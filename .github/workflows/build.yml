@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Install Java and Maven
+        uses: actions/setup-java@v3
+        with:
+          java-version: 16
+          distribution: 'temurin'
+
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Gradle Build
+        run: |
+           ./gradlew build -x test
+#       - name: Upload coverage to Codecov
+#         uses: codecov/codecov-action@v3
+#         with:
+#           files: ./build/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml
+#           flags: unittests
+#           name: codecov-umbrella
+#           fail_ci_if_error: true
+#           verbose: true
+#           java-version: 11

@@ -1,0 +1,64 @@
+[versions]
+kotlin = "1.8.0"
+kotlinx = "1.6.4"
+spring-boot = "2.7.7"
+spring-dependency-management = "1.1.0"
+spring-framework = "5.3.25"
+spring-kafka = "2.9.5"
+couchbase-client = "3.4.2"
+couchbase-client-metrics = "0.4.2"
+jackson = "2.14.1"
+logback-gelf = "4.0.2"
+commons-io = "2.11.0"
+caffeine = "3.1.2"
+arrow = "1.1.5"
+io-reactor = "3.5.2"
+slf4j = "2.0.6"
+kafka = "3.3.2"
+kafka-kotlin = "0.3.0"
+dokka = "1.7.20"
+knit = "0.4.0"
+kover = "0.6.1"
+
+[libraries]
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlinx-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx" }
+kotlinx-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx" }
+kotlinx-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx" }
+kotlinx-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlinx" }
+kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinx" }
+kotlinx-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinx" }
+kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
+kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
+kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version = "1.2.1" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
+kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
+spring-boot-itself = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
+spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
+spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
+spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
+spring-framework-context = { module = "org.springframework:spring-context", version.ref = "spring-framework" }
+spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
+spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
+couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase-client-metrics" }
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+[plugins]
+spring-plugin = { id = "plugin.spring", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+jacocoReportAggregation = { id = "jacoco-report-aggregation" }
+jacoco = { id = "jacoco" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.11.0" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "11.0.0" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+

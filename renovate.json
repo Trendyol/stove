@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "commitBodyTable": true,
+  "packageRules": [
+    {
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "groupName": "all dependencies",
+      "groupSlug": "all"
+    }
+  ]
+}
