@@ -3,6 +3,25 @@ Stove: The easiest way of e2e testing in Kotlin
 
 [Check the documentation](/docs/how-to)
 
+## Roadmap
+
+Stove implements all the physical dependencies, and you can write end-to-end tests against them;
+
+Physical dependencies: 
+
+- [x] Kafka implementation `withKafka`
+- [x] Couchbase implementation `withCouchbase`
+- [ ] Default Http to make real http calls against the _application under test_
+- [ ] Wiremock `withWiremock` to mock all the external dependencies
+- [ ] ElasticSearch implementation `withElasticSearch`
+- [ ] PostgresSql implementation `withPostgresSql`
+
+Framework support:
+
+- [x] Spring
+- [ ] Ktor
+- [ ] Quarkus
+
 ## Show me the code
 
 ### Setting-up all the physical dependencies with application
