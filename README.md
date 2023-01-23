@@ -11,8 +11,8 @@ Physical dependencies:
 
 - [x] Kafka implementation `withKafka`
 - [x] Couchbase implementation `withCouchbase`
-- [ ] Default Http to make real http calls against the _application under test_
-- [ ] Wiremock `withWiremock` to mock all the external dependencies
+- [x] Default Http to make real http calls against the _application under test_
+- [x] Wiremock `withWiremock` to mock all the external dependencies
 - [ ] ElasticSearch implementation `withElasticSearch`
 - [ ] PostgresSql implementation `withPostgresSql`
 
