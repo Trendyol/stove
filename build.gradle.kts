@@ -60,7 +60,7 @@ subprojectsOf("lib", "spring") {
 }
 
 tasks.withType<DokkaMultiModuleTask>().configureEach {
-    outputDirectory.set(file(rootDir.resolve("docs/dokka")))
+    outputDirectory.set(file(rootDir.resolve("docs")))
 }
 
 fun subprojectsOf(
