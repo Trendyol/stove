@@ -1,8 +1,14 @@
 {
-  "extends": [
-    "config:base"
+  "branchPrefix": "renovate/",
+  "dryRun": true,
+  "username": "renovate-bot",
+  "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+  "onboarding": false,
+  "platform": "github",
+  "includeForks": false,
+  "repositories": [
+    "trendyol/stove4k"
   ],
-  "commitBodyTable": true,
   "packageRules": [
     {
       "matchPackagePatterns": [
