@@ -1,12 +1,7 @@
 {
-  "repositories": [
-    "trendyol/stove4k"
-  ],
   "extends": [
     "config:base",
     "group:allNonMajor"
   ],
-  "branchPrefix": "renovate/",
-  "platform": "github",
-  "onboarding": false
+  "branchPrefix": "renovate/"
 }
