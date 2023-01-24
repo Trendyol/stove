@@ -4,18 +4,23 @@
   ],
   "extends": [
     "config:base",
-    "group:allNonMajor"
+    "group:allNonMajor",
+    ":dependencyDashboard"
   ],
   "branchPrefix": "renovate/",
   "platform": "github",
   "onboarding": false,
   "packageRules": [
-    {
+   {
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
       "matchPackagePatterns": [
         "*"
       ],
-      "groupName": "all dependencies",
-      "groupSlug": "all"
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     }
   ]
 }
