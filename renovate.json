@@ -9,18 +9,5 @@
   ],
   "branchPrefix": "renovate/",
   "platform": "github",
-  "onboarding": false,
-  "packageRules": [
-   {
-      "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch",
-      "matchPackagePatterns": [
-        "*"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ]
-    }
-  ]
+  "onboarding": false
 }
