@@ -4,8 +4,7 @@
   ],
   "extends": [
     "config:base",
-    "group:allNonMajor",
-    ":dependencyDashboard"
+    "group:allNonMajor"
   ],
   "branchPrefix": "renovate/",
   "platform": "github",
