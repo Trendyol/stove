@@ -1,4 +1,4 @@
-# e2e Testing
+# Home
 
 Testing a Spring application needs a small tuning to work with **stove-testing.** You can use testing approach/libraries
 without using the entire framework.
