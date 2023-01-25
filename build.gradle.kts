@@ -9,7 +9,7 @@ plugins {
     kotlin("jvm").version(libs.versions.kotlin)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
-    id("publishing")
+    id("stove-publishing") apply false
     id("coverage")
     java
 }
@@ -21,7 +21,7 @@ allprojects {
 subprojectsOf("lib", "spring") {
     apply {
         plugin("kotlin")
-        plugin("publishing")
+        plugin("stove-publishing")
         plugin("java")
         plugin(rootProject.libs.plugins.ktlint.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
