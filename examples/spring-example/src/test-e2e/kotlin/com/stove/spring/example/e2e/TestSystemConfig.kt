@@ -45,7 +45,7 @@ class TestSystemConfig : AbstractProjectConfig() {
                     "kafka.heartbeatInSeconds=2",
                     "kafka.autoCreateTopics=true",
                     "kafka.offset=earliest",
-                    "kafka.isSecure=false"
+                    "kafka.secureKafka=false"
                 )
             )
             .run()
