@@ -1,7 +1,7 @@
 [versions]
 kotlin = "1.8.0"
 kotlinx = "1.6.4"
-spring-boot = "2.7.8"
+spring-boot = "3.0.2"
 spring-dependency-management = "1.1.0"
 spring-framework = "5.3.25"
 spring-kafka = "2.9.5"
