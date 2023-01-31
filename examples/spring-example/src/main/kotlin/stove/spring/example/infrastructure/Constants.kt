@@ -4,7 +4,6 @@ import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.*
 import org.slf4j.MDC
-import stove.spring.example.ExampleApp
 
 class Defaults {
     companion object {

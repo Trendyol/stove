@@ -14,4 +14,3 @@ class TestSystemInitializer :
         bean<TestSystemKafkaInterceptor>(isPrimary = true)
         bean<ObjectMapper> { ref("objectMapper") }
     })
-
