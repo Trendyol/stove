@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: "stove"
+
+server:
+  port: 8001
+  http2:
+    enabled: true
+
+couchbase:
+  hosts: localhost
+  username: user
+  password: pass
+  bucketName: Stove
+  kvTimeout: 3000
+  connectTimeout: 15000
+  queryTimeout: 5000
+  viewTimeout: 5000
+
+
+http-clients:
+  supplier-http:
+    url: http://localhost:9090
+    connectTimeout: 2000
+    readTimeout: 20000
+
+kafka:
+  bootstrapServers: localhost:9092
+  topicPrefix: trendyol.stove.service
+  acks: 1
+  isSecure: false
+  autoCreateTopics: false
+  offset: "latest"
+  heartbeatInSeconds: 30
+  request-timeout: "20000"
+  default-api-timeout: "20000"
+  config:
+    thread-count:
+      basic-listener: 25
+  producer:
+    prefix: trendyol.stove.service
+    product-created:
+      topic-name: ${kafka.producer.prefix}.productCreated.1
+  consumers:
+    retryTopicSuffix: trendyol.stove.service.retry
+    errorTopicSuffix: trendyol.stove.service.error
+    enabled: true
+    groupId: trendyol.stove.service
+    product-create:
+      topic: trendyol.stove.service.product.create.0
+      retryTopic: ${kafka.consumers.product-create.topic}.${kafka.consumers.retryTopicSuffix}
+      errorTopic: ${kafka.consumers.product-create.topic}.${kafka.consumers.errorTopicSuffix}
