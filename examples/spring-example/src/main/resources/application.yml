@@ -28,7 +28,7 @@ kafka:
   bootstrapServers: localhost:9092
   topicPrefix: trendyol.stove.service
   acks: 1
-  isSecure: false
+  secureKafka: false
   autoCreateTopics: false
   offset: "latest"
   heartbeatInSeconds: 30

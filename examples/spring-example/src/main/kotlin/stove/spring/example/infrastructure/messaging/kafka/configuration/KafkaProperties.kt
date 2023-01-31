@@ -16,7 +16,7 @@ data class KafkaProperties(
     var compression: String = "zstd",
     var offset: String = "latest",
     var autoCreateTopics: Boolean = false,
-    var isSecure: Boolean = false,
+    var secureKafka: Boolean = false,
 ) {
     val maxProducerConsumerBytes = "4194304"
 

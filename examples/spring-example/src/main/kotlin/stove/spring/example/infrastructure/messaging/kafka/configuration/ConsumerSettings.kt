@@ -23,7 +23,7 @@ class DefaultConsumerSettings(
      * These are like below;
      * autoCreateTopics: we are sending as true this param for creating missing topics in initialize time.
      * heartbeatInSeconds: we should reduce heartbeat seconds the e2e environment, so we parameterized this field.
-     * isSecure: this is Kafka secure parameter we can set false in default yaml.
+     * secureKafka: this is Kafka secure parameter we can set false in default yaml.
      *      If we want to use it for stage and prod yaml environment for adding secure Kafka configs set isSecure:true
      * offset: we should override this field as earliest for the stove e2e environment.
      */
