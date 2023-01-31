@@ -18,7 +18,7 @@ allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
 }
 
-subprojectsOf("lib", "spring") {
+subprojectsOf("lib", "spring", "examples") {
     apply {
         plugin("kotlin")
         plugin("stove-publishing")
