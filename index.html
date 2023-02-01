@@ -13,7 +13,7 @@
     
     
       
-        <title>Home - Stove</title>
+        <title>What is Stove? - Stove</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#home" class="md-skip">
+        <a href="#what-is-stove" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              What is Stove?
             
           </span>
         </div>
@@ -198,7 +198,7 @@
   
     <li class="md-tabs__item">
       <a href="." class="md-tabs__link md-tabs__link--active">
-        Home
+        Index
       </a>
     </li>
   
@@ -272,14 +272,12 @@
         
           
         
-          
-        
       
       
         
         
         <div class="md-nav__link md-nav__link--index md-nav__link--active">
-          <a href=".">Home</a>
+          <a href=".">Index</a>
           
             <label for="__nav_1">
               <span class="md-nav__icon md-icon"></span>
@@ -287,27 +285,13 @@
           
         </div>
       
-      <nav class="md-nav" aria-label="Home" data-md-level="1">
+      <nav class="md-nav" aria-label="Index" data-md-level="1">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
-          Home
+          Index
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="0001-getting-started/" class="md-nav__link">
-        Getting Started
-      </a>
-    </li>
-  
-
             
           
             
@@ -434,6 +418,61 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-build-the-source-code" class="md-nav__link">
+    How to build the source code?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-start" class="md-nav__link">
+    Where to start?
+  </a>
+  
+    <nav class="md-nav" aria-label="Where to start?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ways-of-testing" class="md-nav__link">
+    Ways of testing?
+  </a>
+  
+    <nav class="md-nav" aria-label="Ways of testing?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-attaching-to-the-application" class="md-nav__link">
+    1. Attaching to the application
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-as-black-box" class="md-nav__link">
+    2. As Black-Box
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -447,11 +486,41 @@
                   
 
 
-<h1 id="home">Home<a class="headerlink" href="#home" title="Permanent link">&para;</a></h1>
-<p>Testing a Spring application needs a small tuning to work with <strong>stove-testing.</strong> You can use testing approach/libraries
-without using the entire framework.</p>
-<p>Stove or this testing approach looks at the Spring application as a black box and just runs it as you run an application
-with <code>java application.jar</code> command from the terminal.</p>
+<h1 id="what-is-stove">What is Stove?<a class="headerlink" href="#what-is-stove" title="Permanent link">&para;</a></h1>
+<p>Stove is an end-to-end testing framework that spins up physical dependencies and your application all together. So you have a control over
+dependencies via code, not with the <code>yaml</code> files. Your e2e testing does not need to know anything about the infra. It is <strong>pluggable</strong>.
+Having said that, the only dependency is <code>docker</code> since Stove is using <a href="https://github.com/testcontainers/testcontainers-java">testcontainers</a> underlying.</p>
+<p>You can use JUnit and Kotest for running the tests. You can run all the tests on your CI, too. But that needs <strong>DinD(docker-in-docker)</strong> integration.</p>
+<h2 id="how-to-build-the-source-code">How to build the source code?<a class="headerlink" href="#how-to-build-the-source-code" title="Permanent link">&para;</a></h2>
+<p>JDK 16+ is necessary.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./gradlew build <span class="c1"># that will build and run the tests</span>
+</code></pre></div>
+<h2 id="where-to-start">Where to start?<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
+<p>Address your dependencies that <em>application under test (in other words your API/Microservice/Application)</em>  uses. Your application needs some physical dependencies
+to be able to run properly on any environment. If Stove has those implementations you may proceed using it. These dependencies:</p>
+<ul>
+<li>Couchbase</li>
+<li>Kafka</li>
+</ul>
+<p>for now.</p>
+<h3 id="ways-of-testing">Ways of testing?<a class="headerlink" href="#ways-of-testing" title="Permanent link">&para;</a></h3>
+<p>With Stove there are two ways of testing. If you are using Spring framework for your application, you may attach Stove
+to your application, so that you can debug and look with a magnifying glass to your code base. This is especially helpful
+when one wants to see how code works when the physical dependencies are present. Because, unit and integration tests stay short
+for the deeper insights when it comes to the behaviour of the system on production.</p>
+<h4 id="1-attaching-to-the-application">1. Attaching to the application<a class="headerlink" href="#1-attaching-to-the-application" title="Permanent link">&para;</a></h4>
+<p>There are entry point for every application, usually a <code>main</code> method that is invoked, and starts the application lifecycle.
+If you are publishing your application/api/microservice as a docker image, <code>docker run ...</code> basically runs your application
+highly likely with a <code>jvm/java</code> command.</p>
+<p>In this approach, we're attaching Stove to very entrance of the application, in other words to its <code>main</code> function.</p>
+<p>Stove calls your application's <code>main</code> function like you would call <code>java yourApplicationName.jar</code> to run the application from the test context.
+So the runner is JUnit or Kotest.</p>
+<p>For Stove to attach properly to your application, application's main function needs to allow that. This does not change
+behaviour at all, it just opens a door for e2e testing framework to <em>enter</em>. We will discuss this later.</p>
+<h4 id="2-as-black-box">2. As Black-Box<a class="headerlink" href="#2-as-black-box" title="Permanent link">&para;</a></h4>
+<p>In this approach, your application does not have any part that is exposed to Stove, and Stove will not attach to application.
+You could provide a docker image of your application, Stove will spin up the application and its dependencies.</p>
+<p><strong>This is on the roadmap, and not implemented yet.</strong></p>
 
 
 
@@ -480,13 +549,13 @@ with <code>java application.jar</code> command from the terminal.</p>
       
       
         
-        <a href="0001-getting-started/" class="md-footer__link md-footer__link--next" aria-label="Next: Getting Started" rel="next">
+        <a href="0002-tuning-app/" class="md-footer__link md-footer__link--next" aria-label="Next: Tuning the application entry point and folder structure" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Getting Started
+              Tuning the application entry point and folder structure
             </div>
           </div>
           <div class="md-footer__button md-icon">
