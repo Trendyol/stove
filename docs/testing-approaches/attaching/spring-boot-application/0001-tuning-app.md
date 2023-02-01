@@ -4,7 +4,7 @@ In a Spring application you usually have an entry point. Let's dive into to the 
 
 ```kotlin
 @SpringBootApplication
-class QCInternationalServiceApplication // Empty application class for Spring dependency scan
+class ExampleApplication // Empty application class for Spring dependency scan
 
 /**
  * Entry point for the jvm application
@@ -20,7 +20,7 @@ fun run(
     args: Array<String>,
     init: SpringApplication.() -> Unit = {},
 ): ConfigurableApplicationContext =
-    runApplication<QCInternationalServiceApplication>(
+    runApplication<ExampleApplication>(
         *args,
         init = init
     )
