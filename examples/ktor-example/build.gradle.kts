@@ -1,7 +1,7 @@
 @file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
 
 plugins {
-    kotlin("jvm") version libs.versions.kotlin
+    kotlin("jvm") version 1.8.10
     application
     idea
     kotlin("plugin.serialization") version libs.versions.kotlin
