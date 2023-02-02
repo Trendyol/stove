@@ -19,6 +19,10 @@ kafka-kotlin = "0.3.0"
 dokka = "1.7.20"
 knit = "0.4.0"
 kover = "0.6.1"
+ktor = "2.0.2"
+koin = "3.2.0"
+r2dbc-spi = "1.0.0.RELEASE"
+r2dbc-postgresql = "0.8.13.RELEASE"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -49,6 +53,10 @@ jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin"
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
+r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }

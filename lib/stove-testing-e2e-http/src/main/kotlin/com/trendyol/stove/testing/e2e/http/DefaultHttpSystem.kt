@@ -9,7 +9,6 @@ import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.deserialize
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import kotlinx.coroutines.future.await
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Redirect.ALWAYS
@@ -20,6 +19,7 @@ import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
 import kotlin.reflect.KClass
+import kotlinx.coroutines.future.await
 
 fun TestSystem.withDefaultHttp(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
     this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))

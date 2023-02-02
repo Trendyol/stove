@@ -23,5 +23,8 @@ kotest-framework-api-jvm = { module = "io.kotest:kotest-framework-api-jvm", vers
 kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version.ref = "kotest-spring" }
 wiremock = { module = "com.github.tomakehurst:wiremock-jre8", version.ref = "wiremock" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
 testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
 testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.ref = "testcontainers" }
+testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+

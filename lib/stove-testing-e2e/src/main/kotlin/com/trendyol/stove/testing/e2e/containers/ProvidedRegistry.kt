@@ -16,7 +16,10 @@ const val DEFAULT_REGISTRY = "hub.docker.com"
 fun <T> withProvidedRegistry(
     imageName: String,
     registry: String = DEFAULT_REGISTRY,
+    compatibleSubstitute: String? = null,
     containerBuilder: (DockerImageName) -> T,
 ): T = containerBuilder(
-    DockerImageName.parse(registry + imageName).asCompatibleSubstituteFor(imageName)
+    DockerImageName
+        .parse(registry.trim('/') + '/' + imageName.trim('/'))
+        .asCompatibleSubstituteFor(compatibleSubstitute ?: imageName)
 )

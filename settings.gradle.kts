@@ -6,18 +6,22 @@ include(
     "lib:stove-testing-e2e-wiremock",
     "lib:stove-testing-e2e-http",
     "lib:stove-testing-e2e-kafka",
-    "lib:stove-testing-e2e-couchbase"
+    "lib:stove-testing-e2e-couchbase",
+    "lib:stove-testing-e2e-rdbms",
+    "lib:stove-testing-e2e-rdbms-postgres"
 )
 
 include(
     "starters",
+    "starters:ktor:stove-ktor-testing-e2e",
     "starters:spring:stove-spring-testing-e2e",
     "starters:spring:stove-spring-testing-e2e-kafka"
 )
 
 include(
     "examples",
-    "examples:spring-example"
+    "examples:spring-example",
+    "examples:ktor-example"
 )
 
 dependencyResolutionManagement {
