@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm") version libs.versions.kotlin
     application
     idea
-    kotlin("plugin.serialization") version libs.versions.kotlin
+    kotlin("plugin.serialization") version 1.8.10
 }
 
 application {
