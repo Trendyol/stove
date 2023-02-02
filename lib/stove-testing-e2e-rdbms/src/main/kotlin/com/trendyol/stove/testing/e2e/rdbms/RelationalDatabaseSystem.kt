@@ -17,11 +17,11 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
 ) : DatabaseSystem, RunAware, ExposesConfiguration {
     private lateinit var sqlOperations: SqlOperations
 
-    protected abstract val connectionFactory: ConnectionFactory
+    protected abstract fun connectionFactory(): ConnectionFactory
 
     override suspend fun run() {
         context.container.start()
-        sqlOperations = SqlOperations(connectionFactory)
+        sqlOperations = SqlOperations(connectionFactory())
         sqlOperations.open()
     }
 
@@ -38,7 +38,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
             database = context.container.databaseName,
             port = context.container.firstMappedPort,
             password = context.container.password,
-            username = context.container.username,
+            username = context.container.username
         )
 
         return context.configureExposedConfiguration(exposedConfiguration) + listOf(
@@ -47,7 +47,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
             "database.database=${exposedConfiguration.database}",
             "database.port=${exposedConfiguration.port}",
             "database.password=${exposedConfiguration.password}",
-            "database.username=${exposedConfiguration.username}",
+            "database.username=${exposedConfiguration.username}"
         )
     }
 

@@ -1,5 +1,6 @@
 package com.stove.ktor.example.e2e
 
+import com.trendol.stove.testing.e2e.rdbms.postgres.PostgresqlOptions
 import com.trendyol.stove.testing.e2e.http.withHttpClient
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.systemUnderTest
@@ -20,16 +21,19 @@ class TestSystemConfig : AbstractProjectConfig() {
     override suspend fun beforeProject() =
         TestSystem(baseUrl = "http://localhost:8080")
             .withHttpClient()
-            .withPostgresql { cfg ->
-                listOf(
-                    "database.jdbcUrl=${cfg.jdbcUrl}",
-                    "database.host=${cfg.host}",
-                    "database.port=${cfg.port}",
-                    "database.databaseName=${cfg.database}",
-                    "database.username=${cfg.username}",
-                    "database.password=${cfg.password}"
-                )
-            }.withWireMock(
+            .withPostgresql(
+                PostgresqlOptions(configureExposedConfiguration = { cfg ->
+                    listOf(
+                        "database.jdbcUrl=${cfg.jdbcUrl}",
+                        "database.host=${cfg.host}",
+                        "database.port=${cfg.port}",
+                        "database.databaseName=${cfg.database}",
+                        "database.username=${cfg.username}",
+                        "database.password=${cfg.password}"
+                    )
+                })
+            )
+            .withWireMock(
                 port = 9090,
                 WireMockSystemOptions(removeStubAfterRequestMatched = true, afterRequest = { e, _, _ ->
                     logger.info(e.request.toString())

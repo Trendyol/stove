@@ -15,23 +15,25 @@ import org.testcontainers.containers.PostgreSQLContainer
 
 const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
 
+data class PostgresqlOptions(
+    val databaseName: String = "stove-e2e-testing",
+    val registry: String = DEFAULT_REGISTRY,
+    val imageName: String = DEFAULT_POSTGRES_IMAGE_NAME,
+    val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() },
+)
+
 internal class PostgresqlContext(
     container: PostgreSQLContainer<*>,
     configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>,
 ) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, configureExposedConfiguration)
 
 fun TestSystem.withPostgresql(
-    registry: String = DEFAULT_REGISTRY,
-    imageName: String = DEFAULT_POSTGRES_IMAGE_NAME,
-    compatibleSubstitute: String? = null,
-    configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ ->
-        listOf()
-    },
+    options: PostgresqlOptions = PostgresqlOptions(),
 ): TestSystem {
-    val container = withProvidedRegistry(imageName, registry, compatibleSubstitute) {
-        PostgreSQLContainer(it).withDatabaseName("integration-tests-db").withUsername("sa").withPassword("sa")
+    val container = withProvidedRegistry(options.imageName, options.registry, "postgres") {
+        PostgreSQLContainer(it).withDatabaseName(options.databaseName).withUsername("sa").withPassword("sa")
     }
-    return getOrRegister(PostgresqlSystem(this, PostgresqlContext(container, configureExposedConfiguration))).let { this }
+    return getOrRegister(PostgresqlSystem(this, PostgresqlContext(container, options.configureExposedConfiguration))).let { this }
 }
 
 fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
@@ -42,15 +44,11 @@ class PostgresqlSystem internal constructor(
     testSystem: TestSystem,
     context: PostgresqlContext,
 ) : RelationalDatabaseSystem<PostgresqlSystem>(testSystem, context) {
-    override val connectionFactory: ConnectionFactory
-        get() {
-            val builder = PostgresqlConnectionConfiguration.builder().apply {
-                host(context.container.host)
-                database(context.container.databaseName)
-                port(context.container.firstMappedPort)
-                password(context.container.password)
-                username(context.container.username)
-            }
-            return PostgresqlConnectionFactory(builder.build())
-        }
+    override fun connectionFactory(): ConnectionFactory = PostgresqlConnectionConfiguration.builder().apply {
+        host(context.container.host)
+        database(context.container.databaseName)
+        port(context.container.firstMappedPort)
+        password(context.container.password)
+        username(context.container.username)
+    }.let { PostgresqlConnectionFactory(it.build()) }
 }

@@ -2,7 +2,10 @@ package com.trendyol.stove.testing.e2e.containers
 
 import org.testcontainers.utility.DockerImageName
 
-const val DEFAULT_REGISTRY = "hub.docker.com"
+/**
+ * Can be set globally
+ */
+var DEFAULT_REGISTRY = "docker.io"
 
 /**
  * Allows a docker image to be sourced from a different registry. [DEFAULT_REGISTRY]
