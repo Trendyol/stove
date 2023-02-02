@@ -9,6 +9,7 @@ kluent = "1.72"
 mockito = "4.1.0"
 wiremock = "2.35.0"
 testcontainers = "1.17.6"
+ktor = "2.2.3"
 
 [libraries]
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
@@ -27,4 +28,5 @@ testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testc
 testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
 testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.ref = "testcontainers" }
 testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
 

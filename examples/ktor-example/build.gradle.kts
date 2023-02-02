@@ -1,12 +1,10 @@
-val ktor_version: String = "2.2.2"
-val koin_version: String = "3.3.0"
+@file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
 
 plugins {
-    kotlin("jvm") version "1.8.0"
-    // id("io.ktor.plugin") version "2.2.2"
+    kotlin("jvm") version libs.versions.kotlin
     application
     idea
-    kotlin("plugin.serialization") version "1.8.0"
+    kotlin("plugin.serialization") version libs.versions.kotlin
 }
 
 application {
@@ -42,18 +40,18 @@ idea {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server:$ktor_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
-    implementation("io.ktor:ktor-server-call-logging:$ktor_version")
-    implementation("io.insert-koin:koin-ktor:$koin_version")
-    implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
+    implementation(libs.ktor.server)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.server.call.logging)
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.logger.slf4j)
     implementation(libs.kotlinx.reactor)
     implementation(libs.r2dbc.postgresql)
 }
 
 dependencies {
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
+    testImplementation(testLibs.ktor.server.tests.jvm)
     testImplementation(testLibs.kotest.property.jvm)
     testImplementation(testLibs.kotest.runner.junit5)
     testImplementation(project(":lib:stove-testing-e2e-http"))
