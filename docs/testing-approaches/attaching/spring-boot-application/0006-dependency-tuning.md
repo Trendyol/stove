@@ -24,7 +24,7 @@ TestSystem()
     .withSchedulerSystem()
     .systemUnderTest(
         runner = { parameters ->
-            com.trendyol.qc.internationalservice.run(parameters) {
+            com.trendyol.exampleapp.run(parameters) {
                 addTestDependencies()
             }
         },

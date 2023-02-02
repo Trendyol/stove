@@ -1,5 +1,3 @@
-plugins {}
-
 dependencies {
     api(project(":lib:stove-testing-e2e"))
     implementation(libs.kafka)

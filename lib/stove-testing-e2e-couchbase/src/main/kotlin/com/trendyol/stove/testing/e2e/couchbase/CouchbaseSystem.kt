@@ -15,7 +15,7 @@ import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.couchbase.ClusterExtensions.executeQueryAs
-import com.trendyol.stove.testing.e2e.database.DatabaseSystem
+import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -73,7 +73,7 @@ fun TestSystem.couchbase(): CouchbaseSystem =
 class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
     private val context: CouchbaseContext,
-) : DatabaseSystem, RunAware, ExposesConfiguration {
+) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
 
     private lateinit var cluster: ReactiveCluster
     private lateinit var collection: ReactiveCollection
@@ -124,19 +124,19 @@ class CouchbaseSystem internal constructor(
     }
 
     override suspend fun <T : Any> shouldGet(
-        id: String,
+        key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
     ): CouchbaseSystem {
-        val result = collection.get(id)
+        val result = collection.get(key)
         val expected = result.awaitSingle().contentAs(clazz.java)
         assertion(expected)
 
         return this
     }
 
-    override suspend fun shouldDelete(id: String): CouchbaseSystem {
-        collection.remove(id).awaitSingle()
+    override suspend fun shouldDelete(key: String): CouchbaseSystem {
+        collection.remove(key).awaitSingle()
         return this
     }
 
@@ -144,7 +144,7 @@ class CouchbaseSystem internal constructor(
      * Saves the [instance] with given [id] to the [collection]
      * To save to the default collection use [saveToDefaultCollection]
      */
-    suspend fun <T : Any> save(
+    override suspend fun <T : Any> save(
         collection: String,
         id: String,
         instance: T,

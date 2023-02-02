@@ -18,18 +18,11 @@ allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
 }
 
-subprojectsOf("lib", "spring", "examples") {
+subprojectsOf("lib", "spring", "examples", "ktor") {
     apply {
         plugin("kotlin")
-        plugin("stove-publishing")
-        plugin("java")
         plugin(rootProject.libs.plugins.ktlint.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
-    }
-
-    java {
-        withSourcesJar()
-        withJavadocJar()
     }
 
     val testImplementation by configurations
@@ -59,6 +52,29 @@ subprojectsOf("lib", "spring", "examples") {
     }
 }
 
+val publishedProjects = listOf(
+    "stove-testing-e2e-couchbase",
+    "stove-testing-e2e-http",
+    "stove-testing-e2e-kafka",
+    "stove-testing-e2e-rdbms-postgres",
+    "stove-testing-e2e-wiremock",
+    "stove-ktor-testing-e2e",
+    "stove-spring-testing-e2e",
+    "stove-spring-testing-e2e-kafka"
+)
+
+subprojectsOf("lib", "spring", "ktor", filter = { p -> publishedProjects.contains(p.name) }) {
+    apply {
+        plugin("java")
+        plugin("stove-publishing")
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+}
+
 tasks.withType<DokkaMultiModuleTask>().configureEach {
     outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
@@ -67,3 +83,9 @@ fun subprojectsOf(
     vararg parentProjects: String,
     action: Action<Project>,
 ): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) }.forEach { action(it) }
+
+fun subprojectsOf(
+    vararg parentProjects: String,
+    filter: (Project) -> Boolean,
+    action: Action<Project>,
+): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) && filter(it) }.forEach { action(it) }

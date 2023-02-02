@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.couchbase
 
-import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldGet
+import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig

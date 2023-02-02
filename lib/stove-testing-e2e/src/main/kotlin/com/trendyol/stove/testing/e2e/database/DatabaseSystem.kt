@@ -8,7 +8,6 @@ import kotlin.reflect.KClass
  * @author Oguzhan Soykan
  */
 interface DatabaseSystem : PluggedSystem {
-
     /**
      * Executes the given [query] and returns a list for [assertion]
      * Caller-side needs to assert based on the list
@@ -21,23 +20,6 @@ interface DatabaseSystem : PluggedSystem {
         clazz: KClass<T>,
     ): DatabaseSystem
 
-    /**
-     * Finds the given [id] and returns the instance if exists, otherwise throws [Exception]
-     * Caller-side needs to assert based on the list
-     *
-     * Also: [Companion.shouldGet]
-     */
-    suspend fun <T : Any> shouldGet(
-        id: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>,
-    ): DatabaseSystem
-
-    /**
-     * Deletes the given [id] from the database
-     */
-    suspend fun shouldDelete(id: String): DatabaseSystem
-
     companion object {
 
         /**
@@ -48,15 +30,5 @@ interface DatabaseSystem : PluggedSystem {
             query: String,
             noinline assertion: (List<T>) -> Unit,
         ): DatabaseSystem = this.shouldQuery(query, assertion, T::class)
-
-        /**
-         * Finds the given [id] and returns the instance if exists, otherwise throws [Exception]
-         * Caller-side needs to assert based on the list
-         *
-         */
-        suspend inline fun <reified T : Any> DatabaseSystem.shouldGet(
-            id: String,
-            noinline assertion: (T) -> Unit,
-        ): DatabaseSystem = this.shouldGet(id, assertion, T::class)
     }
 }

@@ -9,7 +9,6 @@ import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.deserialize
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import kotlinx.coroutines.future.await
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Redirect.ALWAYS
@@ -19,14 +18,33 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
+import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
 
+@Deprecated(
+    "This method is deprecated, going to be removed",
+    replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
+)
 fun TestSystem.withDefaultHttp(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
     this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
     return this
 }
 
+fun TestSystem.withHttpClient(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
+    this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
+    return this
+}
+
+@Deprecated(
+    "This method is deprecated, going to be removed",
+    replaceWith = ReplaceWith("http()", "com.trendyol.stove.testing.e2e.http.TestSystem")
+)
 fun TestSystem.defaultHttp(): DefaultHttpSystem =
+    getOrNone<DefaultHttpSystem>().getOrElse {
+        throw SystemNotRegisteredException(DefaultHttpSystem::class)
+    }
+
+fun TestSystem.http(): DefaultHttpSystem =
     getOrNone<DefaultHttpSystem>().getOrElse {
         throw SystemNotRegisteredException(DefaultHttpSystem::class)
     }
