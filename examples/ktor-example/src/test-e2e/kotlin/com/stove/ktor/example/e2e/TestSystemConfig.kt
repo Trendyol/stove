@@ -12,7 +12,7 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import withPostgresql
+import com.trendol.stove.testing.e2e.rdbms.postgres.withPostgresql
 
 class TestSystemConfig : AbstractProjectConfig() {
 

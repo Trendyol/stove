@@ -5,7 +5,7 @@ import com.trendyol.stove.testing.e2e.couchbase.couchbase
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.get
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJson
-import com.trendyol.stove.testing.e2e.http.defaultHttp
+import com.trendyol.stove.testing.e2e.http.http
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.messaging.AssertsConsuming.Companion.shouldBeConsumedOnCondition
 import com.trendyol.stove.testing.e2e.messaging.AssertsPublishing.Companion.shouldBePublishedOnCondition
@@ -22,7 +22,7 @@ import stove.spring.example.application.services.SupplierPermission
 class ExampleTest : FunSpec({
     test("should swagger be reachable after starting") {
         TestSystem.instance
-            .defaultHttp()
+            .http()
             .get<String>("/api/index") { actual ->
                 actual shouldContain "Hi from Stove framework"
                 println(actual)
@@ -35,7 +35,7 @@ class ExampleTest : FunSpec({
             .wiremock()
             .mockGet("/suppliers/${productCreateRequest.id}/allowed", responseBody = supplierPermission.some(), statusCode = 200)
             .then()
-            .defaultHttp()
+            .http()
             .postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
                 actual shouldBe "OK"
             }
@@ -63,7 +63,7 @@ class ExampleTest : FunSpec({
             .wiremock()
             .mockGet("/suppliers/${productCreateRequest.id}/allowed", responseBody = supplierPermission.some(), statusCode = 200)
             .then()
-            .defaultHttp()
+            .http()
             .postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
                 actual shouldBe "Supplier with the given id(${productCreateRequest.supplierId}) is not allowed for product creation"
             }

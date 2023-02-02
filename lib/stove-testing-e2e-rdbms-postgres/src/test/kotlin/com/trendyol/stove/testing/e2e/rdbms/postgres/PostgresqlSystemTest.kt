@@ -1,5 +1,7 @@
 package com.trendyol.stove.testing.e2e.rdbms.postgres
 
+import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
+import com.trendol.stove.testing.e2e.rdbms.postgres.withPostgresql
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -7,8 +9,6 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
-import postgresql
-import withPostgresql
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {

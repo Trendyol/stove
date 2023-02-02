@@ -1,3 +1,5 @@
+package com.trendol.stove.testing.e2e.rdbms.postgres
+
 import arrow.core.getOrElse
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
@@ -11,10 +13,30 @@ import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
 import org.testcontainers.containers.PostgreSQLContainer
 
+const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
+
 internal class PostgresqlContext(
     container: PostgreSQLContainer<*>,
     configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>,
 ) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, configureExposedConfiguration)
+
+fun TestSystem.withPostgresql(
+    registry: String = DEFAULT_REGISTRY,
+    imageName: String = DEFAULT_POSTGRES_IMAGE_NAME,
+    compatibleSubstitute: String? = null,
+    configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ ->
+        listOf()
+    },
+): TestSystem {
+    val container = withProvidedRegistry(imageName, registry, compatibleSubstitute) {
+        PostgreSQLContainer(it).withDatabaseName("integration-tests-db").withUsername("sa").withPassword("sa")
+    }
+    return getOrRegister(PostgresqlSystem(this, PostgresqlContext(container, configureExposedConfiguration))).let { this }
+}
+
+fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
+    throw SystemNotRegisteredException(PostgresqlSystem::class)
+}
 
 class PostgresqlSystem internal constructor(
     testSystem: TestSystem,
@@ -31,40 +53,4 @@ class PostgresqlSystem internal constructor(
             }
             return PostgresqlConnectionFactory(builder.build())
         }
-}
-
-const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
-
-fun TestSystem.withPostgresql(
-    configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ ->
-        listOf()
-    },
-): TestSystem = this.withPostgresql(registry = null, imageName = null, compatibleSubstitute = null, configureExposedConfiguration)
-
-fun TestSystem.withPostgresql(
-    registry: String? = DEFAULT_REGISTRY,
-    imageName: String? = DEFAULT_POSTGRES_IMAGE_NAME,
-    compatibleSubstitute: String? = null,
-    configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ ->
-        listOf()
-    },
-): TestSystem {
-    val container = if (registry == null) {
-        PostgreSQLContainer(DEFAULT_POSTGRES_IMAGE_NAME).withDatabaseName("integration-tests-db").withUsername("sa").withPassword("sa")
-    } else {
-        withProvidedRegistry(imageName ?: DEFAULT_POSTGRES_IMAGE_NAME, registry, compatibleSubstitute) {
-            PostgreSQLContainer(it).withDatabaseName("integration-tests-db").withUsername("sa").withPassword("sa")
-        }
-    }
-    this.getOrRegister(
-        PostgresqlSystem(
-            this,
-            PostgresqlContext(container, configureExposedConfiguration)
-        )
-    )
-    return this
-}
-
-fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
-    throw SystemNotRegisteredException(PostgresqlSystem::class)
 }
