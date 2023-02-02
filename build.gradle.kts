@@ -1,6 +1,7 @@
 @file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
 
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
+import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 
 group = "com.trendyol"
 version = "0.0.7-SNAPSHOT"
@@ -21,15 +22,8 @@ allprojects {
 subprojectsOf("lib", "spring", "examples", "ktor") {
     apply {
         plugin("kotlin")
-        plugin("stove-publishing")
-        plugin("java")
         plugin(rootProject.libs.plugins.ktlint.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
-    }
-
-    java {
-        withSourcesJar()
-        withJavadocJar()
     }
 
     val testImplementation by configurations
@@ -59,6 +53,18 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
     }
 }
 
+subprojectsOf("lib", "spring", "ktor", filter = { p -> p.publishToMaven() }) {
+    apply {
+        plugin("java")
+        plugin("stove-publishing")
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+}
+
 tasks.withType<DokkaMultiModuleTask>().configureEach {
     outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
@@ -67,3 +73,13 @@ fun subprojectsOf(
     vararg parentProjects: String,
     action: Action<Project>,
 ): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) }.forEach { action(it) }
+
+fun subprojectsOf(
+    vararg parentProjects: String,
+    filter: (Project) -> Boolean,
+    action: Action<Project>,
+): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) && filter(it) }.forEach { action(it) }
+
+fun Project.publishToMaven(): Boolean = this.ext.has("publish").ifTrue {
+    this.ext.get("publish") as Boolean
+} ?: false

@@ -18,15 +18,33 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
-import kotlin.reflect.KClass
 import kotlinx.coroutines.future.await
+import kotlin.reflect.KClass
 
+@Deprecated(
+    "This method is deprecated, going to be removed",
+    replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
+)
 fun TestSystem.withDefaultHttp(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
     this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
     return this
 }
 
+fun TestSystem.withHttpClient(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
+    this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
+    return this
+}
+
+@Deprecated(
+    "This method is deprecated, going to be removed",
+    replaceWith = ReplaceWith("http()", "com.trendyol.stove.testing.e2e.http.TestSystem")
+)
 fun TestSystem.defaultHttp(): DefaultHttpSystem =
+    getOrNone<DefaultHttpSystem>().getOrElse {
+        throw SystemNotRegisteredException(DefaultHttpSystem::class)
+    }
+
+fun TestSystem.http(): DefaultHttpSystem =
     getOrNone<DefaultHttpSystem>().getOrElse {
         throw SystemNotRegisteredException(DefaultHttpSystem::class)
     }

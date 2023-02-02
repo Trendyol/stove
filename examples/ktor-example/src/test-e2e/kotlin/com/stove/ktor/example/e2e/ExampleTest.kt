@@ -16,7 +16,6 @@ class ExampleTest : FunSpec({
     )
 
     test("should save jedi") {
-
         val givenId = 10
         val givenName = "Luke Skywalker"
         TestSystem
@@ -35,7 +34,8 @@ class ExampleTest : FunSpec({
             .then()
             .defaultHttp()
             .postAndExpectBodilessResponse(
-                "/jedis/$givenId", body = UpdateJediRequest(givenName).some()
+                "/jedis/$givenId",
+                body = UpdateJediRequest(givenName).some()
             ) { actual ->
                 actual.status shouldBe 200
             }

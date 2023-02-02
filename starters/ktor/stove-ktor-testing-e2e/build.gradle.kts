@@ -1,3 +1,5 @@
+ext { set("publish", true) }
+
 dependencies {
     api(project(":lib:stove-testing-e2e"))
     implementation(libs.ktor.server.host.common)

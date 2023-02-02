@@ -1,6 +1,6 @@
 package com.stove.ktor.example.e2e
 
-import com.trendyol.stove.testing.e2e.http.withDefaultHttp
+import com.trendyol.stove.testing.e2e.http.withHttpClient
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.systemUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
@@ -17,30 +17,33 @@ import withPostgresql
 class TestSystemConfig : AbstractProjectConfig() {
 
     private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
-    override suspend fun beforeProject() = TestSystem(baseUrl = "http://localhost:8080").withDefaultHttp().withPostgresql { cfg ->
-        listOf(
-            "database.jdbcUrl=${cfg.jdbcUrl}",
-            "database.host=${cfg.host}",
-            "database.port=${cfg.port}",
-            "database.databaseName=${cfg.database}",
-            "database.username=${cfg.username}",
-            "database.password=${cfg.password}",
-        )
-    }.withWireMock(
-        port = 9090,
-        WireMockSystemOptions(removeStubAfterRequestMatched = true, afterRequest = { e, _, _ ->
-            logger.info(e.request.toString())
-        })
-    ).systemUnderTest(
-        withParameters = listOf(
-            "ktor.server.port=8001"
-        ),
-        runner = { parameters ->
-            stove.ktor.example.run(parameters) {
-                addTestSystemDependencies()
-            }
-        }
-    ).run()
+    override suspend fun beforeProject() =
+        TestSystem(baseUrl = "http://localhost:8080")
+            .withHttpClient()
+            .withPostgresql { cfg ->
+                listOf(
+                    "database.jdbcUrl=${cfg.jdbcUrl}",
+                    "database.host=${cfg.host}",
+                    "database.port=${cfg.port}",
+                    "database.databaseName=${cfg.database}",
+                    "database.username=${cfg.username}",
+                    "database.password=${cfg.password}"
+                )
+            }.withWireMock(
+                port = 9090,
+                WireMockSystemOptions(removeStubAfterRequestMatched = true, afterRequest = { e, _, _ ->
+                    logger.info(e.request.toString())
+                })
+            ).systemUnderTest(
+                withParameters = listOf(
+                    "ktor.server.port=8001"
+                ),
+                runner = { parameters ->
+                    stove.ktor.example.run(parameters) {
+                        addTestSystemDependencies()
+                    }
+                }
+            ).run()
 
     override fun extensions(): List<Extension> {
         val listener = object : AfterTestListener {
