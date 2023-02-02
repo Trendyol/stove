@@ -116,7 +116,7 @@ fun SpringApplication.addTestDependencies() {
 ```kotlin  hl_lines="4"
 .systemUnderTest(
     runner = { parameters ->
-        com.trendyol.qc.internationalservice.run(parameters) {
+        com.trendyol.exampleapp.run(parameters) {
             addTestDependencies()
         }
     },

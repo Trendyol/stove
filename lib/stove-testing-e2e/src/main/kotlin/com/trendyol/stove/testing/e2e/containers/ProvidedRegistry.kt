@@ -5,7 +5,7 @@ import org.testcontainers.utility.DockerImageName
 const val DEFAULT_REGISTRY = "hub.docker.com"
 
 /**
- * Allows a docker image to be sourced from a different registry. The default is QC [DEFAULT_REGISTRY]
+ * Allows a docker image to be sourced from a different registry. [DEFAULT_REGISTRY]
  * Example:
  * ```kotlin
  *  withProvidedRegistry("couchbase/server", registry) {
