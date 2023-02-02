@@ -3,7 +3,7 @@
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 
 group = "com.trendyol"
-version = "0.0.7-SNAPSHOT"
+version = "0.0.8-SNAPSHOT"
 
 plugins {
     kotlin("jvm").version(libs.versions.kotlin)
