@@ -53,6 +53,7 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
 }
 
 val publishedProjects = listOf(
+    "stove-testing-e2e",
     "stove-testing-e2e-couchbase",
     "stove-testing-e2e-http",
     "stove-testing-e2e-kafka",
