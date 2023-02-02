@@ -1,5 +1,3 @@
-ext { set("publish", true) }
-
 dependencies {
     api(project(":lib:stove-testing-e2e"))
     api(libs.spring.framework.context)

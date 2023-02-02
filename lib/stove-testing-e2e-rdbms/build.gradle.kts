@@ -1,5 +1,3 @@
-ext { set("publish", false) }
-
 dependencies {
     api(project(":lib:stove-testing-e2e"))
     implementation(libs.kotlinx.reactor)

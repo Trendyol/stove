@@ -1,7 +1,6 @@
 @file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
 
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
-import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 
 group = "com.trendyol"
 version = "0.0.7-SNAPSHOT"
@@ -53,7 +52,18 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
     }
 }
 
-subprojectsOf("lib", "spring", "ktor", filter = { p -> p.publishToMaven() }) {
+val publishedProjects = listOf(
+    "stove-testing-e2e-couchbase",
+    "stove-testing-e2e-http",
+    "stove-testing-e2e-kafka",
+    "stove-testing-e2e-rdbms-postgres",
+    "stove-testing-e2e-wiremock",
+    "stove-ktor-testing-e2e",
+    "stove-spring-testing-e2e",
+    "stove-spring-testing-e2e-kafka"
+)
+
+subprojectsOf("lib", "spring", "ktor", filter = { p -> publishedProjects.contains(p.name) }) {
     apply {
         plugin("java")
         plugin("stove-publishing")
@@ -79,7 +89,3 @@ fun subprojectsOf(
     filter: (Project) -> Boolean,
     action: Action<Project>,
 ): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) && filter(it) }.forEach { action(it) }
-
-fun Project.publishToMaven(): Boolean = this.ext.has("publish").ifTrue {
-    this.ext.get("publish") as Boolean
-} ?: false
