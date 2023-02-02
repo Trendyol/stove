@@ -2,7 +2,7 @@ package com.stove.spring.example.e2e
 
 import arrow.core.some
 import com.trendyol.stove.testing.e2e.couchbase.couchbase
-import com.trendyol.stove.testing.e2e.database.KeyValueDatabaseSystem.Companion.shouldGet
+import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.get
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJson
 import com.trendyol.stove.testing.e2e.http.defaultHttp

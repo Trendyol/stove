@@ -15,7 +15,7 @@ import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.couchbase.ClusterExtensions.executeQueryAs
-import com.trendyol.stove.testing.e2e.database.KeyValueDatabaseSystem
+import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -73,7 +73,7 @@ fun TestSystem.couchbase(): CouchbaseSystem =
 class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
     private val context: CouchbaseContext,
-) : KeyValueDatabaseSystem, RunAware, ExposesConfiguration {
+) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
 
     private lateinit var cluster: ReactiveCluster
     private lateinit var collection: ReactiveCollection

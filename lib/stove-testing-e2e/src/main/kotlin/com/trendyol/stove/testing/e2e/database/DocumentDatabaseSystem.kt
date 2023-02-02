@@ -2,7 +2,7 @@ package com.trendyol.stove.testing.e2e.database
 
 import kotlin.reflect.KClass
 
-interface KeyValueDatabaseSystem : DatabaseSystem {
+interface DocumentDatabaseSystem : DatabaseSystem {
 
     /**
      * Finds the given [key] and returns the instance if exists, otherwise throws [Exception]
@@ -34,7 +34,7 @@ interface KeyValueDatabaseSystem : DatabaseSystem {
          * Caller-side needs to assert based on the list
          *
          */
-        suspend inline fun <reified T : Any> KeyValueDatabaseSystem.shouldGet(
+        suspend inline fun <reified T : Any> DocumentDatabaseSystem.shouldGet(
             id: String,
             noinline assertion: (T) -> Unit,
         ): DatabaseSystem = this.shouldGet(id, assertion, T::class)
