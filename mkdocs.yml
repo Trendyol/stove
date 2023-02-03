@@ -1,5 +1,6 @@
 site_name: "Stove"
 repo_url: https://github.com/trendyol/stove4k
+edit_uri: https://github.com/trendyol/stove4k/edit/main/docs
 extra_css:
   - css/custom.css
 plugins:
