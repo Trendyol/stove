@@ -118,11 +118,11 @@ Overview of the [snapshot versions of Stove](https://oss.sonatype.org/#nexus-sea
      </dependency> 
     ```
 
-### [Testing Approaches](./testing-approaches)
+### [Testing Approaches](./how-to-write?)
 
 You can start looking at the ways of testing an application with Stove. These are explained in detail under the
 corresponding sections.
 
-#### [1. Attaching with the application _(recommended)_](testing-approaches/attaching-with-the-application)
+#### [1. Attaching with the application _(recommended)_](how-to-write%3F/attaching-with-the-application)
 
-#### [2. Dockerized](testing-approaches/dockerized)
+#### [2. Dockerized](how-to-write%3F/dockerized)

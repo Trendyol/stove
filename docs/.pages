@@ -1,5 +1,5 @@
 nav:
  - "Docs":
     - ...
-    - ... | **/testing-approaches
-    - ... | **/abstractions
+    - ... | **/How-To-Write-Tests?
+    - ... | **/Abstractions

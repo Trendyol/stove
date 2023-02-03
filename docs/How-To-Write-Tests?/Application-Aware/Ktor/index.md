@@ -1,4 +1,4 @@
-# Ktor Application
+# Testing a Ktor Application
 
 Ktor applications tend to have an entry point. This is usually a `main` function that starts application with
 the given configuration and the collection of `args`.

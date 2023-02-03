@@ -13,15 +13,14 @@ theme:
     - content.tabs.link
     - content.tooltips
     - header.autohide
-    - navigation.indexes
-    - navigation.tabs
     - navigation.top
     - navigation.tracking
+    - navigation.sections
+    - navigation.indexes
     - search.highlight
     - search.share
     - search.suggest
-    - toc.follow
-    - navigation.instant
+    - toc.integrate
 
   palette:
     - scheme: default
