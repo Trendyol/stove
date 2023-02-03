@@ -8,19 +8,19 @@
       
       
       
-      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <link rel="icon" href="../../../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Tuning the dependency configurations for better testing performance - Stove</title>
+        <title>Writing Your Own TestSystem - Stove</title>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../../../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../../../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -37,9 +37,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../../css/custom.css">
+      <link rel="stylesheet" href="../../../../../css/custom.css">
     
-    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tuning-the-dependency-configurations-for-better-testing-performance" class="md-skip">
+        <a href="#writing-your-own-testsystem" class="md-skip">
           Skip to content
         </a>
       
@@ -82,7 +82,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
+    <a href="../../../../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tuning the dependency configurations for better testing performance
+              Writing Your Own TestSystem
             
           </span>
         </div>
@@ -211,7 +211,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../.." class="md-tabs__link md-tabs__link--active">
+      <a href="../../../../.." class="md-tabs__link md-tabs__link--active">
         Docs
       </a>
     </li>
@@ -239,7 +239,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
+    <a href="../../../../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -293,7 +293,7 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../..">Docs</a>
+          <a href="../../../../..">Docs</a>
           
             <label for="__nav_1">
               <span class="md-nav__icon md-icon"></span>
@@ -318,44 +318,10 @@
   
   
     
-      
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2" type="checkbox" id="__nav_1_2" checked>
-      
-      
-      
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_1_2">
-          
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_2">
-          <span class="md-nav__icon md-icon"></span>
-          
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-    
-  
-  
-    
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_1" type="checkbox" id="__nav_1_2_1" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2" type="checkbox" id="__nav_1_2" checked>
       
       
       
@@ -373,16 +339,16 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../">Testing approaches</a>
+          <a href="../../../../">Testing approaches</a>
           
-            <label for="__nav_1_2_1">
+            <label for="__nav_1_2">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" aria-label="Testing approaches" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_2_1">
+      <nav class="md-nav" aria-label="Testing approaches" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_2">
           <span class="md-nav__icon md-icon"></span>
           Testing approaches
         </label>
@@ -401,7 +367,7 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_1_2" type="checkbox" id="__nav_1_2_1_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2" type="checkbox" id="__nav_1_2_2" checked>
       
       
       
@@ -419,16 +385,16 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../">Attaching with the application</a>
+          <a href="../../../">Attaching with the application</a>
           
-            <label for="__nav_1_2_1_2">
+            <label for="__nav_1_2_2">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" aria-label="Attaching with the application" data-md-level="4">
-        <label class="md-nav__title" for="__nav_1_2_1_2">
+      <nav class="md-nav" aria-label="Attaching with the application" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_2_2">
           <span class="md-nav__icon md-icon"></span>
           Attaching with the application
         </label>
@@ -445,7 +411,7 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_1_2_2" type="checkbox" id="__nav_1_2_1_2_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_2" type="checkbox" id="__nav_1_2_2_2" >
       
       
       
@@ -459,12 +425,12 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../ktor-application/">Ktor application</a>
+          <a href="../../../ktor-application/">Ktor application</a>
           
         </div>
       
-      <nav class="md-nav" aria-label="Ktor application" data-md-level="5">
-        <label class="md-nav__title" for="__nav_1_2_1_2_2">
+      <nav class="md-nav" aria-label="Ktor application" data-md-level="4">
+        <label class="md-nav__title" for="__nav_1_2_2_2">
           <span class="md-nav__icon md-icon"></span>
           Ktor application
         </label>
@@ -490,15 +456,13 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_1_2_3" type="checkbox" id="__nav_1_2_1_2_3" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_3" type="checkbox" id="__nav_1_2_2_3" checked>
       
       
       
         
           
             
-          
-        
           
         
           
@@ -516,16 +480,16 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../">Spring boot application</a>
+          <a href="../../">Spring boot application</a>
           
-            <label for="__nav_1_2_1_2_3">
+            <label for="__nav_1_2_2_3">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" aria-label="Spring boot application" data-md-level="5">
-        <label class="md-nav__title" for="__nav_1_2_1_2_3">
+      <nav class="md-nav" aria-label="Spring boot application" data-md-level="4">
+        <label class="md-nav__title" for="__nav_1_2_2_3">
           <span class="md-nav__icon md-icon"></span>
           Spring boot application
         </label>
@@ -539,7 +503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../0001-tuning-app/" class="md-nav__link">
+      <a href="../../0001-tuning-app/" class="md-nav__link">
         Tuning the application's entry point
       </a>
     </li>
@@ -553,8 +517,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../0003-referencing-stove/" class="md-nav__link">
-        Referencing Stove libraries in your project
+      <a href="../../0002-initial-configuration/" class="md-nav__link">
+        Initial Configuration
       </a>
     </li>
   
@@ -567,22 +531,58 @@
   
   
     <li class="md-nav__item">
-      <a href="../0004-configuring-the-framework/" class="md-nav__link">
-        Configuring the framework
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../0005-writing-tests/" class="md-nav__link">
+      <a href="../../0003-writing-tests/" class="md-nav__link">
         Writing Tests
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_3_5" type="checkbox" id="__nav_1_2_2_3_5" checked>
+      
+      
+      
+        
+          
+        
+          
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_1_2_2_3_5">
+          Advanced
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Advanced" data-md-level="5">
+        <label class="md-nav__title" for="__nav_1_2_2_3_5">
+          <span class="md-nav__icon md-icon"></span>
+          Advanced
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0001-Replacing%20Dependencies%20for%20Better%20Testability/" class="md-nav__link">
+        Replacing Dependencies For Better Testability
       </a>
     </li>
   
@@ -605,12 +605,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Tuning the dependency configurations for better testing performance
+          Writing Your Own TestSystem
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Tuning the dependency configurations for better testing performance
+        Writing Your Own TestSystem
       </a>
       
         
@@ -629,8 +629,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kafka" class="md-nav__link">
-    Kafka
+  <a href="#accessing-an-application-dependency-with-a-system" class="md-nav__link">
+    Accessing an application dependency with a system
   </a>
   
 </li>
@@ -650,9 +650,83 @@
   
   
     <li class="md-nav__item">
-      <a href="../0007-extras/" class="md-nav__link">
-        Extras
+      <a href="../0003-Writing-A-Test-Initializer/" class="md-nav__link">
+        Writing a TestInitializer
       </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_3_6" type="checkbox" id="__nav_1_2_2_3_6" >
+      
+      
+      
+        
+          
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_1_2_2_3_6">
+          Dependencies
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Dependencies" data-md-level="5">
+        <label class="md-nav__title" for="__nav_1_2_2_3_6">
+          <span class="md-nav__icon md-icon"></span>
+          Dependencies
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dependencies/couchbase/" class="md-nav__link">
+        Couchbase
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dependencies/kafka/" class="md-nav__link">
+        Kafka
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -681,7 +755,7 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_1_3" type="checkbox" id="__nav_1_2_1_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_3" type="checkbox" id="__nav_1_2_3" >
       
       
       
@@ -695,12 +769,12 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../dockerized/">Dockerized</a>
+          <a href="../../../../dockerized/">Dockerized</a>
           
         </div>
       
-      <nav class="md-nav" aria-label="Dockerized" data-md-level="4">
-        <label class="md-nav__title" for="__nav_1_2_1_3">
+      <nav class="md-nav" aria-label="Dockerized" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_2_3">
           <span class="md-nav__icon md-icon"></span>
           Dockerized
         </label>
@@ -722,45 +796,6 @@
 
             
           
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_3" type="checkbox" id="__nav_1_3" >
-      
-      
-      
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_1_3">
-          
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_3">
-          <span class="md-nav__icon md-icon"></span>
-          
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
             
               
   
@@ -770,7 +805,7 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_3_1" type="checkbox" id="__nav_1_3_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_3" type="checkbox" id="__nav_1_3" >
       
       
       
@@ -796,16 +831,16 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../../abstractions/">Abstractions</a>
+          <a href="../../../../../abstractions/">Abstractions</a>
           
-            <label for="__nav_1_3_1">
+            <label for="__nav_1_3">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
-      <nav class="md-nav" aria-label="Abstractions" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_3_1">
+      <nav class="md-nav" aria-label="Abstractions" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_3">
           <span class="md-nav__icon md-icon"></span>
           Abstractions
         </label>
@@ -819,7 +854,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../abstractions/database/" class="md-nav__link">
+      <a href="../../../../../abstractions/database/" class="md-nav__link">
         Database
       </a>
     </li>
@@ -833,7 +868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../abstractions/http/" class="md-nav__link">
+      <a href="../../../../../abstractions/http/" class="md-nav__link">
         Http
       </a>
     </li>
@@ -847,7 +882,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../abstractions/httpmock/" class="md-nav__link">
+      <a href="../../../../../abstractions/httpmock/" class="md-nav__link">
         Httpmock
       </a>
     </li>
@@ -861,7 +896,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../abstractions/messaging/" class="md-nav__link">
+      <a href="../../../../../abstractions/messaging/" class="md-nav__link">
         Messaging
       </a>
     </li>
@@ -875,7 +910,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../abstractions/serialization/" class="md-nav__link">
+      <a href="../../../../../abstractions/serialization/" class="md-nav__link">
         Serialization
       </a>
     </li>
@@ -889,16 +924,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../abstractions/system/" class="md-nav__link">
+      <a href="../../../../../abstractions/system/" class="md-nav__link">
         System
       </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
     </li>
   
 
@@ -944,8 +972,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kafka" class="md-nav__link">
-    Kafka
+  <a href="#accessing-an-application-dependency-with-a-system" class="md-nav__link">
+    Accessing an application dependency with a system
   </a>
   
 </li>
@@ -964,46 +992,56 @@
                 
                   
 
-  <a href="https://github.com/trendyol/stove4k/edit/master/docs/testing-approaches/attaching-with-the-application/spring-boot-application/0006-dependency-tuning.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/trendyol/stove4k/edit/master/docs/testing-approaches/attaching-with-the-application/spring-boot-application/advanced/0002-writing-your-own-test-system.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="tuning-the-dependency-configurations-for-better-testing-performance">Tuning the dependency configurations for better testing performance<a class="headerlink" href="#tuning-the-dependency-configurations-for-better-testing-performance" title="Permanent link">&para;</a></h1>
-<h2 id="kafka">Kafka<a class="headerlink" href="#kafka" title="Permanent link">&para;</a></h2>
-<p>There might be a <strong>potential improvement</strong> on the configuration for better testing results that can improve the testing
-performance.</p>
-<p>If you have the following configurations:</p>
-<ul>
-<li><code>AUTO_OFFSET_RESET_CONFIG | "auto.offset.reset"</code></li>
-<li><code>ALLOW_AUTO_CREATE_TOPICS_CONFIG | "allow.auto.create.topics"</code></li>
-<li><code>HEARTBEAT_INTERVAL_MS_CONFIG | "heartbeat.interval.ms"</code></li>
-</ul>
-<p>You better make them configurable, so from the e2e testing context we can change them to improve testing performance.</p>
-<p>As an example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TestSystem</span><span class="p">()</span><span class="w"></span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="na">withDefaultHttp</span><span class="p">()</span><span class="w"></span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withCouchbase</span><span class="p">(</span><span class="s">&quot;International&quot;</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withKafka</span><span class="p">()</span><span class="w"></span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withWireMock</span><span class="p">(</span><span class="m">9090</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withSchedulerSystem</span><span class="p">()</span><span class="w"></span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">.</span><span class="na">systemUnderTest</span><span class="p">(</span><span class="w"></span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"></span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">            </span><span class="n">com</span><span class="p">.</span><span class="na">trendyol</span><span class="p">.</span><span class="na">exampleapp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">                </span><span class="n">addTestDependencies</span><span class="p">()</span><span class="w"></span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">            </span><span class="p">}</span><span class="w"></span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="p">},</span><span class="w"></span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="w"></span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">            </span><span class="s">&quot;logging.level.root=error&quot;</span><span class="p">,</span><span class="w"></span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">            </span><span class="s">&quot;logging.level.org.springframework.web=error&quot;</span><span class="p">,</span><span class="w"></span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">            </span><span class="s">&quot;spring.profiles.active=default&quot;</span><span class="p">,</span><span class="w"></span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">            </span><span class="s">&quot;server.http2.enabled=false&quot;</span><span class="p">,</span><span class="w"></span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">            </span><span class="s">&quot;kafka.heartbeatInSeconds=2&quot;</span><span class="p">,</span><span class="w"></span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">            </span><span class="s">&quot;kafka.autoCreateTopics=true&quot;</span><span class="p">,</span><span class="w"></span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">            </span><span class="s">&quot;kafka.offset=earliest&quot;</span><span class="w"></span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">).</span><span class="na">run</span><span class="p">()</span><span class="w"></span>
+<h1 id="writing-your-own-testsystem">Writing Your Own TestSystem<a class="headerlink" href="#writing-your-own-testsystem" title="Permanent link">&para;</a></h1>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">withSchedulerSystem</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">getOrRegister</span><span class="p">(</span><span class="n">SchedulerSystem</span><span class="p">(</span><span class="k">this</span><span class="p">))</span><span class="w"></span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="w"></span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">scheduler</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOrNone</span><span class="o">&lt;</span><span class="n">SchedulerSystem</span><span class="o">&gt;</span><span class="p">().</span><span class="na">getOrElse</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">SystemNotRegisteredException</span><span class="p">(</span><span class="n">SchedulerSystem</span><span class="o">::</span><span class="n">class</span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="kd">class</span><span class="w"> </span><span class="nc">SchedulerSystem</span><span class="p">(</span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AfterRunAware</span><span class="o">&lt;</span><span class="n">ApplicationContext</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">scheduler</span><span class="p">:</span><span class="w"> </span><span class="n">WaitingRoomScheduler</span><span class="w"></span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">backgroundCommandBus</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommandBusImpl</span><span class="w"></span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">advance</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="n">scheduler</span><span class="p">.</span><span class="na">publishValidProducts</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="w"></span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">advanceBackgroundCommandBus</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="n">backgroundCommandBus</span><span class="p">.</span><span class="na">dispatchTimeoutNotifications</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="w"></span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterRun</span><span class="p">(</span><span class="n">context</span><span class="p">:</span><span class="w"> </span><span class="n">ApplicationContext</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">        </span><span class="n">scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">        </span><span class="n">backgroundCommandBus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p>Later you can use it in testing;</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">.</span><span class="na">then</span><span class="p">().</span><span class="na">scheduler</span><span class="p">().</span><span class="na">advance</span><span class="p">()</span><span class="w"></span>
+</code></pre></div>
+<h2 id="accessing-an-application-dependency-with-a-system">Accessing an application dependency with a system<a class="headerlink" href="#accessing-an-application-dependency-with-a-system" title="Permanent link">&para;</a></h2>
+<p>As you can see, in the example above, if a system implements
+<code>AfterRunAware&lt;ApplicationContext&gt;</code> then, <code>afterRun</code> method becomes available, in here we have access to applications
+dependency container to resolve any bean we need to use.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterRun</span><span class="p">(</span><span class="n">context</span><span class="p">:</span><span class="w"> </span><span class="n">ApplicationContext</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">backgroundCommandBus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 
 
@@ -1032,7 +1070,7 @@ performance.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../0005-writing-tests/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Writing Tests" rel="prev">
+        <a href="../0001-Replacing%20Dependencies%20for%20Better%20Testability/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Replacing Dependencies For Better Testability" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1041,20 +1079,20 @@ performance.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Writing Tests
+              Replacing Dependencies For Better Testability
             </div>
           </div>
         </a>
       
       
         
-        <a href="../0007-extras/" class="md-footer__link md-footer__link--next" aria-label="Next: Extras" rel="next">
+        <a href="../0003-Writing-A-Test-Initializer/" class="md-footer__link md-footer__link--next" aria-label="Next: Writing a TestInitializer" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Extras
+              Writing a TestInitializer
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1085,10 +1123,10 @@ performance.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../../..", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "navigation.instant"], "search": "../../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../../../../..", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.indexes", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "navigation.instant"], "search": "../../../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
     
     
