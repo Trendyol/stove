@@ -1,4 +1,4 @@
-# Testing Approaches
+# How To Write Tests?
 
 There are two ways of testing. If you are using a framework in your application for example, you may attach Stove
 to your application, so that you can debug and look with a magnifying glass to your code base. This is especially

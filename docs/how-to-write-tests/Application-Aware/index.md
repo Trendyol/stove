@@ -29,7 +29,7 @@ This approach has lots of benefits besides of providing a debug ability while e2
   you would only have consuming.
 - Being able to use and expose application's dependency container. This is useful if you want to write your own system.
   Say, if you have a dependency that Stove didn't implement yet, you can go ahead and implement it yourself by using the
-  [abstractions](../../Abstractions). We will discuss it later.
+  [abstractions](../../abstractions). We will discuss it later.
 
 High level diagram:
 

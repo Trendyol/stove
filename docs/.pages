@@ -1,5 +1,5 @@
 nav:
  - "Docs":
     - ...
-    - ... | **/How-To-Write-Tests?
-    - ... | **/Abstractions
+    - "How To Write Tests?": how-to-write-tests
+    - "Abstractions": abstractions

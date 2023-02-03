@@ -20,18 +20,6 @@ docker-in-docker)** integration.
 ./gradlew build # that will build and run the tests
 ```
 
-## Where to start?
-
-Address your dependencies that _application under test (in other words your API/Microservice/Application)_  uses. Your
-application needs some physical dependencies
-to be able to run properly on any environment. If Stove has those implementations you may proceed using it. These
-dependencies:
-
-- Couchbase
-- Kafka
-
-for now.
-
 ## How to get?
 
 The framework still under development and is getting matured. In general it is working well and in use at Trendyol.
@@ -119,11 +107,11 @@ Overview of the [snapshot versions of Stove](https://oss.sonatype.org/#nexus-sea
      </dependency> 
     ```
 
-### [Testing Approaches](./how-to-write?)
+### [How To Write Tests?](./how-to-write-tests)
 
 You can start looking at the ways of testing an application with Stove. These are explained in detail under the
 corresponding sections.
 
-#### [1. Attaching with the application _(recommended)_](how-to-write%3F/attaching-with-the-application)
+#### [1. Attaching with the application _(recommended)_](./how-to-write-tests/Application-Aware)
 
-#### [2. Dockerized](how-to-write%3F/dockerized)
+#### [2. Dockerized](./how-to-write-tests/Dockerized)
