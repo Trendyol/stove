@@ -14,12 +14,12 @@ Physical dependencies:
 - [x] Default Http to make real http calls against the _application under test_
 - [x] Wiremock `withWiremock` to mock all the external dependencies
 - [ ] ElasticSearch implementation `withElasticSearch`
-- [ ] PostgresSql implementation `withPostgresSql`
+- [x] PostgresSql implementation `withPostgresSql`
 
 Framework support:
 
 - [x] Spring
-- [ ] Ktor
+- [x] Ktor
 - [ ] Quarkus
 
 ## Show me the code
