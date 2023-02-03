@@ -13,7 +13,7 @@
     
     
       
-        <title>Referencing Stove libraries in your project - Stove</title>
+        <title>Configuring the framework - Stove</title>
       
     
     
@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#referencing-stove-libraries-in-your-project" class="md-skip">
+        <a href="#configuring-the-framework" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Referencing Stove libraries in your project
+              Configuring the framework
             
           </span>
         </div>
@@ -419,7 +419,7 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../">Attaching with framework</a>
+          <a href="../../">Attaching with the application</a>
           
             <label for="__nav_1_2_1_2">
               <span class="md-nav__icon md-icon"></span>
@@ -427,10 +427,10 @@
           
         </div>
       
-      <nav class="md-nav" aria-label="Attaching with framework" data-md-level="4">
+      <nav class="md-nav" aria-label="Attaching with the application" data-md-level="4">
         <label class="md-nav__title" for="__nav_1_2_1_2">
           <span class="md-nav__icon md-icon"></span>
-          Attaching with framework
+          Attaching with the application
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -551,6 +551,20 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../0003-referencing-stove/" class="md-nav__link">
+        Referencing Stove libraries in your project
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -562,24 +576,48 @@
         
       
       
-      <a href="./" class="md-nav__link md-nav__link--active">
-        Referencing Stove libraries in your project
-      </a>
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Configuring the framework
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../0004-configuring-the-framework/" class="md-nav__link">
+      <a href="./" class="md-nav__link md-nav__link--active">
         Configuring the framework
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-testsystemconfigkt-class" class="md-nav__link">
+    Create a TestSystemConfig.kt class
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-systemundertest" class="md-nav__link">
+    Configuring systemUnderTest
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -906,6 +944,28 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-testsystemconfigkt-class" class="md-nav__link">
+    Create a TestSystemConfig.kt class
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-systemundertest" class="md-nav__link">
+    Configuring systemUnderTest
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -918,22 +978,108 @@
                 
                   
 
-  <a href="https://github.com/trendyol/stove4k/edit/master/docs/testing-approaches/attaching-with-framework/spring-boot-application/0003-referencing-stove.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/trendyol/stove4k/edit/master/docs/testing-approaches/attaching-with-the-application/spring-boot-application/0004-configuring-the-framework.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="referencing-stove-libraries-in-your-project">Referencing Stove libraries in your project<a class="headerlink" href="#referencing-stove-libraries-in-your-project" title="Permanent link">&para;</a></h1>
-<p>After you figure out the physical dependencies you can add the library dependencies of Stove.</p>
-<p>If you want to use Couchbase you should add Stove Couchbase e2e test dependency:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.0.6-SNAPSHOT&quot;</span><span class="w"> </span><span class="c1">// Check before setting it, there might be newer version</span><span class="w"></span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-http:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-kafka:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-couchbase:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-wiremock:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span><span class="w"></span>
+<h1 id="configuring-the-framework">Configuring the framework<a class="headerlink" href="#configuring-the-framework" title="Permanent link">&para;</a></h1>
+<p>After you've added the dependencies from Stove, it is time to construct he config that runs the physical dependencies.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>We assume that you're using <a href="https://kotest.io/">Kotest</a> test framework, the following configuration is applicable for Kotest
+but, it should be available in any test framework.</p>
+</div>
+<h2 id="create-a-testsystemconfigkt-class">Create a TestSystemConfig.kt class<a class="headerlink" href="#create-a-testsystemconfigkt-class" title="Permanent link">&para;</a></h2>
+<p>Here you can see an example <code>TestSystemConfig</code> that is located under <code>test-e2e</code> module. It
+implements <code>AbstractProjectConfig</code>
+from Kotest framework that allows us to spin up the dependencies we need. As a side note, they are pluggable
+extensions, so if you don't want to add the dependency just comment the invocation out. But, be careful, you won't be
+able to use it in testing
+since you didn't enable the dependency.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestSystemConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8001&quot;</span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">            </span><span class="p">.</span><span class="na">withDefaultHttp</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="p">.</span><span class="na">withCouchbase</span><span class="p">(</span><span class="n">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Stove&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"></span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">                </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;couchbase.hosts=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">hostsWithPort</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// You can set spring configuration key</span><span class="w"></span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">                </span><span class="c1">// at this stage couchbase is available</span><span class="w"></span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">            </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">            </span><span class="p">.</span><span class="na">withKafka</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"></span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">                </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;kafka.bootstrapServers=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">boostrapServers</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// You can set spring configuration key</span><span class="w"></span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">                </span><span class="c1">// at this stage kafka is available</span><span class="w"></span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">            </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">            </span><span class="p">.</span><span class="na">withWireMock</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">9090</span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">            </span><span class="p">.</span><span class="na">systemUnderTest</span><span class="p">(</span><span class="w"></span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">                </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"></span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">                    </span><span class="n">stove</span><span class="p">.</span><span class="na">spring</span><span class="p">.</span><span class="na">example</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">                        </span><span class="nb">it</span><span class="p">.</span><span class="na">addTestSystemDependencies</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">                </span><span class="p">},</span><span class="w"></span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">                </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">                </span><span class="n">listOf</span><span class="p">(</span><span class="w"></span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">                    </span><span class="s">&quot;server.port=8001&quot;</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">                    </span><span class="s">&quot;logging.level.root=warn&quot;</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">                    </span><span class="s">&quot;logging.level.org.springframework.web=warn&quot;</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">                    </span><span class="s">&quot;spring.profiles.active=default&quot;</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">                    </span><span class="s">&quot;kafka.heartbeatInSeconds=2&quot;</span><span class="w"></span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">                </span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">            </span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">            </span><span class="p">.</span><span class="na">run</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">extensions</span><span class="p">():</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Extension</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">listener</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">            </span><span class="k">object</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="nc">AfterTestListener</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">                </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterTest</span><span class="p">(</span><span class="w"></span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">                    </span><span class="n">testCase</span><span class="p">:</span><span class="w"> </span><span class="n">TestCase</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w">                    </span><span class="n">result</span><span class="p">:</span><span class="w"> </span><span class="n">TestResult</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="w">                </span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">                    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">instance</span><span class="p">.</span><span class="na">wiremock</span><span class="p">().</span><span class="na">validate</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="w">                </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="w">            </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="n">listener</span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">instance</span><span class="p">.</span><span class="na">close</span><span class="p">()</span><span class="w"></span>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="w">    </span><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
+<p>Here you can see that there are configuration callbacks for the dependencies. For example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">.</span><span class="na">withCouchbase</span><span class="p">(</span><span class="n">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Stove&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"></span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">listOf</span><span class="p">(</span><span class="w"></span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="s">&quot;couchbase.hosts=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">hostsWithPort</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="s">&quot;couchbase.username=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">username</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span><span class="w"></span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="s">&quot;couchbase.password=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">password</span><span class="si">}</span><span class="s">&quot;</span><span class="w"></span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Couchbase configuration
+name in the <code>application.yml</code> is <code>couchbase.hosts</code>, this might differ for your project.</p>
+</div>
+<p>Stove exposes the generated configuration by the execution,
+so you can pass the real connection strings and configurations to your Spring application before it starts.
+So, your application will start with the physical dependencies that are spun-up by the framework.</p>
+<h2 id="configuring-systemundertest">Configuring systemUnderTest<a class="headerlink" href="#configuring-systemundertest" title="Permanent link">&para;</a></h2>
+<p>We may know the concept of <code>service under test</code> from the Test-Driven-Development.</p>
+<p>Here we have the similar concept, since we're testing the entire system, it is called <code>systemUnderTest</code></p>
+<p>Every TestSystem must have a <em>system under test</em>, and configure it. In here we're configuring a <em>Spring application
+under
+test</em>.</p>
+<p><code>systemUnderTest</code> configures how to run the application. <code>runner</code> parameter is the entrance point for the Spring
+application
+that we have configured at <a href="#step-1-tuning-the-application-entry-point-and-folder-structure">step 1</a></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>server.port=8001</code> is a Spring config, TestSystem's <code>baseUrl</code> needs to match with it, since Http requests are made
+against the <code>baseUrl</code> that is defined. <code>withDefaultHttp</code> creates a WebClient and uses the <code>baseUrl</code> that is passed.</p>
+</div>
 
 
 
@@ -961,7 +1107,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../0001-tuning-app/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tuning the application&#39;s entry point" rel="prev">
+        <a href="../0003-referencing-stove/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Referencing Stove libraries in your project" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -970,20 +1116,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Tuning the application's entry point
+              Referencing Stove libraries in your project
             </div>
           </div>
         </a>
       
       
         
-        <a href="../0004-configuring-the-framework/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuring the framework" rel="next">
+        <a href="../0005-writing-tests/" class="md-footer__link md-footer__link--next" aria-label="Next: Writing Tests" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Configuring the framework
+              Writing Tests
             </div>
           </div>
           <div class="md-footer__button md-icon">
