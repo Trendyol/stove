@@ -177,7 +177,7 @@ class CouchbaseSystem internal constructor(
         }
     }
 
-    private fun createDefaultCollection(): ReactiveCollection = cluster.bucket(context.bucket.name).defaultCollection()
+    private fun createDefaultCollection(): ReactiveCollection = cluster.bucket(context.bucket.name).collection()
 
     private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): ReactiveCluster =
         ClusterEnvironment.builder()
