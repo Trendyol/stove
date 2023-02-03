@@ -1,20 +1,18 @@
 # stove4k
-Stove: The easiest way of e2e testing in Kotlin
+Stove: The easiest way of writing e2e tests for your back-end API in Kotlin
 
 [Check the documentation](https://trendyol.github.io/stove4k/)
 
 ## Roadmap
 
-Stove implements all the physical dependencies, and you can write end-to-end tests against them;
-
 Physical dependencies: 
 
 - [x] Kafka implementation `withKafka`
 - [x] Couchbase implementation `withCouchbase`
-- [x] Default Http to make real http calls against the _application under test_
+- [x] HttpClient to make real http calls against the _application under test_
 - [x] Wiremock `withWiremock` to mock all the external dependencies
+- [x] PostgresSql implementation `withPostgresql`
 - [ ] ElasticSearch implementation `withElasticSearch`
-- [x] PostgresSql implementation `withPostgresSql`
 
 Framework support:
 
@@ -68,7 +66,6 @@ TestSystem(baseUrl = "http://localhost:8001")
 ### Testing the entire application with physical dependencies
 
 ```kotlin
-// Testing
 TestSystem.instance
     .defaultHttp().get<String>("/hello/index") { actual ->
         actual shouldContain "Hi from Stove framework"
@@ -79,14 +76,14 @@ TestSystem.instance
         println(actual)
     }
     .then().kafka()
-    .shouldBePublished<ExampleMessage> { actual ->
-        actual.aggregateId shouldBe 123
+    .shouldBePublishedOnCondition<ExampleMessage> { actual ->
+        actual.aggregateId == 123
     }
-    .shouldBeSuccessfullyConsumed<ExampleMessage> { actual ->
-        actual.aggregateId shouldBe 123
+    .shouldBeConsumedOnCondition<ExampleMessage> { actual ->
+        actual.aggregateId == 123
     }
     .then().couchbase().save(collection = "Backlogs", id = "id-of-backlog", instance = Backlog("id-of-backlog"))
-    .then().defaultHttp().postAndExpectBodilessResponse("/backlog/reserve") { actual ->
+    .then().http().postAndExpectBodilessResponse("/backlog/reserve") { actual ->
         actual.status.shouldBe(200)
     }
     .then().kafka().shouldBeConsumedOnCondition<ProductCreated> { actual ->
