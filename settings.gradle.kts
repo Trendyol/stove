@@ -10,6 +10,8 @@ include(
     "lib:stove-testing-e2e-couchbase",
     "lib:stove-testing-e2e-rdbms",
     "lib:stove-testing-e2e-rdbms-postgres"
+    "lib:stove-testing-e2e-couchbase",
+    "lib:stove-testing-e2e-elasticsearch"
 )
 
 include(
