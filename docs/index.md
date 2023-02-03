@@ -2,9 +2,8 @@
 
 Stove is an end-to-end testing framework that spins up physical dependencies and your application all together. So you
 have a control over dependencies via Kotlin code. 
-Your tests will be infra agnostic, but component aware, so they can use easily necessarily physical component
-with Stove provided APIs. 
-All the infra is **pluggable**, can be added easily. You can also create your own infra needs by using the abstractions
+Your tests will be infra agnostic, but component aware, so they can use easily necessary physical components with Stove provided APIs. 
+All the infra is **pluggable**, and can be added easily. You can also create your own infra needs by using the abstractions
 that Stove provides.
 Having said that, the only dependency is `docker` since Stove is
 using [testcontainers](https://github.com/testcontainers/testcontainers-java) underlying.
