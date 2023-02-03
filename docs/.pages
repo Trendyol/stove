@@ -1,7 +1,5 @@
 nav:
- - "Index":
+ - "Docs":
     - ...
-    - "":
-        - ... | **/testing-approaches
-    - "":
-         - ... | **/abstractions
+    - ... | **/testing-approaches
+    - ... | **/abstractions

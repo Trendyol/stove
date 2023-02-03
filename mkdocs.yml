@@ -1,4 +1,7 @@
 site_name: "Stove"
+repo_url: https://github.com/trendyol/stove4k
+extra_css:
+  - css/custom.css
 plugins:
   - search
   - awesome-pages:
@@ -11,7 +14,6 @@ theme:
     - content.tooltips
     - header.autohide
     - navigation.indexes
-    - navigation.sections
     - navigation.tabs
     - navigation.top
     - navigation.tracking

@@ -1,6 +1,4 @@
-# Tuning the dependency configurations for better testing performance
-
-## Kafka
+# Kafka
 
 There might be a **potential improvement** on the configuration for better testing results that can improve the testing
 performance.

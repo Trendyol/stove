@@ -1,10 +1,5 @@
-# Extras
+# Writing Your Own TestSystem
 
-## Writing your own TestSystem
-
-You can write your own system to plug to the testing suite.
-
-As an example:
 ```kotlin
 fun TestSystem.withSchedulerSystem(): TestSystem {
     getOrRegister(SchedulerSystem(this))
