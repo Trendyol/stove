@@ -35,19 +35,24 @@ import kotlin.reflect.KClass
 data class ElasticsearchSystemOptions(
     val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
     val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
+    val containerOptions: ContainerOptions = ContainerOptions()
+)
+
+data class ContainerOptions(
+    val registry: String = "docker.elastic.co/",
+    val imageVersion: String = "7.10.2",
+    val exposedPort: Int = 9200
 )
 
 fun TestSystem.withElasticsearch(
     index: String,
-    registry: String = "docker.elastic.co/",
-    imageVersion: String = "7.10.2",
     options: ElasticsearchSystemOptions = ElasticsearchSystemOptions(),
 ): TestSystem {
     val elasticsearchContainer =
-        withProvidedRegistry("elasticsearch/elasticsearch:$imageVersion", registry) {
+        withProvidedRegistry("elasticsearch/elasticsearch:${options.containerOptions.imageVersion}", options.containerOptions.registry) {
             ElasticsearchContainer(it)
         }
-    elasticsearchContainer.addExposedPorts(9200)
+    elasticsearchContainer.addExposedPorts(options.containerOptions.exposedPort)
     this.getOrRegister(
         ElasticsearchSystem(this, ElasticsearchContext(index, elasticsearchContainer, options))
     )
@@ -103,7 +108,7 @@ class ElasticsearchSystem internal constructor(
         query: String,
         assertion: (List<T>) -> Unit,
         clazz: KClass<T>,
-    ): DatabaseSystem {
+    ): ElasticsearchSystem {
         val request = Request("GET", "${context.index}/_search")
         val response = client.lowLevelClient.performRequest(request)
         val jsonNode = ObjectMapper().readTree(response.entity.content.reader().readText()).get("hits").get("hits")
@@ -118,7 +123,7 @@ class ElasticsearchSystem internal constructor(
         key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
-    ): DatabaseSystem {
+    ): ElasticsearchSystem {
         val result = client.get(GetRequest(context.index, key), RequestOptions.DEFAULT)
         val actual = objectMapper.deserialize(result.sourceAsString, clazz)
         assertion(actual)
@@ -163,19 +168,7 @@ class ElasticsearchSystem internal constructor(
     }
 
     private fun createCluster(exposedConfiguration: ElasticSearchExposedConfiguration): RestHighLevelClient {
-        val requestConfigCallback = RestClientBuilder.RequestConfigCallback { requestConfigBuilder: Builder ->
-            requestConfigBuilder
-                .setConnectionRequestTimeout(0)
-                .setSocketTimeout(ONE_MINUTE)
-                .setConnectTimeout(ONE_SECOND * 5)
-        }
         val builder = RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "http"))
-            .setHttpClientConfigCallback { config: HttpAsyncClientBuilder ->
-                config.setMaxConnPerRoute(1000)
-                config.setMaxConnTotal(2000)
-                config
-            }
-            .setRequestConfigCallback(requestConfigCallback)
         return RestHighLevelClient(builder)
     }
 }
