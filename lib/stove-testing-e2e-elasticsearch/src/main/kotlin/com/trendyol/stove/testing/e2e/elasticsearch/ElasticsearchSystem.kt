@@ -4,9 +4,9 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.database.DatabaseSystem
+import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Constants.ONE_MINUTE
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Constants.ONE_SECOND
 import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
@@ -73,7 +73,7 @@ fun TestSystem.elasticsearch(): ElasticsearchSystem =
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
     private val context: ElasticsearchContext,
-) : DatabaseSystem, RunAware, ExposesConfiguration {
+) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
     private lateinit var client: RestHighLevelClient
 
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
@@ -99,17 +99,6 @@ class ElasticsearchSystem internal constructor(
         context.container.stop()
     }
 
-    fun <T : Any> save(
-        id: String,
-        instance: T,
-    ): ElasticsearchSystem {
-        val request = IndexRequest(context.index).id(id)
-        val jsonInstance = objectMapper.serialize(instance)
-        request.source(jsonInstance, XContentType.JSON)
-        client.index(request, RequestOptions.DEFAULT)
-        return this
-    }
-
     override suspend fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
@@ -126,20 +115,39 @@ class ElasticsearchSystem internal constructor(
     }
 
     override suspend fun <T : Any> shouldGet(
-        id: String,
+        key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
     ): DatabaseSystem {
-        val result = client.get(GetRequest(context.index, id), RequestOptions.DEFAULT)
+        val result = client.get(GetRequest(context.index, key), RequestOptions.DEFAULT)
         val actual = objectMapper.deserialize(result.sourceAsString, clazz)
         assertion(actual)
 
         return this
     }
 
-    override suspend fun shouldDelete(id: String): DatabaseSystem {
-        client.delete(DeleteRequest(context.index, id), RequestOptions.DEFAULT)
+    override suspend fun shouldDelete(key: String): DatabaseSystem {
+        client.delete(DeleteRequest(context.index, key), RequestOptions.DEFAULT)
         return this
+    }
+
+    override suspend fun <T : Any> save(
+        collection: String,
+        id: String,
+        instance: T,
+    ): ElasticsearchSystem {
+        val request = IndexRequest(collection).id(id)
+        val jsonInstance = objectMapper.serialize(instance)
+        request.source(jsonInstance, XContentType.JSON)
+        client.index(request, RequestOptions.DEFAULT)
+        return this
+    }
+
+    suspend fun <T : Any> save(
+        id: String,
+        instance: T,
+    ): ElasticsearchSystem {
+        return save(this.context.index, id, instance)
     }
 
     override fun close() {
