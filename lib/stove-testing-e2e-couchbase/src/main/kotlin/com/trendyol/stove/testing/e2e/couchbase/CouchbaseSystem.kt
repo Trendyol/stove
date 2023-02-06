@@ -200,4 +200,5 @@ class CouchbaseSystem internal constructor(
             input: ByteArray,
         ): T = objectMapper.deserialize(input, Reflection.getOrCreateKotlinClass(target)) as T
     }
+
 }

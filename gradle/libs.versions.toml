@@ -63,8 +63,8 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
-elastic = { module = "org.elasticsearch:elasticsearch", version = "7.10.2" }
-elastic-highlevelclient = { module = "org.elasticsearch.client:elasticsearch-rest-high-level-client", version = "7.10.2" }
+elastic = { module = "org.elasticsearch:elasticsearch", version.ref = "elastic" }
+elastic-highlevelclient = { module = "org.elasticsearch.client:elasticsearch-rest-high-level-client", version.ref = "elastic" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
