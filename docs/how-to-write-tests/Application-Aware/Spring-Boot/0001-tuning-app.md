@@ -1,7 +1,6 @@
 # Tuning the application's entry point
 
-In a Spring application you usually have an entry point. If we assume that your application has a standard `main`
-function, here how we will change it:
+Let's say the application has a standard `main` function, here how we will change it:
 
 === "Before"
 

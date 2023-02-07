@@ -1,9 +1,6 @@
 # Testing a Spring Boot Application
 
-Spring-Boot applications tend to have an entry point. This is usually a `main` function that starts application with
-the given configuration.
-
-[Here](https://github.com/Trendyol/stove4k/tree/main/examples/spring-example) you can jump immediately to the example application.
+[Here](https://github.com/Trendyol/stove4k/tree/main/examples/spring-example) you can jump immediately to the Spring example application.
 
 You need to add the Stove-Spring dependency to be able to write e2e tests for the Spring application.
 
