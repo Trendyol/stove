@@ -14,16 +14,16 @@ caffeine = "3.1.2"
 arrow = "1.1.5"
 io-reactor = "3.5.2"
 slf4j = "2.0.6"
-kafka = "3.3.2"
+kafka = "3.4.0"
 kafka-kotlin = "0.3.0"
 dokka = "1.7.20"
 knit = "0.4.0"
 kover = "0.6.1"
 ktor = "2.2.3"
-koin = "3.3.0"
+koin = "3.3.1"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.6.0"
+elastic = "8.6.1"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -63,8 +63,7 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
-elastic = { module = "org.elasticsearch:elasticsearch", version.ref = "elastic" }
-elastic-highlevelclient = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
+elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
