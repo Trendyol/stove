@@ -102,10 +102,15 @@ class ElasticsearchSystem internal constructor(
         assertion: (List<T>) -> Unit,
         clazz: KClass<T>,
     ): ElasticsearchSystem =
-        esClient.search(SearchRequest.of { it.index(context.index) }, clazz.java)
+        esClient.search(
+            SearchRequest.of { req ->
+                req.index(context.index).query { q -> q.withJson(query.reader()) }
+            },
+            clazz.java
+        )
             .hits().hits()
             .mapNotNull { it.source() }
-            .let { a -> assertion(a) }
+            .also(assertion)
             .let { this }
 
     override suspend fun <T : Any> shouldGet(
@@ -115,7 +120,7 @@ class ElasticsearchSystem internal constructor(
     ): ElasticsearchSystem = esClient.get({ req -> req.index(context.index).id(key) }, clazz.java)
         .source().toOption()
         .map(assertion)
-        .orElse { throw AssertionError("Resource with key is not found") }
+        .orElse { throw AssertionError("Resource with key ($key) is not found") }
         .let { this }
 
     override suspend fun shouldDelete(key: String): ElasticsearchSystem = esClient
