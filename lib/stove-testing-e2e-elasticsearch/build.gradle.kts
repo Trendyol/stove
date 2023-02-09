@@ -5,3 +5,7 @@ dependencies {
     implementation(testLibs.testcontainers.elasticsearch)
     implementation(libs.jackson.databind)
 }
+
+dependencies {
+    testImplementation(libs.slf4j.simple)
+}

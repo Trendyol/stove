@@ -6,11 +6,10 @@ import arrow.core.getOrElse
 import arrow.core.orElse
 import arrow.core.toOption
 import co.elastic.clients.elasticsearch.ElasticsearchClient
-import co.elastic.clients.elasticsearch._types.Refresh.WaitFor
+import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch.core.DeleteRequest
 import co.elastic.clients.elasticsearch.core.SearchRequest
-import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -19,10 +18,7 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import javax.net.ssl.SSLContext
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
@@ -31,13 +27,23 @@ import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
+import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 
 data class ElasticsearchSystemOptions(
     val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
     val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
     val containerOptions: ContainerOptions = ContainerOptions(),
-)
+) {
+    internal val migrationCollection: MigrationCollection = MigrationCollection()
+
+    /**
+     * Helps for registering migrations before the tests run.
+     * @see MigrationCollection
+     * @see ElasticMigrator
+     */
+    fun migrations(migration: MigrationCollection.() -> Unit): ElasticsearchSystemOptions = migration(migrationCollection).let { this }
+}
 
 data class ContainerOptions(
     val registry: String = "docker.elastic.co/",
@@ -46,18 +52,28 @@ data class ContainerOptions(
     val password: String = "password",
 )
 
+/**
+ * Integrates Elasticsearch with the TestSystem.
+ *
+ * Provides a [defaultIndex]: [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
+ */
 fun TestSystem.withElasticsearch(
-    index: String,
+    defaultIndex: DefaultIndex,
     options: ElasticsearchSystemOptions = ElasticsearchSystemOptions(),
 ): TestSystem {
-    val elasticsearchContainer =
-        withProvidedRegistry("elasticsearch/elasticsearch:${options.containerOptions.imageVersion}", options.containerOptions.registry) {
-            ElasticsearchContainer(it)
-        }
+    options.migrations {
+        register<DefaultIndexMigrator> { defaultIndex.migrator }
+    }
+
+    val elasticsearchContainer = withProvidedRegistry(
+        "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",
+        options.containerOptions.registry
+    ) { ElasticsearchContainer(it) }
+
     elasticsearchContainer.addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
     elasticsearchContainer.withPassword(options.containerOptions.password)
-    this.getOrRegister(
-        ElasticsearchSystem(this, ElasticsearchContext(index, elasticsearchContainer, options))
+    getOrRegister(
+        ElasticsearchSystem(this, ElasticsearchContext(defaultIndex.index, elasticsearchContainer, options))
     )
     return this
 }
@@ -82,7 +98,7 @@ fun TestSystem.elasticsearch(): ElasticsearchSystem =
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
     private val context: ElasticsearchContext,
-) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
+) : DocumentDatabaseSystem, RunAware, AfterRunAware, ExposesConfiguration {
     private lateinit var esClient: ElasticsearchClient
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
 
@@ -93,8 +109,11 @@ class ElasticsearchSystem internal constructor(
             context.container.firstMappedPort,
             context.options.containerOptions.password
         )
+    }
+
+    override suspend fun afterRun() {
         esClient = createEsClient(exposedConfiguration, context.container.createSslContextFromCa())
-        createIndex(context.index)
+        context.options.migrationCollection.run(esClient)
     }
 
     override suspend fun stop(): Unit = context.container.stop()
@@ -140,7 +159,7 @@ class ElasticsearchSystem internal constructor(
         .let { this }
 
     override suspend fun shouldDelete(key: String): ElasticsearchSystem = esClient
-        .delete(DeleteRequest.of { req -> req.index(context.index).id(key).refresh(WaitFor) })
+        .delete(DeleteRequest.of { req -> req.index(context.index).id(key).refresh(Refresh.WaitFor) })
         .let { this }
 
     override suspend fun <T : Any> save(
@@ -151,21 +170,13 @@ class ElasticsearchSystem internal constructor(
         req.index(collection)
             .id(id)
             .document(instance)
-            .refresh(WaitFor)
+            .refresh(Refresh.WaitFor)
     }.let { this }
 
     suspend fun <T : Any> save(
         id: String,
         instance: T,
     ): ElasticsearchSystem = save(context.index, id, instance)
-
-    private fun createIndex(
-        indexName: String,
-    ): ElasticsearchSystem {
-        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder().index(indexName).build()
-        esClient.indices().create(createIndexRequest)
-        return this
-    }
 
     override fun close(): Unit = esClient._transport().close()
 
@@ -182,8 +193,12 @@ class ElasticsearchSystem internal constructor(
         sslContext: SSLContext,
     ): ElasticsearchClient {
         val credentialsProvider: CredentialsProvider = BasicCredentialsProvider()
-        credentialsProvider.setCredentials(AuthScope.ANY, UsernamePasswordCredentials("elastic", exposedConfiguration.password))
-        val builder: RestClientBuilder = RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
+        credentialsProvider.setCredentials(
+            AuthScope.ANY,
+            UsernamePasswordCredentials("elastic", exposedConfiguration.password)
+        )
+        val builder: RestClientBuilder =
+            RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
 
         return builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
             clientBuilder.setSSLContext(sslContext)

@@ -1,6 +1,8 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
+import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
@@ -10,11 +12,27 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+const val testIndex = "stove-test-index"
+class TestIndexMigrator : ElasticMigrator {
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    override suspend fun migrate(client: ElasticsearchClient) {
+        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
+            .index(testIndex)
+            .build()
+        client.indices().create(createIndexRequest)
+        logger.info("$testIndex is created")
+    }
+}
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
         TestSystem()
-            .withElasticsearch("index-name")
+            .withElasticsearch(
+                DefaultIndex(index = testIndex, migrator = TestIndexMigrator())
+            )
             .applicationUnderTest(NoOpApplication())
             .run()
     }
