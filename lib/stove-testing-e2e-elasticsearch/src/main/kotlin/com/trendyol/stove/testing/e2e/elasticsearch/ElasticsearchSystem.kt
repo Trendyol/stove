@@ -5,6 +5,7 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 import arrow.core.getOrElse
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch.core.DeleteRequest
+import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -42,7 +43,7 @@ data class ContainerOptions(
     val registry: String = "docker.elastic.co/",
     val imageVersion: String = "8.6.0",
     val exposedPort: Int = 9200,
-    val password: String = "pswd"
+    val password: String = "pswd",
 )
 
 fun TestSystem.withElasticsearch(
@@ -64,7 +65,7 @@ fun TestSystem.withElasticsearch(
 data class ElasticSearchExposedConfiguration(
     val host: String,
     val port: Int,
-    val password: String
+    val password: String,
 )
 
 data class ElasticsearchContext(
@@ -99,6 +100,7 @@ class ElasticsearchSystem internal constructor(
         )
         restClient = createRestClient(exposedConfiguration, context.container)
         elasticsearchClient = createElasticsearchClient(restClient)
+        createIndex(context.index)
     }
 
     override suspend fun stop() {
@@ -161,6 +163,14 @@ class ElasticsearchSystem internal constructor(
         instance: T,
     ): ElasticsearchSystem {
         return save(this.context.index, id, instance)
+    }
+
+    fun createIndex(
+        indexName: String,
+    ): ElasticsearchSystem {
+        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder().index(indexName).build()
+        elasticsearchClient.indices().create(createIndexRequest)
+        return this
     }
 
     override fun close() {
