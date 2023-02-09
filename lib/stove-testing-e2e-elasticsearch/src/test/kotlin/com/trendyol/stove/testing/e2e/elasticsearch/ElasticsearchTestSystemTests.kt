@@ -1,5 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -30,16 +31,15 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
 
 class CouchbaseTestSystemTests : FunSpec({
 
+    @JsonIgnoreProperties
     data class ExampleInstance(
         val id: String,
         val description: String,
     )
     test("should save and get") {
         val exampleInstance = ExampleInstance("1", "1312")
-        val indexName = "index-name"
 
         TestSystem.instance
-            .withElasticsearch(indexName)
             .elasticsearch()
             .save(exampleInstance.id, exampleInstance)
             .shouldGet<ExampleInstance>(exampleInstance.id) {
