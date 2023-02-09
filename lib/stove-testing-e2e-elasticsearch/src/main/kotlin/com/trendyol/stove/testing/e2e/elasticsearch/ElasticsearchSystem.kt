@@ -3,12 +3,14 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.getOrElse
+import arrow.core.orElse
+import arrow.core.toOption
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch.core.DeleteRequest
+import co.elastic.clients.elasticsearch.core.SearchRequest
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
@@ -24,13 +26,9 @@ import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.client.CredentialsProvider
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
-import org.elasticsearch.ResourceNotFoundException
-import org.elasticsearch.client.Request
-import org.elasticsearch.client.RestClient
-import org.elasticsearch.client.RestClientBuilder
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
+import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 
 data class ElasticsearchSystemOptions(
@@ -41,9 +39,9 @@ data class ElasticsearchSystemOptions(
 
 data class ContainerOptions(
     val registry: String = "docker.elastic.co/",
-    val imageVersion: String = "8.6.0",
-    val exposedPort: Int = 9200,
-    val password: String = "pswd",
+    val imageVersion: String = "8.6.1",
+    val exposedPorts: List<Int> = listOf(9200),
+    val password: String = "password",
 )
 
 fun TestSystem.withElasticsearch(
@@ -54,8 +52,8 @@ fun TestSystem.withElasticsearch(
         withProvidedRegistry("elasticsearch/elasticsearch:${options.containerOptions.imageVersion}", options.containerOptions.registry) {
             ElasticsearchContainer(it)
         }
+    elasticsearchContainer.addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
     elasticsearchContainer.withPassword(options.containerOptions.password)
-    elasticsearchContainer.addExposedPorts(options.containerOptions.exposedPort)
     this.getOrRegister(
         ElasticsearchSystem(this, ElasticsearchContext(index, elasticsearchContainer, options))
     )
@@ -83,13 +81,8 @@ class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
     private val context: ElasticsearchContext,
 ) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
-    private lateinit var restClient: RestClient
-    private lateinit var elasticsearchClient: ElasticsearchClient
-
+    private lateinit var esClient: ElasticsearchClient
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
-    private val objectMapper: StoveJsonSerializer = context.options.jsonSerializer
-
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun run() {
         context.container.start()
@@ -98,84 +91,61 @@ class ElasticsearchSystem internal constructor(
             context.container.firstMappedPort,
             context.options.containerOptions.password
         )
-        restClient = createRestClient(exposedConfiguration, context.container)
-        elasticsearchClient = createElasticsearchClient(restClient)
+        esClient = createEsClient(exposedConfiguration, context.container.createSslContextFromCa())
         createIndex(context.index)
     }
 
-    override suspend fun stop() {
-        context.container.stop()
-    }
+    override suspend fun stop(): Unit = context.container.stop()
 
     override suspend fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
         clazz: KClass<T>,
-    ): ElasticsearchSystem {
-        val request = Request("GET", "${context.index}/_search")
-        val response = restClient.performRequest(request)
-        val jsonNode = ObjectMapper().readTree(response.entity.content.reader().readText()).get("hits").get("hits")
-        val queryResults = jsonNode.map {
-            objectMapper.deserialize(it.get("_source").toString(), clazz)
-        }
-        assertion(queryResults)
-        return this
-    }
+    ): ElasticsearchSystem =
+        esClient.search(SearchRequest.of { it.index(context.index) }, clazz.java)
+            .hits().hits()
+            .mapNotNull { it.source() }
+            .let { a -> assertion(a) }
+            .let { this }
 
     override suspend fun <T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
-    ): ElasticsearchSystem {
-        val response = elasticsearchClient.get(
-            { g ->
-                g.index(context.index).id(key)
-            },
-            clazz.java
-        )
+    ): ElasticsearchSystem = esClient.get({ req -> req.index(context.index).id(key) }, clazz.java)
+        .source().toOption()
+        .map(assertion)
+        .orElse { throw AssertionError("Resource with key is not found") }
+        .let { this }
 
-        if (!response.found()) throw ResourceNotFoundException("Resource with id is not found")
-
-        assertion(response.source()!!)
-        return this
-    }
-
-    override suspend fun shouldDelete(key: String): ElasticsearchSystem {
-        elasticsearchClient.delete(DeleteRequest.of { d -> d.index(context.index).id(key) })
-        return this
-    }
+    override suspend fun shouldDelete(key: String): ElasticsearchSystem = esClient
+        .delete(DeleteRequest.of { req -> req.index(context.index).id(key) })
+        .let { this }
 
     override suspend fun <T : Any> save(
         collection: String,
         id: String,
         instance: T,
-    ): ElasticsearchSystem {
-        elasticsearchClient.index { i ->
-            i.index(collection)
-                .id(id)
-                .document(instance)
-        }
-        return this
-    }
+    ): ElasticsearchSystem = esClient.index { req ->
+        req.index(collection)
+            .id(id)
+            .document(instance)
+    }.let { this }
 
     suspend fun <T : Any> save(
         id: String,
         instance: T,
-    ): ElasticsearchSystem {
-        return save(this.context.index, id, instance)
-    }
+    ): ElasticsearchSystem = save(context.index, id, instance)
 
-    fun createIndex(
+    private fun createIndex(
         indexName: String,
     ): ElasticsearchSystem {
         val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder().index(indexName).build()
-        elasticsearchClient.indices().create(createIndexRequest)
+        esClient.indices().create(createIndexRequest)
         return this
     }
 
-    override fun close() {
-        restClient.close()
-    }
+    override fun close(): Unit = esClient._transport().close()
 
     override fun configuration(): List<String> {
         return context.options.configureExposedConfiguration(exposedConfiguration) +
@@ -185,24 +155,20 @@ class ElasticsearchSystem internal constructor(
             )
     }
 
-    private fun createRestClient(
+    private fun createEsClient(
         exposedConfiguration: ElasticSearchExposedConfiguration,
-        container: ElasticsearchContainer,
-    ): RestClient {
+        sslContext: SSLContext,
+    ): ElasticsearchClient {
         val credentialsProvider: CredentialsProvider = BasicCredentialsProvider()
         credentialsProvider.setCredentials(AuthScope.ANY, UsernamePasswordCredentials("elastic", exposedConfiguration.password))
         val builder: RestClientBuilder = RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
 
-        builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
-            clientBuilder.setSSLContext(container.createSslContextFromCa())
+        return builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
+            clientBuilder.setSSLContext(sslContext)
             clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
             clientBuilder
-        }
-        return builder.build()
-    }
-
-    private fun createElasticsearchClient(restClient: RestClient): ElasticsearchClient {
-        val restClientTransport = RestClientTransport(restClient, JacksonJsonpMapper(jacksonObjectMapper()))
-        return ElasticsearchClient(restClientTransport)
+        }.build()
+            .let { RestClientTransport(it, JacksonJsonpMapper(jacksonObjectMapper())) }
+            .let { ElasticsearchClient(it) }
     }
 }
