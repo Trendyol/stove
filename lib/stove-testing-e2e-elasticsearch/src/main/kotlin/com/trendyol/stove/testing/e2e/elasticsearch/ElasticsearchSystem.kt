@@ -6,6 +6,8 @@ import arrow.core.getOrElse
 import arrow.core.orElse
 import arrow.core.toOption
 import co.elastic.clients.elasticsearch.ElasticsearchClient
+import co.elastic.clients.elasticsearch._types.Refresh.WaitFor
+import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch.core.DeleteRequest
 import co.elastic.clients.elasticsearch.core.SearchRequest
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
@@ -20,6 +22,7 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import javax.net.ssl.SSLContext
 import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
@@ -28,7 +31,6 @@ import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
-import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 
 data class ElasticsearchSystemOptions(
@@ -113,18 +115,32 @@ class ElasticsearchSystem internal constructor(
             .also(assertion)
             .let { this }
 
+    suspend fun <T : Any> shouldQuery(
+        query: Query,
+        assertion: (List<T>) -> Unit,
+        clazz: KClass<T>,
+    ): ElasticsearchSystem =
+        esClient.search(
+            SearchRequest.of { q -> q.query(query) },
+            clazz.java
+        )
+            .hits().hits()
+            .mapNotNull { it.source() }
+            .also(assertion)
+            .let { this }
+
     override suspend fun <T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
-    ): ElasticsearchSystem = esClient.get({ req -> req.index(context.index).id(key) }, clazz.java)
+    ): ElasticsearchSystem = esClient.get({ req -> req.index(context.index).id(key).refresh(true) }, clazz.java)
         .source().toOption()
         .map(assertion)
         .orElse { throw AssertionError("Resource with key ($key) is not found") }
         .let { this }
 
     override suspend fun shouldDelete(key: String): ElasticsearchSystem = esClient
-        .delete(DeleteRequest.of { req -> req.index(context.index).id(key) })
+        .delete(DeleteRequest.of { req -> req.index(context.index).id(key).refresh(WaitFor) })
         .let { this }
 
     override suspend fun <T : Any> save(
@@ -135,6 +151,7 @@ class ElasticsearchSystem internal constructor(
         req.index(collection)
             .id(id)
             .document(instance)
+            .refresh(WaitFor)
     }.let { this }
 
     suspend fun <T : Any> save(
@@ -175,5 +192,16 @@ class ElasticsearchSystem internal constructor(
         }.build()
             .let { RestClientTransport(it, JacksonJsonpMapper(jacksonObjectMapper())) }
             .let { ElasticsearchClient(it) }
+    }
+
+    companion object {
+        /**
+         * Executes the given [query] and returns a list for [assertion]
+         * Caller-side needs to assert based on the list
+         */
+        suspend inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
+            query: Query,
+            noinline assertion: (List<T>) -> Unit,
+        ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
     }
 }

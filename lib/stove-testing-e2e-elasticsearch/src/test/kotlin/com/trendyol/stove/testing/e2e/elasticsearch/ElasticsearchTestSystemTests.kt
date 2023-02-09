@@ -1,8 +1,10 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
+import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
@@ -52,20 +54,20 @@ class CouchbaseTestSystemTests : FunSpec({
         val desc = "some description"
         val exampleInstance1 = ExampleInstance("1", desc)
         val exampleInstance2 = ExampleInstance("2", desc)
-        // val queryByDesc = QueryBuilders.term().field("description")
-        //     .value(exampleInstance2.description)
-        //     .queryName("term_by_description")
-        //     .build()
+        val queryByDesc = QueryBuilders.term().field("description.keyword").value(desc).queryName("query_name").build()
+        val queryAsString = queryByDesc.asJsonString()
 
         TestSystem.instance
             .elasticsearch()
             .save(exampleInstance1.id, exampleInstance1)
             .save(exampleInstance2.id, exampleInstance2)
+            .shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
+                it.size shouldBe 2
+            }
             .shouldDelete(exampleInstance1.id)
             .shouldGet<ExampleInstance>(exampleInstance2.id) {}
-            .shouldQuery<ExampleInstance>("{}") { items ->
-                items.size shouldBe 1
-                items[0] shouldBe exampleInstance2
+            .shouldQuery<ExampleInstance>(queryAsString) {
+                it.size shouldBe 1
             }
     }
 })
