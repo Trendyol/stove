@@ -11,6 +11,10 @@ using [testcontainers](https://github.com/testcontainers/testcontainers-java) un
 You can use JUnit and Kotest for running the tests. You can run all the tests on your CI, too. But that needs **DinD(
 docker-in-docker)** integration.
 
+## High Level Architecture
+
+![img](./assets/stove_architecture.svg)
+
 ## How to build the source code?
 
 - JDK 16+

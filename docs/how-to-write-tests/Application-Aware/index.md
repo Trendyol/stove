@@ -30,7 +30,3 @@ This approach has lots of benefits besides of providing a debug ability while e2
 - Being able to use and expose application's dependency container. This is useful if you want to write your own system.
   Say, if you have a dependency that Stove didn't implement yet, you can go ahead and implement it yourself by using the
   [abstractions](../../abstractions). We will discuss it later.
-
-High level diagram:
-
-![img](../../assets/stove-highlevel.svg)
