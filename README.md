@@ -1,6 +1,8 @@
 # stove4k
 Stove: The easiest way of writing e2e tests for your back-end API in Kotlin
 
+![](./docs/assets/stove_architecture.svg)
+
 [Check the documentation](https://trendyol.github.io/stove4k/)
 
 ## Roadmap
@@ -12,7 +14,7 @@ Physical dependencies:
 - [x] HttpClient to make real http calls against the _application under test_
 - [x] Wiremock `withWiremock` to mock all the external dependencies
 - [x] PostgresSql implementation `withPostgresql`
-- [ ] ElasticSearch implementation `withElasticSearch`
+- [x] ElasticSearch implementation `withElasticsearch`
 
 Framework support:
 
