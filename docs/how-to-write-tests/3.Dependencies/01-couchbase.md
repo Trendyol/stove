@@ -1,6 +1,14 @@
 # Couchbase
 
-## How to get?
+## Prerequisites
+
+### 1. Docker Image
+
+```shell  
+ docker buildx imagetools create couchbase/server:latest --tag YOUR_REGISTRY/couchbase/server:latest
+```
+
+### 2. Library
 
 === "Gradle"
 

@@ -1,4 +1,4 @@
-# Dockerized Testing
+# 2. Dockerized Testing
 
 In this approach, your application does not have any part that is exposed to Stove, and Stove will not attach to
 application.

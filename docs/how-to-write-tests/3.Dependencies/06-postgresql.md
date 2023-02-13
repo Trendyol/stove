@@ -1,6 +1,14 @@
 # Postgresql
 
-## How to get?
+## Prerequisites
+
+### 1. Docker Image
+
+```shell
+ docker buildx imagetools create postgres:latest --tag YOUR_REGISTRY/postgres:latest  
+```
+
+### 2. Library
 
 === "Gradle"
 

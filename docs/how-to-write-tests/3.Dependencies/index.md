@@ -18,7 +18,8 @@ your own system that Stove does not have, you should use this structure, too.
 
 ## Every system has the SystemOptions
 
-Every system accepts has a first parameter that implements `SystemOptions`. For example;
+Every system accepts an options parameter that implements `SystemOptions`. For example;
+
 ```kotlin
 fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),

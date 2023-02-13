@@ -1,6 +1,14 @@
 # Kafka
 
-## How to get?
+## Prerequisites
+
+### 1. Docker Image
+
+```shell
+ docker buildx imagetools create confluentinc/cp-kafka:latest --tag YOUR_REGISTRY/confluentinc/cp-kafka:latest  
+```
+
+### 2. Library
 
 === "Gradle"
 
