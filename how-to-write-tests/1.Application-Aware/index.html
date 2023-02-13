@@ -8,19 +8,19 @@
       
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
-        <title>Testing a Ktor Application - Stove</title>
+        <title>Application Aware Testing - Stove</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -37,9 +37,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../css/custom.css">
+      <link rel="stylesheet" href="../../css/custom.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#testing-a-ktor-application" class="md-skip">
+        <a href="#application-aware-testing" class="md-skip">
           Skip to content
         </a>
       
@@ -82,7 +82,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
+    <a href="../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Testing a Ktor Application
+              Application Aware Testing
             
           </span>
         </div>
@@ -212,7 +212,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
+    <a href="../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -268,7 +268,7 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../..">Docs</a>
+          <a href="../..">Docs</a>
           
             <label for="__nav_1">
               <span class="md-nav__icon md-icon"></span>
@@ -309,12 +309,14 @@
         
           
         
+          
+        
       
       
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../">How To Write Tests?</a>
+          <a href="../">How To Write Tests?</a>
           
             <label for="__nav_1_2">
               <span class="md-nav__icon md-icon"></span>
@@ -359,8 +361,8 @@
       
         
         
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../">Application Aware</a>
+        <div class="md-nav__link md-nav__link--index md-nav__link--active">
+          <a href="./">1.Application Aware</a>
           
             <label for="__nav_1_2_2">
               <span class="md-nav__icon md-icon"></span>
@@ -368,10 +370,10 @@
           
         </div>
       
-      <nav class="md-nav" aria-label="Application Aware" data-md-level="3">
+      <nav class="md-nav" aria-label="1.Application Aware" data-md-level="3">
         <label class="md-nav__title" for="__nav_1_2_2">
           <span class="md-nav__icon md-icon"></span>
-          Application Aware
+          1.Application Aware
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -381,14 +383,12 @@
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_2" type="checkbox" id="__nav_1_2_2_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_2" type="checkbox" id="__nav_1_2_2_2" >
       
       
       
@@ -397,22 +397,212 @@
             
           
         
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
       
       
         
         
-        <div class="md-nav__link md-nav__link--index md-nav__link--active">
-          <a href="./">Ktor</a>
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="1.Spring-Boot/">1.Spring Boot</a>
+          
+            <label for="__nav_1_2_2_2">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
           
         </div>
       
-      <nav class="md-nav" aria-label="Ktor" data-md-level="4">
+      <nav class="md-nav" aria-label="1.Spring Boot" data-md-level="4">
         <label class="md-nav__title" for="__nav_1_2_2_2">
           <span class="md-nav__icon md-icon"></span>
-          Ktor
+          1.Spring Boot
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/0001-tuning-app/" class="md-nav__link">
+        Tuning the application's entry point
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/0002-initial-configuration/" class="md-nav__link">
+        Initial Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/0003-writing-tests/" class="md-nav__link">
+        Writing Tests
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_2_5" type="checkbox" id="__nav_1_2_2_2_5" >
+      
+      
+      
+        
+          
+        
+          
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_1_2_2_2_5">
+          Advanced
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Advanced" data-md-level="5">
+        <label class="md-nav__title" for="__nav_1_2_2_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Advanced
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/advanced/0001-Replacing%20Dependencies%20for%20Better%20Testability/" class="md-nav__link">
+        Replacing Dependencies For Better Testability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/advanced/0002-writing-your-own-test-system/" class="md-nav__link">
+        Writing Your Own TestSystem
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/advanced/0003-Writing-A-Test-Initializer/" class="md-nav__link">
+        Writing a TestInitializer
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_2_6" type="checkbox" id="__nav_1_2_2_2_6" >
+      
+      
+      
+        
+          
+        
+      
+      
+        <label class="md-nav__link" for="__nav_1_2_2_2_6">
+          Dependencies
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Dependencies" data-md-level="5">
+        <label class="md-nav__title" for="__nav_1_2_2_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Dependencies
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1.Spring-Boot/dependencies/kafka/" class="md-nav__link">
+        Kafka
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
             
           
         </ul>
@@ -440,228 +630,22 @@
             
           
         
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
       
       
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../Spring-Boot/">Spring Boot</a>
-          
-            <label for="__nav_1_2_2_3">
-              <span class="md-nav__icon md-icon"></span>
-            </label>
+          <a href="2.Ktor/">2.Ktor</a>
           
         </div>
       
-      <nav class="md-nav" aria-label="Spring Boot" data-md-level="4">
+      <nav class="md-nav" aria-label="2.Ktor" data-md-level="4">
         <label class="md-nav__title" for="__nav_1_2_2_3">
           <span class="md-nav__icon md-icon"></span>
-          Spring Boot
+          2.Ktor
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/0001-tuning-app/" class="md-nav__link">
-        Tuning the application's entry point
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/0002-initial-configuration/" class="md-nav__link">
-        Initial Configuration
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/0003-writing-tests/" class="md-nav__link">
-        Writing Tests
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_3_5" type="checkbox" id="__nav_1_2_2_3_5" >
-      
-      
-      
-        
-          
-        
-          
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_1_2_2_3_5">
-          Advanced
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Advanced" data-md-level="5">
-        <label class="md-nav__title" for="__nav_1_2_2_3_5">
-          <span class="md-nav__icon md-icon"></span>
-          Advanced
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/advanced/0001-Replacing%20Dependencies%20for%20Better%20Testability/" class="md-nav__link">
-        Replacing Dependencies For Better Testability
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/advanced/0002-writing-your-own-test-system/" class="md-nav__link">
-        Writing Your Own TestSystem
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/advanced/0003-Writing-A-Test-Initializer/" class="md-nav__link">
-        Writing a TestInitializer
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_3_6" type="checkbox" id="__nav_1_2_2_3_6" >
-      
-      
-      
-        
-          
-        
-          
-        
-      
-      
-        <label class="md-nav__link" for="__nav_1_2_2_3_6">
-          Dependencies
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Dependencies" data-md-level="5">
-        <label class="md-nav__title" for="__nav_1_2_2_3_6">
-          <span class="md-nav__icon md-icon"></span>
-          Dependencies
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/dependencies/couchbase/" class="md-nav__link">
-        Couchbase
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Spring-Boot/dependencies/kafka/" class="md-nav__link">
-        Kafka
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
             
           
         </ul>
@@ -701,17 +685,160 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../Dockerized/">Dockerized</a>
+          <a href="../2.Dockerized/">2.Dockerized</a>
           
         </div>
       
-      <nav class="md-nav" aria-label="Dockerized" data-md-level="3">
+      <nav class="md-nav" aria-label="2.Dockerized" data-md-level="3">
         <label class="md-nav__title" for="__nav_1_2_3">
           <span class="md-nav__icon md-icon"></span>
-          Dockerized
+          2.Dockerized
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_4" type="checkbox" id="__nav_1_2_4" >
+      
+      
+      
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../3.Dependencies/">3.Dependencies</a>
+          
+            <label for="__nav_1_2_4">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
+      
+      <nav class="md-nav" aria-label="3.Dependencies" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          3.Dependencies
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.Dependencies/01-couchbase/" class="md-nav__link">
+        Couchbase
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.Dependencies/02-kafka/" class="md-nav__link">
+        Kafka
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.Dependencies/03-elasticsearch/" class="md-nav__link">
+        Elasticsearch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.Dependencies/04-wiremock/" class="md-nav__link">
+        Wiremock
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.Dependencies/05-http/" class="md-nav__link">
+        HttpClient
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.Dependencies/06-postgresql/" class="md-nav__link">
+        Postgresql
+      </a>
+    </li>
+  
+
             
           
         </ul>
@@ -763,7 +890,7 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../abstractions/">Abstractions</a>
+          <a href="../../abstractions/">Abstractions</a>
           
             <label for="__nav_1_3">
               <span class="md-nav__icon md-icon"></span>
@@ -786,7 +913,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../abstractions/database/" class="md-nav__link">
+      <a href="../../abstractions/database/" class="md-nav__link">
         Database
       </a>
     </li>
@@ -800,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../abstractions/http/" class="md-nav__link">
+      <a href="../../abstractions/http/" class="md-nav__link">
         Http
       </a>
     </li>
@@ -814,7 +941,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../abstractions/httpmock/" class="md-nav__link">
+      <a href="../../abstractions/httpmock/" class="md-nav__link">
         Httpmock
       </a>
     </li>
@@ -828,7 +955,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../abstractions/messaging/" class="md-nav__link">
+      <a href="../../abstractions/messaging/" class="md-nav__link">
         Messaging
       </a>
     </li>
@@ -842,7 +969,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../abstractions/serialization/" class="md-nav__link">
+      <a href="../../abstractions/serialization/" class="md-nav__link">
         Serialization
       </a>
     </li>
@@ -856,7 +983,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../abstractions/system/" class="md-nav__link">
+      <a href="../../abstractions/system/" class="md-nav__link">
         System
       </a>
     </li>
@@ -891,14 +1018,39 @@
                 
                   
 
-  <a href="https://github.com/trendyol/stove4k/edit/main/docs/how-to-write-tests/Application-Aware/Ktor/index.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/trendyol/stove4k/edit/main/docs/how-to-write-tests/1.Application-Aware/index.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="testing-a-ktor-application">Testing a Ktor Application<a class="headerlink" href="#testing-a-ktor-application" title="Permanent link">&para;</a></h1>
-<p><a href="https://github.com/Trendyol/stove4k/tree/main/examples/ktor-example">Here</a> you can jump immediately to the Ktor example application.</p>
+<h1 id="application-aware-testing">Application Aware Testing<a class="headerlink" href="#application-aware-testing" title="Permanent link">&para;</a></h1>
+<p>There are entry point for every application, usually a <code>main</code> method that is invoked, and starts the application
+lifecycle.
+If you are publishing your <code>application/api/microservice</code> as a docker image, <code>docker run ...</code> basically runs your
+application
+highly likely with a <code>jvm/java</code> command.</p>
+<p>In this approach, we're using the <code>main</code> function of your application in the test context to run the application as
+full-blown
+as if it is invoked from outside.</p>
+<p>Stove calls your application's <code>main</code> function like you would call <code>java yourApplicationName.jar</code> to run the application
+from the test context.
+So the runner is JUnit or Kotest.</p>
+<p>For Stove to attach properly to your application, application's main function needs to allow that. This does not change
+behaviour at all, it just opens a door for e2e testing framework to <em>enter</em>. We will discuss this later.</p>
+<h2 id="when-to-use-this-approach">When to use this approach?<a class="headerlink" href="#when-to-use-this-approach" title="Permanent link">&para;</a></h2>
+<p>This approach has lots of benefits besides of providing a debug ability while e2e testing. With this approach, you can:</p>
+<ul>
+<li>Debug the application code</li>
+<li>Replace the implementations of the interfaces. Useful for time-bounded implementation, such as schedulers, background
+  workers, and time.</li>
+<li>Having more control over Kafka messages, you would have control over publishing and consuming,
+  with <a href="../2.Dockerized">dockerized</a> approach
+  you would only have consuming.</li>
+<li>Being able to use and expose application's dependency container. This is useful if you want to write your own system.
+  Say, if you have a dependency that Stove didn't implement yet, you can go ahead and implement it yourself by using the
+  <a href="../../abstractions">abstractions</a>. We will discuss it later.</li>
+</ul>
 
 
 
@@ -926,7 +1078,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Application Aware Testing" rel="prev">
+        <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: How To Write Tests?" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -935,14 +1087,14 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Application Aware Testing
+              How To Write Tests?
             </div>
           </div>
         </a>
       
       
         
-        <a href="../Spring-Boot/" class="md-footer__link md-footer__link--next" aria-label="Next: Testing a Spring Boot Application" rel="next">
+        <a href="1.Spring-Boot/" class="md-footer__link md-footer__link--next" aria-label="Next: Testing a Spring Boot Application" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
@@ -979,10 +1131,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.top", "navigation.tracking", "navigation.sections", "navigation.indexes", "search.highlight", "search.share", "search.suggest", "toc.integrate"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.top", "navigation.tracking", "navigation.sections", "navigation.indexes", "search.highlight", "search.share", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
     
     
