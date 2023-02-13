@@ -64,7 +64,6 @@ markdown_extensions:
 
 extra:
   social:
-    - icon: material/office-building-marker-outline
+    - icon: fontawesome/regular/building
       link: https://trendyol.github.io/
-      name: Trendyol
 

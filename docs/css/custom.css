@@ -9,10 +9,10 @@ img {
 }
 
 .md-social__link {
-    width: fit-content;
+    width: max-content;
 }
 
 .md-social__link:after {
     content: "❤️ Trendyol";
-    float: left;
+    display: flex;
 }
