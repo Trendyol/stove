@@ -1,102 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/0001-tuning-app/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/0002-initial-configuration/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/0003-writing-tests/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/advanced/0001-Replacing%20Dependencies%20for%20Better%20Testability/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/advanced/0002-writing-your-own-test-system/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/advanced/0003-Writing-A-Test-Initializer/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/1.Spring-Boot/dependencies/kafka/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/1.Application-Aware/2.Ktor/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/2.Dockerized/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/01-couchbase/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/02-kafka/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/03-elasticsearch/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/04-wiremock/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/05-http/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>None</loc>
+         <loc>https://trendyol.github.io/stove4k/how-to-write-tests/3.Dependencies/06-postgresql/</loc>
          <lastmod>2023-02-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
