@@ -10,6 +10,7 @@ You need to add the Stove-Spring dependency to be able to write e2e tests for th
     ``` kotlin
     dependencies {
         testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-http:$version")
     }
     ```
 
@@ -21,7 +22,11 @@ You need to add the Stove-Spring dependency to be able to write e2e tests for th
         <artifactId>stove-spring-testing-e2e</artifactId>
         <version>${stove-version}</version>
      </dependency>
-
+     <dependency>
+        <groupId>com.trendyol</groupId>
+        <artifactId>stove-testing-e2e-http</artifactId>
+        <version>${stove-version}</version>
+     </dependency>
     ```
 
 [Do not forget to add](../../../index.md#how-to-get) the other dependencies and configure your maven repository settings first.

@@ -3,6 +3,30 @@
 !!! info
     In progress...
 
+## How to get?
+
+=== "Gradle"
+
+    ``` kotlin
+        dependencies {
+          testImplementation("com.trendyol:stove-spring-testing-e2e-kafka:$version")
+        }
+    ```
+
+=== "Maven"
+
+    ```xml
+     <dependency>
+        <groupId>com.trendyol</groupId>
+        <artifactId>stove-spring-testing-e2e-kafka</artifactId>
+        <version>${stove-version}</version>
+     </dependency>
+    ```
+
+ 
+
+## Configure
+
 There might be a **potential improvement** on the configuration for better testing results that can improve the testing
 performance.
 
@@ -18,16 +42,11 @@ As an example:
 
 ```kotlin
 TestSystem()
-    .withDefaultHttp()
-    .withCouchbase("International")
+    .withHttpClient() 
     .withKafka()
-    .withWireMock(9090)
-    .withSchedulerSystem()
     .systemUnderTest(
         runner = { parameters ->
-            com.trendyol.exampleapp.run(parameters) {
-                addTestDependencies()
-            }
+            com.trendyol.exampleapp.run(parameters)
         },
         withParameters = listOf(
             "logging.level.root=error",

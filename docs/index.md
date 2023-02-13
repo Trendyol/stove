@@ -51,9 +51,6 @@ Overview of the [snapshot versions of Stove](https://oss.sonatype.org/#nexus-sea
     ``` kotlin
     dependencies {
         testImplementation("com.trendyol:stove-testing-e2e:$version")
-        testImplementation("com.trendyol:stove-testing-e2e-http:$version") // to enable http client against your application
-        testImplementation("com.trendyol:stove-testing-e2e-couchbase:$version") // if you have couchbase dependency
-        testImplementation("com.trendyol:stove-testing-e2e-wiremock:$version") // if you want to mock external services
     }
     ```
 
@@ -116,6 +113,6 @@ Overview of the [snapshot versions of Stove](https://oss.sonatype.org/#nexus-sea
 You can start looking at the ways of testing an application with Stove. These are explained in detail under the
 corresponding sections.
 
-#### [1. Attaching with the application _(recommended)_](./how-to-write-tests/Application-Aware)
+#### [1. Application Aware _(recommended)_](./how-to-write-tests/1.Application-Aware)
 
-#### [2. Dockerized](./how-to-write-tests/Dockerized)
+#### [2. Dockerized](./how-to-write-tests/2.Dockerized)

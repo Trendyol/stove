@@ -1,5 +1,6 @@
 package com.stove.spring.example.e2e
 
+import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystemOptions
 import com.trendyol.stove.testing.e2e.couchbase.withCouchbase
 import com.trendyol.stove.testing.e2e.http.withHttpClient
 import com.trendyol.stove.testing.e2e.kafka.withKafka
@@ -21,7 +22,9 @@ class TestSystemConfig : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
         TestSystem(baseUrl = "http://localhost:8001")
             .withHttpClient()
-            .withCouchbase(bucket = "Stove")
+            .withCouchbase(
+                CouchbaseSystemOptions("Stove")
+            )
             .withKafka()
             .withWireMock(
                 port = 9090,

@@ -31,7 +31,7 @@ class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
         TestSystem()
             .withElasticsearch(
-                DefaultIndex(index = testIndex, migrator = TestIndexMigrator())
+                ElasticsearchSystemOptions(DefaultIndex(index = testIndex, migrator = TestIndexMigrator()))
             )
             .applicationUnderTest(NoOpApplication())
             .run()

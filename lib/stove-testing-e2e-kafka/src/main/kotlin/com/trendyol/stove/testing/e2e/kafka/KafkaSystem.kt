@@ -30,17 +30,17 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
+data class KafkaExposedConfiguration(
+    val boostrapServers: String,
+) : ExposedConfiguration
+
 data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
     val errorTopicSuffixes: List<String> = listOf("error", "errorTopic", "retry", "retryTopic"),
     val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
-    val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
-)
-
-data class KafkaExposedConfiguration(
-    val boostrapServers: String,
-)
+    override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
+) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 data class KafkaContext(
     val container: KafkaContainer,

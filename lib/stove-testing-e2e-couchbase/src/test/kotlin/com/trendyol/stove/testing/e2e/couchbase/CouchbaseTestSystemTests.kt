@@ -11,7 +11,7 @@ import java.util.UUID
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
         TestSystem()
-            .withCouchbase(UUID.randomUUID().toString())
+            .withCouchbase(CouchbaseSystemOptions(defaultBucket = UUID.randomUUID().toString()))
             .applicationUnderTest(NoOpApplication())
             .run()
     }

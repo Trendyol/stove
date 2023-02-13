@@ -31,10 +31,12 @@ import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 
 data class ElasticsearchSystemOptions(
-    val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
+    val defaultIndex: DefaultIndex,
     val containerOptions: ContainerOptions = ContainerOptions(),
-) {
+    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
+    val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
+) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
+
     internal val migrationCollection: MigrationCollection = MigrationCollection()
 
     /**
@@ -44,6 +46,18 @@ data class ElasticsearchSystemOptions(
      */
     fun migrations(migration: MigrationCollection.() -> Unit): ElasticsearchSystemOptions = migration(migrationCollection).let { this }
 }
+
+data class ElasticSearchExposedConfiguration(
+    val host: String,
+    val port: Int,
+    val password: String,
+) : ExposedConfiguration
+
+data class ElasticsearchContext(
+    val index: String,
+    val container: ElasticsearchContainer,
+    val options: ElasticsearchSystemOptions,
+)
 
 data class ContainerOptions(
     val registry: String = "docker.elastic.co/",
@@ -55,40 +69,26 @@ data class ContainerOptions(
 /**
  * Integrates Elasticsearch with the TestSystem.
  *
- * Provides a [defaultIndex]: [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
+ * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
  */
 fun TestSystem.withElasticsearch(
-    defaultIndex: DefaultIndex,
-    options: ElasticsearchSystemOptions = ElasticsearchSystemOptions(),
+    options: ElasticsearchSystemOptions,
 ): TestSystem {
     options.migrations {
-        register<DefaultIndexMigrator> { defaultIndex.migrator }
+        register<DefaultIndexMigrator> { options.defaultIndex.migrator }
     }
 
-    val elasticsearchContainer = withProvidedRegistry(
+    return withProvidedRegistry(
         "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",
         options.containerOptions.registry
     ) { ElasticsearchContainer(it) }
-
-    elasticsearchContainer.addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
-    elasticsearchContainer.withPassword(options.containerOptions.password)
-    getOrRegister(
-        ElasticsearchSystem(this, ElasticsearchContext(defaultIndex.index, elasticsearchContainer, options))
-    )
-    return this
+        .apply {
+            addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
+            withPassword(options.containerOptions.password)
+        }
+        .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
+        .let { this }
 }
-
-data class ElasticSearchExposedConfiguration(
-    val host: String,
-    val port: Int,
-    val password: String,
-)
-
-data class ElasticsearchContext(
-    val index: String,
-    val container: ElasticsearchContainer,
-    val options: ElasticsearchSystemOptions,
-)
 
 fun TestSystem.elasticsearch(): ElasticsearchSystem =
     getOrNone<ElasticsearchSystem>().getOrElse {

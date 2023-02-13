@@ -9,6 +9,7 @@ import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.deserialize
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Redirect.ALWAYS
@@ -21,6 +22,8 @@ import java.time.Duration
 import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
 
+data class HttpClientSystemOptions(val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()) : SystemOptions
+
 @Deprecated(
     "This method is deprecated, going to be removed",
     replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
@@ -30,8 +33,8 @@ fun TestSystem.withDefaultHttp(jsonSerializer: StoveJsonSerializer = StoveJackso
     return this
 }
 
-fun TestSystem.withHttpClient(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
-    this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
+fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
+    this.getOrRegister(DefaultHttpSystem(this, options.jsonSerializer))
     return this
 }
 

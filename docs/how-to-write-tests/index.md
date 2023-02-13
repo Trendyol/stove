@@ -35,5 +35,5 @@ local docker to be able to pull the dependencies when the e2e tests run.
 
 ## Choose your testing strategy
 
-- [I will attach my application to Stove E2e testing framework _(recommended)_](./Application-Aware)
-- [I will use docker image of my application](./Dockerized)
+- [I will run my application alongside Stove E2e testing framework _(recommended)_](./1.Application-Aware)
+- [I will use docker image of my application](./2.Dockerized)

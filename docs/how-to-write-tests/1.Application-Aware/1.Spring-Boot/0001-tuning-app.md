@@ -1,5 +1,10 @@
 # Tuning the application's entry point
 
+!!! note
+    This change is an optional change. If you don't have any unpredictable components to alter, like, time, scheduler, etc...
+    Or if you don't want to have full observability over Kafka you can leave the main function as is. 
+    But, still we recommend this change, as you might have components to change in the future.
+
 Let's say the application has a standard `main` function, here how we will change it:
 
 === "Before"

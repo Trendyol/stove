@@ -25,7 +25,7 @@ This approach has lots of benefits besides of providing a debug ability while e2
 - Replace the implementations of the interfaces. Useful for time-bounded implementation, such as schedulers, background
   workers, and time.
 - Having more control over Kafka messages, you would have control over publishing and consuming,
-  with [dockerized](../Dockerized) approach
+  with [dockerized](../2.Dockerized) approach
   you would only have consuming.
 - Being able to use and expose application's dependency container. This is useful if you want to write your own system.
   Say, if you have a dependency that Stove didn't implement yet, you can go ahead and implement it yourself by using the

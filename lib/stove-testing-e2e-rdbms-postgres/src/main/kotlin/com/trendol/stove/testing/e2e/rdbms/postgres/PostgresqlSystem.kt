@@ -7,7 +7,9 @@ import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseContext
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
@@ -19,8 +21,8 @@ data class PostgresqlOptions(
     val databaseName: String = "stove-e2e-testing",
     val registry: String = DEFAULT_REGISTRY,
     val imageName: String = DEFAULT_POSTGRES_IMAGE_NAME,
-    val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-)
+    override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() },
+) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>
 
 internal class PostgresqlContext(
     container: PostgreSQLContainer<*>,
@@ -29,12 +31,10 @@ internal class PostgresqlContext(
 
 fun TestSystem.withPostgresql(
     options: PostgresqlOptions = PostgresqlOptions(),
-): TestSystem {
-    val container = withProvidedRegistry(options.imageName, options.registry, "postgres") {
-        PostgreSQLContainer(it).withDatabaseName(options.databaseName).withUsername("sa").withPassword("sa")
-    }
-    return getOrRegister(PostgresqlSystem(this, PostgresqlContext(container, options.configureExposedConfiguration))).let { this }
-}
+): TestSystem = withProvidedRegistry(options.imageName, options.registry, "postgres") {
+    PostgreSQLContainer(it).withDatabaseName(options.databaseName).withUsername("sa").withPassword("sa")
+}.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
+    .let { this }
 
 fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
     throw SystemNotRegisteredException(PostgresqlSystem::class)

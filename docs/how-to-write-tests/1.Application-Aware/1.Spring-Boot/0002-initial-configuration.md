@@ -47,7 +47,39 @@ it is time to run your application for the first time from the test-context with
 
 === "JUnit"
     
-    // TODO
+    ```kotlin
+    class TestSystemConfig {
+    
+        @BeforeAll
+        fun beforeProject() = runBlocking {
+            TestSystem(baseUrl = "http://localhost:8001")
+                .withHttpClient()
+                .systemUnderTest(
+                    runner = { parameters ->
+                        /* 
+                        *  As you remember, we have divided application's main 
+                        *  function into two parts, main and run. 
+                        *  We use `run` invocation here.
+                        * */
+                        stove.spring.example.run(parameters)
+                    },
+                    withParameters =
+                    listOf(
+                        "server.port=8001",
+                        "logging.level.root=warn",
+                        "logging.level.org.springframework.web=warn",
+                        "spring.profiles.active=default"
+                    )
+                )
+                .run()
+        }
+    
+        @AfterAll
+        fun afterProject() = runBlocking {
+            TestSystem.instance.close()
+        }
+    }
+    ```
 
 ## Configuring systemUnderTest
 

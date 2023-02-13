@@ -22,6 +22,7 @@ import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -37,7 +38,7 @@ data class WireMockSystemOptions(
     val afterStubRemoved: AfterStubRemoved = { _, _, _ -> },
     val afterRequest: AfterRequestHandler = { _, _, _ -> },
     val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(jacksonObjectMapper()),
-)
+) : SystemOptions
 
 fun TestSystem.withWireMock(
     port: Int = 8080,

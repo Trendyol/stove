@@ -9,9 +9,7 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.messaging.AssertsPublishing
 import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -23,31 +21,27 @@ import org.testcontainers.containers.KafkaContainer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-data class KafkaSystemOptions(
-    val ports: List<Int> = listOf(9092, 9093),
-)
-
-fun TestSystem.withKafka(
-    registry: String = DEFAULT_REGISTRY,
-    options: KafkaSystemOptions = KafkaSystemOptions(),
-    configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
-): TestSystem {
-    val kafka =
-        withProvidedRegistry("confluentinc/cp-kafka:latest", registry) {
-            KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
-        }
-    getOrRegister(KafkaSystem(this, KafkaContext(kafka, configureExposedConfiguration)))
-    return this
-}
-
 data class KafkaExposedConfiguration(
     val boostrapServers: String,
-)
+) : ExposedConfiguration
+
+data class KafkaSystemOptions(
+    val registry: String = DEFAULT_REGISTRY,
+    val ports: List<Int> = listOf(9092, 9093),
+    override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
+) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 data class KafkaContext(
     val container: KafkaContainer,
     val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>,
 )
+
+fun TestSystem.withKafka(
+    options: KafkaSystemOptions = KafkaSystemOptions(),
+): TestSystem = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
+    KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
+}.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.configureExposedConfiguration))) }
+    .let { this }
 
 fun TestSystem.kafka(): KafkaSystem =
     getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
@@ -78,7 +72,7 @@ class KafkaSystem(
         ) + listOf("kafka.bootstrapServers=${context.container.bootstrapServers}", "kafka.isSecure=false")
     }
 
-    override suspend fun stop() = context.container.stop()
+    override suspend fun stop(): Unit = context.container.stop()
 
     override suspend fun publish(
         topic: String,
@@ -92,7 +86,7 @@ class KafkaSystem(
             0,
             key.getOrElse { "" },
             objectMapper.writeValueAsString(message),
-            headers.map { RecordHeader(it.key, it.value.toByteArray()) }
+            headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
         )
 
         return kafkaTemplate.send(record).completable().await().let { this }
@@ -142,5 +136,8 @@ class KafkaSystem(
 }
 
 private fun (MutableMap<String, String>).addTestCase(testCase: Option<String>): MutableMap<String, String> =
-    if (this.containsKey("testCase")) this
-    else testCase.map { this["testCase"] = it }.let { this }
+    if (this.containsKey("testCase")) {
+        this
+    } else {
+        testCase.map { this["testCase"] = it }.let { this }
+    }

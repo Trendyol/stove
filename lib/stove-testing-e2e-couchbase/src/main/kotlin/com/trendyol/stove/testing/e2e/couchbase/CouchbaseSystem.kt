@@ -19,7 +19,10 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
 import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import kotlinx.coroutines.reactive.awaitSingle
@@ -31,19 +34,26 @@ import org.testcontainers.couchbase.CouchbaseContainer
 import kotlin.jvm.internal.Reflection
 import kotlin.reflect.KClass
 
+data class CouchbaseExposedConfiguration(
+    val connectionString: String,
+    val hostsWithPort: String,
+    val username: String,
+    val password: String,
+) : ExposedConfiguration
+
 data class CouchbaseSystemOptions(
-    val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
+    val defaultBucket: String,
+    val registry: String = DEFAULT_REGISTRY,
+    override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
     val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
-)
+) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration>
 
 fun TestSystem.withCouchbase(
-    bucket: String,
-    registry: String = DEFAULT_REGISTRY,
-    options: CouchbaseSystemOptions = CouchbaseSystemOptions(),
+    options: CouchbaseSystemOptions,
 ): TestSystem {
-    val bucketDefinition = BucketDefinition(bucket)
+    val bucketDefinition = BucketDefinition(options.defaultBucket)
     val couchbaseContainer =
-        withProvidedRegistry("couchbase/server", registry) {
+        withProvidedRegistry("couchbase/server", options.registry) {
             CouchbaseContainer(it).withBucket(bucketDefinition)
         }
     this.getOrRegister(
@@ -51,13 +61,6 @@ fun TestSystem.withCouchbase(
     )
     return this
 }
-
-data class CouchbaseExposedConfiguration(
-    val connectionString: String,
-    val hostsWithPort: String,
-    val username: String,
-    val password: String,
-)
 
 data class CouchbaseContext(
     val bucket: BucketDefinition,
