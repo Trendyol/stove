@@ -4,6 +4,16 @@
     margin-top: 0
 }
 
-img{
+img {
     width: 100%;
+}
+
+.md-social__link {
+    width: fit-content;
+}
+
+
+.md-social__link:after {
+    content: "❤️ Trendyol";
+    float: left;
 }
