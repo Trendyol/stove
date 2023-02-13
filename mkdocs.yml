@@ -1,4 +1,5 @@
 site_name: "Stove"
+site_url: "https://trendyol.github.io/stove4k/"
 repo_url: https://github.com/trendyol/stove4k
 edit_uri: https://github.com/trendyol/stove4k/edit/main/docs
 extra_css:
@@ -9,6 +10,7 @@ plugins:
      collapse_single_pages: true
 theme:
   name: material
+  logo: assets/logo.png
   features:
     - content.code.annotate
     - content.tabs.link
@@ -59,3 +61,6 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
+
+extra:
+  homepage: "/"
