@@ -19,6 +19,7 @@ theme:
     - navigation.tracking
     - navigation.sections
     - navigation.indexes
+    - navigation.footer
     - search.highlight
     - search.share
     - search.suggest
@@ -62,4 +63,8 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
 extra:
-  homepage: "/"
+  social:
+    - icon: material/office-building-marker-outline
+      link: https://trendyol.github.io/
+      name: Trendyol
+
