@@ -34,7 +34,7 @@ data class KafkaExposedConfiguration(
 data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
-    val jsonSerializer: ObjectMapper = StoveObjectMapper.Default,
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
@@ -48,7 +48,7 @@ fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),
 ): TestSystem = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
     KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
-}.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.jsonSerializer, options.configureExposedConfiguration))) }
+}.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
     .let { this }
 
 fun TestSystem.kafka(): KafkaSystem =

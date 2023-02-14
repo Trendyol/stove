@@ -76,6 +76,5 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "11.2.0" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-gitVersioning = { id = "me.qoomon.git-versioning", version = "6.4.0" }
-palantirGitVersioning = { id = "com.palantir.git-version", version = "1.0.0" }
+gitVersioning = { id = "com.palantir.git-version", version = "1.0.0" }
 

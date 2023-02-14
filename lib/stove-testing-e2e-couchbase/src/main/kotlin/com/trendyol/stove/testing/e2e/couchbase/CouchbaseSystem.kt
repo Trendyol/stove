@@ -46,7 +46,7 @@ data class CouchbaseSystemOptions(
     val defaultBucket: String,
     val registry: String = DEFAULT_REGISTRY,
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.Default.registerModule(JsonValueModule()),
+    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) }
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration>
 
 fun TestSystem.withCouchbase(
