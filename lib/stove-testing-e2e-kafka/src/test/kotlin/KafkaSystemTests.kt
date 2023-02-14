@@ -3,7 +3,6 @@ import com.trendyol.stove.testing.e2e.kafka.setup.DomainEvents.ProductCreated
 import com.trendyol.stove.testing.e2e.kafka.setup.DomainEvents.ProductFailingCreated
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.spec.style.FunSpec
-import kotlinx.coroutines.delay
 
 class KafkaSystemTests : FunSpec({
 
@@ -14,7 +13,7 @@ class KafkaSystemTests : FunSpec({
             .publish("product", ProductCreated("2"))
             .publish("product", ProductCreated("3"))
 
-        delay(5000)
+        // delay(5000)
     }
 
     test("When publish to a failing consumer should end-up throwing exception") {
@@ -23,6 +22,6 @@ class KafkaSystemTests : FunSpec({
             .publish("productFailing", ProductFailingCreated("1"))
             .shouldBeConsumed(message = ProductFailingCreated("1"))
 
-        delay(5000)
+        // delay(5000)
     }
 })

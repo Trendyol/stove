@@ -19,6 +19,10 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import javax.net.ssl.SSLContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
@@ -27,7 +31,6 @@ import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
-import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 
 data class ElasticsearchSystemOptions(
@@ -178,7 +181,12 @@ class ElasticsearchSystem internal constructor(
         instance: T,
     ): ElasticsearchSystem = save(context.index, id, instance)
 
-    override fun close(): Unit = esClient._transport().close()
+    override fun close(): Unit = runBlocking {
+        withContext(Dispatchers.IO) {
+            esClient._transport().close()
+            stop()
+        }
+    }
 
     override fun configuration(): List<String> {
         return context.options.configureExposedConfiguration(exposedConfiguration) +

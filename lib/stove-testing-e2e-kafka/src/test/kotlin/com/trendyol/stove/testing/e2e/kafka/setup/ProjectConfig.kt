@@ -68,9 +68,12 @@ class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachList
     override suspend fun beforeProject() {
         TestSystem()
             .withKafka(
-                KafkaSystemOptions(configureExposedConfiguration = { cfg ->
-                    listOf("kafka.servers=${cfg.boostrapServers}")
-                })
+                KafkaSystemOptions(
+                    // ports = listOf(9094, 9095),
+                    configureExposedConfiguration = { cfg ->
+                        listOf("kafka.servers=${cfg.boostrapServers}")
+                    }
+                )
             )
             .applicationUnderTest(KafkaApplicationUnderTest())
             .run()

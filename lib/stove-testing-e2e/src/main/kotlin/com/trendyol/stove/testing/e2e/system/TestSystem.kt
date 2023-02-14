@@ -111,7 +111,7 @@ class TestSystem(
             val afterRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<AfterRunAware>()
             afterRunAwareSystems.map { async { it.afterRun() } }.awaitAll()
 
-            activeSystems.map { cleanup.add { it.value.close() } }
+            activeSystems.forEach { cleanup.add { it.value.close() } }
             cleanup.add { applicationUnderTest.stop() }
         }
 
