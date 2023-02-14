@@ -2,16 +2,24 @@
 
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 
-group = "com.trendyol"
-version = "0.0.8-SNAPSHOT"
-
 plugins {
     kotlin("jvm").version(libs.versions.kotlin)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.gitVersioning)
     id("stove-publishing") apply false
     id("coverage")
     java
+}
+
+group = "com.trendyol"
+gitVersioning.apply {
+    refs {
+        branch("main") {
+            describeTagPattern = "(?<version>.*)"
+            version = "\${describe.tag.version}"
+        }
+    }
 }
 
 allprojects {
