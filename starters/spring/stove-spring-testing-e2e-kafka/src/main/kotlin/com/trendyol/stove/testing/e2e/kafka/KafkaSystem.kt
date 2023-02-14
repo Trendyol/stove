@@ -40,7 +40,7 @@ data class KafkaSystemOptions(
 
 data class KafkaContext(
     val container: KafkaContainer,
-    val jsonSerializer: ObjectMapper,
+    val objectMapper: ObjectMapper,
     val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>,
 )
 
@@ -59,7 +59,6 @@ class KafkaSystem(
     private val context: KafkaContext,
 ) : MessagingSystem, AssertsPublishing, RunnableSystemWithContext<ApplicationContext>, ExposesConfiguration {
     private lateinit var applicationContext: ApplicationContext
-    private val objectMapper = context.jsonSerializer
     private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
     val getInterceptor = { applicationContext.getBean(TestSystemKafkaInterceptor::class.java) }
 
@@ -92,7 +91,7 @@ class KafkaSystem(
             topic,
             0,
             key.getOrElse { "" },
-            objectMapper.writeValueAsString(message),
+            context.objectMapper.writeValueAsString(message),
             headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
         )
 
