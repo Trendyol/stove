@@ -77,4 +77,5 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 gitVersioning = { id = "me.qoomon.git-versioning", version = "6.3.8" }
+palantirGitVersioning = { id = "com.palantir.git-version", version = "1.0.0" }
 

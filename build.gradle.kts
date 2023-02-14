@@ -6,21 +6,16 @@ plugins {
     kotlin("jvm").version(libs.versions.kotlin)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
-    alias(libs.plugins.gitVersioning)
+    alias(libs.plugins.palantirGitVersioning)
     id("stove-publishing") apply false
     id("coverage")
     java
 }
 
 group = "com.trendyol"
-gitVersioning.apply {
-    refs {
-        branch("main") {
-            describeTagPattern = "(?<version>.*)"
-            version = "\${describe.tag.version}"
-        }
-    }
-}
+val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+val details = versionDetails()
+version = details.lastTag
 
 allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
