@@ -17,7 +17,6 @@ class JediService(private val repository: JediRepository, private val lockProvid
         }
 
         try {
-
             repository.transaction {
                 val jedi = it.findById(id)
                 jedi.name = request.name

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 class SubscribeToAll(
     private val adminClient: Admin,
-    private val receiver: KafkaReceiver<String, String>,
+    private val receiver: KafkaReceiver<String, Any>,
     private val interceptor: TestSystemKafkaInterceptor,
 ) : AutoCloseable {
 

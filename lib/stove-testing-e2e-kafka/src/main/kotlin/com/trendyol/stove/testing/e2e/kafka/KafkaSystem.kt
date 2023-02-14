@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.Option
@@ -70,6 +72,8 @@ class KafkaSystem(
     private lateinit var kafkaProducer: KafkaProducer<String, Any>
     private lateinit var subscribeToAllConsumer: SubscribeToAll
     private lateinit var interceptor: TestSystemKafkaInterceptor
+    private val assertedMessages: MutableList<Any> = mutableListOf()
+    private val assertedConditions: MutableList<(Any) -> Boolean> = mutableListOf()
 
     override suspend fun publish(
         topic: String,
@@ -88,6 +92,7 @@ class KafkaSystem(
         atLeastIn: Duration,
         message: Any,
     ): KafkaSystem = interceptor
+        .also { assertedMessages.add(message) }
         .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.exists { it == message } }
         .let { this }
 
@@ -96,6 +101,7 @@ class KafkaSystem(
         condition: (T) -> Boolean,
         clazz: KClass<T>,
     ): KafkaSystem = interceptor
+        .also { assertedConditions.add(condition as (Any) -> Boolean) }
         .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.exists { condition(it) } }
         .let { this }
 
@@ -122,7 +128,7 @@ class KafkaSystem(
 
     private fun consumer(
         cfg: KafkaExposedConfiguration,
-    ): KafkaReceiver<String, String> = mapOf(
+    ): KafkaReceiver<String, Any> = mapOf(
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to cfg.boostrapServers,
         ConsumerConfig.GROUP_ID_CONFIG to "stove-kafka-subscribe-to-all",
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",

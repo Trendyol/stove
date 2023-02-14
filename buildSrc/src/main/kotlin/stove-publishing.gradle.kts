@@ -66,9 +66,11 @@ afterEvaluate {
     val signingKey = getProperty(projectKey = "gpg.key", environmentKey = "gpg_private_key")
     val passPhrase = getProperty(projectKey = "gpg.passphrase", environmentKey = "gpg_passphrase")
     signing {
-        if (passPhrase == null) logger.warn(
-            "The passphrase for the signing key was not found. Either provide it as env variable 'gpg_passphrase' or as project property 'gpg_passphrase'. Otherwise the signing might fail!"
-        )
+        if (passPhrase == null) {
+            logger.warn(
+                "The passphrase for the signing key was not found. Either provide it as env variable 'gpg_passphrase' or as project property 'gpg_passphrase'. Otherwise the signing might fail!"
+            )
+        }
         useInMemoryPgpKeys(signingKey, passPhrase)
         sign(publishing.publications)
     }

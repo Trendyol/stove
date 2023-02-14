@@ -114,8 +114,11 @@ sealed class Try<out T> {
         when (this) {
             is Success ->
                 try {
-                    if (predicate(value)) this
-                    else throw NoSuchElementException("Predicate not satisfied for $value")
+                    if (predicate(value)) {
+                        this
+                    } else {
+                        throw NoSuchElementException("Predicate not satisfied for $value")
+                    }
                 } catch (exception: Throwable) {
                     if (NonFatal(exception)) Failure(exception) else throw exception
                 }
@@ -135,8 +138,11 @@ sealed class Try<out T> {
         when (this) {
             is Success ->
                 try {
-                    if (!predicate(value)) this
-                    else throw NoSuchElementException("Predicate not satisfied for $value")
+                    if (!predicate(value)) {
+                        this
+                    } else {
+                        throw NoSuchElementException("Predicate not satisfied for $value")
+                    }
                 } catch (exception: Throwable) {
                     if (NonFatal(exception)) Failure(exception) else throw exception
                 }
@@ -154,8 +160,11 @@ sealed class Try<out T> {
         when (this) {
             is Success ->
                 try {
-                    if (value is R) Success<R>(value)
-                    else throw NoSuchElementException("Not an instance of ${R::class}")
+                    if (value is R) {
+                        Success<R>(value)
+                    } else {
+                        throw NoSuchElementException("Not an instance of ${R::class}")
+                    }
                 } catch (exception: Throwable) {
                     if (NonFatal(exception)) Failure(exception) else throw exception
                 }
@@ -311,8 +320,9 @@ inline fun <T> Try<T>.getOrElse(default: () -> T): T = if (isSuccess) get() else
  * @return This [Success] or [default].
  */
 inline fun <T> Try<T>.orElse(default: () -> Try<T>): Try<T> =
-    if (isSuccess) this
-    else {
+    if (isSuccess) {
+        this
+    } else {
         try {
             default()
         } catch (exception: Throwable) {

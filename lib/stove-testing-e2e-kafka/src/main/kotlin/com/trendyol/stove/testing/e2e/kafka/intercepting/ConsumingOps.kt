@@ -1,21 +1,18 @@
 package com.trendyol.stove.testing.e2e.kafka.intercepting
 
-import arrow.core.Option
-import arrow.core.firstOrNone
-import arrow.core.getOrElse
-import arrow.core.toOption
-import java.util.UUID
-import java.util.concurrent.ConcurrentMap
+import arrow.core.*
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.Logger
+import java.util.UUID
+import java.util.concurrent.ConcurrentMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 internal interface ConsumingOps : CommonOps {
     val logger: Logger
-    val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, String>>
+    val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, Any>>
 
     suspend fun <T : Any> waitUntilConsumed(
         atLeastIn: Duration,
@@ -33,8 +30,8 @@ internal interface ConsumingOps : CommonOps {
     }
 
     fun recordMessage(
-        record: ConsumerRecord<String, String>,
-        consumer: Consumer<String, String>,
+        record: ConsumerRecord<String, Any>,
+        consumer: Consumer<String, Any>,
     ): Unit = runBlocking {
         consumedRecords.putIfAbsent(UUID.randomUUID(), record)
         logger.info(
@@ -50,7 +47,7 @@ internal interface ConsumingOps : CommonOps {
     }
 
     fun recordError(
-        record: ConsumerRecord<String, String>,
+        record: ConsumerRecord<String, Any>,
     ): Unit = runBlocking {
         val exception = AssertionError(buildErrorMessage(record))
         exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))
@@ -66,14 +63,14 @@ internal interface ConsumingOps : CommonOps {
         )
     }
 
-    private fun buildErrorMessage(record: ConsumerRecord<String, String>): String = """MESSAGE FAILED TO CONSUME:
+    private fun buildErrorMessage(record: ConsumerRecord<String, Any>): String = """MESSAGE FAILED TO CONSUME:
         Topic: ${record.topic()}
         Record: ${record.value()}
         Key: ${record.key()}
         Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
     """.trimIndent()
 
-    override fun dumpMessages(): String {
-        return "TODO://CONSUMED MESSAGES"
-    }
+    override fun dumpMessages(): String = """CONSUMED MESSAGES: 
+    ${consumedRecords.map { it.value.value() }.joinToString("\n")}
+    """.trimIndent()
 }

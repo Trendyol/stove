@@ -12,5 +12,5 @@ data class ClientConfigurationProperty(
     var url: String = "",
     val uri: URI = URI.create(url),
     var connectTimeout: Int = 0,
-    var readTimeout: Long = 0
+    var readTimeout: Long = 0,
 )

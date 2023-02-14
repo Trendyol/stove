@@ -4,6 +4,7 @@ import arrow.core.Option
 import arrow.core.align
 import arrow.core.handleErrorWith
 import arrow.core.toOption
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.trendyol.stove.testing.e2e.kafka.KafkaSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import java.util.UUID
@@ -50,20 +51,21 @@ internal interface CommonOps : RecordsAssertions {
     fun <T : Any> throwIfFailed(
         clazz: KClass<T>,
         selector: (Option<T>) -> Boolean,
-    ) {
-        exceptions
-            .filter { selector(readCatching(it.value.message.toString(), clazz).getOrNull().toOption()) }
-            .forEach { throw it.value.reason }
-    }
+    ): Unit = exceptions
+        .filter { selector(readCatching(it.value.message.toString(), clazz).getOrNull().toOption()) }
+        .forEach { throw it.value.reason }
 
     fun <T : Any> readCatching(
-        json: String,
+        json: Any,
         clazz: KClass<T>,
-    ): Result<T> = runCatching { serde.deserialize(json, clazz) }
-
-    fun reset() {
-        exceptions.clear()
+    ): Result<T> = runCatching {
+        when (json) {
+            is String -> serde.deserialize(json, clazz)
+            else -> jacksonObjectMapper().convertValue(json, clazz.java)
+        }
     }
+
+    fun reset(): Unit = exceptions.clear()
 
     fun dumpMessages(): String
 

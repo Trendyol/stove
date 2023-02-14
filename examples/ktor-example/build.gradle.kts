@@ -27,8 +27,7 @@ sourceSets {
         runtimeClasspath += sourceSets.main.get().output
     }
 
-    val testE2eImplementation by
-    configurations.getting { extendsFrom(configurations.testImplementation.get()) }
+    val testE2eImplementation by configurations.getting { extendsFrom(configurations.testImplementation.get()) }
     configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
 }
 
