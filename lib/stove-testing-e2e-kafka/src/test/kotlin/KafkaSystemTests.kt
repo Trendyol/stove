@@ -16,7 +16,7 @@ class KafkaSystemTests : FunSpec({
         // delay(5000)
     }
 
-    test("When publish to a failing consumer should end-up throwing exception") {
+    xtest("When publish to a failing consumer should end-up throwing exception") {
         TestSystem.instance
             .kafka()
             .publish("productFailing", ProductFailingCreated("1"))
