@@ -5,19 +5,20 @@ package com.trendyol.stove.testing.e2e.couchbase
 import arrow.core.getOrElse
 import com.couchbase.client.core.msg.kv.DurabilityLevel.PERSIST_TO_MAJORITY
 import com.couchbase.client.java.*
-import com.couchbase.client.java.codec.JsonSerializer
+import com.couchbase.client.java.codec.JacksonJsonSerializer
 import com.couchbase.client.java.env.ClusterEnvironment
 import com.couchbase.client.java.json.JsonObject
+import com.couchbase.client.java.json.JsonValueModule
 import com.couchbase.client.java.kv.InsertOptions
 import com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.couchbase.ClusterExtensions.executeQueryAs
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
@@ -31,7 +32,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.testcontainers.couchbase.BucketDefinition
 import org.testcontainers.couchbase.CouchbaseContainer
-import kotlin.jvm.internal.Reflection
 import kotlin.reflect.KClass
 
 data class CouchbaseExposedConfiguration(
@@ -45,7 +45,7 @@ data class CouchbaseSystemOptions(
     val defaultBucket: String,
     val registry: String = DEFAULT_REGISTRY,
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
+    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) },
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration>
 
 fun TestSystem.withCouchbase(
@@ -82,7 +82,7 @@ class CouchbaseSystem internal constructor(
     private lateinit var collection: ReactiveCollection
     private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
 
-    private val objectMapper: StoveJsonSerializer = context.options.jsonSerializer
+    private val objectMapper: ObjectMapper = context.options.objectMapper
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun run() {
@@ -119,8 +119,8 @@ class CouchbaseSystem internal constructor(
         val result = cluster.executeQueryAs<Any>(query) { queryOptions -> queryOptions.scanConsistency(REQUEST_PLUS) }
 
         val objects = result
-            .map { objectMapper.serialize(it) }
-            .map { objectMapper.deserialize(it, clazz) }
+            .map { objectMapper.writeValueAsString(it) }
+            .map { objectMapper.readValue(it, clazz.java) }
 
         assertion(objects)
         return this
@@ -157,7 +157,7 @@ class CouchbaseSystem internal constructor(
             .collection(collection)
             .insert(
                 id,
-                JsonObject.fromJson(objectMapper.serialize(instance)),
+                JsonObject.fromJson(objectMapper.writeValueAsString(instance)),
                 InsertOptions.insertOptions().durability(PERSIST_TO_MAJORITY)
             )
             .awaitSingle()
@@ -184,7 +184,7 @@ class CouchbaseSystem internal constructor(
 
     private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): ReactiveCluster =
         ClusterEnvironment.builder()
-            .jsonSerializer(jsonSerializer())
+            .jsonSerializer(JacksonJsonSerializer.create(objectMapper))
             .build()
             .let {
                 Cluster.connect(
@@ -194,13 +194,4 @@ class CouchbaseSystem internal constructor(
                         .environment(it)
                 ).reactive()
             }
-
-    private fun jsonSerializer(): JsonSerializer = object : JsonSerializer {
-        override fun serialize(input: Any): ByteArray = objectMapper.serializeAsBytes(input)
-
-        override fun <T : Any> deserialize(
-            target: Class<T>,
-            input: ByteArray,
-        ): T = objectMapper.deserialize(input, Reflection.getOrCreateKotlinClass(target)) as T
-    }
 }

@@ -4,9 +4,9 @@ import arrow.core.Option
 import arrow.core.align
 import arrow.core.handleErrorWith
 import arrow.core.toOption
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.trendyol.stove.testing.e2e.kafka.KafkaSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
 import java.util.UUID
 import java.util.concurrent.ConcurrentMap
 import kotlinx.coroutines.TimeoutCancellationException
@@ -27,7 +27,7 @@ data class KafkaAssertion<T : Any>(
 
 internal interface CommonOps : RecordsAssertions {
     val exceptions: ConcurrentMap<UUID, Failure>
-    val serde: StoveJsonSerializer
+    val serde: ObjectMapper
     val adminClient: Admin
 
     suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
@@ -60,7 +60,7 @@ internal interface CommonOps : RecordsAssertions {
         clazz: KClass<T>,
     ): Result<T> = runCatching {
         when (json) {
-            is String -> serde.deserialize(json, clazz)
+            is String -> serde.readValue(json, clazz.java)
             else -> jacksonObjectMapper().convertValue(json, clazz.java)
         }
     }

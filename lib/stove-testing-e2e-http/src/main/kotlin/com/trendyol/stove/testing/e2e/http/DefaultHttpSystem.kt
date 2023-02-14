@@ -4,9 +4,9 @@ package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.Option
 import arrow.core.getOrElse
-import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.deserialize
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
@@ -22,19 +22,19 @@ import java.time.Duration
 import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
 
-data class HttpClientSystemOptions(val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()) : SystemOptions
+data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
 
 @Deprecated(
     "This method is deprecated, going to be removed",
     replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
 )
-fun TestSystem.withDefaultHttp(jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer()): TestSystem {
+fun TestSystem.withDefaultHttp(jsonSerializer: ObjectMapper = StoveObjectMapper.Default): TestSystem {
     this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
     return this
 }
 
 fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
-    this.getOrRegister(DefaultHttpSystem(this, options.jsonSerializer))
+    this.getOrRegister(DefaultHttpSystem(this, options.objectMapper))
     return this
 }
 
@@ -54,7 +54,7 @@ fun TestSystem.http(): DefaultHttpSystem =
 
 class DefaultHttpSystem(
     override val testSystem: TestSystem,
-    private val json: StoveJsonSerializer,
+    private val objectMapper: ObjectMapper,
 ) : HttpSystem {
     private val httpClient: HttpClient = httpClient()
 
@@ -72,7 +72,7 @@ class DefaultHttpSystem(
         token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
-            ifSome = { request.POST(BodyPublishers.ofString(json.serialize(it))) }
+            ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
     }.let { expect(deserialize(it, clazz)); this }
 
@@ -85,7 +85,7 @@ class DefaultHttpSystem(
         token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
-            ifSome = { request.POST(BodyPublishers.ofString(json.serialize(it))) }
+            ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
@@ -107,7 +107,7 @@ class DefaultHttpSystem(
     ): DefaultHttpSystem = httpClient.send(uri) { request ->
         token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
         request.GET()
-    }.let { expect(json.deserialize(it.body())); this }
+    }.let { expect(objectMapper.readValue(it.body())); this }
 
     override suspend fun getResponse(
         uri: String,
@@ -145,7 +145,7 @@ class DefaultHttpSystem(
         clazz: KClass<TExpected>,
     ): TExpected = when {
         clazz.java.isAssignableFrom(String::class.java) -> String(it.body()) as TExpected
-        else -> json.deserialize(it.body(), clazz)
+        else -> objectMapper.readValue(it.body(), clazz.java)
     }
 
     override fun close() {}

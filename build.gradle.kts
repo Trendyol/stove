@@ -6,7 +6,7 @@ plugins {
     kotlin("jvm").version(libs.versions.kotlin)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
-    alias(libs.plugins.palantirGitVersioning)
+    alias(libs.plugins.gitVersioning)
     id("stove-publishing") apply false
     id("coverage")
     java

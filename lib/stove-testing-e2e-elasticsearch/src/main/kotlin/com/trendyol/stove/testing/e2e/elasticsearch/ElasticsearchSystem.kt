@@ -12,11 +12,11 @@ import co.elastic.clients.elasticsearch.core.DeleteRequest
 import co.elastic.clients.elasticsearch.core.SearchRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import org.apache.http.HttpHost
@@ -34,7 +34,7 @@ data class ElasticsearchSystemOptions(
     val defaultIndex: DefaultIndex,
     val containerOptions: ContainerOptions = ContainerOptions(),
     override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
 
     internal val migrationCollection: MigrationCollection = MigrationCollection()

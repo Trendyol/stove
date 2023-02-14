@@ -8,8 +8,14 @@ import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.messaging.AssertsPublishing
 import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -28,11 +34,13 @@ data class KafkaExposedConfiguration(
 data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 data class KafkaContext(
     val container: KafkaContainer,
+    val jsonSerializer: ObjectMapper,
     val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>,
 )
 
@@ -40,7 +48,7 @@ fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),
 ): TestSystem = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
     KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
-}.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.configureExposedConfiguration))) }
+}.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
     .let { this }
 
 fun TestSystem.kafka(): KafkaSystem =
@@ -51,7 +59,7 @@ class KafkaSystem(
     private val context: KafkaContext,
 ) : MessagingSystem, AssertsPublishing, RunnableSystemWithContext<ApplicationContext>, ExposesConfiguration {
     private lateinit var applicationContext: ApplicationContext
-    private lateinit var objectMapper: ObjectMapper
+    private val objectMapper = context.jsonSerializer
     private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
     val getInterceptor = { applicationContext.getBean(TestSystemKafkaInterceptor::class.java) }
 
@@ -61,7 +69,6 @@ class KafkaSystem(
 
     override suspend fun afterRun(context: ApplicationContext) {
         applicationContext = context
-        objectMapper = context.getBean("objectMapper", ObjectMapper::class.java)
         kafkaTemplate = context.getBean()
         kafkaTemplate.setProducerListener(getInterceptor())
     }

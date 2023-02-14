@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.wiremock
 import arrow.core.None
 import arrow.core.Option
 import arrow.core.getOrElse
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
@@ -17,8 +17,7 @@ import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.trendyol.stove.testing.e2e.httpmock.HttpMockSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
@@ -37,7 +36,7 @@ data class WireMockSystemOptions(
     val removeStubAfterRequestMatched: Boolean = false,
     val afterStubRemoved: AfterStubRemoved = { _, _, _ -> },
     val afterRequest: AfterRequestHandler = { _, _, _ -> },
-    val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(jacksonObjectMapper()),
+    val jsonSerializer: ObjectMapper = StoveObjectMapper.Default,
 ) : SystemOptions
 
 fun TestSystem.withWireMock(
@@ -67,7 +66,7 @@ data class WireMockContext(
 
     val afterRequest: AfterRequestHandler,
 
-    val stoveJsonSerializer: StoveJsonSerializer,
+    val objectMapper: ObjectMapper,
 )
 
 fun TestSystem.wiremock(): WireMockSystem =
@@ -82,7 +81,7 @@ class WireMockSystem(
 
     private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
     private var wireMock: WireMockServer
-    private val json: StoveJsonSerializer = ctx.stoveJsonSerializer
+    private val json: ObjectMapper = ctx.objectMapper
 
     init {
         val stoveExtensions = mutableListOf<Extension>()
@@ -139,7 +138,7 @@ class WireMockSystem(
         val res = aResponse()
             .withStatus(statusCode)
             .withHeader("Content-Type", "application/json; charset=UTF-8")
-        responseBody.map { res.withBody(json.serializeAsBytes(it)) }
+        responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
         val req = WireMock.put(WireMock.urlEqualTo(url))
         configureBodyAndMetadata(req, metadata, requestBody)
         val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
@@ -177,7 +176,7 @@ class WireMockSystem(
 
     override fun mockPutConfigure(
         url: String,
-        configure: (MappingBuilder, StoveJsonSerializer) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
     ): WireMockSystem {
         val req = WireMock.put(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -187,7 +186,7 @@ class WireMockSystem(
 
     override fun mockGetConfigure(
         url: String,
-        configure: (MappingBuilder, StoveJsonSerializer) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
     ): WireMockSystem {
         val req = WireMock.get(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -197,7 +196,7 @@ class WireMockSystem(
 
     override fun mockHeadConfigure(
         url: String,
-        configure: (MappingBuilder, StoveJsonSerializer) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
     ): WireMockSystem {
         val req = WireMock.head(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -207,7 +206,7 @@ class WireMockSystem(
 
     override fun mockDeleteConfigure(
         url: String,
-        configure: (MappingBuilder, StoveJsonSerializer) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
     ): WireMockSystem {
         val req = WireMock.delete(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -217,7 +216,7 @@ class WireMockSystem(
 
     override fun mockPostConfigure(
         url: String,
-        configure: (MappingBuilder, StoveJsonSerializer) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
     ): WireMockSystem {
         val req = WireMock.post(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -242,7 +241,7 @@ class WireMockSystem(
                 ValidationResult(
                     "${it.method.value()} ${it.url}",
                     it.bodyAsString,
-                    json.serialize(it.queryParams)
+                    json.writeValueAsString(it.queryParams)
                 ).toString()
             }
             throw AssertionError(
@@ -262,7 +261,7 @@ class WireMockSystem(
         body.map {
             request.withRequestBody(
                 equalToJson(
-                    json.serialize(it),
+                    json.writeValueAsString(it),
                     true,
                     false
                 )
@@ -277,7 +276,7 @@ class WireMockSystem(
         val mockResponse = aResponse()
             .withStatus(statusCode)
             .withHeader("Content-Type", "application/json; charset=UTF-8")
-        responseBody.map { mockResponse.withBody(json.serializeAsBytes(it)) }
+        responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
         return mockResponse
     }
 }
