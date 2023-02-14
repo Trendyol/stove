@@ -7,6 +7,7 @@ plugins {
 dependencies {
     jacocoAggregation(project(":lib:stove-testing-e2e"))
     jacocoAggregation(project(":lib:stove-testing-e2e-couchbase"))
+    jacocoAggregation(project(":lib:stove-testing-e2e-elasticsearch"))
     jacocoAggregation(project(":lib:stove-testing-e2e-http"))
     jacocoAggregation(project(":lib:stove-testing-e2e-kafka"))
     jacocoAggregation(project(":lib:stove-testing-e2e-wiremock"))
