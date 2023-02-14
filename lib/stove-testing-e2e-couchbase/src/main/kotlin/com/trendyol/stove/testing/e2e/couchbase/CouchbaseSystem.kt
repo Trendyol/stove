@@ -12,7 +12,6 @@ import com.couchbase.client.java.json.JsonValueModule
 import com.couchbase.client.java.kv.InsertOptions
 import com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
@@ -46,7 +45,7 @@ data class CouchbaseSystemOptions(
     val defaultBucket: String,
     val registry: String = DEFAULT_REGISTRY,
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) }
+    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) },
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration>
 
 fun TestSystem.withCouchbase(
