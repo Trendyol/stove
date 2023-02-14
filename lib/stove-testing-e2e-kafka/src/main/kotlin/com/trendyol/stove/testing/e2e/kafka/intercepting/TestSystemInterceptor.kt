@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.kafka.intercepting
 
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
+import com.fasterxml.jackson.databind.ObjectMapper
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 class TestSystemKafkaInterceptor(
     override val adminClient: Admin,
-    override val serde: StoveJsonSerializer,
+    override val serde: ObjectMapper,
     private val options: InterceptionOptions,
 ) : ConsumingOps, CommonOps, AutoCloseable {
 

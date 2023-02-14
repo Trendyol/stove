@@ -2,7 +2,7 @@ package com.trendyol.stove.testing.e2e.httpmock
 
 import arrow.core.None
 import arrow.core.Option
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ValidatedSystem
 
@@ -67,7 +67,7 @@ interface HttpMockSystem<TRequestBuilder : Any> : PluggedSystem, ValidatedSystem
      */
     fun mockPostConfigure(
         url: String,
-        configure: (TRequestBuilder, StoveJsonSerializer) -> TRequestBuilder,
+        configure: (TRequestBuilder, ObjectMapper) -> TRequestBuilder,
     ): HttpMockSystem<TRequestBuilder>
 
     /**
@@ -75,7 +75,7 @@ interface HttpMockSystem<TRequestBuilder : Any> : PluggedSystem, ValidatedSystem
      */
     fun mockGetConfigure(
         url: String,
-        configure: (TRequestBuilder, StoveJsonSerializer) -> TRequestBuilder,
+        configure: (TRequestBuilder, ObjectMapper) -> TRequestBuilder,
     ): HttpMockSystem<TRequestBuilder>
 
     /**
@@ -83,7 +83,7 @@ interface HttpMockSystem<TRequestBuilder : Any> : PluggedSystem, ValidatedSystem
      */
     fun mockHeadConfigure(
         url: String,
-        configure: (TRequestBuilder, StoveJsonSerializer) -> TRequestBuilder,
+        configure: (TRequestBuilder, ObjectMapper) -> TRequestBuilder,
     ): HttpMockSystem<TRequestBuilder>
 
     /**
@@ -91,7 +91,7 @@ interface HttpMockSystem<TRequestBuilder : Any> : PluggedSystem, ValidatedSystem
      */
     fun mockDeleteConfigure(
         url: String,
-        configure: (TRequestBuilder, StoveJsonSerializer) -> TRequestBuilder,
+        configure: (TRequestBuilder, ObjectMapper) -> TRequestBuilder,
     ): HttpMockSystem<TRequestBuilder>
 
     /**
@@ -99,6 +99,6 @@ interface HttpMockSystem<TRequestBuilder : Any> : PluggedSystem, ValidatedSystem
      */
     fun mockPutConfigure(
         url: String,
-        configure: (TRequestBuilder, StoveJsonSerializer) -> TRequestBuilder,
+        configure: (TRequestBuilder, ObjectMapper) -> TRequestBuilder,
     ): HttpMockSystem<TRequestBuilder>
 }

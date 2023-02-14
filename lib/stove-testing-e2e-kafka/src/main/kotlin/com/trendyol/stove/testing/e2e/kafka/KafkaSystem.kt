@@ -4,14 +4,14 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.Option
 import arrow.core.getOrElse
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.kafka.intercepting.InterceptionOptions
 import com.trendyol.stove.testing.e2e.kafka.intercepting.TestSystemKafkaInterceptor
 import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveJacksonJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.StoveJsonSerializer
-import com.trendyol.stove.testing.e2e.serialization.deserialize
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import io.github.nomisRev.kafka.Admin
@@ -40,7 +40,7 @@ data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
     val errorTopicSuffixes: List<String> = listOf("error", "errorTopic", "retry", "retryTopic"),
-    val jsonSerializer: StoveJsonSerializer = StoveJacksonJsonSerializer(),
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
@@ -115,7 +115,7 @@ class KafkaSystem(
     override suspend fun afterRun() {
         interceptor = TestSystemKafkaInterceptor(
             adminClient,
-            StoveJacksonJsonSerializer(),
+            context.options.objectMapper,
             InterceptionOptions(errorTopicSuffixes = context.options.errorTopicSuffixes)
         )
         subscribeToAllConsumer = SubscribeToAll(
@@ -178,19 +178,19 @@ class KafkaSystem(
 }
 
 class StoveKafkaValueDeserializer<T : Any> : Deserializer<T> {
-    private val jsonSerializer = StoveJacksonJsonSerializer()
+    private val objectMapper = StoveObjectMapper.Default
 
     @Suppress("UNCHECKED_CAST")
     override fun deserialize(
         topic: String,
         data: ByteArray,
-    ): T = jsonSerializer.deserialize<Any>(data) as T
+    ): T = objectMapper.readValue<Any>(data) as T
 }
 
 class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
-    private val jsonSerializer = StoveJacksonJsonSerializer()
+    private val objectMapper = StoveObjectMapper.Default
     override fun serialize(
         topic: String,
         data: T,
-    ): ByteArray = jsonSerializer.serializeAsBytes(data)
+    ): ByteArray = objectMapper.writeValueAsBytes(data)
 }
