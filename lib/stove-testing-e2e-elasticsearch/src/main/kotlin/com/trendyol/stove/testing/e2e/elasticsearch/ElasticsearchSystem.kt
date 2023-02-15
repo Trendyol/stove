@@ -27,15 +27,25 @@ import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.client.CredentialsProvider
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.seconds
 
 data class ElasticClientConfigurer(
     val restClientBuilder: RestClientBuilder.() -> Unit = {},
-    val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {},
+    val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
+        setDefaultRequestConfig(
+            RequestConfig.custom()
+                .setSocketTimeout(5.seconds.inWholeMilliseconds.toInt())
+                .setConnectTimeout(5.seconds.inWholeMilliseconds.toInt())
+                .setConnectionRequestTimeout(5.seconds.inWholeMilliseconds.toInt())
+                .build()
+        )
+    },
 )
 
 data class ElasticsearchSystemOptions(

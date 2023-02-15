@@ -50,7 +50,7 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
     }
 }
 
-class CouchbaseTestSystemTests : FunSpec({
+class ElasticsearchTestSystemTests : FunSpec({
 
     @JsonIgnoreProperties
     data class ExampleInstance(
