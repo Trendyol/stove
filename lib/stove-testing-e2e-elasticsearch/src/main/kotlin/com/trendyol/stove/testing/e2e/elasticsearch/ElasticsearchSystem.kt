@@ -2,7 +2,9 @@
 
 package com.trendyol.stove.testing.e2e.elasticsearch
 
+import arrow.core.Option
 import arrow.core.getOrElse
+import arrow.core.none
 import arrow.core.orElse
 import arrow.core.toOption
 import co.elastic.clients.elasticsearch.ElasticsearchClient
@@ -36,7 +38,6 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
 
 data class ElasticClientConfigurer(
-    val restClientBuilder: RestClientBuilder.() -> Unit = {},
     val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
         setDefaultRequestConfig(
             RequestConfig.custom()
@@ -46,6 +47,7 @@ data class ElasticClientConfigurer(
                 .build()
         )
     },
+    val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none(),
 )
 
 data class ElasticsearchSystemOptions(
@@ -215,7 +217,16 @@ class ElasticsearchSystem internal constructor(
     private fun createEsClient(
         exposedConfiguration: ElasticSearchExposedConfiguration,
         sslContext: SSLContext,
-    ): ElasticsearchClient {
+    ): ElasticsearchClient =
+        context.options.clientConfigurer.restClientOverrideFn
+            .getOrElse { { cfg -> secureRestClient(cfg, sslContext) } }
+            .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(jacksonObjectMapper())) }
+            .let { ElasticsearchClient(it) }
+
+    private fun secureRestClient(
+        exposedConfiguration: ElasticSearchExposedConfiguration,
+        sslContext: SSLContext,
+    ): RestClient {
         val credentialsProvider: CredentialsProvider = BasicCredentialsProvider()
         credentialsProvider.setCredentials(
             AuthScope.ANY,
@@ -229,10 +240,7 @@ class ElasticsearchSystem internal constructor(
             clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
             context.options.clientConfigurer.httpClientBuilder(clientBuilder)
             clientBuilder
-        }.also(context.options.clientConfigurer.restClientBuilder)
-            .build()
-            .let { RestClientTransport(it, JacksonJsonpMapper(jacksonObjectMapper())) }
-            .let { ElasticsearchClient(it) }
+        }.build()
     }
 
     companion object {
