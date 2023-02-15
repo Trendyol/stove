@@ -133,7 +133,7 @@ class ElasticsearchSystem internal constructor(
     }
 
     override suspend fun afterRun() {
-        esClient = createEsClient(exposedConfiguration, context.container.createSslContextFromCa())
+        esClient = createEsClient(exposedConfiguration)
         context.options.migrationCollection.run(esClient)
     }
 
@@ -216,10 +216,9 @@ class ElasticsearchSystem internal constructor(
 
     private fun createEsClient(
         exposedConfiguration: ElasticSearchExposedConfiguration,
-        sslContext: SSLContext,
     ): ElasticsearchClient =
         context.options.clientConfigurer.restClientOverrideFn
-            .getOrElse { { cfg -> secureRestClient(cfg, sslContext) } }
+            .getOrElse { { cfg -> secureRestClient(cfg, context.container.createSslContextFromCa()) } }
             .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(jacksonObjectMapper())) }
             .let { ElasticsearchClient(it) }
 
