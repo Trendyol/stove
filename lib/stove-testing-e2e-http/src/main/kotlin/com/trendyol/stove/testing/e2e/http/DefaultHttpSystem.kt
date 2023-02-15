@@ -28,8 +28,8 @@ data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectM
     "This method is deprecated, going to be removed",
     replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
 )
-fun TestSystem.withDefaultHttp(jsonSerializer: ObjectMapper = StoveObjectMapper.Default): TestSystem {
-    this.getOrRegister(DefaultHttpSystem(this, jsonSerializer))
+fun TestSystem.withDefaultHttp(objectMapper: ObjectMapper = StoveObjectMapper.Default): TestSystem {
+    this.getOrRegister(DefaultHttpSystem(this, objectMapper))
     return this
 }
 

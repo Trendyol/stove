@@ -36,7 +36,7 @@ data class WireMockSystemOptions(
     val removeStubAfterRequestMatched: Boolean = false,
     val afterStubRemoved: AfterStubRemoved = { _, _, _ -> },
     val afterRequest: AfterRequestHandler = { _, _, _ -> },
-    val jsonSerializer: ObjectMapper = StoveObjectMapper.Default,
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
 ) : SystemOptions
 
 fun TestSystem.withWireMock(
@@ -50,7 +50,7 @@ fun TestSystem.withWireMock(
             options.removeStubAfterRequestMatched,
             options.afterStubRemoved,
             options.afterRequest,
-            options.jsonSerializer
+            options.objectMapper
         )
     )
     this.getOrRegister(system)
