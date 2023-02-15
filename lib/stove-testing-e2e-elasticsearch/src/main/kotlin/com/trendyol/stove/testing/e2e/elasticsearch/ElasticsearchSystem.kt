@@ -33,8 +33,14 @@ import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 import kotlin.reflect.KClass
 
+data class ElasticClientConfigurer(
+    val restClientBuilder: RestClientBuilder.() -> Unit = {},
+    val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {},
+)
+
 data class ElasticsearchSystemOptions(
     val defaultIndex: DefaultIndex,
+    val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
     val containerOptions: ContainerOptions = ContainerOptions(),
     override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
@@ -205,14 +211,16 @@ class ElasticsearchSystem internal constructor(
             AuthScope.ANY,
             UsernamePasswordCredentials("elastic", exposedConfiguration.password)
         )
-        val builder: RestClientBuilder =
-            RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
+        val builder: RestClientBuilder = RestClient
+            .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
 
         return builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
             clientBuilder.setSSLContext(sslContext)
             clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+            context.options.clientConfigurer.httpClientBuilder(clientBuilder)
             clientBuilder
-        }.build()
+        }.also(context.options.clientConfigurer.restClientBuilder)
+            .build()
             .let { RestClientTransport(it, JacksonJsonpMapper(jacksonObjectMapper())) }
             .let { ElasticsearchClient(it) }
     }
