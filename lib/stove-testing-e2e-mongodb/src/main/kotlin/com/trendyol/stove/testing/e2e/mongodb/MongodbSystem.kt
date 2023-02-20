@@ -64,7 +64,7 @@ class MongodbSystem internal constructor(
         .getCollection(context.options.databaseOptions.default.collection)
         .find(BsonDocument.parse(query))
         .toFlux()
-        .map { (it as Document).toJson() }
+        .map { (it as Document).toJson(jsonWriterSettings) }
         .map { context.options.objectMapper.readValue(it, clazz.java) }
         .collectList()
         .awaitFirst()

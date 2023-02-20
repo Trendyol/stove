@@ -144,4 +144,34 @@ class MongodbTestSystemTests : FunSpec({
                 actual.first().id shouldBe id3
             }
     }
+
+    test("should delete") {
+        data class ExampleInstance @BsonCreator constructor(
+            @BsonId
+            @JsonAlias("_id")
+            val id: String,
+            @BsonProperty("aggregateId") val aggregateId: String,
+            @BsonProperty("description") val description: String,
+        )
+
+        val id = ObjectId()
+        TestSystem.instance
+            .mongodb()
+            .saveToDefaultCollection(
+                id.toHexString(),
+                ExampleInstance(
+                    id = id.toHexString(),
+                    aggregateId = id.toHexString(),
+                    description = testCase.name.testName
+                )
+            )
+            .shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
+                actual.size shouldBe 1
+            }.then()
+            .mongodb()
+            .shouldDelete(id.toHexString())
+            .shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
+                actual.size shouldBe 0
+            }
+    }
 })
