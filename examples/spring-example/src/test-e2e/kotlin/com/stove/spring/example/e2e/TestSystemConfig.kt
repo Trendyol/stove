@@ -2,9 +2,7 @@ package com.stove.spring.example.e2e
 
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystemOptions
 import com.trendyol.stove.testing.e2e.couchbase.withCouchbase
-import com.trendyol.stove.testing.e2e.elasticsearch.DefaultIndex
-import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystemOptions
-import com.trendyol.stove.testing.e2e.elasticsearch.withElasticsearch
+import com.trendyol.stove.testing.e2e.elasticsearch.*
 import com.trendyol.stove.testing.e2e.http.withHttpClient
 import com.trendyol.stove.testing.e2e.kafka.withKafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -41,7 +39,10 @@ class TestSystemConfig : AbstractProjectConfig() {
                 ElasticsearchSystemOptions(
                     defaultIndex = DefaultIndex("some"),
                     configureExposedConfiguration = { cfg ->
-                        listOf("elasticsearch.certificateBytes=${cfg.certificate.bytes}")
+                        when (val c = cfg.certificate) {
+                            is ElasticsearchExposedCertificate -> listOf("elasticsearch.certificateBytes=${c.bytes}")
+                            else -> listOf()
+                        }
                     }
                 )
             )
