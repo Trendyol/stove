@@ -15,6 +15,7 @@ Physical dependencies:
 - [x] Wiremock `withWiremock` to mock all the external dependencies
 - [x] PostgresSql `withPostgresql`
 - [x] ElasticSearch `withElasticsearch`
+- [x] MongoDB `withMongodb`
 
 Frameworks:
 
