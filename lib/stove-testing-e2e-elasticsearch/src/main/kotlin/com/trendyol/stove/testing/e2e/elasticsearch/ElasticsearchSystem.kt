@@ -10,11 +10,10 @@ import co.elastic.clients.elasticsearch.core.DeleteRequest
 import co.elastic.clients.elasticsearch.core.SearchRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
+import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
+import com.trendyol.stove.testing.e2e.containers.NoCertificate
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.Dispatchers
@@ -24,100 +23,12 @@ import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.client.CredentialsProvider
-import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
-import org.testcontainers.elasticsearch.ElasticsearchContainer
 import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
 import kotlin.reflect.KClass
-import kotlin.time.Duration.Companion.seconds
-
-data class ElasticClientConfigurer(
-    val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
-        setDefaultRequestConfig(
-            RequestConfig.custom()
-                .setSocketTimeout(5.seconds.inWholeMilliseconds.toInt())
-                .setConnectTimeout(5.seconds.inWholeMilliseconds.toInt())
-                .setConnectionRequestTimeout(5.seconds.inWholeMilliseconds.toInt())
-                .build()
-        )
-    },
-    val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none(),
-)
-
-data class ElasticsearchSystemOptions(
-    val defaultIndex: DefaultIndex,
-    val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-    val containerOptions: ContainerOptions = ContainerOptions(),
-    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
-
-    internal val migrationCollection: MigrationCollection = MigrationCollection()
-
-    /**
-     * Helps for registering migrations before the tests run.
-     * @see MigrationCollection
-     * @see ElasticMigrator
-     */
-    fun migrations(migration: MigrationCollection.() -> Unit): ElasticsearchSystemOptions = migration(migrationCollection).let { this }
-}
-
-data class ElasticsearchExposedCertificate(
-    val bytes: ByteArray,
-    val sslContext: SSLContext,
-)
-
-data class ElasticSearchExposedConfiguration(
-    val host: String,
-    val port: Int,
-    val password: String,
-    val certificate: ElasticsearchExposedCertificate,
-) : ExposedConfiguration
-
-data class ElasticsearchContext(
-    val index: String,
-    val container: ElasticsearchContainer,
-    val options: ElasticsearchSystemOptions,
-)
-
-data class ContainerOptions(
-    val registry: String = "docker.elastic.co/",
-    val imageVersion: String = "8.6.1",
-    val exposedPorts: List<Int> = listOf(9200),
-    val password: String = "password",
-)
-
-/**
- * Integrates Elasticsearch with the TestSystem.
- *
- * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
- */
-fun TestSystem.withElasticsearch(
-    options: ElasticsearchSystemOptions,
-): TestSystem {
-    options.migrations {
-        register<DefaultIndexMigrator> { options.defaultIndex.migrator }
-    }
-
-    return withProvidedRegistry(
-        "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",
-        options.containerOptions.registry
-    ) { ElasticsearchContainer(it) }
-        .apply {
-            addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
-            withPassword(options.containerOptions.password)
-        }
-        .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
-        .let { this }
-}
-
-fun TestSystem.elasticsearch(): ElasticsearchSystem =
-    getOrNone<ElasticsearchSystem>().getOrElse {
-        throw SystemNotRegisteredException(ElasticsearchSystem::class)
-    }
 
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
@@ -132,10 +43,15 @@ class ElasticsearchSystem internal constructor(
             context.container.host,
             context.container.firstMappedPort,
             context.options.containerOptions.password,
-            ElasticsearchExposedCertificate(
-                context.container.caCertAsBytes().getOrElse { ByteArray(0) },
-                context.container.createSslContextFromCa()
-            )
+            determineCertificate()
+        )
+    }
+
+    private fun determineCertificate(): ExposedCertificate = when (context.options.containerOptions.disableSecurity) {
+        true -> NoCertificate
+        false -> ElasticsearchExposedCertificate(
+            context.container.caCertAsBytes().getOrElse { ByteArray(0) },
+            context.container.createSslContextFromCa()
         )
     }
 

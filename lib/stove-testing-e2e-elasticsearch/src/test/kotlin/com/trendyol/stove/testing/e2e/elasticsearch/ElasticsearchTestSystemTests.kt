@@ -1,5 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
+import arrow.core.Some
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
@@ -12,10 +13,13 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import org.apache.http.HttpHost
+import org.elasticsearch.client.RestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 const val testIndex = "stove-test-index"
+
 class TestIndexMigrator : ElasticMigrator {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     override suspend fun migrate(client: ElasticsearchClient) {
@@ -31,7 +35,14 @@ class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
         TestSystem()
             .withElasticsearch(
-                ElasticsearchSystemOptions(DefaultIndex(index = testIndex, migrator = TestIndexMigrator()))
+                ElasticsearchSystemOptions(
+                    DefaultIndex(index = testIndex, migrator = TestIndexMigrator()),
+                    clientConfigurer = ElasticClientConfigurer(
+                        restClientOverrideFn = Some { cfg ->
+                            RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
+                        }
+                    )
+                )
             )
             .applicationUnderTest(NoOpApplication())
             .run()
