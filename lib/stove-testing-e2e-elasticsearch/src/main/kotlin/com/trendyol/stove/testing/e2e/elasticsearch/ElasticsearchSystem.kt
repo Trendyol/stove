@@ -2,11 +2,7 @@
 
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.core.Option
-import arrow.core.getOrElse
-import arrow.core.none
-import arrow.core.orElse
-import arrow.core.toOption
+import arrow.core.*
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
@@ -21,7 +17,6 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import javax.net.ssl.SSLContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -34,6 +29,8 @@ import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
+import javax.net.ssl.SSLContext
+import kotlin.jvm.optionals.getOrElse
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
 
@@ -68,10 +65,16 @@ data class ElasticsearchSystemOptions(
     fun migrations(migration: MigrationCollection.() -> Unit): ElasticsearchSystemOptions = migration(migrationCollection).let { this }
 }
 
+data class ElasticsearchExposedCertificate(
+    val bytes: ByteArray,
+    val sslContext: SSLContext,
+)
+
 data class ElasticSearchExposedConfiguration(
     val host: String,
     val port: Int,
     val password: String,
+    val certificate: ElasticsearchExposedCertificate,
 ) : ExposedConfiguration
 
 data class ElasticsearchContext(
@@ -128,7 +131,11 @@ class ElasticsearchSystem internal constructor(
         exposedConfiguration = ElasticSearchExposedConfiguration(
             context.container.host,
             context.container.firstMappedPort,
-            context.options.containerOptions.password
+            context.options.containerOptions.password,
+            ElasticsearchExposedCertificate(
+                context.container.caCertAsBytes().getOrElse { ByteArray(0) },
+                context.container.createSslContextFromCa()
+            )
         )
     }
 

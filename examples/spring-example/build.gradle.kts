@@ -30,6 +30,7 @@ dependencies {
     testImplementation(project(":lib:stove-testing-e2e-http"))
     testImplementation(project(":lib:stove-testing-e2e-wiremock"))
     testImplementation(project(":lib:stove-testing-e2e-couchbase"))
+    testImplementation(project(":lib:stove-testing-e2e-elasticsearch"))
     testImplementation(project(":starters:spring:stove-spring-testing-e2e"))
     testImplementation(project(":starters:spring:stove-spring-testing-e2e-kafka"))
 }
