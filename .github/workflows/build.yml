@@ -18,6 +18,11 @@ jobs:
 
       - name: Check out Git repository
         uses: actions/checkout@v3
+    
+      - name: Set up Docker environment
+        run: |
+          sudo service docker start
+          sudo chmod 666 /var/run/docker.sock
 
       - name: Gradle Build
         run: |
