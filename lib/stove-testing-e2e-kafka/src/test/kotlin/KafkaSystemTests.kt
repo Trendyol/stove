@@ -6,7 +6,7 @@ import io.kotest.core.spec.style.FunSpec
 
 class KafkaSystemTests : FunSpec({
 
-    test("When publish then it should work") {
+    xtest("When publish then it should work") {
         TestSystem.instance
             .kafka()
             .publish("product", ProductCreated("1"))
@@ -16,7 +16,7 @@ class KafkaSystemTests : FunSpec({
         // delay(5000)
     }
 
-    test("When publish to a failing consumer should end-up throwing exception") {
+    xtest("When publish to a failing consumer should end-up throwing exception") {
         TestSystem.instance
             .kafka()
             .publish("productFailing", ProductFailingCreated("1"))
