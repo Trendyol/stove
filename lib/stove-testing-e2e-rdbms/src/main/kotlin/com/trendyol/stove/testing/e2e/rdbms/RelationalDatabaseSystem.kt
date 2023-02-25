@@ -1,5 +1,7 @@
 package com.trendyol.stove.testing.e2e.rdbms
 
+import com.trendyol.stove.functional.Try
+import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.database.DatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
@@ -8,6 +10,8 @@ import io.r2dbc.spi.ConnectionFactory
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
@@ -16,6 +20,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     protected val context: RelationalDatabaseContext<*>,
 ) : DatabaseSystem, RunAware, ExposesConfiguration {
     private lateinit var sqlOperations: SqlOperations
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     protected abstract fun connectionFactory(): ConnectionFactory
 
@@ -25,11 +30,12 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         sqlOperations.open()
     }
 
-    override suspend fun stop() {
+    override suspend fun stop(): Unit = Try {
         sqlOperations.close()
-        context.container
         context.container.stop()
-    }
+    }.recover {
+        logger.warn("got an error while stopping the container ${context.container.containerName} ")
+    }.let { }
 
     override fun configuration(): List<String> {
         val exposedConfiguration = RelationalDatabaseExposedConfiguration(
@@ -49,10 +55,6 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
             "database.password=${exposedConfiguration.password}",
             "database.username=${exposedConfiguration.username}"
         )
-    }
-
-    override fun close() = runBlocking {
-        stop()
     }
 
     override suspend fun <T : Any> shouldQuery(
@@ -77,6 +79,8 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         }
         return this as SELF
     }
+
+    override fun close(): Unit = runBlocking { stop() }
 
     companion object {
         suspend inline fun <reified T : Any> RelationalDatabaseSystem<*>.shouldQuery(

@@ -16,15 +16,20 @@ import com.github.tomakehurst.wiremock.extension.Extension
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import com.trendyol.stove.functional.Try
+import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.httpmock.HttpMockSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import kotlinx.coroutines.runBlocking
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 typealias AfterStubRemoved = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapping>) -> Unit
 typealias AfterRequestHandler = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapping>) -> Unit
@@ -82,6 +87,7 @@ class WireMockSystem(
     private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
     private var wireMock: WireMockServer
     private val json: ObjectMapper = ctx.objectMapper
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     init {
         val stoveExtensions = mutableListOf<Extension>()
@@ -250,7 +256,11 @@ class WireMockSystem(
         }
     }
 
-    override fun close() {}
+    override fun close(): Unit = runBlocking {
+        Try {
+            stop()
+        }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
+    }
 
     private fun configureBodyAndMetadata(
         request: MappingBuilder,

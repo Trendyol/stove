@@ -29,7 +29,7 @@ class KafkaConsumerConfiguration(
         factory.setConcurrency(1)
         factory.consumerFactory = consumerFactory
         factory.containerProperties.isDeliveryAttemptHeader = true
-        factory.setMessageConverter(stringJsonMessageConverter())
+        factory.setRecordMessageConverter(stringJsonMessageConverter())
         val errorHandler = DefaultErrorHandler(
             FixedBackOff(0, 0)
         )
@@ -46,7 +46,7 @@ class KafkaConsumerConfiguration(
     ): ConcurrentKafkaListenerContainerFactory<String, String> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
         factory.setConcurrency(1)
-        factory.setMessageConverter(stringJsonMessageConverter())
+        factory.setRecordMessageConverter(stringJsonMessageConverter())
         factory.containerProperties.isDeliveryAttemptHeader = true
         factory.consumerFactory = consumerRetryFactory
         val errorHandler = DefaultErrorHandler(

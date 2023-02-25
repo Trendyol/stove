@@ -3,10 +3,7 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.module.kotlin.convertValue
-import com.mongodb.ConnectionString
-import com.mongodb.MongoClientSettings
-import com.mongodb.ReadConcern
-import com.mongodb.WriteConcern
+import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
@@ -38,6 +35,7 @@ class MongodbSystem internal constructor(
     private val jsonWriterSettings: JsonWriterSettings = JsonWriterSettings.builder()
         .objectIdConverter { value, writer -> writer.writeString(value.toHexString()) }
         .build()
+
     override suspend fun run() {
         context.container.start()
         exposedConfiguration = MongodbExposedConfiguration(
@@ -46,7 +44,7 @@ class MongodbSystem internal constructor(
         mongoClient = createClient(exposedConfiguration)
     }
 
-    override suspend fun stop() = context.container.stop()
+    override suspend fun stop(): Unit = context.container.stop()
 
     override fun configuration(): List<String> {
         return context.options.configureExposedConfiguration(exposedConfiguration) +

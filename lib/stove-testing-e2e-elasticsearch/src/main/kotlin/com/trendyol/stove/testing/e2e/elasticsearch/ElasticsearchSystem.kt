@@ -11,6 +11,8 @@ import co.elastic.clients.elasticsearch.core.SearchRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.trendyol.stove.functional.Try
+import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
 import com.trendyol.stove.testing.e2e.containers.NoCertificate
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
@@ -18,7 +20,6 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
@@ -26,6 +27,8 @@ import org.apache.http.client.CredentialsProvider
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
 import kotlin.reflect.KClass
@@ -36,6 +39,7 @@ class ElasticsearchSystem internal constructor(
 ) : DocumentDatabaseSystem, RunAware, AfterRunAware, ExposesConfiguration {
     private lateinit var esClient: ElasticsearchClient
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun run() {
         context.container.start()
@@ -78,7 +82,7 @@ class ElasticsearchSystem internal constructor(
             .also(assertion)
             .let { this }
 
-    suspend fun <T : Any> shouldQuery(
+    fun <T : Any> shouldQuery(
         query: Query,
         assertion: (List<T>) -> Unit,
         clazz: KClass<T>,
@@ -122,11 +126,11 @@ class ElasticsearchSystem internal constructor(
         instance: T,
     ): ElasticsearchSystem = save(context.index, id, instance)
 
-    override fun close(): Unit = runBlocking {
-        withContext(Dispatchers.IO) {
+    override fun close(): Unit = runBlocking(context = Dispatchers.IO) {
+        Try {
             esClient._transport().close()
             stop()
-        }
+        }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
     }
 
     override fun configuration(): List<String> {
@@ -141,9 +145,18 @@ class ElasticsearchSystem internal constructor(
         exposedConfiguration: ElasticSearchExposedConfiguration,
     ): ElasticsearchClient =
         context.options.clientConfigurer.restClientOverrideFn
-            .getOrElse { { cfg -> secureRestClient(cfg, context.container.createSslContextFromCa()) } }
+            .getOrElse { { cfg -> restClient(cfg) } }
             .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(jacksonObjectMapper())) }
             .let { ElasticsearchClient(it) }
+
+    private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
+        when (context.options.containerOptions.disableSecurity) {
+            true -> RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port)).apply {
+                setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
+            }.build()
+
+            false -> secureRestClient(cfg, context.container.createSslContextFromCa())
+        }
 
     private fun secureRestClient(
         exposedConfiguration: ElasticSearchExposedConfiguration,
@@ -170,7 +183,7 @@ class ElasticsearchSystem internal constructor(
          * Executes the given [query] and returns a list for [assertion]
          * Caller-side needs to assert based on the list
          */
-        suspend inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
+        inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
             query: Query,
             noinline assertion: (List<T>) -> Unit,
         ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)

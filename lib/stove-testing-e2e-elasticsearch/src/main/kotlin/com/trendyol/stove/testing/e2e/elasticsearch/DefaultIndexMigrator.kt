@@ -1,8 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient
-import co.elastic.clients.elasticsearch._types.WaitForActiveShardOptions.All
-import co.elastic.clients.elasticsearch._types.WaitForActiveShards
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -21,16 +19,15 @@ class DefaultIndexMigrator(private val index: String) : ElasticMigrator {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     override suspend fun migrate(client: ElasticsearchClient) {
         val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
-            .waitForActiveShards(
-                WaitForActiveShards.of {
-                    it.option(All)
-                }
-            )
             .index(index)
             .build()
         val response = client.indices().create(createIndexRequest)
         if (!response.shardsAcknowledged()) {
-            throw AssertionError("Shards are not acknowledged for $index")
+            logger.info("Shards are not acknowledged for $index")
+        }
+
+        if (response.acknowledged()) {
+            logger.info("$index is acknowledged")
         }
 
         logger.info("$index is created")

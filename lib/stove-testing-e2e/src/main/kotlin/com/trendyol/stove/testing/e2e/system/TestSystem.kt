@@ -3,19 +3,12 @@ package com.trendyol.stove.testing.e2e.system
 import arrow.core.None
 import arrow.core.Option
 import arrow.core.getOrNone
-import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.BeforeRunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ReadyTestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
+import com.trendyol.stove.functional.Try
+import com.trendyol.stove.functional.recover
+import com.trendyol.stove.testing.e2e.system.abstractions.*
+import kotlinx.coroutines.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 /**
@@ -66,6 +59,7 @@ class TestSystem(
     private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
     val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
     private lateinit var applicationUnderTest: ApplicationUnderTest<*>
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
         /**
@@ -98,8 +92,8 @@ class TestSystem(
             val beforeRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<BeforeRunAware>()
             val runAwareSystems = activeSystems.map { it.value }.filterIsInstance<RunAware>()
 
-            beforeRunAwareSystems.map { async { it.beforeRun() } }.awaitAll()
-            runAwareSystems.map { async { it.run() } }.awaitAll()
+            beforeRunAwareSystems.map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
+            runAwareSystems.map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
 
             val applicationConfigurations = activeSystems
                 .map { it.value }
@@ -109,7 +103,7 @@ class TestSystem(
             applicationUnderTestContext = applicationUnderTest.start(applicationConfigurations)
 
             val afterRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<AfterRunAware>()
-            afterRunAwareSystems.map { async { it.afterRun() } }.awaitAll()
+            afterRunAwareSystems.map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
 
             activeSystems.forEach { cleanup.add { it.value.close() } }
             cleanup.add { applicationUnderTest.stop() }
@@ -152,5 +146,9 @@ class TestSystem(
     @Suppress("UNCHECKED_CAST")
     fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
 
-    override fun close(): Unit = runBlocking { cleanup.forEach { it() } }
+    override fun close(): Unit =
+        runBlocking {
+            Try { cleanup.forEach { it() } }
+                .recover { logger.warn("got an error while stopping the TestSystem: ${it.message}") }
+        }
 }
