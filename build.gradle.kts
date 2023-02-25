@@ -43,12 +43,14 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         testImplementation(testLibs.kotest.property.jvm)
     }
 
-    this.tasks {
+    tasks {
         test {
+            dependsOn(ktlintCheck)
             useJUnitPlatform()
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            dependsOn(ktlintCheck)
             kotlinOptions.jvmTarget = "16"
             kotlinOptions.allWarningsAsErrors = true
         }

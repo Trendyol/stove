@@ -13,14 +13,14 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.RestClient
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 import javax.net.ssl.SSLContext
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 data class ElasticsearchSystemOptions(
     val defaultIndex: DefaultIndex,
     val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
     val containerOptions: ContainerOptions = ContainerOptions(),
-    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
 
     internal val migrationCollection: MigrationCollection = MigrationCollection()
@@ -64,9 +64,9 @@ data class ElasticClientConfigurer(
     val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
         setDefaultRequestConfig(
             RequestConfig.custom()
-                .setSocketTimeout(5.seconds.inWholeMilliseconds.toInt())
-                .setConnectTimeout(5.seconds.inWholeMilliseconds.toInt())
-                .setConnectionRequestTimeout(5.seconds.inWholeMilliseconds.toInt())
+                .setSocketTimeout(5.minutes.inWholeMilliseconds.toInt())
+                .setConnectTimeout(5.minutes.inWholeMilliseconds.toInt())
+                .setConnectionRequestTimeout(5.minutes.inWholeMilliseconds.toInt())
                 .build()
         )
     },

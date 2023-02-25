@@ -38,12 +38,7 @@ class TestSystemConfig : AbstractProjectConfig() {
             ).withElasticsearch(
                 ElasticsearchSystemOptions(
                     defaultIndex = DefaultIndex("some"),
-                    configureExposedConfiguration = { cfg ->
-                        when (val c = cfg.certificate) {
-                            is ElasticsearchExposedCertificate -> listOf("elasticsearch.certificateBytes=${c.bytes}")
-                            else -> listOf()
-                        }
-                    }
+                    containerOptions = ContainerOptions(disableSecurity = true)
                 )
             )
             .systemUnderTest(

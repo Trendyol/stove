@@ -24,8 +24,7 @@ class SpringApplicationUnderTest(
     private lateinit var application: ConfigurableApplicationContext
 
     override suspend fun start(configurations: List<String>): ConfigurableApplicationContext = coroutineScope {
-        val allConfigurations =
-            (configurations + defaultConfigurations() + parameters).map { "--$it" }.toTypedArray()
+        val allConfigurations = (configurations + defaultConfigurations() + parameters).map { "--$it" }.toTypedArray()
         application = runner(allConfigurations)
         while (!application.isRunning || !application.isActive) {
             delay(500)
@@ -35,7 +34,7 @@ class SpringApplicationUnderTest(
             .map { it.value }
             .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
             .map { it as AfterRunAwareWithContext<ConfigurableApplicationContext> }
-            .map { async { it.afterRun(application) } }
+            .map { async(context = Dispatchers.IO) { it.afterRun(application) } }
             .awaitAll()
         application
     }

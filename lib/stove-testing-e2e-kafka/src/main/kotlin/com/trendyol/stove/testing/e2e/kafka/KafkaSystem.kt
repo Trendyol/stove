@@ -6,6 +6,8 @@ import arrow.core.Option
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.trendyol.stove.functional.Try
+import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.kafka.intercepting.InterceptionOptions
@@ -27,6 +29,8 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.testcontainers.containers.KafkaContainer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -74,6 +78,7 @@ class KafkaSystem(
     private lateinit var interceptor: TestSystemKafkaInterceptor
     private val assertedMessages: MutableList<Any> = mutableListOf()
     private val assertedConditions: MutableList<(Any) -> Boolean> = mutableListOf()
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun publish(
         topic: String,
@@ -164,11 +169,11 @@ class KafkaSystem(
         "kafka.isSecure=false"
     )
 
-    override suspend fun stop() {
+    override suspend fun stop(): Unit = Try {
         subscribeToAllConsumer.close()
         kafkaProducer.close()
         context.container.stop()
-    }
+    }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
 
     override fun close(): Unit = runBlocking { stop() }
 
