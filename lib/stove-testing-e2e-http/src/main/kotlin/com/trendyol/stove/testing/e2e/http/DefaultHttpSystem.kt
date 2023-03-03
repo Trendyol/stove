@@ -69,7 +69,7 @@ class DefaultHttpSystem(
         token: Option<String>,
         expect: suspend (actual: TExpected) -> Unit,
     ): DefaultHttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
@@ -82,7 +82,7 @@ class DefaultHttpSystem(
         body: Option<Any>,
         expect: suspend (StoveHttpResponse) -> Unit,
     ): DefaultHttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
@@ -95,7 +95,7 @@ class DefaultHttpSystem(
         token: Option<String>,
         expect: suspend (TExpected) -> Unit,
     ): DefaultHttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
     }.let { expect(deserialize(it, clazz)); this }
 
@@ -105,7 +105,7 @@ class DefaultHttpSystem(
         token: Option<String>,
         expect: suspend (List<TExpected>) -> Unit,
     ): DefaultHttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
     }.let { expect(objectMapper.readValue(it.body())); this }
 
@@ -114,7 +114,7 @@ class DefaultHttpSystem(
         token: Option<String>,
         expect: suspend (StoveHttpResponse) -> Unit,
     ): DefaultHttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authentication, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
@@ -157,7 +157,7 @@ class DefaultHttpSystem(
 
         object Headers {
             const val ContentType = "Content-Type"
-            const val Authentication = "Authentication "
+            const val Authorization = "Authorization"
 
             fun bearer(token: String) = "Bearer $token"
         }
