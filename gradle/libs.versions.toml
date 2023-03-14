@@ -5,14 +5,14 @@ spring-boot = "2.7.9"
 spring-dependency-management = "1.1.0"
 spring-framework = "5.3.25"
 spring-kafka = "2.9.6"
-couchbase-client = "3.4.3"
-couchbase-client-metrics = "0.4.3"
+couchbase-client = "3.4.4"
+couchbase-client-metrics = "0.4.4"
 jackson = "2.14.2"
 logback-gelf = "4.0.2"
 commons-io = "2.11.0"
 caffeine = "3.1.2"
 arrow = "1.1.5"
-io-reactor = "3.5.3"
+io-reactor = "3.5.4"
 slf4j = "2.0.6"
 kafka = "3.4.0"
 kafka-kotlin = "0.3.0"
@@ -37,7 +37,7 @@ kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", ver
 kotlinx-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinx" }
 kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
-kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version = "1.2.1" }
+kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version = "1.2.2" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
