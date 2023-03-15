@@ -46,6 +46,7 @@ class CouchbaseSystem internal constructor(
         )
         cluster = createCluster(exposedConfiguration)
         collection = createDefaultCollection()
+        context.options.migrationCollection.run(cluster)
     }
 
     override suspend fun stop(): Unit = context.container.stop()

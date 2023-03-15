@@ -2,8 +2,11 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.Option
 import arrow.core.none
+import co.elastic.clients.elasticsearch.ElasticsearchClient
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
+import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
+import com.trendyol.stove.testing.e2e.database.migrations.MigrationCollection
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
@@ -23,14 +26,18 @@ data class ElasticsearchSystemOptions(
     override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
 
-    internal val migrationCollection: MigrationCollection = MigrationCollection()
+    internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
     /**
      * Helps for registering migrations before the tests run.
      * @see MigrationCollection
-     * @see ElasticMigrator
+     * @see DatabaseMigration
      */
-    fun migrations(migration: MigrationCollection.() -> Unit): ElasticsearchSystemOptions = migration(migrationCollection).let { this }
+    fun migrations(migration: MigrationCollection<ElasticsearchClient>.() -> Unit): ElasticsearchSystemOptions = migration(
+        migrationCollection
+    ).let {
+        this
+    }
 }
 
 data class ElasticsearchExposedCertificate(
