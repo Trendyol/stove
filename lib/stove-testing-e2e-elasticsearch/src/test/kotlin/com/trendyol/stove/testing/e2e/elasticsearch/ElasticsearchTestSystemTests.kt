@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
+import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -20,13 +21,13 @@ import org.slf4j.LoggerFactory
 
 const val testIndex = "stove-test-index"
 
-class TestIndexMigrator : ElasticMigrator {
+class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
-    override suspend fun migrate(client: ElasticsearchClient) {
+    override suspend fun execute(connection: ElasticsearchClient) {
         val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
             .index(testIndex)
             .build()
-        client.indices().create(createIndexRequest)
+        connection.indices().create(createIndexRequest)
         logger.info("$testIndex is created")
     }
 }

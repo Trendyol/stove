@@ -14,18 +14,18 @@ interface DocumentDatabaseSystem : DatabaseSystem {
         key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
-    ): DatabaseSystem
+    ): DocumentDatabaseSystem
 
     /**
      * Deletes the given [key] from the database
      */
-    suspend fun shouldDelete(key: String): DatabaseSystem
+    suspend fun shouldDelete(key: String): DocumentDatabaseSystem
 
     suspend fun <T : Any> save(
         collection: String,
         id: String,
         instance: T,
-    ): DatabaseSystem
+    ): DocumentDatabaseSystem
 
     companion object {
 
@@ -37,6 +37,6 @@ interface DocumentDatabaseSystem : DatabaseSystem {
         suspend inline fun <reified T : Any> DocumentDatabaseSystem.shouldGet(
             id: String,
             noinline assertion: (T) -> Unit,
-        ): DatabaseSystem = this.shouldGet(id, assertion, T::class)
+        ): DocumentDatabaseSystem = this.shouldGet(id, assertion, T::class)
     }
 }

@@ -4,3 +4,7 @@ dependencies {
     implementation(libs.couchbase.client)
     implementation(libs.kotlinx.reactive)
 }
+
+dependencies {
+    testImplementation(libs.slf4j.simple)
+}

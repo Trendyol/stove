@@ -46,6 +46,7 @@ class CouchbaseSystem internal constructor(
         )
         cluster = createCluster(exposedConfiguration)
         collection = createDefaultCollection()
+        context.options.migrationCollection.run(cluster)
     }
 
     override suspend fun stop(): Unit = context.container.stop()
@@ -78,13 +79,22 @@ class CouchbaseSystem internal constructor(
         key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>,
-    ): CouchbaseSystem {
-        val result = collection.get(key)
-        val expected = result.awaitSingle().contentAs(clazz.java)
-        assertion(expected)
+    ): CouchbaseSystem = collection.get(key)
+        .awaitSingle().contentAs(clazz.java)
+        .let(assertion)
+        .let { this }
 
-        return this
-    }
+    suspend fun <T : Any> shouldGet(
+        collection: String,
+        key: String,
+        assertion: (T) -> Unit,
+        clazz: KClass<T>,
+    ): CouchbaseSystem = cluster.bucket(context.bucket.name)
+        .collection(collection)
+        .get(key).awaitSingle()
+        .contentAs(clazz.java)
+        .let(assertion)
+        .let { this }
 
     override suspend fun shouldDelete(key: String): CouchbaseSystem {
         collection.remove(key).awaitSingle()
@@ -145,4 +155,13 @@ class CouchbaseSystem internal constructor(
                         .environment(it)
                 ).reactive()
             }
+
+    companion object {
+
+        suspend inline fun <reified T : Any> CouchbaseSystem.shouldGet(
+            collection: String,
+            key: String,
+            noinline assertion: (T) -> Unit,
+        ): CouchbaseSystem = this.shouldGet(collection, key, assertion, T::class)
+    }
 }
