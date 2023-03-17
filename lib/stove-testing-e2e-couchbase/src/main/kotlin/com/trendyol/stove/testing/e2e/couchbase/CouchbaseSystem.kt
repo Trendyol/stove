@@ -17,6 +17,7 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
@@ -34,19 +35,29 @@ class CouchbaseSystem internal constructor(
 
     private val objectMapper: ObjectMapper = context.options.objectMapper
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val state: StateOfSystem<CouchbaseSystem, CouchbaseExposedConfiguration> = StateOfSystem(
+        testSystem.options,
+        CouchbaseSystem::class,
+        CouchbaseExposedConfiguration::class
+    )
 
     override suspend fun run() {
-        context.container.start()
-        val couchbaseHostWithPort = context.container.connectionString.replace("couchbase://", "")
-        exposedConfiguration = CouchbaseExposedConfiguration(
-            context.container.connectionString,
-            couchbaseHostWithPort,
-            context.container.username,
-            context.container.password
-        )
+        exposedConfiguration = state.capture {
+            context.container.start()
+            val couchbaseHostWithPort = context.container.connectionString.replace("couchbase://", "")
+            CouchbaseExposedConfiguration(
+                context.container.connectionString,
+                couchbaseHostWithPort,
+                context.container.username,
+                context.container.password
+            )
+        }
+
         cluster = createCluster(exposedConfiguration)
-        collection = createDefaultCollection()
-        context.options.migrationCollection.run(cluster)
+        collection = cluster.bucket(context.bucket.name).defaultCollection()
+        if (!state.isSubsequentRun()) {
+            context.options.migrationCollection.run(cluster)
+        }
     }
 
     override suspend fun stop(): Unit = context.container.stop()
@@ -134,14 +145,12 @@ class CouchbaseSystem internal constructor(
 
     override fun close(): Unit = runBlocking {
         Try {
-            stop()
             cluster.disconnect().awaitSingle()
+            executeWithReuseCheck { stop() }
         }.recover {
             logger.warn("Disconnecting the couchbase cluster got an error: $it")
         }
     }
-
-    private fun createDefaultCollection(): ReactiveCollection = cluster.bucket(context.bucket.name).defaultCollection()
 
     private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): ReactiveCluster =
         ClusterEnvironment.builder()

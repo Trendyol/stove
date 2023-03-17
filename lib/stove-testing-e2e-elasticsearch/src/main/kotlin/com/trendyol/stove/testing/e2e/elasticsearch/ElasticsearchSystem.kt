@@ -18,6 +18,7 @@ import com.trendyol.stove.testing.e2e.containers.NoCertificate
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import javax.net.ssl.SSLContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
@@ -29,7 +30,6 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
 import kotlin.reflect.KClass
 
@@ -40,15 +40,19 @@ class ElasticsearchSystem internal constructor(
     private lateinit var esClient: ElasticsearchClient
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val state: StateOfSystem<ElasticsearchSystem, ElasticSearchExposedConfiguration> =
+        StateOfSystem(testSystem.options, ElasticsearchSystem::class, ElasticSearchExposedConfiguration::class)
 
     override suspend fun run() {
-        context.container.start()
-        exposedConfiguration = ElasticSearchExposedConfiguration(
-            context.container.host,
-            context.container.firstMappedPort,
-            context.options.containerOptions.password,
-            determineCertificate()
-        )
+        exposedConfiguration = state.capture {
+            context.container.start()
+            ElasticSearchExposedConfiguration(
+                context.container.host,
+                context.container.firstMappedPort,
+                context.options.containerOptions.password,
+                determineCertificate()
+            )
+        }
     }
 
     private fun determineCertificate(): ExposedCertificate = when (context.options.containerOptions.disableSecurity) {
@@ -61,7 +65,9 @@ class ElasticsearchSystem internal constructor(
 
     override suspend fun afterRun() {
         esClient = createEsClient(exposedConfiguration)
-        context.options.migrationCollection.run(esClient)
+        if (!state.isSubsequentRun()) {
+            context.options.migrationCollection.run(esClient)
+        }
     }
 
     override suspend fun stop(): Unit = context.container.stop()
@@ -129,7 +135,7 @@ class ElasticsearchSystem internal constructor(
     override fun close(): Unit = runBlocking(context = Dispatchers.IO) {
         Try {
             esClient._transport().close()
-            stop()
+            executeWithReuseCheck { stop() }
         }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
     }
 

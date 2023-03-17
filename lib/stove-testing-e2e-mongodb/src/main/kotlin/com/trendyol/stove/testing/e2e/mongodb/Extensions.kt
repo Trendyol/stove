@@ -12,6 +12,7 @@ fun TestSystem.withMongodb(
     val mongodbContainer =
         withProvidedRegistry(options.container.imageWithTag, options.container.registry) {
             MongoDBContainer(it)
+                .withReuse(this.options.keepDependenciesRunning)
         }
     this.getOrRegister(
         MongodbSystem(this, MongodbContext(mongodbContainer, options))

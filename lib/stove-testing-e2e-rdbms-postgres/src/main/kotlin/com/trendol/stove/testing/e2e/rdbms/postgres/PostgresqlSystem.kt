@@ -32,7 +32,11 @@ internal class PostgresqlContext(
 fun TestSystem.withPostgresql(
     options: PostgresqlOptions = PostgresqlOptions(),
 ): TestSystem = withProvidedRegistry(options.imageName, options.registry, "postgres") {
-    PostgreSQLContainer(it).withDatabaseName(options.databaseName).withUsername("sa").withPassword("sa")
+    PostgreSQLContainer(it)
+        .withDatabaseName(options.databaseName)
+        .withUsername("sa")
+        .withPassword("sa")
+        .withReuse(this.options.keepDependenciesRunning)
 }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
     .let { this }
 
@@ -44,11 +48,12 @@ class PostgresqlSystem internal constructor(
     testSystem: TestSystem,
     context: PostgresqlContext,
 ) : RelationalDatabaseSystem<PostgresqlSystem>(testSystem, context) {
-    override fun connectionFactory(): ConnectionFactory = PostgresqlConnectionConfiguration.builder().apply {
-        host(context.container.host)
-        database(context.container.databaseName)
-        port(context.container.firstMappedPort)
-        password(context.container.password)
-        username(context.container.username)
-    }.let { PostgresqlConnectionFactory(it.build()) }
+    override fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
+        PostgresqlConnectionConfiguration.builder().apply {
+            host(exposedConfiguration.host)
+            database(exposedConfiguration.database)
+            port(exposedConfiguration.port)
+            password(exposedConfiguration.password)
+            username(exposedConfiguration.username)
+        }.let { PostgresqlConnectionFactory(it.build()) }
 }

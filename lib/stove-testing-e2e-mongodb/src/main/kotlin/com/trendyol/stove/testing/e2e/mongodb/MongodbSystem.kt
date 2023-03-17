@@ -35,12 +35,16 @@ class MongodbSystem internal constructor(
     private val jsonWriterSettings: JsonWriterSettings = JsonWriterSettings.builder()
         .objectIdConverter { value, writer -> writer.writeString(value.toHexString()) }
         .build()
+    private val state: StateOfSystem<MongodbSystem, MongodbExposedConfiguration> =
+        StateOfSystem(testSystem.options, MongodbSystem::class, MongodbExposedConfiguration::class)
 
     override suspend fun run() {
-        context.container.start()
-        exposedConfiguration = MongodbExposedConfiguration(
-            context.container.connectionString
-        )
+        exposedConfiguration = state.capture {
+            context.container.start()
+            MongodbExposedConfiguration(
+                context.container.connectionString
+            )
+        }
         mongoClient = createClient(exposedConfiguration)
     }
 
@@ -113,7 +117,10 @@ class MongodbSystem internal constructor(
     ): MongodbSystem = save(context.options.databaseOptions.default.collection, id, instance)
 
     override fun close(): Unit = runBlocking {
-        Try { mongoClient.close() }.recover {
+        Try {
+            mongoClient.close()
+            executeWithReuseCheck { stop() }
+        }.recover {
             logger.warn("Closing mongodb got an error: $it")
         }
     }

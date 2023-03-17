@@ -28,6 +28,7 @@ fun TestSystem.withElasticsearch(
             if (options.containerOptions.disableSecurity) {
                 withEnv("xpack.security.enabled", "false")
             }
+            withReuse(this@withElasticsearch.options.keepDependenciesRunning)
             options.containerOptions.configureContainer(this)
         }
         .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
