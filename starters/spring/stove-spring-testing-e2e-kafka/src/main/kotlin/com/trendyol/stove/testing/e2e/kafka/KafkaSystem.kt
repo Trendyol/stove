@@ -4,6 +4,8 @@ import arrow.core.Option
 import arrow.core.Some
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.trendyol.stove.functional.Try
+import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.messaging.AssertsPublishing
@@ -14,12 +16,16 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfi
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
+import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeader
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 import org.springframework.kafka.core.KafkaTemplate
@@ -47,7 +53,9 @@ data class KafkaContext(
 fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),
 ): TestSystem = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
-    KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
+    KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper().withReuse(
+        this.options.keepDependenciesRunning
+    )
 }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
     .let { this }
 
@@ -58,13 +66,22 @@ class KafkaSystem(
     override val testSystem: TestSystem,
     private val context: KafkaContext,
 ) : MessagingSystem, AssertsPublishing, RunnableSystemWithContext<ApplicationContext>, ExposesConfiguration {
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
     private lateinit var applicationContext: ApplicationContext
     private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
+    private lateinit var exposedConfiguration: KafkaExposedConfiguration
     val getInterceptor = { applicationContext.getBean(TestSystemKafkaInterceptor::class.java) }
+    private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> =
+        StateOfSystem(testSystem.options, javaClass.kotlin, KafkaExposedConfiguration::class)
 
     override suspend fun beforeRun() {}
 
-    override suspend fun run(): Unit = context.container.start()
+    override suspend fun run() {
+        exposedConfiguration = state.capture {
+            context.container.start()
+            KafkaExposedConfiguration(context.container.bootstrapServers)
+        }
+    }
 
     override suspend fun afterRun(context: ApplicationContext) {
         applicationContext = context
@@ -73,12 +90,22 @@ class KafkaSystem(
     }
 
     override fun configuration(): List<String> {
-        return context.configureExposedConfiguration(
-            KafkaExposedConfiguration(context.container.bootstrapServers)
-        ) + listOf("kafka.bootstrapServers=${context.container.bootstrapServers}", "kafka.isSecure=false")
+        return context.configureExposedConfiguration(exposedConfiguration) + listOf(
+            "kafka.bootstrapServers=${context.container.bootstrapServers}",
+            "kafka.isSecure=false"
+        )
     }
 
     override suspend fun stop(): Unit = context.container.stop()
+
+    override fun close(): Unit = runBlocking {
+        Try {
+            kafkaTemplate.destroy()
+            executeWithReuseCheck { stop() }
+        }.recover {
+            logger.warn("got an error while closing KafkaSystem", it)
+        }
+    }
 
     override suspend fun publish(
         topic: String,

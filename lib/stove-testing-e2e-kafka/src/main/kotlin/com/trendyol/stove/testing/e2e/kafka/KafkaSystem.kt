@@ -61,6 +61,7 @@ fun TestSystem.withKafka(
 ): TestSystem {
     val kafka = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
         KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
+            .withReuse(this.options.keepDependenciesRunning)
     }
     getOrRegister(KafkaSystem(this, KafkaContext(kafka, options)))
     return this
@@ -79,6 +80,11 @@ class KafkaSystem(
     private val assertedMessages: MutableList<Any> = mutableListOf()
     private val assertedConditions: MutableList<(Any) -> Boolean> = mutableListOf()
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
+        testSystem.options,
+        KafkaSystem::class,
+        KafkaExposedConfiguration::class
+    )
 
     override suspend fun publish(
         topic: String,
@@ -111,8 +117,10 @@ class KafkaSystem(
         .let { this }
 
     override suspend fun run() {
-        context.container.start()
-        exposedConfiguration = KafkaExposedConfiguration(context.container.bootstrapServers)
+        exposedConfiguration = state.capture {
+            context.container.start()
+            KafkaExposedConfiguration(context.container.bootstrapServers)
+        }
         adminClient = createAdminClient(exposedConfiguration)
         kafkaProducer = createProducer(exposedConfiguration)
     }
@@ -169,13 +177,15 @@ class KafkaSystem(
         "kafka.isSecure=false"
     )
 
-    override suspend fun stop(): Unit = Try {
-        subscribeToAllConsumer.close()
-        kafkaProducer.close()
-        context.container.stop()
-    }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
+    override suspend fun stop(): Unit = context.container.stop()
 
-    override fun close(): Unit = runBlocking { stop() }
+    override fun close(): Unit = runBlocking {
+        Try {
+            subscribeToAllConsumer.close()
+            kafkaProducer.close()
+            executeWithReuseCheck { stop() }
+        }
+    }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
 
     companion object {
         const val SubscribeToAllGroupId = "stove-kafka-subscribe-to-all"

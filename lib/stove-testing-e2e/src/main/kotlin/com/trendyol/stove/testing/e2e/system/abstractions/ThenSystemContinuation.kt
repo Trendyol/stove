@@ -9,4 +9,11 @@ interface ThenSystemContinuation {
     val testSystem: TestSystem
 
     fun then(): TestSystem = testSystem
+
+    suspend fun executeWithReuseCheck(action: suspend () -> Unit) {
+        if (testSystem.options.keepDependenciesRunning) {
+            return
+        }
+        action()
+    }
 }

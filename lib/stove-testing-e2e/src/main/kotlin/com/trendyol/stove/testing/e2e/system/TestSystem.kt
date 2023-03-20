@@ -55,11 +55,20 @@ import kotlin.reflect.KClass
  */
 class TestSystem(
     val baseUrl: String = "http://localhost:8001",
+    configure: TestSystemOptionsDsl.() -> Unit = {},
 ) : ReadyTestSystem, AutoCloseable {
+    private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
+
+    init {
+        configure(optionsDsl)
+    }
+
     private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
     val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
     private lateinit var applicationUnderTest: ApplicationUnderTest<*>
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+    val options: TestSystemOptions = optionsDsl.options
 
     companion object {
         /**
@@ -95,12 +104,12 @@ class TestSystem(
             beforeRunAwareSystems.map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
             runAwareSystems.map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
 
-            val applicationConfigurations = activeSystems
+            val dependencyConfigurations = activeSystems
                 .map { it.value }
                 .filterIsInstance<ExposesConfiguration>()
                 .flatMap { it.configuration() }
 
-            applicationUnderTestContext = applicationUnderTest.start(applicationConfigurations)
+            applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
 
             val afterRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<AfterRunAware>()
             afterRunAwareSystems.map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()

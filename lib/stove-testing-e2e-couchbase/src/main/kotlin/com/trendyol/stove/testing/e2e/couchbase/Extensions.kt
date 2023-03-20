@@ -14,6 +14,7 @@ fun TestSystem.withCouchbase(
     val couchbaseContainer =
         withProvidedRegistry("couchbase/server", options.registry) {
             CouchbaseContainer(it).withBucket(bucketDefinition)
+                .withReuse(this.options.keepDependenciesRunning)
         }
     this.getOrRegister(
         CouchbaseSystem(this, CouchbaseContext(bucketDefinition, couchbaseContainer, options))
