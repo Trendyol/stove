@@ -46,9 +46,9 @@ class DefaultMigration : DatabaseMigration<ReactiveCluster> {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     override suspend fun execute(connection: ReactiveCluster) {
         connection
-          .bucket(testBucket)
-          .collections().createCollection(CollectionSpec.create("another", "_default"))
-          .awaitFirstOrNull()
+            .bucket(testBucket)
+            .collections().createCollection(CollectionSpec.create("another", "_default"))
+            .awaitFirstOrNull()
 
         connection.bucket(testBucket).waitUntilReady(Duration.ofSeconds(30)).awaitFirstOrNull()
 
@@ -67,17 +67,17 @@ class CouchbaseTestSystemTests : FunSpec({
         val id = UUID.randomUUID().toString()
         val anotherCollectionName = "another"
         TestSystem.instance
-          .couchbase()
-          .saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
-          .save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.testName))
-          .shouldGet<ExampleInstance>(id) { actual ->
-              actual.id shouldBe id
-              actual.description shouldBe testCase.name.testName
-          }
-          .then().couchbase()
-          .shouldGet<ExampleInstance>(anotherCollectionName, id) { actual ->
-              actual.id shouldBe id
-              actual.description shouldBe testCase.name.testName
-          }
+            .couchbase()
+            .saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
+            .save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.testName))
+            .shouldGet<ExampleInstance>(id) { actual ->
+                actual.id shouldBe id
+                actual.description shouldBe testCase.name.testName
+            }
+            .then().couchbase()
+            .shouldGet<ExampleInstance>(anotherCollectionName, id) { actual ->
+                actual.id shouldBe id
+                actual.description shouldBe testCase.name.testName
+            }
     }
 })
