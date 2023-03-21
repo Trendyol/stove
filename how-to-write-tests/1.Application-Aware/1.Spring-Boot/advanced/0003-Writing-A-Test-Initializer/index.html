@@ -529,10 +529,59 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2_2_6" type="checkbox" id="__nav_1_2_2_6" >
+      
+      
+      
+        
+          
+            
+          
+        
+          
+        
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../dependencies/">Dependencies</a>
+          
+            <label for="__nav_1_2_2_6">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
+      
+      <nav class="md-nav" aria-label="Dependencies" data-md-level="4">
+        <label class="md-nav__title" for="__nav_1_2_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Dependencies
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+          
+            
+              
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../dependencies/kafka/" class="md-nav__link">
         Kafka
       </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -552,7 +601,7 @@
   
     <li class="md-nav__item">
       <a href="../../../2.Ktor/" class="md-nav__link">
-        Testing a Ktor Application
+        2. Ktor
       </a>
     </li>
   
@@ -771,20 +820,18 @@ test perspective.</p>
 <p>e2e Testing has dependencies:</p>
 <ul>
 <li><code>ObjectMapper</code>, you can either provide the ObjectMapper you have already in here we get existing bean by <code>ref("objectMapper")</code></li>
-<li><code>TestSystemConsumerInterceptor</code> is for being able to check consumed messages</li>
-<li><code>StoveSpringKafkaProducer</code> to the able to publish messages to Kafka, so messages can route to the listeners in the application you're testing.</li>
+<li><code>TestSystemInterceptor</code> is for being able to check consumed messages</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span><span class="w"></span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemConsumerInterceptor</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">StoveSpringKafkaProducer</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"></span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">ObjectMapper</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="p">(</span><span class="s">&quot;objectMapper&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// &quot;objectMapper&quot; bean name should be in your spring context otherwise it will fail, if not you can provide an instance here.</span><span class="w"></span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="c1">// Be sure that, Couchbase, Kafka and other systems share the same serialization strategy.</span><span class="w"></span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">NoDelayBackgroundCommandBusImpl</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional dependency to alter delayed implementation with 0-wait.</span><span class="w"></span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">})</span><span class="w"></span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="kd">fun</span><span class="w"> </span><span class="n">SpringApplication</span><span class="p">.</span><span class="nf">addTestDependencies</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">addInitializers</span><span class="p">(</span><span class="n">TestInitializer</span><span class="p">())</span><span class="w"></span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">}</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemInterceptor</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"></span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">ObjectMapper</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="p">(</span><span class="s">&quot;objectMapper&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// &quot;objectMapper&quot; bean name should be in your spring context otherwise it will fail, if not you can provide an instance here.</span><span class="w"></span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="c1">// Be sure that, Couchbase, Kafka and other systems share the same serialization strategy.</span><span class="w"></span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">NoDelayBackgroundCommandBusImpl</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional dependency to alter delayed implementation with 0-wait.</span><span class="w"></span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">})</span><span class="w"></span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kd">fun</span><span class="w"> </span><span class="n">SpringApplication</span><span class="p">.</span><span class="nf">addTestDependencies</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">addInitializers</span><span class="p">(</span><span class="n">TestInitializer</span><span class="p">())</span><span class="w"></span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p><code>addTestDependencies</code> is an extension that helps us to register our dependencies in the application.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">.</span><span class="na">systemUnderTest</span><span class="p">(</span><span class="w"></span>
@@ -847,13 +894,13 @@ test perspective.</p>
       
       
         
-        <a href="../../dependencies/kafka/" class="md-footer__link md-footer__link--next" aria-label="Next: Kafka" rel="next">
+        <a href="../../dependencies/" class="md-footer__link md-footer__link--next" aria-label="Next: Dependencies" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Kafka
+              Dependencies
             </div>
           </div>
           <div class="md-footer__button md-icon">
