@@ -9,7 +9,7 @@ it is time to run your application for the first time from the test-context with
 ## Setting up Stove for the Runner
 
 === "Kotest"
-    
+
     It implements `AbstractProjectConfig` from Kotest framework that allows us to spin up Stove per run. This is project
     wide operation and executes **only one time**, as the name implies `beforeProject`.
     
@@ -46,7 +46,7 @@ it is time to run your application for the first time from the test-context with
     ```
 
 === "JUnit"
-    
+
     ```kotlin
     class TestSystemConfig {
     

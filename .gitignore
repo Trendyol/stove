@@ -76,6 +76,7 @@ outTmp/
 /test.output
 /kotlin-native/dist
 kotlin-ide/
+**/bin/**/*
 
 # Ignore Gradle project-specific cache directory
 .gradle

@@ -6,13 +6,11 @@ test perspective.
 e2e Testing has dependencies:
 
 - `ObjectMapper`, you can either provide the ObjectMapper you have already in here we get existing bean by `ref("objectMapper")`
-- `TestSystemConsumerInterceptor` is for being able to check consumed messages
-- `StoveSpringKafkaProducer` to the able to publish messages to Kafka, so messages can route to the listeners in the application you're testing.
+- `TestSystemInterceptor` is for being able to check consumed messages
 
 ```kotlin
 class TestInitializer : BaseApplicationContextInitializer({
-    bean<TestSystemConsumerInterceptor>(isPrimary = true)
-    bean<StoveSpringKafkaProducer>(isPrimary = true)
+    bean<TestSystemInterceptor>(isPrimary = true)
     bean<ObjectMapper> { ref("objectMapper") } // "objectMapper" bean name should be in your spring context otherwise it will fail, if not you can provide an instance here.
     // Be sure that, Couchbase, Kafka and other systems share the same serialization strategy.
     bean<NoDelayBackgroundCommandBusImpl>(isPrimary = true) // Optional dependency to alter delayed implementation with 0-wait.

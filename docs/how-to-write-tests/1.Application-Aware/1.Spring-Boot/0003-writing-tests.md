@@ -2,7 +2,7 @@
 
 Here is an example test that validates `http://localhost:$port/hello/index` returns the expected text
 === "Kotest"
-    
+
     ```kotlin
     class ExampleTest: FuncSpec({
 

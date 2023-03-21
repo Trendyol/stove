@@ -7,7 +7,8 @@ You need to add the Stove-Spring dependency to be able to write e2e tests for th
 `$version = please check the current version`
 
 === "Gradle"
-    ``` kotlin
+
+    ```kotlin
     dependencies {
         testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
         testImplementation("com.trendyol:stove-testing-e2e-http:$version")
