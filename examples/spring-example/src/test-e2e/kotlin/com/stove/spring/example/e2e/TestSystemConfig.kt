@@ -2,7 +2,6 @@ package com.stove.spring.example.e2e
 
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystemOptions
 import com.trendyol.stove.testing.e2e.couchbase.withCouchbase
-import com.trendyol.stove.testing.e2e.elasticsearch.*
 import com.trendyol.stove.testing.e2e.http.withHttpClient
 import com.trendyol.stove.testing.e2e.kafka.withKafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -34,11 +33,6 @@ class TestSystemConfig : AbstractProjectConfig() {
                     afterRequest = { e, _, _ ->
                         logger.info(e.request.toString())
                     }
-                )
-            ).withElasticsearch(
-                ElasticsearchSystemOptions(
-                    defaultIndex = DefaultIndex("some"),
-                    containerOptions = ContainerOptions(disableSecurity = true)
                 )
             )
             .systemUnderTest(

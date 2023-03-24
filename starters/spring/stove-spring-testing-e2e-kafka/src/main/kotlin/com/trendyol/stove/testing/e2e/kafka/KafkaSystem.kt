@@ -12,13 +12,7 @@ import com.trendyol.stove.testing.e2e.messaging.AssertsPublishing
 import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -34,7 +28,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 data class KafkaExposedConfiguration(
-    val boostrapServers: String,
+    val bootstrapServers: String,
 ) : ExposedConfiguration
 
 data class KafkaSystemOptions(
@@ -91,7 +85,7 @@ class KafkaSystem(
 
     override fun configuration(): List<String> {
         return context.configureExposedConfiguration(exposedConfiguration) + listOf(
-            "kafka.bootstrapServers=${context.container.bootstrapServers}",
+            "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
             "kafka.isSecure=false"
         )
     }

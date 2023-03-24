@@ -10,7 +10,9 @@ import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import kotlinx.coroutines.future.await
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Redirect.ALWAYS
 import java.net.http.HttpClient.Version.HTTP_2
@@ -19,7 +21,6 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
-import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
 
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
@@ -91,29 +92,32 @@ class DefaultHttpSystem(
 
     override suspend fun <TExpected : Any> get(
         uri: String,
+        queryParams: Map<String, String>,
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (TExpected) -> Unit,
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
     }.let { expect(deserialize(it, clazz)); this }
 
     override suspend fun <TExpected : Any> getMany(
         uri: String,
+        queryParams: Map<String, String>,
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (List<TExpected>) -> Unit,
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
     }.let { expect(objectMapper.readValue(it.body())); this }
 
     override suspend fun getResponse(
         uri: String,
+        queryParams: Map<String, String>,
         token: Option<String>,
         expect: suspend (StoveHttpResponse) -> Unit,
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
@@ -122,15 +126,25 @@ class DefaultHttpSystem(
 
     private suspend fun HttpClient.send(
         uri: String,
+        queryParams: Map<String, String> = mapOf(),
         configureRequest: (request: HttpRequest.Builder) -> HttpRequest.Builder,
     ): HttpResponse<ByteArray> {
         val requestBuilder = HttpRequest.newBuilder()
-            .uri(relative(uri))
+            .uri(relative(uri, queryParams))
             .setHeader(Headers.ContentType, MediaType.ApplicationJson)
         return sendAsync(configureRequest(requestBuilder).build(), BodyHandlers.ofByteArray()).await()
     }
 
-    private fun relative(uri: String): URI = URI.create(testSystem.baseUrl).resolve(uri)
+    private fun relative(
+        uri: String,
+        queryParams: Map<String, String> = mapOf(),
+    ): URI = URI.create(testSystem.baseUrl)
+        .resolve(uri + queryParams.toParamsString())
+
+    private fun Map<String, String>.toParamsString(): String = when {
+        this.any() -> "?${this.map { "${it.key}=${URLEncoder.encode(it.value, Charsets.UTF_8)}" }.joinToString("&")}"
+        else -> ""
+    }
 
     private fun httpClient(): HttpClient {
         val builder = HttpClient.newBuilder()

@@ -37,7 +37,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 data class KafkaExposedConfiguration(
-    val boostrapServers: String,
+    val bootstrapServers: String,
 ) : ExposedConfiguration
 
 data class KafkaSystemOptions(
@@ -142,7 +142,7 @@ class KafkaSystem(
     private fun consumer(
         cfg: KafkaExposedConfiguration,
     ): KafkaReceiver<String, Any> = mapOf(
-        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to cfg.boostrapServers,
+        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to cfg.bootstrapServers,
         ConsumerConfig.GROUP_ID_CONFIG to "stove-kafka-subscribe-to-all",
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
@@ -152,7 +152,7 @@ class KafkaSystem(
     ).let {
         KafkaReceiver(
             ReceiverSettings(
-                cfg.boostrapServers,
+                cfg.bootstrapServers,
                 StringDeserializer(),
                 StoveKafkaValueDeserializer(),
                 SubscribeToAllGroupId,
@@ -162,18 +162,18 @@ class KafkaSystem(
     }
 
     private fun createProducer(exposedConfiguration: KafkaExposedConfiguration): KafkaProducer<String, Any> = mapOf(
-        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.boostrapServers,
+        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java
     ).let { KafkaProducer(it) }
 
     private fun createAdminClient(exposedConfiguration: KafkaExposedConfiguration): Admin = mapOf<String, Any>(
-        AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.boostrapServers,
+        AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
         AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
-    ).let { Admin(AdminSettings(exposedConfiguration.boostrapServers, it.toProperties())) }
+    ).let { Admin(AdminSettings(exposedConfiguration.bootstrapServers, it.toProperties())) }
 
     override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) + listOf(
-        "kafka.bootstrapServers=${context.container.bootstrapServers}",
+        "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
         "kafka.isSecure=false"
     )
 

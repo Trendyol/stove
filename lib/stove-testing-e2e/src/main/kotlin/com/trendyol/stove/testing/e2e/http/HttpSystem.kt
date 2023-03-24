@@ -52,6 +52,7 @@ interface HttpSystem : PluggedSystem {
      */
     suspend fun <TExpected : Any> get(
         uri: String,
+        queryParams: Map<String, String>,
         clazz: KClass<TExpected>,
         token: Option<String> = None,
         expect: suspend (TExpected) -> Unit,
@@ -65,6 +66,7 @@ interface HttpSystem : PluggedSystem {
      */
     suspend fun <TExpected : Any> getMany(
         uri: String,
+        queryParams: Map<String, String>,
         clazz: KClass<TExpected>,
         token: Option<String> = None,
         expect: suspend (List<TExpected>) -> Unit,
@@ -79,6 +81,7 @@ interface HttpSystem : PluggedSystem {
      */
     suspend fun getResponse(
         uri: String,
+        queryParams: Map<String, String>,
         token: Option<String> = None,
         expect: suspend (StoveHttpResponse) -> Unit,
     ): HttpSystem
@@ -90,42 +93,47 @@ interface HttpSystem : PluggedSystem {
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.get(
             uri: String,
+            queryParams: Map<String, String> = mapOf(),
             token: Option<String> = None,
             noinline expect: suspend (TExpected) -> Unit,
-        ): HttpSystem = this.get(uri, TExpected::class, token, expect)
+        ): HttpSystem = this.get(uri, queryParams, TExpected::class, token, expect)
 
         /**
          * Extension for: [HttpSystem.get]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.get(
             uri: String,
+            queryParams: Map<String, String> = mapOf(),
             noinline expect: suspend (TExpected) -> Unit,
-        ): HttpSystem = this.get(uri, TExpected::class, None, expect)
+        ): HttpSystem = this.get(uri, queryParams, TExpected::class, None, expect)
 
         /**
          * Extension for: [HttpSystem.getResponse]
          * */
         suspend fun HttpSystem.getResponse(
             uri: String,
+            queryParams: Map<String, String> = mapOf(),
             expect: suspend (StoveHttpResponse) -> Unit,
-        ): HttpSystem = this.getResponse(uri, None, expect)
+        ): HttpSystem = this.getResponse(uri, queryParams, None, expect)
 
         /**
          * Extension for: [HttpSystem.getMany]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.getMany(
             uri: String,
+            queryParams: Map<String, String> = mapOf(),
             token: Option<String> = None,
             noinline expect: suspend (List<TExpected>) -> Unit,
-        ): HttpSystem = this.getMany(uri, TExpected::class, token, expect)
+        ): HttpSystem = this.getMany(uri, queryParams, TExpected::class, token, expect)
 
         /**
          * Extension for: [HttpSystem.getMany]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.getMany(
             uri: String,
+            queryParams: Map<String, String> = mapOf(),
             noinline expect: suspend (List<TExpected>) -> Unit,
-        ): HttpSystem = this.getMany(uri, TExpected::class, None, expect)
+        ): HttpSystem = this.getMany(uri, queryParams, TExpected::class, None, expect)
 
         /**
          * Extension for: [HttpSystem.postAndExpectJson]
