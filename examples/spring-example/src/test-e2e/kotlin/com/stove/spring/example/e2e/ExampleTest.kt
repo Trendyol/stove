@@ -14,20 +14,25 @@ import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
 import stove.spring.example.application.handlers.ProductCreateRequest
 import stove.spring.example.application.handlers.ProductCreatedEvent
 import stove.spring.example.application.services.SupplierPermission
+import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
 
 class ExampleTest : FunSpec({
-    test("should swagger be reachable after starting") {
+    test("index should be reachable") {
         TestSystem.instance
             .http()
+            .get<String>("/api/index", queryParams = mapOf("keyword" to testCase.name.testName)) { actual ->
+                actual shouldContain "Hi from Stove framework with ${testCase.name.testName}"
+                println(actual)
+            }
             .get<String>("/api/index") { actual ->
-                actual shouldContain "Hi from Stove framework"
+                actual shouldContain "Hi from Stove framework with"
                 println(actual)
             }
     }
+
     test("should create new product when send product create request from api for the allowed supplier") {
         val productCreateRequest = ProductCreateRequest(1L, name = "product name", 99L)
         val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = true)

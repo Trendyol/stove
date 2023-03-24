@@ -71,7 +71,7 @@ class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachList
                 KafkaSystemOptions(
                     // ports = listOf(9094, 9095),
                     configureExposedConfiguration = { cfg ->
-                        listOf("kafka.servers=${cfg.boostrapServers}")
+                        listOf("kafka.servers=${cfg.bootstrapServers}")
                     }
                 )
             )

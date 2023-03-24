@@ -66,8 +66,8 @@ class CouchbaseSystem internal constructor(
         return context.options.configureExposedConfiguration(exposedConfiguration) +
             listOf(
                 "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
-                "couchbase.username=${context.container.username}",
-                "couchbase.password=${context.container.password}"
+                "couchbase.username=${exposedConfiguration.username}",
+                "couchbase.password=${exposedConfiguration.password}"
             )
     }
 

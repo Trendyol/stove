@@ -20,11 +20,7 @@ const val testBucket = "test-couchbase-bucket"
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
-        TestSystem {
-            if (isRunningLocally()) {
-                keepDependenciesRunning()
-            }
-        }.withCouchbase(
+        TestSystem {}.withCouchbase(
             CouchbaseSystemOptions(defaultBucket = testBucket).migrations {
                 register<DefaultMigration>()
             }
