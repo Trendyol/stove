@@ -10,7 +10,6 @@ import co.elastic.clients.elasticsearch.core.DeleteRequest
 import co.elastic.clients.elasticsearch.core.SearchRequest
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
@@ -19,6 +18,8 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import javax.net.ssl.SSLContext
+import kotlin.jvm.optionals.getOrElse
+import kotlin.reflect.KClass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
@@ -30,8 +31,6 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.jvm.optionals.getOrElse
-import kotlin.reflect.KClass
 
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
@@ -152,7 +151,7 @@ class ElasticsearchSystem internal constructor(
     ): ElasticsearchClient =
         context.options.clientConfigurer.restClientOverrideFn
             .getOrElse { { cfg -> restClient(cfg) } }
-            .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(jacksonObjectMapper())) }
+            .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(context.options.objectMapper)) }
             .let { ElasticsearchClient(it) }
 
     private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
