@@ -24,7 +24,7 @@ koin = "3.4.0"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.7.0"
-mongodb = "4.9.0"
+mongodb = "4.9.1"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
