@@ -47,9 +47,9 @@ data class KafkaContext(
 fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),
 ): TestSystem = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
-    KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper().withReuse(
-        this.options.keepDependenciesRunning
-    )
+    KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
+        .withEmbeddedZookeeper()
+        .withReuse(this.options.keepDependenciesRunning)
 }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
     .let { this }
 
