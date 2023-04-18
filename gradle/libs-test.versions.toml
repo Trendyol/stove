@@ -1,14 +1,14 @@
 [versions]
 kotlinx = "1.6.4"
 spring-boot = "2.7.10"
-spring-kafka = "2.9.7"
+spring-kafka = "2.9.8"
 junit = "5.9.2"
-kotest = "5.5.5"
+kotest = "5.6.1"
 kotest-spring = "1.1.2"
 kluent = "1.72"
 mockito = "4.1.0"
 wiremock = "2.35.0"
-testcontainers = "1.17.6"
+testcontainers = "1.18.0"
 ktor = "2.2.4"
 
 [libraries]
