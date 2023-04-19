@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.wiremock
 
 import arrow.core.None
 import arrow.core.Option
-import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.MappingBuilder
@@ -19,65 +18,17 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.httpmock.HttpMockSystem
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import kotlinx.coroutines.runBlocking
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 typealias AfterStubRemoved = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapping>) -> Unit
 typealias AfterRequestHandler = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapping>) -> Unit
-
-data class WireMockSystemOptions(
-    /**
-     * Removes the stub when request matches/completes
-     */
-    val removeStubAfterRequestMatched: Boolean = false,
-    val afterStubRemoved: AfterStubRemoved = { _, _, _ -> },
-    val afterRequest: AfterRequestHandler = { _, _, _ -> },
-    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-) : SystemOptions
-
-fun TestSystem.withWireMock(
-    port: Int = 8080,
-    options: WireMockSystemOptions = WireMockSystemOptions(),
-): TestSystem {
-    val system = WireMockSystem(
-        this,
-        WireMockContext(
-            port,
-            options.removeStubAfterRequestMatched,
-            options.afterStubRemoved,
-            options.afterRequest,
-            options.objectMapper
-        )
-    )
-    this.getOrRegister(system)
-    return this
-}
-
-data class WireMockContext(
-    val port: Int,
-
-    val removeStubAfterRequestMatched: Boolean,
-
-    val afterStubRemoved: AfterStubRemoved,
-
-    val afterRequest: AfterRequestHandler,
-
-    val objectMapper: ObjectMapper,
-)
-
-fun TestSystem.wiremock(): WireMockSystem =
-    getOrNone<WireMockSystem>().getOrElse {
-        throw SystemNotRegisteredException(WireMockSystem::class)
-    }
 
 class WireMockSystem(
     override val testSystem: TestSystem,

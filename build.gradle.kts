@@ -7,8 +7,10 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.gitVersioning)
+    id(libs.plugins.jacocoReportAggregation.get().pluginId)
+    id(libs.plugins.jacoco.get().pluginId)
     id("stove-publishing") apply false
-    id("coverage")
+    id("reporting")
     java
 }
 
@@ -26,6 +28,8 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         plugin("kotlin")
         plugin(rootProject.libs.plugins.ktlint.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
+        plugin(rootProject.libs.plugins.jacoco.get().pluginId)
+        plugin(rootProject.libs.plugins.jacocoReportAggregation.get().pluginId)
     }
 
     val testImplementation by configurations
@@ -47,6 +51,19 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         test {
             dependsOn(ktlintCheck)
             useJUnitPlatform()
+            reports {
+                junitXml.required.set(true)
+                html.required.set(true)
+            }
+        }
+
+        jacocoTestReport {
+            dependsOn(test)
+            reports {
+                xml.required.set(true)
+                csv.required.set(false)
+                html.required.set(true)
+            }
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

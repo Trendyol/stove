@@ -15,6 +15,7 @@ import com.trendyol.stove.testing.e2e.kafka.intercepting.TestSystemKafkaIntercep
 import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import io.github.nomisRev.kafka.Admin
 import io.github.nomisRev.kafka.AdminSettings
@@ -28,7 +29,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.*
+import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.Serializer
+import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.KafkaContainer
@@ -55,6 +59,9 @@ data class KafkaContext(
 
 fun TestSystem.kafka(): KafkaSystem =
     getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
+
+suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit =
+    validation(this.testSystem.kafka())
 
 fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),

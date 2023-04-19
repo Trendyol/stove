@@ -76,6 +76,8 @@ class TestSystem(
          * DO NOT access it before [run] completes
          */
         lateinit var instance: TestSystem
+
+        suspend fun validate(validation: suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
     }
 
     /**
