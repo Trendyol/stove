@@ -9,9 +9,17 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.time.Instant
 
+/**
+ * This class is used to create an object mapper with default configurations.
+ * This object mapper is used to serialize and deserialize request and response bodies.
+ */
 class E2eObjectMapperConfig {
 
     companion object {
+        /**
+         * Creates an object mapper with default configurations.
+         * This object mapper is used to serialize and deserialize request and response bodies.
+         */
         fun createObjectMapperWithDefaults(): ObjectMapper {
             val isoInstantModule =
                 SimpleModule()

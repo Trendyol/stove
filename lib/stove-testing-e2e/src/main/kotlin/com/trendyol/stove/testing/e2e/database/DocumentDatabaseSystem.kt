@@ -21,6 +21,9 @@ interface DocumentDatabaseSystem : DatabaseSystem {
      */
     suspend fun shouldDelete(key: String): DocumentDatabaseSystem
 
+    /**
+     * Saves the given [instance] to the database
+     */
     suspend fun <T : Any> save(
         collection: String,
         id: String,
