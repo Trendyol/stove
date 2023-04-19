@@ -50,3 +50,7 @@ kafka:
       topic: trendyol.stove.service.product.create.0
       retryTopic: ${kafka.consumers.product-create.topic}.${kafka.consumers.retryTopicSuffix}
       errorTopic: ${kafka.consumers.product-create.topic}.${kafka.consumers.errorTopicSuffix}
+    product-failing:
+      topic: trendyol.stove.service.product.failing.0
+      retryTopic: ${kafka.consumers.product-failing.topic}.${kafka.consumers.retryTopicSuffix}
+      errorTopic: ${kafka.consumers.product-failing.topic}.${kafka.consumers.errorTopicSuffix}

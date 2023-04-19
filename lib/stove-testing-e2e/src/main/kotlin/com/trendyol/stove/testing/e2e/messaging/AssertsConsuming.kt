@@ -22,6 +22,24 @@ interface AssertsConsuming {
     ): MessagingSystem
 
     /**
+     * Expects a message to be failed [atLeastIn] given time
+     * Expected message instance should be given with [message]
+     *
+     *  Kafka Example:
+     * ```kotlin
+     * TestSystem.validate{
+     *    kafka {
+     *        shouldBeFailed(message = TestEvent(id= "test-id"))
+     *    }
+     *}
+     * ```
+     */
+    suspend fun shouldBeFailed(
+        atLeastIn: Duration = 5.seconds,
+        message: Any,
+    ): MessagingSystem
+
+    /**
      * Expects a predicate over a message type of [T].
      * Use the extension of [Companion.shouldBeConsumedOnCondition] to be able to  pass [T] in a generic way.
      * The method waits until the condition is satisfied, otherwise throws [AssertionError] indicating that `Consuming Failed`
@@ -40,6 +58,26 @@ interface AssertsConsuming {
         clazz: KClass<T>,
     ): MessagingSystem
 
+    /**
+     * Expects a predicate over a message type of [T].
+     * Use the extension of [Companion.shouldBeFailedOnCondition] to be able to  pass [T] in a generic way.
+     * The method waits until the condition is satisfied, otherwise throws [AssertionError] indicating that `expected failure is not satisfied`
+     * Example:
+     * ```kotlin
+     * TestSystem.validate {
+     *  kafka {
+     *      shouldBeFailedOnCondition<TestEvent>{ actual ->
+     *          actual.id == "id-to-match"
+     *        }
+     *     }
+     *  }
+     */
+    suspend fun <T : Any> shouldBeFailedOnCondition(
+        atLeastIn: Duration,
+        condition: (T) -> Boolean,
+        clazz: KClass<T>,
+    ): MessagingSystem
+
     companion object {
 
         /**
@@ -49,5 +87,13 @@ interface AssertsConsuming {
             atLeastIn: Duration = 5.seconds,
             noinline condition: (T) -> Boolean,
         ): MessagingSystem = this.shouldBeConsumedOnCondition(atLeastIn, condition, T::class)
+
+        /**
+         * Extension for [AssertsConsuming.shouldBeFailedOnCondition] to enable generic invocation as method<[T]>(...)
+         */
+        suspend inline fun <reified T : Any> AssertsConsuming.shouldBeFailedOnCondition(
+            atLeastIn: Duration = 5.seconds,
+            noinline condition: (T) -> Boolean,
+        ): MessagingSystem = this.shouldBeFailedOnCondition(atLeastIn, condition, T::class)
     }
 }

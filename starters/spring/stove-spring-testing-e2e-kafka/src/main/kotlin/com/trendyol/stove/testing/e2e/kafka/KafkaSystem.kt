@@ -93,22 +93,22 @@ class KafkaSystem(
         shouldBeConsumedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
     }.let { this }
 
-    suspend fun shouldBeFailed(
+    override suspend fun shouldBeFailed(
         atLeastIn: Duration,
         message: Any,
     ): KafkaSystem = coroutineScope {
-        shouldbeFailedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
+        shouldBeFailedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
     }.let { this }
 
-    suspend fun <T : Any> shouldBeFailedOnCondition(
+    override suspend fun <T : Any> shouldBeFailedOnCondition(
         atLeastIn: Duration,
         condition: (T) -> Boolean,
         clazz: KClass<T>,
-    ): MessagingSystem = coroutineScope {
-        shouldbeFailedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.exists { o -> condition(o) } }
+    ): KafkaSystem = coroutineScope {
+        shouldBeFailedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.exists { o -> condition(o) } }
     }.let { this }
 
-    private suspend fun <T : Any> shouldbeFailedInternal(
+    private suspend fun <T : Any> shouldBeFailedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
         condition: (Option<T>) -> Boolean,

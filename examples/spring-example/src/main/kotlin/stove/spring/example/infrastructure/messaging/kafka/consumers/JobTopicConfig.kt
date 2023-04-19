@@ -16,6 +16,10 @@ class ConsumerConfig(
 @ConfigurationProperties(prefix = "kafka.consumers.product-create")
 class ProductCreateEventTopicConfig : TopicConfig()
 
+@Configuration
+@ConfigurationProperties(prefix = "kafka.consumers.product-failing")
+class ProductFailingEventTopicConfig : TopicConfig()
+
 abstract class TopicConfig(
     var topic: String = "",
     var retryTopic: String = "",

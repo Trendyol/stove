@@ -8,6 +8,7 @@ import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJso
 import com.trendyol.stove.testing.e2e.http.http
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.messaging.AssertsConsuming.Companion.shouldBeConsumedOnCondition
+import com.trendyol.stove.testing.e2e.messaging.AssertsConsuming.Companion.shouldBeFailedOnCondition
 import com.trendyol.stove.testing.e2e.messaging.AssertsPublishing.Companion.shouldBePublishedOnCondition
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
@@ -128,6 +129,19 @@ class ExampleTest : FunSpec({
                     actual.name shouldBe productCreateEvent.name
                     actual.supplierId shouldBe productCreateEvent.supplierId
                 }
+            }
+        }
+    }
+
+    test("when failing event is published then it should be validated") {
+        data class FailingEvent(val id: Long)
+        TestSystem.validate {
+            kafka {
+                publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))
+                shouldBeFailedOnCondition<FailingEvent> { actual ->
+                    actual.id == 5L
+                }
+                shouldBeFailed(message = FailingEvent(5L))
             }
         }
     }
