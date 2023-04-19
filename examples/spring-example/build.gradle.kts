@@ -7,11 +7,11 @@ plugins {
 }
 
 dependencies {
+    annotationProcessor(libs.spring.boot.annotationProcessor)
     implementation(libs.spring.boot.autoconfigure)
     implementation(libs.spring.boot.itself)
     implementation(libs.spring.boot.webflux)
     implementation(libs.spring.boot.actuator)
-    implementation(libs.spring.boot.annotationProcessor)
     implementation(libs.kotlinx.reactor)
     implementation(libs.kotlinx.core)
     implementation(libs.kotlinx.reactive)

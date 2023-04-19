@@ -114,6 +114,13 @@ class KafkaSystem(
         .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.exists { it == message } }
         .let { this }
 
+    override suspend fun shouldBeFailed(
+        atLeastIn: Duration,
+        message: Any,
+    ): MessagingSystem {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun <T : Any> shouldBeConsumedOnCondition(
         atLeastIn: Duration,
         condition: (T) -> Boolean,
@@ -122,6 +129,14 @@ class KafkaSystem(
         .also { assertedConditions.add(condition as (Any) -> Boolean) }
         .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.exists { condition(it) } }
         .let { this }
+
+    override suspend fun <T : Any> shouldBeFailedOnCondition(
+        atLeastIn: Duration,
+        condition: (T) -> Boolean,
+        clazz: KClass<T>,
+    ): MessagingSystem {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun run() {
         exposedConfiguration = state.capture {

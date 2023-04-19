@@ -83,8 +83,7 @@ class KafkaSystem(
             context.objectMapper.writeValueAsString(message),
             headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
         )
-
-        return kafkaTemplate.send(record).completable().await().let { this }
+        return kafkaTemplate.usingCompletableFuture().send(record).await().let { this }
     }
 
     override suspend fun shouldBeConsumed(
@@ -93,6 +92,27 @@ class KafkaSystem(
     ): KafkaSystem = coroutineScope {
         shouldBeConsumedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
     }.let { this }
+
+    override suspend fun shouldBeFailed(
+        atLeastIn: Duration,
+        message: Any,
+    ): KafkaSystem = coroutineScope {
+        shouldBeFailedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
+    }.let { this }
+
+    override suspend fun <T : Any> shouldBeFailedOnCondition(
+        atLeastIn: Duration,
+        condition: (T) -> Boolean,
+        clazz: KClass<T>,
+    ): KafkaSystem = coroutineScope {
+        shouldBeFailedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.exists { o -> condition(o) } }
+    }.let { this }
+
+    private suspend fun <T : Any> shouldBeFailedInternal(
+        clazz: KClass<T>,
+        atLeastIn: Duration,
+        condition: (Option<T>) -> Boolean,
+    ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
 
     override suspend fun <T : Any> shouldBeConsumedOnCondition(
         atLeastIn: Duration,
