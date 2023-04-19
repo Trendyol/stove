@@ -31,7 +31,7 @@ Frameworks:
 TestSystem(baseUrl = "http://localhost:8001") {
     if (isRunningLocally()) {
         enableReuseForTestContainers()
-        keepDendenciesRunning()
+        keepDendenciesRunning() // this will keep the dependencies running after the tests are finished, so next run will be blazing fast :)
     }
 }.withHttpClient()
     .withCouchbase(
