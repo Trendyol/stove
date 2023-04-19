@@ -2,29 +2,39 @@ package com.trendyol.stove.testing.e2e.system.abstractions
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystemOptions
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.Locale
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.readBytes
-import kotlin.io.path.writeBytes
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.*
+import kotlin.io.path.*
 import kotlin.reflect.KClass
 
+/**
+ * Represents the state of the [TestSystem] which is being captured.
+ * @param TState the type of the state
+ * @param state the state of the [TestSystem]
+ * @param processId the process id of the [TestSystem]
+ */
 data class StateWithProcess<TState : Any>(
     val state: TState,
     val processId: Long,
 )
 
+/**
+ * Represents the state of the [TestSystem] which is being captured.
+ * @param TSystem the type of the [TestSystem]
+ * @param TState the type of the state
+ * @param options the options of the [TestSystem]
+ * @param system the [TestSystem] which is being captured
+ * @param state the state of the [TestSystem]
+ */
 class StateOfSystem<TSystem : Any, TState : Any>(
     val options: TestSystemOptions,
     val system: KClass<TSystem>,
-    val state: KClass<TState>,
+    private val state: KClass<TState>,
 ) {
     private val folderForSystem = Paths.get(
         System.getProperty("java.io.tmpdir"),
@@ -42,6 +52,10 @@ class StateOfSystem<TSystem : Any, TState : Any>(
         }
     }
 
+    /**
+     * Captures the TestSystem state into the file system. Basically creates a Json file which contains the state of the [PluggedSystem]
+     * that is run by the [TestSystem].
+     */
     suspend fun capture(start: suspend () -> TState): TState = when {
         !options.keepDependenciesRunning -> {
             l.info("State for ${name()} is being deleted at the path: ${pathForSystem.absolutePathString()}")
@@ -57,6 +71,9 @@ class StateOfSystem<TSystem : Any, TState : Any>(
         }
     }
 
+    /**
+     * Returns true if the [TestSystem] is being run for the first time.
+     */
     fun isSubsequentRun(): Boolean = pathForSystem.exists() && options.keepDependenciesRunning && isDifferentProcess()
 
     private fun saveStateForNextRun(state: TState): TState = state.also {

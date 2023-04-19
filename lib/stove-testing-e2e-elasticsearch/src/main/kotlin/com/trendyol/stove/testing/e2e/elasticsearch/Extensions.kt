@@ -3,6 +3,7 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 import arrow.core.getOrElse
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 
@@ -39,3 +40,6 @@ fun TestSystem.elasticsearch(): ElasticsearchSystem =
     getOrNone<ElasticsearchSystem>().getOrElse {
         throw SystemNotRegisteredException(ElasticsearchSystem::class)
     }
+
+suspend fun ValidationDsl.elasticsearch(validation: suspend ElasticsearchSystem.() -> Unit): Unit =
+    validation(this.testSystem.elasticsearch())

@@ -35,25 +35,4 @@ dependencies {
     testImplementation(project(":starters:spring:stove-spring-testing-e2e-kafka"))
 }
 
-object TestFolders {
-    const val e2e = "test-e2e"
-}
-
-sourceSets {
-    create(TestFolders.e2e) {
-        compileClasspath += sourceSets.main.get().output
-        runtimeClasspath += sourceSets.main.get().output
-    }
-
-    val testE2eImplementation by configurations.getting { extendsFrom(configurations.testImplementation.get()) }
-    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
-}
-
-idea {
-    module {
-        testSources.from(project.sourceSets[TestFolders.e2e].kotlin.srcDirs)
-        testResources.from(project.sourceSets[TestFolders.e2e].resources.srcDirs)
-    }
-}
-
 application { mainClass.set("stove.spring.example.ExampleAppkt") }

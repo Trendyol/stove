@@ -16,28 +16,6 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
-object TestFolders {
-    const val Integration = "test-int"
-    const val e2e = "test-e2e"
-}
-
-sourceSets {
-    create(TestFolders.e2e) {
-        compileClasspath += sourceSets.main.get().output
-        runtimeClasspath += sourceSets.main.get().output
-    }
-
-    val testE2eImplementation by configurations.getting { extendsFrom(configurations.testImplementation.get()) }
-    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
-}
-
-idea {
-    module {
-        testSources.from(project.sourceSets[TestFolders.e2e].kotlin.srcDirs)
-        testResources.from(project.sourceSets[TestFolders.e2e].resources.srcDirs)
-    }
-}
-
 dependencies {
     implementation(libs.ktor.server)
     implementation(libs.ktor.server.netty)
