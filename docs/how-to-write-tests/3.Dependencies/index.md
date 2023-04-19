@@ -2,11 +2,11 @@
 
 All the dependencies are pluggable. Stove supports:
 
-- [Http client](05-http.md)
 - [Couchbase](01-couchbase.md)
 - [Kafka](02-kafka.md)
 - [Elasticsearch](03-elasticsearch.md)
 - [Wiremock](04-wiremock.md)
+- [Http client](05-http.md)
 - [Postgres Sql](06-postgresql.md)
 
 and more to come.

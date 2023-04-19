@@ -83,8 +83,7 @@ class KafkaSystem(
             context.objectMapper.writeValueAsString(message),
             headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
         )
-
-        return kafkaTemplate.send(record).completable().await().let { this }
+        return kafkaTemplate.usingCompletableFuture().send(record).await().let { this }
     }
 
     override suspend fun shouldBeConsumed(

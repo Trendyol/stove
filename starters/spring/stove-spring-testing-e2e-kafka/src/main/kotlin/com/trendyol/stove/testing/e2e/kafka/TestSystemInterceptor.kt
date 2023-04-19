@@ -1,14 +1,7 @@
 package com.trendyol.stove.testing.e2e.kafka
 
-import arrow.core.Option
-import arrow.core.firstOrNone
-import arrow.core.getOrElse
-import arrow.core.handleErrorWith
-import arrow.core.toOption
+import arrow.core.*
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -22,6 +15,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.kafka.listener.CompositeRecordInterceptor
 import org.springframework.kafka.support.ProducerListener
 import org.springframework.stereotype.Component
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -122,6 +118,20 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         throwIfFailed(clazz, condition)
     }
 
+    suspend fun <T : Any> waitUntilFailed(
+        atLeastIn: Duration,
+        clazz: KClass<T>,
+        condition: (Option<T>) -> Boolean,
+    ) {
+        val getRecords = { exceptions.map { it.value.message.toString() } }
+        getRecords.waitUntilConditionMet(atLeastIn, "While WAITING FOR FAILURE ${clazz.java.simpleName}") {
+            val outcome = readCatching(it, clazz)
+            outcome.isSuccess && condition(outcome.getOrNull().toOption())
+        }
+
+        throwIfSucceeded(clazz, condition)
+    }
+
     suspend fun <T : Any> waitUntilPublished(
         atLeastIn: Duration,
         clazz: KClass<T>,
@@ -153,6 +163,13 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     ) = exceptions
         .filter { selector(readCatching(it.value.message.toString(), clazz).getOrNull().toOption()) }
         .forEach { throw it.value.reason }
+
+    private fun <T : Any> throwIfSucceeded(
+        clazz: KClass<T>,
+        selector: (Option<T>) -> Boolean,
+    ): Unit = consumedRecords
+        .filter { selector(readCatching(it.value.value(), clazz).getOrNull().toOption()) }
+        .forEach { throw AssertionError("Expected to fail but succeeded: $it") }
 
     private suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
         duration: Duration,
