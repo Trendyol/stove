@@ -21,25 +21,29 @@ Frameworks:
 
 - [x] Spring
 - [x] Ktor
-- [ ] Quarkus
+- [ ] Quarkus _(up for grabs)_
 
 ## Show me the code
 
 ### Setting-up all the physical dependencies with application
 
 ```kotlin
-TestSystem(baseUrl = "http://localhost:8001")
-    .withDefaultHttp()
+TestSystem(baseUrl = "http://localhost:8001") {
+    if (isRunningLocally()) {
+        enableReuseForTestContainers()
+        keepDendenciesRunning()
+    }
+}.withHttpClient()
     .withCouchbase(
         bucket = "Stove",
         options = CouchbaseSystemOptions(
-            configureExposedConfiguration = { cfg -> listOf("couchbase.hosts=${cfg.hostsWithPort}") }
-        )
+            configureExposedConfiguration = { cfg -> listOf("couchbase.hosts=${cfg.hostsWithPort}") },
+        ),
     )
     .withKafka(
         configureExposedConfiguration = { cfg ->
             listOf("kafka.bootstrapServers=${cfg.boostrapServers}")
-        }
+        },
     )
     .withWireMock(
         port = 9090,
@@ -47,8 +51,8 @@ TestSystem(baseUrl = "http://localhost:8001")
             removeStubAfterRequestMatched = true,
             afterRequest = { e, _, _ ->
                 logger.info(e.request.toString())
-            }
-        )
+            },
+        ),
     )
     .systemUnderTest(
         runner = { parameters ->
@@ -60,36 +64,57 @@ TestSystem(baseUrl = "http://localhost:8001")
             "logging.level.root=warn",
             "logging.level.org.springframework.web=warn",
             "spring.profiles.active=default",
-            "kafka.heartbeatInSeconds=2"
-        )
+            "kafka.heartbeatInSeconds=2",
+        ),
     )
     .run()
+
 ```
 
 ### Testing the entire application with physical dependencies
 
 ```kotlin
-TestSystem.instance
-    .defaultHttp().get<String>("/hello/index") { actual ->
-        actual shouldContain "Hi from Stove framework"
-        println(actual)
+TestSystem.validate {
+    wiremock {
+        mockGet("/example-url", responseBody = None, statusCode = 200)
     }
-    .then().wiremock().mockGet("/example-url", responseBody = None, statusCode = 200)
-    .then().couchbase().shouldQuery<Any>("SELECT * FROM system:keyspaces") { actual ->
-        println(actual)
+    
+    http {
+        get<String>("/hello/index") { actual ->
+            actual shouldContain "Hi from Stove framework"
+            println(actual)
+        }
     }
-    .then().kafka()
-    .shouldBePublishedOnCondition<ExampleMessage> { actual ->
-        actual.aggregateId == 123
+
+    couchbase {
+        shouldQuery<Any>("SELECT * FROM system:keyspaces") { actual ->
+            println(actual)
+        }
     }
-    .shouldBeConsumedOnCondition<ExampleMessage> { actual ->
-        actual.aggregateId == 123
+
+    kafka {
+        shouldBePublishedOnCondition<ExampleMessage> { actual ->
+            actual.aggregateId == 123
+        }
+        shouldBeConsumedOnCondition<ExampleMessage> { actual ->
+            actual.aggregateId == 123
+        }
     }
-    .then().couchbase().save(collection = "Backlogs", id = "id-of-backlog", instance = Backlog("id-of-backlog"))
-    .then().http().postAndExpectBodilessResponse("/backlog/reserve") { actual ->
-        actual.status.shouldBe(200)
+
+    couchbase {
+        save(collection = "Backlogs", id = "id-of-backlog", instance = Backlog("id-of-backlog"))
     }
-    .then().kafka().shouldBeConsumedOnCondition<ProductCreated> { actual ->
-        actual.aggregateId == expectedId
+
+    http {
+        postAndExpectBodilessResponse("/backlog/reserve") { actual ->
+            actual.status.shouldBe(200)
+        }
     }
+
+    kafka {
+        shouldBeConsumedOnCondition<ProductCreated> { actual ->
+            actual.aggregateId == expectedId
+        }
+    }
+}
 ```
