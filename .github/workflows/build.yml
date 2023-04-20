@@ -31,7 +31,7 @@ jobs:
         id: jacoco
         uses: madrapps/jacoco-report@v1.3
         with:
-          paths: "./build/jacoco/codeCoverageReport/codeCoverageReport.xml"
+          paths: "./build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
           token: ${{ secrets.RENOVATE_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
