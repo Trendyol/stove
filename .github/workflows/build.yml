@@ -25,7 +25,7 @@ jobs:
     
       - name: Gradle Build and Test
         run: |
-           ./gradlew build
+           ./gradlew build test codeCoverageReport testAggregateReports
 #       - name: Upload coverage to Codecov
 #         uses: codecov/codecov-action@v3
 #         with:
