@@ -2,7 +2,6 @@
 
 rootProject.name = "stove4k"
 include(
-    "lib",
     "lib:stove-testing-e2e",
     "lib:stove-testing-e2e-wiremock",
     "lib:stove-testing-e2e-http",
@@ -15,14 +14,12 @@ include(
 )
 
 include(
-    "starters",
     "starters:ktor:stove-ktor-testing-e2e",
     "starters:spring:stove-spring-testing-e2e",
     "starters:spring:stove-spring-testing-e2e-kafka"
 )
 
 include(
-    "examples",
     "examples:spring-example",
     "examples:ktor-example"
 )
