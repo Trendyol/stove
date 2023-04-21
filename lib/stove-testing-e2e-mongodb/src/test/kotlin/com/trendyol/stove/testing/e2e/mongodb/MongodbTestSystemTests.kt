@@ -17,8 +17,8 @@ import org.bson.types.ObjectId
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
         TestSystem()
-            .withMongodb {
-                mongodb {
+            .with {
+                mongodbDsl {
                     tag("latest")
                 }
             }

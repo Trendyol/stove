@@ -1,68 +1,59 @@
 package com.stove.ktor.example.e2e
 
 import com.trendol.stove.testing.e2e.rdbms.postgres.PostgresqlOptions
-import com.trendyol.stove.testing.e2e.http.withHttpClient
+import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
+import com.trendyol.stove.testing.e2e.http.httpClient
+import com.trendyol.stove.testing.e2e.ktor
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.systemUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
 import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
-import com.trendyol.stove.testing.e2e.wiremock.withWireMock
+import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.extensions.Extension
-import io.kotest.core.listeners.AfterTestListener
-import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import com.trendol.stove.testing.e2e.rdbms.postgres.withPostgresql
 
+@ExperimentalDsl
 class TestSystemConfig : AbstractProjectConfig() {
 
     private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
     override suspend fun beforeProject() =
         TestSystem(baseUrl = "http://localhost:8080")
-            .withHttpClient()
-            .withPostgresql(
-                PostgresqlOptions(configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "database.jdbcUrl=${cfg.jdbcUrl}",
-                        "database.host=${cfg.host}",
-                        "database.port=${cfg.port}",
-                        "database.databaseName=${cfg.database}",
-                        "database.username=${cfg.username}",
-                        "database.password=${cfg.password}"
-                    )
-                })
-            )
-            .withWireMock(
-                port = 9090,
-                WireMockSystemOptions(removeStubAfterRequestMatched = true, afterRequest = { e, _, _ ->
-                    logger.info(e.request.toString())
-                })
-            ).systemUnderTest(
-                withParameters = listOf(
-                    "ktor.server.port=8001"
-                ),
-                runner = { parameters ->
-                    stove.ktor.example.run(parameters) {
-                        addTestSystemDependencies()
-                    }
+            .with {
+                httpClient()
+                postgresql {
+                    PostgresqlOptions(configureExposedConfiguration = { cfg ->
+                        listOf(
+                            "database.jdbcUrl=${cfg.jdbcUrl}",
+                            "database.host=${cfg.host}",
+                            "database.port=${cfg.port}",
+                            "database.databaseName=${cfg.database}",
+                            "database.username=${cfg.username}",
+                            "database.password=${cfg.password}"
+                        )
+                    })
                 }
-            ).run()
-
-    override fun extensions(): List<Extension> {
-        val listener = object : AfterTestListener {
-            override suspend fun afterTest(
-                testCase: TestCase,
-                result: TestResult,
-            ) {
-                // TestSystem.instance.wiremock().validate()
-            }
-        }
-
-        return listOf(listener)
-    }
+                wiremock {
+                    WireMockSystemOptions(
+                        port = 9090,
+                        removeStubAfterRequestMatched = true,
+                        afterRequest = { e, _, _ ->
+                            logger.info(e.request.toString())
+                        }
+                    )
+                }
+                ktor(
+                    withParameters = listOf(
+                        "ktor.server.port=8001"
+                    ),
+                    runner = { parameters ->
+                        stove.ktor.example.run(parameters) {
+                            addTestSystemDependencies()
+                        }
+                    }
+                )
+            }.run()
 
     override suspend fun afterProject() {
-        TestSystem.instance.close()
+        TestSystem.stop()
     }
 }

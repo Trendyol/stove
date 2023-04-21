@@ -10,13 +10,22 @@ import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
-import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.InterceptionOptions
-import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.TestSystemKafkaInterceptor
 import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.InterceptionOptions
+import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.TestSystemKafkaInterceptor
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import io.github.nomisRev.kafka.Admin
 import io.github.nomisRev.kafka.AdminSettings
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
@@ -73,6 +82,10 @@ fun TestSystem.withKafka(
     getOrRegister(KafkaSystem(this, KafkaContext(kafka, options)))
     return this
 }
+
+@ExperimentalDsl
+fun WithDsl.kafka(configure: () -> KafkaSystemOptions): TestSystem =
+    this.testSystem.withKafka(configure())
 
 class KafkaSystem(
     override val testSystem: TestSystem,

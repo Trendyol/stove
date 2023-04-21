@@ -7,7 +7,9 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
+import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
@@ -41,6 +43,10 @@ fun TestSystem.withKafka(
 
 fun TestSystem.kafka(): KafkaSystem =
     getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
+
+@ExperimentalDsl
+fun WithDsl.kafka(configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }): TestSystem =
+    this.testSystem.withKafka(configure())
 
 suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit =
     validation(this.testSystem.kafka())

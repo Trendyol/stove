@@ -11,21 +11,26 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.Duration
+import java.util.UUID
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.time.Duration
-import java.util.*
 
 const val testBucket = "test-couchbase-bucket"
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject() {
-        TestSystem {}.withCouchbase(
-            CouchbaseSystemOptions(defaultBucket = testBucket).migrations {
-                register<DefaultMigration>()
+        TestSystem {}
+            .with {
+                couchbase {
+                    CouchbaseSystemOptions(defaultBucket = testBucket)
+                        .migrations {
+                            register<DefaultMigration>()
+                        }
+                }
             }
-        ).applicationUnderTest(NoOpApplication()).run()
+            .applicationUnderTest(NoOpApplication()).run()
     }
 
     override suspend fun afterProject() {

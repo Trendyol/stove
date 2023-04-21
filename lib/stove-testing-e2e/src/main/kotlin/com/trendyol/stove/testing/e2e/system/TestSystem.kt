@@ -5,8 +5,20 @@ import arrow.core.Option
 import arrow.core.getOrNone
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import com.trendyol.stove.testing.e2e.system.abstractions.*
-import kotlinx.coroutines.*
+import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithContext
+import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.BeforeRunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.ReadyTestSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
@@ -78,6 +90,8 @@ class TestSystem(
         lateinit var instance: TestSystem
 
         suspend fun validate(validation: suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
+
+        fun stop(): Unit = instance.close()
     }
 
     /**
@@ -121,6 +135,31 @@ class TestSystem(
         }
 
         instance = this
+    }
+
+    /**
+     * Enables the DSL for constructing the entire system with the [PluggedSystem]s.
+     *
+     * Example:
+     * ```kotlin
+     *  TestSystem().with {
+     *    httpClient{
+     *      // configure the http client
+     *    }
+     *    kafka{
+     *      // configure kafka
+     *    }
+     *    couchbase {
+     *      // configure couchbase
+     *    }
+     *
+     *    // and so on...
+     *  }
+     * ```
+     */
+    fun with(withDsl: WithDsl.() -> Unit): TestSystem {
+        withDsl(WithDsl(this))
+        return this
     }
 
     /**
