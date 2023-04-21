@@ -4,7 +4,7 @@ After you've added the dependencies, and configured the application's `main` fun
 it is time to run your application for the first time from the test-context with Stove.
 
 !!! note
-At this stage you can create a new e2e testing module, or use your existing test module in your project.
+    At this stage you can create a new e2e testing module, or use your existing test module in your project.
 
 ## Setting up Stove for the Runner
 
