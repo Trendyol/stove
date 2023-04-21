@@ -8,29 +8,33 @@ import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.Duration
+import java.util.UUID
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.time.Duration
-import java.util.*
 
 const val testBucket = "test-couchbase-bucket"
 
+@ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject() {
-        TestSystem {}.withCouchbase(
-            CouchbaseSystemOptions(defaultBucket = testBucket).migrations {
-                register<DefaultMigration>()
-            }
-        ).applicationUnderTest(NoOpApplication()).run()
-    }
+    override suspend fun beforeProject(): Unit =
+        TestSystem {}
+            .with {
+                couchbase {
+                    CouchbaseSystemOptions(defaultBucket = testBucket)
+                        .migrations {
+                            register<DefaultMigration>()
+                        }
+                }
+                applicationUnderTest(NoOpApplication())
+            }.run()
 
-    override suspend fun afterProject() {
-        TestSystem.instance.close()
-    }
+    override suspend fun afterProject(): Unit = TestSystem.stop()
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
@@ -54,32 +58,6 @@ class DefaultMigration : DatabaseMigration<ReactiveCluster> {
         logger.info("default migration is executed")
     }
 }
-
-class CouchbaseTestSystemTests : FunSpec({
-
-    data class ExampleInstance(
-        val id: String,
-        val description: String,
-    )
-
-    test("should save and get") {
-        val id = UUID.randomUUID().toString()
-        val anotherCollectionName = "another"
-        TestSystem.instance
-            .couchbase()
-            .saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
-            .save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.testName))
-            .shouldGet<ExampleInstance>(id) { actual ->
-                actual.id shouldBe id
-                actual.description shouldBe testCase.name.testName
-            }
-            .then().couchbase()
-            .shouldGet<ExampleInstance>(anotherCollectionName, id) { actual ->
-                actual.id shouldBe id
-                actual.description shouldBe testCase.name.testName
-            }
-    }
-})
 
 class CouchbaseTestSystemUsesDslTests : FunSpec({
 

@@ -2,28 +2,28 @@ package com.trendyol.stove.testing.e2e.wiremock
 
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 
+@ExperimentalStoveDsl
 class TestSystemConfig : AbstractProjectConfig() {
 
-    override suspend fun beforeProject() {
-        TestSystem()
-            .withWireMock(
-                port = 9098,
+    override suspend fun beforeProject(): Unit = TestSystem()
+        .with {
+            wiremock {
                 WireMockSystemOptions(
+                    port = 9098,
                     removeStubAfterRequestMatched = true
                 )
-            )
-            .applicationUnderTest(object : ApplicationUnderTest<Unit> {
+            }
+            applicationUnderTest(object : ApplicationUnderTest<Unit> {
                 override suspend fun start(configurations: List<String>) {
                 }
 
                 override suspend fun stop() {
                 }
-            }).run()
-    }
+            })
+        }.run()
 
-    override suspend fun afterProject() {
-        TestSystem.instance.close()
-    }
+    override suspend fun afterProject(): Unit = TestSystem.stop()
 }

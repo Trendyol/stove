@@ -4,6 +4,8 @@ import arrow.core.getOrElse
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
+import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 
@@ -35,6 +37,10 @@ fun TestSystem.withElasticsearch(
         .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
         .let { this }
 }
+
+@ExperimentalStoveDsl
+fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem =
+    this.testSystem.withElasticsearch(configure())
 
 fun TestSystem.elasticsearch(): ElasticsearchSystem =
     getOrNone<ElasticsearchSystem>().getOrElse {

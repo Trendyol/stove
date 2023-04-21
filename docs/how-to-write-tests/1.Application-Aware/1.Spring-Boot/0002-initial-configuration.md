@@ -4,7 +4,7 @@ After you've added the dependencies, and configured the application's `main` fun
 it is time to run your application for the first time from the test-context with Stove.
 
 !!! note
-    At this stage you can create a new e2e testing module, or use your existing test module in your project.
+At this stage you can create a new e2e testing module, or use your existing test module in your project.
 
 ## Setting up Stove for the Runner
 
@@ -16,32 +16,29 @@ it is time to run your application for the first time from the test-context with
     ```kotlin hl_lines="8-13"
     class TestSystemConfig : AbstractProjectConfig() {
     
-        override suspend fun beforeProject() {
+        override suspend fun beforeProject(): Unit = 
             TestSystem(baseUrl = "http://localhost:8001")
-                .withHttpClient()
-                .systemUnderTest(
-                    runner = { parameters ->
-                        /* 
-                        *  As you remember, we have divided application's main 
-                        *  function into two parts, main and run. 
-                        *  We use `run` invocation here.
-                        * */
-                        stove.spring.example.run(parameters)
-                    },
-                    withParameters =
-                    listOf(
-                        "server.port=8001",
-                        "logging.level.root=warn",
-                        "logging.level.org.springframework.web=warn",
-                        "spring.profiles.active=default"
+                .with {
+                    httpClient()
+                    springBoot(
+                        runner = { parameters ->
+                            /* 
+                            *  As you remember, we have divided application's main 
+                            *  function into two parts, main and run. 
+                            *  We use `run` invocation here.
+                            * */
+                            stove.spring.example.run(parameters)
+                        },
+                        withParameters = listOf(
+                            "server.port=8001",
+                            "logging.level.root=warn",
+                            "logging.level.org.springframework.web=warn",
+                            "spring.profiles.active=default"
+                        )
                     )
-                )
-                .run()
-        }
+                }.run()
     
-        override suspend fun afterProject() {
-            TestSystem.instance.close()
-        }
+        override suspend fun afterProject(): Unit = TestSystem.stop()
     }
     ```
 
@@ -52,31 +49,31 @@ it is time to run your application for the first time from the test-context with
     
         @BeforeAll
         fun beforeProject() = runBlocking {
-            TestSystem(baseUrl = "http://localhost:8001")
-                .withHttpClient()
-                .systemUnderTest(
-                    runner = { parameters ->
-                        /* 
-                        *  As you remember, we have divided application's main 
-                        *  function into two parts, main and run. 
-                        *  We use `run` invocation here.
-                        * */
-                        stove.spring.example.run(parameters)
-                    },
-                    withParameters =
-                    listOf(
-                        "server.port=8001",
-                        "logging.level.root=warn",
-                        "logging.level.org.springframework.web=warn",
-                        "spring.profiles.active=default"
+             TestSystem(baseUrl = "http://localhost:8001")
+                .with {
+                    httpClient()
+                    springBoot(
+                        runner = { parameters ->
+                            /* 
+                            *  As you remember, we have divided application's main 
+                            *  function into two parts, main and run. 
+                            *  We use `run` invocation here.
+                            * */
+                            stove.spring.example.run(parameters)
+                        },
+                        withParameters = listOf(
+                            "server.port=8001",
+                            "logging.level.root=warn",
+                            "logging.level.org.springframework.web=warn",
+                            "spring.profiles.active=default"
+                        )
                     )
-                )
-                .run()
+                }.run()
         }
     
         @AfterAll
         fun afterProject() = runBlocking {
-            TestSystem.instance.close()
+            TestSystem.stop()
         }
     }
     ```
@@ -95,5 +92,5 @@ application
 that we have configured at [step 1](0001-tuning-app.md#tuning-the-applications-entry-point)
 
 !!! note
-    `server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
-    against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.
+`server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
+against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.

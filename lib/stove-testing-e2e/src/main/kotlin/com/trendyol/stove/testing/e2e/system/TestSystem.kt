@@ -78,6 +78,8 @@ class TestSystem(
         lateinit var instance: TestSystem
 
         suspend fun validate(validation: suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
+
+        fun stop(): Unit = instance.close()
     }
 
     /**
@@ -121,6 +123,31 @@ class TestSystem(
         }
 
         instance = this
+    }
+
+    /**
+     * Enables the DSL for constructing the entire system with the [PluggedSystem]s.
+     *
+     * Example:
+     * ```kotlin
+     *  TestSystem().with {
+     *    httpClient{
+     *      // configure the http client
+     *    }
+     *    kafka{
+     *      // configure kafka
+     *    }
+     *    couchbase {
+     *      // configure couchbase
+     *    }
+     *
+     *    // and so on...
+     *  }
+     * ```
+     */
+    fun with(withDsl: WithDsl.() -> Unit): TestSystem {
+        withDsl(WithDsl(this))
+        return this
     }
 
     /**

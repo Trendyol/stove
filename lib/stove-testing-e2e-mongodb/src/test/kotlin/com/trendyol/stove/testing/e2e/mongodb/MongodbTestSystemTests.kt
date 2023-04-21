@@ -5,6 +5,7 @@ import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQu
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAny
@@ -14,21 +15,18 @@ import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 
+@ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject() {
+    override suspend fun beforeProject(): Unit =
         TestSystem()
-            .withMongodb {
-                mongodb {
+            .with {
+                mongodbDsl {
                     tag("latest")
                 }
-            }
-            .applicationUnderTest(NoOpApplication())
-            .run()
-    }
+                applicationUnderTest(NoOpApplication())
+            }.run()
 
-    override suspend fun afterProject() {
-        TestSystem.instance.close()
-    }
+    override suspend fun afterProject(): Unit = TestSystem.stop()
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
@@ -51,20 +49,22 @@ class MongodbTestSystemTests : FunSpec({
         )
 
         val id = ObjectId()
-        TestSystem.instance
-            .mongodb()
-            .saveToDefaultCollection(
-                id.toHexString(),
-                ExampleInstanceWithObjectId(
-                    id = id,
-                    aggregateId = id.toHexString(),
-                    description = testCase.name.testName
+        TestSystem.validate {
+            mongodb {
+                saveToDefaultCollection(
+                    id.toHexString(),
+                    ExampleInstanceWithObjectId(
+                        id = id,
+                        aggregateId = id.toHexString(),
+                        description = testCase.name.testName
+                    )
                 )
-            )
-            .shouldGet<ExampleInstanceWithObjectId>(id.toHexString()) { actual ->
-                actual.aggregateId shouldBe id.toHexString()
-                actual.description shouldBe testCase.name.testName
+                shouldGet<ExampleInstanceWithObjectId>(id.toHexString()) { actual ->
+                    actual.aggregateId shouldBe id.toHexString()
+                    actual.description shouldBe testCase.name.testName
+                }
             }
+        }
     }
 
     test("should save and get with string objectId") {
@@ -77,20 +77,22 @@ class MongodbTestSystemTests : FunSpec({
         )
 
         val id = ObjectId()
-        TestSystem.instance
-            .mongodb()
-            .saveToDefaultCollection(
-                id.toHexString(),
-                ExampleInstanceWithStringObjectId(
-                    id = id.toHexString(),
-                    aggregateId = id.toHexString(),
-                    description = testCase.name.testName
+        TestSystem.validate {
+            mongodb {
+                saveToDefaultCollection(
+                    id.toHexString(),
+                    ExampleInstanceWithStringObjectId(
+                        id = id.toHexString(),
+                        aggregateId = id.toHexString(),
+                        description = testCase.name.testName
+                    )
                 )
-            )
-            .shouldGet<ExampleInstanceWithStringObjectId>(id.toHexString()) { actual ->
-                actual.aggregateId shouldBe id.toHexString()
-                actual.description shouldBe testCase.name.testName
+                shouldGet<ExampleInstanceWithStringObjectId>(id.toHexString()) { actual ->
+                    actual.aggregateId shouldBe id.toHexString()
+                    actual.description shouldBe testCase.name.testName
+                }
             }
+        }
     }
 
     test("Get with query should work") {
@@ -107,42 +109,44 @@ class MongodbTestSystemTests : FunSpec({
         val id1 = ObjectId()
         val id2 = ObjectId()
         val id3 = ObjectId()
-        TestSystem.instance
-            .mongodb()
-            .saveToDefaultCollection(
-                id1.toHexString(),
-                ExampleInstance(
-                    id = id1,
-                    aggregateId = id1.toHexString(),
-                    description = testCase.name.testName + "1"
+        TestSystem.validate {
+            mongodb {
+                saveToDefaultCollection(
+                    id1.toHexString(),
+                    ExampleInstance(
+                        id = id1,
+                        aggregateId = id1.toHexString(),
+                        description = testCase.name.testName + "1"
+                    )
                 )
-            )
-            .saveToDefaultCollection(
-                id2.toHexString(),
-                ExampleInstance(
-                    id = id2,
-                    aggregateId = id2.toHexString(),
-                    description = testCase.name.testName + "2"
+                saveToDefaultCollection(
+                    id2.toHexString(),
+                    ExampleInstance(
+                        id = id2,
+                        aggregateId = id2.toHexString(),
+                        description = testCase.name.testName + "2"
+                    )
                 )
-            )
-            .saveToDefaultCollection(
-                id3.toHexString(),
-                ExampleInstance(
-                    id = id3,
-                    aggregateId = id3.toHexString(),
-                    description = testCase.name.testName + "3",
-                    isActive = false
+                saveToDefaultCollection(
+                    id3.toHexString(),
+                    ExampleInstance(
+                        id = id3,
+                        aggregateId = id3.toHexString(),
+                        description = testCase.name.testName + "3",
+                        isActive = false
+                    )
                 )
-            )
-            .shouldQuery<ExampleInstance>("{\"isActive\": true}") { actual ->
-                actual.count() shouldBe 2
-                actual.forAny { it.id shouldBe id1 }
-                actual.forAny { it.id shouldBe id2 }
+                shouldQuery<ExampleInstance>("{\"isActive\": true}") { actual ->
+                    actual.count() shouldBe 2
+                    actual.forAny { it.id shouldBe id1 }
+                    actual.forAny { it.id shouldBe id2 }
+                }
+                shouldQuery<ExampleInstance>("{\"isActive\": false}") { actual ->
+                    actual.count() shouldBe 1
+                    actual.first().id shouldBe id3
+                }
             }
-            .shouldQuery<ExampleInstance>("{\"isActive\": false}") { actual ->
-                actual.count() shouldBe 1
-                actual.first().id shouldBe id3
-            }
+        }
     }
 
     test("should delete") {
@@ -155,23 +159,24 @@ class MongodbTestSystemTests : FunSpec({
         )
 
         val id = ObjectId()
-        TestSystem.instance
-            .mongodb()
-            .saveToDefaultCollection(
-                id.toHexString(),
-                ExampleInstance(
-                    id = id.toHexString(),
-                    aggregateId = id.toHexString(),
-                    description = testCase.name.testName
+        TestSystem.validate {
+            mongodb {
+                saveToDefaultCollection(
+                    id.toHexString(),
+                    ExampleInstance(
+                        id = id.toHexString(),
+                        aggregateId = id.toHexString(),
+                        description = testCase.name.testName
+                    )
                 )
-            )
-            .shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
-                actual.size shouldBe 1
-            }.then()
-            .mongodb()
-            .shouldDelete(id.toHexString())
-            .shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
-                actual.size shouldBe 0
+                shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
+                    actual.size shouldBe 1
+                }
+                shouldDelete(id.toHexString())
+                shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
+                    actual.size shouldBe 0
+                }
             }
+        }
     }
 })

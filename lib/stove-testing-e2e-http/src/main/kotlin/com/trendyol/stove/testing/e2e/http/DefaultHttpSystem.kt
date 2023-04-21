@@ -9,9 +9,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
+import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
-import kotlinx.coroutines.future.await
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -22,6 +23,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
+import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
 
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
@@ -39,6 +41,10 @@ fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSyste
     this.getOrRegister(DefaultHttpSystem(this, options.objectMapper))
     return this
 }
+
+@ExperimentalStoveDsl
+fun WithDsl.httpClient(configure: () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
+    this.testSystem.withHttpClient(configure())
 
 @Deprecated(
     "This method is deprecated, going to be removed",

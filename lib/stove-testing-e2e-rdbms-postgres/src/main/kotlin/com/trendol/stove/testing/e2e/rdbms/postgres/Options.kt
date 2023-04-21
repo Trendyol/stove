@@ -7,7 +7,9 @@ import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseContext
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
+import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import org.testcontainers.containers.PostgreSQLContainer
@@ -36,6 +38,10 @@ fun TestSystem.withPostgresql(
         .withReuse(this.options.keepDependenciesRunning)
 }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
     .let { this }
+
+@ExperimentalStoveDsl
+fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
+    this.testSystem.withPostgresql(configure())
 
 fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
     throw SystemNotRegisteredException(PostgresqlSystem::class)
