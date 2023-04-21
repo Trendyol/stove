@@ -1,6 +1,6 @@
 <h1 align="center">Stove</h1>
 
-Stove: The easiest way of writing e2e tests for your back-end API in Kotlin
+<p align="center">The easiest way of writing e2e tests for your back-end API in Kotlin</p>
 
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
  
