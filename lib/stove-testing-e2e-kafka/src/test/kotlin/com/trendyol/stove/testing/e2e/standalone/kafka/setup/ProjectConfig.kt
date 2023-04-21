@@ -3,13 +3,13 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.setup
 import com.trendyol.stove.testing.e2e.standalone.kafka.KafkaSystemOptions
 import com.trendyol.stove.testing.e2e.standalone.kafka.StoveKafkaValueDeserializer
 import com.trendyol.stove.testing.e2e.standalone.kafka.StoveKafkaValueSerializer
+import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared
-import com.trendyol.stove.testing.e2e.standalone.kafka.withKafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.extensions.Extension
 import io.kotest.core.listeners.AfterEachListener
 import io.kotest.core.listeners.BeforeEachListener
 import org.apache.kafka.clients.admin.AdminClient
@@ -62,28 +62,22 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
     }
 }
 
+@ExperimentalStoveDsl
 @ExperimentalKotest
 class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachListener {
 
-    override suspend fun beforeProject() {
-        TestSystem()
-            .withKafka(
+    override suspend fun beforeProject(): Unit = TestSystem()
+        .with {
+            kafka {
                 KafkaSystemOptions(
                     // ports = listOf(9094, 9095),
                     configureExposedConfiguration = { cfg ->
                         listOf("kafka.servers=${cfg.bootstrapServers}")
                     }
                 )
-            )
-            .applicationUnderTest(KafkaApplicationUnderTest())
-            .run()
-    }
+            }
+            applicationUnderTest(KafkaApplicationUnderTest())
+        }.run()
 
-    override suspend fun afterProject() {
-        TestSystem.instance.close()
-    }
-
-    override fun extensions(): List<Extension> {
-        return listOf(this)
-    }
+    override suspend fun afterProject(): Unit = TestSystem.stop()
 }

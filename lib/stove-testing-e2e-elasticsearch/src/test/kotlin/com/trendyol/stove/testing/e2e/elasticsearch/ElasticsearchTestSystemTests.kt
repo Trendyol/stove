@@ -11,6 +11,7 @@ import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -32,10 +33,11 @@ class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
     }
 }
 
+@ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject() {
-        TestSystem()
-            .withElasticsearch(
+    override suspend fun beforeProject(): Unit = TestSystem()
+        .with {
+            elasticsearch {
                 ElasticsearchSystemOptions(
                     DefaultIndex(index = testIndex, migrator = TestIndexMigrator()),
                     clientConfigurer = ElasticClientConfigurer(
@@ -44,14 +46,11 @@ class Setup : AbstractProjectConfig() {
                         }
                     )
                 )
-            )
-            .applicationUnderTest(NoOpApplication())
-            .run()
-    }
+            }
+            applicationUnderTest(NoOpApplication())
+        }.run()
 
-    override suspend fun afterProject() {
-        TestSystem.instance.close()
-    }
+    override suspend fun afterProject(): Unit = TestSystem.stop()
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
@@ -71,13 +70,14 @@ class ElasticsearchTestSystemTests : FunSpec({
     )
     test("should save and get") {
         val exampleInstance = ExampleInstance("1", "1312")
-
-        TestSystem.instance
-            .elasticsearch()
-            .save(exampleInstance.id, exampleInstance)
-            .shouldGet<ExampleInstance>(exampleInstance.id) {
-                it.description shouldBe exampleInstance.description
+        TestSystem.validate {
+            elasticsearch {
+                save(exampleInstance.id, exampleInstance)
+                shouldGet<ExampleInstance>(exampleInstance.id) {
+                    it.description shouldBe exampleInstance.description
+                }
             }
+        }
     }
 
     test("should save 2 documents with the same description, then delete first one and query by description") {
@@ -86,18 +86,19 @@ class ElasticsearchTestSystemTests : FunSpec({
         val exampleInstance2 = ExampleInstance("2", desc)
         val queryByDesc = QueryBuilders.term().field("description.keyword").value(desc).queryName("query_name").build()
         val queryAsString = queryByDesc.asJsonString()
-
-        TestSystem.instance
-            .elasticsearch()
-            .save(exampleInstance1.id, exampleInstance1)
-            .save(exampleInstance2.id, exampleInstance2)
-            .shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
-                it.size shouldBe 2
+        TestSystem.validate {
+            elasticsearch {
+                save(exampleInstance1.id, exampleInstance1)
+                save(exampleInstance2.id, exampleInstance2)
+                shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
+                    it.size shouldBe 2
+                }
+                shouldDelete(exampleInstance1.id)
+                shouldGet<ExampleInstance>(exampleInstance2.id) {}
+                shouldQuery<ExampleInstance>(queryAsString) {
+                    it.size shouldBe 1
+                }
             }
-            .shouldDelete(exampleInstance1.id)
-            .shouldGet<ExampleInstance>(exampleInstance2.id) {}
-            .shouldQuery<ExampleInstance>(queryAsString) {
-                it.size shouldBe 1
-            }
+        }
     }
 })

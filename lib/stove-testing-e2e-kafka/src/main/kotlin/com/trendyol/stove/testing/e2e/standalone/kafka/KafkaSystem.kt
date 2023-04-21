@@ -19,7 +19,7 @@ import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
@@ -83,7 +83,7 @@ fun TestSystem.withKafka(
     return this
 }
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.kafka(configure: () -> KafkaSystemOptions): TestSystem =
     this.testSystem.withKafka(configure())
 

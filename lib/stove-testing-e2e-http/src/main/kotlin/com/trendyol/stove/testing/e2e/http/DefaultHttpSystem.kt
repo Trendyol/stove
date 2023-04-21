@@ -10,7 +10,7 @@ import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import java.net.URI
@@ -42,7 +42,7 @@ fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSyste
     return this
 }
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.httpClient(configure: () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
     this.testSystem.withHttpClient(configure())
 

@@ -7,7 +7,7 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.testcontainers.containers.MongoDBContainer
@@ -52,11 +52,11 @@ fun TestSystem.withMongodb(
     return this
 }
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem =
     this.testSystem.withMongodb(configure())
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.mongodbDsl(configure: MongodbOptionsDsl.() -> Unit): TestSystem =
     this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
 

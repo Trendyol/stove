@@ -63,7 +63,7 @@ fun TestSystem.withCouchbase(
     return this
 }
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem =
     this.testSystem.withCouchbase(configure())
 

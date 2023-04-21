@@ -16,34 +16,37 @@ class ExampleTest : FunSpec({
     )
 
     test("should save jedi") {
-        val givenId = 10
-        val givenName = "Luke Skywalker"
         TestSystem
-            .instance
-            .postgresql()
-            .shouldExecute(
-                """
+            .validate {
+                val givenId = 10
+                val givenName = "Luke Skywalker"
+                postgresql {
+                    shouldExecute(
+                        """
                     DROP TABLE IF EXISTS Jedis;
                     CREATE TABLE IF NOT EXISTS Jedis (
                     	id serial PRIMARY KEY,
                     	name VARCHAR (50)  NOT NULL
                     );
-                """.trimIndent()
-            )
-            .shouldExecute("INSERT INTO Jedis (id, name) VALUES ('$givenId', 'Obi Wan Kenobi')")
-            .then()
-            .http()
-            .postAndExpectBodilessResponse(
-                "/jedis/$givenId",
-                body = UpdateJediRequest(givenName).some()
-            ) { actual ->
-                actual.status shouldBe 200
-            }
-            .then()
-            .postgresql()
-            .shouldQuery<JediTestAssert>("Select * FROM Jedis WHERE id=$givenId") {
-                it.count() shouldBe 1
-                it.first().name shouldBe givenName
+                        """.trimIndent()
+                    )
+                    shouldExecute("INSERT INTO Jedis (id, name) VALUES ('$givenId', 'Obi Wan Kenobi')")
+                }
+                http {
+                    postAndExpectBodilessResponse(
+                        "/jedis/$givenId",
+                        body = UpdateJediRequest(givenName).some()
+                    ) { actual ->
+                        actual.status shouldBe 200
+                    }
+                }
+
+                postgresql {
+                    shouldQuery<JediTestAssert>("Select * FROM Jedis WHERE id=$givenId") {
+                        it.count() shouldBe 1
+                        it.first().name shouldBe givenName
+                    }
+                }
             }
     }
 })

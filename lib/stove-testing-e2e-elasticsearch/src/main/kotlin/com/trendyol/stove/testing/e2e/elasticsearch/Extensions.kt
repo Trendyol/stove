@@ -5,7 +5,7 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 
@@ -38,7 +38,7 @@ fun TestSystem.withElasticsearch(
         .let { this }
 }
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem =
     this.testSystem.withElasticsearch(configure())
 

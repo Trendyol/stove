@@ -19,7 +19,7 @@ fun TestSystem.systemUnderTest(
     withParameters: List<String> = listOf(),
 ): ReadyTestSystem = applicationUnderTest(KtorApplicationUnderTest(this, runner, withParameters))
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.ktor(
     runner: Runner<ApplicationEngine>,
     withParameters: List<String> = listOf(),

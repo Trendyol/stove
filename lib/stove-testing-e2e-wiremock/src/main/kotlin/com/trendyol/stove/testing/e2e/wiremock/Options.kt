@@ -6,7 +6,7 @@ import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 
@@ -64,7 +64,7 @@ fun TestSystem.withWireMock(
 ).also { getOrRegister(it) }
     .let { this }
 
-@ExperimentalDsl
+@ExperimentalStoveDsl
 fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem =
     this.testSystem.withWireMock(configure())
 

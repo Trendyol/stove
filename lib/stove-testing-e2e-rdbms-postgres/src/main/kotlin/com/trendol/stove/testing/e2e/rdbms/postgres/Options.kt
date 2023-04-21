@@ -9,7 +9,7 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalDsl
+import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import org.testcontainers.containers.PostgreSQLContainer
@@ -39,8 +39,8 @@ fun TestSystem.withPostgresql(
 }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
     .let { this }
 
-@ExperimentalDsl
-fun WithDsl.postgresql(configure: () -> PostgresqlOptions): TestSystem =
+@ExperimentalStoveDsl
+fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
     this.testSystem.withPostgresql(configure())
 
 fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
