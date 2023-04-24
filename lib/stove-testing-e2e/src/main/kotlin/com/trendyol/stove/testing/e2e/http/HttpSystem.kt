@@ -86,6 +86,19 @@ interface HttpSystem : PluggedSystem {
         expect: suspend (StoveHttpResponse) -> Unit,
     ): HttpSystem
 
+    /**
+     * Sends a DELETE request to the relative [uri] and expects [StoveHttpResponse]
+     * Use this method when only the status is the important for your case
+     * Provide a [token] in case of Unauthorized with `token = Some("YOUR_TOKEN")`
+     *
+     * Also: [Companion.postAndExpectBodilessResponse]
+     */
+    suspend fun deleteAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String> = None,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): HttpSystem
+
     companion object {
 
         /**

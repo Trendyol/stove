@@ -23,8 +23,8 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
-import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
+import kotlinx.coroutines.future.await
 
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
 
@@ -130,6 +130,15 @@ class DefaultHttpSystem(
     ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    override suspend fun deleteAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        request.DELETE()
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
     override fun then(): TestSystem = testSystem
