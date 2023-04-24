@@ -141,6 +141,33 @@ class DefaultHttpSystem(
         request.DELETE()
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
+    override suspend fun putAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        body: Option<Any>,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        body.fold(
+            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
+            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
+        )
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    override suspend fun <TExpected : Any> putAndExpectJson(
+        uri: String,
+        body: Option<Any>,
+        clazz: KClass<TExpected>,
+        token: Option<String>,
+        expect: suspend (actual: TExpected) -> Unit,
+    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        body.fold(
+            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
+            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
+        )
+    }.let { expect(deserialize(it, clazz)); this }
+
     override fun then(): TestSystem = testSystem
 
     private suspend fun HttpClient.send(
