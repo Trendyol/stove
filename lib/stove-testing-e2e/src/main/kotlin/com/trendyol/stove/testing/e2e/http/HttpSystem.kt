@@ -45,6 +45,34 @@ interface HttpSystem : PluggedSystem {
     ): HttpSystem
 
     /**
+     * Sends a PUT request to the relative [uri] and expects [StoveHttpResponse] without a body
+     * Use this method when only the status is the important for your case
+     * Provide a [token] in case of Unauthorized with `token = Some("YOUR_TOKEN")`
+     *
+     * Also: [Companion.putAndExpectBodilessResponse]
+     */
+    suspend fun putAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String> = None,
+        body: Option<Any> = None,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): HttpSystem
+
+    /**
+     * Sends a PUT request with [body] to the relative [uri]
+     * To skip the body use [None] as value
+     *
+     * Also: [Companion.postAndExpectJson]
+     * */
+    suspend fun <TExpected : Any> putAndExpectJson(
+        uri: String,
+        body: Option<Any>,
+        clazz: KClass<TExpected>,
+        token: Option<String> = None,
+        expect: suspend (actual: TExpected) -> Unit,
+    ): HttpSystem
+
+    /**
      * Sends a GET request to the relative [uri] and expects a type of [TExpected] for validation
      * Provide a [token] in case of Unauthorized with `token = Some("YOUR_TOKEN")`
      *
@@ -82,6 +110,19 @@ interface HttpSystem : PluggedSystem {
     suspend fun getResponse(
         uri: String,
         queryParams: Map<String, String>,
+        token: Option<String> = None,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): HttpSystem
+
+    /**
+     * Sends a DELETE request to the relative [uri] and expects [StoveHttpResponse]
+     * Use this method when only the status is the important for your case
+     * Provide a [token] in case of Unauthorized with `token = Some("YOUR_TOKEN")`
+     *
+     * Also: [Companion.deleteAndExpectBodilessResponse]
+     */
+    suspend fun deleteAndExpectBodilessResponse(
+        uri: String,
         token: Option<String> = None,
         expect: suspend (StoveHttpResponse) -> Unit,
     ): HttpSystem
@@ -178,5 +219,44 @@ interface HttpSystem : PluggedSystem {
             uri: String,
             noinline expect: suspend (actual: StoveHttpResponse) -> Unit,
         ): HttpSystem = this.postAndExpectBodilessResponse(uri, None, None, expect)
+
+        /**
+         * Extension for: [HttpSystem.deleteAndExpectBodilessResponse]
+         * */
+        suspend inline fun HttpSystem.deleteAndExpectBodilessResponse(
+            uri: String,
+            noinline expect: suspend (actual: StoveHttpResponse) -> Unit,
+        ): HttpSystem = this.deleteAndExpectBodilessResponse(uri, None, expect)
+
+        suspend inline fun <reified TExpected : Any> HttpSystem.putAndExpectJson(
+            uri: String,
+            body: Option<Any> = None,
+            noinline expect: suspend (actual: TExpected) -> Unit,
+        ): HttpSystem = this.putAndExpectJson(uri, body, TExpected::class, None, expect)
+
+        /**
+         * Extension for: [HttpSystem.putAndExpectJson]
+         * */
+        suspend inline fun <reified TExpected : Any> HttpSystem.putAndExpectJson(
+            uri: String,
+            noinline expect: suspend (actual: TExpected) -> Unit,
+        ): HttpSystem = this.putAndExpectJson(uri, None, TExpected::class, None, expect)
+
+        /**
+         * Extension for: [HttpSystem.putAndExpectBodilessResponse]
+         * */
+        suspend inline fun HttpSystem.putAndExpectBodilessResponse(
+            uri: String,
+            body: Option<Any> = None,
+            noinline expect: suspend (actual: StoveHttpResponse) -> Unit,
+        ): HttpSystem = this.putAndExpectBodilessResponse(uri, None, body, expect)
+
+        /**
+         * Extension for: [HttpSystem.putAndExpectBodilessResponse]
+         * */
+        suspend inline fun HttpSystem.putAndExpectBodilessResponse(
+            uri: String,
+            noinline expect: suspend (actual: StoveHttpResponse) -> Unit,
+        ): HttpSystem = this.putAndExpectBodilessResponse(uri, None, None, expect)
     }
 }

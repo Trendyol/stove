@@ -23,8 +23,8 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
-import kotlinx.coroutines.future.await
 import kotlin.reflect.KClass
+import kotlinx.coroutines.future.await
 
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
 
@@ -131,6 +131,42 @@ class DefaultHttpSystem(
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    override suspend fun deleteAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        request.DELETE()
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    override suspend fun putAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        body: Option<Any>,
+        expect: suspend (StoveHttpResponse) -> Unit,
+    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        body.fold(
+            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
+            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
+        )
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    override suspend fun <TExpected : Any> putAndExpectJson(
+        uri: String,
+        body: Option<Any>,
+        clazz: KClass<TExpected>,
+        token: Option<String>,
+        expect: suspend (actual: TExpected) -> Unit,
+    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        body.fold(
+            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
+            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
+        )
+    }.let { expect(deserialize(it, clazz)); this }
 
     override fun then(): TestSystem = testSystem
 
