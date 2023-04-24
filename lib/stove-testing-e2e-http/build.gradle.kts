@@ -5,4 +5,6 @@ dependencies {
     implementation(libs.kotlinx.reactive)
     implementation(libs.kotlinx.jdk8)
     implementation(libs.kotlinx.jvm)
+
+    testImplementation(project(":lib:stove-testing-e2e-wiremock"))
 }

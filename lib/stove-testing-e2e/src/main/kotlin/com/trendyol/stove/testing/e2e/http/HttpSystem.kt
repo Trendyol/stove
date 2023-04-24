@@ -90,6 +90,8 @@ interface HttpSystem : PluggedSystem {
      * Sends a DELETE request to the relative [uri] and expects [StoveHttpResponse]
      * Use this method when only the status is the important for your case
      * Provide a [token] in case of Unauthorized with `token = Some("YOUR_TOKEN")`
+     *
+     * Also: [Companion.deleteAndExpectBodilessResponse]
      */
     suspend fun deleteAndExpectBodilessResponse(
         uri: String,
