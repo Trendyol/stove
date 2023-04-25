@@ -130,6 +130,7 @@ class KafkaSystem(
     override suspend fun shouldBeFailed(
         atLeastIn: Duration,
         message: Any,
+        exception: Throwable,
     ): MessagingSystem {
         TODO("Not yet implemented")
     }
@@ -145,7 +146,7 @@ class KafkaSystem(
 
     override suspend fun <T : Any> shouldBeFailedOnCondition(
         atLeastIn: Duration,
-        condition: (T) -> Boolean,
+        condition: (T, Throwable) -> Boolean,
         clazz: KClass<T>,
     ): MessagingSystem {
         TODO("Not yet implemented")
