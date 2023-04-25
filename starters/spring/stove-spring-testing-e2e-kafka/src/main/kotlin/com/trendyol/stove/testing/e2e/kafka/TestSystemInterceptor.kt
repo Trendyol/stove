@@ -74,7 +74,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         recordMetadata: RecordMetadata?,
         exception: Exception,
     ): Unit = runBlocking {
-        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.value(), exception))
+        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.value(), extractCause(exception)))
         logger.error(
             """PRODUCER GOT AN ERROR:
             Topic: ${record.topic()}
@@ -92,7 +92,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         exception: Exception,
         consumer: Consumer<String, String>,
     ): Unit = runBlocking {
-        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.value(), exception))
+        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.value(), extractCause(exception)))
         logger.error(
             """CONSUMER GOT AN ERROR:
             Topic: ${record.topic()}
@@ -127,7 +127,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         val getRecords = { exceptions.map { Pair(it.value.message.toString(), it.value.reason) } }
         getRecords.waitUntilConditionMet(atLeastIn, "While WAITING FOR FAILURE ${clazz.java.simpleName}") {
             val outcome = readCatching(it.first, clazz)
-            outcome.isSuccess && condition(outcome.getOrNull().toOption(), extractCause(it.second))
+            outcome.isSuccess && condition(outcome.getOrNull().toOption(), it.second)
         }
 
         throwIfSucceeded(clazz, condition)
@@ -185,7 +185,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         clazz: KClass<T>,
     ): Throwable = exceptions
         .map { Pair(it.value.message.toString(), it.value.reason) }
-        .first { selector(readCatching(it.first, clazz).getOrNull().toOption(), getExceptionFor(selector, clazz)) }
+        .first { selector(readCatching(it.first, clazz).getOrNull().toOption(), it.second) }
         .second
 
     private suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
