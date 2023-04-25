@@ -2,6 +2,7 @@
 
 package com.trendyol.stove.testing.e2e.couchbase
 
+import com.couchbase.client.core.error.DocumentNotFoundException
 import com.couchbase.client.core.msg.kv.DurabilityLevel.PERSIST_TO_MAJORITY
 import com.couchbase.client.java.*
 import com.couchbase.client.java.codec.JacksonJsonSerializer
@@ -18,10 +19,12 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
 
 class CouchbaseSystem internal constructor(
@@ -94,6 +97,21 @@ class CouchbaseSystem internal constructor(
         .awaitSingle().contentAs(clazz.java)
         .let(assertion)
         .let { this }
+
+    override suspend fun shouldNotGet(
+        key: String,
+    ): CouchbaseSystem = when (
+        collection.get(key)
+            .onErrorResume { throwable ->
+                when (throwable) {
+                    is DocumentNotFoundException -> Mono.empty()
+                    else -> throw throwable
+                }
+            }.awaitFirstOrNull()
+    ) {
+        null -> this
+        else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
+    }
 
     suspend fun <T : Any> shouldGet(
         collection: String,

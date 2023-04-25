@@ -15,6 +15,7 @@ import io.kotest.matchers.shouldBe
 import java.time.Duration
 import java.util.UUID
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -81,6 +82,35 @@ class CouchbaseTestSystemUsesDslTests : FunSpec({
                     actual.id shouldBe id
                     actual.description shouldBe testCase.name.testName
                 }
+            }
+        }
+    }
+
+    test("should not get when document does not exist") {
+        val id = UUID.randomUUID().toString()
+        val notExistDocId = UUID.randomUUID().toString()
+        validate {
+            couchbase {
+                saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
+                shouldGet<ExampleInstance>(id) { actual ->
+                    actual.id shouldBe id
+                    actual.description shouldBe testCase.name.testName
+                }
+                shouldNotGet(notExistDocId)
+            }
+        }
+    }
+
+    test("should throw assertion exception when document exist") {
+        val id = UUID.randomUUID().toString()
+        validate {
+            couchbase {
+                saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
+                shouldGet<ExampleInstance>(id) { actual ->
+                    actual.id shouldBe id
+                    actual.description shouldBe testCase.name.testName
+                }
+                assertThrows<AssertionError> { shouldNotGet(id) }
             }
         }
     }
