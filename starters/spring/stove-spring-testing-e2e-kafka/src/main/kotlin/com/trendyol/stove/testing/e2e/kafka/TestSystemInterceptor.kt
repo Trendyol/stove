@@ -185,7 +185,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         clazz: KClass<T>,
     ): Throwable = exceptions
         .map { Pair(it.value.message.toString(), it.value.reason) }
-        .first { selector(readCatching(it.first, clazz).getOrNull().toOption(), it.second) }
+        .first { selector(readCatching(it.first, clazz).getOrNull().toOption(), getExceptionFor(selector, clazz)) }
         .second
 
     private suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
