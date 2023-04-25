@@ -9,6 +9,8 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaConsumerConfiguration
 
+data class BusinessException(override val message: String) : RuntimeException(message)
+
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")
 class FailingProductCreateConsumer {
@@ -22,6 +24,6 @@ class FailingProductCreateConsumer {
     fun listen(cr: ConsumerRecord<String, String>): Unit = runBlocking(MDCContext()) {
         logger.info("Received product failing event ${cr.value()}")
 
-        throw Exception("Failing product create event")
+        throw BusinessException("Failing product create event")
     }
 }

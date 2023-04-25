@@ -96,22 +96,23 @@ class KafkaSystem(
     override suspend fun shouldBeFailed(
         atLeastIn: Duration,
         message: Any,
+        exception: Throwable,
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
+        shouldBeFailedInternal(message::class, atLeastIn) { option, throwable -> option == Some(message) && throwable == exception }
     }.let { this }
 
     override suspend fun <T : Any> shouldBeFailedOnCondition(
         atLeastIn: Duration,
-        condition: (T) -> Boolean,
+        condition: (T, Throwable) -> Boolean,
         clazz: KClass<T>,
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.exists { o -> condition(o) } }
+        shouldBeFailedInternal(clazz, atLeastIn) { message, throwable -> message.exists { m -> condition(m, throwable) } }
     }.let { this }
 
     private suspend fun <T : Any> shouldBeFailedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (Option<T>) -> Boolean,
+        condition: (Option<T>, Throwable) -> Boolean,
     ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
 
     override suspend fun <T : Any> shouldBeConsumedOnCondition(

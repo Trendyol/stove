@@ -13,6 +13,7 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.listener.CompositeRecordInterceptor
+import org.springframework.kafka.listener.ListenerExecutionFailedException
 import org.springframework.kafka.support.ProducerListener
 import org.springframework.stereotype.Component
 import java.util.*
@@ -121,15 +122,23 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     suspend fun <T : Any> waitUntilFailed(
         atLeastIn: Duration,
         clazz: KClass<T>,
-        condition: (Option<T>) -> Boolean,
+        condition: (Option<T>, Throwable) -> Boolean,
     ) {
-        val getRecords = { exceptions.map { it.value.message.toString() } }
+        val getRecords = { exceptions.map { Pair(it.value.message.toString(), it.value.reason) } }
         getRecords.waitUntilConditionMet(atLeastIn, "While WAITING FOR FAILURE ${clazz.java.simpleName}") {
-            val outcome = readCatching(it, clazz)
-            outcome.isSuccess && condition(outcome.getOrNull().toOption())
+            val outcome = readCatching(it.first, clazz)
+            outcome.isSuccess && condition(outcome.getOrNull().toOption(), extractCause(it.second))
         }
 
         throwIfSucceeded(clazz, condition)
+    }
+
+    private fun extractCause(listenerException: Throwable): Throwable = when (listenerException) {
+        is ListenerExecutionFailedException ->
+            listenerException.cause
+                ?: AssertionError("No cause found: Listener was not able to capture the cause")
+
+        else -> listenerException
     }
 
     suspend fun <T : Any> waitUntilPublished(
@@ -166,10 +175,18 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
 
     private fun <T : Any> throwIfSucceeded(
         clazz: KClass<T>,
-        selector: (Option<T>) -> Boolean,
+        selector: (Option<T>, Throwable) -> Boolean,
     ): Unit = consumedRecords
-        .filter { selector(readCatching(it.value.value(), clazz).getOrNull().toOption()) }
+        .filter { selector(readCatching(it.value.value(), clazz).getOrNull().toOption(), getExceptionFor(selector, clazz)) }
         .forEach { throw AssertionError("Expected to fail but succeeded: $it") }
+
+    private fun <T : Any> getExceptionFor(
+        selector: (Option<T>, Throwable) -> Boolean,
+        clazz: KClass<T>,
+    ): Throwable = exceptions
+        .map { Pair(it.value.message.toString(), it.value.reason) }
+        .first { selector(readCatching(it.first, clazz).getOrNull().toOption(), it.second) }
+        .second
 
     private suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
         duration: Duration,
