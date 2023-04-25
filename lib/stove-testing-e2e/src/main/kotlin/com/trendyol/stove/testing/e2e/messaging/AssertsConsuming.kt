@@ -37,6 +37,7 @@ interface AssertsConsuming {
     suspend fun shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
         message: Any,
+        exception: Throwable,
     ): MessagingSystem
 
     /**
@@ -74,7 +75,7 @@ interface AssertsConsuming {
      */
     suspend fun <T : Any> shouldBeFailedOnCondition(
         atLeastIn: Duration,
-        condition: (T) -> Boolean,
+        condition: (T, Throwable) -> Boolean,
         clazz: KClass<T>,
     ): MessagingSystem
 
@@ -93,7 +94,7 @@ interface AssertsConsuming {
          */
         suspend inline fun <reified T : Any> AssertsConsuming.shouldBeFailedOnCondition(
             atLeastIn: Duration = 5.seconds,
-            noinline condition: (T) -> Boolean,
+            noinline condition: (T, Throwable) -> Boolean,
         ): MessagingSystem = this.shouldBeFailedOnCondition(atLeastIn, condition, T::class)
     }
 }

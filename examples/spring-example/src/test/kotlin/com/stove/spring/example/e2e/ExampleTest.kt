@@ -18,6 +18,7 @@ import io.kotest.matchers.string.shouldContain
 import stove.spring.example.application.handlers.ProductCreateRequest
 import stove.spring.example.application.handlers.ProductCreatedEvent
 import stove.spring.example.application.services.SupplierPermission
+import stove.spring.example.infrastructure.messaging.kafka.consumers.BusinessException
 import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
 
 class ExampleTest : FunSpec({
@@ -138,10 +139,10 @@ class ExampleTest : FunSpec({
         TestSystem.validate {
             kafka {
                 publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))
-                shouldBeFailedOnCondition<FailingEvent> { actual ->
-                    actual.id == 5L
+                shouldBeFailedOnCondition<FailingEvent> { actual, exception ->
+                    actual.id == 5L && exception is BusinessException
                 }
-                shouldBeFailed(message = FailingEvent(5L))
+                shouldBeFailed(message = FailingEvent(5L), exception = BusinessException("Failing product create event"))
             }
         }
     }
