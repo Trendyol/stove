@@ -8,8 +8,11 @@ that Stove provides.
 Having said that, the only dependency is `docker` since Stove is
 using [testcontainers](https://github.com/testcontainers/testcontainers-java) underlying.
 
-You can use JUnit and Kotest for running the tests. You can run all the tests on your CI, too. But that needs **DinD(
-docker-in-docker)** integration.
+You can use JUnit and Kotest for running the tests. You can run all the tests on your CI, too.
+But that needs **DinD(docker-in-docker)** integration.
+
+The medium story about the motivation behind the framework:
+[A New Approach to the API End-to-End Testing in Kotlin](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)
 
 ## High Level Architecture
 
