@@ -96,7 +96,7 @@ class CouchbaseTestSystemUsesDslTests : FunSpec({
                     actual.id shouldBe id
                     actual.description shouldBe testCase.name.testName
                 }
-                shouldNotGet(notExistDocId)
+                shouldNotExist(notExistDocId)
             }
         }
     }
@@ -110,7 +110,7 @@ class CouchbaseTestSystemUsesDslTests : FunSpec({
                     actual.id shouldBe id
                     actual.description shouldBe testCase.name.testName
                 }
-                assertThrows<AssertionError> { shouldNotGet(id) }
+                assertThrows<AssertionError> { shouldNotExist(id) }
             }
         }
     }

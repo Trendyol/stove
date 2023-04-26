@@ -15,8 +15,10 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.util.UUID
 import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
+import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -98,6 +100,30 @@ class ElasticsearchTestSystemTests : FunSpec({
                 shouldQuery<ExampleInstance>(queryAsString) {
                     it.size shouldBe 1
                 }
+            }
+        }
+    }
+
+    test("should throw assertion error when document does exist") {
+        val existDocId = UUID.randomUUID().toString()
+        val exampleInstance = ExampleInstance(existDocId, "1312")
+        TestSystem.validate {
+            elasticsearch {
+                save(exampleInstance.id, exampleInstance)
+                shouldGet<ExampleInstance>(exampleInstance.id) {
+                    it.description shouldBe exampleInstance.description
+                }
+
+                assertThrows<AssertionError> { shouldNotExist(existDocId) }
+            }
+        }
+    }
+
+    test("should does not throw exception when given does not exist id") {
+        val notExistDocId = UUID.randomUUID().toString()
+        TestSystem.validate {
+            elasticsearch {
+                shouldNotExist(notExistDocId)
             }
         }
     }

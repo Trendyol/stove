@@ -98,7 +98,7 @@ class CouchbaseSystem internal constructor(
         .let(assertion)
         .let { this }
 
-    override suspend fun shouldNotGet(
+    override suspend fun shouldNotExist(
         key: String,
     ): CouchbaseSystem = when (
         collection.get(key)

@@ -19,7 +19,7 @@ interface DocumentDatabaseSystem : DatabaseSystem {
     /**
      * Fails if the document exists with the given [key]
      */
-    suspend fun shouldNotGet(
+    suspend fun shouldNotExist(
         key: String,
     ): DocumentDatabaseSystem
 

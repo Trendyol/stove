@@ -14,6 +14,7 @@ import org.bson.codecs.pojo.annotations.BsonCreator
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
+import org.junit.jupiter.api.assertThrows
 
 @ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
@@ -39,14 +40,23 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
 
 class MongodbTestSystemTests : FunSpec({
 
+    data class ExampleInstanceWithObjectId @BsonCreator constructor(
+        @BsonId
+        @JsonAlias("_id")
+        val id: ObjectId,
+        @BsonProperty("aggregateId") val aggregateId: String,
+        @BsonProperty("description") val description: String,
+    )
+
+    data class ExampleInstanceWithStringObjectId @BsonCreator constructor(
+        @BsonId
+        @JsonAlias("_id")
+        val id: String,
+        @BsonProperty("aggregateId") val aggregateId: String,
+        @BsonProperty("description") val description: String,
+    )
+
     test("should save and get with objectId") {
-        data class ExampleInstanceWithObjectId @BsonCreator constructor(
-            @BsonId
-            @JsonAlias("_id")
-            val id: ObjectId,
-            @BsonProperty("aggregateId") val aggregateId: String,
-            @BsonProperty("description") val description: String,
-        )
 
         val id = ObjectId()
         TestSystem.validate {
@@ -68,14 +78,6 @@ class MongodbTestSystemTests : FunSpec({
     }
 
     test("should save and get with string objectId") {
-        data class ExampleInstanceWithStringObjectId @BsonCreator constructor(
-            @BsonId
-            @JsonAlias("_id")
-            val id: String,
-            @BsonProperty("aggregateId") val aggregateId: String,
-            @BsonProperty("description") val description: String,
-        )
-
         val id = ObjectId()
         TestSystem.validate {
             mongodb {
@@ -96,84 +98,97 @@ class MongodbTestSystemTests : FunSpec({
     }
 
     test("Get with query should work") {
-
-        data class ExampleInstance @BsonCreator constructor(
-            @BsonId
-            @JsonAlias("_id")
-            val id: ObjectId,
-            @BsonProperty("aggregateId") val aggregateId: String,
-            @BsonProperty("description") val description: String,
-            @BsonProperty val isActive: Boolean = true,
-        )
-
         val id1 = ObjectId()
         val id2 = ObjectId()
         val id3 = ObjectId()
+        val firstDesc = "same description"
+        val secondDesc = "different description"
         TestSystem.validate {
             mongodb {
                 saveToDefaultCollection(
                     id1.toHexString(),
-                    ExampleInstance(
+                    ExampleInstanceWithObjectId(
                         id = id1,
                         aggregateId = id1.toHexString(),
-                        description = testCase.name.testName + "1"
+                        description = firstDesc
                     )
                 )
                 saveToDefaultCollection(
                     id2.toHexString(),
-                    ExampleInstance(
+                    ExampleInstanceWithObjectId(
                         id = id2,
                         aggregateId = id2.toHexString(),
-                        description = testCase.name.testName + "2"
+                        description = secondDesc
                     )
                 )
                 saveToDefaultCollection(
                     id3.toHexString(),
-                    ExampleInstance(
+                    ExampleInstanceWithObjectId(
                         id = id3,
                         aggregateId = id3.toHexString(),
-                        description = testCase.name.testName + "3",
-                        isActive = false
+                        description = secondDesc
                     )
                 )
-                shouldQuery<ExampleInstance>("{\"isActive\": true}") { actual ->
+                shouldQuery<ExampleInstanceWithObjectId>("{\"description\": \"$secondDesc\"}") { actual ->
                     actual.count() shouldBe 2
-                    actual.forAny { it.id shouldBe id1 }
                     actual.forAny { it.id shouldBe id2 }
+                    actual.forAny { it.id shouldBe id3 }
                 }
-                shouldQuery<ExampleInstance>("{\"isActive\": false}") { actual ->
+                shouldQuery<ExampleInstanceWithObjectId>("{\"description\": \"$firstDesc\"}") { actual ->
                     actual.count() shouldBe 1
-                    actual.first().id shouldBe id3
+                    actual.first().id shouldBe id1
                 }
             }
         }
     }
 
-    test("should delete") {
-        data class ExampleInstance @BsonCreator constructor(
-            @BsonId
-            @JsonAlias("_id")
-            val id: String,
-            @BsonProperty("aggregateId") val aggregateId: String,
-            @BsonProperty("description") val description: String,
-        )
+    test("should throw assertion error when document does exist") {
 
+        val id1 = ObjectId()
+        TestSystem.validate {
+            mongodb {
+                saveToDefaultCollection(
+                    id1.toHexString(),
+                    ExampleInstanceWithObjectId(
+                        id = id1,
+                        aggregateId = id1.toHexString(),
+                        description = testCase.name.testName + "1"
+                    )
+                )
+                shouldGet<ExampleInstanceWithStringObjectId>(id1.toHexString()) { actual ->
+                    actual.aggregateId shouldBe id1.toHexString()
+                }
+                assertThrows<AssertionError> { shouldNotExist(id1.toHexString()) }
+            }
+        }
+    }
+
+    test("should does not throw exception when given does not exist id") {
+        val notExistDocId = ObjectId()
+        TestSystem.validate {
+            mongodb {
+                shouldNotExist(notExistDocId.toHexString())
+            }
+        }
+    }
+
+    test("should delete") {
         val id = ObjectId()
         TestSystem.validate {
             mongodb {
                 saveToDefaultCollection(
                     id.toHexString(),
-                    ExampleInstance(
-                        id = id.toHexString(),
+                    ExampleInstanceWithObjectId(
+                        id = id,
                         aggregateId = id.toHexString(),
                         description = testCase.name.testName
                     )
                 )
-                shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
+                shouldQuery<ExampleInstanceWithObjectId>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
                     actual.size shouldBe 1
                 }
                 shouldDelete(id.toHexString())
-                shouldQuery<ExampleInstance>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
+                shouldQuery<ExampleInstanceWithObjectId>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
                     actual.size shouldBe 0
                 }
             }
