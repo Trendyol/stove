@@ -163,7 +163,7 @@ class MongodbTestSystemTests : FunSpec({
         }
     }
 
-    test("should does not throw exception when given does not exist id") {
+    test("should not throw exception when given does not exist id") {
         val notExistDocId = ObjectId()
         TestSystem.validate {
             mongodb {
