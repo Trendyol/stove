@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.http
 import arrow.core.None
 import arrow.core.some
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.get
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.getResponse
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.getMany
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJson
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.putAndExpectJson
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -114,8 +114,9 @@ class DefaultHttpSystemTests : FunSpec({
                 get<TestDto>("/get") { actual ->
                     actual.name shouldBe expectedGetDtoName
                 }
-                getResponse("/get") {
-                    it.status shouldBe 200
+
+                getMany<TestDto>("/get-many") { actual ->
+                    actual[0] shouldBe TestDto(expectedGetDtoName)
                 }
             }
         }

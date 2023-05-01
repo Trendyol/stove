@@ -5,7 +5,6 @@ package com.trendyol.stove.testing.e2e.http
 import arrow.core.Option
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
@@ -117,10 +116,19 @@ class DefaultHttpSystem(
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (List<TExpected>) -> Unit,
-    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        request.GET()
-    }.let { expect(objectMapper.readValue(it.body())); this }
+    ): DefaultHttpSystem {
+        return httpClient.send(uri, queryParams) { request ->
+            token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+            request.GET()
+        }.let {
+            expect(
+                objectMapper.readValue(
+                    it.body(),
+                    objectMapper.typeFactory.constructCollectionType(List::class.java, clazz.javaObjectType)
+                )
+            ); this
+        }
+    }
 
     override suspend fun getResponse(
         uri: String,
