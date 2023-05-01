@@ -182,8 +182,8 @@ class DefaultHttpSystem(
         configureRequest: (request: HttpRequest.Builder) -> HttpRequest.Builder,
     ): HttpResponse<ByteArray> {
         val requestBuilder = HttpRequest.newBuilder()
-          .uri(relative(uri, queryParams))
-          .setHeader(Headers.ContentType, MediaType.ApplicationJson)
+            .uri(relative(uri, queryParams))
+            .setHeader(Headers.ContentType, MediaType.ApplicationJson)
         return sendAsync(configureRequest(requestBuilder).build(), BodyHandlers.ofByteArray()).await()
     }
 
@@ -191,7 +191,7 @@ class DefaultHttpSystem(
         uri: String,
         queryParams: Map<String, String> = mapOf(),
     ): URI = URI.create(testSystem.baseUrl)
-      .resolve(uri + queryParams.toParamsString())
+        .resolve(uri + queryParams.toParamsString())
 
     private fun Map<String, String>.toParamsString(): String = when {
         this.any() -> "?${this.map { "${it.key}=${URLEncoder.encode(it.value, Charsets.UTF_8)}" }.joinToString("&")}"
