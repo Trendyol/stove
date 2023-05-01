@@ -130,10 +130,6 @@ class DefaultHttpSystem(
         }
     }
 
-    data class TestData(
-        val name: String,
-    )
-
     override suspend fun getResponse(
         uri: String,
         queryParams: Map<String, String>,
