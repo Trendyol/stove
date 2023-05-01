@@ -111,6 +111,14 @@ class ElasticsearchSystem internal constructor(
         .orElse { throw AssertionError("Resource with key ($key) is not found") }
         .let { this }
 
+    override suspend fun shouldNotExist(key: String): ElasticsearchSystem {
+        val exists = esClient.exists { req -> req.index(context.index).id(key) }
+        if (exists.value()) {
+            throw AssertionError("The document with the given id($key) was not expected, but found!")
+        }
+        return this
+    }
+
     override suspend fun shouldDelete(key: String): ElasticsearchSystem = esClient
         .delete(DeleteRequest.of { req -> req.index(context.index).id(key).refresh(Refresh.WaitFor) })
         .let { this }

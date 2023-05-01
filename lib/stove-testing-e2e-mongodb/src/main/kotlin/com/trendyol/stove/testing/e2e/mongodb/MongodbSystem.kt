@@ -13,6 +13,7 @@ import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.runBlocking
 import org.bson.BsonDocument
 import org.bson.Document
@@ -86,6 +87,16 @@ class MongodbSystem internal constructor(
         .let { context.options.objectMapper.readValue(it, clazz.java) }
         .also(assertion)
         .let { this }
+
+    override suspend fun shouldNotExist(key: String): DocumentDatabaseSystem {
+        val isExistById = !mongoClient.getDatabase(context.options.databaseOptions.default.name)
+            .getCollection(context.options.databaseOptions.default.collection)
+            .find(filterById(key)).awaitFirstOrNull().isNullOrEmpty()
+        if (isExistById) {
+            throw AssertionError("The document with the given id($key) was not expected, but found!")
+        }
+        return this
+    }
 
     override suspend fun shouldDelete(
         key: String,

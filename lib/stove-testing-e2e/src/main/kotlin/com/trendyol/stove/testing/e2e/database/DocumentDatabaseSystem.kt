@@ -17,6 +17,13 @@ interface DocumentDatabaseSystem : DatabaseSystem {
     ): DocumentDatabaseSystem
 
     /**
+     * Fails if the document exists with the given [key]
+     */
+    suspend fun shouldNotExist(
+        key: String,
+    ): DocumentDatabaseSystem
+
+    /**
      * Deletes the given [key] from the database
      */
     suspend fun shouldDelete(key: String): DocumentDatabaseSystem
