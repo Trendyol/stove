@@ -25,9 +25,8 @@ data class MongoContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "mongo",
     override val tag: String = "latest",
-) : ContainerOptions {
-    override val imageWithTag: String = "$image:$tag"
-}
+    override val imageWithTag: String = "$image:$tag",
+) : ContainerOptions
 
 data class DatabaseOptions(
     val default: DefaultDatabase = DefaultDatabase(),
