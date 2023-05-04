@@ -41,7 +41,7 @@ fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),
 ): TestSystem = withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
     KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
-        .withKraft()
+        .withEmbeddedZookeeper()
         .withReuse(this.options.keepDependenciesRunning)
 }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
     .let { this }
