@@ -3,6 +3,8 @@ package com.stove.spring.example.e2e
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystemOptions
 import com.trendyol.stove.testing.e2e.couchbase.couchbase
 import com.trendyol.stove.testing.e2e.http.httpClient
+import com.trendyol.stove.testing.e2e.kafka.KafkaContainerOptions
+import com.trendyol.stove.testing.e2e.kafka.KafkaSystemOptions
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -22,7 +24,9 @@ class TestSystemConfig : AbstractProjectConfig() {
             .with {
                 httpClient()
                 couchbase { CouchbaseSystemOptions("Stove") }
-                kafka()
+                kafka {
+                    KafkaSystemOptions(containerOptions = KafkaContainerOptions(tag = "latest"))
+                }
                 wiremock {
                     WireMockSystemOptions(
                         port = 9099,

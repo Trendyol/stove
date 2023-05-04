@@ -12,4 +12,6 @@ interface ContainerOptions {
     val tag: String
 
     val imageWithTag: String
+
+    val compatibleSubstitute: String get() = image
 }

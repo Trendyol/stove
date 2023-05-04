@@ -2,27 +2,32 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.trendyol.stove.testing.e2e.containers.ContainerOptions
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import org.testcontainers.containers.KafkaContainer
 
 data class KafkaExposedConfiguration(
     val bootstrapServers: String,
 ) : ExposedConfiguration
 
+data class KafkaContainerOptions(
+    override val registry: String = DEFAULT_REGISTRY,
+    override val image: String = "confluentinc/cp-kafka",
+    override val tag: String = "latest",
+    override val imageWithTag: String = "$image:$tag",
+) : ContainerOptions
+
 data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+    val containerOptions: ContainerOptions = KafkaContainerOptions(),
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
@@ -34,7 +39,7 @@ data class KafkaContext(
 
 fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions(),
-): TestSystem = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
+): TestSystem = withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
     KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
         .withEmbeddedZookeeper()
         .withReuse(this.options.keepDependenciesRunning)
