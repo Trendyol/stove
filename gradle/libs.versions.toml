@@ -1,30 +1,28 @@
 [versions]
-kotlin = "1.8.21"
-kotlinx = "1.7.0"
-spring-boot = "2.7.11"
-spring-dependency-management = "1.1.0"
-spring-framework = "5.3.27"
-spring-kafka = "2.9.8"
-couchbase-client = "3.4.6"
-couchbase-client-metrics = "0.4.6"
-jackson = "2.15.0"
-logback-gelf = "4.0.2"
-commons-io = "2.11.0"
-caffeine = "3.1.2"
-arrow = "1.1.5"
-io-reactor = "3.5.5"
-slf4j = "2.0.7"
-kafka = "3.4.0"
-kafka-kotlin = "0.3.0"
-dokka = "1.8.10"
-knit = "0.4.0"
-kover = "0.6.1"
-ktor = "2.3.0"
-koin = "3.4.0"
-r2dbc-spi = "1.0.0.RELEASE"
-r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.7.1"
-mongodb = "4.9.1"
+kotlin = { strictly = "1.8.21" }
+kotlinx = { strictly = "1.7.0" }
+spring-boot = { strictly = "2.7.11" }
+spring-dependency-management = { strictly = "1.1.0" }
+spring-framework = { strictly = "5.3.27" }
+spring-kafka = { strictly = "2.9.8" }
+couchbase-client = { strictly = "3.4.6" }
+couchbase-client-metrics = { strictly = "0.4.6" }
+jackson = { strictly = "2.15.0" }
+arrow = { strictly = "1.1.5" }
+io-reactor = { strictly = "3.5.5" }
+io-reactor-extensions = { strictly = "1.2.2" }
+slf4j = { strictly = "2.0.7" }
+kafka = { strictly = "3.4.0" }
+kafka-kotlin = { strictly = "0.3.0" }
+dokka = { strictly = "1.8.10" }
+knit = { strictly = "0.4.0" }
+kover = { strictly = "0.6.1" }
+ktor = { strictly = "2.3.0" }
+koin = { strictly = "3.4.0" }
+r2dbc-spi = { strictly = "1.0.0.RELEASE" }
+r2dbc-postgresql = { strictly = "0.8.13.RELEASE" }
+elastic = { strictly = "8.7.1" }
+mongodb = { strictly = "4.9.1" }
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -37,7 +35,7 @@ kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", ver
 kotlinx-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinx" }
 kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
-kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version = "1.2.2" }
+kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
