@@ -9,7 +9,7 @@ couchbase-client = { strictly = "3.4.6" }
 couchbase-client-metrics = { strictly = "0.4.6" }
 jackson = { strictly = "2.15.0" }
 arrow = { strictly = "1.1.5" }
-io-reactor = { strictly = "3.5.5" }
+io-reactor = { strictly = "3.5.6" }
 io-reactor-extensions = { strictly = "1.2.2" }
 slf4j = { strictly = "2.0.7" }
 kafka = { strictly = "3.4.0" }
