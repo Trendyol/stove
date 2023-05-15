@@ -4,7 +4,7 @@ kotlinx = { strictly = "1.7.1" }
 spring-boot = { strictly = "2.7.11" }
 spring-dependency-management = { strictly = "1.1.0" }
 spring-framework = { strictly = "5.3.27" }
-spring-kafka = { strictly = "2.9.8" }
+spring-kafka = { strictly = "2.9.9" }
 couchbase-client = { strictly = "3.4.6" }
 couchbase-client-metrics = { strictly = "0.4.6" }
 jackson = { strictly = "2.15.0" }
