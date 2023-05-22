@@ -13,7 +13,7 @@ io-reactor = { strictly = "3.5.6" }
 io-reactor-extensions = { strictly = "1.2.2" }
 slf4j = { strictly = "2.0.7" }
 kafka = { strictly = "3.4.0" }
-kafka-kotlin = { strictly = "0.3.0" }
+kafka-kotlin = { strictly = "0.3.1" }
 dokka = { strictly = "1.8.10" }
 knit = { strictly = "0.4.0" }
 kover = { strictly = "0.7.0" }
