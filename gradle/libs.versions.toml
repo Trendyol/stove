@@ -7,7 +7,7 @@ spring-framework = { strictly = "5.3.27" }
 spring-kafka = { strictly = "2.9.9" }
 couchbase-client = { strictly = "3.4.6" }
 couchbase-client-metrics = { strictly = "0.4.6" }
-jackson = { strictly = "2.15.0" }
+jackson = { strictly = "2.15.1" }
 arrow = { strictly = "1.1.5" }
 io-reactor = { strictly = "3.5.6" }
 io-reactor-extensions = { strictly = "1.2.2" }
