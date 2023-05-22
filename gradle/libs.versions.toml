@@ -16,7 +16,7 @@ kafka = { strictly = "3.4.0" }
 kafka-kotlin = { strictly = "0.3.0" }
 dokka = { strictly = "1.8.10" }
 knit = { strictly = "0.4.0" }
-kover = { strictly = "0.6.1" }
+kover = { strictly = "0.7.0" }
 ktor = { strictly = "2.3.0" }
 koin = { strictly = "3.4.0" }
 r2dbc-spi = { strictly = "1.0.0.RELEASE" }
