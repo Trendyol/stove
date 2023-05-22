@@ -14,6 +14,9 @@ import org.testcontainers.containers.MongoDBContainer
 
 data class MongodbExposedConfiguration(
     val connectionString: String,
+    val host: String,
+    val port: Int,
+    val replicaSetUrl: String,
 ) : ExposedConfiguration
 
 data class MongodbContext(

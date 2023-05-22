@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.module.kotlin.convertValue
@@ -43,7 +41,10 @@ class MongodbSystem internal constructor(
         exposedConfiguration = state.capture {
             context.container.start()
             MongodbExposedConfiguration(
-                context.container.connectionString
+                context.container.connectionString,
+                context.container.host,
+                context.container.firstMappedPort,
+                context.container.replicaSetUrl
             )
         }
         mongoClient = createClient(exposedConfiguration)
