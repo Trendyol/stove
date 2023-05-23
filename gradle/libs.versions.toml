@@ -1,28 +1,28 @@
 [versions]
-kotlin = { strictly = "1.8.21" }
-kotlinx = { strictly = "1.7.1" }
-spring-boot = { strictly = "2.7.12" }
-spring-dependency-management = { strictly = "1.1.0" }
-spring-framework = { strictly = "5.3.27" }
-spring-kafka = { strictly = "2.9.9" }
-couchbase-client = { strictly = "3.4.6" }
-couchbase-client-metrics = { strictly = "0.4.6" }
-jackson = { strictly = "2.15.1" }
-arrow = { strictly = "1.1.5" }
-io-reactor = { strictly = "3.5.6" }
-io-reactor-extensions = { strictly = "1.2.2" }
-slf4j = { strictly = "2.0.7" }
-kafka = { strictly = "3.4.0" }
-kafka-kotlin = { strictly = "0.3.1" }
-dokka = { strictly = "1.8.10" }
-knit = { strictly = "0.4.0" }
-kover = { strictly = "0.7.0" }
-ktor = { strictly = "2.3.0" }
-koin = { strictly = "3.4.0" }
-r2dbc-spi = { strictly = "1.0.0.RELEASE" }
-r2dbc-postgresql = { strictly = "0.8.13.RELEASE" }
-elastic = { strictly = "8.7.1" }
-mongodb = { strictly = "4.9.1" }
+kotlin = "1.8.21"
+kotlinx = "1.7.1"
+spring-boot = "2.7.12"
+spring-dependency-management = "1.1.0"
+spring-framework = "5.3.27"
+spring-kafka = "2.9.9"
+couchbase-client = "3.4.6"
+couchbase-client-metrics = "0.4.6"
+jackson = "2.15.1"
+arrow = "1.1.5"
+io-reactor = "3.5.6"
+io-reactor-extensions = "1.2.2"
+slf4j = "2.0.7"
+kafka = "3.4.0"
+kafka-kotlin = "0.3.1"
+dokka = "1.8.10"
+knit = "0.4.0"
+kover = "0.7.0"
+ktor = "2.3.0"
+koin = "3.4.0"
+r2dbc-spi = "1.0.0.RELEASE"
+r2dbc-postgresql = "0.8.13.RELEASE"
+elastic = "8.7.1"
+mongodb = "4.9.1"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
