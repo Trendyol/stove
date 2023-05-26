@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
+import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -15,14 +16,15 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.util.UUID
 import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 const val testIndex = "stove-test-index"
+const val anotherIndex = "stove-another-index"
 
 class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -32,6 +34,17 @@ class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
             .build()
         connection.indices().create(createIndexRequest)
         logger.info("$testIndex is created")
+    }
+}
+
+class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    override suspend fun execute(connection: ElasticsearchClient) {
+        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
+            .index(anotherIndex)
+            .build()
+        connection.indices().create(createIndexRequest)
+        logger.info("$anotherIndex is created")
     }
 }
 
@@ -47,7 +60,7 @@ class Setup : AbstractProjectConfig() {
                             RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
                         }
                     )
-                )
+                ).migrations { register<AnotherIndexMigrator>() }
             }
             applicationUnderTest(NoOpApplication())
         }.run()
@@ -76,6 +89,18 @@ class ElasticsearchTestSystemTests : FunSpec({
             elasticsearch {
                 save(exampleInstance.id, exampleInstance)
                 shouldGet<ExampleInstance>(exampleInstance.id) {
+                    it.description shouldBe exampleInstance.description
+                }
+            }
+        }
+    }
+
+    test("should save and get from another index") {
+        val exampleInstance = ExampleInstance("1", "1312")
+        TestSystem.validate {
+            elasticsearch {
+                save(anotherIndex, exampleInstance.id, exampleInstance)
+                shouldGet<ExampleInstance>(anotherIndex, exampleInstance.id) {
                     it.description shouldBe exampleInstance.description
                 }
             }
