@@ -1,8 +1,8 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.core.*
+import arrow.core.getOrElse
+import arrow.core.orElse
+import arrow.core.toOption
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
@@ -16,10 +16,10 @@ import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
 import com.trendyol.stove.testing.e2e.containers.NoCertificate
 import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.*
-import javax.net.ssl.SSLContext
-import kotlin.jvm.optionals.getOrElse
-import kotlin.reflect.KClass
+import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
@@ -28,9 +28,13 @@ import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.client.CredentialsProvider
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
-import org.elasticsearch.client.*
+import org.elasticsearch.client.RestClient
+import org.elasticsearch.client.RestClientBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.net.ssl.SSLContext
+import kotlin.jvm.optionals.getOrElse
+import kotlin.reflect.KClass
 
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
@@ -110,6 +114,21 @@ class ElasticsearchSystem internal constructor(
         .map(assertion)
         .orElse { throw AssertionError("Resource with key ($key) is not found") }
         .let { this }
+
+    fun <T : Any> shouldGet(
+        index: String,
+        key: String,
+        assertion: (T) -> Unit,
+        clazz: KClass<T>,
+    ): ElasticsearchSystem {
+        require(index.isNotBlank()) { "Index cannot be blank" }
+        return esClient
+            .get({ req -> req.index(index).id(key).refresh(true) }, clazz.java)
+            .source().toOption()
+            .map(assertion)
+            .orElse { throw AssertionError("Resource with key ($key) is not found") }
+            .let { this }
+    }
 
     override suspend fun shouldNotExist(key: String): ElasticsearchSystem {
         val exists = esClient.exists { req -> req.index(context.index).id(key) }
@@ -200,5 +219,11 @@ class ElasticsearchSystem internal constructor(
             query: Query,
             noinline assertion: (List<T>) -> Unit,
         ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
+
+        inline fun <reified T : Any> ElasticsearchSystem.shouldGet(
+            index: String,
+            key: String,
+            noinline assertion: (T) -> Unit,
+        ): ElasticsearchSystem = this.shouldGet(index, key, assertion, T::class)
     }
 }
