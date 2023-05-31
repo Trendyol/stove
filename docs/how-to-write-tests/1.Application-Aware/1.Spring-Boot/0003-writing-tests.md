@@ -4,7 +4,7 @@ Here is an example test that validates `http://localhost:$port/hello/index` retu
 === "Kotest"
 
     ```kotlin
-    class ExampleTest: FuncSpec({
+    class ExampleTest: FunSpec({
 
         test("should return hi"){
             TestSystem.instance
