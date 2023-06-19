@@ -1,19 +1,19 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 class TestSystemKafkaInterceptor(
     override val adminClient: Admin,
     override val serde: ObjectMapper,
-    private val options: InterceptionOptions,
+    private val options: InterceptionOptions
 ) : ConsumingOps, CommonOps, AutoCloseable {
 
     override val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -25,7 +25,7 @@ class TestSystemKafkaInterceptor(
 
     fun onMessage(
         record: ConsumerRecord<String, Any>,
-        consumer: Consumer<String, Any>,
+        consumer: Consumer<String, Any>
     ): Unit = when {
         options.isErrorTopic(record.topic()) -> recordError(record)
         else -> recordMessage(record, consumer)

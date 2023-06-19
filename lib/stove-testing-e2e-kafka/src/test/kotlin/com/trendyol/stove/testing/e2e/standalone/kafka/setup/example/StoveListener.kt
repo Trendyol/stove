@@ -4,17 +4,17 @@ import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared.TopicDefinition
 import io.github.nomisRev.kafka.sendAwait
-import java.time.Duration
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.asFlow
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
+import java.time.Duration
 
 abstract class StoveListener(
     consumerSettings: Map<String, Any>,
-    producerSettings: Map<String, Any>,
+    producerSettings: Map<String, Any>
 ) : AutoCloseable {
 
     protected val logger = org.slf4j.LoggerFactory.getLogger(javaClass)

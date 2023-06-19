@@ -20,5 +20,5 @@ fun main(args: Array<String>) {
  */
 fun run(
     args: Array<String>,
-    init: SpringApplication.() -> Unit = {},
+    init: SpringApplication.() -> Unit = {}
 ): ConfigurableApplicationContext = runApplication<ExampleApp>(*args, init = init)

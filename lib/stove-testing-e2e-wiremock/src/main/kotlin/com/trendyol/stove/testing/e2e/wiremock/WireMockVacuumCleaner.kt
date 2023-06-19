@@ -7,14 +7,14 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import java.util.UUID
-import java.util.concurrent.ConcurrentMap
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.UUID
+import java.util.concurrent.ConcurrentMap
 
 class WireMockVacuumCleaner(
     private val stubLog: ConcurrentMap<UUID, StubMapping>,
-    private val afterStubRemoved: AfterStubRemoved,
+    private val afterStubRemoved: AfterStubRemoved
 ) : PostServeAction() {
 
     private lateinit var wireMock: WireMockServer
@@ -27,7 +27,7 @@ class WireMockVacuumCleaner(
 
     override fun doGlobalAction(
         serveEvent: ServeEvent,
-        admin: Admin,
+        admin: Admin
     ) {
         if (!serveEvent.wasMatched) {
             return

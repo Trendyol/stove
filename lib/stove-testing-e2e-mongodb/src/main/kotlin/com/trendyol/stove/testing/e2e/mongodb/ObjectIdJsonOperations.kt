@@ -15,14 +15,14 @@ class ObjectIdSerializer : StdSerializer<ObjectId>(ObjectId::class.java) {
     override fun serialize(
         value: ObjectId,
         gen: JsonGenerator,
-        provider: SerializerProvider,
+        provider: SerializerProvider
     ): Unit = gen.writeString(value.toHexString())
 }
 
 class ObjectIdDeserializer : StdDeserializer<ObjectId>(ObjectId::class.java) {
     override fun deserialize(
         parser: JsonParser,
-        context: DeserializationContext,
+        context: DeserializationContext
     ): ObjectId = when (val node = context.parser.codec.readValue(parser, JsonNode::class.java)) {
         is TextNode -> node.textValue().removeSurrounding("\"")
         is JsonNode -> node["\$oid"].textValue().removeSurrounding("\"")

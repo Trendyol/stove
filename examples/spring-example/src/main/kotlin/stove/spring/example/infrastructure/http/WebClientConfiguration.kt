@@ -14,8 +14,8 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.web.reactive.function.client.*
 import reactor.netty.http.client.HttpClient
-import java.util.concurrent.TimeUnit
 import stove.spring.example.infrastructure.ObjectMapperConfig
+import java.util.concurrent.TimeUnit
 
 @Configuration
 @EnableConfigurationProperties(WebClientConfigurationProperties::class)
@@ -56,7 +56,7 @@ class WebClientConfiguration(private val webClientConfigurationProperties: WebCl
     private fun defaultWebClientBuilder(
         baseUrl: String,
         connectTimeout: Int,
-        readTimeout: Long,
+        readTimeout: Long
     ): WebClient.Builder {
         return WebClient.builder()
             .baseUrl(baseUrl)

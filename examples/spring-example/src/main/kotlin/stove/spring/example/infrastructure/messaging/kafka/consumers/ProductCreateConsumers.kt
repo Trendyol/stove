@@ -8,15 +8,15 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
-import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaConsumerConfiguration
 import stove.spring.example.application.handlers.ProductCreator
 import stove.spring.example.application.handlers.mapToCreateRequest
+import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaConsumerConfiguration
 
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")
 class ProductTransferConsumers(
     private val objectMapper: ObjectMapper,
-    private val productCreator: ProductCreator,
+    private val productCreator: ProductCreator
 ) {
     private val logger = LoggerFactory.getLogger(ProductTransferConsumers::class.java)
 
@@ -43,5 +43,5 @@ class ProductTransferConsumers(
 data class ProductCreateEvent(
     val id: Long,
     val name: String,
-    val supplierId: Long,
+    val supplierId: Long
 )

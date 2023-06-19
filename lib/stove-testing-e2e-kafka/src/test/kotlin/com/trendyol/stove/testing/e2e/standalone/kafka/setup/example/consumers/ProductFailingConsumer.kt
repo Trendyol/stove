@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 
 class ProductFailingConsumer(
     consumerSettings: Map<String, Any>,
-    producerSettings: Map<String, Any>,
+    producerSettings: Map<String, Any>
 ) : StoveListener(consumerSettings, producerSettings) {
 
     override val topicDefinition: TopicDefinition = TopicDefinition("productFailing", "productFailing.retry", "productFailing.error")

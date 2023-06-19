@@ -12,7 +12,7 @@ import kotlin.reflect.jvm.jvmErasure
 internal fun <T : Any> mapper(
     row: Row,
     rowMetadata: RowMetadata,
-    clazz: KClass<T>,
+    clazz: KClass<T>
 ): T = when {
     clazz.isData -> dataClassMapper(clazz, rowMetadata, row)
     else -> classMapper(clazz, rowMetadata, row)
@@ -21,7 +21,7 @@ internal fun <T : Any> mapper(
 private fun <T : Any> dataClassMapper(
     clazz: KClass<T>,
     rowMetadata: RowMetadata,
-    row: Row,
+    row: Row
 ): T {
     val constructor = clazz.primaryConstructor!!
 
@@ -36,7 +36,7 @@ private fun <T : Any> dataClassMapper(
 private fun <T : Any> classMapper(
     clazz: KClass<T>,
     rowMetadata: RowMetadata,
-    row: Row,
+    row: Row
 ): T {
     val classMemberProperties = clazz.memberProperties.filterIsInstance<KMutableProperty<*>>()
     val instance = clazz.createInstance()
@@ -104,5 +104,5 @@ private fun Class<*>.isNumericType(): Boolean {
 
 private fun checkBothNumeric(
     jClazz1: Class<*>,
-    jClazz2: Class<*>,
+    jClazz2: Class<*>
 ): Boolean = jClazz1.isNumericType() && jClazz2.isNumericType()

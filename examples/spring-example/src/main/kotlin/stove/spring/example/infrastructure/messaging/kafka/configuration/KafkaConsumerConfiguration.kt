@@ -17,13 +17,13 @@ import org.springframework.util.backoff.FixedBackOff
 @Configuration
 class KafkaConsumerConfiguration(
     private val objectMapper: ObjectMapper,
-    private val customConsumerInterceptor: ConsumerAwareRecordInterceptor<String, String>,
+    private val customConsumerInterceptor: ConsumerAwareRecordInterceptor<String, String>
 ) {
 
     @Bean
     fun kafkaListenerContainerFactory(
         kafkaTemplate: KafkaTemplate<String, Any>,
-        consumerFactory: ConsumerFactory<String, Any>,
+        consumerFactory: ConsumerFactory<String, Any>
     ): ConcurrentKafkaListenerContainerFactory<String, String> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
         factory.setConcurrency(1)
@@ -42,7 +42,7 @@ class KafkaConsumerConfiguration(
     @Bean
     fun kafkaRetryListenerContainerFactory(
         kafkaTemplate: KafkaTemplate<*, *>,
-        consumerRetryFactory: ConsumerFactory<String, Any>,
+        consumerRetryFactory: ConsumerFactory<String, Any>
     ): ConcurrentKafkaListenerContainerFactory<String, String> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
         factory.setConcurrency(1)

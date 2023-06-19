@@ -66,7 +66,7 @@ internal class Handle(val connection: Connection) {
      */
     suspend fun execute(
         sql: String,
-        vararg parameters: Any,
+        vararg parameters: Any
     ) {
         connection.createStatement(sql)
             .let {
@@ -81,7 +81,7 @@ internal class Handle(val connection: Connection) {
      * @return raw r2dbc result
      */
     suspend fun select(
-        sql: String,
+        sql: String
     ): io.r2dbc.spi.Result = connection.createStatement(sql).execute().awaitFirst()
 
     /**
@@ -92,7 +92,7 @@ internal class Handle(val connection: Connection) {
      */
     suspend fun select(
         sql: String,
-        vararg parameters: Any,
+        vararg parameters: Any
     ): Flow<Row> {
         val query = this.connection.createStatement(sql)
 
@@ -113,7 +113,7 @@ internal class Handle(val connection: Connection) {
     suspend inline fun <reified T : Any> select(
         sql: String,
         noinline rowMapper: (row: Row, rowMetadata: RowMetadata) -> T,
-        vararg parameters: Any,
+        vararg parameters: Any
     ): Flow<T> {
         val query = this.connection.createStatement(sql)
 

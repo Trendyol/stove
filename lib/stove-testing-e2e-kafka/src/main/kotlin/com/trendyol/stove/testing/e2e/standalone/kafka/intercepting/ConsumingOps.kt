@@ -17,7 +17,7 @@ internal interface ConsumingOps : CommonOps {
     suspend fun <T : Any> waitUntilConsumed(
         atLeastIn: Duration,
         clazz: KClass<T>,
-        condition: (Option<T>) -> Boolean,
+        condition: (Option<T>) -> Boolean
     ) {
         assertions.putIfAbsent(UUID.randomUUID(), KafkaAssertion(clazz, condition))
         val getRecords = { consumedRecords.map { it.value.value() } }
@@ -31,7 +31,7 @@ internal interface ConsumingOps : CommonOps {
 
     fun recordMessage(
         record: ConsumerRecord<String, Any>,
-        consumer: Consumer<String, Any>,
+        consumer: Consumer<String, Any>
     ): Unit = runBlocking {
         consumedRecords.putIfAbsent(UUID.randomUUID(), record)
         logger.info(
@@ -47,7 +47,7 @@ internal interface ConsumingOps : CommonOps {
     }
 
     fun recordError(
-        record: ConsumerRecord<String, Any>,
+        record: ConsumerRecord<String, Any>
     ): Unit = runBlocking {
         val exception = AssertionError(buildErrorMessage(record))
         exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))

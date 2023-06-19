@@ -5,8 +5,6 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQuery
-import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
@@ -81,7 +79,7 @@ class ElasticsearchTestSystemTests : FunSpec({
     @JsonIgnoreProperties
     data class ExampleInstance(
         val id: String,
-        val description: String,
+        val description: String
     )
     test("should save and get") {
         val exampleInstance = ExampleInstance("1", "1312")

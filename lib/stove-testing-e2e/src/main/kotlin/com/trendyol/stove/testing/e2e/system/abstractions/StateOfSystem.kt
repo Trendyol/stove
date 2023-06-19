@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
  */
 data class StateWithProcess<TState : Any>(
     val state: TState,
-    val processId: Long,
+    val processId: Long
 )
 
 /**
@@ -34,7 +34,7 @@ data class StateWithProcess<TState : Any>(
 class StateOfSystem<TSystem : Any, TState : Any>(
     val options: TestSystemOptions,
     val system: KClass<TSystem>,
-    private val state: KClass<TState>,
+    private val state: KClass<TState>
 ) {
     private val folderForSystem = Paths.get(
         System.getProperty("java.io.tmpdir"),

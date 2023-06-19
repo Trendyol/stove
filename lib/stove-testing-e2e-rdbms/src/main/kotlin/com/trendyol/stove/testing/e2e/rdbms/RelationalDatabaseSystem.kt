@@ -2,9 +2,9 @@ package com.trendyol.stove.testing.e2e.rdbms
 
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import com.trendyol.stove.testing.e2e.database.DatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
 import io.r2dbc.spi.ConnectionFactory
@@ -18,8 +18,8 @@ import kotlin.reflect.KClass
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> protected constructor(
     final override val testSystem: TestSystem,
-    protected val context: RelationalDatabaseContext<*>,
-) : DatabaseSystem, RunAware, ExposesConfiguration {
+    protected val context: RelationalDatabaseContext<*>
+) : PluggedSystem, RunAware, ExposesConfiguration {
     private lateinit var sqlOperations: SqlOperations
     private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -55,10 +55,10 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         )
     }
 
-    override suspend fun <T : Any> shouldQuery(
+    suspend fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): SELF {
         var results: List<T> = emptyList()
         sqlOperations.transaction {
@@ -70,7 +70,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     }
 
     suspend fun shouldExecute(
-        sql: String,
+        sql: String
     ): SELF {
         sqlOperations.transaction {
             it.execute(sql)
@@ -91,7 +91,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     companion object {
         suspend inline fun <reified T : Any> RelationalDatabaseSystem<*>.shouldQuery(
             id: String,
-            noinline assertion: (List<T>) -> Unit,
-        ): DatabaseSystem = this.shouldQuery(id, assertion, T::class)
+            noinline assertion: (List<T>) -> Unit
+        ): RelationalDatabaseSystem<*> = this.shouldQuery(id, assertion, T::class)
     }
 }

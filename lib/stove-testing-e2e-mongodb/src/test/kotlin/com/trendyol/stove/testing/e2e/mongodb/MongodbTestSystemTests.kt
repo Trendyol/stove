@@ -1,8 +1,8 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.annotation.JsonAlias
-import com.trendyol.stove.testing.e2e.database.DatabaseSystem.Companion.shouldQuery
-import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
+import com.trendyol.stove.testing.e2e.mongodb.MongodbSystem.Companion.shouldGet
+import com.trendyol.stove.testing.e2e.mongodb.MongodbSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
@@ -45,7 +45,7 @@ class MongodbTestSystemTests : FunSpec({
         @JsonAlias("_id")
         val id: ObjectId,
         @BsonProperty("aggregateId") val aggregateId: String,
-        @BsonProperty("description") val description: String,
+        @BsonProperty("description") val description: String
     )
 
     data class ExampleInstanceWithStringObjectId @BsonCreator constructor(
@@ -53,7 +53,7 @@ class MongodbTestSystemTests : FunSpec({
         @JsonAlias("_id")
         val id: String,
         @BsonProperty("aggregateId") val aggregateId: String,
-        @BsonProperty("description") val description: String,
+        @BsonProperty("description") val description: String
     )
 
     test("should save and get with objectId") {

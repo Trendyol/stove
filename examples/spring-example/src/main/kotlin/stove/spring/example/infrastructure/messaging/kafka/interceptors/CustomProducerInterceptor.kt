@@ -1,12 +1,12 @@
 package stove.spring.example.infrastructure.messaging.kafka.interceptors
 
-import java.time.Instant
-import java.util.UUID
 import org.apache.kafka.clients.producer.ProducerInterceptor
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import stove.spring.example.infrastructure.Defaults
 import stove.spring.example.infrastructure.Headers
+import java.time.Instant
+import java.util.UUID
 
 class CustomProducerInterceptor : ProducerInterceptor<String, Any> {
     companion object {
@@ -34,7 +34,7 @@ class CustomProducerInterceptor : ProducerInterceptor<String, Any> {
 
     override fun onAcknowledgement(
         metadata: RecordMetadata?,
-        exception: Exception?,
+        exception: Exception?
     ) = Unit
 
     override fun close() = Unit

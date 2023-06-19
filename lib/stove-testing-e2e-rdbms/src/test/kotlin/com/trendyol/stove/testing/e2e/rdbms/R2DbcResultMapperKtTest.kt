@@ -15,7 +15,7 @@ class R2DbcResultMapperKtTest : FunSpec({
     test("should map if given class type is simple data class") {
         data class Dummy1(
             val id: Long,
-            val description: String,
+            val description: String
         )
 
         // given

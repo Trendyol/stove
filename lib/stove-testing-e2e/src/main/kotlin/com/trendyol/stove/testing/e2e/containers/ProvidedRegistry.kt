@@ -20,7 +20,7 @@ fun <T> withProvidedRegistry(
     imageName: String,
     registry: String = DEFAULT_REGISTRY,
     compatibleSubstitute: String? = null,
-    containerBuilder: (DockerImageName) -> T,
+    containerBuilder: (DockerImageName) -> T
 ): T = containerBuilder(
     DockerImageName
         .parse(registry.trim('/') + '/' + imageName.trim('/'))

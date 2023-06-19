@@ -20,7 +20,7 @@ import java.time.temporal.TemporalAccessor
 class IsoInstantDeserializer : JsonDeserializer<Instant>() {
     override fun deserialize(
         parser: JsonParser,
-        context: DeserializationContext,
+        context: DeserializationContext
     ): Instant {
         val string: String = parser.text.trim()
         return Try {
@@ -39,7 +39,7 @@ class IsoInstantSerializer : JsonSerializer<Instant>() {
     override fun serialize(
         value: Instant,
         gen: JsonGenerator,
-        serializers: SerializerProvider?,
+        serializers: SerializerProvider?
     ) {
         gen.writeString(value.toString())
     }

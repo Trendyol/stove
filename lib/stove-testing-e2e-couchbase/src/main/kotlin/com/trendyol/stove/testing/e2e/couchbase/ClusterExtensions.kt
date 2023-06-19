@@ -18,7 +18,7 @@ object ClusterExtensions {
 
     suspend inline fun <reified T> ReactiveCluster.executeQueryAs(
         query: String,
-        queryOptionsConfigurer: (QueryOptions) -> Unit = {},
+        queryOptionsConfigurer: (QueryOptions) -> Unit = {}
     ): List<T> {
         val options = createDefaultQueryOptions()
         queryOptionsConfigurer(options)

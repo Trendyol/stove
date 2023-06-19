@@ -1,18 +1,18 @@
 package stove.spring.example.infrastructure.messaging.kafka.configuration
 
-import java.time.Duration
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
+import java.time.Duration
 
 interface ConsumerSettings : MapBasedSettings
 
 @Component
 @EnableConfigurationProperties(KafkaProperties::class)
 class DefaultConsumerSettings(
-    val kafkaProperties: KafkaProperties,
+    val kafkaProperties: KafkaProperties
 ) : ConsumerSettings {
 
     @Value("\${kafka.config.thread-count.basic-listener}")

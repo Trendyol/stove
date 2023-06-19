@@ -15,7 +15,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
-import java.time.Duration
 import kotlinx.serialization.Serializable
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
@@ -27,6 +26,7 @@ import org.koin.logger.SLF4JLogger
 import org.slf4j.event.*
 import stove.ktor.example.domain.JediRepository
 import stove.ktor.example.domain.JediService
+import java.time.Duration
 
 fun main(args: Array<String>) {
     run(args)
@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
 
 fun run(
     args: Array<String>,
-    applicationOverrides: () -> Module = { module { } },
+    applicationOverrides: () -> Module = { module { } }
 ): ApplicationEngine {
     val applicationEngine = embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         mainModule(args, applicationOverrides)
@@ -49,7 +49,7 @@ data class UpdateJediRequest(val name: String)
 
 fun Application.mainModule(
     args: Array<String>,
-    applicationOverrides: () -> Module,
+    applicationOverrides: () -> Module
 ) {
     install(CallLogging) {
     }
