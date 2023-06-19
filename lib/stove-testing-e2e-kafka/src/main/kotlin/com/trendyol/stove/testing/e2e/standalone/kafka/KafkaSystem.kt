@@ -128,7 +128,8 @@ class KafkaSystem(
         TODO("Not yet implemented")
     }
 
-    suspend fun <T : Any> shouldBeConsumedOnCondition(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldBeConsumedOnCondition(
         atLeastIn: Duration = 5.seconds,
         condition: (T) -> Boolean,
         clazz: KClass<T>
@@ -137,7 +138,8 @@ class KafkaSystem(
         .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.exists { condition(it) } }
         .let { this }
 
-    suspend fun <T : Any> shouldBeFailedOnCondition(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldBeFailedOnCondition(
         atLeastIn: Duration = 5.seconds,
         condition: (T, Throwable) -> Boolean,
         clazz: KClass<T>

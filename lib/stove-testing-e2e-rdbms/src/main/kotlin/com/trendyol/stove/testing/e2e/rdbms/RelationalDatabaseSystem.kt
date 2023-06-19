@@ -55,7 +55,8 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         )
     }
 
-    suspend fun <T : Any> shouldQuery(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
         clazz: KClass<T>
