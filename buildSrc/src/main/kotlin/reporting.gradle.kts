@@ -40,6 +40,7 @@ tasks.register<JacocoReport>(TaskNames.codeCoverageReport) {
                 fileTree(it) {
                     exclude("**/examples/**")
                     exclude("**/examples/*")
+                    exclude { file -> file.path.contains("example") }
                 }
             }
         )
