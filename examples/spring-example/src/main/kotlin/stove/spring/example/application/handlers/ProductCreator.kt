@@ -3,7 +3,6 @@ package stove.spring.example.application.handlers
 import com.couchbase.client.java.ReactiveCollection
 import com.couchbase.client.java.json.JsonObject
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.util.Date
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -12,13 +11,14 @@ import stove.spring.example.infrastructure.http.SupplierHttpService
 import stove.spring.example.infrastructure.messaging.kafka.KafkaOutgoingMessage
 import stove.spring.example.infrastructure.messaging.kafka.KafkaProducer
 import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
+import java.util.Date
 
 @Component
 class ProductCreator(
     private val supplierHttpService: SupplierHttpService,
     private val collection: ReactiveCollection,
     private val objectMapper: ObjectMapper,
-    private val kafkaProducer: KafkaProducer,
+    private val kafkaProducer: KafkaProducer
 ) {
     @Value("\${kafka.producer.product-created.topic-name}")
     lateinit var productCreatedTopic: String
@@ -57,11 +57,11 @@ data class ProductCreatedEvent(
     val name: String,
     val supplierId: Long,
     val createdDate: Date,
-    val type: String = ProductCreatedEvent::class.simpleName!!,
+    val type: String = ProductCreatedEvent::class.simpleName!!
 )
 
 data class ProductCreateRequest(
     val id: Long,
     val name: String,
-    val supplierId: Long,
+    val supplierId: Long
 )

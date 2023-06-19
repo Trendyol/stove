@@ -18,7 +18,7 @@ abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl
     }
 
     protected fun register(
-        registration: BeanDefinitionDsl.() -> Unit,
+        registration: BeanDefinitionDsl.() -> Unit
     ): BaseApplicationContextInitializer {
         registrations.add(registration)
         return this

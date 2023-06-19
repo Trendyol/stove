@@ -12,7 +12,7 @@ import org.springframework.context.ConfigurableApplicationContext
 @ExperimentalStoveDsl
 fun TestSystem.systemUnderTest(
     runner: Runner<ConfigurableApplicationContext>,
-    withParameters: List<String> = listOf(),
+    withParameters: List<String> = listOf()
 ): ReadyTestSystem {
     this.applicationUnderTest(SpringApplicationUnderTest(this, runner, withParameters))
     return this
@@ -21,13 +21,13 @@ fun TestSystem.systemUnderTest(
 @ExperimentalStoveDsl
 fun WithDsl.springBoot(
     runner: Runner<ConfigurableApplicationContext>,
-    withParameters: List<String> = listOf(),
+    withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
 class SpringApplicationUnderTest(
     private val testSystem: TestSystem,
     private val runner: Runner<ConfigurableApplicationContext>,
-    private val parameters: List<String>,
+    private val parameters: List<String>
 ) : ApplicationUnderTest<ConfigurableApplicationContext> {
     private lateinit var application: ConfigurableApplicationContext
 

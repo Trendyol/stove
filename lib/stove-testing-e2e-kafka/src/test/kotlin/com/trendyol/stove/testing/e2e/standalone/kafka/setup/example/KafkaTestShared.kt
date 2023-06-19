@@ -9,7 +9,7 @@ object KafkaTestShared {
     data class TopicDefinition(
         val topic: String,
         val retryTopic: String,
-        val deadLetterTopic: String,
+        val deadLetterTopic: String
     )
 
     val topics = listOf(

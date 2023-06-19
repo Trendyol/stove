@@ -35,7 +35,7 @@ data class WireMockSystemOptions(
     /**
      * ObjectMapper for serialization/deserialization
      */
-    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default
 ) : SystemOptions
 
 data class WireMockContext(
@@ -47,11 +47,11 @@ data class WireMockContext(
 
     val afterRequest: AfterRequestHandler,
 
-    val objectMapper: ObjectMapper,
+    val objectMapper: ObjectMapper
 )
 
 fun TestSystem.withWireMock(
-    options: WireMockSystemOptions = WireMockSystemOptions(),
+    options: WireMockSystemOptions = WireMockSystemOptions()
 ): TestSystem = WireMockSystem(
     testSystem = this,
     WireMockContext(

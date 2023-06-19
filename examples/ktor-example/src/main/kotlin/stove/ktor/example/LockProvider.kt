@@ -1,13 +1,13 @@
 package stove.ktor.example
 
-import java.time.Duration
 import kotlinx.coroutines.sync.Mutex
+import java.time.Duration
 
 interface LockProvider {
 
     suspend fun acquireLock(
         name: String,
-        duration: Duration,
+        duration: Duration
     ): Boolean
 
     suspend fun releaseLock(name: String)
@@ -19,7 +19,7 @@ class MutexLockProvider : LockProvider {
 
     override suspend fun acquireLock(
         name: String,
-        duration: Duration,
+        duration: Duration
     ): Boolean {
         return mutex.tryLock(this)
     }

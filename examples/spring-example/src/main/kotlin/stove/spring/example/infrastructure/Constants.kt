@@ -1,9 +1,8 @@
 package stove.spring.example.infrastructure
 
+import org.slf4j.MDC
 import java.net.InetAddress
 import java.net.UnknownHostException
-import java.util.*
-import org.slf4j.MDC
 
 class Defaults {
     companion object {
@@ -30,7 +29,7 @@ class Headers {
 
         fun getOrDefault(
             key: String,
-            defaultValue: String = Defaults.USER_EMAIL,
+            defaultValue: String = Defaults.USER_EMAIL
         ): String {
             return try {
                 MDC.get(key) ?: MDC.get(key.lowercase()) ?: MDC.get(key.uppercase()) ?: defaultValue

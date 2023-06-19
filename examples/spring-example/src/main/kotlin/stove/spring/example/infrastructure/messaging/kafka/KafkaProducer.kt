@@ -13,12 +13,12 @@ data class KafkaOutgoingMessage(
     val key: String?,
     val payload: String,
     val headers: Map<String, String>,
-    val partition: Int? = null,
+    val partition: Int? = null
 )
 
 @Component
 class KafkaProducer(
-    private val kafkaTemplate: KafkaTemplate<String, Any>,
+    private val kafkaTemplate: KafkaTemplate<String, Any>
 ) {
     private val logger: Logger = LoggerFactory.getLogger(KafkaProducer::class.java)
 

@@ -8,5 +8,5 @@ data class RelationalDatabaseExposedConfiguration(
     val database: String,
     val port: Int,
     val password: String,
-    val username: String,
+    val username: String
 ) : ExposedConfiguration

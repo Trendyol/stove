@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  */
 data class DefaultIndex(
     val index: String,
-    val migrator: DatabaseMigration<ElasticsearchClient> = DefaultIndexMigrator(index),
+    val migrator: DatabaseMigration<ElasticsearchClient> = DefaultIndexMigrator(index)
 )
 
 class DefaultIndexMigrator(private val index: String) : DatabaseMigration<ElasticsearchClient> {

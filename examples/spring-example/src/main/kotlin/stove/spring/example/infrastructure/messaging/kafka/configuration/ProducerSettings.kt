@@ -1,10 +1,10 @@
 package stove.spring.example.infrastructure.messaging.kafka.configuration
 
-import stove.spring.example.infrastructure.messaging.kafka.interceptors.CustomProducerInterceptor
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
+import stove.spring.example.infrastructure.messaging.kafka.interceptors.CustomProducerInterceptor
 
 interface ProducerSettings : MapBasedSettings
 

@@ -9,7 +9,7 @@ import io.r2dbc.spi.ConnectionFactory
 
 class PostgresqlSystem internal constructor(
     testSystem: TestSystem,
-    context: PostgresqlContext,
+    context: PostgresqlContext
 ) : RelationalDatabaseSystem<PostgresqlSystem>(testSystem, context) {
     override fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
         PostgresqlConnectionConfiguration.builder().apply {

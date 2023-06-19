@@ -14,12 +14,8 @@ import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
 import com.trendyol.stove.testing.e2e.containers.NoCertificate
-import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
@@ -38,8 +34,8 @@ import kotlin.reflect.KClass
 
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
-    private val context: ElasticsearchContext,
-) : DocumentDatabaseSystem, RunAware, AfterRunAware, ExposesConfiguration {
+    private val context: ElasticsearchContext
+) : PluggedSystem, RunAware, AfterRunAware, ExposesConfiguration {
     private lateinit var esClient: ElasticsearchClient
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -75,10 +71,11 @@ class ElasticsearchSystem internal constructor(
 
     override suspend fun stop(): Unit = context.container.stop()
 
-    override suspend fun <T : Any> shouldQuery(
+    @PublishedApi
+    internal fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): ElasticsearchSystem =
         esClient.search(
             SearchRequest.of { req ->
@@ -91,10 +88,11 @@ class ElasticsearchSystem internal constructor(
             .also(assertion)
             .let { this }
 
-    fun <T : Any> shouldQuery(
+    @PublishedApi
+    internal fun <T : Any> shouldQuery(
         query: Query,
         assertion: (List<T>) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): ElasticsearchSystem =
         esClient.search(
             SearchRequest.of { q -> q.query(query) },
@@ -105,21 +103,23 @@ class ElasticsearchSystem internal constructor(
             .also(assertion)
             .let { this }
 
-    override suspend fun <T : Any> shouldGet(
+    @PublishedApi
+    internal fun <T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): ElasticsearchSystem = esClient.get({ req -> req.index(context.index).id(key).refresh(true) }, clazz.java)
         .source().toOption()
         .map(assertion)
         .orElse { throw AssertionError("Resource with key ($key) is not found") }
         .let { this }
 
-    fun <T : Any> shouldGet(
+    @PublishedApi
+    internal fun <T : Any> shouldGet(
         index: String,
         key: String,
         assertion: (T) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): ElasticsearchSystem {
         require(index.isNotBlank()) { "Index cannot be blank" }
         return esClient
@@ -130,7 +130,7 @@ class ElasticsearchSystem internal constructor(
             .let { this }
     }
 
-    override suspend fun shouldNotExist(key: String): ElasticsearchSystem {
+    fun shouldNotExist(key: String): ElasticsearchSystem {
         val exists = esClient.exists { req -> req.index(context.index).id(key) }
         if (exists.value()) {
             throw AssertionError("The document with the given id($key) was not expected, but found!")
@@ -138,14 +138,14 @@ class ElasticsearchSystem internal constructor(
         return this
     }
 
-    override suspend fun shouldDelete(key: String): ElasticsearchSystem = esClient
+    fun shouldDelete(key: String): ElasticsearchSystem = esClient
         .delete(DeleteRequest.of { req -> req.index(context.index).id(key).refresh(Refresh.WaitFor) })
         .let { this }
 
-    override suspend fun <T : Any> save(
+    fun <T : Any> save(
         collection: String,
         id: String,
-        instance: T,
+        instance: T
     ): ElasticsearchSystem = esClient.index { req ->
         req.index(collection)
             .id(id)
@@ -153,9 +153,9 @@ class ElasticsearchSystem internal constructor(
             .refresh(Refresh.WaitFor)
     }.let { this }
 
-    suspend fun <T : Any> save(
+    fun <T : Any> save(
         id: String,
-        instance: T,
+        instance: T
     ): ElasticsearchSystem = save(context.index, id, instance)
 
     override fun close(): Unit = runBlocking(context = Dispatchers.IO) {
@@ -165,16 +165,14 @@ class ElasticsearchSystem internal constructor(
         }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
     }
 
-    override fun configuration(): List<String> {
-        return context.options.configureExposedConfiguration(exposedConfiguration) +
-            listOf(
-                "elasticsearch.host=${exposedConfiguration.host}",
-                "elasticsearch.port=${exposedConfiguration.port}"
-            )
-    }
+    override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) +
+        listOf(
+            "elasticsearch.host=${exposedConfiguration.host}",
+            "elasticsearch.port=${exposedConfiguration.port}"
+        )
 
     private fun createEsClient(
-        exposedConfiguration: ElasticSearchExposedConfiguration,
+        exposedConfiguration: ElasticSearchExposedConfiguration
     ): ElasticsearchClient =
         context.options.clientConfigurer.restClientOverrideFn
             .getOrElse { { cfg -> restClient(cfg) } }
@@ -192,7 +190,7 @@ class ElasticsearchSystem internal constructor(
 
     private fun secureRestClient(
         exposedConfiguration: ElasticSearchExposedConfiguration,
-        sslContext: SSLContext,
+        sslContext: SSLContext
     ): RestClient {
         val credentialsProvider: CredentialsProvider = BasicCredentialsProvider()
         credentialsProvider.setCredentials(
@@ -217,13 +215,28 @@ class ElasticsearchSystem internal constructor(
          */
         inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
             query: Query,
-            noinline assertion: (List<T>) -> Unit,
+            noinline assertion: (List<T>) -> Unit
+        ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
+
+        inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
+            query: String,
+            noinline assertion: (List<T>) -> Unit
         ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
 
         inline fun <reified T : Any> ElasticsearchSystem.shouldGet(
             index: String,
             key: String,
-            noinline assertion: (T) -> Unit,
+            noinline assertion: (T) -> Unit
         ): ElasticsearchSystem = this.shouldGet(index, key, assertion, T::class)
+
+        /**
+         * Finds the given [id] and returns the instance if exists, otherwise throws [Exception]
+         * Caller-side needs to assert based on the list
+         *
+         */
+        inline fun <reified T : Any> ElasticsearchSystem.shouldGet(
+            id: String,
+            noinline assertion: (T) -> Unit
+        ): ElasticsearchSystem = this.shouldGet(id, assertion, T::class)
     }
 }

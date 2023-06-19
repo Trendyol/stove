@@ -16,7 +16,7 @@ class CustomConsumerInterceptor : ConsumerAwareRecordInterceptor<String, String>
 
     override fun intercept(
         record: ConsumerRecord<String, String>,
-        consumer: Consumer<String, String>,
+        consumer: Consumer<String, String>
     ): ConsumerRecord<String, String>? {
         val contextMap = HashMap<String, String>()
         record.headers()

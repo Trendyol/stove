@@ -34,6 +34,17 @@ tasks.register<JacocoReport>(TaskNames.codeCoverageReport) {
         }
     }
 
+    classDirectories.setFrom(
+        files(
+            classDirectories.map {
+                fileTree(it) {
+                    exclude("**/examples/**")
+                    exclude("**/examples/*")
+                }
+            }
+        )
+    )
+
     // enable the different report types (html, xml, csv)
     reports {
         // xml is usually used to integrate code coverage with

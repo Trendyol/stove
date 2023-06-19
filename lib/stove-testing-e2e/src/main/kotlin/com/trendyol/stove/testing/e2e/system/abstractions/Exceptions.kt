@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
  * @author Oguzhan Soykan
  */
 class SystemNotRegisteredException(
-    system: KClass<*>,
+    system: KClass<*>
 ) : Throwable(
     "${system.simpleName} was not registered. Make sure that you registered your service on TestSystem"
 )
@@ -16,7 +16,7 @@ class SystemNotRegisteredException(
  */
 class SystemConfigurationException(
     system: KClass<*>,
-    reason: String,
+    reason: String
 ) : Throwable(
     "${system.simpleName} configuration got an error: $reason"
 )

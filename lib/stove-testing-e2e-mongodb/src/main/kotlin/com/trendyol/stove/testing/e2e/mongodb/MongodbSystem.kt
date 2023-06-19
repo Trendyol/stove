@@ -1,15 +1,20 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.module.kotlin.convertValue
-import com.mongodb.*
+import com.mongodb.ConnectionString
+import com.mongodb.MongoClientSettings
+import com.mongodb.ReadConcern
+import com.mongodb.WriteConcern
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.runBlocking
@@ -25,8 +30,8 @@ import kotlin.reflect.KClass
 
 class MongodbSystem internal constructor(
     override val testSystem: TestSystem,
-    private val context: MongodbContext,
-) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
+    private val context: MongodbContext
+) : PluggedSystem, RunAware, ExposesConfiguration {
 
     private lateinit var mongoClient: MongoClient
     private lateinit var exposedConfiguration: MongodbExposedConfiguration
@@ -59,10 +64,11 @@ class MongodbSystem internal constructor(
             )
     }
 
-    override suspend fun <T : Any> shouldQuery(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
         .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(clazz).build()) }
         .getCollection(context.options.databaseOptions.default.collection)
@@ -75,10 +81,11 @@ class MongodbSystem internal constructor(
         .also(assertion)
         .let { this }
 
-    override suspend fun <T : Any> shouldGet(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
         .getCollection(context.options.databaseOptions.default.collection)
         .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(clazz).build()) }
@@ -89,7 +96,7 @@ class MongodbSystem internal constructor(
         .also(assertion)
         .let { this }
 
-    override suspend fun shouldNotExist(key: String): DocumentDatabaseSystem {
+    suspend fun shouldNotExist(key: String): MongodbSystem {
         val isExistById = !mongoClient.getDatabase(context.options.databaseOptions.default.name)
             .getCollection(context.options.databaseOptions.default.collection)
             .find(filterById(key)).awaitFirstOrNull().isNullOrEmpty()
@@ -99,8 +106,8 @@ class MongodbSystem internal constructor(
         return this
     }
 
-    override suspend fun shouldDelete(
-        key: String,
+    suspend fun shouldDelete(
+        key: String
     ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
         .getCollection(context.options.databaseOptions.default.collection)
         .deleteOne(filterById(key)).awaitFirst().let { this }
@@ -108,10 +115,10 @@ class MongodbSystem internal constructor(
     /**
      * Saves the [instance] with given [id] to the [collection]
      */
-    override suspend fun <T : Any> save(
+    suspend fun <T : Any> save(
         collection: String,
         id: String,
-        instance: T,
+        instance: T
     ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
         .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(instance::class).build()) }
         .getCollection(collection)
@@ -125,7 +132,7 @@ class MongodbSystem internal constructor(
 
     suspend fun <T : Any> saveToDefaultCollection(
         id: String,
-        instance: T,
+        instance: T
     ): MongodbSystem = save(context.options.databaseOptions.default.collection, id, instance)
 
     override fun close(): Unit = runBlocking {
@@ -149,5 +156,15 @@ class MongodbSystem internal constructor(
 
         private const val RESERVED_ID = "_id"
         private fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))
+
+        suspend inline fun <reified T : Any> MongodbSystem.shouldQuery(
+            query: String,
+            noinline assertion: (List<T>) -> Unit
+        ): MongodbSystem = shouldQuery(query, assertion, T::class)
+
+        suspend inline fun <reified T : Any> MongodbSystem.shouldGet(
+            key: String,
+            noinline assertion: (T) -> Unit
+        ): MongodbSystem = shouldGet(key, assertion, T::class)
     }
 }

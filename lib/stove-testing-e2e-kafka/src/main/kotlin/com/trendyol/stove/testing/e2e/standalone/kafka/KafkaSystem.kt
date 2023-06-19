@@ -1,7 +1,8 @@
-@file:Suppress("UNCHECKED_CAST")
+@file:Suppress("UNCHECKED_CAST", "UNUSED_PARAMETER")
 
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
+import arrow.core.None
 import arrow.core.Option
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -10,22 +11,13 @@ import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
-import com.trendyol.stove.testing.e2e.messaging.MessagingSystem
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.InterceptionOptions
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.TestSystemKafkaInterceptor
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import io.github.nomisRev.kafka.Admin
 import io.github.nomisRev.kafka.AdminSettings
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
@@ -48,9 +40,10 @@ import org.testcontainers.containers.KafkaContainer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 data class KafkaExposedConfiguration(
-    val bootstrapServers: String,
+    val bootstrapServers: String
 ) : ExposedConfiguration
 
 data class KafkaSystemOptions(
@@ -58,12 +51,12 @@ data class KafkaSystemOptions(
     val ports: List<Int> = listOf(9092, 9093),
     val errorTopicSuffixes: List<String> = listOf("error", "errorTopic", "retry", "retryTopic"),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-    override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
+    override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 data class KafkaContext(
     val container: KafkaContainer,
-    val options: KafkaSystemOptions,
+    val options: KafkaSystemOptions
 )
 
 fun TestSystem.kafka(): KafkaSystem =
@@ -73,7 +66,7 @@ suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Uni
     validation(this.testSystem.kafka())
 
 fun TestSystem.withKafka(
-    options: KafkaSystemOptions = KafkaSystemOptions(),
+    options: KafkaSystemOptions = KafkaSystemOptions()
 ): TestSystem {
     val kafka = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
         KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
@@ -89,8 +82,8 @@ fun WithDsl.kafka(configure: () -> KafkaSystemOptions): TestSystem =
 
 class KafkaSystem(
     override val testSystem: TestSystem,
-    private val context: KafkaContext,
-) : MessagingSystem, ExposesConfiguration, RunAware, AfterRunAware {
+    private val context: KafkaContext
+) : PluggedSystem, ExposesConfiguration, RunAware, AfterRunAware {
 
     private lateinit var exposedConfiguration: KafkaExposedConfiguration
     private lateinit var adminClient: Admin
@@ -106,12 +99,12 @@ class KafkaSystem(
         KafkaExposedConfiguration::class
     )
 
-    override suspend fun publish(
+    suspend fun publish(
         topic: String,
         message: Any,
-        key: Option<String>,
-        headers: Map<String, String>,
-        testCase: Option<String>,
+        key: Option<String> = None,
+        headers: Map<String, String> = mapOf(),
+        testCase: Option<String> = None
     ): KafkaSystem {
         val record = ProducerRecord<String, Any>(topic, message)
         testCase.map { record.headers().add("testCase", it.toByteArray()) }
@@ -119,36 +112,36 @@ class KafkaSystem(
         return this
     }
 
-    override suspend fun shouldBeConsumed(
-        atLeastIn: Duration,
-        message: Any,
+    suspend fun shouldBeConsumed(
+        atLeastIn: Duration = 5.seconds,
+        message: Any
     ): KafkaSystem = interceptor
         .also { assertedMessages.add(message) }
         .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.exists { it == message } }
         .let { this }
 
-    override suspend fun shouldBeFailed(
-        atLeastIn: Duration,
+    suspend fun shouldBeFailed(
+        atLeastIn: Duration = 5.seconds,
         message: Any,
-        exception: Throwable,
-    ): MessagingSystem {
+        exception: Throwable
+    ): KafkaSystem {
         TODO("Not yet implemented")
     }
 
-    override suspend fun <T : Any> shouldBeConsumedOnCondition(
-        atLeastIn: Duration,
+    suspend fun <T : Any> shouldBeConsumedOnCondition(
+        atLeastIn: Duration = 5.seconds,
         condition: (T) -> Boolean,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): KafkaSystem = interceptor
         .also { assertedConditions.add(condition as (Any) -> Boolean) }
         .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.exists { condition(it) } }
         .let { this }
 
-    override suspend fun <T : Any> shouldBeFailedOnCondition(
-        atLeastIn: Duration,
+    suspend fun <T : Any> shouldBeFailedOnCondition(
+        atLeastIn: Duration = 5.seconds,
         condition: (T, Throwable) -> Boolean,
-        clazz: KClass<T>,
-    ): MessagingSystem {
+        clazz: KClass<T>
+    ): KafkaSystem {
         TODO("Not yet implemented")
     }
 
@@ -176,7 +169,7 @@ class KafkaSystem(
     }
 
     private fun consumer(
-        cfg: KafkaExposedConfiguration,
+        cfg: KafkaExposedConfiguration
     ): KafkaReceiver<String, Any> = mapOf(
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to cfg.bootstrapServers,
         ConsumerConfig.GROUP_ID_CONFIG to "stove-kafka-subscribe-to-all",
@@ -234,7 +227,7 @@ class StoveKafkaValueDeserializer<T : Any> : Deserializer<T> {
     @Suppress("UNCHECKED_CAST")
     override fun deserialize(
         topic: String,
-        data: ByteArray,
+        data: ByteArray
     ): T = objectMapper.readValue<Any>(data) as T
 }
 
@@ -242,6 +235,6 @@ class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
     private val objectMapper = StoveObjectMapper.Default
     override fun serialize(
         topic: String,
-        data: T,
+        data: T
     ): ByteArray = objectMapper.writeValueAsBytes(data)
 }

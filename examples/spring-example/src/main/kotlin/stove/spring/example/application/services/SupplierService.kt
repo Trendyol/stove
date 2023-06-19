@@ -2,7 +2,7 @@ package stove.spring.example.application.services
 
 data class SupplierPermission(
     val id: Long,
-    val isAllowed: Boolean,
+    val isAllowed: Boolean
 )
 
 interface SupplierService {

@@ -1,8 +1,8 @@
 package stove.spring.example.infrastructure.messaging.kafka.configuration
 
-import java.util.UUID
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
+import java.util.UUID
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "kafka")
@@ -16,7 +16,7 @@ data class KafkaProperties(
     var compression: String = "zstd",
     var offset: String = "latest",
     var autoCreateTopics: Boolean = false,
-    var secureKafka: Boolean = false,
+    var secureKafka: Boolean = false
 ) {
     val maxProducerConsumerBytes = "4194304"
 

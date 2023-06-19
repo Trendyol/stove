@@ -16,32 +16,32 @@ data class MongodbExposedConfiguration(
     val connectionString: String,
     val host: String,
     val port: Int,
-    val replicaSetUrl: String,
+    val replicaSetUrl: String
 ) : ExposedConfiguration
 
 data class MongodbContext(
     val container: MongoDBContainer,
-    val options: MongodbSystemOptions,
+    val options: MongodbSystemOptions
 )
 
 data class MongoContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "mongo",
     override val tag: String = "latest",
-    override val imageWithTag: String = "$image:$tag",
+    override val imageWithTag: String = "$image:$tag"
 ) : ContainerOptions
 
 data class DatabaseOptions(
-    val default: DefaultDatabase = DefaultDatabase(),
+    val default: DefaultDatabase = DefaultDatabase()
 ) {
     data class DefaultDatabase(
         val name: String = "stove",
-        val collection: String = "stoveCollection",
+        val collection: String = "stoveCollection"
     )
 }
 
 fun TestSystem.withMongodb(
-    options: MongodbSystemOptions,
+    options: MongodbSystemOptions
 ): TestSystem {
     val mongodbContainer =
         withProvidedRegistry(options.container.imageWithTag, options.container.registry) {

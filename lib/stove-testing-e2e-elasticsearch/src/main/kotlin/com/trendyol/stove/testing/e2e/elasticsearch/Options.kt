@@ -23,7 +23,7 @@ data class ElasticsearchSystemOptions(
     val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
     val containerOptions: ContainerOptions = ContainerOptions(),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() },
+    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
 
     internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
@@ -42,20 +42,20 @@ data class ElasticsearchSystemOptions(
 
 data class ElasticsearchExposedCertificate(
     val bytes: ByteArray,
-    val sslContext: SSLContext,
+    val sslContext: SSLContext
 ) : ExposedCertificate
 
 data class ElasticSearchExposedConfiguration(
     val host: String,
     val port: Int,
     val password: String,
-    val certificate: ExposedCertificate,
+    val certificate: ExposedCertificate
 ) : ExposedConfiguration
 
 data class ElasticsearchContext(
     val index: String,
     val container: ElasticsearchContainer,
-    val options: ElasticsearchSystemOptions,
+    val options: ElasticsearchSystemOptions
 )
 
 data class ContainerOptions(
@@ -64,7 +64,7 @@ data class ContainerOptions(
     val exposedPorts: List<Int> = listOf(9200),
     val password: String = "password",
     val disableSecurity: Boolean = true,
-    val configureContainer: ElasticsearchContainer.() -> Unit = {},
+    val configureContainer: ElasticsearchContainer.() -> Unit = {}
 )
 
 data class ElasticClientConfigurer(
@@ -77,5 +77,5 @@ data class ElasticClientConfigurer(
                 .build()
         )
     },
-    val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none(),
+    val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none()
 )

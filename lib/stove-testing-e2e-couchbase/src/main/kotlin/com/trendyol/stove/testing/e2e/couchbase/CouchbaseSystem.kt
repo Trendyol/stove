@@ -4,7 +4,10 @@ package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.core.error.DocumentNotFoundException
 import com.couchbase.client.core.msg.kv.DurabilityLevel.PERSIST_TO_MAJORITY
-import com.couchbase.client.java.*
+import com.couchbase.client.java.Cluster
+import com.couchbase.client.java.ClusterOptions
+import com.couchbase.client.java.ReactiveCluster
+import com.couchbase.client.java.ReactiveCollection
 import com.couchbase.client.java.codec.JacksonJsonSerializer
 import com.couchbase.client.java.env.ClusterEnvironment
 import com.couchbase.client.java.json.JsonObject
@@ -14,9 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
 import com.trendyol.stove.testing.e2e.couchbase.ClusterExtensions.executeQueryAs
-import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
+import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
 import kotlinx.coroutines.reactive.awaitFirstOrNull
@@ -29,8 +32,8 @@ import kotlin.reflect.KClass
 
 class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
-    private val context: CouchbaseContext,
-) : DocumentDatabaseSystem, RunAware, ExposesConfiguration {
+    private val context: CouchbaseContext
+) : PluggedSystem, RunAware, ExposesConfiguration {
 
     private lateinit var cluster: ReactiveCluster
     private lateinit var collection: ReactiveCollection
@@ -74,10 +77,11 @@ class CouchbaseSystem internal constructor(
             )
     }
 
-    override suspend fun <T : Any> shouldQuery(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): CouchbaseSystem {
         val result = cluster.executeQueryAs<Any>(query) { queryOptions -> queryOptions.scanConsistency(REQUEST_PLUS) }
 
@@ -89,17 +93,18 @@ class CouchbaseSystem internal constructor(
         return this
     }
 
-    override suspend fun <T : Any> shouldGet(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): CouchbaseSystem = collection.get(key)
         .awaitSingle().contentAs(clazz.java)
         .let(assertion)
         .let { this }
 
-    override suspend fun shouldNotExist(
-        key: String,
+    suspend fun shouldNotExist(
+        key: String
     ): CouchbaseSystem = when (
         collection.get(key)
             .onErrorResume { throwable ->
@@ -113,11 +118,12 @@ class CouchbaseSystem internal constructor(
         else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
 
-    suspend fun <T : Any> shouldGet(
+    @PublishedApi
+    internal suspend fun <T : Any> shouldGet(
         collection: String,
         key: String,
         assertion: (T) -> Unit,
-        clazz: KClass<T>,
+        clazz: KClass<T>
     ): CouchbaseSystem = cluster.bucket(context.bucket.name)
         .collection(collection)
         .get(key).awaitSingle()
@@ -125,7 +131,7 @@ class CouchbaseSystem internal constructor(
         .let(assertion)
         .let { this }
 
-    override suspend fun shouldDelete(key: String): CouchbaseSystem {
+    suspend fun shouldDelete(key: String): CouchbaseSystem {
         collection.remove(key).awaitSingle()
         return this
     }
@@ -134,10 +140,10 @@ class CouchbaseSystem internal constructor(
      * Saves the [instance] with given [id] to the [collection]
      * To save to the default collection use [saveToDefaultCollection]
      */
-    override suspend fun <T : Any> save(
+    suspend fun <T : Any> save(
         collection: String,
         id: String,
-        instance: T,
+        instance: T
     ): CouchbaseSystem {
         cluster
             .bucket(context.bucket.name)
@@ -158,7 +164,7 @@ class CouchbaseSystem internal constructor(
      */
     suspend inline fun <reified T : Any> saveToDefaultCollection(
         id: String,
-        instance: T,
+        instance: T
     ): CouchbaseSystem = this.save("_default", id, instance)
 
     override fun close(): Unit = runBlocking {
@@ -188,7 +194,12 @@ class CouchbaseSystem internal constructor(
         suspend inline fun <reified T : Any> CouchbaseSystem.shouldGet(
             collection: String,
             key: String,
-            noinline assertion: (T) -> Unit,
+            noinline assertion: (T) -> Unit
         ): CouchbaseSystem = this.shouldGet(collection, key, assertion, T::class)
+
+        suspend inline fun <reified T : Any> CouchbaseSystem.shouldGet(
+            key: String,
+            noinline assertion: (T) -> Unit
+        ): CouchbaseSystem = this.shouldGet(key, assertion, T::class)
     }
 }

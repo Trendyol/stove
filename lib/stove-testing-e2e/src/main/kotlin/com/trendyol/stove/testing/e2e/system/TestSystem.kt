@@ -55,7 +55,7 @@ import kotlin.reflect.KClass
  */
 class TestSystem(
     val baseUrl: String = "http://localhost:8001",
-    configure: TestSystemOptionsDsl.() -> Unit = {},
+    configure: TestSystemOptionsDsl.() -> Unit = {}
 ) : ReadyTestSystem, AutoCloseable {
     private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
 

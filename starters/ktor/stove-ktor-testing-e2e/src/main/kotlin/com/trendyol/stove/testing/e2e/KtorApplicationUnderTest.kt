@@ -16,19 +16,19 @@ import kotlinx.coroutines.coroutineScope
  */
 fun TestSystem.systemUnderTest(
     runner: Runner<ApplicationEngine>,
-    withParameters: List<String> = listOf(),
+    withParameters: List<String> = listOf()
 ): ReadyTestSystem = applicationUnderTest(KtorApplicationUnderTest(this, runner, withParameters))
 
 @ExperimentalStoveDsl
 fun WithDsl.ktor(
     runner: Runner<ApplicationEngine>,
-    withParameters: List<String> = listOf(),
+    withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
 class KtorApplicationUnderTest(
     private val testSystem: TestSystem,
     private val runner: Runner<ApplicationEngine>,
-    private val parameters: List<String>,
+    private val parameters: List<String>
 ) : ApplicationUnderTest<ApplicationEngine> {
     private lateinit var application: ApplicationEngine
 

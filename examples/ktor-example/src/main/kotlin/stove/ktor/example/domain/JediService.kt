@@ -1,13 +1,13 @@
 package stove.ktor.example.domain
 
-import java.time.Duration
 import stove.ktor.example.LockProvider
 import stove.ktor.example.UpdateJediRequest
+import java.time.Duration
 
 class JediService(private val repository: JediRepository, private val lockProvider: LockProvider) {
     suspend fun update(
         id: Long,
-        request: UpdateJediRequest,
+        request: UpdateJediRequest
     ) {
         val acquireLock = lockProvider.acquireLock(::JediService.name, Duration.ofSeconds(30))
 

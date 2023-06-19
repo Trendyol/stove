@@ -9,12 +9,12 @@ import java.util.concurrent.ConcurrentMap
 
 class WireMockRequestListener(
     private val stubLog: ConcurrentMap<UUID, StubMapping>,
-    private val afterRequest: AfterRequestHandler,
+    private val afterRequest: AfterRequestHandler
 ) : PostServeAction() {
     override fun getName(): String = WireMockRequestListener::class.java.simpleName
 
     override fun doGlobalAction(
         serveEvent: ServeEvent,
-        admin: Admin,
+        admin: Admin
     ): Unit = afterRequest(serveEvent, admin, stubLog)
 }

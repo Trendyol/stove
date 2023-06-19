@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.couchbase
 import com.couchbase.client.java.ReactiveCluster
 import com.couchbase.client.java.manager.collection.CollectionSpec
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystem.Companion.shouldGet
-import com.trendyol.stove.testing.e2e.database.DocumentDatabaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
@@ -12,12 +11,12 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.time.Duration
-import java.util.UUID
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.Duration
+import java.util.UUID
 
 const val testBucket = "test-couchbase-bucket"
 
@@ -64,7 +63,7 @@ class CouchbaseTestSystemUsesDslTests : FunSpec({
 
     data class ExampleInstance(
         val id: String,
-        val description: String,
+        val description: String
     )
 
     test("should save and get") {

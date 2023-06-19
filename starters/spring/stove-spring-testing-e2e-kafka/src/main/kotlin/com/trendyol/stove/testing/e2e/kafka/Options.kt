@@ -13,14 +13,14 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 import org.testcontainers.containers.KafkaContainer
 
 data class KafkaExposedConfiguration(
-    val bootstrapServers: String,
+    val bootstrapServers: String
 ) : ExposedConfiguration
 
 data class KafkaContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "confluentinc/cp-kafka",
     override val tag: String = "latest",
-    override val imageWithTag: String = "$image:$tag",
+    override val imageWithTag: String = "$image:$tag"
 ) : ContainerOptions
 
 data class KafkaSystemOptions(
@@ -28,17 +28,17 @@ data class KafkaSystemOptions(
     val ports: List<Int> = listOf(9092, 9093),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     val containerOptions: ContainerOptions = KafkaContainerOptions(),
-    override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() },
+    override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 data class KafkaContext(
     val container: KafkaContainer,
     val objectMapper: ObjectMapper,
-    val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>,
+    val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 )
 
 fun TestSystem.withKafka(
-    options: KafkaSystemOptions = KafkaSystemOptions(),
+    options: KafkaSystemOptions = KafkaSystemOptions()
 ): TestSystem = withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
     KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
         .withEmbeddedZookeeper()

@@ -11,18 +11,18 @@ import com.couchbase.client.java.json.JsonValueModule
 import com.couchbase.client.metrics.micrometer.MicrometerMeter
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.MeterRegistry
-import java.time.Duration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import stove.spring.example.infrastructure.ObjectMapperConfig
+import java.time.Duration
 
 @Configuration
 @EnableConfigurationProperties(CouchbaseProperties::class)
 class CouchbaseConfiguration(
     private val couchbaseProperties: CouchbaseProperties,
-    private val meterRegistry: MeterRegistry,
+    private val meterRegistry: MeterRegistry
 ) {
     companion object {
         val objectMapper: ObjectMapper = ObjectMapperConfig.createObjectMapperWithDefaults()

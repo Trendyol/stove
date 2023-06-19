@@ -33,7 +33,7 @@ class PostgresqlSystemTests : FunSpec({
 
     data class Dummy1(
         val id: Long,
-        val description: String,
+        val description: String
     )
 
     test("should save and get with immutable data class") {

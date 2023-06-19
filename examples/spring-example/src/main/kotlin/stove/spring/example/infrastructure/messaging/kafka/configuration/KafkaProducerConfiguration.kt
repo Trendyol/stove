@@ -29,7 +29,7 @@ class KafkaProducerConfiguration {
             override fun onError(
                 producerRecord: ProducerRecord<String, Any>,
                 recordMetadata: RecordMetadata?,
-                exception: java.lang.Exception?,
+                exception: java.lang.Exception?
             ) {
                 logger.error(
                     "ProducerListener Topic: ${producerRecord.topic()}, Key: ${producerRecord.value()}",

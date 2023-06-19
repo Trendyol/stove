@@ -9,7 +9,7 @@ import org.bson.codecs.pojo.PojoCodecProvider
 import kotlin.reflect.KClass
 
 data class PojoRegistry(
-    val registry: CodecRegistry = fromRegistries(),
+    val registry: CodecRegistry = fromRegistries()
 ) {
 
     private var builder: PojoCodecProvider.Builder = PojoCodecProvider.builder().conventions(

@@ -20,16 +20,16 @@ data class PostgresqlOptions(
     val databaseName: String = "stove-e2e-testing",
     val registry: String = DEFAULT_REGISTRY,
     val imageName: String = DEFAULT_POSTGRES_IMAGE_NAME,
-    override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() },
+    override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>
 
 internal class PostgresqlContext(
     container: PostgreSQLContainer<*>,
-    configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>,
+    configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, configureExposedConfiguration)
 
 fun TestSystem.withPostgresql(
-    options: PostgresqlOptions = PostgresqlOptions(),
+    options: PostgresqlOptions = PostgresqlOptions()
 ): TestSystem = withProvidedRegistry(options.imageName, options.registry, "postgres") {
     PostgreSQLContainer(it)
         .withDatabaseName(options.databaseName)

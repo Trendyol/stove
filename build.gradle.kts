@@ -5,7 +5,7 @@ import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 plugins {
     kotlin("jvm").version(libs.versions.kotlin)
     alias(libs.plugins.dokka)
-    alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlinter)
     alias(libs.plugins.gitVersioning)
     id(libs.plugins.jacocoReportAggregation.get().pluginId)
     id(libs.plugins.jacoco.get().pluginId)
@@ -26,7 +26,7 @@ allprojects {
 subprojectsOf("lib", "spring", "examples", "ktor") {
     apply {
         plugin("kotlin")
-        plugin(rootProject.libs.plugins.ktlint.get().pluginId)
+        plugin(rootProject.libs.plugins.kotlinter.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
         plugin(rootProject.libs.plugins.jacoco.get().pluginId)
         plugin(rootProject.libs.plugins.jacocoReportAggregation.get().pluginId)
@@ -49,7 +49,7 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
 
     tasks {
         test {
-            dependsOn(ktlintCheck)
+            dependsOn(lintKotlin)
             useJUnitPlatform()
             reports {
                 junitXml.required.set(true)
@@ -67,7 +67,7 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            dependsOn(ktlintCheck)
+            dependsOn(formatKotlin, lintKotlin)
             kotlinOptions.jvmTarget = "16"
             kotlinOptions.allWarningsAsErrors = true
         }

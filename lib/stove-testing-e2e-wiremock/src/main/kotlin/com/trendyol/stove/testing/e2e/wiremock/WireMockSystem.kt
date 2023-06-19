@@ -17,9 +17,10 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import com.trendyol.stove.testing.e2e.httpmock.HttpMockSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
+import com.trendyol.stove.testing.e2e.system.abstractions.ValidatedSystem
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,8 +33,8 @@ typealias AfterRequestHandler = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapp
 
 class WireMockSystem(
     override val testSystem: TestSystem,
-    ctx: WireMockContext,
-) : HttpMockSystem<MappingBuilder>, RunAware {
+    ctx: WireMockContext
+) : PluggedSystem, ValidatedSystem, RunAware {
 
     private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
     private var wireMock: WireMockServer
@@ -56,11 +57,11 @@ class WireMockSystem(
 
     override suspend fun stop(): Unit = wireMock.stop()
 
-    override fun mockGet(
+    fun mockGet(
         url: String,
-        responseBody: Option<Any>,
+        responseBody: Option<Any> = None,
         statusCode: Int,
-        metadata: Map<String, Any>,
+        metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val mockRequest = WireMock.get(WireMock.urlEqualTo(url))
         mockRequest.withMetadata(metadata)
@@ -70,12 +71,12 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockPost(
+    fun mockPost(
         url: String,
-        requestBody: Option<Any>,
-        responseBody: Option<Any>,
+        requestBody: Option<Any> = None,
+        responseBody: Option<Any> = None,
         statusCode: Int,
-        metadata: Map<String, Any>,
+        metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val mockRequest = WireMock.post(WireMock.urlEqualTo(url))
         configureBodyAndMetadata(mockRequest, metadata, requestBody)
@@ -85,12 +86,12 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockPut(
+    fun mockPut(
         url: String,
-        requestBody: Option<Any>,
-        responseBody: Option<Any>,
+        requestBody: Option<Any> = None,
+        responseBody: Option<Any> = None,
         statusCode: Int,
-        metadata: Map<String, Any>,
+        metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val res = aResponse()
             .withStatus(statusCode)
@@ -103,10 +104,10 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockDelete(
+    fun mockDelete(
         url: String,
         statusCode: Int,
-        metadata: Map<String, Any>,
+        metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val mockRequest = WireMock.delete(WireMock.urlEqualTo(url))
         configureBodyAndMetadata(mockRequest, metadata, None)
@@ -117,10 +118,10 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockHead(
+    fun mockHead(
         url: String,
         statusCode: Int,
-        metadata: Map<String, Any>,
+        metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val mockRequest = WireMock.head(WireMock.urlEqualTo(url))
         configureBodyAndMetadata(mockRequest, metadata, None)
@@ -131,9 +132,9 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockPutConfigure(
+    fun mockPutConfigure(
         url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
     ): WireMockSystem {
         val req = WireMock.put(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -141,9 +142,9 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockGetConfigure(
+    fun mockGetConfigure(
         url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
     ): WireMockSystem {
         val req = WireMock.get(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -151,9 +152,9 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockHeadConfigure(
+    fun mockHeadConfigure(
         url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
     ): WireMockSystem {
         val req = WireMock.head(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -161,9 +162,9 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockDeleteConfigure(
+    fun mockDeleteConfigure(
         url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
     ): WireMockSystem {
         val req = WireMock.delete(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -171,9 +172,9 @@ class WireMockSystem(
         return this
     }
 
-    override fun mockPostConfigure(
+    fun mockPostConfigure(
         url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder,
+        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
     ): WireMockSystem {
         val req = WireMock.post(WireMock.urlEqualTo(url))
         val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
@@ -185,7 +186,7 @@ class WireMockSystem(
         data class ValidationResult(
             val url: String,
             val bodyAsString: String,
-            val queryParams: String,
+            val queryParams: String
         ) {
             override fun toString(): String = """
                 Url: $url
@@ -216,7 +217,7 @@ class WireMockSystem(
     private fun configureBodyAndMetadata(
         request: MappingBuilder,
         metadata: Map<String, Any>,
-        body: Option<Any>,
+        body: Option<Any>
     ) {
         request.withMetadata(metadata)
         body.map {
@@ -232,7 +233,7 @@ class WireMockSystem(
 
     private fun configureBody(
         statusCode: Int,
-        responseBody: Option<Any>,
+        responseBody: Option<Any>
     ): ResponseDefinitionBuilder? {
         val mockResponse = aResponse()
             .withStatus(statusCode)

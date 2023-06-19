@@ -186,7 +186,7 @@ sealed class Try<out T> {
      */
     inline fun filterOrElse(
         predicate: (T) -> Boolean,
-        throwable: (T) -> Throwable,
+        throwable: (T) -> Throwable
     ): Try<T> =
         when (this) {
             is Success ->
@@ -208,7 +208,7 @@ sealed class Try<out T> {
      */
     inline fun <R> fold(
         successTransform: (T) -> R,
-        failureTransform: (Throwable) -> R,
+        failureTransform: (Throwable) -> R
     ): R =
         when (this) {
             is Success ->
@@ -231,7 +231,7 @@ sealed class Try<out T> {
      */
     inline fun <R> transform(
         successTransform: (T) -> Try<R>,
-        failureTransform: (Throwable) -> Try<R>,
+        failureTransform: (Throwable) -> Try<R>
     ): Try<R> =
         try {
             when (this) {
@@ -269,7 +269,7 @@ sealed class Try<out T> {
      */
     inline fun <T1, R> zip(
         other: Try<T1>,
-        transform: (T, T1) -> R,
+        transform: (T, T1) -> R
     ): Try<R> = Try { transform(get(), other.get()) }
 
     /**

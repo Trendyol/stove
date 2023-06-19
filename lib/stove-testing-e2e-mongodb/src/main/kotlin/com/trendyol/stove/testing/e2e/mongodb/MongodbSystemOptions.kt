@@ -9,5 +9,5 @@ data class MongodbSystemOptions(
     val databaseOptions: DatabaseOptions = DatabaseOptions(),
     val container: MongoContainerOptions = MongoContainerOptions(),
     override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(ObjectIdModule()) },
+    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(ObjectIdModule()) }
 ) : SystemOptions, ConfiguresExposedConfiguration<MongodbExposedConfiguration>

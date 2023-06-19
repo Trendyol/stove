@@ -20,14 +20,14 @@ data class CouchbaseExposedConfiguration(
     val connectionString: String,
     val hostsWithPort: String,
     val username: String,
-    val password: String,
+    val password: String
 ) : ExposedConfiguration
 
 data class CouchbaseSystemOptions(
     val defaultBucket: String,
     val registry: String = DEFAULT_REGISTRY,
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) },
+    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) }
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
 
     internal val migrationCollection: MigrationCollection<ReactiveCluster> = MigrationCollection()
@@ -45,11 +45,11 @@ data class CouchbaseSystemOptions(
 data class CouchbaseContext(
     val bucket: BucketDefinition,
     val container: CouchbaseContainer,
-    val options: CouchbaseSystemOptions,
+    val options: CouchbaseSystemOptions
 )
 
 fun TestSystem.withCouchbase(
-    options: CouchbaseSystemOptions,
+    options: CouchbaseSystemOptions
 ): TestSystem {
     val bucketDefinition = BucketDefinition(options.defaultBucket)
     val couchbaseContainer =
