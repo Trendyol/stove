@@ -1,6 +1,6 @@
 [versions]
 kotlinx = "1.7.1"
-spring-boot = "2.7.12"
+spring-boot = "2.7.13"
 spring-kafka = "2.9.9"
 junit = "5.9.3"
 kotest = "5.6.2"
