@@ -21,7 +21,7 @@ ktor = "2.3.2"
 koin = "3.4.1"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.8.1"
+elastic = "8.8.2"
 mongodb = "4.10.1"
 
 [libraries]
