@@ -97,8 +97,8 @@ class ElasticsearchTestSystemTests : FunSpec({
         val exampleInstance = ExampleInstance("1", "1312")
         TestSystem.validate {
             elasticsearch {
-                save(anotherIndex, exampleInstance.id, exampleInstance)
-                shouldGet<ExampleInstance>(anotherIndex, exampleInstance.id) {
+                save(exampleInstance.id, exampleInstance, anotherIndex)
+                shouldGet<ExampleInstance>(exampleInstance.id, anotherIndex) {
                     it.description shouldBe exampleInstance.description
                 }
             }

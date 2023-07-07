@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.core.error.DocumentNotFoundException
@@ -68,14 +66,13 @@ class CouchbaseSystem internal constructor(
 
     override suspend fun stop(): Unit = context.container.stop()
 
-    override fun configuration(): List<String> {
-        return context.options.configureExposedConfiguration(exposedConfiguration) +
+    override fun configuration(): List<String> =
+        context.options.configureExposedConfiguration(exposedConfiguration) +
             listOf(
                 "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
                 "couchbase.username=${exposedConfiguration.username}",
                 "couchbase.password=${exposedConfiguration.password}"
             )
-    }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldQuery(
@@ -103,6 +100,19 @@ class CouchbaseSystem internal constructor(
         .let(assertion)
         .let { this }
 
+    @PublishedApi
+    internal suspend fun <T : Any> shouldGet(
+        collection: String,
+        key: String,
+        assertion: (T) -> Unit,
+        clazz: KClass<T>
+    ): CouchbaseSystem = cluster.bucket(context.bucket.name)
+        .collection(collection)
+        .get(key).awaitSingle()
+        .contentAs(clazz.java)
+        .let(assertion)
+        .let { this }
+
     suspend fun shouldNotExist(
         key: String
     ): CouchbaseSystem = when (
@@ -118,23 +128,37 @@ class CouchbaseSystem internal constructor(
         else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldGet(
+    @Suppress("unused")
+    suspend fun shouldNotExist(
         collection: String,
-        key: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>
-    ): CouchbaseSystem = cluster.bucket(context.bucket.name)
-        .collection(collection)
-        .get(key).awaitSingle()
-        .contentAs(clazz.java)
-        .let(assertion)
-        .let { this }
-
-    suspend fun shouldDelete(key: String): CouchbaseSystem {
-        collection.remove(key).awaitSingle()
-        return this
+        key: String
+    ): CouchbaseSystem = when (
+        cluster
+            .bucket(context.bucket.name)
+            .collection(collection)
+            .get(key)
+            .onErrorResume { throwable ->
+                when (throwable) {
+                    is DocumentNotFoundException -> Mono.empty()
+                    else -> throw throwable
+                }
+            }.awaitFirstOrNull()
+    ) {
+        null -> this
+        else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
+
+    @Suppress("unused")
+    suspend fun shouldDelete(key: String): CouchbaseSystem =
+        collection.remove(key).awaitSingle()
+            .let { this }
+
+    @Suppress("unused")
+    suspend fun shouldDelete(collection: String, key: String): CouchbaseSystem =
+        cluster.bucket(context.bucket.name)
+            .collection(collection)
+            .remove(key)
+            .awaitSingle().let { this }
 
     /**
      * Saves the [instance] with given [id] to the [collection]
@@ -144,19 +168,15 @@ class CouchbaseSystem internal constructor(
         collection: String,
         id: String,
         instance: T
-    ): CouchbaseSystem {
-        cluster
-            .bucket(context.bucket.name)
-            .collection(collection)
-            .insert(
-                id,
-                JsonObject.fromJson(objectMapper.writeValueAsString(instance)),
-                InsertOptions.insertOptions().durability(PERSIST_TO_MAJORITY)
-            )
-            .awaitSingle()
-
-        return this
-    }
+    ): CouchbaseSystem = cluster
+        .bucket(context.bucket.name)
+        .collection(collection)
+        .insert(
+            id,
+            JsonObject.fromJson(objectMapper.writeValueAsString(instance)),
+            InsertOptions.insertOptions().durability(PERSIST_TO_MAJORITY)
+        )
+        .awaitSingle().let { this }
 
     /**
      * Saves the [instance] with given [id] to the default collection
@@ -201,5 +221,11 @@ class CouchbaseSystem internal constructor(
             key: String,
             noinline assertion: (T) -> Unit
         ): CouchbaseSystem = this.shouldGet(key, assertion, T::class)
+
+        @Suppress("unused")
+        suspend inline fun <reified T : Any> CouchbaseSystem.shouldQuery(
+            query: String,
+            noinline assertion: (List<T>) -> Unit
+        ): CouchbaseSystem = this.shouldQuery(query, assertion, T::class)
     }
 }

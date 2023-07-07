@@ -1,8 +1,8 @@
 package com.stove.ktor.example.e2e
 
+import arrow.core.None
 import arrow.core.some
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectBodilessResponse
 import com.trendyol.stove.testing.e2e.http.http
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -36,7 +36,8 @@ class ExampleTest : FunSpec({
                 http {
                     postAndExpectBodilessResponse(
                         "/jedis/$givenId",
-                        body = UpdateJediRequest(givenName).some()
+                        body = UpdateJediRequest(givenName).some(),
+                        token = None
                     ) { actual ->
                         actual.status shouldBe 200
                     }

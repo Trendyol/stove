@@ -34,7 +34,7 @@ import kotlin.reflect.KClass
 
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
-    private val context: ElasticsearchContext
+    val context: ElasticsearchContext
 ) : PluggedSystem, RunAware, AfterRunAware, ExposesConfiguration {
     private lateinit var esClient: ElasticsearchClient
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
@@ -105,18 +105,7 @@ class ElasticsearchSystem internal constructor(
 
     @PublishedApi
     internal fun <T : Any> shouldGet(
-        key: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>
-    ): ElasticsearchSystem = esClient.get({ req -> req.index(context.index).id(key).refresh(true) }, clazz.java)
-        .source().toOption()
-        .map(assertion)
-        .orElse { throw AssertionError("Resource with key ($key) is not found") }
-        .let { this }
-
-    @PublishedApi
-    internal fun <T : Any> shouldGet(
-        index: String,
+        index: String = context.index,
         key: String,
         assertion: (T) -> Unit,
         clazz: KClass<T>
@@ -130,33 +119,28 @@ class ElasticsearchSystem internal constructor(
             .let { this }
     }
 
-    fun shouldNotExist(key: String): ElasticsearchSystem {
-        val exists = esClient.exists { req -> req.index(context.index).id(key) }
+    fun shouldNotExist(key: String, onIndex: String = context.index): ElasticsearchSystem {
+        val exists = esClient.exists { req -> req.index(onIndex).id(key) }
         if (exists.value()) {
             throw AssertionError("The document with the given id($key) was not expected, but found!")
         }
         return this
     }
 
-    fun shouldDelete(key: String): ElasticsearchSystem = esClient
-        .delete(DeleteRequest.of { req -> req.index(context.index).id(key).refresh(Refresh.WaitFor) })
+    fun shouldDelete(key: String, fromIndex: String = context.index): ElasticsearchSystem = esClient
+        .delete(DeleteRequest.of { req -> req.index(fromIndex).id(key).refresh(Refresh.WaitFor) })
         .let { this }
 
     fun <T : Any> save(
-        collection: String,
         id: String,
-        instance: T
+        instance: T,
+        toIndex: String = context.index
     ): ElasticsearchSystem = esClient.index { req ->
-        req.index(collection)
+        req.index(toIndex)
             .id(id)
             .document(instance)
             .refresh(Refresh.WaitFor)
     }.let { this }
-
-    fun <T : Any> save(
-        id: String,
-        instance: T
-    ): ElasticsearchSystem = save(context.index, id, instance)
 
     override fun close(): Unit = runBlocking(context = Dispatchers.IO) {
         Try {
@@ -224,19 +208,9 @@ class ElasticsearchSystem internal constructor(
         ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
 
         inline fun <reified T : Any> ElasticsearchSystem.shouldGet(
-            index: String,
             key: String,
+            index: String = context.index,
             noinline assertion: (T) -> Unit
         ): ElasticsearchSystem = this.shouldGet(index, key, assertion, T::class)
-
-        /**
-         * Finds the given [id] and returns the instance if exists, otherwise throws [Exception]
-         * Caller-side needs to assert based on the list
-         *
-         */
-        inline fun <reified T : Any> ElasticsearchSystem.shouldGet(
-            id: String,
-            noinline assertion: (T) -> Unit
-        ): ElasticsearchSystem = this.shouldGet(id, assertion, T::class)
     }
 }
