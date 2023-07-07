@@ -7,7 +7,7 @@ kotest = "5.6.2"
 kotest-spring = "1.1.3"
 mockito = "5.0.0"
 wiremock = "2.35.0"
-testcontainers = "1.17.6"
+testcontainers = "1.18.3"
 ktor = "2.3.2"
 
 [libraries]
@@ -30,3 +30,7 @@ testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.re
 testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
 testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
+
+
+[plugins]
+testLogger = { id = "com.adarshr.test-logger", version = "3.2.0" }

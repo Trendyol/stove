@@ -11,6 +11,7 @@ plugins {
     id(libs.plugins.jacoco.get().pluginId)
     id("stove-publishing") apply false
     id("reporting")
+    alias(testLibs.plugins.testLogger)
     java
 }
 
@@ -30,6 +31,7 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
         plugin(rootProject.libs.plugins.jacoco.get().pluginId)
         plugin(rootProject.libs.plugins.jacocoReportAggregation.get().pluginId)
+        plugin(rootProject.testLibs.plugins.testLogger.get().pluginId)
     }
 
     val testImplementation by configurations
@@ -51,6 +53,10 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         test {
             dependsOn(lintKotlin)
             useJUnitPlatform()
+            testlogger {
+                setTheme("mocha")
+                this.showStandardStreams = true
+            }
             reports {
                 junitXml.required.set(true)
                 html.required.set(true)
