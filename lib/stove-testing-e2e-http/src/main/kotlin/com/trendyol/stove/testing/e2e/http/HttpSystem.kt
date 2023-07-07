@@ -81,6 +81,41 @@ class HttpSystem(
         request
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
+    suspend fun postAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        body: Option<Any>,
+        expect: suspend (StoveHttpResponse) -> Unit
+    ): HttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        body.fold(
+            ifEmpty = { request.POST(BodyPublishers.noBody()) },
+            ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
+        )
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    suspend fun putAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        body: Option<Any>,
+        expect: suspend (StoveHttpResponse) -> Unit
+    ): HttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        body.fold(
+            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
+            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
+        )
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    suspend fun deleteAndExpectBodilessResponse(
+        uri: String,
+        token: Option<String>,
+        expect: suspend (StoveHttpResponse) -> Unit
+    ): HttpSystem = httpClient.send(uri) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        request.DELETE()
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
     @PublishedApi
     internal suspend fun <TExpected : Any> get(
         uri: String,
@@ -126,44 +161,6 @@ class HttpSystem(
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
     }.let { expect(deserialize(it, clazz)); this }
-
-    @PublishedApi
-    internal suspend fun postAndExpectBodilessResponse(
-        uri: String,
-        token: Option<String>,
-        body: Option<Any>,
-        expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        body.fold(
-            ifEmpty = { request.POST(BodyPublishers.noBody()) },
-            ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
-        )
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
-
-    @PublishedApi
-    internal suspend fun deleteAndExpectBodilessResponse(
-        uri: String,
-        token: Option<String>,
-        expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        request.DELETE()
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
-
-    @PublishedApi
-    internal suspend fun putAndExpectBodilessResponse(
-        uri: String,
-        token: Option<String>,
-        body: Option<Any>,
-        expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        body.fold(
-            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
-            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
-        )
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
     @PublishedApi
     internal suspend fun <TExpected : Any> putAndExpectJson(
@@ -268,25 +265,6 @@ class HttpSystem(
         ): HttpSystem = this.postAndExpectJson(uri, body, TExpected::class, token, expect)
 
         /**
-         * Extension for: [HttpSystem.postAndExpectBodilessResponse]
-         * */
-        suspend inline fun HttpSystem.postAndExpectBodilessResponse(
-            uri: String,
-            token: Option<String> = None,
-            body: Option<Any> = None,
-            noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): HttpSystem = this.postAndExpectBodilessResponse(uri, token, body, expect)
-
-        /**
-         * Extension for: [HttpSystem.deleteAndExpectBodilessResponse]
-         * */
-        suspend inline fun HttpSystem.deleteAndExpectBodilessResponse(
-            uri: String,
-            token: Option<String> = None,
-            noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): HttpSystem = this.deleteAndExpectBodilessResponse(uri, token, expect)
-
-        /**
          * Extension for: [HttpSystem.putAndExpectJson]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.putAndExpectJson(
@@ -295,15 +273,5 @@ class HttpSystem(
             body: Option<Any> = None,
             noinline expect: suspend (actual: TExpected) -> Unit
         ): HttpSystem = this.putAndExpectJson(uri, body, TExpected::class, token, expect)
-
-        /**
-         * Extension for: [HttpSystem.putAndExpectBodilessResponse]
-         * */
-        suspend inline fun HttpSystem.putAndExpectBodilessResponse(
-            uri: String,
-            token: Option<String> = None,
-            body: Option<Any> = None,
-            noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): HttpSystem = this.putAndExpectBodilessResponse(uri, token, body, expect)
     }
 }
