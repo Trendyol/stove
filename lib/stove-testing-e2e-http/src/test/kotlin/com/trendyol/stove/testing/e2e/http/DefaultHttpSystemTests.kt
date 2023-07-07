@@ -2,12 +2,9 @@ package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.None
 import arrow.core.some
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.deleteAndExpectBodilessResponse
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.get
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.getMany
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectBodilessResponse
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJson
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.putAndExpectBodilessResponse
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.putAndExpectJson
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -57,10 +54,10 @@ class DefaultHttpSystemTests : FunSpec({
             }
 
             http {
-                deleteAndExpectBodilessResponse("/delete-success") { actual ->
+                deleteAndExpectBodilessResponse("/delete-success", None) { actual ->
                     actual.status shouldBe 200
                 }
-                deleteAndExpectBodilessResponse("/delete-fail") { actual ->
+                deleteAndExpectBodilessResponse("/delete-fail", None) { actual ->
                     actual.status shouldBe 400
                 }
             }
@@ -76,7 +73,7 @@ class DefaultHttpSystemTests : FunSpec({
             }
 
             http {
-                putAndExpectBodilessResponse("/put-without-response-body") { actual ->
+                putAndExpectBodilessResponse("/put-without-response-body", None, None) { actual ->
                     actual.status shouldBe 200
                 }
                 putAndExpectJson<TestDto>("/put-with-response-body") { actual ->
@@ -95,7 +92,7 @@ class DefaultHttpSystemTests : FunSpec({
             }
 
             http {
-                postAndExpectBodilessResponse("/post-without-response-body") { actual ->
+                postAndExpectBodilessResponse("/post-without-response-body", None, None) { actual ->
                     actual.status shouldBe 200
                 }
                 postAndExpectJson<TestDto>("/post-with-response-body") { actual ->
