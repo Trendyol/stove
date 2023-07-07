@@ -2,13 +2,13 @@ package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.None
 import arrow.core.some
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.deleteAndExpectBodilessResponse
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.get
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.getMany
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.postAndExpectBodilessResponse
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.postAndExpectJson
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.putAndExpectBodilessResponse
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.putAndExpectJson
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.deleteAndExpectBodilessResponse
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.get
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.getMany
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectBodilessResponse
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJson
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.putAndExpectBodilessResponse
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.putAndExpectJson
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl

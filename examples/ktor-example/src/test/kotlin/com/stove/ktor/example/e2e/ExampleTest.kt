@@ -2,7 +2,7 @@ package com.stove.ktor.example.e2e
 
 import arrow.core.some
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
-import com.trendyol.stove.testing.e2e.http.DefaultHttpSystem.Companion.postAndExpectBodilessResponse
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectBodilessResponse
 import com.trendyol.stove.testing.e2e.http.http
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem

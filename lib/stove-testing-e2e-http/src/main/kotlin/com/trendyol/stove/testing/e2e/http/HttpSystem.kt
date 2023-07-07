@@ -34,12 +34,12 @@ data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectM
     replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
 )
 fun TestSystem.withDefaultHttp(objectMapper: ObjectMapper = StoveObjectMapper.Default): TestSystem {
-    this.getOrRegister(DefaultHttpSystem(this, objectMapper))
+    this.getOrRegister(HttpSystem(this, objectMapper))
     return this
 }
 
 fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
-    this.getOrRegister(DefaultHttpSystem(this, options.objectMapper))
+    this.getOrRegister(HttpSystem(this, options.objectMapper))
     return this
 }
 
@@ -51,24 +51,66 @@ fun WithDsl.httpClient(configure: () -> HttpClientSystemOptions = { HttpClientSy
     "This method is deprecated, going to be removed",
     replaceWith = ReplaceWith("http()", "com.trendyol.stove.testing.e2e.http.TestSystem")
 )
-fun TestSystem.defaultHttp(): DefaultHttpSystem =
-    getOrNone<DefaultHttpSystem>().getOrElse {
-        throw SystemNotRegisteredException(DefaultHttpSystem::class)
+fun TestSystem.defaultHttp(): HttpSystem =
+    getOrNone<HttpSystem>().getOrElse {
+        throw SystemNotRegisteredException(HttpSystem::class)
     }
 
-fun TestSystem.http(): DefaultHttpSystem =
-    getOrNone<DefaultHttpSystem>().getOrElse {
-        throw SystemNotRegisteredException(DefaultHttpSystem::class)
+fun TestSystem.http(): HttpSystem =
+    getOrNone<HttpSystem>().getOrElse {
+        throw SystemNotRegisteredException(HttpSystem::class)
     }
 
-suspend fun ValidationDsl.http(validation: suspend DefaultHttpSystem.() -> Unit): Unit =
+suspend fun ValidationDsl.http(validation: suspend HttpSystem.() -> Unit): Unit =
     validation(this.testSystem.http())
 
-class DefaultHttpSystem(
+class HttpSystem(
     override val testSystem: TestSystem,
     private val objectMapper: ObjectMapper
 ) : PluggedSystem {
     private val httpClient: HttpClient = httpClient()
+
+    @Suppress("unused")
+    suspend fun getResponse(
+        uri: String,
+        queryParams: Map<String, String> = mapOf(),
+        token: Option<String> = None,
+        expect: suspend (StoveHttpResponse) -> Unit
+    ): HttpSystem = httpClient.send(uri, queryParams) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        request
+    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+
+    @PublishedApi
+    internal suspend fun <TExpected : Any> get(
+        uri: String,
+        queryParams: Map<String, String>,
+        clazz: KClass<TExpected>,
+        token: Option<String>,
+        expect: suspend (TExpected) -> Unit
+    ): HttpSystem = httpClient.send(uri, queryParams) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        request.GET()
+    }.let { expect(deserialize(it, clazz)); this }
+
+    @PublishedApi
+    internal suspend fun <TExpected : Any> getMany(
+        uri: String,
+        queryParams: Map<String, String>,
+        clazz: KClass<TExpected>,
+        token: Option<String>,
+        expect: suspend (List<TExpected>) -> Unit
+    ): HttpSystem = httpClient.send(uri, queryParams) { request ->
+        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        request.GET()
+    }.let {
+        expect(
+            objectMapper.readValue(
+                it.body(),
+                objectMapper.typeFactory.constructCollectionType(List::class.java, clazz.javaObjectType)
+            )
+        ); this
+    }
 
     @PublishedApi
     internal suspend fun <TExpected : Any> postAndExpectJson(
@@ -77,7 +119,7 @@ class DefaultHttpSystem(
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (actual: TExpected) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
@@ -91,7 +133,7 @@ class DefaultHttpSystem(
         token: Option<String>,
         body: Option<Any>,
         expect: suspend (StoveHttpResponse) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
@@ -100,53 +142,11 @@ class DefaultHttpSystem(
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
 
     @PublishedApi
-    internal suspend fun <TExpected : Any> get(
-        uri: String,
-        queryParams: Map<String, String>,
-        clazz: KClass<TExpected>,
-        token: Option<String>,
-        expect: suspend (TExpected) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        request.GET()
-    }.let { expect(deserialize(it, clazz)); this }
-
-    @PublishedApi
-    internal suspend fun <TExpected : Any> getMany(
-        uri: String,
-        queryParams: Map<String, String>,
-        clazz: KClass<TExpected>,
-        token: Option<String>,
-        expect: suspend (List<TExpected>) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        request.GET()
-    }.let {
-        expect(
-            objectMapper.readValue(
-                it.body(),
-                objectMapper.typeFactory.constructCollectionType(List::class.java, clazz.javaObjectType)
-            )
-        ); this
-    }
-
-    @PublishedApi
-    internal suspend fun getResponse(
-        uri: String,
-        queryParams: Map<String, String>,
-        token: Option<String>,
-        expect: suspend (StoveHttpResponse) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri, queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
-        request
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
-
-    @PublishedApi
     internal suspend fun deleteAndExpectBodilessResponse(
         uri: String,
         token: Option<String>,
         expect: suspend (StoveHttpResponse) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.DELETE()
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
@@ -157,7 +157,7 @@ class DefaultHttpSystem(
         token: Option<String>,
         body: Option<Any>,
         expect: suspend (StoveHttpResponse) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
@@ -172,7 +172,7 @@ class DefaultHttpSystem(
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (actual: TExpected) -> Unit
-    ): DefaultHttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
@@ -234,136 +234,76 @@ class DefaultHttpSystem(
             fun bearer(token: String) = "Bearer $token"
         }
 
-        fun DefaultHttpSystem.client(): HttpClient = this.httpClient
+        @Suppress("unused")
+        fun HttpSystem.client(): HttpClient = this.httpClient
 
         /**
-         * Extension for: [DefaultHttpSystem.get]
+         * Extension for: [HttpSystem.get]
          * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.get(
+        suspend inline fun <reified TExpected : Any> HttpSystem.get(
             uri: String,
             queryParams: Map<String, String> = mapOf(),
             token: Option<String> = None,
             noinline expect: suspend (TExpected) -> Unit
-        ): DefaultHttpSystem = this.get(uri, queryParams, TExpected::class, token, expect)
+        ): HttpSystem = this.get(uri, queryParams, TExpected::class, token, expect)
 
         /**
-         * Extension for: [DefaultHttpSystem.get]
+         * Extension for: [HttpSystem.getMany]
          * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.get(
-            uri: String,
-            queryParams: Map<String, String> = mapOf(),
-            noinline expect: suspend (TExpected) -> Unit
-        ): DefaultHttpSystem = this.get(uri, queryParams, TExpected::class, None, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.getResponse]
-         * */
-        suspend fun DefaultHttpSystem.getResponse(
-            uri: String,
-            queryParams: Map<String, String> = mapOf(),
-            expect: suspend (StoveHttpResponse) -> Unit
-        ): DefaultHttpSystem = this.getResponse(uri, queryParams, None, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.getMany]
-         * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.getMany(
+        suspend inline fun <reified TExpected : Any> HttpSystem.getMany(
             uri: String,
             queryParams: Map<String, String> = mapOf(),
             token: Option<String> = None,
             noinline expect: suspend (List<TExpected>) -> Unit
-        ): DefaultHttpSystem = this.getMany(uri, queryParams, TExpected::class, token, expect)
+        ): HttpSystem = this.getMany(uri, queryParams, TExpected::class, token, expect)
 
         /**
-         * Extension for: [DefaultHttpSystem.getMany]
+         * Extension for: [HttpSystem.postAndExpectJson]
          * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.getMany(
-            uri: String,
-            queryParams: Map<String, String> = mapOf(),
-            noinline expect: suspend (List<TExpected>) -> Unit
-        ): DefaultHttpSystem = this.getMany(uri, queryParams, TExpected::class, None, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.postAndExpectJson]
-         * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.postAndExpectJson(
+        suspend inline fun <reified TExpected : Any> HttpSystem.postAndExpectJson(
             uri: String,
             body: Option<Any> = None,
             token: Option<String> = None,
             noinline expect: suspend (actual: TExpected) -> Unit
-        ): DefaultHttpSystem = this.postAndExpectJson(uri, body, TExpected::class, token, expect)
+        ): HttpSystem = this.postAndExpectJson(uri, body, TExpected::class, token, expect)
 
         /**
-         * Extension for: [DefaultHttpSystem.postAndExpectJson]
+         * Extension for: [HttpSystem.postAndExpectBodilessResponse]
          * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.postAndExpectJson(
+        suspend inline fun HttpSystem.postAndExpectBodilessResponse(
             uri: String,
-            body: Option<Any> = None,
-            noinline expect: suspend (actual: TExpected) -> Unit
-        ): DefaultHttpSystem = this.postAndExpectJson(uri, body, TExpected::class, None, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.postAndExpectJson]
-         * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.postAndExpectJson(
-            uri: String,
-            noinline expect: suspend (actual: TExpected) -> Unit
-        ): DefaultHttpSystem = this.postAndExpectJson(uri, None, TExpected::class, None, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.postAndExpectBodilessResponse]
-         * */
-        suspend inline fun DefaultHttpSystem.postAndExpectBodilessResponse(
-            uri: String,
+            token: Option<String> = None,
             body: Option<Any> = None,
             noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): DefaultHttpSystem = this.postAndExpectBodilessResponse(uri, None, body, expect)
+        ): HttpSystem = this.postAndExpectBodilessResponse(uri, token, body, expect)
 
         /**
-         * Extension for: [DefaultHttpSystem.postAndExpectBodilessResponse]
+         * Extension for: [HttpSystem.deleteAndExpectBodilessResponse]
          * */
-        suspend inline fun DefaultHttpSystem.postAndExpectBodilessResponse(
+        suspend inline fun HttpSystem.deleteAndExpectBodilessResponse(
             uri: String,
+            token: Option<String> = None,
             noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): DefaultHttpSystem = this.postAndExpectBodilessResponse(uri, None, None, expect)
+        ): HttpSystem = this.deleteAndExpectBodilessResponse(uri, token, expect)
 
         /**
-         * Extension for: [DefaultHttpSystem.deleteAndExpectBodilessResponse]
+         * Extension for: [HttpSystem.putAndExpectJson]
          * */
-        suspend inline fun DefaultHttpSystem.deleteAndExpectBodilessResponse(
+        suspend inline fun <reified TExpected : Any> HttpSystem.putAndExpectJson(
             uri: String,
-            noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): DefaultHttpSystem = this.deleteAndExpectBodilessResponse(uri, None, expect)
-
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.putAndExpectJson(
-            uri: String,
+            token: Option<String> = None,
             body: Option<Any> = None,
             noinline expect: suspend (actual: TExpected) -> Unit
-        ): DefaultHttpSystem = this.putAndExpectJson(uri, body, TExpected::class, None, expect)
+        ): HttpSystem = this.putAndExpectJson(uri, body, TExpected::class, token, expect)
 
         /**
-         * Extension for: [DefaultHttpSystem.putAndExpectJson]
+         * Extension for: [HttpSystem.putAndExpectBodilessResponse]
          * */
-        suspend inline fun <reified TExpected : Any> DefaultHttpSystem.putAndExpectJson(
+        suspend inline fun HttpSystem.putAndExpectBodilessResponse(
             uri: String,
-            noinline expect: suspend (actual: TExpected) -> Unit
-        ): DefaultHttpSystem = this.putAndExpectJson(uri, None, TExpected::class, None, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.putAndExpectBodilessResponse]
-         * */
-        suspend inline fun DefaultHttpSystem.putAndExpectBodilessResponse(
-            uri: String,
+            token: Option<String> = None,
             body: Option<Any> = None,
             noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): DefaultHttpSystem = this.putAndExpectBodilessResponse(uri, None, body, expect)
-
-        /**
-         * Extension for: [DefaultHttpSystem.putAndExpectBodilessResponse]
-         * */
-        suspend inline fun DefaultHttpSystem.putAndExpectBodilessResponse(
-            uri: String,
-            noinline expect: suspend (actual: StoveHttpResponse) -> Unit
-        ): DefaultHttpSystem = this.putAndExpectBodilessResponse(uri, None, None, expect)
+        ): HttpSystem = this.putAndExpectBodilessResponse(uri, token, body, expect)
     }
 }
