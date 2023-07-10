@@ -22,7 +22,7 @@ jobs:
         settings-path: ${{ github.workspace }}
 
     - name: Publish to Maven Repository
-      uses: gradle/gradle-build-action@v2.5.1
+      uses: gradle/gradle-build-action@v2.6.0
       with:
         arguments: publish
       env:
