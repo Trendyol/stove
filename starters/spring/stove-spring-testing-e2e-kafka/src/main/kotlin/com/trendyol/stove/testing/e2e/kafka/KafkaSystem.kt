@@ -106,7 +106,7 @@ class KafkaSystem(
         condition: (T, Throwable) -> Boolean,
         clazz: KClass<T>
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(clazz, atLeastIn) { message, throwable -> message.exists { m -> condition(m, throwable) } }
+        shouldBeFailedInternal(clazz, atLeastIn) { message, throwable -> message.isSome { m -> condition(m, throwable) } }
     }.let { this }
 
     private suspend fun <T : Any> shouldBeFailedInternal(
@@ -121,7 +121,7 @@ class KafkaSystem(
         condition: (T) -> Boolean,
         clazz: KClass<T>
     ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.exists { o -> condition(o) } }
+        shouldBeConsumedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
     }.let { this }
 
     private suspend fun <T : Any> shouldBeConsumedInternal(
@@ -143,7 +143,7 @@ class KafkaSystem(
         condition: (T) -> Boolean,
         clazz: KClass<T>
     ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.exists { o -> condition(o) } }
+        shouldBePublishedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
     }.let { this }
 
     private suspend fun <T : Any> shouldBePublishedInternal(

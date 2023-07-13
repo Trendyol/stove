@@ -1,7 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.getOrElse
-import arrow.core.orElse
 import arrow.core.toOption
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.Refresh
@@ -115,7 +114,7 @@ class ElasticsearchSystem internal constructor(
             .get({ req -> req.index(index).id(key).refresh(true) }, clazz.java)
             .source().toOption()
             .map(assertion)
-            .orElse { throw AssertionError("Resource with key ($key) is not found") }
+            .getOrElse { throw AssertionError("Resource with key ($key) is not found") }
             .let { this }
     }
 

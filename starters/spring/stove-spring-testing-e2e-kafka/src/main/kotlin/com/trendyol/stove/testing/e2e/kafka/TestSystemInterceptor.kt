@@ -1,6 +1,9 @@
 package com.trendyol.stove.testing.e2e.kafka
 
-import arrow.core.*
+import arrow.core.Option
+import arrow.core.firstOrNone
+import arrow.core.getOrElse
+import arrow.core.toOption
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -196,14 +199,14 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         val collectionFunc = this
         withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(50) }
         return collectionFunc().filter { condition(it) }
-    }.handleErrorWith {
+    }.recoverCatching {
         when (it) {
             is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
             is ConcurrentModificationException ->
                 Result.success(waitUntilConditionMet(duration, subject, condition))
 
             else -> throw it
-        }
+        }.getOrThrow()
     }.getOrThrow()
 
     private fun dumpMessages(): String = """Messages in the KafkaSystem so far:

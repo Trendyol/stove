@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import arrow.core.Option
 import arrow.core.align
-import arrow.core.handleErrorWith
 import arrow.core.toOption
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -38,14 +37,14 @@ internal interface CommonOps : RecordsAssertions {
         val collectionFunc = this
         withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(50) }
         return collectionFunc().filter { condition(it) }
-    }.handleErrorWith {
+    }.recoverCatching {
         when (it) {
             is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
             is ConcurrentModificationException ->
                 Result.success(waitUntilConditionMet(duration, subject, condition))
 
             else -> throw it
-        }
+        }.getOrThrow()
     }.getOrThrow()
 
     fun <T : Any> throwIfFailed(

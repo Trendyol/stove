@@ -24,14 +24,14 @@ fun <T> Try<Option<T>>.flatten(): Option<T> =
  *
  * @return [Some] if this [Some] contains a [Success]. Otherwise, returns [None].
  */
-fun <T> Option<Try<T>>.flatten(): Option<T> = if (isEmpty()) None else get().toOption()
+fun <T> Option<Try<T>>.flatten(): Option<T> = if (isNone()) None else get().toOption()
 
 /**
  * Returns nested [List] if this is [Some]. Otherwise, returns an empty [List].
  *
  * @return Nested [List] if this is [Some]. Otherwise, returns an empty [List].
  */
-fun <T> Option<Iterable<T>>.flatten(): List<T> = if (isEmpty()) emptyList() else get().toList()
+fun <T> Option<Iterable<T>>.flatten(): List<T> = if (isNone()) emptyList() else get().toList()
 
 /**
  * Returns [List] of values of each [Some] in this [Iterable].

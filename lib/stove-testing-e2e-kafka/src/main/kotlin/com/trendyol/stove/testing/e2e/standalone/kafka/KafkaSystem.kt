@@ -117,7 +117,7 @@ class KafkaSystem(
         message: Any
     ): KafkaSystem = interceptor
         .also { assertedMessages.add(message) }
-        .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.exists { it == message } }
+        .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.isSome { it == message } }
         .let { this }
 
     suspend fun shouldBeFailed(
@@ -135,7 +135,7 @@ class KafkaSystem(
         clazz: KClass<T>
     ): KafkaSystem = interceptor
         .also { assertedConditions.add(condition as (Any) -> Boolean) }
-        .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.exists { condition(it) } }
+        .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.isSome { condition(it) } }
         .let { this }
 
     @PublishedApi
