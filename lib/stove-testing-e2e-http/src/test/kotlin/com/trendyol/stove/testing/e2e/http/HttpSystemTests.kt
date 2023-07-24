@@ -45,7 +45,7 @@ class TestConfig : AbstractProjectConfig() {
     override suspend fun afterProject(): Unit = TestSystem.stop()
 }
 
-class DefaultHttpSystemTests : FunSpec({
+class HttpSystemTests : FunSpec({
     test("DELETE and expect bodiless response") {
         TestSystem.validate {
             wiremock {
