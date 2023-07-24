@@ -74,9 +74,10 @@ class HttpSystem(
     suspend fun getResponse(
         uri: String,
         queryParams: Map<String, String> = mapOf(),
+        headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri, queryParams) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
@@ -85,8 +86,9 @@ class HttpSystem(
         uri: String,
         token: Option<String>,
         body: Option<Any>,
+        headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
@@ -98,8 +100,9 @@ class HttpSystem(
         uri: String,
         token: Option<String>,
         body: Option<Any>,
+        headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
@@ -110,8 +113,9 @@ class HttpSystem(
     suspend fun deleteAndExpectBodilessResponse(
         uri: String,
         token: Option<String>,
+        headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.DELETE()
     }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
@@ -120,10 +124,11 @@ class HttpSystem(
     internal suspend fun <TExpected : Any> get(
         uri: String,
         queryParams: Map<String, String>,
+        headers: Map<String, String> = mapOf(),
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (TExpected) -> Unit
-    ): HttpSystem = httpClient.send(uri, queryParams) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
     }.let { expect(deserialize(it, clazz)); this }
@@ -132,10 +137,11 @@ class HttpSystem(
     internal suspend fun <TExpected : Any> getMany(
         uri: String,
         queryParams: Map<String, String>,
+        headers: Map<String, String> = mapOf(),
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (List<TExpected>) -> Unit
-    ): HttpSystem = httpClient.send(uri, queryParams) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
     }.let {
@@ -150,11 +156,12 @@ class HttpSystem(
     @PublishedApi
     internal suspend fun <TExpected : Any> postAndExpectJson(
         uri: String,
+        headers: Map<String, String> = mapOf(),
         body: Option<Any>,
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (actual: TExpected) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
@@ -165,11 +172,12 @@ class HttpSystem(
     @PublishedApi
     internal suspend fun <TExpected : Any> putAndExpectJson(
         uri: String,
+        headers: Map<String, String> = mapOf(),
         body: Option<Any>,
         clazz: KClass<TExpected>,
         token: Option<String>,
         expect: suspend (actual: TExpected) -> Unit
-    ): HttpSystem = httpClient.send(uri) { request ->
+    ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
@@ -181,14 +189,21 @@ class HttpSystem(
 
     private suspend fun HttpClient.send(
         uri: String,
+        headers: Map<String, String> = mapOf(),
         queryParams: Map<String, String> = mapOf(),
         configureRequest: (request: HttpRequest.Builder) -> HttpRequest.Builder
     ): HttpResponse<ByteArray> {
         val requestBuilder = HttpRequest.newBuilder()
             .uri(relative(uri, queryParams))
-            .setHeader(Headers.ContentType, MediaType.ApplicationJson)
+            .addHeaders(headers)
         return sendAsync(configureRequest(requestBuilder).build(), BodyHandlers.ofByteArray()).await()
     }
+
+    private fun HttpRequest.Builder.addHeaders(headers: Map<String, String>): HttpRequest.Builder = headers
+        .toMutableMap()
+        .apply { this[Headers.ContentType] = MediaType.ApplicationJson }
+        .forEach { (key, value) -> setHeader(key, value) }
+        .let { this }
 
     private fun relative(
         uri: String,
@@ -239,39 +254,57 @@ class HttpSystem(
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.get(
             uri: String,
+            headers: Map<String, String> = mapOf(),
             queryParams: Map<String, String> = mapOf(),
             token: Option<String> = None,
             noinline expect: suspend (TExpected) -> Unit
-        ): HttpSystem = this.get(uri, queryParams, TExpected::class, token, expect)
+        ): HttpSystem = get(
+            uri,
+            queryParams = queryParams,
+            headers = headers,
+            clazz = TExpected::class,
+            token = token,
+            expect = expect
+        )
 
         /**
          * Extension for: [HttpSystem.getMany]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.getMany(
             uri: String,
+            headers: Map<String, String> = mapOf(),
             queryParams: Map<String, String> = mapOf(),
             token: Option<String> = None,
             noinline expect: suspend (List<TExpected>) -> Unit
-        ): HttpSystem = this.getMany(uri, queryParams, TExpected::class, token, expect)
+        ): HttpSystem = getMany(
+            uri,
+            queryParams = queryParams,
+            headers = headers,
+            clazz = TExpected::class,
+            token = token,
+            expect = expect
+        )
 
         /**
          * Extension for: [HttpSystem.postAndExpectJson]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.postAndExpectJson(
             uri: String,
+            headers: Map<String, String> = mapOf(),
             body: Option<Any> = None,
             token: Option<String> = None,
             noinline expect: suspend (actual: TExpected) -> Unit
-        ): HttpSystem = this.postAndExpectJson(uri, body, TExpected::class, token, expect)
+        ): HttpSystem = this.postAndExpectJson(uri, headers = headers, body, TExpected::class, token, expect)
 
         /**
          * Extension for: [HttpSystem.putAndExpectJson]
          * */
         suspend inline fun <reified TExpected : Any> HttpSystem.putAndExpectJson(
             uri: String,
+            headers: Map<String, String> = mapOf(),
             token: Option<String> = None,
             body: Option<Any> = None,
             noinline expect: suspend (actual: TExpected) -> Unit
-        ): HttpSystem = this.putAndExpectJson(uri, body, TExpected::class, token, expect)
+        ): HttpSystem = this.putAndExpectJson(uri, headers = headers, body, TExpected::class, token, expect)
     }
 }
