@@ -43,7 +43,11 @@ class ExampleTest : FunSpec({
             val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = true)
 
             wiremock {
-                mockGet("/suppliers/${productCreateRequest.id}/allowed", responseBody = supplierPermission.some(), statusCode = 200)
+                mockGet(
+                    "/suppliers/${productCreateRequest.id}/allowed",
+                    statusCode = 200,
+                    responseBody = supplierPermission.some()
+                )
             }
 
             http {
@@ -75,7 +79,11 @@ class ExampleTest : FunSpec({
             val productCreateRequest = ProductCreateRequest(2L, name = "product name", 98L)
             val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = false)
             wiremock {
-                mockGet("/suppliers/${productCreateRequest.id}/allowed", responseBody = supplierPermission.some(), statusCode = 200)
+                mockGet(
+                    "/suppliers/${productCreateRequest.id}/allowed",
+                    statusCode = 200,
+                    responseBody = supplierPermission.some()
+                )
                 http {
                     postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
                         actual shouldBe "Supplier with the given id(${productCreateRequest.supplierId}) is not allowed for product creation"
@@ -91,7 +99,11 @@ class ExampleTest : FunSpec({
             val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = false)
 
             wiremock {
-                mockGet("/suppliers/${productCreateEvent.id}/allowed", responseBody = supplierPermission.some(), statusCode = 200)
+                mockGet(
+                    "/suppliers/${productCreateEvent.id}/allowed",
+                    statusCode = 200,
+                    responseBody = supplierPermission.some()
+                )
             }
 
             kafka {
@@ -109,7 +121,11 @@ class ExampleTest : FunSpec({
             val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = true)
 
             wiremock {
-                mockGet("/suppliers/${productCreateEvent.id}/allowed", responseBody = supplierPermission.some(), statusCode = 200)
+                mockGet(
+                    "/suppliers/${productCreateEvent.id}/allowed",
+                    statusCode = 200,
+                    responseBody = supplierPermission.some()
+                )
             }
 
             kafka {

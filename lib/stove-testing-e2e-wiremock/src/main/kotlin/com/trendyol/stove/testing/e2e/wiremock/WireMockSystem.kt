@@ -59,8 +59,8 @@ class WireMockSystem(
 
     fun mockGet(
         url: String,
-        responseBody: Option<Any> = None,
         statusCode: Int,
+        responseBody: Option<Any> = None,
         metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val mockRequest = WireMock.get(WireMock.urlEqualTo(url))
@@ -73,9 +73,9 @@ class WireMockSystem(
 
     fun mockPost(
         url: String,
+        statusCode: Int,
         requestBody: Option<Any> = None,
         responseBody: Option<Any> = None,
-        statusCode: Int,
         metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val mockRequest = WireMock.post(WireMock.urlEqualTo(url))
@@ -88,9 +88,9 @@ class WireMockSystem(
 
     fun mockPut(
         url: String,
+        statusCode: Int,
         requestBody: Option<Any> = None,
         responseBody: Option<Any> = None,
-        statusCode: Int,
         metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
         val res = aResponse()

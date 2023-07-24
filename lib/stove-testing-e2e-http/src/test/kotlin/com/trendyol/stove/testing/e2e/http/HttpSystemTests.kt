@@ -68,8 +68,8 @@ class HttpSystemTests : FunSpec({
         val expectedPutDtoName = UUID.randomUUID().toString()
         TestSystem.validate {
             wiremock {
-                mockPut("/put-with-response-body", None, responseBody = TestDto(expectedPutDtoName).some(), 200)
-                mockPut("/put-without-response-body", None, responseBody = None, 200)
+                mockPut("/put-with-response-body", 200, None, responseBody = TestDto(expectedPutDtoName).some())
+                mockPut("/put-without-response-body", 200, None, responseBody = None)
             }
 
             http {
@@ -87,8 +87,8 @@ class HttpSystemTests : FunSpec({
         val expectedPOSTDtoName = UUID.randomUUID().toString()
         TestSystem.validate {
             wiremock {
-                mockPost("/post-with-response-body", None, responseBody = TestDto(expectedPOSTDtoName).some(), 200)
-                mockPost("/post-without-response-body", None, responseBody = None, 200)
+                mockPost("/post-with-response-body", 200, None, responseBody = TestDto(expectedPOSTDtoName).some())
+                mockPost("/post-without-response-body", 200, None, responseBody = None)
             }
 
             http {
@@ -106,8 +106,8 @@ class HttpSystemTests : FunSpec({
         val expectedGetDtoName = UUID.randomUUID().toString()
         TestSystem.validate {
             wiremock {
-                mockGet("/get", responseBody = TestDto(expectedGetDtoName).some(), 200)
-                mockGet("/get-many", responseBody = listOf(TestDto(expectedGetDtoName)).some(), 200)
+                mockGet("/get", 200, responseBody = TestDto(expectedGetDtoName).some())
+                mockGet("/get-many", 200, responseBody = listOf(TestDto(expectedGetDtoName)).some())
             }
 
             http {
