@@ -11,6 +11,7 @@ import com.trendyol.stove.testing.e2e.kafka.KafkaSystem.Companion.shouldBeFailed
 import com.trendyol.stove.testing.e2e.kafka.KafkaSystem.Companion.shouldBePublishedOnCondition
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.using
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -18,10 +19,19 @@ import io.kotest.matchers.string.shouldContain
 import stove.spring.example.application.handlers.ProductCreateRequest
 import stove.spring.example.application.handlers.ProductCreatedEvent
 import stove.spring.example.application.services.SupplierPermission
+import stove.spring.example.infrastructure.couchbase.CouchbaseProperties
 import stove.spring.example.infrastructure.messaging.kafka.consumers.BusinessException
 import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
 
 class ExampleTest : FunSpec({
+    test("bridge should work") {
+        TestSystem.validate {
+            using<CouchbaseProperties> {
+                this.bucketName shouldBe "Stove"
+            }
+        }
+    }
+
     test("index should be reachable") {
         TestSystem.validate {
             http {

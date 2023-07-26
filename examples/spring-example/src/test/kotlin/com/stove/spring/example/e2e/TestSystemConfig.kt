@@ -1,5 +1,6 @@
 package com.stove.spring.example.e2e
 
+import com.trendyol.stove.testing.e2e.bridge
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystemOptions
 import com.trendyol.stove.testing.e2e.couchbase.couchbase
 import com.trendyol.stove.testing.e2e.http.httpClient
@@ -27,6 +28,7 @@ class TestSystemConfig : AbstractProjectConfig() {
                 kafka {
                     KafkaSystemOptions(containerOptions = KafkaContainerOptions(tag = "latest"))
                 }
+                bridge()
                 wiremock {
                     WireMockSystemOptions(
                         port = 9099,
