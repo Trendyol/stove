@@ -41,22 +41,24 @@ As an example:
 
 ```kotlin
 TestSystem()
-    .withHttpClient() 
-    .withKafka()
-    .systemUnderTest(
-        runner = { parameters ->
-            com.trendyol.exampleapp.run(parameters)
-        },
-        withParameters = listOf(
-            "logging.level.root=error",
-            "logging.level.org.springframework.web=error",
-            "spring.profiles.active=default",
-            "server.http2.enabled=false",
-            "kafka.heartbeatInSeconds=2",
-            "kafka.autoCreateTopics=true",
-            "kafka.offset=earliest"
+    .with{
+        httpClient()
+        kafka()
+        springBoot(
+            runner = { parameters ->
+                com.trendyol.exampleapp.run(parameters)
+            },
+            withParameters = listOf(
+                "logging.level.root=error",
+                "logging.level.org.springframework.web=error",
+                "spring.profiles.active=default",
+                "server.http2.enabled=false",
+                "kafka.heartbeatInSeconds=2",
+                "kafka.autoCreateTopics=true",
+                "kafka.offset=earliest"
+            )
         )
-    ).run()
+    }.run()
 ```
 
 As you can see, we pass these configuration values as parameters. Since they are configurable, the application considers these values instead of application-default values.
@@ -111,7 +113,7 @@ fun SpringApplication.addTestDependencies() {
 `addTestDependencies` is an extension that helps us to register our dependencies in the application.
 
 ```kotlin  hl_lines="4"
-.systemUnderTest(
+.springBoot(
     runner = { parameters ->
         com.trendyol.exampleapp.run(parameters) {
             addTestDependencies() // Enable TestInitializer with extensions call
@@ -132,9 +134,10 @@ fun SpringApplication.addTestDependencies() {
 Now you're full set and have control over Kafka messages from the testing context.
 
 ```kotlin
-TestSystem
-    .instance
-    .kafka()
-    .shouldBeConsumedOnCondition<AnyEvent> { actual->  }
-    .shouldBePublishedOnCondition<AnyEvent> { actual->  }
+TestSystem.validate {
+        kafka {
+            shouldBeConsumedOnCondition<AnyEvent> { actual->  }
+            shouldBePublishedOnCondition<AnyEvent> { actual->  }
+        }
+    }
 ```

@@ -92,5 +92,5 @@ application
 that we have configured at [step 1](0001-tuning-app.md#tuning-the-applications-entry-point)
 
 !!! note
-`server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
-against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.
+    `server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
+    against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.
