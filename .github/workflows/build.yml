@@ -29,7 +29,7 @@ jobs:
 
       - name: Add coverage to PR
         id: jacoco
-        uses: madrapps/jacoco-report@v1.5
+        uses: madrapps/jacoco-report@v1.6
         with:
           paths: "./build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
           token: ${{ secrets.RENOVATE_TOKEN }}
