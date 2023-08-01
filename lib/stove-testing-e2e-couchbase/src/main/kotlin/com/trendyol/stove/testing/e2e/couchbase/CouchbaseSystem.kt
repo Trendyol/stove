@@ -2,10 +2,7 @@ package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.core.error.DocumentNotFoundException
 import com.couchbase.client.core.msg.kv.DurabilityLevel.PERSIST_TO_MAJORITY
-import com.couchbase.client.java.Cluster
-import com.couchbase.client.java.ClusterOptions
-import com.couchbase.client.java.ReactiveCluster
-import com.couchbase.client.java.ReactiveCollection
+import com.couchbase.client.java.*
 import com.couchbase.client.java.codec.JacksonJsonSerializer
 import com.couchbase.client.java.env.ClusterEnvironment
 import com.couchbase.client.java.json.JsonObject
@@ -68,11 +65,11 @@ class CouchbaseSystem internal constructor(
 
     override fun configuration(): List<String> =
         context.options.configureExposedConfiguration(exposedConfiguration) +
-            listOf(
-                "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
-                "couchbase.username=${exposedConfiguration.username}",
-                "couchbase.password=${exposedConfiguration.password}"
-            )
+          listOf(
+              "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
+              "couchbase.username=${exposedConfiguration.username}",
+              "couchbase.password=${exposedConfiguration.password}"
+          )
 
     @PublishedApi
     internal suspend fun <T : Any> shouldQuery(
@@ -210,6 +207,18 @@ class CouchbaseSystem internal constructor(
             }
 
     companion object {
+
+        /**
+         * Exposes the [ReactiveCluster] of the [CouchbaseSystem]
+         */
+        @Suppress("unused")
+        fun CouchbaseSystem.cluster(): ReactiveCluster = this.cluster
+
+        /**
+         * Exposes the [ReactiveBucket] of the [CouchbaseSystem]
+         */
+        @Suppress("unused")
+        fun CouchbaseSystem.bucket(): ReactiveBucket = this.cluster.bucket(this.context.bucket.name)
 
         suspend inline fun <reified T : Any> CouchbaseSystem.shouldGet(
             collection: String,

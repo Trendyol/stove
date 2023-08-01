@@ -1,10 +1,6 @@
 package com.trendyol.stove.testing.e2e.rdbms
 
-import io.r2dbc.spi.Connection
-import io.r2dbc.spi.ConnectionFactory
-import io.r2dbc.spi.IsolationLevel
-import io.r2dbc.spi.Row
-import io.r2dbc.spi.RowMetadata
+import io.r2dbc.spi.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
@@ -13,7 +9,7 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 /**
  * An R2DBC abstraction that uses Kotlin coroutines.
  */
-internal class SqlOperations(private val connectionFactory: ConnectionFactory) {
+class SqlOperations(private val connectionFactory: ConnectionFactory) {
 
     private lateinit var connection: Connection
 
@@ -48,7 +44,7 @@ internal class SqlOperations(private val connectionFactory: ConnectionFactory) {
 /**
  * Wrapper for [Connection].
  */
-internal class Handle(val connection: Connection) {
+class Handle(val connection: Connection) {
 
     /**
      * Change transaction isolation level.

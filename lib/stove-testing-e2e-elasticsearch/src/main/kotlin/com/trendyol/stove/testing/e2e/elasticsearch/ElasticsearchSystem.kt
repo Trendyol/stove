@@ -149,10 +149,10 @@ class ElasticsearchSystem internal constructor(
     }
 
     override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) +
-        listOf(
-            "elasticsearch.host=${exposedConfiguration.host}",
-            "elasticsearch.port=${exposedConfiguration.port}"
-        )
+      listOf(
+          "elasticsearch.host=${exposedConfiguration.host}",
+          "elasticsearch.port=${exposedConfiguration.port}"
+      )
 
     private fun createEsClient(
         exposedConfiguration: ElasticSearchExposedConfiguration
@@ -192,6 +192,14 @@ class ElasticsearchSystem internal constructor(
     }
 
     companion object {
+
+        /**
+         * Exposes the [ElasticsearchClient] for the given [ElasticsearchSystem]
+         * This is useful for custom queries
+         */
+        @Suppress("unused")
+        fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
+
         /**
          * Executes the given [query] and returns a list for [assertion]
          * Caller-side needs to assert based on the list

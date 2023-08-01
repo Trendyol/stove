@@ -246,6 +246,9 @@ class HttpSystem(
             fun bearer(token: String) = "Bearer $token"
         }
 
+        /**
+         * Exposes the [HttpClient] used by the [HttpSystem].
+         */
         @Suppress("unused")
         fun HttpSystem.client(): HttpClient = this.httpClient
 

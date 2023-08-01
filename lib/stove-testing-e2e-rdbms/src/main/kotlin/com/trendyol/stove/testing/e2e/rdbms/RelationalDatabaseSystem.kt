@@ -90,6 +90,13 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     }
 
     companion object {
+
+        /**
+         * Exposes the [SqlOperations] of the [RelationalDatabaseSystem].
+         */
+        @Suppress("unused")
+        fun RelationalDatabaseSystem<*>.operations(): SqlOperations = this.sqlOperations
+
         suspend inline fun <reified T : Any> RelationalDatabaseSystem<*>.shouldQuery(
             id: String,
             noinline assertion: (List<T>) -> Unit

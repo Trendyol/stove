@@ -241,4 +241,13 @@ class WireMockSystem(
         responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
         return mockResponse
     }
+
+    companion object {
+
+        /**
+         * Exposes the [WireMockServer] instance for the given [WireMockSystem].
+         */
+        @Suppress("unused")
+        fun WireMockSystem.server(): WireMockServer = wireMock
+    }
 }

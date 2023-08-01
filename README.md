@@ -35,22 +35,34 @@ TestSystem(baseUrl = "http://localhost:8001") {
         keepDendenciesRunning() // this will keep the dependencies running after the tests are finished, so next run will be blazing fast :)
     }
 }.with {
-    httpClient() // Enables http client to make real http calls against the application under test
+    // Enables http client 
+    // to make real http calls 
+    // against the application under test
+    http()
 
-    couchbase { // Enables Couchbase physically and exposes the configuration to the application under test
+    // Enables Couchbase physically 
+    // and exposes the configuration 
+    // to the application under test
+    couchbase {
         CouchbaseSystemOptions(
             defaultBucket = "Stove",
             configureExposedConfiguration = { cfg -> listOf("couchbase.hosts=${cfg.hostsWithPort}") },
         )
     }
 
-    kafka { // Enables Kafka physically and exposes the configuration to the application under test
+    // Enables Kafka physically 
+    // and exposes the configuration 
+    // to the application under test
+    kafka {
         KafkaSystemOptions(
             configureExposedConfiguration = { cfg -> listOf("kafka.bootstrapServers=${cfg.boostrapServers}") },
         )
     }
 
-    wiremock { // Enables Wiremock on the given port and provides configurable mock HTTP server for your external API calls
+    // Enables Wiremock on the given port 
+    // and provides configurable mock HTTP server 
+    // for your external API calls
+    wiremock {
         WireMockSystemOptions(
             port = 9090,
             removeStubAfterRequestMatched = true,
@@ -60,7 +72,10 @@ TestSystem(baseUrl = "http://localhost:8001") {
         )
     }
 
-    springBoot( // The Application Under Test. Enables Spring Boot application to be run with the given parameters.
+    // The Application Under Test. 
+    // Enables Spring Boot application 
+    // to be run with the given parameters.
+    springBoot(
         runner = { parameters ->
             stove.spring.example.run(parameters) { it.addTestSystemDependencies() }
         },

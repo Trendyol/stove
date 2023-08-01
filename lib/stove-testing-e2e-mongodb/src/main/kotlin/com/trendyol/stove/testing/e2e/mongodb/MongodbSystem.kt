@@ -59,9 +59,9 @@ class MongodbSystem internal constructor(
 
     override fun configuration(): List<String> {
         return context.options.configureExposedConfiguration(exposedConfiguration) +
-            listOf(
-                "mongodb.connectionString=${exposedConfiguration.connectionString}"
-            )
+          listOf(
+              "mongodb.connectionString=${exposedConfiguration.connectionString}"
+          )
     }
 
     @PublishedApi
@@ -156,6 +156,12 @@ class MongodbSystem internal constructor(
 
         private const val RESERVED_ID = "_id"
         private fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))
+
+        /**
+         * Exposes the [MongoClient] to the [MongodbSystem]
+         */
+        @Suppress("unused")
+        fun MongodbSystem.client(): MongoClient = mongoClient
 
         suspend inline fun <reified T : Any> MongodbSystem.shouldQuery(
             query: String,
