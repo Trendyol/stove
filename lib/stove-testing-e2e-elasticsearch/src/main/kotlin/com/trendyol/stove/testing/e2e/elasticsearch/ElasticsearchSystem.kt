@@ -149,10 +149,10 @@ class ElasticsearchSystem internal constructor(
     }
 
     override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) +
-      listOf(
-          "elasticsearch.host=${exposedConfiguration.host}",
-          "elasticsearch.port=${exposedConfiguration.port}"
-      )
+        listOf(
+            "elasticsearch.host=${exposedConfiguration.host}",
+            "elasticsearch.port=${exposedConfiguration.port}"
+        )
 
     private fun createEsClient(
         exposedConfiguration: ElasticSearchExposedConfiguration

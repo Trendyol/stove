@@ -65,11 +65,11 @@ class CouchbaseSystem internal constructor(
 
     override fun configuration(): List<String> =
         context.options.configureExposedConfiguration(exposedConfiguration) +
-          listOf(
-              "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
-              "couchbase.username=${exposedConfiguration.username}",
-              "couchbase.password=${exposedConfiguration.password}"
-          )
+            listOf(
+                "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
+                "couchbase.username=${exposedConfiguration.username}",
+                "couchbase.password=${exposedConfiguration.password}"
+            )
 
     @PublishedApi
     internal suspend fun <T : Any> shouldQuery(

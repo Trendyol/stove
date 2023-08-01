@@ -59,9 +59,9 @@ class MongodbSystem internal constructor(
 
     override fun configuration(): List<String> {
         return context.options.configureExposedConfiguration(exposedConfiguration) +
-          listOf(
-              "mongodb.connectionString=${exposedConfiguration.connectionString}"
-          )
+            listOf(
+                "mongodb.connectionString=${exposedConfiguration.connectionString}"
+            )
     }
 
     @PublishedApi
