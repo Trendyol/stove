@@ -21,8 +21,8 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     protected val context: RelationalDatabaseContext<*>
 ) : PluggedSystem, RunAware, ExposesConfiguration {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
-    private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
 
+    protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
     protected lateinit var sqlOperations: SqlOperations
     protected val state: StateOfSystem<RelationalDatabaseSystem<SELF>, RelationalDatabaseExposedConfiguration> =
         StateOfSystem(testSystem.options, javaClass.kotlin, RelationalDatabaseExposedConfiguration::class)
