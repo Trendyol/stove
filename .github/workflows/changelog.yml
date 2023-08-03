@@ -20,6 +20,8 @@ jobs:
     - uses: BobAnkh/auto-generate-changelog@master
       with:
         ACCESS_TOKEN: ${{secrets.BOT_REPO_TOKEN}}
+        PULL_REQUEST: changelog
+        BRANCH: ''
         PATH: 'CHANGELOG.md'
         COMMIT_MESSAGE: 'docs(changelog): update release notes'
         TYPE: 'feat:Feature,fix:Bug Fixes,docs:Documentation,refactor:Refactor,perf:Performance Improvements'
