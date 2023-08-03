@@ -3,6 +3,7 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
+import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -18,6 +19,8 @@ data class DefaultIndex(
 
 class DefaultIndexMigrator(private val index: String) : DatabaseMigration<ElasticsearchClient> {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+    override val order: Int = MigrationPriority.HIGHEST.value
     override suspend fun execute(connection: ElasticsearchClient) {
         val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
             .index(index)

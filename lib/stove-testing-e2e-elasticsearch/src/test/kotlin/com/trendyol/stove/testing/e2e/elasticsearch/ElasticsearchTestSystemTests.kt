@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
+import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -25,6 +26,7 @@ const val testIndex = "stove-test-index"
 const val anotherIndex = "stove-another-index"
 
 class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+    override val order: Int = MigrationPriority.HIGHEST.value
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     override suspend fun execute(connection: ElasticsearchClient) {
         val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
@@ -36,6 +38,7 @@ class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
 }
 
 class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+    override val order: Int = MigrationPriority.HIGHEST.value + 1
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     override suspend fun execute(connection: ElasticsearchClient) {
         val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()

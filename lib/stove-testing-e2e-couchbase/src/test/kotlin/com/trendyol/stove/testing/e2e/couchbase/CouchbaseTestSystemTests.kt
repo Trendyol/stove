@@ -4,6 +4,7 @@ import com.couchbase.client.java.ReactiveCluster
 import com.couchbase.client.java.manager.collection.CollectionSpec
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
+import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -16,7 +17,7 @@ import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import java.util.UUID
+import java.util.*
 
 const val testBucket = "test-couchbase-bucket"
 
@@ -47,6 +48,8 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
 
 class DefaultMigration : DatabaseMigration<ReactiveCluster> {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+    override val order: Int = MigrationPriority.HIGHEST.value
     override suspend fun execute(connection: ReactiveCluster) {
         connection
             .bucket(testBucket)
