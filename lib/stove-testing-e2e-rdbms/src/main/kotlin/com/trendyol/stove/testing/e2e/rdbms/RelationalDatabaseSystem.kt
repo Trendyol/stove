@@ -20,10 +20,11 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     final override val testSystem: TestSystem,
     protected val context: RelationalDatabaseContext<*>
 ) : PluggedSystem, RunAware, ExposesConfiguration {
-    private lateinit var sqlOperations: SqlOperations
-    private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
-    private val state: StateOfSystem<RelationalDatabaseSystem<SELF>, RelationalDatabaseExposedConfiguration> =
+
+    protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+    protected lateinit var sqlOperations: SqlOperations
+    protected val state: StateOfSystem<RelationalDatabaseSystem<SELF>, RelationalDatabaseExposedConfiguration> =
         StateOfSystem(testSystem.options, javaClass.kotlin, RelationalDatabaseExposedConfiguration::class)
 
     protected abstract fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory

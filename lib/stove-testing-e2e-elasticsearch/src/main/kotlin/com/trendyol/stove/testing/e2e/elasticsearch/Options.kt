@@ -1,5 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
+import arrow.core.None
 import arrow.core.Option
 import arrow.core.none
 import co.elastic.clients.elasticsearch.ElasticsearchClient
@@ -61,6 +62,7 @@ data class ElasticsearchContext(
 data class ContainerOptions(
     val registry: String = "docker.elastic.co/",
     val imageVersion: String = "8.6.1",
+    val compatibleSubstitute: Option<String> = None,
     val exposedPorts: List<Int> = listOf(9200),
     val password: String = "password",
     val disableSecurity: Boolean = true,

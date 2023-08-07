@@ -80,5 +80,5 @@ class MigrationCollection<TConnection> {
      * @param connection The connection of the database
      * @return Unit
      */
-    suspend fun run(connection: TConnection): Unit = types.map { it.value }.forEach { it.execute(connection) }
+    suspend fun run(connection: TConnection): Unit = types.map { it.value }.sortedBy { it.order }.forEach { it.execute(connection) }
 }
