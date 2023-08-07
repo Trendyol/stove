@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [0.3.2](https://github.com/Trendyol/stove4k/releases/tag/0.3.2) - 2023-08-07 07:57:33
+
+## What's Changed
+
+### Features
+* feature: add migration order to the migrations by @osoykan in https://github.com/Trendyol/stove4k/pull/184
+
+### Deps
+* fix(deps): update dependency com.couchbase.client:java-client to v3.4.9 by @renovate in https://github.com/Trendyol/stove4k/pull/185
+* fix(deps): update dependency com.couchbase.client:metrics-micrometer to v0.4.9 by @renovate in https://github.com/Trendyol/stove4k/pull/186
+
+
+**Full Changelog**: https://github.com/Trendyol/stove4k/compare/0.3.1...0.3.2
+
+### Feature
+
+- general:
+  - feature: add migration order to the migrations (#184) ([682c2ec](https://github.com/Trendyol/stove4k/commit/682c2ec2e2bf853ea492aa566a926ba3a6dd4851)) ([#184](https://github.com/Trendyol/stove4k/pull/184))
+
+### Bug Fixes
+
+- deps:
+  - update dependency com.couchbase.client:metrics-micrometer to v0.4.9 (#186) ([aa2ab16](https://github.com/Trendyol/stove4k/commit/aa2ab16a247c0ac586c05d6233a4d384f81c8d66)) ([#186](https://github.com/Trendyol/stove4k/pull/186))
+  - update dependency com.couchbase.client:java-client to v3.4.9 (#185) ([0575221](https://github.com/Trendyol/stove4k/commit/057522149d956ef23a7f831666fad30ca7866970)) ([#185](https://github.com/Trendyol/stove4k/pull/185))
+
 ## [0.3.1](https://github.com/Trendyol/stove4k/releases/tag/0.3.1) - 2023-08-03 09:54:08
 
 ## [0.3.0](https://github.com/Trendyol/stove4k/releases/tag/0.3.0) - 2023-07-27 09:00:53
