@@ -22,8 +22,9 @@ fun TestSystem.withElasticsearch(
     }
 
     return withProvidedRegistry(
-        "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",
-        options.containerOptions.registry
+        imageName = "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",
+        registry = options.containerOptions.registry,
+        compatibleSubstitute = options.containerOptions.compatibleSubstitute.getOrNull()
     ) { ElasticsearchContainer(it) }
         .apply {
             addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
