@@ -4,6 +4,7 @@ dependencies {
     api(libs.elastic)
     implementation(testLibs.testcontainers.elasticsearch)
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.arrow)
 }
 
 dependencies {
