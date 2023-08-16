@@ -1,6 +1,7 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.getOrElse
+import arrow.integrations.jackson.module.registerArrowModule
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
@@ -20,6 +21,8 @@ fun TestSystem.withElasticsearch(
     options.migrations {
         register<DefaultIndexMigrator> { options.defaultIndex.migrator }
     }
+
+    options.objectMapper.registerArrowModule()
 
     return withProvidedRegistry(
         imageName = "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",

@@ -1,7 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.core.getOrElse
-import arrow.core.toOption
+import arrow.core.*
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
@@ -11,8 +10,6 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import com.trendyol.stove.testing.e2e.containers.ExposedCertificate
-import com.trendyol.stove.testing.e2e.containers.NoCertificate
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.Dispatchers
@@ -53,13 +50,13 @@ class ElasticsearchSystem internal constructor(
         }
     }
 
-    private fun determineCertificate(): ExposedCertificate = when (context.options.containerOptions.disableSecurity) {
-        true -> NoCertificate
-        false -> ElasticsearchExposedCertificate(
-            context.container.caCertAsBytes().getOrElse { ByteArray(0) },
-            context.container.createSslContextFromCa()
-        )
-    }
+    private fun determineCertificate(): Option<ElasticsearchExposedCertificate> =
+        when (context.options.containerOptions.disableSecurity) {
+            true -> None
+            false -> ElasticsearchExposedCertificate(
+                context.container.caCertAsBytes().getOrElse { ByteArray(0) }
+            ).apply { sslContext = context.container.createSslContextFromCa() }.some()
+        }
 
     override suspend fun afterRun() {
         esClient = createEsClient(exposedConfiguration)
