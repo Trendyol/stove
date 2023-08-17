@@ -2,22 +2,6 @@
 
 ## [0.3.3](https://github.com/Trendyol/stove4k/releases/tag/0.3.3) - 2023-08-16 07:59:30
 
-## What's Changed
-* fix(deps): update dependency org.mockito.kotlin:mockito-kotlin to v5.1.0 by @renovate in https://github.com/Trendyol/stove4k/pull/187
-* chore(deps): update dependency io.spring.dependency-management to v1.1.3 by @renovate in https://github.com/Trendyol/stove4k/pull/188
-* chore(deps): update plugin kotlinter to v3.16.0 by @renovate in https://github.com/Trendyol/stove4k/pull/189
-* fix(deps): update dependency io.projectreactor:reactor-core to v3.5.9 by @renovate in https://github.com/Trendyol/stove4k/pull/190
-* Fix for Elasticsearch state capture when security enabled by @osoykan in https://github.com/Trendyol/stove4k/pull/191
-
-
-**Full Changelog**: https://github.com/Trendyol/stove4k/compare/0.3.2...0.3.3
-
-### Bug Fixes
-
-- deps:
-  - update dependency io.projectreactor:reactor-core to v3.5.9 (#190) ([c17ba77](https://github.com/Trendyol/stove4k/commit/c17ba77d2b984a23b05810daedf2f82a193527d9)) ([#190](https://github.com/Trendyol/stove4k/pull/190))
-  - update dependency org.mockito.kotlin:mockito-kotlin to v5.1.0 (#187) ([9637e1e](https://github.com/Trendyol/stove4k/commit/9637e1e7cc81b07734aa551dec2de36bc2d3968c)) ([#187](https://github.com/Trendyol/stove4k/pull/187))
-
 ## [0.3.2](https://github.com/Trendyol/stove4k/releases/tag/0.3.2) - 2023-08-07 07:57:33
 
 ## [0.3.1](https://github.com/Trendyol/stove4k/releases/tag/0.3.1) - 2023-08-03 09:54:08
