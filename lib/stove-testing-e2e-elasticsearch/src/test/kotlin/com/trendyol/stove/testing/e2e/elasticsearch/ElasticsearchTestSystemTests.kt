@@ -60,7 +60,8 @@ class Setup : AbstractProjectConfig() {
                         restClientOverrideFn = Some { cfg ->
                             RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
                         }
-                    )
+                    ),
+                    ContainerOptions(imageVersion = "8.9.0")
                 ).migrations { register<AnotherIndexMigrator>() }
             }
             applicationUnderTest(NoOpApplication())
