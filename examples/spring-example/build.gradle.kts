@@ -25,7 +25,6 @@ dependencies {
 dependencies {
     testImplementation(testLibs.kotest.property.jvm)
     testImplementation(testLibs.kotest.runner.junit5)
-    testImplementation(testLibs.kotest.extensions.spring)
     testImplementation(project(":lib:stove-testing-e2e"))
     testImplementation(project(":lib:stove-testing-e2e-http"))
     testImplementation(project(":lib:stove-testing-e2e-wiremock"))
