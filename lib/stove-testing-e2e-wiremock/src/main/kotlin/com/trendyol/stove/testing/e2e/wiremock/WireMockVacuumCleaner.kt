@@ -7,8 +7,8 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import wiremock.org.slf4j.Logger
+import wiremock.org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentMap
 

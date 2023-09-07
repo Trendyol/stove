@@ -21,8 +21,8 @@ import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.ValidatedSystem
 import kotlinx.coroutines.runBlocking
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import wiremock.org.slf4j.Logger
+import wiremock.org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
