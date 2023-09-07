@@ -25,12 +25,12 @@ data class WireMockSystemOptions(
     /**
      * Called after stub removed
      */
-    val afterStubRemoved: AfterStubRemoved = { _, _, _ -> },
+    val afterStubRemoved: AfterStubRemoved = { _, _ -> },
 
     /**
      * Called after request handled
      */
-    val afterRequest: AfterRequestHandler = { _, _, _ -> },
+    val afterRequest: AfterRequestHandler = { _, _ -> },
 
     /**
      * ObjectMapper for serialization/deserialization
