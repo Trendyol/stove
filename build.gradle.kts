@@ -73,7 +73,7 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            dependsOn(formatKotlin, lintKotlin)
+            dependsOn(lintKotlin)
             kotlinOptions.jvmTarget = "16"
             kotlinOptions.allWarningsAsErrors = true
         }

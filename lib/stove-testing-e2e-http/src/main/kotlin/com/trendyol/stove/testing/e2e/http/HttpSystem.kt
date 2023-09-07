@@ -80,7 +80,10 @@ class HttpSystem(
     ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+    }.let {
+        expect(StoveHttpResponse(it.statusCode(), it.headers().map()))
+        this
+    }
 
     suspend fun postAndExpectBodilessResponse(
         uri: String,
@@ -94,7 +97,10 @@ class HttpSystem(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+    }.let {
+        expect(StoveHttpResponse(it.statusCode(), it.headers().map()))
+        this
+    }
 
     suspend fun putAndExpectBodilessResponse(
         uri: String,
@@ -108,7 +114,10 @@ class HttpSystem(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
             ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+    }.let {
+        expect(StoveHttpResponse(it.statusCode(), it.headers().map()))
+        this
+    }
 
     suspend fun deleteAndExpectBodilessResponse(
         uri: String,
@@ -118,7 +127,10 @@ class HttpSystem(
     ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.DELETE()
-    }.let { expect(StoveHttpResponse(it.statusCode(), it.headers().map())); this }
+    }.let {
+        expect(StoveHttpResponse(it.statusCode(), it.headers().map()))
+        this
+    }
 
     @PublishedApi
     internal suspend fun <TExpected : Any> get(
@@ -131,7 +143,10 @@ class HttpSystem(
     ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
         token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
         request.GET()
-    }.let { expect(deserialize(it, clazz)); this }
+    }.let {
+        expect(deserialize(it, clazz))
+        this
+    }
 
     @PublishedApi
     internal suspend fun <TExpected : Any> getMany(
@@ -150,7 +165,8 @@ class HttpSystem(
                 it.body(),
                 objectMapper.typeFactory.constructCollectionType(List::class.java, clazz.javaObjectType)
             )
-        ); this
+        )
+        this
     }
 
     @PublishedApi
@@ -167,7 +183,10 @@ class HttpSystem(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
-    }.let { expect(deserialize(it, clazz)); this }
+    }.let {
+        expect(deserialize(it, clazz))
+        this
+    }
 
     @PublishedApi
     internal suspend fun <TExpected : Any> putAndExpectJson(
@@ -183,7 +202,10 @@ class HttpSystem(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
             ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
-    }.let { expect(deserialize(it, clazz)); this }
+    }.let {
+        expect(deserialize(it, clazz))
+        this
+    }
 
     override fun then(): TestSystem = testSystem
 
