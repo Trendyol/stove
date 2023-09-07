@@ -1,20 +1,20 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
-import com.github.tomakehurst.wiremock.core.Admin
-import com.github.tomakehurst.wiremock.extension.PostServeAction
+import com.github.tomakehurst.wiremock.extension.Parameters
+import com.github.tomakehurst.wiremock.extension.ServeEventListener
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentMap
 
 class WireMockRequestListener(
     private val stubLog: ConcurrentMap<UUID, StubMapping>,
     private val afterRequest: AfterRequestHandler
-) : PostServeAction() {
+) : ServeEventListener {
     override fun getName(): String = WireMockRequestListener::class.java.simpleName
 
-    override fun doGlobalAction(
-        serveEvent: ServeEvent,
-        admin: Admin
-    ): Unit = afterRequest(serveEvent, admin, stubLog)
+    override fun beforeResponseSent(
+        serveEvent: ServeEvent?,
+        parameters: Parameters?
+    ): Unit = afterRequest(serveEvent!!, stubLog)
 }

@@ -9,7 +9,6 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
-import com.github.tomakehurst.wiremock.core.Admin
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
@@ -28,8 +27,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-typealias AfterStubRemoved = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapping>) -> Unit
-typealias AfterRequestHandler = (ServeEvent, Admin, ConcurrentMap<UUID, StubMapping>) -> Unit
+typealias AfterStubRemoved = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
+typealias AfterRequestHandler = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
 
 class WireMockSystem(
     override val testSystem: TestSystem,

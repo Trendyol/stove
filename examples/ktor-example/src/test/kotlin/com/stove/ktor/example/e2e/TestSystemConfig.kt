@@ -36,7 +36,7 @@ class TestSystemConfig : AbstractProjectConfig() {
                     WireMockSystemOptions(
                         port = 9090,
                         removeStubAfterRequestMatched = true,
-                        afterRequest = { e, _, _ ->
+                        afterRequest = { e, _ ->
                             logger.info(e.request.toString())
                         }
                     )
