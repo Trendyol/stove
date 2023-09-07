@@ -25,10 +25,6 @@ class WireMockVacuumCleaner(
         this.wireMock = wireMockServer
     }
 
-    override fun afterMatch(serveEvent: ServeEvent?, parameters: Parameters?) {
-        super.afterMatch(serveEvent, parameters)
-    }
-
     override fun beforeResponseSent(serveEvent: ServeEvent, parameters: Parameters?) {
         if (!serveEvent.wasMatched) {
             return
