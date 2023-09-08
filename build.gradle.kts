@@ -14,11 +14,13 @@ plugins {
     alias(testLibs.plugins.testLogger)
     java
 }
-
 group = "com.trendyol"
-val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-val details = versionDetails()
-version = details.lastTag
+
+beforeEvaluate {
+    val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+    val details = versionDetails()
+    version = details.lastTag
+}
 
 allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -113,11 +115,11 @@ tasks.withType<DokkaMultiModuleTask>().configureEach {
 
 fun subprojectsOf(
     vararg parentProjects: String,
-    action: Action<Project>,
+    action: Action<Project>
 ): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) }.forEach { action(it) }
 
 fun subprojectsOf(
     vararg parentProjects: String,
     filter: (Project) -> Boolean,
-    action: Action<Project>,
+    action: Action<Project>
 ): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) && filter(it) }.forEach { action(it) }
