@@ -15,12 +15,9 @@ plugins {
     java
 }
 group = "com.trendyol"
-
-beforeEvaluate {
-    val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-    val details = versionDetails()
-    version = details.lastTag
-}
+val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+val details = versionDetails()
+version = details.lastTag
 
 allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
