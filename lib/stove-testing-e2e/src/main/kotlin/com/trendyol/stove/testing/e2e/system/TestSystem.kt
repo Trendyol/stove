@@ -71,11 +71,12 @@ class TestSystem(
     val options: TestSystemOptions = optionsDsl.options
 
     companion object {
+
         /**
          * [instance] is created only once per project, and it is available throughout the lifetime of the all the tests.
          * DO NOT access it before [run] completes
          */
-        lateinit var instance: TestSystem
+        internal lateinit var instance: TestSystem
 
         suspend fun validate(validation: suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
 
@@ -181,7 +182,7 @@ class TestSystem(
         return closeable
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "unused")
     fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
 
     override fun close(): Unit =

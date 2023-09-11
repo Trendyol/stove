@@ -13,7 +13,6 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> protected constructor(
@@ -23,6 +22,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+
     protected lateinit var sqlOperations: SqlOperations
     protected val state: StateOfSystem<RelationalDatabaseSystem<SELF>, RelationalDatabaseExposedConfiguration> =
         StateOfSystem(testSystem.options, javaClass.kotlin, RelationalDatabaseExposedConfiguration::class)
@@ -56,15 +56,13 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         )
     }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldQuery(
+    suspend inline fun <reified T : Any> shouldQuery(
         query: String,
-        assertion: (List<T>) -> Unit,
-        clazz: KClass<T>
+        assertion: (List<T>) -> Unit
     ): SELF {
         var results: List<T> = emptyList()
-        sqlOperations.transaction {
-            results = it.select(query).map { r, rm -> mapper(r, rm, clazz) }.asFlow().toList()
+        internalSqlOperations.transaction {
+            results = it.select(query).map { r, rm -> mapper(r, rm, T::class) }.asFlow().toList()
         }
 
         assertion(results)
@@ -90,6 +88,13 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         }.let { }
     }
 
+    @PublishedApi
+    internal var internalSqlOperations: SqlOperations
+        get() = sqlOperations
+        set(value) {
+            sqlOperations = value
+        }
+
     companion object {
 
         /**
@@ -97,10 +102,5 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
          */
         @Suppress("unused")
         fun RelationalDatabaseSystem<*>.operations(): SqlOperations = this.sqlOperations
-
-        suspend inline fun <reified T : Any> RelationalDatabaseSystem<*>.shouldQuery(
-            id: String,
-            noinline assertion: (List<T>) -> Unit
-        ): RelationalDatabaseSystem<*> = this.shouldQuery(id, assertion, T::class)
     }
 }

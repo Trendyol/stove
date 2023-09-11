@@ -1,7 +1,6 @@
 package com.trendyol.stove.testing.e2e.rdbms.postgres
 
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
-import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl

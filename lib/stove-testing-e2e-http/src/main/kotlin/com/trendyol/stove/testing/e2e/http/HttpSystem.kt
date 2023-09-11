@@ -10,7 +10,6 @@ import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
@@ -29,46 +28,29 @@ import kotlin.reflect.KClass
 
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
 
-@Deprecated(
-    "This method is deprecated, going to be removed",
-    replaceWith = ReplaceWith("withHttpClient()", "com.trendyol.stove.testing.e2e.http.TestSystem")
-)
-fun TestSystem.withDefaultHttp(objectMapper: ObjectMapper = StoveObjectMapper.Default): TestSystem {
-    this.getOrRegister(HttpSystem(this, objectMapper))
-    return this
-}
-
-fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
+internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
     this.getOrRegister(HttpSystem(this, options.objectMapper))
     return this
 }
 
-@ExperimentalStoveDsl
+internal fun TestSystem.http(): HttpSystem =
+    getOrNone<HttpSystem>().getOrElse {
+        throw SystemNotRegisteredException(HttpSystem::class)
+    }
+
 fun WithDsl.httpClient(configure: () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
     this.testSystem.withHttpClient(configure())
-
-@Deprecated(
-    "This method is deprecated, going to be removed",
-    replaceWith = ReplaceWith("http()", "com.trendyol.stove.testing.e2e.http.TestSystem")
-)
-fun TestSystem.defaultHttp(): HttpSystem =
-    getOrNone<HttpSystem>().getOrElse {
-        throw SystemNotRegisteredException(HttpSystem::class)
-    }
-
-fun TestSystem.http(): HttpSystem =
-    getOrNone<HttpSystem>().getOrElse {
-        throw SystemNotRegisteredException(HttpSystem::class)
-    }
 
 suspend fun ValidationDsl.http(validation: suspend HttpSystem.() -> Unit): Unit =
     validation(this.testSystem.http())
 
 class HttpSystem(
     override val testSystem: TestSystem,
-    private val objectMapper: ObjectMapper
+    @PublishedApi internal val objectMapper: ObjectMapper
 ) : PluggedSystem {
-    private val httpClient: HttpClient = httpClient()
+
+    @PublishedApi
+    internal val httpClient: HttpClient = httpClient()
 
     @Suppress("unused")
     suspend fun getResponse(
@@ -78,7 +60,7 @@ class HttpSystem(
         token: Option<String> = None,
         expect: suspend (StoveHttpResponse) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         request
     }.let {
         expect(StoveHttpResponse(it.statusCode(), it.headers().map()))
@@ -87,12 +69,12 @@ class HttpSystem(
 
     suspend fun postAndExpectBodilessResponse(
         uri: String,
-        token: Option<String>,
         body: Option<Any>,
+        token: Option<String> = None,
         headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
@@ -104,12 +86,12 @@ class HttpSystem(
 
     suspend fun putAndExpectBodilessResponse(
         uri: String,
-        token: Option<String>,
         body: Option<Any>,
+        token: Option<String> = None,
         headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
             ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
@@ -121,95 +103,88 @@ class HttpSystem(
 
     suspend fun deleteAndExpectBodilessResponse(
         uri: String,
-        token: Option<String>,
+        token: Option<String> = None,
         headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         request.DELETE()
     }.let {
         expect(StoveHttpResponse(it.statusCode(), it.headers().map()))
         this
     }
 
-    @PublishedApi
-    internal suspend fun <TExpected : Any> get(
+    suspend inline fun <reified TExpected : Any> get(
         uri: String,
-        queryParams: Map<String, String>,
+        queryParams: Map<String, String> = mapOf(),
         headers: Map<String, String> = mapOf(),
-        clazz: KClass<TExpected>,
-        token: Option<String>,
-        expect: suspend (TExpected) -> Unit
+        token: Option<String> = None,
+        expect: (TExpected) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         request.GET()
     }.let {
-        expect(deserialize(it, clazz))
+        expect(deserialize(it, TExpected::class))
         this
     }
 
-    @PublishedApi
-    internal suspend fun <TExpected : Any> getMany(
+    suspend inline fun <reified TExpected : Any> getMany(
         uri: String,
-        queryParams: Map<String, String>,
+        queryParams: Map<String, String> = mapOf(),
         headers: Map<String, String> = mapOf(),
-        clazz: KClass<TExpected>,
-        token: Option<String>,
-        expect: suspend (List<TExpected>) -> Unit
+        token: Option<String> = None,
+        expect: (List<TExpected>) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         request.GET()
     }.let {
         expect(
             objectMapper.readValue(
                 it.body(),
-                objectMapper.typeFactory.constructCollectionType(List::class.java, clazz.javaObjectType)
+                objectMapper.typeFactory.constructCollectionType(List::class.java, TExpected::class.javaObjectType)
             )
         )
         this
     }
 
-    @PublishedApi
-    internal suspend fun <TExpected : Any> postAndExpectJson(
+    suspend inline fun <reified TExpected : Any> postAndExpectJson(
         uri: String,
+        body: Option<Any> = None,
         headers: Map<String, String> = mapOf(),
-        body: Option<Any>,
-        clazz: KClass<TExpected>,
-        token: Option<String>,
-        expect: suspend (actual: TExpected) -> Unit
+        token: Option<String> = None,
+        expect: (actual: TExpected) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.POST(BodyPublishers.noBody()) },
             ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
     }.let {
-        expect(deserialize(it, clazz))
+        expect(deserialize(it, TExpected::class))
         this
     }
 
-    @PublishedApi
-    internal suspend fun <TExpected : Any> putAndExpectJson(
+    suspend inline fun <reified TExpected : Any> putAndExpectJson(
         uri: String,
+        body: Option<Any> = None,
         headers: Map<String, String> = mapOf(),
-        body: Option<Any>,
-        clazz: KClass<TExpected>,
-        token: Option<String>,
-        expect: suspend (actual: TExpected) -> Unit
+        token: Option<String> = None,
+        expect: (actual: TExpected) -> Unit
     ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.Authorization, Headers.bearer(it)) }
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         body.fold(
             ifEmpty = { request.PUT(BodyPublishers.noBody()) },
             ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
         )
     }.let {
-        expect(deserialize(it, clazz))
+        expect(deserialize(it, TExpected::class))
         this
     }
 
     override fun then(): TestSystem = testSystem
 
-    private suspend fun HttpClient.send(
+    @PublishedApi
+    internal suspend fun HttpClient.send(
         uri: String,
         headers: Map<String, String> = mapOf(),
         queryParams: Map<String, String> = mapOf(),
@@ -223,7 +198,7 @@ class HttpSystem(
 
     private fun HttpRequest.Builder.addHeaders(headers: Map<String, String>): HttpRequest.Builder = headers
         .toMutableMap()
-        .apply { this[Headers.ContentType] = MediaType.ApplicationJson }
+        .apply { this[Headers.CONTENT_TYPE] = MediaType.APPLICATION_JSON }
         .forEach { (key, value) -> setHeader(key, value) }
         .let { this }
 
@@ -246,7 +221,8 @@ class HttpSystem(
         return builder.build()
     }
 
-    private fun <TExpected : Any> deserialize(
+    @PublishedApi
+    internal fun <TExpected : Any> deserialize(
         it: HttpResponse<ByteArray>,
         clazz: KClass<TExpected>
     ): TExpected = when {
@@ -258,12 +234,12 @@ class HttpSystem(
 
     companion object {
         object MediaType {
-            const val ApplicationJson = "application/json"
+            const val APPLICATION_JSON = "application/json"
         }
 
         object Headers {
-            const val ContentType = "Content-Type"
-            const val Authorization = "Authorization"
+            const val CONTENT_TYPE = "Content-Type"
+            const val AUTHORIZATION = "Authorization"
 
             fun bearer(token: String) = "Bearer $token"
         }
@@ -273,63 +249,5 @@ class HttpSystem(
          */
         @Suppress("unused")
         fun HttpSystem.client(): HttpClient = this.httpClient
-
-        /**
-         * Extension for: [HttpSystem.get]
-         * */
-        suspend inline fun <reified TExpected : Any> HttpSystem.get(
-            uri: String,
-            headers: Map<String, String> = mapOf(),
-            queryParams: Map<String, String> = mapOf(),
-            token: Option<String> = None,
-            noinline expect: suspend (TExpected) -> Unit
-        ): HttpSystem = get(
-            uri,
-            queryParams = queryParams,
-            headers = headers,
-            clazz = TExpected::class,
-            token = token,
-            expect = expect
-        )
-
-        /**
-         * Extension for: [HttpSystem.getMany]
-         * */
-        suspend inline fun <reified TExpected : Any> HttpSystem.getMany(
-            uri: String,
-            headers: Map<String, String> = mapOf(),
-            queryParams: Map<String, String> = mapOf(),
-            token: Option<String> = None,
-            noinline expect: suspend (List<TExpected>) -> Unit
-        ): HttpSystem = getMany(
-            uri,
-            queryParams = queryParams,
-            headers = headers,
-            clazz = TExpected::class,
-            token = token,
-            expect = expect
-        )
-
-        /**
-         * Extension for: [HttpSystem.postAndExpectJson]
-         * */
-        suspend inline fun <reified TExpected : Any> HttpSystem.postAndExpectJson(
-            uri: String,
-            headers: Map<String, String> = mapOf(),
-            body: Option<Any> = None,
-            token: Option<String> = None,
-            noinline expect: suspend (actual: TExpected) -> Unit
-        ): HttpSystem = this.postAndExpectJson(uri, headers = headers, body, TExpected::class, token, expect)
-
-        /**
-         * Extension for: [HttpSystem.putAndExpectJson]
-         * */
-        suspend inline fun <reified TExpected : Any> HttpSystem.putAndExpectJson(
-            uri: String,
-            headers: Map<String, String> = mapOf(),
-            token: Option<String> = None,
-            body: Option<Any> = None,
-            noinline expect: suspend (actual: TExpected) -> Unit
-        ): HttpSystem = this.putAndExpectJson(uri, headers = headers, body, TExpected::class, token, expect)
     }
 }

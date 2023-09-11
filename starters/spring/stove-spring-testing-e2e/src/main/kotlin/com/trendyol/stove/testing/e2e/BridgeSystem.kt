@@ -5,7 +5,6 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.springframework.beans.factory.getBean
@@ -61,17 +60,7 @@ class BridgeSystem(override val testSystem: TestSystem) : PluggedSystem, AfterRu
  * @receiver the test system to modify.
  * @return the modified test system.
  */
-fun TestSystem.withBridgeSystem(): TestSystem = getOrRegister(BridgeSystem(this)).let { this }
-
-/**
- * Returns the bridge system associated with the test system.
- *
- * @receiver the test system.
- * @return the bridge system.
- * @throws SystemNotRegisteredException if the bridge system is not registered.
- */
-@ExperimentalStoveDsl
-fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
+internal fun TestSystem.withBridgeSystem(): TestSystem = getOrRegister(BridgeSystem(this)).let { this }
 
 /**
  * Returns the bridge system associated with the test system.
@@ -81,7 +70,18 @@ fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
  * @return the bridge system.
  * @throws SystemNotRegisteredException if the bridge system is not registered.
  */
-fun TestSystem.bridge(): BridgeSystem = getOrNone<BridgeSystem>().getOrElse { throw SystemNotRegisteredException(BridgeSystem::class) }
+@PublishedApi
+internal fun TestSystem.bridge(): BridgeSystem =
+    getOrNone<BridgeSystem>().getOrElse { throw SystemNotRegisteredException(BridgeSystem::class) }
+
+/**
+ * Returns the bridge system associated with the test system.
+ *
+ * @receiver the test system.
+ * @return the bridge system.
+ * @throws SystemNotRegisteredException if the bridge system is not registered.
+ */
+fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
 
 /**
  * Executes the specified validation function using the resolved bean from the bridge system.

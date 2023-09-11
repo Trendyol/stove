@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.java.ReactiveCluster
 import com.couchbase.client.java.manager.collection.CollectionSpec
-import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
 import com.trendyol.stove.testing.e2e.system.TestSystem

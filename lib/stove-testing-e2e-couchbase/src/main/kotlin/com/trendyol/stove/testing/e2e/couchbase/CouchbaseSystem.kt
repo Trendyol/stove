@@ -23,18 +23,22 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
-import kotlin.reflect.KClass
 
 class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
-    private val context: CouchbaseContext
+    val context: CouchbaseContext
 ) : PluggedSystem, RunAware, ExposesConfiguration {
 
-    private lateinit var cluster: ReactiveCluster
-    private lateinit var collection: ReactiveCollection
-    private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
+    @PublishedApi
+    internal lateinit var cluster: ReactiveCluster
 
-    private val objectMapper: ObjectMapper = context.options.objectMapper
+    @PublishedApi
+    internal lateinit var collection: ReactiveCollection
+
+    @PublishedApi
+    internal val objectMapper: ObjectMapper = context.options.objectMapper
+
+    private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     private val state: StateOfSystem<CouchbaseSystem, CouchbaseExposedConfiguration> = StateOfSystem(
         testSystem.options,
@@ -71,42 +75,37 @@ class CouchbaseSystem internal constructor(
                 "couchbase.password=${exposedConfiguration.password}"
             )
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldQuery(
+    @Suppress("unused")
+    suspend inline fun <reified T : Any> shouldQuery(
         query: String,
-        assertion: (List<T>) -> Unit,
-        clazz: KClass<T>
+        assertion: (List<T>) -> Unit
     ): CouchbaseSystem {
         val result = cluster.executeQueryAs<Any>(query) { queryOptions -> queryOptions.scanConsistency(REQUEST_PLUS) }
 
         val objects = result
             .map { objectMapper.writeValueAsString(it) }
-            .map { objectMapper.readValue(it, clazz.java) }
+            .map { objectMapper.readValue(it, T::class.java) }
 
         assertion(objects)
         return this
     }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldGet(
+    suspend inline fun <reified T : Any> shouldGet(
         key: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>
+        assertion: (T) -> Unit
     ): CouchbaseSystem = collection.get(key)
-        .awaitSingle().contentAs(clazz.java)
+        .awaitSingle().contentAs(T::class.java)
         .let(assertion)
         .let { this }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldGet(
+    suspend inline fun <reified T : Any> shouldGet(
         collection: String,
         key: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>
+        assertion: (T) -> Unit
     ): CouchbaseSystem = cluster.bucket(context.bucket.name)
         .collection(collection)
         .get(key).awaitSingle()
-        .contentAs(clazz.java)
+        .contentAs(T::class.java)
         .let(assertion)
         .let { this }
 
@@ -219,22 +218,5 @@ class CouchbaseSystem internal constructor(
          */
         @Suppress("unused")
         fun CouchbaseSystem.bucket(): ReactiveBucket = this.cluster.bucket(this.context.bucket.name)
-
-        suspend inline fun <reified T : Any> CouchbaseSystem.shouldGet(
-            collection: String,
-            key: String,
-            noinline assertion: (T) -> Unit
-        ): CouchbaseSystem = this.shouldGet(collection, key, assertion, T::class)
-
-        suspend inline fun <reified T : Any> CouchbaseSystem.shouldGet(
-            key: String,
-            noinline assertion: (T) -> Unit
-        ): CouchbaseSystem = this.shouldGet(key, assertion, T::class)
-
-        @Suppress("unused")
-        suspend inline fun <reified T : Any> CouchbaseSystem.shouldQuery(
-            query: String,
-            noinline assertion: (List<T>) -> Unit
-        ): CouchbaseSystem = this.shouldQuery(query, assertion, T::class)
     }
 }

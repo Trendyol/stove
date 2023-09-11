@@ -92,6 +92,21 @@ class KafkaSystem(
         shouldBeConsumedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
     }.let { this }
 
+    suspend inline fun <reified T : Any> shouldBeConsumed(
+        atLeastIn: Duration = 5.seconds,
+        crossinline condition: (T) -> Boolean
+    ): KafkaSystem = coroutineScope {
+        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+    }.let { this }
+
+    @Deprecated("Use shouldBeConsumed instead", ReplaceWith("shouldBeConsumed<T> { actual -> actual == expected }"))
+    suspend inline fun <reified T : Any> shouldBeConsumedOnCondition(
+        atLeastIn: Duration = 5.seconds,
+        crossinline condition: (T) -> Boolean
+    ): KafkaSystem = coroutineScope {
+        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+    }.let { this }
+
     suspend fun shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
         message: Any,
@@ -100,35 +115,23 @@ class KafkaSystem(
         shouldBeFailedInternal(message::class, atLeastIn) { option, throwable -> option == Some(message) && throwable == exception }
     }.let { this }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldBeFailedOnCondition(
+    suspend inline fun <reified T : Any> shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
-        condition: (T, Throwable) -> Boolean,
-        clazz: KClass<T>
+        crossinline condition: (T, Throwable) -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(clazz, atLeastIn) { message, throwable -> message.isSome { m -> condition(m, throwable) } }
+        shouldBeFailedInternal(T::class, atLeastIn) { message, throwable -> message.isSome { m -> condition(m, throwable) } }
     }.let { this }
 
-    private suspend fun <T : Any> shouldBeFailedInternal(
-        clazz: KClass<T>,
-        atLeastIn: Duration,
-        condition: (Option<T>, Throwable) -> Boolean
-    ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
-
-    @PublishedApi
-    internal suspend fun <T : Any> shouldBeConsumedOnCondition(
+    @Deprecated(
+        "Use shouldBeFailed instead",
+        ReplaceWith("shouldBeFailed<T> { actual, throwable -> actual == expected && throwable == exception }")
+    )
+    suspend inline fun <reified T : Any> shouldBeFailedOnCondition(
         atLeastIn: Duration = 5.seconds,
-        condition: (T) -> Boolean,
-        clazz: KClass<T>
+        crossinline condition: (T, Throwable) -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+        shouldBeFailedInternal(T::class, atLeastIn) { message, throwable -> message.isSome { m -> condition(m, throwable) } }
     }.let { this }
-
-    private suspend fun <T : Any> shouldBeConsumedInternal(
-        clazz: KClass<T>,
-        atLeastIn: Duration,
-        condition: (Option<T>) -> Boolean
-    ): Unit = coroutineScope { getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition) }
 
     suspend fun shouldBePublished(
         atLeastIn: Duration = 5.seconds,
@@ -137,52 +140,42 @@ class KafkaSystem(
         shouldBePublishedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
     }.let { this }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldBePublishedOnCondition(
+    suspend inline fun <reified T : Any> shouldBePublished(
         atLeastIn: Duration = 5.seconds,
-        condition: (T) -> Boolean,
-        clazz: KClass<T>
+        crossinline condition: (T) -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(clazz, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
     }.let { this }
 
-    private suspend fun <T : Any> shouldBePublishedInternal(
+    @Deprecated("Use shouldBePublished instead", ReplaceWith("shouldBePublished<T> { actual -> actual == expected }"))
+    suspend inline fun <reified T : Any> shouldBePublishedOnCondition(
+        atLeastIn: Duration = 5.seconds,
+        crossinline condition: (T) -> Boolean
+    ): KafkaSystem = coroutineScope {
+        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+    }.let { this }
+
+    @PublishedApi
+    internal suspend fun <T : Any> shouldBeConsumedInternal(
+        clazz: KClass<T>,
+        atLeastIn: Duration,
+        condition: (Option<T>) -> Boolean
+    ): Unit = coroutineScope { getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition) }
+
+    @PublishedApi
+    internal suspend fun <T : Any> shouldBeFailedInternal(
+        clazz: KClass<T>,
+        atLeastIn: Duration,
+        condition: (Option<T>, Throwable) -> Boolean
+    ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
+
+    @PublishedApi
+    internal suspend fun <T : Any> shouldBePublishedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
         condition: (Option<T>) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilPublished(atLeastIn, clazz, condition) }
-
-    companion object {
-
-        /**
-         * Extension for [KafkaSystem.shouldBeConsumedOnCondition] to enable generic invocation as method<[T]>(...)
-         */
-        suspend inline fun <reified T : Any> KafkaSystem.shouldBeConsumedOnCondition(
-            atLeastIn: Duration = 5.seconds,
-            noinline condition: (T) -> Boolean
-        ): KafkaSystem = this.shouldBeConsumedOnCondition(atLeastIn, condition, T::class)
-
-        /**
-         * Extension for [KafkaSystem.shouldBeFailedOnCondition] to enable generic invocation as method<[T]>(...)
-         */
-        suspend inline fun <reified T : Any> KafkaSystem.shouldBeFailedOnCondition(
-            atLeastIn: Duration = 5.seconds,
-            noinline condition: (T, Throwable) -> Boolean
-        ): KafkaSystem = this.shouldBeFailedOnCondition(atLeastIn, condition, T::class)
-
-        /**
-         * Extension for [KafkaSystem.shouldBePublishedOnCondition] to enable generic invocation as method<[T]>(...)
-         */
-        suspend inline fun <reified T : Any> KafkaSystem.shouldBePublishedOnCondition(
-            atLeastIn: Duration = 5.seconds,
-            noinline condition: (T) -> Boolean
-        ): KafkaSystem = this.shouldBePublishedOnCondition(atLeastIn, condition, T::class)
-    }
 }
 
 private fun (MutableMap<String, String>).addTestCase(testCase: Option<String>): MutableMap<String, String> =
-    if (this.containsKey("testCase")) {
-        this
-    } else {
-        testCase.map { this["testCase"] = it }.let { this }
-    }
+    if (this.containsKey("testCase")) this else testCase.map { this["testCase"] = it }.let { this }

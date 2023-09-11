@@ -26,17 +26,19 @@ import org.bson.types.ObjectId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import reactor.kotlin.core.publisher.toFlux
-import kotlin.reflect.KClass
 
 class MongodbSystem internal constructor(
     override val testSystem: TestSystem,
-    private val context: MongodbContext
+    val context: MongodbContext
 ) : PluggedSystem, RunAware, ExposesConfiguration {
 
-    private lateinit var mongoClient: MongoClient
+    @PublishedApi
+    internal lateinit var mongoClient: MongoClient
     private lateinit var exposedConfiguration: MongodbExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
-    private val jsonWriterSettings: JsonWriterSettings = JsonWriterSettings.builder()
+
+    @PublishedApi
+    internal val jsonWriterSettings: JsonWriterSettings = JsonWriterSettings.builder()
         .objectIdConverter { value, writer -> writer.writeString(value.toHexString()) }
         .build()
     private val state: StateOfSystem<MongodbSystem, MongodbExposedConfiguration> =
@@ -64,35 +66,31 @@ class MongodbSystem internal constructor(
             )
     }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldQuery(
+    suspend inline fun <reified T : Any> shouldQuery(
         query: String,
-        assertion: (List<T>) -> Unit,
-        clazz: KClass<T>
+        assertion: (List<T>) -> Unit
     ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
-        .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(clazz).build()) }
+        .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
         .getCollection(context.options.databaseOptions.default.collection)
         .find(BsonDocument.parse(query))
         .toFlux()
         .map { (it as Document).toJson(jsonWriterSettings) }
-        .map { context.options.objectMapper.readValue(it, clazz.java) }
+        .map { context.options.objectMapper.readValue(it, T::class.java) }
         .collectList()
         .awaitFirst()
         .also(assertion)
         .let { this }
 
-    @PublishedApi
-    internal suspend fun <T : Any> shouldGet(
+    suspend inline fun <reified T : Any> shouldGet(
         key: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>
+        assertion: (T) -> Unit
     ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
         .getCollection(context.options.databaseOptions.default.collection)
-        .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(clazz).build()) }
+        .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
         .find(filterById(key))
         .awaitFirst()
         .let { it as Document }.toJson(jsonWriterSettings)
-        .let { context.options.objectMapper.readValue(it, clazz.java) }
+        .let { context.options.objectMapper.readValue(it, T::class.java) }
         .also(assertion)
         .let { this }
 
@@ -155,22 +153,14 @@ class MongodbSystem internal constructor(
     companion object {
 
         private const val RESERVED_ID = "_id"
-        private fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))
+
+        @PublishedApi
+        internal fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))
 
         /**
          * Exposes the [MongoClient] to the [MongodbSystem]
          */
         @Suppress("unused")
         fun MongodbSystem.client(): MongoClient = mongoClient
-
-        suspend inline fun <reified T : Any> MongodbSystem.shouldQuery(
-            query: String,
-            noinline assertion: (List<T>) -> Unit
-        ): MongodbSystem = shouldQuery(query, assertion, T::class)
-
-        suspend inline fun <reified T : Any> MongodbSystem.shouldGet(
-            key: String,
-            noinline assertion: (T) -> Unit
-        ): MongodbSystem = shouldGet(key, assertion, T::class)
     }
 }

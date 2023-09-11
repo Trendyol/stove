@@ -6,7 +6,6 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 
@@ -15,7 +14,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer
  *
  * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
  */
-fun TestSystem.withElasticsearch(
+internal fun TestSystem.withElasticsearch(
     options: ElasticsearchSystemOptions
 ): TestSystem {
     options.migrations {
@@ -42,14 +41,13 @@ fun TestSystem.withElasticsearch(
         .let { this }
 }
 
-@ExperimentalStoveDsl
-fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem =
-    this.testSystem.withElasticsearch(configure())
-
-fun TestSystem.elasticsearch(): ElasticsearchSystem =
+internal fun TestSystem.elasticsearch(): ElasticsearchSystem =
     getOrNone<ElasticsearchSystem>().getOrElse {
         throw SystemNotRegisteredException(ElasticsearchSystem::class)
     }
+
+fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem =
+    this.testSystem.withElasticsearch(configure())
 
 suspend fun ValidationDsl.elasticsearch(validation: suspend ElasticsearchSystem.() -> Unit): Unit =
     validation(this.testSystem.elasticsearch())

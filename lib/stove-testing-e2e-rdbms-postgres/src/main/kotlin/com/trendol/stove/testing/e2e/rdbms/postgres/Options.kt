@@ -9,7 +9,6 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import org.testcontainers.containers.PostgreSQLContainer
@@ -28,7 +27,7 @@ internal class PostgresqlContext(
     configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, configureExposedConfiguration)
 
-fun TestSystem.withPostgresql(
+internal fun TestSystem.withPostgresql(
     options: PostgresqlOptions = PostgresqlOptions()
 ): TestSystem = withProvidedRegistry(options.imageName, options.registry, "postgres") {
     PostgreSQLContainer(it)
@@ -39,13 +38,12 @@ fun TestSystem.withPostgresql(
 }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
     .let { this }
 
-@ExperimentalStoveDsl
-fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
-    this.testSystem.withPostgresql(configure())
-
-fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
+internal fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
     throw SystemNotRegisteredException(PostgresqlSystem::class)
 }
+
+fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
+    this.testSystem.withPostgresql(configure())
 
 suspend fun ValidationDsl.postgresql(validation: suspend PostgresqlSystem.() -> Unit): Unit =
     validation(this.testSystem.postgresql())

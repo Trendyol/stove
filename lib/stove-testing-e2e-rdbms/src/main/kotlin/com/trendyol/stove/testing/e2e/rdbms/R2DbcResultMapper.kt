@@ -9,6 +9,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.jvmErasure
 
+@PublishedApi
 internal fun <T : Any> mapper(
     row: Row,
     rowMetadata: RowMetadata,
@@ -26,7 +27,7 @@ private fun <T : Any> dataClassMapper(
     val constructor = clazz.primaryConstructor!!
 
     val args = constructor.parameters.map { param ->
-        val jClazz = rowMetadata.getColumnMetadata(param.name!!).javaType
+        val jClazz = rowMetadata.getColumnMetadata(param.name!!).javaType!!
         row.get(param.name!!, jClazz)
     }.toTypedArray()
 
@@ -56,7 +57,7 @@ private fun <T : Any> classMapper(
                 }
                 val columnValue = row.get(memberProperty.name, columnTypeOfRow)
                 val propertyValue: Any? = try {
-                    columnValue.cast(propClazz)
+                    columnValue?.cast(propClazz)
                 } catch (ex: ClassCastException) {
                     columnValue.convertToNumericOverString(propClazz)
                 }
