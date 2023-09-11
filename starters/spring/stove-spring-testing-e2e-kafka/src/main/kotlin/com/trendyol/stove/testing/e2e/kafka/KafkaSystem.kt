@@ -21,6 +21,15 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 import org.springframework.kafka.core.KafkaTemplate
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableMap
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mapOf
+import kotlin.collections.plus
+import kotlin.collections.set
+import kotlin.collections.toMutableMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -87,93 +96,87 @@ class KafkaSystem(
 
     suspend fun shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
-        message: Any
+        message: Any,
+        metadataCondition: (KafkaMetadata) -> Boolean = { true }
     ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
+        shouldBeConsumedInternal(
+            message::class,
+            atLeastIn
+        ) { incomingMessage, incomingMetadata ->
+            incomingMessage == Some(message) && metadataCondition(incomingMetadata)
+        }
     }.let { this }
 
     suspend inline fun <reified T : Any> shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
+        crossinline metadataCondition: (KafkaMetadata) -> Boolean = { true },
         crossinline condition: (T) -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
-    }.let { this }
-
-    @Deprecated("Use shouldBeConsumed instead", ReplaceWith("shouldBeConsumed<T> { actual -> actual == expected }"))
-    suspend inline fun <reified T : Any> shouldBeConsumedOnCondition(
-        atLeastIn: Duration = 5.seconds,
-        crossinline condition: (T) -> Boolean
-    ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage, incomingMetadata ->
+            incomingMessage.isSome { o -> condition(o) } && metadataCondition(incomingMetadata)
+        }
     }.let { this }
 
     suspend fun shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
         message: Any,
-        exception: Throwable
+        exception: Throwable,
+        metadataCondition: (KafkaMetadata) -> Boolean = { true }
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(message::class, atLeastIn) { option, throwable -> option == Some(message) && throwable == exception }
+        shouldBeFailedInternal(message::class, atLeastIn) { incomingMessage, incomingMetadata, incomingException ->
+            incomingMessage == Some(message) && incomingException == exception && metadataCondition(incomingMetadata)
+        }
     }.let { this }
 
     suspend inline fun <reified T : Any> shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
+        crossinline metadataCondition: (KafkaMetadata) -> Boolean = { true },
         crossinline condition: (T, Throwable) -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(T::class, atLeastIn) { message, throwable -> message.isSome { m -> condition(m, throwable) } }
-    }.let { this }
-
-    @Deprecated(
-        "Use shouldBeFailed instead",
-        ReplaceWith("shouldBeFailed<T> { actual, throwable -> actual == expected && throwable == exception }")
-    )
-    suspend inline fun <reified T : Any> shouldBeFailedOnCondition(
-        atLeastIn: Duration = 5.seconds,
-        crossinline condition: (T, Throwable) -> Boolean
-    ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(T::class, atLeastIn) { message, throwable -> message.isSome { m -> condition(m, throwable) } }
+        shouldBeFailedInternal(T::class, atLeastIn) { incomingMessage, incomingMetadata, incomingException ->
+            incomingMessage.isSome { o -> condition(o, incomingException) && metadataCondition(incomingMetadata) }
+        }
     }.let { this }
 
     suspend fun shouldBePublished(
         atLeastIn: Duration = 5.seconds,
-        message: Any
+        message: Any,
+        metadataCondition: (KafkaMetadata) -> Boolean = { true }
     ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(message::class, atLeastIn) { incomingMessage -> incomingMessage == Some(message) }
+        shouldBePublishedInternal(message::class, atLeastIn) { incomingMessage, incomingMetadata ->
+            incomingMessage.isSome { o -> o == message && metadataCondition(incomingMetadata) }
+        }
     }.let { this }
 
     suspend inline fun <reified T : Any> shouldBePublished(
         atLeastIn: Duration = 5.seconds,
+        crossinline metadataCondition: (KafkaMetadata) -> Boolean = { true },
         crossinline condition: (T) -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
-    }.let { this }
-
-    @Deprecated("Use shouldBePublished instead", ReplaceWith("shouldBePublished<T> { actual -> actual == expected }"))
-    suspend inline fun <reified T : Any> shouldBePublishedOnCondition(
-        atLeastIn: Duration = 5.seconds,
-        crossinline condition: (T) -> Boolean
-    ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage -> incomingMessage.isSome { o -> condition(o) } }
+        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage, incomingMetadata ->
+            incomingMessage.isSome { o -> condition(o) && metadataCondition(incomingMetadata) }
+        }
     }.let { this }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBeConsumedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (Option<T>) -> Boolean
+        condition: (message: Option<T>, metadata: KafkaMetadata) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition) }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBeFailedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (Option<T>, Throwable) -> Boolean
+        condition: (Option<T>, metadata: KafkaMetadata, Throwable) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBePublishedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (Option<T>) -> Boolean
+        condition: (Option<T>, metadata: KafkaMetadata) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilPublished(atLeastIn, clazz, condition) }
 }
 

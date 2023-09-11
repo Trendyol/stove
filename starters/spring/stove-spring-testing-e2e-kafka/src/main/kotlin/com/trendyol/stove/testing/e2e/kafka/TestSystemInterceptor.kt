@@ -25,13 +25,20 @@ import java.util.concurrent.ConcurrentMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
+data class KafkaMetadata(
+    val topic: String,
+    val key: String,
+    val headers: Map<String, Any>
+)
+
 @Component
 class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     CompositeRecordInterceptor<String, String>(),
     ProducerListener<String, Any> {
     data class Failure(
         val message: Any,
-        val reason: Throwable
+        val reason: Throwable,
+        val metadata: KafkaMetadata
     )
 
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -77,7 +84,18 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         recordMetadata: RecordMetadata?,
         exception: Exception
     ): Unit = runBlocking {
-        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.value(), extractCause(exception)))
+        exceptions.putIfAbsent(
+            UUID.randomUUID(),
+            Failure(
+                record.value(),
+                extractCause(exception),
+                KafkaMetadata(
+                    record.topic(),
+                    record.key(),
+                    record.headers().associate { Pair(it.key(), String(it.value())) }
+                )
+            )
+        )
         logger.error(
             """PRODUCER GOT AN ERROR:
             Topic: ${record.topic()}
@@ -95,7 +113,18 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         exception: Exception,
         consumer: Consumer<String, String>
     ): Unit = runBlocking {
-        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.value(), extractCause(exception)))
+        exceptions.putIfAbsent(
+            UUID.randomUUID(),
+            Failure(
+                record.value(),
+                extractCause(exception),
+                KafkaMetadata(
+                    record.topic(),
+                    record.key(),
+                    record.headers().associate { Pair(it.key(), String(it.value())) }
+                )
+            )
+        )
         logger.error(
             """CONSUMER GOT AN ERROR:
             Topic: ${record.topic()}
@@ -111,12 +140,19 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     suspend fun <T : Any> waitUntilConsumed(
         atLeastIn: Duration,
         clazz: KClass<T>,
-        condition: (Option<T>) -> Boolean
+        condition: (Option<T>, metadata: KafkaMetadata) -> Boolean
     ) {
-        val getRecords = { consumedRecords.map { it.value.value() } }
+        val getRecords = { consumedRecords.map { it.value } }
         getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
-            val outcome = readCatching(it, clazz)
-            outcome.isSuccess && condition(outcome.getOrNull().toOption())
+            val outcome = readCatching(it.value(), clazz)
+            outcome.isSuccess && condition(
+                outcome.getOrNull().toOption(),
+                KafkaMetadata(
+                    it.topic(),
+                    it.key(),
+                    it.headers().associate { h -> Pair(h.key(), String(h.value())) }
+                )
+            )
         }
 
         throwIfFailed(clazz, condition)
@@ -125,12 +161,12 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     suspend fun <T : Any> waitUntilFailed(
         atLeastIn: Duration,
         clazz: KClass<T>,
-        condition: (Option<T>, Throwable) -> Boolean
+        condition: (Option<T>, metadata: KafkaMetadata, Throwable) -> Boolean
     ) {
-        val getRecords = { exceptions.map { Pair(it.value.message.toString(), it.value.reason) } }
+        val getRecords = { exceptions.map { it.value } }
         getRecords.waitUntilConditionMet(atLeastIn, "While WAITING FOR FAILURE ${clazz.java.simpleName}") {
-            val outcome = readCatching(it.first, clazz)
-            outcome.isSuccess && condition(outcome.getOrNull().toOption(), it.second)
+            val outcome = readCatching(it.message.toString(), clazz)
+            outcome.isSuccess && condition(outcome.getOrNull().toOption(), it.metadata, it.reason)
         }
 
         throwIfSucceeded(clazz, condition)
@@ -147,12 +183,19 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     suspend fun <T : Any> waitUntilPublished(
         atLeastIn: Duration,
         clazz: KClass<T>,
-        condition: (Option<T>) -> Boolean
+        condition: (Option<T>, metadata: KafkaMetadata) -> Boolean
     ) {
-        val getRecords = { producedRecords.map { it.value.value() } }
+        val getRecords = { producedRecords.map { it.value } }
         getRecords.waitUntilConditionMet(atLeastIn, "While PUBLISHING ${clazz.java.simpleName}") {
-            val outcome = readCatching(it.toString(), clazz)
-            outcome.isSuccess && condition(outcome.getOrNull().toOption())
+            val outcome = readCatching(it.value().toString(), clazz)
+            outcome.isSuccess && condition(
+                outcome.getOrNull().toOption(),
+                KafkaMetadata(
+                    it.topic(),
+                    it.key(),
+                    it.headers().associate { h -> Pair(h.key(), String(h.value())) }
+                )
+            )
         }
 
         throwIfFailed(clazz, condition)
@@ -171,25 +214,46 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
 
     private fun <T : Any> throwIfFailed(
         clazz: KClass<T>,
-        selector: (Option<T>) -> Boolean
+        selector: (Option<T>, metadata: KafkaMetadata) -> Boolean
     ) = exceptions
-        .filter { selector(readCatching(it.value.message.toString(), clazz).getOrNull().toOption()) }
+        .filter {
+            selector(
+                readCatching(it.value.message.toString(), clazz).getOrNull().toOption(),
+                it.value.metadata
+            )
+        }
         .forEach { throw it.value.reason }
 
     private fun <T : Any> throwIfSucceeded(
         clazz: KClass<T>,
-        selector: (Option<T>, Throwable) -> Boolean
+        selector: (Option<T>, metadata: KafkaMetadata, Throwable) -> Boolean
     ): Unit = consumedRecords
-        .filter { selector(readCatching(it.value.value(), clazz).getOrNull().toOption(), getExceptionFor(selector, clazz)) }
+        .filter {
+            selector(
+                readCatching(it.value.value(), clazz).getOrNull().toOption(),
+                KafkaMetadata(
+                    it.value.topic(),
+                    it.value.key(),
+                    it.value.headers().associate { h -> Pair(h.key(), String(h.value())) }
+                ),
+                getExceptionFor(selector, clazz)
+            )
+        }
         .forEach { throw AssertionError("Expected to fail but succeeded: $it") }
 
     private fun <T : Any> getExceptionFor(
-        selector: (Option<T>, Throwable) -> Boolean,
+        selector: (Option<T>, topic: KafkaMetadata, Throwable) -> Boolean,
         clazz: KClass<T>
     ): Throwable = exceptions
-        .map { Pair(it.value.message.toString(), it.value.reason) }
-        .first { selector(readCatching(it.first, clazz).getOrNull().toOption(), it.second) }
-        .second
+        .map { it.value }
+        .first {
+            selector(
+                readCatching(it.message.toString(), clazz).getOrNull().toOption(),
+                it.metadata,
+                it.reason
+            )
+        }
+        .reason
 
     private suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
         duration: Duration,
