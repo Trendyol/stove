@@ -7,7 +7,6 @@ import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -20,7 +19,6 @@ import java.util.*
 
 const val testBucket = "test-couchbase-bucket"
 
-@ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
         TestSystem {}

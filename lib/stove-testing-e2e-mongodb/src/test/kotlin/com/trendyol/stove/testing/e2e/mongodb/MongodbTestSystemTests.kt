@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.mongodb
 import com.fasterxml.jackson.annotation.JsonAlias
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAny
@@ -14,7 +13,6 @@ import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.assertThrows
 
-@ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
         TestSystem()

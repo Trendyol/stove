@@ -5,14 +5,12 @@ import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.http.httpClient
 import com.trendyol.stove.testing.e2e.ktor
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.config.AbstractProjectConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-@ExperimentalStoveDsl
 class TestSystemConfig : AbstractProjectConfig() {
 
     private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")

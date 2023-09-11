@@ -2,10 +2,8 @@ package com.trendyol.stove.testing.e2e.wiremock
 
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 
-@ExperimentalStoveDsl
 class TestSystemConfig : AbstractProjectConfig() {
 
     override suspend fun beforeProject(): Unit = TestSystem()

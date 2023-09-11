@@ -3,13 +3,11 @@ package com.trendyol.stove.testing.e2e.rdbms.postgres
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 
-@ExperimentalStoveDsl
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit = TestSystem()
         .with {

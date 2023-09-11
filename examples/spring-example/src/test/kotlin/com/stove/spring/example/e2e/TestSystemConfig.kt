@@ -9,14 +9,12 @@ import com.trendyol.stove.testing.e2e.kafka.KafkaSystemOptions
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.config.AbstractProjectConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-@OptIn(ExperimentalStoveDsl::class)
 class TestSystemConfig : AbstractProjectConfig() {
 
     private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")

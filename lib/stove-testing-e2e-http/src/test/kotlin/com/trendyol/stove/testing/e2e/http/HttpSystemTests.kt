@@ -4,7 +4,6 @@ import arrow.core.None
 import arrow.core.some
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.config.AbstractProjectConfig
@@ -25,7 +24,6 @@ class NoApplication : ApplicationUnderTest<Unit> {
 
 class TestConfig : AbstractProjectConfig() {
 
-    @ExperimentalStoveDsl
     override suspend fun beforeProject(): Unit =
         TestSystem("http://localhost:8086")
             .with {

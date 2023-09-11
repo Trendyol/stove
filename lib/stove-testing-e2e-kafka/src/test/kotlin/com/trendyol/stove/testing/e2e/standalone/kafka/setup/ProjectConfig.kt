@@ -7,7 +7,6 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterEachListener
@@ -62,7 +61,6 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
     }
 }
 
-@ExperimentalStoveDsl
 @ExperimentalKotest
 class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachListener {
 
