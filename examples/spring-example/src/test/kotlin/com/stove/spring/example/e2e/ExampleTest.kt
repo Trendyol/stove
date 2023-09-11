@@ -133,8 +133,12 @@ class ExampleTest : FunSpec({
             }
 
             kafka {
-                publish("trendyol.stove.service.product.create.0", productCreateEvent)
-                shouldBeConsumed<ProductCreateEvent> { actual ->
+                publish("trendyol.stove.service.product.create.0", productCreateEvent, headers = mapOf("test" to "test"))
+                shouldBeConsumed<ProductCreateEvent>(metadataCondition = {
+                    it.headers.containsKey("test") &&
+                        it.headers["test"] == "test" &&
+                        it.topic == "trendyol.stove.service.product.create.0"
+                }) { actual ->
                     actual.id == productCreateEvent.id
                 }
                 shouldBePublished<ProductCreatedEvent> { actual ->
