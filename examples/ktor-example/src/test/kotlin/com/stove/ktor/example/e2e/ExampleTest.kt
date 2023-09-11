@@ -4,7 +4,6 @@ import arrow.core.None
 import arrow.core.some
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

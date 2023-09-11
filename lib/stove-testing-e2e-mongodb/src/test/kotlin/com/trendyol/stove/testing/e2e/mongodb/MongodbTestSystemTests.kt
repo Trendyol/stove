@@ -1,8 +1,6 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.annotation.JsonAlias
-import com.trendyol.stove.testing.e2e.mongodb.MongodbSystem.Companion.shouldGet
-import com.trendyol.stove.testing.e2e.mongodb.MongodbSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl

@@ -1,14 +1,8 @@
 package com.stove.spring.example.e2e
 
 import arrow.core.some
-import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystem.Companion.shouldGet
 import com.trendyol.stove.testing.e2e.couchbase.couchbase
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.get
-import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.postAndExpectJson
 import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.kafka.KafkaSystem.Companion.shouldBeConsumedOnCondition
-import com.trendyol.stove.testing.e2e.kafka.KafkaSystem.Companion.shouldBeFailedOnCondition
-import com.trendyol.stove.testing.e2e.kafka.KafkaSystem.Companion.shouldBePublishedOnCondition
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.using
@@ -67,7 +61,7 @@ class ExampleTest : FunSpec({
             }
 
             kafka {
-                shouldBePublishedOnCondition<ProductCreatedEvent> { actual ->
+                shouldBePublished<ProductCreatedEvent> { actual ->
                     actual.id == productCreateRequest.id &&
                         actual.name == productCreateRequest.name &&
                         actual.supplierId == productCreateRequest.supplierId
@@ -118,7 +112,7 @@ class ExampleTest : FunSpec({
 
             kafka {
                 publish("trendyol.stove.service.product.create.0", productCreateEvent)
-                shouldBeConsumedOnCondition<ProductCreateEvent> { actual ->
+                shouldBeConsumed<ProductCreateEvent> { actual ->
                     actual.id == productCreateEvent.id
                 }
             }
@@ -140,10 +134,10 @@ class ExampleTest : FunSpec({
 
             kafka {
                 publish("trendyol.stove.service.product.create.0", productCreateEvent)
-                shouldBeConsumedOnCondition<ProductCreateEvent> { actual ->
+                shouldBeConsumed<ProductCreateEvent> { actual ->
                     actual.id == productCreateEvent.id
                 }
-                shouldBePublishedOnCondition<ProductCreatedEvent> { actual ->
+                shouldBePublished<ProductCreatedEvent> { actual ->
                     actual.id == productCreateEvent.id &&
                         actual.name == productCreateEvent.name &&
                         actual.supplierId == productCreateEvent.supplierId
@@ -165,7 +159,7 @@ class ExampleTest : FunSpec({
         TestSystem.validate {
             kafka {
                 publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))
-                shouldBeFailedOnCondition<FailingEvent> { actual, exception ->
+                shouldBeFailed<FailingEvent> { actual, exception ->
                     actual.id == 5L && exception is BusinessException
                 }
                 shouldBeFailed(message = FailingEvent(5L), exception = BusinessException("Failing product create event"))

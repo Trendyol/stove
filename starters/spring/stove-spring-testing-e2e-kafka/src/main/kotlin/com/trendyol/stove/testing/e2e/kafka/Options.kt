@@ -37,7 +37,7 @@ data class KafkaContext(
     val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 )
 
-fun TestSystem.withKafka(
+internal fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions()
 ): TestSystem = withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
     KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
@@ -46,10 +46,9 @@ fun TestSystem.withKafka(
 }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
     .let { this }
 
-fun TestSystem.kafka(): KafkaSystem =
+internal fun TestSystem.kafka(): KafkaSystem =
     getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
 
-@ExperimentalStoveDsl
 fun WithDsl.kafka(configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }): TestSystem =
     this.testSystem.withKafka(configure())
 

@@ -7,7 +7,6 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import org.testcontainers.containers.MongoDBContainer
@@ -40,7 +39,7 @@ data class DatabaseOptions(
     )
 }
 
-fun TestSystem.withMongodb(
+internal fun TestSystem.withMongodb(
     options: MongodbSystemOptions
 ): TestSystem {
     val mongodbContainer =
@@ -54,18 +53,16 @@ fun TestSystem.withMongodb(
     return this
 }
 
-@ExperimentalStoveDsl
-fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem =
-    this.testSystem.withMongodb(configure())
-
-@ExperimentalStoveDsl
-fun WithDsl.mongodbDsl(configure: MongodbOptionsDsl.() -> Unit): TestSystem =
-    this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
-
-fun TestSystem.mongodb(): MongodbSystem =
+internal fun TestSystem.mongodb(): MongodbSystem =
     getOrNone<MongodbSystem>().getOrElse {
         throw SystemNotRegisteredException(MongodbSystem::class)
     }
+
+fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem =
+    this.testSystem.withMongodb(configure())
+
+fun WithDsl.mongodbDsl(configure: MongodbOptionsDsl.() -> Unit): TestSystem =
+    this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
 
 suspend fun ValidationDsl.mongodb(validation: suspend MongodbSystem.() -> Unit): Unit =
     validation(this.testSystem.mongodb())

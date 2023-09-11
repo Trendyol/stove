@@ -6,7 +6,6 @@ import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 
@@ -50,7 +49,7 @@ data class WireMockContext(
     val objectMapper: ObjectMapper
 )
 
-fun TestSystem.withWireMock(
+internal fun TestSystem.withWireMock(
     options: WireMockSystemOptions = WireMockSystemOptions()
 ): TestSystem = WireMockSystem(
     testSystem = this,
@@ -64,13 +63,12 @@ fun TestSystem.withWireMock(
 ).also { getOrRegister(it) }
     .let { this }
 
-@ExperimentalStoveDsl
-fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem =
-    this.testSystem.withWireMock(configure())
-
-fun TestSystem.wiremock(): WireMockSystem = getOrNone<WireMockSystem>().getOrElse {
+internal fun TestSystem.wiremock(): WireMockSystem = getOrNone<WireMockSystem>().getOrElse {
     throw SystemNotRegisteredException(WireMockSystem::class)
 }
+
+fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem =
+    this.testSystem.withWireMock(configure())
 
 suspend fun ValidationDsl.wiremock(validation: suspend WireMockSystem.() -> Unit): Unit =
     validation(this.testSystem.wiremock())

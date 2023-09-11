@@ -26,13 +26,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
-import kotlin.reflect.KClass
 
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
     val context: ElasticsearchContext
 ) : PluggedSystem, RunAware, AfterRunAware, ExposesConfiguration {
-    private lateinit var esClient: ElasticsearchClient
+
+    @PublishedApi
+    internal lateinit var esClient: ElasticsearchClient
+
     private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
     private val state: StateOfSystem<ElasticsearchSystem, ElasticSearchExposedConfiguration> =
@@ -67,48 +69,40 @@ class ElasticsearchSystem internal constructor(
 
     override suspend fun stop(): Unit = context.container.stop()
 
-    @PublishedApi
-    internal fun <T : Any> shouldQuery(
+    inline fun <reified T : Any> shouldQuery(
         query: String,
-        assertion: (List<T>) -> Unit,
-        clazz: KClass<T>
+        assertion: (List<T>) -> Unit
     ): ElasticsearchSystem =
         esClient.search(
             SearchRequest.of { req ->
                 req.index(context.index).query { q -> q.withJson(query.reader()) }
             },
-            clazz.java
-        )
-            .hits().hits()
+            T::class.java
+        ).hits().hits()
             .mapNotNull { it.source() }
             .also(assertion)
             .let { this }
 
-    @PublishedApi
-    internal fun <T : Any> shouldQuery(
+    inline fun <reified T : Any> shouldQuery(
         query: Query,
-        assertion: (List<T>) -> Unit,
-        clazz: KClass<T>
+        assertion: (List<T>) -> Unit
     ): ElasticsearchSystem =
         esClient.search(
             SearchRequest.of { q -> q.query(query) },
-            clazz.java
-        )
-            .hits().hits()
+            T::class.java
+        ).hits().hits()
             .mapNotNull { it.source() }
             .also(assertion)
             .let { this }
 
-    @PublishedApi
-    internal fun <T : Any> shouldGet(
+    inline fun <reified T : Any> shouldGet(
         index: String = context.index,
         key: String,
-        assertion: (T) -> Unit,
-        clazz: KClass<T>
+        assertion: (T) -> Unit
     ): ElasticsearchSystem {
         require(index.isNotBlank()) { "Index cannot be blank" }
         return esClient
-            .get({ req -> req.index(index).id(key).refresh(true) }, clazz.java)
+            .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
             .source().toOption()
             .map(assertion)
             .getOrElse { throw AssertionError("Resource with key ($key) is not found") }
@@ -196,25 +190,5 @@ class ElasticsearchSystem internal constructor(
          */
         @Suppress("unused")
         fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
-
-        /**
-         * Executes the given [query] and returns a list for [assertion]
-         * Caller-side needs to assert based on the list
-         */
-        inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
-            query: Query,
-            noinline assertion: (List<T>) -> Unit
-        ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
-
-        inline fun <reified T : Any> ElasticsearchSystem.shouldQuery(
-            query: String,
-            noinline assertion: (List<T>) -> Unit
-        ): ElasticsearchSystem = this.shouldQuery(query, assertion, T::class)
-
-        inline fun <reified T : Any> ElasticsearchSystem.shouldGet(
-            key: String,
-            index: String = context.index,
-            noinline assertion: (T) -> Unit
-        ): ElasticsearchSystem = this.shouldGet(index, key, assertion, T::class)
     }
 }

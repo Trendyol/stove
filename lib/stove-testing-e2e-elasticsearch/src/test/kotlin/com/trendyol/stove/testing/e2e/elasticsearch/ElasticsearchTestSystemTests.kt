@@ -7,8 +7,6 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
-import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldGet
-import com.trendyol.stove.testing.e2e.elasticsearch.ElasticsearchSystem.Companion.shouldQuery
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ExperimentalStoveDsl
@@ -90,7 +88,7 @@ class ElasticsearchTestSystemTests : FunSpec({
         TestSystem.validate {
             elasticsearch {
                 save(exampleInstance.id, exampleInstance)
-                shouldGet<ExampleInstance>(exampleInstance.id) {
+                shouldGet<ExampleInstance>(key = exampleInstance.id) {
                     it.description shouldBe exampleInstance.description
                 }
             }
@@ -102,7 +100,7 @@ class ElasticsearchTestSystemTests : FunSpec({
         TestSystem.validate {
             elasticsearch {
                 save(exampleInstance.id, exampleInstance, anotherIndex)
-                shouldGet<ExampleInstance>(exampleInstance.id, anotherIndex) {
+                shouldGet<ExampleInstance>(anotherIndex, exampleInstance.id) {
                     it.description shouldBe exampleInstance.description
                 }
             }
@@ -123,7 +121,7 @@ class ElasticsearchTestSystemTests : FunSpec({
                     it.size shouldBe 2
                 }
                 shouldDelete(exampleInstance1.id)
-                shouldGet<ExampleInstance>(exampleInstance2.id) {}
+                shouldGet<ExampleInstance>(key = exampleInstance2.id) {}
                 shouldQuery<ExampleInstance>(queryAsString) {
                     it.size shouldBe 1
                 }
@@ -137,7 +135,7 @@ class ElasticsearchTestSystemTests : FunSpec({
         TestSystem.validate {
             elasticsearch {
                 save(exampleInstance.id, exampleInstance)
-                shouldGet<ExampleInstance>(exampleInstance.id) {
+                shouldGet<ExampleInstance>(key = exampleInstance.id) {
                     it.description shouldBe exampleInstance.description
                 }
 

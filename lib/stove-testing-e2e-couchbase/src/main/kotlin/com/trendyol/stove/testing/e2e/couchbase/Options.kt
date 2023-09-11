@@ -48,7 +48,7 @@ data class CouchbaseContext(
     val options: CouchbaseSystemOptions
 )
 
-fun TestSystem.withCouchbase(
+internal fun TestSystem.withCouchbase(
     options: CouchbaseSystemOptions
 ): TestSystem {
     val bucketDefinition = BucketDefinition(options.defaultBucket)
@@ -63,14 +63,13 @@ fun TestSystem.withCouchbase(
     return this
 }
 
-@ExperimentalStoveDsl
-fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem =
-    this.testSystem.withCouchbase(configure())
-
-fun TestSystem.couchbase(): CouchbaseSystem =
+internal fun TestSystem.couchbase(): CouchbaseSystem =
     getOrNone<CouchbaseSystem>().getOrElse {
         throw SystemNotRegisteredException(CouchbaseSystem::class)
     }
+
+fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem =
+    this.testSystem.withCouchbase(configure())
 
 suspend fun ValidationDsl.couchbase(validation: suspend CouchbaseSystem.() -> Unit): Unit =
     validation(this.testSystem.couchbase())

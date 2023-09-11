@@ -59,13 +59,10 @@ data class KafkaContext(
     val options: KafkaSystemOptions
 )
 
-fun TestSystem.kafka(): KafkaSystem =
+internal fun TestSystem.kafka(): KafkaSystem =
     getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
 
-suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit =
-    validation(this.testSystem.kafka())
-
-fun TestSystem.withKafka(
+internal fun TestSystem.withKafka(
     options: KafkaSystemOptions = KafkaSystemOptions()
 ): TestSystem {
     val kafka = withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
@@ -76,7 +73,9 @@ fun TestSystem.withKafka(
     return this
 }
 
-@ExperimentalStoveDsl
+suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit =
+    validation(this.testSystem.kafka())
+
 fun WithDsl.kafka(configure: () -> KafkaSystemOptions): TestSystem =
     this.testSystem.withKafka(configure())
 
