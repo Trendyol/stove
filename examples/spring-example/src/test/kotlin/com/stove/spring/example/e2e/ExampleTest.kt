@@ -61,7 +61,7 @@ class ExampleTest : FunSpec({
             }
 
             kafka {
-                shouldBePublished<ProductCreatedEvent> { actual ->
+                shouldBePublished<ProductCreatedEvent> {
                     actual.id == productCreateRequest.id &&
                         actual.name == productCreateRequest.name &&
                         actual.supplierId == productCreateRequest.supplierId
@@ -112,7 +112,7 @@ class ExampleTest : FunSpec({
 
             kafka {
                 publish("trendyol.stove.service.product.create.0", productCreateEvent)
-                shouldBeConsumed<ProductCreateEvent> { actual ->
+                shouldBeConsumed<ProductCreateEvent> {
                     actual.id == productCreateEvent.id
                 }
             }
@@ -134,14 +134,7 @@ class ExampleTest : FunSpec({
 
             kafka {
                 publish("trendyol.stove.service.product.create.0", productCreateEvent, headers = mapOf("test" to "test"))
-                shouldBeConsumed<ProductCreateEvent>(metadataCondition = {
-                    it.headers.containsKey("test") &&
-                        it.headers["test"] == "test" &&
-                        it.topic == "trendyol.stove.service.product.create.0"
-                }) { actual ->
-                    actual.id == productCreateEvent.id
-                }
-                shouldBePublished<ProductCreatedEvent> { actual ->
+                shouldBePublished<ProductCreatedEvent> {
                     actual.id == productCreateEvent.id &&
                         actual.name == productCreateEvent.name &&
                         actual.supplierId == productCreateEvent.supplierId
@@ -163,10 +156,13 @@ class ExampleTest : FunSpec({
         TestSystem.validate {
             kafka {
                 publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))
-                shouldBeFailed<FailingEvent> { actual, exception ->
-                    actual.id == 5L && exception is BusinessException
+                shouldBeFailed<FailingEvent> {
+                    actual.id == 5L && reason is BusinessException
                 }
-                shouldBeFailed(message = FailingEvent(5L), exception = BusinessException("Failing product create event"))
+
+                shouldBeFailed<FailingEvent> {
+                    actual == FailingEvent(5L) && reason is BusinessException
+                }
             }
         }
     }

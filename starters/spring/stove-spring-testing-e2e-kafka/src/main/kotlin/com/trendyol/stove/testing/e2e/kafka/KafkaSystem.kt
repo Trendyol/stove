@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.None
 import arrow.core.Option
-import arrow.core.Some
 import arrow.core.getOrElse
 import com.trendyol.stove.functional.Try
 import com.trendyol.stove.functional.recover
@@ -94,67 +93,38 @@ class KafkaSystem(
         return kafkaTemplate.usingCompletableFuture().send(record).await().let { this }
     }
 
-    suspend fun shouldBeConsumed(
-        atLeastIn: Duration = 5.seconds,
-        message: Any,
-        metadataCondition: (KafkaMetadata) -> Boolean = { true }
-    ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(
-            message::class,
-            atLeastIn
-        ) { incomingMessage, incomingMetadata ->
-            incomingMessage == Some(message) && metadataCondition(incomingMetadata)
-        }
-    }.let { this }
-
     suspend inline fun <reified T : Any> shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
-        crossinline metadataCondition: (KafkaMetadata) -> Boolean = { true },
-        crossinline condition: (T) -> Boolean
+        crossinline condition: ObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage, incomingMetadata ->
-            incomingMessage.isSome { o -> condition(o) } && metadataCondition(incomingMetadata)
-        }
-    }.let { this }
-
-    suspend fun shouldBeFailed(
-        atLeastIn: Duration = 5.seconds,
-        message: Any,
-        exception: Throwable,
-        metadataCondition: (KafkaMetadata) -> Boolean = { true }
-    ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(message::class, atLeastIn) { incomingMessage, incomingMetadata, incomingException ->
-            incomingMessage == Some(message) && incomingException == exception && metadataCondition(incomingMetadata)
+        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage ->
+            incomingMessage.message.isSome { o -> condition(ObservedMessage(o, incomingMessage.metadata)) }
         }
     }.let { this }
 
     suspend inline fun <reified T : Any> shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
-        crossinline metadataCondition: (KafkaMetadata) -> Boolean = { true },
-        crossinline condition: (T, Throwable) -> Boolean
+        crossinline condition: FailedObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(T::class, atLeastIn) { incomingMessage, incomingMetadata, incomingException ->
-            incomingMessage.isSome { o -> condition(o, incomingException) && metadataCondition(incomingMetadata) }
-        }
-    }.let { this }
-
-    suspend fun shouldBePublished(
-        atLeastIn: Duration = 5.seconds,
-        message: Any,
-        metadataCondition: (KafkaMetadata) -> Boolean = { true }
-    ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(message::class, atLeastIn) { incomingMessage, incomingMetadata ->
-            incomingMessage.isSome { o -> o == message && metadataCondition(incomingMetadata) }
+        shouldBeFailedInternal(T::class, atLeastIn) { incomingMessage ->
+            incomingMessage.message.message.isSome { o ->
+                condition(
+                    FailedObservedMessage(
+                        o,
+                        incomingMessage.message.metadata,
+                        incomingMessage.reason
+                    )
+                )
+            }
         }
     }.let { this }
 
     suspend inline fun <reified T : Any> shouldBePublished(
         atLeastIn: Duration = 5.seconds,
-        crossinline metadataCondition: (KafkaMetadata) -> Boolean = { true },
-        crossinline condition: (T) -> Boolean
+        crossinline condition: ObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage, incomingMetadata ->
-            incomingMessage.isSome { o -> condition(o) && metadataCondition(incomingMetadata) }
+        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage ->
+            incomingMessage.message.isSome { o -> condition(ObservedMessage(o, incomingMessage.metadata)) }
         }
     }.let { this }
 
@@ -162,21 +132,21 @@ class KafkaSystem(
     internal suspend fun <T : Any> shouldBeConsumedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (message: Option<T>, metadata: KafkaMetadata) -> Boolean
+        condition: (message: ParsedMessage<T>) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition) }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBeFailedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (Option<T>, metadata: KafkaMetadata, Throwable) -> Boolean
+        condition: (message: FailedParsedMessage<T>) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBePublishedInternal(
         clazz: KClass<T>,
         atLeastIn: Duration,
-        condition: (Option<T>, metadata: KafkaMetadata) -> Boolean
+        condition: (message: ParsedMessage<T>) -> Boolean
     ): Unit = coroutineScope { getInterceptor().waitUntilPublished(atLeastIn, clazz, condition) }
 }
 
