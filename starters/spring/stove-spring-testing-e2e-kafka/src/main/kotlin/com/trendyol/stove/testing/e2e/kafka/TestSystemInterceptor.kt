@@ -123,12 +123,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         val getRecords = { consumedRecords.map { it.value } }
         getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
             val outcome = readCatching(it.value(), clazz)
-            outcome.isSuccess && condition(
-                ParsedMessage(
-                    outcome.getOrNull().toOption(),
-                    it.toMetadata()
-                )
-            )
+            outcome.isSuccess && condition(ParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
         }
 
         throwIfFailed(clazz, condition)
@@ -169,12 +164,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         val getRecords = { producedRecords.map { it.value } }
         getRecords.waitUntilConditionMet(atLeastIn, "While PUBLISHING ${clazz.java.simpleName}") {
             val outcome = readCatching(it.value().toString(), clazz)
-            outcome.isSuccess && condition(
-                ParsedMessage(
-                    outcome.getOrNull().toOption(),
-                    it.toMetadata()
-                )
-            )
+            outcome.isSuccess && condition(ParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
         }
 
         throwIfFailed(clazz, condition)
@@ -184,12 +174,6 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         json: String,
         clazz: KClass<T>
     ): Result<T> = runCatching { objectMapper.readValue(json, clazz.java) }
-
-    fun reset() {
-        exceptions.clear()
-        producedRecords.clear()
-        consumedRecords.clear()
-    }
 
     private fun <T : Any> throwIfFailed(
         clazz: KClass<T>,

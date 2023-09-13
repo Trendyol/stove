@@ -55,8 +55,8 @@ class ExampleTest : FunSpec({
             }
 
             http {
-                postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
-                    actual shouldBe "OK"
+                postAndExpectBodilessResponse(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
+                    actual.status shouldBe 200
                 }
             }
 
@@ -137,7 +137,8 @@ class ExampleTest : FunSpec({
                 shouldBePublished<ProductCreatedEvent> {
                     actual.id == productCreateEvent.id &&
                         actual.name == productCreateEvent.name &&
-                        actual.supplierId == productCreateEvent.supplierId
+                        actual.supplierId == productCreateEvent.supplierId &&
+                        metadata.headers["test"] == "test"
                 }
             }
 

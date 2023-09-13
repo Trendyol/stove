@@ -97,8 +97,8 @@ class KafkaSystem(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(T::class, atLeastIn) { incomingMessage ->
-            incomingMessage.message.isSome { o -> condition(ObservedMessage(o, incomingMessage.metadata)) }
+        shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
+            parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
         }
     }.let { this }
 
@@ -106,13 +106,13 @@ class KafkaSystem(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: FailedObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(T::class, atLeastIn) { incomingMessage ->
-            incomingMessage.message.message.isSome { o ->
+        shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
+            parsed.message.message.isSome { o ->
                 condition(
                     FailedObservedMessage(
                         o,
-                        incomingMessage.message.metadata,
-                        incomingMessage.reason
+                        parsed.message.metadata,
+                        parsed.reason
                     )
                 )
             }
@@ -123,8 +123,8 @@ class KafkaSystem(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(T::class, atLeastIn) { incomingMessage ->
-            incomingMessage.message.isSome { o -> condition(ObservedMessage(o, incomingMessage.metadata)) }
+        shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
+            parsed.message.isSome { o -> ObservedMessage(o, parsed.metadata).condition() }
         }
     }.let { this }
 
