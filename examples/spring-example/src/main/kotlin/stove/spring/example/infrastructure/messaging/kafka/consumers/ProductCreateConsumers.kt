@@ -31,16 +31,16 @@ class ProductTransferConsumers(
         containerFactory = KafkaConsumerConfiguration.RETRY_LISTENER_BEAN_NAME
     )
     fun listen(cr: ConsumerRecord<String, String>) = runBlocking(MDCContext()) {
-        logger.info("Received product transfer event ${cr.value()}")
-        val productCreateEvent = objectMapper.readValue(
+        logger.info("Received product transfer command ${cr.value()}")
+        val command = objectMapper.readValue(
             cr.value(),
-            ProductCreateEvent::class.java
+            CreateProductCommand::class.java
         )
-        productCreator.createNewProduct(productCreateEvent.mapToCreateRequest())
+        productCreator.create(command.mapToCreateRequest())
     }
 }
 
-data class ProductCreateEvent(
+data class CreateProductCommand(
     val id: Long,
     val name: String,
     val supplierId: Long
