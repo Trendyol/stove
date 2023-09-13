@@ -8,12 +8,14 @@ data class MessageMetadata(
     val headers: Map<String, Any>
 )
 
-data class ParsedMessage<T>(
+@PublishedApi
+internal data class ParsedMessage<T>(
     val message: Option<T>,
     val metadata: MessageMetadata
 )
 
-data class FailedParsedMessage<T>(
+@PublishedApi
+internal data class FailedParsedMessage<T>(
     val message: ParsedMessage<T>,
     val reason: Throwable
 )

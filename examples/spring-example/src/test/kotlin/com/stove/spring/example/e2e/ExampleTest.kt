@@ -133,12 +133,12 @@ class ExampleTest : FunSpec({
             }
 
             kafka {
-                publish("trendyol.stove.service.product.create.0", productCreateEvent, headers = mapOf("test" to "test"))
+                publish("trendyol.stove.service.product.create.0", productCreateEvent)
                 shouldBePublished<ProductCreatedEvent> {
                     actual.id == productCreateEvent.id &&
                         actual.name == productCreateEvent.name &&
                         actual.supplierId == productCreateEvent.supplierId &&
-                        metadata.headers["test"] == "test"
+                        metadata.headers["X-UserEmail"] == "stove@trendyol.com"
                 }
             }
 

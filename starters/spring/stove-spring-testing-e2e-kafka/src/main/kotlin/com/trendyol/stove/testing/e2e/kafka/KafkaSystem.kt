@@ -124,7 +124,7 @@ class KafkaSystem(
         crossinline condition: ObservedMessage<T>.() -> Boolean
     ): KafkaSystem = coroutineScope {
         shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
-            parsed.message.isSome { o -> ObservedMessage(o, parsed.metadata).condition() }
+            parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
         }
     }.let { this }
 

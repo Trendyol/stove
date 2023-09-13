@@ -115,7 +115,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         )
     }
 
-    suspend fun <T : Any> waitUntilConsumed(
+    internal suspend fun <T : Any> waitUntilConsumed(
         atLeastIn: Duration,
         clazz: KClass<T>,
         condition: (metadata: ParsedMessage<T>) -> Boolean
@@ -129,7 +129,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         throwIfFailed(clazz, condition)
     }
 
-    suspend fun <T : Any> waitUntilFailed(
+    internal suspend fun <T : Any> waitUntilFailed(
         atLeastIn: Duration,
         clazz: KClass<T>,
         condition: (metadata: FailedParsedMessage<T>) -> Boolean
@@ -148,15 +148,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         throwIfSucceeded(clazz, condition)
     }
 
-    private fun extractCause(listenerException: Throwable): Throwable = when (listenerException) {
-        is ListenerExecutionFailedException ->
-            listenerException.cause
-                ?: AssertionError("No cause found: Listener was not able to capture the cause")
-
-        else -> listenerException
-    }
-
-    suspend fun <T : Any> waitUntilPublished(
+    internal suspend fun <T : Any> waitUntilPublished(
         atLeastIn: Duration,
         clazz: KClass<T>,
         condition: (message: ParsedMessage<T>) -> Boolean
@@ -168,6 +160,14 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
         }
 
         throwIfFailed(clazz, condition)
+    }
+
+    private fun extractCause(listenerException: Throwable): Throwable = when (listenerException) {
+        is ListenerExecutionFailedException ->
+            listenerException.cause
+                ?: AssertionError("No cause found: Listener was not able to capture the cause")
+
+        else -> listenerException
     }
 
     private fun <T : Any> readCatching(
