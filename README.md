@@ -6,6 +6,12 @@
  
 [Check the documentation](https://trendyol.github.io/stove4k/)
 
+> [!WARNING]
+> Stove is under development and, despite being heavily tested, its API isn't yet stabilized; _breaking changes
+> might happen on minor releases._ However, we will always provide migration guides.
+
+> Report any issue or bug <a href="/issues">in the GitHub repository.</a>
+
 ## Supports
 
 Physical dependencies: 
