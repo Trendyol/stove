@@ -20,6 +20,6 @@ class ProductController(private val productCreator: ProductCreator) {
 
     @PostMapping("/product/create")
     suspend fun createProduct(@RequestBody productCreateRequest: ProductCreateRequest): String {
-        return productCreator.createNewProduct(productCreateRequest)
+        return productCreator.create(productCreateRequest)
     }
 }

@@ -1,11 +1,14 @@
 spring:
   application:
     name: "stove"
+  servlet:
+    multipart:
+      max-request-size: 10MB
 
 server:
   port: 8001
   http2:
-    enabled: true
+    enabled: false
 
 couchbase:
   hosts: localhost

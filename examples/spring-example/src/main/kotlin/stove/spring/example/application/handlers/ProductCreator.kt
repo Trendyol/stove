@@ -10,7 +10,7 @@ import stove.spring.example.infrastructure.Headers
 import stove.spring.example.infrastructure.http.SupplierHttpService
 import stove.spring.example.infrastructure.messaging.kafka.KafkaOutgoingMessage
 import stove.spring.example.infrastructure.messaging.kafka.KafkaProducer
-import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
+import stove.spring.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
 import java.util.Date
 
 @Component
@@ -22,29 +22,29 @@ class ProductCreator(
 ) {
     @Value("\${kafka.producer.product-created.topic-name}")
     lateinit var productCreatedTopic: String
-    suspend fun createNewProduct(productCreateRequest: ProductCreateRequest): String {
-        val supplierPermission = supplierHttpService.getSupplierPermission(productCreateRequest.id)
+    suspend fun create(req: ProductCreateRequest): String {
+        val supplierPermission = supplierHttpService.getSupplierPermission(req.id)
         if (!supplierPermission.isAllowed) {
-            return "Supplier with the given id(${productCreateRequest.supplierId}) is not allowed for product creation"
+            return "Supplier with the given id(${req.supplierId}) is not allowed for product creation"
         }
-        val fromJson = JsonObject.fromJson(objectMapper.writeValueAsString(productCreateRequest))
+        val fromJson = JsonObject.fromJson(objectMapper.writeValueAsString(req))
 
-        collection.insert("product:${productCreateRequest.id}", fromJson).awaitFirst()
+        collection.insert("product:${req.id}", fromJson).awaitFirst()
 
         kafkaProducer.send(
             KafkaOutgoingMessage(
                 topic = productCreatedTopic,
-                key = productCreateRequest.id.toString(),
+                key = req.id.toString(),
                 headers = mapOf(Headers.EVENT_TYPE to ProductCreatedEvent::class.simpleName!!),
                 partition = 0,
-                payload = objectMapper.writeValueAsString(productCreateRequest.mapToProductCreatedEvent())
+                payload = objectMapper.writeValueAsString(req.mapToProductCreatedEvent())
             )
         )
         return "OK"
     }
 }
 
-fun ProductCreateEvent.mapToCreateRequest(): ProductCreateRequest {
+fun CreateProductCommand.mapToCreateRequest(): ProductCreateRequest {
     return ProductCreateRequest(this.id, this.name, this.supplierId)
 }
 

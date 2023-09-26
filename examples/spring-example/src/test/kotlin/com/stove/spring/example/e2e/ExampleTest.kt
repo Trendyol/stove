@@ -15,7 +15,7 @@ import stove.spring.example.application.handlers.ProductCreatedEvent
 import stove.spring.example.application.services.SupplierPermission
 import stove.spring.example.infrastructure.couchbase.CouchbaseProperties
 import stove.spring.example.infrastructure.messaging.kafka.consumers.BusinessException
-import stove.spring.example.infrastructure.messaging.kafka.consumers.ProductCreateEvent
+import stove.spring.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
 
 class ExampleTest : FunSpec({
     test("bridge should work") {
@@ -55,13 +55,13 @@ class ExampleTest : FunSpec({
             }
 
             http {
-                postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
-                    actual shouldBe "OK"
+                postAndExpectBodilessResponse(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
+                    actual.status shouldBe 200
                 }
             }
 
             kafka {
-                shouldBePublished<ProductCreatedEvent> { actual ->
+                shouldBePublished<ProductCreatedEvent> {
                     actual.id == productCreateRequest.id &&
                         actual.name == productCreateRequest.name &&
                         actual.supplierId == productCreateRequest.supplierId
@@ -99,7 +99,7 @@ class ExampleTest : FunSpec({
 
     test("should throw error when send product create event for the not allowed supplier") {
         TestSystem.validate {
-            val productCreateEvent = ProductCreateEvent(3L, name = "product name", 97L)
+            val productCreateEvent = CreateProductCommand(3L, name = "product name", 97L)
             val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = false)
 
             wiremock {
@@ -112,7 +112,7 @@ class ExampleTest : FunSpec({
 
             kafka {
                 publish("trendyol.stove.service.product.create.0", productCreateEvent)
-                shouldBeConsumed<ProductCreateEvent> { actual ->
+                shouldBeConsumed<CreateProductCommand> {
                     actual.id == productCreateEvent.id
                 }
             }
@@ -121,34 +121,32 @@ class ExampleTest : FunSpec({
 
     test("should create new product when send product create event for the allowed supplier") {
         TestSystem.validate {
-            val productCreateEvent = ProductCreateEvent(4L, name = "product name", 96L)
-            val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = true)
+            val createProductCommand = CreateProductCommand(4L, name = "product name", 96L)
+            val supplierPermission = SupplierPermission(createProductCommand.supplierId, isAllowed = true)
 
             wiremock {
                 mockGet(
-                    "/suppliers/${productCreateEvent.id}/allowed",
+                    "/suppliers/${createProductCommand.id}/allowed",
                     statusCode = 200,
                     responseBody = supplierPermission.some()
                 )
             }
 
             kafka {
-                publish("trendyol.stove.service.product.create.0", productCreateEvent)
-                shouldBeConsumed<ProductCreateEvent> { actual ->
-                    actual.id == productCreateEvent.id
-                }
-                shouldBePublished<ProductCreatedEvent> { actual ->
-                    actual.id == productCreateEvent.id &&
-                        actual.name == productCreateEvent.name &&
-                        actual.supplierId == productCreateEvent.supplierId
+                publish("trendyol.stove.service.product.create.0", createProductCommand)
+                shouldBePublished<ProductCreatedEvent> {
+                    actual.id == createProductCommand.id &&
+                        actual.name == createProductCommand.name &&
+                        actual.supplierId == createProductCommand.supplierId &&
+                        metadata.headers["X-UserEmail"] == "stove@trendyol.com"
                 }
             }
 
             couchbase {
-                shouldGet<ProductCreateRequest>("product:${productCreateEvent.id}") { actual ->
-                    actual.id shouldBe productCreateEvent.id
-                    actual.name shouldBe productCreateEvent.name
-                    actual.supplierId shouldBe productCreateEvent.supplierId
+                shouldGet<ProductCreateRequest>("product:${createProductCommand.id}") { actual ->
+                    actual.id shouldBe createProductCommand.id
+                    actual.name shouldBe createProductCommand.name
+                    actual.supplierId shouldBe createProductCommand.supplierId
                 }
             }
         }
@@ -159,10 +157,13 @@ class ExampleTest : FunSpec({
         TestSystem.validate {
             kafka {
                 publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))
-                shouldBeFailed<FailingEvent> { actual, exception ->
-                    actual.id == 5L && exception is BusinessException
+                shouldBeFailed<FailingEvent> {
+                    actual.id == 5L && reason is BusinessException
                 }
-                shouldBeFailed(message = FailingEvent(5L), exception = BusinessException("Failing product create event"))
+
+                shouldBeFailed<FailingEvent> {
+                    actual == FailingEvent(5L) && reason is BusinessException
+                }
             }
         }
     }
