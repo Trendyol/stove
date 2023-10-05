@@ -7,7 +7,7 @@ kotest = "5.7.2"
 mockito = "5.1.0"
 wiremock = "3.2.0"
 testcontainers = "1.19.1"
-ktor = "2.3.4"
+ktor = "2.3.5"
 
 [libraries]
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
