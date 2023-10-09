@@ -27,23 +27,22 @@ internal class PostgresqlContext(
     configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, configureExposedConfiguration)
 
-internal fun TestSystem.withPostgresql(
-    options: PostgresqlOptions = PostgresqlOptions()
-): TestSystem = withProvidedRegistry(options.imageName, options.registry, "postgres") {
-    PostgreSQLContainer(it)
-        .withDatabaseName(options.databaseName)
-        .withUsername("sa")
-        .withPassword("sa")
-        .withReuse(this.options.keepDependenciesRunning)
-}.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
-    .let { this }
+internal fun TestSystem.withPostgresql(options: PostgresqlOptions = PostgresqlOptions()): TestSystem =
+    withProvidedRegistry(options.imageName, options.registry, "postgres") {
+        PostgreSQLContainer(it)
+            .withDatabaseName(options.databaseName)
+            .withUsername("sa")
+            .withPassword("sa")
+            .withReuse(this.options.keepDependenciesRunning)
+    }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options.configureExposedConfiguration))) }
+        .let { this }
 
-internal fun TestSystem.postgresql(): PostgresqlSystem = getOrNone<PostgresqlSystem>().getOrElse {
-    throw SystemNotRegisteredException(PostgresqlSystem::class)
-}
+internal fun TestSystem.postgresql(): PostgresqlSystem =
+    getOrNone<PostgresqlSystem>().getOrElse {
+        throw SystemNotRegisteredException(PostgresqlSystem::class)
+    }
 
 fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
     this.testSystem.withPostgresql(configure())
 
-suspend fun ValidationDsl.postgresql(validation: suspend PostgresqlSystem.() -> Unit): Unit =
-    validation(this.testSystem.postgresql())
+suspend fun ValidationDsl.postgresql(validation: suspend PostgresqlSystem.() -> Unit): Unit = validation(this.testSystem.postgresql())

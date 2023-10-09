@@ -4,7 +4,6 @@ import kotlinx.coroutines.sync.Mutex
 import java.time.Duration
 
 interface LockProvider {
-
     suspend fun acquireLock(
         name: String,
         duration: Duration
@@ -14,7 +13,6 @@ interface LockProvider {
 }
 
 class MutexLockProvider : LockProvider {
-
     private val mutex = Mutex()
 
     override suspend fun acquireLock(

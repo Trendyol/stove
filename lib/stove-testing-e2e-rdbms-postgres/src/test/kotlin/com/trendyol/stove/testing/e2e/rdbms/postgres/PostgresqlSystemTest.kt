@@ -9,11 +9,12 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject(): Unit = TestSystem()
-        .with {
-            postgresql()
-            applicationUnderTest(NoOpApplication())
-        }.run()
+    override suspend fun beforeProject(): Unit =
+        TestSystem()
+            .with {
+                postgresql()
+                applicationUnderTest(NoOpApplication())
+            }.run()
 
     override suspend fun afterProject(): Unit = TestSystem.stop()
 }

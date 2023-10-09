@@ -76,9 +76,10 @@ class WireMockSystemTests : FunSpec({
         (1..20).map { i ->
             async {
                 val request = reqBuilder.POST(BodyPublishers.ofString("request$i")).build()
-                val response = withContext(Dispatchers.IO) {
-                    client.send(request, BodyHandlers.ofString())
-                }
+                val response =
+                    withContext(Dispatchers.IO) {
+                        client.send(request, BodyHandlers.ofString())
+                    }
                 response.body() shouldBe "response$i"
             }
         }.awaitAll()

@@ -16,16 +16,19 @@ class WireMockVacuumCleaner(
     private val stubLog: ConcurrentMap<UUID, StubMapping>,
     private val afterStubRemoved: AfterStubRemoved
 ) : ServeEventListener {
-
     private lateinit var wireMock: WireMockServer
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
     override fun getName(): String = "StoveVacuumCleaner"
 
     fun wireMock(wireMockServer: WireMockServer) {
         this.wireMock = wireMockServer
     }
 
-    override fun beforeResponseSent(serveEvent: ServeEvent, parameters: Parameters?) {
+    override fun beforeResponseSent(
+        serveEvent: ServeEvent,
+        parameters: Parameters?
+    ) {
         if (!serveEvent.wasMatched) {
             return
         }

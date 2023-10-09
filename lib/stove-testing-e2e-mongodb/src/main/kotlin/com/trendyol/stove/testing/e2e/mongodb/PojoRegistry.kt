@@ -11,10 +11,10 @@ import kotlin.reflect.KClass
 data class PojoRegistry(
     val registry: CodecRegistry = fromRegistries()
 ) {
-
-    private var builder: PojoCodecProvider.Builder = PojoCodecProvider.builder().conventions(
-        Conventions.DEFAULT_CONVENTIONS
-    )
+    private var builder: PojoCodecProvider.Builder =
+        PojoCodecProvider.builder().conventions(
+            Conventions.DEFAULT_CONVENTIONS
+        )
 
     inline fun <reified T : Any> register(): PojoRegistry = register(T::class)
 

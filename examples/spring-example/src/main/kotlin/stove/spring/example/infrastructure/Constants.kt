@@ -6,11 +6,12 @@ import java.net.UnknownHostException
 
 class Defaults {
     companion object {
-        val HOST_NAME: String = try {
-            InetAddress.getLocalHost().hostName
-        } catch (e: UnknownHostException) {
-            "stove-service-host"
-        }
+        val HOST_NAME: String =
+            try {
+                InetAddress.getLocalHost().hostName
+            } catch (e: UnknownHostException) {
+                "stove-service-host"
+            }
 
         const val AGENT_NAME = "stove-service"
         const val USER_EMAIL = "stove@trendyol.com"

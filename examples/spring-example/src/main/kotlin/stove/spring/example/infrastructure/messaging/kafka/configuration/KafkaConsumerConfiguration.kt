@@ -19,7 +19,6 @@ class KafkaConsumerConfiguration(
     private val objectMapper: ObjectMapper,
     private val customConsumerInterceptor: ConsumerAwareRecordInterceptor<String, String>
 ) {
-
     @Bean
     fun kafkaListenerContainerFactory(
         kafkaTemplate: KafkaTemplate<String, Any>,
@@ -30,9 +29,10 @@ class KafkaConsumerConfiguration(
         factory.consumerFactory = consumerFactory
         factory.containerProperties.isDeliveryAttemptHeader = true
         factory.setRecordMessageConverter(stringJsonMessageConverter())
-        val errorHandler = DefaultErrorHandler(
-            FixedBackOff(0, 0)
-        )
+        val errorHandler =
+            DefaultErrorHandler(
+                FixedBackOff(0, 0)
+            )
 
         factory.setCommonErrorHandler(errorHandler)
         factory.setRecordInterceptor(customConsumerInterceptor)
@@ -49,9 +49,10 @@ class KafkaConsumerConfiguration(
         factory.setRecordMessageConverter(stringJsonMessageConverter())
         factory.containerProperties.isDeliveryAttemptHeader = true
         factory.consumerFactory = consumerRetryFactory
-        val errorHandler = DefaultErrorHandler(
-            FixedBackOff(5000, 1)
-        )
+        val errorHandler =
+            DefaultErrorHandler(
+                FixedBackOff(5000, 1)
+            )
         factory.setCommonErrorHandler(errorHandler)
         factory.setRecordInterceptor(customConsumerInterceptor)
         return factory

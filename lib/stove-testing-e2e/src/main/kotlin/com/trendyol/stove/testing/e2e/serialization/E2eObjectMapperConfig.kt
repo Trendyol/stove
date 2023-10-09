@@ -14,7 +14,6 @@ import java.time.Instant
  * This object mapper is used to serialize and deserialize request and response bodies.
  */
 class E2eObjectMapperConfig {
-
     companion object {
         /**
          * Creates an object mapper with default configurations.

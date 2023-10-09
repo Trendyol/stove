@@ -14,9 +14,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer
  *
  * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
  */
-internal fun TestSystem.withElasticsearch(
-    options: ElasticsearchSystemOptions
-): TestSystem {
+internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): TestSystem {
     options.migrations {
         register<DefaultIndexMigrator> { options.defaultIndex.migrator }
     }
@@ -46,8 +44,7 @@ internal fun TestSystem.elasticsearch(): ElasticsearchSystem =
         throw SystemNotRegisteredException(ElasticsearchSystem::class)
     }
 
-fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem =
-    this.testSystem.withElasticsearch(configure())
+fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem = this.testSystem.withElasticsearch(configure())
 
 suspend fun ValidationDsl.elasticsearch(validation: suspend ElasticsearchSystem.() -> Unit): Unit =
     validation(this.testSystem.elasticsearch())

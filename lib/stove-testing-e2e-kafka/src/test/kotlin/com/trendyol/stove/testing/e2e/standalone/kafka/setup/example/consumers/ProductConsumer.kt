@@ -8,8 +8,8 @@ class ProductConsumer(
     consumerSettings: Map<String, Any>,
     producerSettings: Map<String, Any>
 ) : StoveListener(consumerSettings, producerSettings) {
-
     override val topicDefinition: TopicDefinition = TopicDefinition("product", "product.retry", "product.error")
+
     override suspend fun listen(record: ConsumerRecord<String, String>) {
     }
 }

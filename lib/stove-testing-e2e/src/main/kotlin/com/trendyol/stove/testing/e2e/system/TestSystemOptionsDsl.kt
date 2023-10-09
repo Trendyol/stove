@@ -8,6 +8,7 @@ class TestSystemOptionsDsl {
     private val propertiesFile = PropertiesFile()
 
     internal var options = TestSystemOptions()
+
     fun keepDependenciesRunning(): TestSystemOptionsDsl {
         l.info(
             """You have chosen to keep dependencies running. 
@@ -25,7 +26,8 @@ class TestSystemOptionsDsl {
 
     fun enableReuseForTestContainers(): Unit = propertiesFile.enable()
 
-    private fun isRunningOnCI(): Boolean = System.getenv("CI") == "true" ||
-        System.getenv("GITLAB_CI") == "true" ||
-        System.getenv("GITHUB_ACTIONS") == "true"
+    private fun isRunningOnCI(): Boolean =
+        System.getenv("CI") == "true" ||
+            System.getenv("GITLAB_CI") == "true" ||
+            System.getenv("GITHUB_ACTIONS") == "true"
 }

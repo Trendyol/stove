@@ -12,7 +12,6 @@ import io.kotest.matchers.shouldBe
 import java.util.*
 
 class NoApplication : ApplicationUnderTest<Unit> {
-
     override suspend fun start(configurations: List<String>) {
         // do nothing
     }
@@ -23,7 +22,6 @@ class NoApplication : ApplicationUnderTest<Unit> {
 }
 
 class TestConfig : AbstractProjectConfig() {
-
     override suspend fun beforeProject(): Unit =
         TestSystem("http://localhost:8086")
             .with {

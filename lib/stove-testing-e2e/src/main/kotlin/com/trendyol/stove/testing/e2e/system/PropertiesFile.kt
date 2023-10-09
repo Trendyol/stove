@@ -6,10 +6,9 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.*
 
-class PropertiesFile() {
-
+class PropertiesFile {
     companion object {
-        const val reuseEnabled = "testcontainers.reuse.enable=true"
+        const val REUSE_ENABLED = "testcontainers.reuse.enable=true"
     }
 
     private val l: Logger = LoggerFactory.getLogger(javaClass)
@@ -20,14 +19,15 @@ class PropertiesFile() {
             l.info("'.testcontainers.properties' file exists")
             when {
                 propertiesFile.readText()
-                    .contains(reuseEnabled) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
+                    .contains(REUSE_ENABLED) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
 
-                else -> l.info(
-                    """
-                    '.testcontainers.properties' does not contain 'testcontainers.reuse.enable=true'
-                     | You need to create either by yourself or using '${TestSystemOptionsDsl::enableReuseForTestContainers.name}' method
-                    """.trimIndent()
-                )
+                else ->
+                    l.info(
+                        """
+                        '.testcontainers.properties' does not contain 'testcontainers.reuse.enable=true'
+                         | You need to create either by yourself or using '${TestSystemOptionsDsl::enableReuseForTestContainers.name}' method
+                        """.trimIndent()
+                    )
             }
         } else {
             l.info(
@@ -40,21 +40,24 @@ class PropertiesFile() {
 
     fun enable() {
         l.info(
-            """You will see a file `~/.testcontainers.properties', with the setting 'testcontainers.reuse.enable=true'.
-                | If you don't see the file please create by yourself. 
-                | Otherwise dependencies won't keep running.
+            """
+            You will see a file `~/.testcontainers.properties', with the setting 'testcontainers.reuse.enable=true'.
+            | If you don't see the file please create by yourself. 
+            | Otherwise dependencies won't keep running.
             """.trimIndent()
         )
         when {
-            !propertiesFile.exists() -> propertiesFile.writeText(reuseEnabled)
-            else -> when {
-                propertiesFile.readText()
-                    .contains(reuseEnabled) -> l.info(
-                    "'.testcontainers.properties' looks good and contains reuse feature!"
-                )
+            !propertiesFile.exists() -> propertiesFile.writeText(REUSE_ENABLED)
+            else ->
+                when {
+                    propertiesFile.readText()
+                        .contains(REUSE_ENABLED) ->
+                        l.info(
+                            "'.testcontainers.properties' looks good and contains reuse feature!"
+                        )
 
-                else -> propertiesFile.appendText(reuseEnabled)
-            }
+                    else -> propertiesFile.appendText(REUSE_ENABLED)
+                }
         }
     }
 }

@@ -71,7 +71,6 @@ class TestSystem(
     val options: TestSystemOptions = optionsDsl.options
 
     companion object {
-
         /**
          * [instance] is created only once per project, and it is available throughout the lifetime of the all the tests.
          * DO NOT access it before [run] completes
@@ -109,10 +108,11 @@ class TestSystem(
             beforeRunAwareSystems.map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
             runAwareSystems.map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
 
-            val dependencyConfigurations = activeSystems
-                .map { it.value }
-                .filterIsInstance<ExposesConfiguration>()
-                .flatMap { it.configuration() }
+            val dependencyConfigurations =
+                activeSystems
+                    .map { it.value }
+                    .filterIsInstance<ExposesConfiguration>()
+                    .flatMap { it.configuration() }
 
             applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
 

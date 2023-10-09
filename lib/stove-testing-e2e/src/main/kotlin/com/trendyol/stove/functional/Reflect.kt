@@ -14,9 +14,8 @@ class Reflect<T : Any>(val instance: T) {
         }
     }
 
-    inline fun <reified R> on(
-        propertySelector: T.() -> KProperty<R>
-    ): OnGoingReflect<R> = OnGoingReflect(instance, propertySelector(instance).name)
+    inline fun <reified R> on(propertySelector: T.() -> KProperty<R>): OnGoingReflect<R> =
+        OnGoingReflect(instance, propertySelector(instance).name)
 
     inline fun <reified R> on(property: String): OnGoingReflect<R> = OnGoingReflect(instance, property)
 

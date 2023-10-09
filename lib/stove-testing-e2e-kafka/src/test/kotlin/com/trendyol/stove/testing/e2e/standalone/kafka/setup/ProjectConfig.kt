@@ -25,9 +25,10 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 
     override suspend fun start(configurations: List<String>) {
         val bootstrapServers = configurations.first { it.contains("kafka", true) }.split('=')[1]
-        client = mapOf<String, Any>(
-            AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers
-        ).let { AdminClient.create(it) }
+        client =
+            mapOf<String, Any>(
+                AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers
+            ).let { AdminClient.create(it) }
 
         val newTopics = KafkaTestShared.topics.flatMap { listOf(it.topic, it.retryTopic, it.deadLetterTopic) }.map { NewTopic(it, 1, 1) }
         client.createTopics(newTopics).all().get()
@@ -35,20 +36,22 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
     }
 
     private suspend fun startConsumers(bootStrapServers: String) {
-        val consumerSettings = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
-            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers"
-        )
+        val consumerSettings =
+            mapOf(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
+                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers"
+            )
 
-        val producerSettings = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java,
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.ACKS_CONFIG to "1"
-        )
+        val producerSettings =
+            mapOf(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java,
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+                ProducerConfig.ACKS_CONFIG to "1"
+            )
 
         val listeners = KafkaTestShared.consumers(consumerSettings, producerSettings)
         listeners.forEach { it.start() }
@@ -63,19 +66,19 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 
 @ExperimentalKotest
 class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachListener {
-
-    override suspend fun beforeProject(): Unit = TestSystem()
-        .with {
-            kafka {
-                KafkaSystemOptions(
-                    // ports = listOf(9094, 9095),
-                    configureExposedConfiguration = { cfg ->
-                        listOf("kafka.servers=${cfg.bootstrapServers}")
-                    }
-                )
-            }
-            applicationUnderTest(KafkaApplicationUnderTest())
-        }.run()
+    override suspend fun beforeProject(): Unit =
+        TestSystem()
+            .with {
+                kafka {
+                    KafkaSystemOptions(
+                        // ports = listOf(9094, 9095),
+                        configureExposedConfiguration = { cfg ->
+                            listOf("kafka.servers=${cfg.bootstrapServers}")
+                        }
+                    )
+                }
+                applicationUnderTest(KafkaApplicationUnderTest())
+            }.run()
 
     override suspend fun afterProject(): Unit = TestSystem.stop()
 }

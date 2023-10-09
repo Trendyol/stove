@@ -14,10 +14,11 @@ internal fun <T : Any> mapper(
     row: Row,
     rowMetadata: RowMetadata,
     clazz: KClass<T>
-): T = when {
-    clazz.isData -> dataClassMapper(clazz, rowMetadata, row)
-    else -> classMapper(clazz, rowMetadata, row)
-}
+): T =
+    when {
+        clazz.isData -> dataClassMapper(clazz, rowMetadata, row)
+        else -> classMapper(clazz, rowMetadata, row)
+    }
 
 private fun <T : Any> dataClassMapper(
     clazz: KClass<T>,
@@ -26,10 +27,11 @@ private fun <T : Any> dataClassMapper(
 ): T {
     val constructor = clazz.primaryConstructor!!
 
-    val args = constructor.parameters.map { param ->
-        val jClazz = rowMetadata.getColumnMetadata(param.name!!).javaType!!
-        row.get(param.name!!, jClazz)
-    }.toTypedArray()
+    val args =
+        constructor.parameters.map { param ->
+            val jClazz = rowMetadata.getColumnMetadata(param.name!!).javaType!!
+            row.get(param.name!!, jClazz)
+        }.toTypedArray()
 
     return constructor.call(*args)
 }
@@ -56,11 +58,12 @@ private fun <T : Any> classMapper(
                     )
                 }
                 val columnValue = row.get(memberProperty.name, columnTypeOfRow)
-                val propertyValue: Any? = try {
-                    columnValue?.cast(propClazz)
-                } catch (ex: ClassCastException) {
-                    columnValue.convertToNumericOverString(propClazz)
-                }
+                val propertyValue: Any? =
+                    try {
+                        columnValue?.cast(propClazz)
+                    } catch (ex: ClassCastException) {
+                        columnValue.convertToNumericOverString(propClazz)
+                    }
 
                 memberProperty.setter.call(instance, propertyValue)
             }
@@ -86,14 +89,15 @@ private fun <T : Any> Any?.convertToNumericOverString(clazz: KClass<T>): T? {
 
 private fun <T : Any> Any.cast(targetClazz: KClass<T>): T = targetClazz.javaObjectType.cast(this)
 
-private val primitiveNumbers: Set<Class<*>> = setOf(
-    Int::class.javaPrimitiveType as Class<*>,
-    Long::class.javaPrimitiveType as Class<*>,
-    Float::class.javaPrimitiveType as Class<*>,
-    Double::class.javaPrimitiveType as Class<*>,
-    Byte::class.javaPrimitiveType as Class<*>,
-    Short::class.javaPrimitiveType as Class<*>
-)
+private val primitiveNumbers: Set<Class<*>> =
+    setOf(
+        Int::class.javaPrimitiveType as Class<*>,
+        Long::class.javaPrimitiveType as Class<*>,
+        Float::class.javaPrimitiveType as Class<*>,
+        Double::class.javaPrimitiveType as Class<*>,
+        Byte::class.javaPrimitiveType as Class<*>,
+        Short::class.javaPrimitiveType as Class<*>
+    )
 
 private fun Class<*>.isNumericType(): Boolean {
     return if (this.isPrimitive) {

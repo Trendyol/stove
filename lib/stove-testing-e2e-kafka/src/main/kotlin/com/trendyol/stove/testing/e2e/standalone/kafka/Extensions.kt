@@ -19,6 +19,7 @@ suspend inline fun <reified K : Any, reified V : Any> KafkaProducer<K, V>.dispat
         }
     }
 
-fun <K, V> Map<K, V>.toProperties(): Properties = Properties().apply {
-    this@toProperties.forEach { (k, v) -> this[k] = v }
-}
+fun <K, V> Map<K, V>.toProperties(): Properties =
+    Properties().apply {
+        this@toProperties.forEach { (k, v) -> this[k] = v }
+    }

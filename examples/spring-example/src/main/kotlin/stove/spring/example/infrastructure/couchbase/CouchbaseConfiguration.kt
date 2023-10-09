@@ -25,8 +25,9 @@ class CouchbaseConfiguration(
     private val meterRegistry: MeterRegistry
 ) {
     companion object {
-        val objectMapper: ObjectMapper = ObjectMapperConfig.createObjectMapperWithDefaults()
-            .registerModule(JsonValueModule())
+        val objectMapper: ObjectMapper =
+            ObjectMapperConfig.createObjectMapperWithDefaults()
+                .registerModule(JsonValueModule())
     }
 
     @Primary
@@ -50,9 +51,10 @@ class CouchbaseConfiguration(
     @Primary
     @Bean(destroyMethod = "disconnect")
     fun cluster(clusterEnvironment: ClusterEnvironment): ReactiveCluster {
-        val clusterOptions = ClusterOptions
-            .clusterOptions(couchbaseProperties.username, couchbaseProperties.password)
-            .environment(clusterEnvironment)
+        val clusterOptions =
+            ClusterOptions
+                .clusterOptions(couchbaseProperties.username, couchbaseProperties.password)
+                .environment(clusterEnvironment)
 
         return ReactiveCluster.connect(couchbaseProperties.hosts.joinToString(","), clusterOptions)
     }

@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class ObjectMapperConfig {
-
     companion object {
         fun createObjectMapperWithDefaults(): ObjectMapper {
             val isoInstantModule = SimpleModule()

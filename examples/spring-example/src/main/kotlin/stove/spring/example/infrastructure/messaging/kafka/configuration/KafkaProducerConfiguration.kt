@@ -25,19 +25,21 @@ class KafkaProducerConfiguration {
     @Bean
     fun kafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
         val kafkaTemplate = KafkaTemplate(producerFactory)
-        kafkaTemplate.setProducerListener(object : ProducerListener<String, Any> {
-            override fun onError(
-                producerRecord: ProducerRecord<String, Any>,
-                recordMetadata: RecordMetadata?,
-                exception: java.lang.Exception?
-            ) {
-                logger.error(
-                    "ProducerListener Topic: ${producerRecord.topic()}, Key: ${producerRecord.value()}",
-                    exception
-                )
-                super.onError(producerRecord, recordMetadata, exception)
+        kafkaTemplate.setProducerListener(
+            object : ProducerListener<String, Any> {
+                override fun onError(
+                    producerRecord: ProducerRecord<String, Any>,
+                    recordMetadata: RecordMetadata?,
+                    exception: java.lang.Exception?
+                ) {
+                    logger.error(
+                        "ProducerListener Topic: ${producerRecord.topic()}, Key: ${producerRecord.value()}",
+                        exception
+                    )
+                    super.onError(producerRecord, recordMetadata, exception)
+                }
             }
-        })
+        )
         return kafkaTemplate
     }
 

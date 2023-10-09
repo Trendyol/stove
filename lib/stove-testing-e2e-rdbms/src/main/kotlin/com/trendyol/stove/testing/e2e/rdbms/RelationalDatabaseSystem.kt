@@ -30,30 +30,32 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     protected abstract fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory
 
     override suspend fun run() {
-        exposedConfiguration = state.capture {
-            context.container.start()
-            RelationalDatabaseExposedConfiguration(
-                jdbcUrl = context.container.jdbcUrl,
-                host = context.container.host,
-                database = context.container.databaseName,
-                port = context.container.firstMappedPort,
-                password = context.container.password,
-                username = context.container.username
-            )
-        }
+        exposedConfiguration =
+            state.capture {
+                context.container.start()
+                RelationalDatabaseExposedConfiguration(
+                    jdbcUrl = context.container.jdbcUrl,
+                    host = context.container.host,
+                    database = context.container.databaseName,
+                    port = context.container.firstMappedPort,
+                    password = context.container.password,
+                    username = context.container.username
+                )
+            }
         sqlOperations = SqlOperations(connectionFactory(exposedConfiguration))
         sqlOperations.open()
     }
 
     override fun configuration(): List<String> {
-        return context.configureExposedConfiguration(exposedConfiguration) + listOf(
-            "database.jdbcUrl=${exposedConfiguration.jdbcUrl}",
-            "database.host=${exposedConfiguration.host}",
-            "database.database=${exposedConfiguration.database}",
-            "database.port=${exposedConfiguration.port}",
-            "database.password=${exposedConfiguration.password}",
-            "database.username=${exposedConfiguration.username}"
-        )
+        return context.configureExposedConfiguration(exposedConfiguration) +
+            listOf(
+                "database.jdbcUrl=${exposedConfiguration.jdbcUrl}",
+                "database.host=${exposedConfiguration.host}",
+                "database.database=${exposedConfiguration.database}",
+                "database.port=${exposedConfiguration.port}",
+                "database.password=${exposedConfiguration.password}",
+                "database.username=${exposedConfiguration.username}"
+            )
     }
 
     suspend inline fun <reified T : Any> shouldQuery(
@@ -69,9 +71,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         return this as SELF
     }
 
-    suspend fun shouldExecute(
-        sql: String
-    ): SELF {
+    suspend fun shouldExecute(sql: String): SELF {
         sqlOperations.transaction {
             it.execute(sql)
         }
@@ -79,14 +79,16 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     }
 
     override suspend fun stop(): Unit = context.container.stop()
-    override fun close(): Unit = runBlocking {
-        Try {
-            sqlOperations.close()
-            executeWithReuseCheck { stop() }
-        }.recover {
-            logger.warn("got an error while stopping the container ${context.container.containerName} ")
-        }.let { }
-    }
+
+    override fun close(): Unit =
+        runBlocking {
+            Try {
+                sqlOperations.close()
+                executeWithReuseCheck { stop() }
+            }.recover {
+                logger.warn("got an error while stopping the container ${context.container.containerName} ")
+            }.let { }
+        }
 
     @PublishedApi
     internal var internalSqlOperations: SqlOperations
@@ -96,7 +98,6 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         }
 
     companion object {
-
         /**
          * Exposes the [SqlOperations] of the [RelationalDatabaseSystem].
          */

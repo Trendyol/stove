@@ -13,9 +13,10 @@ class MigrationCollection<TConnection> {
      * Register a migration to the collection
      * @param clazz The class of the migration
      */
-    fun <T : DatabaseMigration<TConnection>> register(clazz: KClass<T>): MigrationCollection<TConnection> = types
-        .putIfAbsent(clazz, clazz.createInstance() as DatabaseMigration<TConnection>)
-        .let { this }
+    fun <T : DatabaseMigration<TConnection>> register(clazz: KClass<T>): MigrationCollection<TConnection> =
+        types
+            .putIfAbsent(clazz, clazz.createInstance() as DatabaseMigration<TConnection>)
+            .let { this }
 
     /**
      * Register a migration to the collection
@@ -24,9 +25,10 @@ class MigrationCollection<TConnection> {
     fun <T : DatabaseMigration<TConnection>> register(
         clazz: KClass<T>,
         migrator: DatabaseMigration<TConnection>
-    ): MigrationCollection<TConnection> = types
-        .put(clazz, migrator)
-        .let { this }
+    ): MigrationCollection<TConnection> =
+        types
+            .put(clazz, migrator)
+            .let { this }
 
     /**
      * Register a migration to the collection
@@ -34,8 +36,7 @@ class MigrationCollection<TConnection> {
      */
     inline fun <reified T : DatabaseMigration<TConnection>> register(
         instance: () -> DatabaseMigration<TConnection>
-    ): MigrationCollection<TConnection> =
-        this.register(T::class, instance()).let { this }
+    ): MigrationCollection<TConnection> = this.register(T::class, instance()).let { this }
 
     /**
      * Replace a migration to the collection
@@ -45,9 +46,10 @@ class MigrationCollection<TConnection> {
     fun <T : DatabaseMigration<TConnection>> replace(
         clazz: KClass<T>,
         migrator: DatabaseMigration<TConnection>
-    ): MigrationCollection<TConnection> = types
-        .replace(clazz, migrator)
-        .let { this }
+    ): MigrationCollection<TConnection> =
+        types
+            .replace(clazz, migrator)
+            .let { this }
 
     /**
      * Replace a migration to the collection
@@ -61,8 +63,7 @@ class MigrationCollection<TConnection> {
      */
     inline fun <reified T : DatabaseMigration<TConnection>> replace(
         instance: () -> DatabaseMigration<TConnection>
-    ): MigrationCollection<TConnection> =
-        this.replace(T::class, instance()).let { this }
+    ): MigrationCollection<TConnection> = this.replace(T::class, instance()).let { this }
 
     /**
      * Replace a migration to the collection

@@ -14,7 +14,6 @@ interface ConsumerSettings : MapBasedSettings
 class DefaultConsumerSettings(
     val kafkaProperties: KafkaProperties
 ) : ConsumerSettings {
-
     @Value("\${kafka.config.thread-count.basic-listener}")
     private val basicListenerThreadCount: String = "100"
 
@@ -48,5 +47,6 @@ class DefaultConsumerSettings(
     }
 
     private fun ofSeconds(seconds: Long) = Duration.ofSeconds(seconds).toMillis().toInt()
+
     private fun ofMinutes(minutes: Long) = Duration.ofMinutes(minutes).toMillis().toInt()
 }

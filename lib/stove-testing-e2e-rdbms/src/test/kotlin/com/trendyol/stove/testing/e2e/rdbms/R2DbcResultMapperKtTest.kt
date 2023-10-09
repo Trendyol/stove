@@ -22,31 +22,36 @@ class R2DbcResultMapperKtTest : FunSpec({
         val givenId = 33L
         val givenDescription = "LukeSkywalker"
 
-        val givenIdColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn Long::class.java
-        }
+        val givenIdColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn Long::class.java
+            }
 
-        val givenDescriptionColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn String::class.java
-        }
+        val givenDescriptionColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn String::class.java
+            }
 
-        val givenRowMetadata = mock<RowMetadata> {
-            on { it.getColumnMetadata(Dummy1::id.name) } doReturn givenIdColumnMetadata
-            on { it.getColumnMetadata(Dummy1::description.name) } doReturn givenDescriptionColumnMetadata
-        }
+        val givenRowMetadata =
+            mock<RowMetadata> {
+                on { it.getColumnMetadata(Dummy1::id.name) } doReturn givenIdColumnMetadata
+                on { it.getColumnMetadata(Dummy1::description.name) } doReturn givenDescriptionColumnMetadata
+            }
 
-        val givenRow = mock<Row> {
-            on { it.get(Dummy1::id.name, Long::class.java) } doReturn givenId
-            on { it.get(Dummy1::description.name, String::class.java) } doReturn givenDescription
-            on { it.metadata } doReturn givenRowMetadata
-        }
+        val givenRow =
+            mock<Row> {
+                on { it.get(Dummy1::id.name, Long::class.java) } doReturn givenId
+                on { it.get(Dummy1::description.name, String::class.java) } doReturn givenDescription
+                on { it.metadata } doReturn givenRowMetadata
+            }
 
         // when
-        val result = mapper(
-            givenRow,
-            givenRowMetadata,
-            Dummy1::class
-        )
+        val result =
+            mapper(
+                givenRow,
+                givenRowMetadata,
+                Dummy1::class
+            )
 
         // then
         result.id shouldBe givenId
@@ -63,31 +68,36 @@ class R2DbcResultMapperKtTest : FunSpec({
         val givenId = 33L
         val givenDescription = "LukeSkywalker"
 
-        val givenIdColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn Long::class.java
-        }
+        val givenIdColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn Long::class.java
+            }
 
-        val givenDescriptionColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn String::class.java
-        }
+        val givenDescriptionColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn String::class.java
+            }
 
-        val givenRowMetadata = mock<RowMetadata> {
-            on { it.getColumnMetadata(Dummy2::id.name) } doReturn givenIdColumnMetadata
-            on { it.getColumnMetadata(Dummy2::description.name) } doReturn givenDescriptionColumnMetadata
-        }
+        val givenRowMetadata =
+            mock<RowMetadata> {
+                on { it.getColumnMetadata(Dummy2::id.name) } doReturn givenIdColumnMetadata
+                on { it.getColumnMetadata(Dummy2::description.name) } doReturn givenDescriptionColumnMetadata
+            }
 
-        val givenRow = mock<Row> {
-            on { it.get(Dummy2::id.name, Long::class.java) } doReturn givenId
-            on { it.get(Dummy2::description.name, String::class.java) } doReturn givenDescription
-            on { it.metadata } doReturn givenRowMetadata
-        }
+        val givenRow =
+            mock<Row> {
+                on { it.get(Dummy2::id.name, Long::class.java) } doReturn givenId
+                on { it.get(Dummy2::description.name, String::class.java) } doReturn givenDescription
+                on { it.metadata } doReturn givenRowMetadata
+            }
 
         // when
-        val result = mapper(
-            givenRow,
-            givenRowMetadata,
-            Dummy2::class
-        )
+        val result =
+            mapper(
+                givenRow,
+                givenRowMetadata,
+                Dummy2::class
+            )
 
         // then
         result.id shouldBe givenId
@@ -104,33 +114,38 @@ class R2DbcResultMapperKtTest : FunSpec({
         val givenId = 33L
         val givenDescription = "LukeSkywalker"
 
-        val givenIdColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn Long::class.java
-        }
+        val givenIdColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn Long::class.java
+            }
 
-        val givenDescriptionColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn String::class.java
-        }
+        val givenDescriptionColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn String::class.java
+            }
 
-        val givenRowMetadata = mock<RowMetadata> {
-            on { it.getColumnMetadata(Dummy3::id.name) } doReturn givenIdColumnMetadata
-            on { it.getColumnMetadata(Dummy3::description.name) } doReturn givenDescriptionColumnMetadata
-        }
+        val givenRowMetadata =
+            mock<RowMetadata> {
+                on { it.getColumnMetadata(Dummy3::id.name) } doReturn givenIdColumnMetadata
+                on { it.getColumnMetadata(Dummy3::description.name) } doReturn givenDescriptionColumnMetadata
+            }
 
-        val givenRow = mock<Row> {
-            on { it.get(Dummy3::id.name, Long::class.java) } doReturn givenId
-            on { it.get(Dummy3::description.name, String::class.java) } doReturn givenDescription
-            on { it.metadata } doReturn givenRowMetadata
-        }
+        val givenRow =
+            mock<Row> {
+                on { it.get(Dummy3::id.name, Long::class.java) } doReturn givenId
+                on { it.get(Dummy3::description.name, String::class.java) } doReturn givenDescription
+                on { it.metadata } doReturn givenRowMetadata
+            }
 
         // when
-        val ex = shouldThrow<IllegalStateException> {
-            mapper(
-                givenRow,
-                givenRowMetadata,
-                Dummy3::class
-            )
-        }
+        val ex =
+            shouldThrow<IllegalStateException> {
+                mapper(
+                    givenRow,
+                    givenRowMetadata,
+                    Dummy3::class
+                )
+            }
 
         // then
         ex.message shouldNotBe null
@@ -146,31 +161,36 @@ class R2DbcResultMapperKtTest : FunSpec({
         val givenId = 33
         val givenDescription = "LukeSkywalker"
 
-        val givenIdColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn Int::class.java
-        }
+        val givenIdColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn Int::class.java
+            }
 
-        val givenDescriptionColumnMetadata = mock<ColumnMetadata> {
-            on { it.javaType } doReturn String::class.java
-        }
+        val givenDescriptionColumnMetadata =
+            mock<ColumnMetadata> {
+                on { it.javaType } doReturn String::class.java
+            }
 
-        val givenRowMetadata = mock<RowMetadata> {
-            on { it.getColumnMetadata(Dummy3::id.name) } doReturn givenIdColumnMetadata
-            on { it.getColumnMetadata(Dummy3::description.name) } doReturn givenDescriptionColumnMetadata
-        }
+        val givenRowMetadata =
+            mock<RowMetadata> {
+                on { it.getColumnMetadata(Dummy3::id.name) } doReturn givenIdColumnMetadata
+                on { it.getColumnMetadata(Dummy3::description.name) } doReturn givenDescriptionColumnMetadata
+            }
 
-        val givenRow = mock<Row> {
-            on { it.get(Dummy3::id.name, Int::class.java) } doReturn givenId
-            on { it.get(Dummy3::description.name, String::class.java) } doReturn givenDescription
-            on { it.metadata } doReturn givenRowMetadata
-        }
+        val givenRow =
+            mock<Row> {
+                on { it.get(Dummy3::id.name, Int::class.java) } doReturn givenId
+                on { it.get(Dummy3::description.name, String::class.java) } doReturn givenDescription
+                on { it.metadata } doReturn givenRowMetadata
+            }
 
         // when
-        val result = mapper(
-            givenRow,
-            givenRowMetadata,
-            Dummy3::class
-        )
+        val result =
+            mapper(
+                givenRow,
+                givenRowMetadata,
+                Dummy3::class
+            )
 
         // then
         result.id shouldBe givenId

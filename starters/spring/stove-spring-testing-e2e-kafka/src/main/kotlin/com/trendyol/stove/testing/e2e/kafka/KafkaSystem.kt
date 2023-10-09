@@ -48,10 +48,11 @@ class KafkaSystem(
     override suspend fun beforeRun() {}
 
     override suspend fun run() {
-        exposedConfiguration = state.capture {
-            context.container.start()
-            KafkaExposedConfiguration(context.container.bootstrapServers)
-        }
+        exposedConfiguration =
+            state.capture {
+                context.container.start()
+                KafkaExposedConfiguration(context.container.bootstrapServers)
+            }
     }
 
     override suspend fun afterRun(context: ApplicationContext) {
@@ -60,21 +61,24 @@ class KafkaSystem(
         kafkaTemplate.setProducerListener(getInterceptor())
     }
 
-    override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration) + listOf(
-        "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
-        "kafka.isSecure=false"
-    )
+    override fun configuration(): List<String> =
+        context.configureExposedConfiguration(exposedConfiguration) +
+            listOf(
+                "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
+                "kafka.isSecure=false"
+            )
 
     override suspend fun stop(): Unit = context.container.stop()
 
-    override fun close(): Unit = runBlocking {
-        Try {
-            kafkaTemplate.destroy()
-            executeWithReuseCheck { stop() }
-        }.recover {
-            logger.warn("got an error while closing KafkaSystem", it)
+    override fun close(): Unit =
+        runBlocking {
+            Try {
+                kafkaTemplate.destroy()
+                executeWithReuseCheck { stop() }
+            }.recover {
+                logger.warn("got an error while closing KafkaSystem", it)
+            }
         }
-    }
 
     suspend fun publish(
         topic: String,
@@ -83,50 +87,54 @@ class KafkaSystem(
         headers: Map<String, String> = mapOf(),
         testCase: Option<String> = None
     ): KafkaSystem {
-        val record = ProducerRecord<String, Any>(
-            topic,
-            0,
-            key.getOrElse { "" },
-            context.objectMapper.writeValueAsString(message),
-            headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
-        )
+        val record =
+            ProducerRecord<String, Any>(
+                topic,
+                0,
+                key.getOrElse { "" },
+                context.objectMapper.writeValueAsString(message),
+                headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
+            )
         return kafkaTemplate.usingCompletableFuture().send(record).await().let { this }
     }
 
     suspend inline fun <reified T : Any> shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
-    ): KafkaSystem = coroutineScope {
-        shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
-            parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
-        }
-    }.let { this }
+    ): KafkaSystem =
+        coroutineScope {
+            shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
+                parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+            }
+        }.let { this }
 
     suspend inline fun <reified T : Any> shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: FailedObservedMessage<T>.() -> Boolean
-    ): KafkaSystem = coroutineScope {
-        shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
-            parsed.message.message.isSome { o ->
-                condition(
-                    FailedObservedMessage(
-                        o,
-                        parsed.message.metadata,
-                        parsed.reason
+    ): KafkaSystem =
+        coroutineScope {
+            shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
+                parsed.message.message.isSome { o ->
+                    condition(
+                        FailedObservedMessage(
+                            o,
+                            parsed.message.metadata,
+                            parsed.reason
+                        )
                     )
-                )
+                }
             }
-        }
-    }.let { this }
+        }.let { this }
 
     suspend inline fun <reified T : Any> shouldBePublished(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
-    ): KafkaSystem = coroutineScope {
-        shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
-            parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
-        }
-    }.let { this }
+    ): KafkaSystem =
+        coroutineScope {
+            shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
+                parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+            }
+        }.let { this }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBeConsumedInternal(

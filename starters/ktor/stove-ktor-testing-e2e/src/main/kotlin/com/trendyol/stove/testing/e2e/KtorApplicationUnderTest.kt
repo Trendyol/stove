@@ -34,18 +34,19 @@ class KtorApplicationUnderTest(
 ) : ApplicationUnderTest<ApplicationEngine> {
     private lateinit var application: ApplicationEngine
 
-    override suspend fun start(configurations: List<String>): ApplicationEngine = coroutineScope {
-        val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
-        application = runner(allConfigurations)
-        testSystem.activeSystems
-            .map { it.value }
-            .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-            .map { it as RunnableSystemWithContext<ApplicationEngine> }
-            .map { async { it.afterRun(application) } }
-            .awaitAll()
+    override suspend fun start(configurations: List<String>): ApplicationEngine =
+        coroutineScope {
+            val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
+            application = runner(allConfigurations)
+            testSystem.activeSystems
+                .map { it.value }
+                .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
+                .map { it as RunnableSystemWithContext<ApplicationEngine> }
+                .map { async { it.afterRun(application) } }
+                .awaitAll()
 
-        application
-    }
+            application
+        }
 
     override suspend fun stop(): Unit = application.stop()
 

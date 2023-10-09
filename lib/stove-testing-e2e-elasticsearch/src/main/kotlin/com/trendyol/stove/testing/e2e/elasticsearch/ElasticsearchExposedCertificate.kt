@@ -11,7 +11,6 @@ import javax.net.ssl.SSLContext
 data class ElasticsearchExposedCertificate(
     val bytes: ByteArray
 ) {
-
     @get:JsonIgnore
     @set:JsonIgnore
     var sslContext: SSLContext = SSLContext.getDefault()

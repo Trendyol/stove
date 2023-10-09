@@ -32,45 +32,51 @@ internal interface ConsumingOps : CommonOps {
     fun recordMessage(
         record: ConsumerRecord<String, Any>,
         consumer: Consumer<String, Any>
-    ): Unit = runBlocking {
-        consumedRecords.putIfAbsent(UUID.randomUUID(), record)
-        logger.info(
-            """RECEIVED MESSAGE:
-            Consumer: ${consumer.groupMetadata().memberId()} | ${consumer.groupMetadata().groupId()}
-            Topic: ${record.topic()}
-            Record: ${record.value()}
-            Key: ${record.key()}
-            Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-            TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-            """.trimIndent()
-        )
-    }
+    ): Unit =
+        runBlocking {
+            consumedRecords.putIfAbsent(UUID.randomUUID(), record)
+            logger.info(
+                """
+                RECEIVED MESSAGE:
+                Consumer: ${consumer.groupMetadata().memberId()} | ${consumer.groupMetadata().groupId()}
+                Topic: ${record.topic()}
+                Record: ${record.value()}
+                Key: ${record.key()}
+                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
+                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
+                """.trimIndent()
+            )
+        }
 
-    fun recordError(
-        record: ConsumerRecord<String, Any>
-    ): Unit = runBlocking {
-        val exception = AssertionError(buildErrorMessage(record))
-        exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))
-        logger.error(
-            """CONSUMER GOT AN ERROR:
-            Topic: ${record.topic()}
-            Record: ${record.value()}
-            Key: ${record.key()}
-            Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-            TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-            Exception: $exception
-            """.trimIndent()
-        )
-    }
+    fun recordError(record: ConsumerRecord<String, Any>): Unit =
+        runBlocking {
+            val exception = AssertionError(buildErrorMessage(record))
+            exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))
+            logger.error(
+                """
+                CONSUMER GOT AN ERROR:
+                Topic: ${record.topic()}
+                Record: ${record.value()}
+                Key: ${record.key()}
+                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
+                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
+                Exception: $exception
+                """.trimIndent()
+            )
+        }
 
-    private fun buildErrorMessage(record: ConsumerRecord<String, Any>): String = """MESSAGE FAILED TO CONSUME:
+    private fun buildErrorMessage(record: ConsumerRecord<String, Any>): String =
+        """
+        MESSAGE FAILED TO CONSUME:
         Topic: ${record.topic()}
         Record: ${record.value()}
         Key: ${record.key()}
         Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-    """.trimIndent()
+        """.trimIndent()
 
-    override fun dumpMessages(): String = """CONSUMED MESSAGES: 
-    ${consumedRecords.map { it.value.value() }.joinToString("\n")}
-    """.trimIndent()
+    override fun dumpMessages(): String =
+        """
+        CONSUMED MESSAGES: 
+        ${consumedRecords.map { it.value.value() }.joinToString("\n")}
+        """.trimIndent()
 }

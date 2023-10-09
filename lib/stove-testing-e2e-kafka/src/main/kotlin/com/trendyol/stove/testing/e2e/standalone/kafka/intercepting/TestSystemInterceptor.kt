@@ -15,7 +15,6 @@ class TestSystemKafkaInterceptor(
     override val serde: ObjectMapper,
     private val options: InterceptionOptions
 ) : ConsumingOps, CommonOps, AutoCloseable {
-
     override val logger: Logger = LoggerFactory.getLogger(javaClass)
     override val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, Any>> = ConcurrentHashMap()
     override val exceptions: ConcurrentMap<UUID, Failure> = ConcurrentHashMap()
@@ -26,12 +25,14 @@ class TestSystemKafkaInterceptor(
     fun onMessage(
         record: ConsumerRecord<String, Any>,
         consumer: Consumer<String, Any>
-    ): Unit = when {
-        options.isErrorTopic(record.topic()) -> recordError(record)
-        else -> recordMessage(record, consumer)
-    }
+    ): Unit =
+        when {
+            options.isErrorTopic(record.topic()) -> recordError(record)
+            else -> recordMessage(record, consumer)
+        }
 
     private lateinit var canceller: (message: String, cause: Throwable) -> Unit
+
     fun registerCancellationFunc(canceller: (message: String, cause: Throwable) -> Unit) {
         this.canceller = canceller
     }

@@ -13,8 +13,9 @@ class SupplierHttpService(private val supplierHttpClient: WebClient) : SupplierS
         return supplierHttpClient
             .get()
             .uri {
-                val builder = it
-                    .path("/suppliers/{id}/allowed")
+                val builder =
+                    it
+                        .path("/suppliers/{id}/allowed")
                 builder.build(id)
             }
             .accept(MediaType.APPLICATION_JSON)

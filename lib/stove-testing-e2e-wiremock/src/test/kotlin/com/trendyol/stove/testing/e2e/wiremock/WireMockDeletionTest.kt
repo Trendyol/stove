@@ -35,8 +35,9 @@ class WireMockDeletionTest : FunSpec({
         }
 
         val client = HttpClient.newBuilder().build()
-        val reqBuilder = HttpRequest.newBuilder(URI("http://localhost:9098/post-url"))
-            .header("Content-Type", "application/json")
+        val reqBuilder =
+            HttpRequest.newBuilder(URI("http://localhost:9098/post-url"))
+                .header("Content-Type", "application/json")
 
         withContext(Dispatchers.IO) {
             val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
@@ -70,8 +71,9 @@ class WireMockDeletionTest : FunSpec({
         }
 
         val client = HttpClient.newBuilder().build()
-        val reqBuilder = HttpRequest.newBuilder(URI("http://localhost:9098$url"))
-            .header("Content-Type", "application/json")
+        val reqBuilder =
+            HttpRequest.newBuilder(URI("http://localhost:9098$url"))
+                .header("Content-Type", "application/json")
 
         withContext(Dispatchers.IO) {
             val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()

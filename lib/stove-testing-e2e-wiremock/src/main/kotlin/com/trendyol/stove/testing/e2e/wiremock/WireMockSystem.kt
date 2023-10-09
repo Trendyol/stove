@@ -34,7 +34,6 @@ class WireMockSystem(
     override val testSystem: TestSystem,
     ctx: WireMockContext
 ) : PluggedSystem, ValidatedSystem, RunAware {
-
     private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
     private var wireMock: WireMockServer
     private val json: ObjectMapper = ctx.objectMapper
@@ -92,9 +91,10 @@ class WireMockSystem(
         responseBody: Option<Any> = None,
         metadata: Map<String, Any> = mapOf()
     ): WireMockSystem {
-        val res = aResponse()
-            .withStatus(statusCode)
-            .withHeader("Content-Type", "application/json; charset=UTF-8")
+        val res =
+            aResponse()
+                .withStatus(statusCode)
+                .withHeader("Content-Type", "application/json; charset=UTF-8")
         responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
         val req = WireMock.put(WireMock.urlEqualTo(url))
         configureBodyAndMetadata(req, metadata, requestBody)
@@ -187,31 +187,34 @@ class WireMockSystem(
             val bodyAsString: String,
             val queryParams: String
         ) {
-            override fun toString(): String = """
+            override fun toString(): String =
+                """
                 Url: $url
                 Body: $bodyAsString
                 QueryParams: $queryParams
-            """.trimIndent()
+                """.trimIndent()
         }
         if (wireMock.findAllUnmatchedRequests().any()) {
-            val problems = wireMock.findAllUnmatchedRequests().joinToString("\n") {
-                ValidationResult(
-                    "${it.method.value()} ${it.url}",
-                    it.bodyAsString,
-                    json.writeValueAsString(it.queryParams)
-                ).toString()
-            }
+            val problems =
+                wireMock.findAllUnmatchedRequests().joinToString("\n") {
+                    ValidationResult(
+                        "${it.method.value()} ${it.url}",
+                        it.bodyAsString,
+                        json.writeValueAsString(it.queryParams)
+                    ).toString()
+                }
             throw AssertionError(
                 "There are unmatched requests in the mock pipeline, please satisfy all the wanted requests.\n$problems"
             )
         }
     }
 
-    override fun close(): Unit = runBlocking {
-        Try {
-            stop()
-        }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
-    }
+    override fun close(): Unit =
+        runBlocking {
+            Try {
+                stop()
+            }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
+        }
 
     private fun configureBodyAndMetadata(
         request: MappingBuilder,
@@ -234,15 +237,15 @@ class WireMockSystem(
         statusCode: Int,
         responseBody: Option<Any>
     ): ResponseDefinitionBuilder? {
-        val mockResponse = aResponse()
-            .withStatus(statusCode)
-            .withHeader("Content-Type", "application/json; charset=UTF-8")
+        val mockResponse =
+            aResponse()
+                .withStatus(statusCode)
+                .withHeader("Content-Type", "application/json; charset=UTF-8")
         responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
         return mockResponse
     }
 
     companion object {
-
         /**
          * Exposes the [WireMockServer] instance for the given [WireMockSystem].
          */

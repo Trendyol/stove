@@ -19,49 +19,56 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 
-const val testIndex = "stove-test-index"
-const val anotherIndex = "stove-another-index"
+const val TEST_INDEX = "stove-test-index"
+const val ANOTHER_INDEX = "stove-another-index"
 
 class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
     override val order: Int = MigrationPriority.HIGHEST.value
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
     override suspend fun execute(connection: ElasticsearchClient) {
-        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
-            .index(testIndex)
-            .build()
+        val createIndexRequest: CreateIndexRequest =
+            CreateIndexRequest.Builder()
+                .index(TEST_INDEX)
+                .build()
         connection.indices().create(createIndexRequest)
-        logger.info("$testIndex is created")
+        logger.info("$TEST_INDEX is created")
     }
 }
 
 class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
     override val order: Int = MigrationPriority.HIGHEST.value + 1
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
     override suspend fun execute(connection: ElasticsearchClient) {
-        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
-            .index(anotherIndex)
-            .build()
+        val createIndexRequest: CreateIndexRequest =
+            CreateIndexRequest.Builder()
+                .index(ANOTHER_INDEX)
+                .build()
         connection.indices().create(createIndexRequest)
-        logger.info("$anotherIndex is created")
+        logger.info("$ANOTHER_INDEX is created")
     }
 }
 
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject(): Unit = TestSystem()
-        .with {
-            elasticsearch {
-                ElasticsearchSystemOptions(
-                    DefaultIndex(index = testIndex, migrator = TestIndexMigrator()),
-                    clientConfigurer = ElasticClientConfigurer(
-                        restClientOverrideFn = Some { cfg ->
-                            RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
-                        }
-                    ),
-                    ContainerOptions(imageVersion = "8.9.0")
-                ).migrations { register<AnotherIndexMigrator>() }
-            }
-            applicationUnderTest(NoOpApplication())
-        }.run()
+    override suspend fun beforeProject(): Unit =
+        TestSystem()
+            .with {
+                elasticsearch {
+                    ElasticsearchSystemOptions(
+                        DefaultIndex(index = TEST_INDEX, migrator = TestIndexMigrator()),
+                        clientConfigurer =
+                            ElasticClientConfigurer(
+                                restClientOverrideFn =
+                                    Some { cfg ->
+                                        RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
+                                    }
+                            ),
+                        ContainerOptions(imageVersion = "8.9.0")
+                    ).migrations { register<AnotherIndexMigrator>() }
+                }
+                applicationUnderTest(NoOpApplication())
+            }.run()
 
     override suspend fun afterProject(): Unit = TestSystem.stop()
 }
@@ -97,8 +104,8 @@ class ElasticsearchTestSystemTests : FunSpec({
         val exampleInstance = ExampleInstance("1", "1312")
         TestSystem.validate {
             elasticsearch {
-                save(exampleInstance.id, exampleInstance, anotherIndex)
-                shouldGet<ExampleInstance>(anotherIndex, exampleInstance.id) {
+                save(exampleInstance.id, exampleInstance, ANOTHER_INDEX)
+                shouldGet<ExampleInstance>(ANOTHER_INDEX, exampleInstance.id) {
                     it.description shouldBe exampleInstance.description
                 }
             }

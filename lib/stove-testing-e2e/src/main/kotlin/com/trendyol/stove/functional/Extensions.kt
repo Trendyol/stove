@@ -5,8 +5,7 @@ package com.trendyol.stove.functional
 import arrow.core.*
 
 /** Extracts a [T] element if exists, otherwise throws [NoSuchElementException] */
-fun <T> Option<T>.get(): T =
-    this.getOrElse { throw NoSuchElementException("get() on Option<Nothing> does not exist") }
+fun <T> Option<T>.get(): T = this.getOrElse { throw NoSuchElementException("get() on Option<Nothing> does not exist") }
 
 /**
  * Extracts an [Option] nested in the [Try] to a not nested [Option].

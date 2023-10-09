@@ -5,6 +5,7 @@ import org.testcontainers.utility.DockerImageName
 /**
  * Can be set globally
  */
+@Suppress("ktlint:standard:property-naming")
 var DEFAULT_REGISTRY = "docker.io"
 
 /**
@@ -21,8 +22,9 @@ fun <T> withProvidedRegistry(
     registry: String = DEFAULT_REGISTRY,
     compatibleSubstitute: String? = null,
     containerBuilder: (DockerImageName) -> T
-): T = containerBuilder(
-    DockerImageName
-        .parse(registry.trim('/') + '/' + imageName.trim('/'))
-        .asCompatibleSubstituteFor(compatibleSubstitute ?: imageName)
-)
+): T =
+    containerBuilder(
+        DockerImageName
+            .parse(registry.trim('/') + '/' + imageName.trim('/'))
+            .asCompatibleSubstituteFor(compatibleSubstitute ?: imageName)
+    )

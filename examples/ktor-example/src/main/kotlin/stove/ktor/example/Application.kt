@@ -36,9 +36,10 @@ fun run(
     args: Array<String>,
     applicationOverrides: () -> Module = { module { } }
 ): ApplicationEngine {
-    val applicationEngine = embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
-        mainModule(args, applicationOverrides)
-    }
+    val applicationEngine =
+        embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
+            mainModule(args, applicationOverrides)
+        }
     applicationEngine.start(wait = false)
 
     return applicationEngine
@@ -82,22 +83,25 @@ fun Application.mainModule(
     }
 }
 
-fun dataModule(args: Array<String>) = module {
-    val map = args.associate { it.split("=")[0] to it.split("=")[1] }
-    single {
-        val builder = PostgresqlConnectionConfiguration.builder().apply {
-            host(map["database.host"]!!)
-            database(map["database.databaseName"]!!)
-            port(map["database.port"]!!.toInt())
-            password(map["database.password"]!!)
-            username(map["database.username"]!!)
+fun dataModule(args: Array<String>) =
+    module {
+        val map = args.associate { it.split("=")[0] to it.split("=")[1] }
+        single {
+            val builder =
+                PostgresqlConnectionConfiguration.builder().apply {
+                    host(map["database.host"]!!)
+                    database(map["database.databaseName"]!!)
+                    port(map["database.port"]!!.toInt())
+                    password(map["database.password"]!!)
+                    username(map["database.username"]!!)
+                }
+            PostgresqlConnectionFactory(builder.connectTimeout(Duration.ofSeconds(10)).build())
         }
-        PostgresqlConnectionFactory(builder.connectTimeout(Duration.ofSeconds(10)).build())
     }
-}
 
-fun applicationModule() = module {
-    singleOf(::JediRepository)
-    singleOf(::JediService)
-    singleOf(::MutexLockProvider) { bind<LockProvider>() }
-}
+fun applicationModule() =
+    module {
+        singleOf(::JediRepository)
+        singleOf(::JediService)
+        singleOf(::MutexLockProvider) { bind<LockProvider>() }
+    }

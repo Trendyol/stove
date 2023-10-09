@@ -39,9 +39,7 @@ data class DatabaseOptions(
     )
 }
 
-internal fun TestSystem.withMongodb(
-    options: MongodbSystemOptions
-): TestSystem {
+internal fun TestSystem.withMongodb(options: MongodbSystemOptions): TestSystem {
     val mongodbContainer =
         withProvidedRegistry(options.container.imageWithTag, options.container.registry) {
             MongoDBContainer(it)
@@ -58,11 +56,8 @@ internal fun TestSystem.mongodb(): MongodbSystem =
         throw SystemNotRegisteredException(MongodbSystem::class)
     }
 
-fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem =
-    this.testSystem.withMongodb(configure())
+fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem = this.testSystem.withMongodb(configure())
 
-fun WithDsl.mongodbDsl(configure: MongodbOptionsDsl.() -> Unit): TestSystem =
-    this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
+fun WithDsl.mongodbDsl(configure: MongodbOptionsDsl.() -> Unit): TestSystem = this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
 
-suspend fun ValidationDsl.mongodb(validation: suspend MongodbSystem.() -> Unit): Unit =
-    validation(this.testSystem.mongodb())
+suspend fun ValidationDsl.mongodb(validation: suspend MongodbSystem.() -> Unit): Unit = validation(this.testSystem.mongodb())

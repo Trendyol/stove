@@ -12,8 +12,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TestSystemConfig : AbstractProjectConfig() {
-
     private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
+
     override suspend fun beforeProject() =
         TestSystem(baseUrl = "http://localhost:8080")
             .with {
@@ -40,9 +40,10 @@ class TestSystemConfig : AbstractProjectConfig() {
                     )
                 }
                 ktor(
-                    withParameters = listOf(
-                        "ktor.server.port=8001"
-                    ),
+                    withParameters =
+                        listOf(
+                            "ktor.server.port=8001"
+                        ),
                     runner = { parameters ->
                         stove.ktor.example.run(parameters) {
                             addTestSystemDependencies()

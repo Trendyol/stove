@@ -16,7 +16,6 @@ import org.springframework.context.ApplicationContext
  * @property testSystem the test system to bridge.
  */
 class BridgeSystem(override val testSystem: TestSystem) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
-
     /**
      * The application context used to resolve dependencies.
      */

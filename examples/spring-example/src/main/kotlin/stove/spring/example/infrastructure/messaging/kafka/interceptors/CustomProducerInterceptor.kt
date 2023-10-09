@@ -10,7 +10,7 @@ import java.util.UUID
 
 class CustomProducerInterceptor : ProducerInterceptor<String, Any> {
     companion object {
-        private var DEFAULT_HOST_NAME_AS_BYTE: ByteArray = Defaults.HOST_NAME.toByteArray()
+        private val DEFAULT_HOST_NAME_AS_BYTE: ByteArray = Defaults.HOST_NAME.toByteArray()
     }
 
     override fun onSend(record: ProducerRecord<String, Any>): ProducerRecord<String, Any> {

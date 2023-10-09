@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets
  */
 @Component
 class CustomConsumerInterceptor : ConsumerAwareRecordInterceptor<String, String> {
-
     override fun intercept(
         record: ConsumerRecord<String, String>,
         consumer: Consumer<String, String>

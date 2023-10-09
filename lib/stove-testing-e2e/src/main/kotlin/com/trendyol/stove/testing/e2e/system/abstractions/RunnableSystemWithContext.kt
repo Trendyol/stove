@@ -40,7 +40,6 @@ interface AfterRunAware {
  * @author Oguzhan Soykan
  */
 interface RunnableSystemWithContext<TContext> : AutoCloseable, BeforeRunAware, RunAware, AfterRunAwareWithContext<TContext> {
-
     private val logger: Logger get() = LoggerFactory.getLogger(javaClass)
 
     override fun close(): Unit = runBlocking { Try { stop() }.recover { logger.warn("got an error while stopping") } }

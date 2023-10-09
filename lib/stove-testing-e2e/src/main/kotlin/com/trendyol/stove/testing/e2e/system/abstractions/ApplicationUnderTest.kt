@@ -5,7 +5,6 @@ package com.trendyol.stove.testing.e2e.system.abstractions
  * @author Oguzhan Soykan
  */
 interface ApplicationUnderTest<TContext : Any> {
-
     /**
      * Starts the application with the given parameters. [configurations] usually represents the CLI-like arguments.
      * For example:

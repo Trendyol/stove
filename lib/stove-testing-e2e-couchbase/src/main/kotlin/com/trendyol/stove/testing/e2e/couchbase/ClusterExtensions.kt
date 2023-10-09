@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 
 object ClusterExtensions {
-
     fun QueryOptions.withParams(vararg params: Pair<String, Any>): QueryOptions {
         val jObject = JsonObject.create()
         params.forEach { jObject.put(it.first, it.second) }

@@ -7,6 +7,7 @@ import arrow.core.Either.Left
 import arrow.core.Either.Right
 
 // https://github.com/sczerwinski/kotlin-util
+
 /**
  * Representation of an operation that might successfully return a value or throw an exception.
  *
@@ -20,7 +21,6 @@ import arrow.core.Either.Right
  * @param T Type of the value of a successful operation.
  */
 sealed class Try<out T> {
-
     /**
      * Returns `true` if this is a [Success] or `false` if this is [Failure].
      *
@@ -398,7 +398,6 @@ fun <T> Try<T?>.filterNotNull(): Try<T> =
     }
 
 data class Success<out T>(val value: T) : Try<T>() {
-
     override val isSuccess: Boolean
         get() = true
 
@@ -409,14 +408,15 @@ data class Success<out T>(val value: T) : Try<T>() {
         get() = Failure(UnsupportedOperationException("Unsupported operation: Success::failed"))
 
     override fun get(): T = value
+
     override fun getOrNull(): T? = value
 
     override fun toEither(): Either<Throwable, T> = Right(value)
+
     override fun toOption(): Option<T> = Some(value)
 }
 
 data class Failure(val exception: Throwable) : Try<Nothing>() {
-
     override val isSuccess: Boolean
         get() = false
 
@@ -427,8 +427,10 @@ data class Failure(val exception: Throwable) : Try<Nothing>() {
         get() = Success(exception)
 
     override fun get(): Nothing = throw exception
+
     override fun getOrNull(): Nothing? = null
 
     override fun toEither(): Either<Throwable, Nothing> = Left(exception)
+
     override fun toOption(): Option<Nothing> = None
 }

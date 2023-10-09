@@ -28,7 +28,6 @@ class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
     val context: CouchbaseContext
 ) : PluggedSystem, RunAware, ExposesConfiguration {
-
     @PublishedApi
     internal lateinit var cluster: ReactiveCluster
 
@@ -40,23 +39,25 @@ class CouchbaseSystem internal constructor(
 
     private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
-    private val state: StateOfSystem<CouchbaseSystem, CouchbaseExposedConfiguration> = StateOfSystem(
-        testSystem.options,
-        CouchbaseSystem::class,
-        CouchbaseExposedConfiguration::class
-    )
+    private val state: StateOfSystem<CouchbaseSystem, CouchbaseExposedConfiguration> =
+        StateOfSystem(
+            testSystem.options,
+            CouchbaseSystem::class,
+            CouchbaseExposedConfiguration::class
+        )
 
     override suspend fun run() {
-        exposedConfiguration = state.capture {
-            context.container.start()
-            val couchbaseHostWithPort = context.container.connectionString.replace("couchbase://", "")
-            CouchbaseExposedConfiguration(
-                context.container.connectionString,
-                couchbaseHostWithPort,
-                context.container.username,
-                context.container.password
-            )
-        }
+        exposedConfiguration =
+            state.capture {
+                context.container.start()
+                val couchbaseHostWithPort = context.container.connectionString.replace("couchbase://", "")
+                CouchbaseExposedConfiguration(
+                    context.container.connectionString,
+                    couchbaseHostWithPort,
+                    context.container.username,
+                    context.container.password
+                )
+            }
 
         cluster = createCluster(exposedConfiguration)
         collection = cluster.bucket(context.bucket.name).defaultCollection()
@@ -82,9 +83,10 @@ class CouchbaseSystem internal constructor(
     ): CouchbaseSystem {
         val result = cluster.executeQueryAs<Any>(query) { queryOptions -> queryOptions.scanConsistency(REQUEST_PLUS) }
 
-        val objects = result
-            .map { objectMapper.writeValueAsString(it) }
-            .map { objectMapper.readValue(it, T::class.java) }
+        val objects =
+            result
+                .map { objectMapper.writeValueAsString(it) }
+                .map { objectMapper.readValue(it, T::class.java) }
 
         assertion(objects)
         return this
@@ -93,56 +95,58 @@ class CouchbaseSystem internal constructor(
     suspend inline fun <reified T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit
-    ): CouchbaseSystem = collection.get(key)
-        .awaitSingle().contentAs(T::class.java)
-        .let(assertion)
-        .let { this }
+    ): CouchbaseSystem =
+        collection.get(key)
+            .awaitSingle().contentAs(T::class.java)
+            .let(assertion)
+            .let { this }
 
     suspend inline fun <reified T : Any> shouldGet(
         collection: String,
         key: String,
         assertion: (T) -> Unit
-    ): CouchbaseSystem = cluster.bucket(context.bucket.name)
-        .collection(collection)
-        .get(key).awaitSingle()
-        .contentAs(T::class.java)
-        .let(assertion)
-        .let { this }
+    ): CouchbaseSystem =
+        cluster.bucket(context.bucket.name)
+            .collection(collection)
+            .get(key).awaitSingle()
+            .contentAs(T::class.java)
+            .let(assertion)
+            .let { this }
 
-    suspend fun shouldNotExist(
-        key: String
-    ): CouchbaseSystem = when (
-        collection.get(key)
-            .onErrorResume { throwable ->
-                when (throwable) {
-                    is DocumentNotFoundException -> Mono.empty()
-                    else -> throw throwable
-                }
-            }.awaitFirstOrNull()
-    ) {
-        null -> this
-        else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
-    }
+    suspend fun shouldNotExist(key: String): CouchbaseSystem =
+        when (
+            collection.get(key)
+                .onErrorResume { throwable ->
+                    when (throwable) {
+                        is DocumentNotFoundException -> Mono.empty()
+                        else -> throw throwable
+                    }
+                }.awaitFirstOrNull()
+        ) {
+            null -> this
+            else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
+        }
 
     @Suppress("unused")
     suspend fun shouldNotExist(
         collection: String,
         key: String
-    ): CouchbaseSystem = when (
-        cluster
-            .bucket(context.bucket.name)
-            .collection(collection)
-            .get(key)
-            .onErrorResume { throwable ->
-                when (throwable) {
-                    is DocumentNotFoundException -> Mono.empty()
-                    else -> throw throwable
-                }
-            }.awaitFirstOrNull()
-    ) {
-        null -> this
-        else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
-    }
+    ): CouchbaseSystem =
+        when (
+            cluster
+                .bucket(context.bucket.name)
+                .collection(collection)
+                .get(key)
+                .onErrorResume { throwable ->
+                    when (throwable) {
+                        is DocumentNotFoundException -> Mono.empty()
+                        else -> throw throwable
+                    }
+                }.awaitFirstOrNull()
+        ) {
+            null -> this
+            else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
+        }
 
     @Suppress("unused")
     suspend fun shouldDelete(key: String): CouchbaseSystem =
@@ -150,7 +154,10 @@ class CouchbaseSystem internal constructor(
             .let { this }
 
     @Suppress("unused")
-    suspend fun shouldDelete(collection: String, key: String): CouchbaseSystem =
+    suspend fun shouldDelete(
+        collection: String,
+        key: String
+    ): CouchbaseSystem =
         cluster.bucket(context.bucket.name)
             .collection(collection)
             .remove(key)
@@ -164,15 +171,16 @@ class CouchbaseSystem internal constructor(
         collection: String,
         id: String,
         instance: T
-    ): CouchbaseSystem = cluster
-        .bucket(context.bucket.name)
-        .collection(collection)
-        .insert(
-            id,
-            JsonObject.fromJson(objectMapper.writeValueAsString(instance)),
-            InsertOptions.insertOptions().durability(PERSIST_TO_MAJORITY)
-        )
-        .awaitSingle().let { this }
+    ): CouchbaseSystem =
+        cluster
+            .bucket(context.bucket.name)
+            .collection(collection)
+            .insert(
+                id,
+                JsonObject.fromJson(objectMapper.writeValueAsString(instance)),
+                InsertOptions.insertOptions().durability(PERSIST_TO_MAJORITY)
+            )
+            .awaitSingle().let { this }
 
     /**
      * Saves the [instance] with given [id] to the default collection
@@ -183,14 +191,15 @@ class CouchbaseSystem internal constructor(
         instance: T
     ): CouchbaseSystem = this.save("_default", id, instance)
 
-    override fun close(): Unit = runBlocking {
-        Try {
-            cluster.disconnect().awaitSingle()
-            executeWithReuseCheck { stop() }
-        }.recover {
-            logger.warn("Disconnecting the couchbase cluster got an error: $it")
+    override fun close(): Unit =
+        runBlocking {
+            Try {
+                cluster.disconnect().awaitSingle()
+                executeWithReuseCheck { stop() }
+            }.recover {
+                logger.warn("Disconnecting the couchbase cluster got an error: $it")
+            }
         }
-    }
 
     private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): ReactiveCluster =
         ClusterEnvironment.builder()
@@ -206,7 +215,6 @@ class CouchbaseSystem internal constructor(
             }
 
     companion object {
-
         /**
          * Exposes the [ReactiveCluster] of the [CouchbaseSystem]
          */

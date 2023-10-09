@@ -37,20 +37,16 @@ data class KafkaContext(
     val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 )
 
-internal fun TestSystem.withKafka(
-    options: KafkaSystemOptions = KafkaSystemOptions()
-): TestSystem = withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
-    KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
-        .withEmbeddedZookeeper()
-        .withReuse(this.options.keepDependenciesRunning)
-}.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
-    .let { this }
+internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem =
+    withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
+        KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
+            .withEmbeddedZookeeper()
+            .withReuse(this.options.keepDependenciesRunning)
+    }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
+        .let { this }
 
-internal fun TestSystem.kafka(): KafkaSystem =
-    getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
+internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
 
-fun WithDsl.kafka(configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }): TestSystem =
-    this.testSystem.withKafka(configure())
+fun WithDsl.kafka(configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }): TestSystem = this.testSystem.withKafka(configure())
 
-suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit =
-    validation(this.testSystem.kafka())
+suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit = validation(this.testSystem.kafka())

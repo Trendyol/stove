@@ -31,7 +31,6 @@ class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
     val context: ElasticsearchContext
 ) : PluggedSystem, RunAware, AfterRunAware, ExposesConfiguration {
-
     @PublishedApi
     internal lateinit var esClient: ElasticsearchClient
 
@@ -41,23 +40,25 @@ class ElasticsearchSystem internal constructor(
         StateOfSystem(testSystem.options, ElasticsearchSystem::class, ElasticSearchExposedConfiguration::class)
 
     override suspend fun run() {
-        exposedConfiguration = state.capture {
-            context.container.start()
-            ElasticSearchExposedConfiguration(
-                context.container.host,
-                context.container.firstMappedPort,
-                context.options.containerOptions.password,
-                determineCertificate()
-            )
-        }
+        exposedConfiguration =
+            state.capture {
+                context.container.start()
+                ElasticSearchExposedConfiguration(
+                    context.container.host,
+                    context.container.firstMappedPort,
+                    context.options.containerOptions.password,
+                    determineCertificate()
+                )
+            }
     }
 
     private fun determineCertificate(): Option<ElasticsearchExposedCertificate> =
         when (context.options.containerOptions.disableSecurity) {
             true -> None
-            false -> ElasticsearchExposedCertificate(
-                context.container.caCertAsBytes().getOrElse { ByteArray(0) }
-            ).apply { sslContext = context.container.createSslContextFromCa() }.some()
+            false ->
+                ElasticsearchExposedCertificate(
+                    context.container.caCertAsBytes().getOrElse { ByteArray(0) }
+                ).apply { sslContext = context.container.createSslContextFromCa() }.some()
         }
 
     override suspend fun afterRun() {
@@ -109,7 +110,10 @@ class ElasticsearchSystem internal constructor(
             .let { this }
     }
 
-    fun shouldNotExist(key: String, onIndex: String = context.index): ElasticsearchSystem {
+    fun shouldNotExist(
+        key: String,
+        onIndex: String = context.index
+    ): ElasticsearchSystem {
         val exists = esClient.exists { req -> req.index(onIndex).id(key) }
         if (exists.value()) {
             throw AssertionError("The document with the given id($key) was not expected, but found!")
@@ -117,37 +121,42 @@ class ElasticsearchSystem internal constructor(
         return this
     }
 
-    fun shouldDelete(key: String, fromIndex: String = context.index): ElasticsearchSystem = esClient
-        .delete(DeleteRequest.of { req -> req.index(fromIndex).id(key).refresh(Refresh.WaitFor) })
-        .let { this }
+    fun shouldDelete(
+        key: String,
+        fromIndex: String = context.index
+    ): ElasticsearchSystem =
+        esClient
+            .delete(DeleteRequest.of { req -> req.index(fromIndex).id(key).refresh(Refresh.WaitFor) })
+            .let { this }
 
     fun <T : Any> save(
         id: String,
         instance: T,
         toIndex: String = context.index
-    ): ElasticsearchSystem = esClient.index { req ->
-        req.index(toIndex)
-            .id(id)
-            .document(instance)
-            .refresh(Refresh.WaitFor)
-    }.let { this }
+    ): ElasticsearchSystem =
+        esClient.index { req ->
+            req.index(toIndex)
+                .id(id)
+                .document(instance)
+                .refresh(Refresh.WaitFor)
+        }.let { this }
 
-    override fun close(): Unit = runBlocking(context = Dispatchers.IO) {
-        Try {
-            esClient._transport().close()
-            executeWithReuseCheck { stop() }
-        }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
-    }
+    override fun close(): Unit =
+        runBlocking(context = Dispatchers.IO) {
+            Try {
+                esClient._transport().close()
+                executeWithReuseCheck { stop() }
+            }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
+        }
 
-    override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) +
-        listOf(
-            "elasticsearch.host=${exposedConfiguration.host}",
-            "elasticsearch.port=${exposedConfiguration.port}"
-        )
+    override fun configuration(): List<String> =
+        context.options.configureExposedConfiguration(exposedConfiguration) +
+            listOf(
+                "elasticsearch.host=${exposedConfiguration.host}",
+                "elasticsearch.port=${exposedConfiguration.port}"
+            )
 
-    private fun createEsClient(
-        exposedConfiguration: ElasticSearchExposedConfiguration
-    ): ElasticsearchClient =
+    private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
         context.options.clientConfigurer.restClientOverrideFn
             .getOrElse { { cfg -> restClient(cfg) } }
             .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(context.options.objectMapper)) }
@@ -155,9 +164,10 @@ class ElasticsearchSystem internal constructor(
 
     private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
         when (context.options.containerOptions.disableSecurity) {
-            true -> RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port)).apply {
-                setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
-            }.build()
+            true ->
+                RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port)).apply {
+                    setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
+                }.build()
 
             false -> secureRestClient(cfg, context.container.createSslContextFromCa())
         }
@@ -171,8 +181,9 @@ class ElasticsearchSystem internal constructor(
             AuthScope.ANY,
             UsernamePasswordCredentials("elastic", exposedConfiguration.password)
         )
-        val builder: RestClientBuilder = RestClient
-            .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
+        val builder: RestClientBuilder =
+            RestClient
+                .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
 
         return builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
             clientBuilder.setSSLContext(sslContext)
@@ -183,7 +194,6 @@ class ElasticsearchSystem internal constructor(
     }
 
     companion object {
-
         /**
          * Exposes the [ElasticsearchClient] for the given [ElasticsearchSystem]
          * This is useful for custom queries

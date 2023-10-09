@@ -29,21 +29,22 @@ class SpringApplicationUnderTest(
 ) : ApplicationUnderTest<ConfigurableApplicationContext> {
     private lateinit var application: ConfigurableApplicationContext
 
-    override suspend fun start(configurations: List<String>): ConfigurableApplicationContext = coroutineScope {
-        val allConfigurations = (configurations + defaultConfigurations() + parameters).map { "--$it" }.toTypedArray()
-        application = runner(allConfigurations)
-        while (!application.isRunning || !application.isActive) {
-            delay(500)
-            continue
+    override suspend fun start(configurations: List<String>): ConfigurableApplicationContext =
+        coroutineScope {
+            val allConfigurations = (configurations + defaultConfigurations() + parameters).map { "--$it" }.toTypedArray()
+            application = runner(allConfigurations)
+            while (!application.isRunning || !application.isActive) {
+                delay(500)
+                continue
+            }
+            testSystem.activeSystems
+                .map { it.value }
+                .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
+                .map { it as AfterRunAwareWithContext<ConfigurableApplicationContext> }
+                .map { async(context = Dispatchers.IO) { it.afterRun(application) } }
+                .awaitAll()
+            application
         }
-        testSystem.activeSystems
-            .map { it.value }
-            .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-            .map { it as AfterRunAwareWithContext<ConfigurableApplicationContext> }
-            .map { async(context = Dispatchers.IO) { it.afterRun(application) } }
-            .awaitAll()
-        application
-    }
 
     override suspend fun stop(): Unit = application.stop()
 

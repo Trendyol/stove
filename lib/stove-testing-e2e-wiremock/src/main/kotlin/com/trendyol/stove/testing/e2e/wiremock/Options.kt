@@ -14,23 +14,19 @@ data class WireMockSystemOptions(
      * Port of wiremock server
      */
     val port: Int = 8080,
-
     /**
      * Removes the stub when request matches/completes
      * Default value is false
      */
     val removeStubAfterRequestMatched: Boolean = false,
-
     /**
      * Called after stub removed
      */
     val afterStubRemoved: AfterStubRemoved = { _, _ -> },
-
     /**
      * Called after request handled
      */
     val afterRequest: AfterRequestHandler = { _, _ -> },
-
     /**
      * ObjectMapper for serialization/deserialization
      */
@@ -39,36 +35,30 @@ data class WireMockSystemOptions(
 
 data class WireMockContext(
     val port: Int,
-
     val removeStubAfterRequestMatched: Boolean,
-
     val afterStubRemoved: AfterStubRemoved,
-
     val afterRequest: AfterRequestHandler,
-
     val objectMapper: ObjectMapper
 )
 
-internal fun TestSystem.withWireMock(
-    options: WireMockSystemOptions = WireMockSystemOptions()
-): TestSystem = WireMockSystem(
-    testSystem = this,
-    WireMockContext(
-        options.port,
-        options.removeStubAfterRequestMatched,
-        options.afterStubRemoved,
-        options.afterRequest,
-        options.objectMapper
-    )
-).also { getOrRegister(it) }
-    .let { this }
+internal fun TestSystem.withWireMock(options: WireMockSystemOptions = WireMockSystemOptions()): TestSystem =
+    WireMockSystem(
+        testSystem = this,
+        WireMockContext(
+            options.port,
+            options.removeStubAfterRequestMatched,
+            options.afterStubRemoved,
+            options.afterRequest,
+            options.objectMapper
+        )
+    ).also { getOrRegister(it) }
+        .let { this }
 
-internal fun TestSystem.wiremock(): WireMockSystem = getOrNone<WireMockSystem>().getOrElse {
-    throw SystemNotRegisteredException(WireMockSystem::class)
-}
+internal fun TestSystem.wiremock(): WireMockSystem =
+    getOrNone<WireMockSystem>().getOrElse {
+        throw SystemNotRegisteredException(WireMockSystem::class)
+    }
 
-fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem =
-    this.testSystem.withWireMock(configure())
+fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem = this.testSystem.withWireMock(configure())
 
-suspend fun ValidationDsl.wiremock(validation: suspend WireMockSystem.() -> Unit): Unit =
-    validation(this.testSystem.wiremock())
+suspend fun ValidationDsl.wiremock(validation: suspend WireMockSystem.() -> Unit): Unit = validation(this.testSystem.wiremock())

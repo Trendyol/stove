@@ -9,7 +9,6 @@ import org.springframework.context.support.beans
 
 abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl.() -> Unit = {}) :
     ApplicationContextInitializer<GenericApplicationContext> {
-
     private var registrations = mutableListOf<(BeanDefinitionDsl) -> Unit>()
     private val beans = beans {}
 
@@ -17,9 +16,7 @@ abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl
         registrations.add(registration)
     }
 
-    protected fun register(
-        registration: BeanDefinitionDsl.() -> Unit
-    ): BaseApplicationContextInitializer {
+    protected fun register(registration: BeanDefinitionDsl.() -> Unit): BaseApplicationContextInitializer {
         registrations.add(registration)
         return this
     }
@@ -38,5 +35,6 @@ abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl
     }
 
     protected open fun applicationReady(applicationContext: GenericApplicationContext) {}
+
     protected open fun applicationContextInitialized(applicationContext: GenericApplicationContext) {}
 }

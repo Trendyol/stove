@@ -12,7 +12,8 @@ import io.kotest.matchers.shouldNotBe
 
 class ElasticsearchExposedCertificateTest : FunSpec({
     test("ser/de") {
-        val state = """
+        val state =
+            """
             {
               "state": {
                 "host": "localhost",
@@ -24,7 +25,7 @@ class ElasticsearchExposedCertificateTest : FunSpec({
               },
               "processId": 10496
             }
-        """.trimIndent()
+            """.trimIndent()
         val j = StoveObjectMapper.byConfiguring { this.registerArrowModule() }
         val stateWithProcess = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(state)
         val serialize = j.writeValueAsString(stateWithProcess)

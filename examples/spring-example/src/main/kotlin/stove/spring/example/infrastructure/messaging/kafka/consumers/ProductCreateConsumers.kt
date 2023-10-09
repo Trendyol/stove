@@ -30,14 +30,16 @@ class ProductTransferConsumers(
         groupId = "#{@consumerConfig.groupId}_retry",
         containerFactory = KafkaConsumerConfiguration.RETRY_LISTENER_BEAN_NAME
     )
-    fun listen(cr: ConsumerRecord<String, String>) = runBlocking(MDCContext()) {
-        logger.info("Received product transfer command ${cr.value()}")
-        val command = objectMapper.readValue(
-            cr.value(),
-            CreateProductCommand::class.java
-        )
-        productCreator.create(command.mapToCreateRequest())
-    }
+    fun listen(cr: ConsumerRecord<String, String>) =
+        runBlocking(MDCContext()) {
+            logger.info("Received product transfer command ${cr.value()}")
+            val command =
+                objectMapper.readValue(
+                    cr.value(),
+                    CreateProductCommand::class.java
+                )
+            productCreator.create(command.mapToCreateRequest())
+        }
 }
 
 data class CreateProductCommand(

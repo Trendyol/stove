@@ -20,19 +20,19 @@ import java.util.concurrent.TimeUnit
 @Configuration
 @EnableConfigurationProperties(WebClientConfigurationProperties::class)
 class WebClientConfiguration(private val webClientConfigurationProperties: WebClientConfigurationProperties) {
-
     companion object {
         private const val MAX_MEMORY_SIZE = 50 * 1024 * 1024
     }
 
     @Bean
-    fun supplierHttpClient(exchangeStrategies: ExchangeStrategies): WebClient = defaultWebClientBuilder(
-        webClientConfigurationProperties.supplierHttp.url,
-        webClientConfigurationProperties.supplierHttp.connectTimeout,
-        webClientConfigurationProperties.supplierHttp.readTimeout
-    )
-        .exchangeStrategies(exchangeStrategies)
-        .build()
+    fun supplierHttpClient(exchangeStrategies: ExchangeStrategies): WebClient =
+        defaultWebClientBuilder(
+            webClientConfigurationProperties.supplierHttp.url,
+            webClientConfigurationProperties.supplierHttp.connectTimeout,
+            webClientConfigurationProperties.supplierHttp.readTimeout
+        )
+            .exchangeStrategies(exchangeStrategies)
+            .build()
 
     @Bean
     fun webClientObjectMapper(): ObjectMapper {

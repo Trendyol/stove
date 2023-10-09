@@ -17,14 +17,14 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.*
 
-const val testBucket = "test-couchbase-bucket"
+const val TEST_BUCKET = "test-couchbase-bucket"
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
         TestSystem {}
             .with {
                 couchbase {
-                    CouchbaseSystemOptions(defaultBucket = testBucket)
+                    CouchbaseSystemOptions(defaultBucket = TEST_BUCKET)
                         .migrations {
                             register<DefaultMigration>()
                         }
@@ -47,13 +47,14 @@ class DefaultMigration : DatabaseMigration<ReactiveCluster> {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override val order: Int = MigrationPriority.HIGHEST.value
+
     override suspend fun execute(connection: ReactiveCluster) {
         connection
-            .bucket(testBucket)
+            .bucket(TEST_BUCKET)
             .collections().createCollection(CollectionSpec.create("another", "_default"))
             .awaitFirstOrNull()
 
-        connection.bucket(testBucket).waitUntilReady(Duration.ofSeconds(30)).awaitFirstOrNull()
+        connection.bucket(TEST_BUCKET).waitUntilReady(Duration.ofSeconds(30)).awaitFirstOrNull()
 
         logger.info("default migration is executed")
     }

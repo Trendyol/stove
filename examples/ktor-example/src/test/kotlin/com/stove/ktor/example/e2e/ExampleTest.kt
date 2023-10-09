@@ -23,11 +23,11 @@ class ExampleTest : FunSpec({
                 postgresql {
                     shouldExecute(
                         """
-                    DROP TABLE IF EXISTS Jedis;
-                    CREATE TABLE IF NOT EXISTS Jedis (
-                    	id serial PRIMARY KEY,
-                    	name VARCHAR (50)  NOT NULL
-                    );
+                        DROP TABLE IF EXISTS Jedis;
+                        CREATE TABLE IF NOT EXISTS Jedis (
+                        	id serial PRIMARY KEY,
+                        	name VARCHAR (50)  NOT NULL
+                        );
                         """.trimIndent()
                     )
                     shouldExecute("INSERT INTO Jedis (id, name) VALUES ('$givenId', 'Obi Wan Kenobi')")

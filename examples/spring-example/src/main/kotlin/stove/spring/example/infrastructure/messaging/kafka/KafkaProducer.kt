@@ -23,19 +23,21 @@ class KafkaProducer(
     private val logger: Logger = LoggerFactory.getLogger(KafkaProducer::class.java)
 
     suspend fun send(message: KafkaOutgoingMessage) {
-        val recordHeaders = message.headers.map { it ->
-            RecordHeader(
-                it.key,
-                it.value.toByteArray()
+        val recordHeaders =
+            message.headers.map { it ->
+                RecordHeader(
+                    it.key,
+                    it.value.toByteArray()
+                )
+            }.toMutableList()
+        val record =
+            ProducerRecord<String, Any>(
+                message.topic,
+                message.partition,
+                message.key,
+                message.payload,
+                recordHeaders
             )
-        }.toMutableList()
-        val record = ProducerRecord<String, Any>(
-            message.topic,
-            message.partition,
-            message.key,
-            message.payload,
-            recordHeaders
-        )
         logger.info("Kafka message has published $message")
         kafkaTemplate.send(record)
     }

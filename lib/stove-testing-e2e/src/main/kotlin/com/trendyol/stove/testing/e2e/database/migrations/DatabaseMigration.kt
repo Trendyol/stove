@@ -12,7 +12,6 @@ import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
  * @see AfterRunAware.afterRun
  */
 interface DatabaseMigration<in TConnection> {
-
     /**
      * [connection] is ready for executing operations
      */

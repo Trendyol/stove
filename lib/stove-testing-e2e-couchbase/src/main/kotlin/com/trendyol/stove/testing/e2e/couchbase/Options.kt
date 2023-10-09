@@ -29,7 +29,6 @@ data class CouchbaseSystemOptions(
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
     val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) }
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
-
     internal val migrationCollection: MigrationCollection<ReactiveCluster> = MigrationCollection()
 
     /**
@@ -37,9 +36,10 @@ data class CouchbaseSystemOptions(
      * @see MigrationCollection
      * @see DatabaseMigration
      */
-    fun migrations(migration: MigrationCollection<ReactiveCluster>.() -> Unit): CouchbaseSystemOptions = migration(
-        migrationCollection
-    ).let { this }
+    fun migrations(migration: MigrationCollection<ReactiveCluster>.() -> Unit): CouchbaseSystemOptions =
+        migration(
+            migrationCollection
+        ).let { this }
 }
 
 data class CouchbaseContext(
@@ -48,9 +48,7 @@ data class CouchbaseContext(
     val options: CouchbaseSystemOptions
 )
 
-internal fun TestSystem.withCouchbase(
-    options: CouchbaseSystemOptions
-): TestSystem {
+internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSystem {
     val bucketDefinition = BucketDefinition(options.defaultBucket)
     val couchbaseContainer =
         withProvidedRegistry("couchbase/server", options.registry) {
@@ -68,8 +66,6 @@ internal fun TestSystem.couchbase(): CouchbaseSystem =
         throw SystemNotRegisteredException(CouchbaseSystem::class)
     }
 
-fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem =
-    this.testSystem.withCouchbase(configure())
+fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem = this.testSystem.withCouchbase(configure())
 
-suspend fun ValidationDsl.couchbase(validation: suspend CouchbaseSystem.() -> Unit): Unit =
-    validation(this.testSystem.couchbase())
+suspend fun ValidationDsl.couchbase(validation: suspend CouchbaseSystem.() -> Unit): Unit = validation(this.testSystem.couchbase())

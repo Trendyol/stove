@@ -21,10 +21,12 @@ class DefaultIndexMigrator(private val index: String) : DatabaseMigration<Elasti
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override val order: Int = MigrationPriority.HIGHEST.value
+
     override suspend fun execute(connection: ElasticsearchClient) {
-        val createIndexRequest: CreateIndexRequest = CreateIndexRequest.Builder()
-            .index(index)
-            .build()
+        val createIndexRequest: CreateIndexRequest =
+            CreateIndexRequest.Builder()
+                .index(index)
+                .build()
         val response = connection.indices().create(createIndexRequest)
         if (!response.shardsAcknowledged()) {
             logger.info("Shards are not acknowledged for $index")

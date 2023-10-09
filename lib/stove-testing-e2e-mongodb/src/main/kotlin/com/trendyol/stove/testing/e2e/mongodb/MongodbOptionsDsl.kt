@@ -13,11 +13,13 @@ class MongodbOptionsDsl internal constructor(private val init: MongodbOptionsDsl
     private var options: MongodbSystemOptions = MongodbSystemOptions()
 
     fun defaultDatabase(name: String) {
-        options = options.copy(
-            databaseOptions = options.databaseOptions.copy(
-                default = options.databaseOptions.default.copy(name = name)
+        options =
+            options.copy(
+                databaseOptions =
+                    options.databaseOptions.copy(
+                        default = options.databaseOptions.default.copy(name = name)
+                    )
             )
-        )
     }
 
     fun image(image: String) {

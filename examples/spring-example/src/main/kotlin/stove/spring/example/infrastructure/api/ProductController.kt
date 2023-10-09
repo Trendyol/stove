@@ -12,14 +12,17 @@ import stove.spring.example.application.handlers.ProductCreator
 @RestController
 @RequestMapping("/api")
 class ProductController(private val productCreator: ProductCreator) {
-
     @GetMapping("/index")
-    suspend fun get(@RequestParam(required = false) keyword: String): String {
+    suspend fun get(
+        @RequestParam(required = false) keyword: String
+    ): String {
         return "Hi from Stove framework with $keyword"
     }
 
     @PostMapping("/product/create")
-    suspend fun createProduct(@RequestBody productCreateRequest: ProductCreateRequest): String {
+    suspend fun createProduct(
+        @RequestBody productCreateRequest: ProductCreateRequest
+    ): String {
         return productCreator.create(productCreateRequest)
     }
 }

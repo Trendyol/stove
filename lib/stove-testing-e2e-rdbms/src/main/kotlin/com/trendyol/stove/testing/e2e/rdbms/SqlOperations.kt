@@ -10,7 +10,6 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
  * An R2DBC abstraction that uses Kotlin coroutines.
  */
 class SqlOperations(private val connectionFactory: ConnectionFactory) {
-
     private lateinit var connection: Connection
 
     /**
@@ -45,7 +44,6 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
  * Wrapper for [Connection].
  */
 class Handle(val connection: Connection) {
-
     /**
      * Change transaction isolation level.
      */
@@ -76,9 +74,7 @@ class Handle(val connection: Connection) {
      * @param sql sql statement
      * @return raw r2dbc result
      */
-    suspend fun select(
-        sql: String
-    ): io.r2dbc.spi.Result = connection.createStatement(sql).execute().awaitFirst()
+    suspend fun select(sql: String): io.r2dbc.spi.Result = connection.createStatement(sql).execute().awaitFirst()
 
     /**
      * Creates a select query.

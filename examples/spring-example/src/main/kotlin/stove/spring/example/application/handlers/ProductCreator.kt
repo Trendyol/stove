@@ -22,6 +22,7 @@ class ProductCreator(
 ) {
     @Value("\${kafka.producer.product-created.topic-name}")
     lateinit var productCreatedTopic: String
+
     suspend fun create(req: ProductCreateRequest): String {
         val supplierPermission = supplierHttpService.getSupplierPermission(req.id)
         if (!supplierPermission.isAllowed) {
