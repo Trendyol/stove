@@ -119,11 +119,15 @@ TestSystem.validate {
     }
 
     kafka {
-        shouldBePublishedOnCondition<ExampleMessage> { actual ->
-            actual.aggregateId == 123
+        shouldBePublished<ExampleMessage> {
+            actual.aggregateId == 123 
+                    && actual.metadata.topic = "example-topic" 
+                    && actual.metadata.headers["example-header"] == "example-value"
         }
-        shouldBeConsumedOnCondition<ExampleMessage> { actual ->
+        shouldBeConsumed<ExampleMessage> {
             actual.aggregateId == 123
+                    && actual.metadata.topic = "example-topic"
+                    && actual.metadata.headers["example-header"] == "example-value"
         }
     }
 
@@ -138,7 +142,7 @@ TestSystem.validate {
     }
 
     kafka {
-        shouldBeConsumedOnCondition<ProductCreated> { actual ->
+        shouldBeConsumed<ProductCreated> {
             actual.aggregateId == expectedId
         }
     }
