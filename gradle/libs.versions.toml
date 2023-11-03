@@ -71,7 +71,7 @@ spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 jacocoReportAggregation = { id = "jacoco-report-aggregation" }
 jacoco = { id = "jacoco" }
-ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.15.0" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.15.1" }
 kotlinter = { id = "org.jmailen.kotlinter", version = "4.0.0" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
