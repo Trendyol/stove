@@ -5,7 +5,7 @@ spring-kafka = "2.9.13"
 junit = "5.10.0"
 kotest = "5.8.0"
 mockito = "5.1.0"
-wiremock = "3.3.0"
+wiremock = "3.3.1"
 testcontainers = "1.19.1"
 ktor = "2.3.5"
 
