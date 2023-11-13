@@ -2,7 +2,7 @@
 kotlin = "1.9.20"
 kotlinx = "1.7.3"
 spring-boot = "2.7.17"
-spring-dependency-management = "1.1.3"
+spring-dependency-management = "1.1.4"
 spring-framework = "5.3.30"
 spring-kafka = "2.9.13"
 couchbase-client = "3.4.11"
