@@ -72,6 +72,7 @@ class KafkaConsumerConfiguration(
     fun stringJsonMessageConverter(): StringJsonMessageConverter {
         return StringJsonMessageConverter(objectMapper)
     }
+
     companion object {
         const val RETRY_LISTENER_BEAN_NAME = "kafkaRetryListenerContainerFactory"
         const val LISTENER_BEAN_NAME = "kafkaListenerContainerFactory"
