@@ -2,8 +2,7 @@ package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.java.ReactiveCluster
 import com.couchbase.client.java.manager.collection.CreateCollectionSettings
-import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
-import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
+import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -12,8 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.junit.jupiter.api.assertThrows
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 import java.time.Duration
 import java.util.*
 
@@ -51,7 +49,7 @@ class DefaultMigration : DatabaseMigration<ReactiveCluster> {
     override suspend fun execute(connection: ReactiveCluster) {
         connection
             .bucket(TEST_BUCKET)
-            .collections().createCollection("another", "_default", CreateCollectionSettings.createCollectionSettings())
+            .collections().createCollection("_default", "another", CreateCollectionSettings.createCollectionSettings())
             .awaitFirstOrNull()
 
         connection.bucket(TEST_BUCKET).waitUntilReady(Duration.ofSeconds(30)).awaitFirstOrNull()
