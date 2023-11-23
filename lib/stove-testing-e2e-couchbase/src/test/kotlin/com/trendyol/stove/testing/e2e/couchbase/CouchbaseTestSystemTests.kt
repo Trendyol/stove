@@ -1,7 +1,7 @@
 package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.java.ReactiveCluster
-import com.couchbase.client.java.manager.collection.CollectionSpec
+import com.couchbase.client.java.manager.collection.CreateCollectionSettings
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -51,7 +51,7 @@ class DefaultMigration : DatabaseMigration<ReactiveCluster> {
     override suspend fun execute(connection: ReactiveCluster) {
         connection
             .bucket(TEST_BUCKET)
-            .collections().createCollection(CollectionSpec.create("another", "_default"))
+            .collections().createCollection("another", "_default", CreateCollectionSettings.createCollectionSettings())
             .awaitFirstOrNull()
 
         connection.bucket(TEST_BUCKET).waitUntilReady(Duration.ofSeconds(30)).awaitFirstOrNull()
