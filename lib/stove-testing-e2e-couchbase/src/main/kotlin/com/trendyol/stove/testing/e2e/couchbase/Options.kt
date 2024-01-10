@@ -25,7 +25,7 @@ data class CouchbaseExposedConfiguration(
 
 data class CouchbaseSystemOptions(
     val defaultBucket: String,
-    val registry: String = DEFAULT_REGISTRY,
+    val containerOptions: ContainerOptions = ContainerOptions(),
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
     val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) }
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
@@ -48,10 +48,15 @@ data class CouchbaseContext(
     val options: CouchbaseSystemOptions
 )
 
+data class ContainerOptions(
+    val registry: String = DEFAULT_REGISTRY,
+    val imageVersion: String = "latest"
+)
+
 internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSystem {
     val bucketDefinition = BucketDefinition(options.defaultBucket)
     val couchbaseContainer =
-        withProvidedRegistry("couchbase/server", options.registry) {
+        withProvidedRegistry("couchbase/server:${options.containerOptions.imageVersion}", options.containerOptions.registry) {
             CouchbaseContainer(it).withBucket(bucketDefinition)
                 .withReuse(this.options.keepDependenciesRunning)
         }

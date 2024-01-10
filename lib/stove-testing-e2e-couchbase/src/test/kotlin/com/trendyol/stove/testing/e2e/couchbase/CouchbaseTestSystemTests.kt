@@ -22,7 +22,12 @@ class Setup : AbstractProjectConfig() {
         TestSystem {}
             .with {
                 couchbase {
-                    CouchbaseSystemOptions(defaultBucket = TEST_BUCKET)
+                    CouchbaseSystemOptions(
+                        defaultBucket = TEST_BUCKET,
+                        containerOptions = ContainerOptions(
+                            imageVersion = "latest"
+                        )
+                    )
                         .migrations {
                             register<DefaultMigration>()
                         }
