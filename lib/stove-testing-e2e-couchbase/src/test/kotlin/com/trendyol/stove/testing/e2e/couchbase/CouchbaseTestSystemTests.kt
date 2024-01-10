@@ -25,7 +25,7 @@ class Setup : AbstractProjectConfig() {
                     CouchbaseSystemOptions(
                         defaultBucket = TEST_BUCKET,
                         containerOptions = ContainerOptions(
-                            imageVersion = "7.1.1"
+                            imageVersion = "latest"
                         )
                     )
                         .migrations {
