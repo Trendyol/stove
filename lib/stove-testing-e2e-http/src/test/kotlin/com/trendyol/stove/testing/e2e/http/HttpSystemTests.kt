@@ -120,9 +120,24 @@ class HttpSystemTests : FunSpec({
             }
 
             http {
+                getResponse<TestDto>("/get") { actual ->
+                    actual.body().name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
+
+    test("getResponse and expect bodiless") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get", 200, responseBody = TestDto(expectedGetDtoName).some())
+            }
+
+            http {
                 getResponse("/get") { actual ->
-                    actual as StoveHttpResponse.WithBody
-                    actual.bodyAs<TestDto>().name shouldBe expectedGetDtoName
+                    actual.status shouldBe 200
+                    actual::class shouldBe StoveHttpResponse.Bodiless::class
                 }
             }
         }
@@ -136,9 +151,8 @@ class HttpSystemTests : FunSpec({
             }
 
             http {
-                putAndExpectBody("/put-with-response-body") { actual ->
-                    actual as StoveHttpResponse.WithBody
-                    actual.bodyAs<TestDto>().name shouldBe expectedPutDtoName
+                putAndExpectBody<TestDto>("/put-with-response-body") { actual ->
+                    actual.body().name shouldBe expectedPutDtoName
                 }
             }
         }
@@ -152,9 +166,8 @@ class HttpSystemTests : FunSpec({
             }
 
             http {
-                postAndExpectBody("/post-with-response-body") { actual ->
-                    actual as StoveHttpResponse.WithBody
-                    actual.bodyAs<TestDto>().name shouldBe expectedPostDtoName
+                postAndExpectBody<TestDto>("/post-with-response-body") { actual ->
+                    actual.body().name shouldBe expectedPostDtoName
                 }
             }
         }

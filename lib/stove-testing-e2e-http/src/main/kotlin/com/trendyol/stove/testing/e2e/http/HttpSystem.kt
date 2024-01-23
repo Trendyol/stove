@@ -52,10 +52,29 @@ class HttpSystem(
         request
     }.let {
         expect(
+            StoveHttpResponse.Bodiless(
+                it.statusCode(),
+                it.headers().map()
+            )
+        )
+        this
+    }
+
+    suspend inline fun <reified T : Any> getResponse(
+        uri: String,
+        queryParams: Map<String, String> = mapOf(),
+        headers: Map<String, String> = mapOf(),
+        token: Option<String> = None,
+        expect: (StoveHttpResponse.WithBody<T>) -> Unit
+    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
+        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
+        request
+    }.let {
+        expect(
             StoveHttpResponse.WithBody(
                 it.statusCode(),
                 it.headers().map()
-            ) { it.body() }
+            ) { deserialize(it, T::class) }
         )
         this
     }
@@ -118,14 +137,14 @@ class HttpSystem(
     /**
      * Posts the given [body] to the given [uri] and expects the response to have a body.
      */
-    suspend fun postAndExpectBody(
+    suspend inline fun <reified TExpected : Any> postAndExpectBody(
         uri: String,
         body: Option<Any> = None,
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
-        expect: (actual: StoveHttpResponse) -> Unit
+        expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
     ): HttpSystem = doPostReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { it.body() })
+        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it, TExpected::class) })
         this
     }
 
@@ -151,14 +170,14 @@ class HttpSystem(
         this
     }
 
-    suspend fun putAndExpectBody(
+    suspend inline fun <reified TExpected : Any> putAndExpectBody(
         uri: String,
         body: Option<Any> = None,
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
-        expect: (actual: StoveHttpResponse) -> Unit
+        expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
     ): HttpSystem = doPUTReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { it.body() })
+        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it, TExpected::class) })
         this
     }
 
