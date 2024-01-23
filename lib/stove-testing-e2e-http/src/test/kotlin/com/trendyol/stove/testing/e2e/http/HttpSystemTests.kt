@@ -1,11 +1,9 @@
 package com.trendyol.stove.testing.e2e.http
 
-import arrow.core.None
-import arrow.core.some
+import arrow.core.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -125,6 +123,38 @@ class HttpSystemTests : FunSpec({
                 getResponse("/get") { actual ->
                     actual as StoveHttpResponse.WithBody
                     actual.bodyAs<TestDto>().name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
+
+    test("put and expect body") {
+        val expectedPutDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockPut("/put-with-response-body", 200, None, responseBody = TestDto(expectedPutDtoName).some())
+            }
+
+            http {
+                putAndExpectBody("/put-with-response-body") { actual ->
+                    actual as StoveHttpResponse.WithBody
+                    actual.bodyAs<TestDto>().name shouldBe expectedPutDtoName
+                }
+            }
+        }
+    }
+
+    test("post and expect body") {
+        val expectedPostDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockPost("/post-with-response-body", 200, None, responseBody = TestDto(expectedPostDtoName).some())
+            }
+
+            http {
+                postAndExpectBody("/post-with-response-body") { actual ->
+                    actual as StoveHttpResponse.WithBody
+                    actual.bodyAs<TestDto>().name shouldBe expectedPostDtoName
                 }
             }
         }
