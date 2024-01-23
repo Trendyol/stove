@@ -113,6 +113,22 @@ class HttpSystemTests : FunSpec({
             }
         }
     }
+
+    test("getResponse and expect body") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get", 200, responseBody = TestDto(expectedGetDtoName).some())
+            }
+
+            http {
+                getResponse("/get") { actual ->
+                    actual as StoveHttpResponse.WithBody
+                    actual.bodyAs<TestDto>().name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
 })
 
 data class TestDto(
