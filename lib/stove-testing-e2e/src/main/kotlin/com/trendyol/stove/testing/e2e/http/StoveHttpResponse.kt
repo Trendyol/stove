@@ -1,6 +1,17 @@
 package com.trendyol.stove.testing.e2e.http
 
-data class StoveHttpResponse(
-    val status: Int,
-    val headers: Map<String, Any>
-)
+sealed class StoveHttpResponse(
+    open val status: Int,
+    open val headers: Map<String, Any>
+) {
+    data class Bodiless(
+        override val status: Int,
+        override val headers: Map<String, Any>
+    ) : StoveHttpResponse(status, headers)
+
+    data class WithBody<T>(
+        override val status: Int,
+        override val headers: Map<String, Any>,
+        val body: () -> T
+    ) : StoveHttpResponse(status, headers)
+}

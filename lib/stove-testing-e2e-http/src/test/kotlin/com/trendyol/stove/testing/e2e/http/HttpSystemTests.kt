@@ -1,11 +1,9 @@
 package com.trendyol.stove.testing.e2e.http
 
-import arrow.core.None
-import arrow.core.some
+import arrow.core.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -109,6 +107,67 @@ class HttpSystemTests : FunSpec({
 
                 getMany<TestDto>("/get-many") { actual ->
                     actual[0] shouldBe TestDto(expectedGetDtoName)
+                }
+            }
+        }
+    }
+
+    test("getResponse and expect body") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get", 200, responseBody = TestDto(expectedGetDtoName).some())
+            }
+
+            http {
+                getResponse<TestDto>("/get") { actual ->
+                    actual.body().name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
+
+    test("getResponse and expect bodiless") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get", 200, responseBody = TestDto(expectedGetDtoName).some())
+            }
+
+            http {
+                getResponse("/get") { actual ->
+                    actual.status shouldBe 200
+                    actual::class shouldBe StoveHttpResponse.Bodiless::class
+                }
+            }
+        }
+    }
+
+    test("put and expect body") {
+        val expectedPutDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockPut("/put-with-response-body", 200, None, responseBody = TestDto(expectedPutDtoName).some())
+            }
+
+            http {
+                putAndExpectBody<TestDto>("/put-with-response-body") { actual ->
+                    actual.body().name shouldBe expectedPutDtoName
+                }
+            }
+        }
+    }
+
+    test("post and expect body") {
+        val expectedPostDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockPost("/post-with-response-body", 200, None, responseBody = TestDto(expectedPostDtoName).some())
+            }
+
+            http {
+                postAndExpectBody<TestDto>("/post-with-response-body") { actual ->
+                    actual.body().name shouldBe expectedPostDtoName
                 }
             }
         }
