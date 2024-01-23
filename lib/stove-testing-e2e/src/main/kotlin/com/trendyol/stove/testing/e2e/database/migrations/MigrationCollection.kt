@@ -73,7 +73,7 @@ class MigrationCollection<TConnection> {
     inline fun <
         reified TOld : DatabaseMigration<TConnection>,
         reified TNew : DatabaseMigration<TConnection>
-        > replace(): MigrationCollection<TConnection> =
+    > replace(): MigrationCollection<TConnection> =
         this.replace(TOld::class, TNew::class.createInstance()).let { this }
 
     /**
