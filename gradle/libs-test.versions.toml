@@ -2,7 +2,7 @@
 kotlinx = "1.7.3"
 spring-boot = "2.7.18"
 spring-kafka = "2.9.13"
-junit = "5.10.1"
+junit = "5.10.2"
 kotest = "5.8.0"
 mockito = "5.2.1"
 wiremock = "3.3.1"
