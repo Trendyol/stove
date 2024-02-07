@@ -13,6 +13,7 @@ include(
     "lib:stove-testing-e2e-rdbms-postgres",
     "lib:stove-testing-e2e-rdbms-mssql",
     "lib:stove-testing-e2e-elasticsearch",
+    "lib:stove-testing-e2e-redis",
     "lib:stove-testing-e2e-mongodb"
 )
 
