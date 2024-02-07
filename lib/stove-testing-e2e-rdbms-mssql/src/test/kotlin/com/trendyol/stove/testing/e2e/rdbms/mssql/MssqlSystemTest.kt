@@ -20,7 +20,11 @@ class Setup : AbstractProjectConfig() {
                         applicationName = "test",
                         databaseName = "test",
                         userName = "sa",
-                        password = "Password12!"
+                        password = "Password12!",
+                        configureContainer = {
+                            dockerImageName = "mcr.microsoft.com/mssql/server:latest"
+                            this
+                        }
                     ).migrations {
                         register<InitialMigration>()
                     }

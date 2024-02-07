@@ -6,7 +6,7 @@ import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.MSSQLServerContainer
 
 data class MsSqlOptions(
@@ -15,6 +15,7 @@ data class MsSqlOptions(
     val userName: String,
     val password: String,
     val registry: String = DEFAULT_REGISTRY,
+    val configureContainer: MSSQLServerContainer<*>.() -> MSSQLServerContainer<*> = { this },
     override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
     val migrationCollection: MigrationCollection<SqlMigrationContext> = MigrationCollection()
@@ -50,12 +51,13 @@ internal fun TestSystem.mssql(): MsSqlSystem =
 
 internal fun TestSystem.withMsSql(options: MsSqlOptions): TestSystem =
     withProvidedRegistry(MSSQLServerContainer.IMAGE) {
-        MSSQLServerContainer(it)
+        val container = MSSQLServerContainer(it)
             .acceptLicense()
             .withEnv("MSSQL_USER", options.userName)
             .withEnv("MSSQL_SA_PASSWORD", options.password)
             .withEnv("MSSQL_DB", options.databaseName)
             .withPassword(options.password)
             .withReuse(this.options.keepDependenciesRunning)
+        options.configureContainer(container)
     }.let { getOrRegister(MsSqlSystem(this, MsSqlContext(it, options))) }
         .let { this }
