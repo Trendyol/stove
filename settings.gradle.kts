@@ -1,5 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "stove4k"
 include(
     "lib:stove-testing-e2e",
@@ -9,6 +11,7 @@ include(
     "lib:stove-testing-e2e-couchbase",
     "lib:stove-testing-e2e-rdbms",
     "lib:stove-testing-e2e-rdbms-postgres",
+    "lib:stove-testing-e2e-rdbms-mssql",
     "lib:stove-testing-e2e-elasticsearch",
     "lib:stove-testing-e2e-mongodb"
 )

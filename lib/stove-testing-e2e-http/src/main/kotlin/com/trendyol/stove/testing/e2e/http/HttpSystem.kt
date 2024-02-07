@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.future.await
 import java.net.*
 import java.net.http.*
@@ -17,6 +18,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
 import kotlin.reflect.KClass
 
+@StoveDsl
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
 
 internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
@@ -29,11 +31,16 @@ internal fun TestSystem.http(): HttpSystem =
         throw SystemNotRegisteredException(HttpSystem::class)
     }
 
+@StoveDsl
 fun WithDsl.httpClient(configure: () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
     this.testSystem.withHttpClient(configure())
 
-suspend fun ValidationDsl.http(validation: suspend HttpSystem.() -> Unit): Unit = validation(this.testSystem.http())
+@StoveDsl
+suspend fun ValidationDsl.http(
+    validation: suspend HttpSystem.() -> Unit
+): Unit = validation(this.testSystem.http())
 
+@StoveDsl
 class HttpSystem(
     override val testSystem: TestSystem,
     @PublishedApi internal val objectMapper: ObjectMapper

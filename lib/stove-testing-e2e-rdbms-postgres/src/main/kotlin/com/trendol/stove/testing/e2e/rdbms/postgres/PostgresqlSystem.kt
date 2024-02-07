@@ -3,10 +3,12 @@ package com.trendol.stove.testing.e2e.rdbms.postgres
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
 
+@StoveDsl
 class PostgresqlSystem internal constructor(
     testSystem: TestSystem,
     context: PostgresqlContext

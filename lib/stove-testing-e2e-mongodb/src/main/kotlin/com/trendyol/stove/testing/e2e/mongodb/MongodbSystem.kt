@@ -15,6 +15,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.runBlocking
@@ -27,6 +28,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import reactor.kotlin.core.publisher.toFlux
 
+@StoveDsl
 class MongodbSystem internal constructor(
     override val testSystem: TestSystem,
     val context: MongodbContext

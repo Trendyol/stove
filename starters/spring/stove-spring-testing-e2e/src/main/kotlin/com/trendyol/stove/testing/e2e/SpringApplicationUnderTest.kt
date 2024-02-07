@@ -6,9 +6,11 @@ import com.trendyol.stove.testing.e2e.system.Runner
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.*
 import org.springframework.context.ConfigurableApplicationContext
 
+@StoveDsl
 fun TestSystem.systemUnderTest(
     runner: Runner<ConfigurableApplicationContext>,
     withParameters: List<String> = listOf()
@@ -17,11 +19,13 @@ fun TestSystem.systemUnderTest(
     return this
 }
 
+@StoveDsl
 fun WithDsl.springBoot(
     runner: Runner<ConfigurableApplicationContext>,
     withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
+@StoveDsl
 class SpringApplicationUnderTest(
     private val testSystem: TestSystem,
     private val runner: Runner<ConfigurableApplicationContext>,

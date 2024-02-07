@@ -1,14 +1,12 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
+@StoveDsl
 fun mongodb(init: MongodbOptionsDsl.() -> Unit): MongodbSystemOptions = MongodbOptionsDsl(init).invoke()
 
-@DslMarker
-@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
-annotation class MongoOptionsDsl
-
-@MongoOptionsDsl
+@StoveDsl
 class MongodbOptionsDsl internal constructor(private val init: MongodbOptionsDsl.() -> Unit) {
     private var options: MongodbSystemOptions = MongodbSystemOptions()
 

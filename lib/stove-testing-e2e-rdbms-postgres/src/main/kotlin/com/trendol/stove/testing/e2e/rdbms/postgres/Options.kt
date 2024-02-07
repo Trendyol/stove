@@ -11,10 +11,12 @@ import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.PostgreSQLContainer
 
 const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
 
+@StoveDsl
 data class PostgresqlOptions(
     val databaseName: String = "stove-e2e-testing",
     val registry: String = DEFAULT_REGISTRY,
@@ -42,7 +44,9 @@ internal fun TestSystem.postgresql(): PostgresqlSystem =
         throw SystemNotRegisteredException(PostgresqlSystem::class)
     }
 
+@StoveDsl
 fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
     this.testSystem.withPostgresql(configure())
 
+@StoveDsl
 suspend fun ValidationDsl.postgresql(validation: suspend PostgresqlSystem.() -> Unit): Unit = validation(this.testSystem.postgresql())

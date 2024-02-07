@@ -1,14 +1,14 @@
 package com.trendyol.stove.testing.e2e.rdbms
 
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.r2dbc.spi.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlinx.coroutines.reactive.*
 
 /**
  * An R2DBC abstraction that uses Kotlin coroutines.
  */
+@StoveDsl
 class SqlOperations(private val connectionFactory: ConnectionFactory) {
     private lateinit var connection: Connection
 
@@ -26,7 +26,7 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
     /**
      * Open the connection within a transaction.
      */
-    suspend fun <T> transaction(invoke: suspend (Handle) -> T): T {
+    suspend fun <T> transaction(invoke: suspend Handle.() -> T): T {
         val handle = Handle(connection)
         connection.beginTransaction().awaitFirstOrNull()
         try {
@@ -74,7 +74,7 @@ class Handle(val connection: Connection) {
      * @param sql sql statement
      * @return raw r2dbc result
      */
-    suspend fun select(sql: String): io.r2dbc.spi.Result = connection.createStatement(sql).execute().awaitFirst()
+    suspend fun select(sql: String): Result = connection.createStatement(sql).execute().awaitFirst()
 
     /**
      * Creates a select query.

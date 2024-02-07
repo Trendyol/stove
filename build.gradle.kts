@@ -1,5 +1,3 @@
-@file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
-
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 
 plugins {

@@ -23,6 +23,9 @@ r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = { strictly = "[8.12.0,)" }
 mongodb = "4.11.1"
+wiremock = "3.3.1"
+testcontainers = "1.19.4"
+r2dbc-mssql = "1.0.2.RELEASE"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -64,6 +67,19 @@ r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
 mongodb-reactivestreams = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
+
+wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.ref = "testcontainers" }
+testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
+testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
+testcontainers-mssql = { module = "org.testcontainers:mssqlserver", version.ref = "testcontainers" }
+r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.4.2.jre11" }
+
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }

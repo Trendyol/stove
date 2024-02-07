@@ -1,14 +1,11 @@
 package com.trendyol.stove.testing.e2e.system
 
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.getOrNone
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
+import arrow.core.*
+import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.*
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 import kotlin.reflect.KClass
 
 /**
@@ -53,6 +50,7 @@ import kotlin.reflect.KClass
  *     )
  * ```
  */
+@StoveDsl
 class TestSystem(
     val baseUrl: String = "http://localhost:8001",
     configure: TestSystemOptionsDsl.() -> Unit = {}
@@ -77,6 +75,7 @@ class TestSystem(
          */
         internal lateinit var instance: TestSystem
 
+        @StoveDsl
         suspend fun validate(validation: suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
 
         fun stop(): Unit = instance.close()
@@ -146,6 +145,7 @@ class TestSystem(
      *  }
      * ```
      */
+    @StoveDsl
     fun with(withDsl: WithDsl.() -> Unit): TestSystem {
         withDsl(WithDsl(this))
         return this

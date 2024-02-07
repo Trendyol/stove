@@ -8,6 +8,7 @@ import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
 data class WireMockSystemOptions(
     /**
@@ -59,6 +60,8 @@ internal fun TestSystem.wiremock(): WireMockSystem =
         throw SystemNotRegisteredException(WireMockSystem::class)
     }
 
+@StoveDsl
 fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem = this.testSystem.withWireMock(configure())
 
+@StoveDsl
 suspend fun ValidationDsl.wiremock(validation: suspend WireMockSystem.() -> Unit): Unit = validation(this.testSystem.wiremock())

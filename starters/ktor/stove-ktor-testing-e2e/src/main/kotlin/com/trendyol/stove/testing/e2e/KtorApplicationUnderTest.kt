@@ -9,6 +9,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithConte
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ReadyTestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.ktor.server.engine.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -17,16 +18,19 @@ import kotlinx.coroutines.coroutineScope
 /**
  *  Definition for Application Under Test for Ktor enabled application
  */
+@StoveDsl
 internal fun TestSystem.systemUnderTest(
     runner: Runner<ApplicationEngine>,
     withParameters: List<String> = listOf()
 ): ReadyTestSystem = applicationUnderTest(KtorApplicationUnderTest(this, runner, withParameters))
 
+@StoveDsl
 fun WithDsl.ktor(
     runner: Runner<ApplicationEngine>,
     withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
+@StoveDsl
 class KtorApplicationUnderTest(
     private val testSystem: TestSystem,
     private val runner: Runner<ApplicationEngine>,

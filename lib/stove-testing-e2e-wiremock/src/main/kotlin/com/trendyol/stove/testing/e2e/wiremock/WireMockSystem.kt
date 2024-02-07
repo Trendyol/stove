@@ -20,6 +20,7 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.ValidatedSystem
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.Logger
 import wiremock.org.slf4j.LoggerFactory
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentMap
 typealias AfterStubRemoved = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
 typealias AfterRequestHandler = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
 
+@StoveDsl
 class WireMockSystem(
     override val testSystem: TestSystem,
     ctx: WireMockContext

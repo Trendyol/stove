@@ -9,21 +9,17 @@ import com.couchbase.client.java.json.JsonObject
 import com.couchbase.client.java.kv.InsertOptions
 import com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
+import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.couchbase.ClusterExtensions.executeQueryAs
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import kotlinx.coroutines.reactive.awaitSingle
+import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import kotlinx.coroutines.reactive.*
 import kotlinx.coroutines.runBlocking
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 import reactor.core.publisher.Mono
 
+@StoveDsl
 class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
     val context: CouchbaseContext
@@ -167,6 +163,7 @@ class CouchbaseSystem internal constructor(
      * Saves the [instance] with given [id] to the [collection]
      * To save to the default collection use [saveToDefaultCollection]
      */
+
     suspend fun <T : Any> save(
         collection: String,
         id: String,
@@ -186,6 +183,7 @@ class CouchbaseSystem internal constructor(
      * Saves the [instance] with given [id] to the default collection
      * In couchbase the default collection is `_default`
      */
+
     suspend inline fun <reified T : Any> saveToDefaultCollection(
         id: String,
         instance: T

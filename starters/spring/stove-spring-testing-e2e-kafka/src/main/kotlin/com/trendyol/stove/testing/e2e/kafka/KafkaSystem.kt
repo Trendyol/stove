@@ -10,6 +10,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
 import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -33,6 +34,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+@StoveDsl
 class KafkaSystem(
     override val testSystem: TestSystem,
     private val context: KafkaContext

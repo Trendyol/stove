@@ -10,12 +10,10 @@ import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import stove.spring.example.application.handlers.ProductCreateRequest
-import stove.spring.example.application.handlers.ProductCreatedEvent
+import stove.spring.example.application.handlers.*
 import stove.spring.example.application.services.SupplierPermission
 import stove.spring.example.infrastructure.couchbase.CouchbaseProperties
-import stove.spring.example.infrastructure.messaging.kafka.consumers.BusinessException
-import stove.spring.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
+import stove.spring.example.infrastructure.messaging.kafka.consumers.*
 
 class ExampleTest : FunSpec({
     test("bridge should work") {
@@ -88,10 +86,10 @@ class ExampleTest : FunSpec({
                     statusCode = 200,
                     responseBody = supplierPermission.some()
                 )
-                http {
-                    postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
-                        actual shouldBe "Supplier with the given id(${productCreateRequest.supplierId}) is not allowed for product creation"
-                    }
+            }
+            http {
+                postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
+                    actual shouldBe "Supplier with the given id(${productCreateRequest.supplierId}) is not allowed for product creation"
                 }
             }
         }

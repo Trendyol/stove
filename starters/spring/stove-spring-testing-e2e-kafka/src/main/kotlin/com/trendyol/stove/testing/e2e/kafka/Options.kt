@@ -10,12 +10,15 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.KafkaContainer
 
+@StoveDsl
 data class KafkaExposedConfiguration(
     val bootstrapServers: String
 ) : ExposedConfiguration
 
+@StoveDsl
 data class KafkaContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "confluentinc/cp-kafka",
@@ -23,6 +26,7 @@ data class KafkaContainerOptions(
     override val imageWithTag: String = "$image:$tag"
 ) : ContainerOptions
 
+@StoveDsl
 data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
@@ -31,6 +35,7 @@ data class KafkaSystemOptions(
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
+@StoveDsl
 data class KafkaContext(
     val container: KafkaContainer,
     val objectMapper: ObjectMapper,
@@ -47,6 +52,8 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptio
 
 internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
 
+@StoveDsl
 fun WithDsl.kafka(configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }): TestSystem = this.testSystem.withKafka(configure())
 
+@StoveDsl
 suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit = validation(this.testSystem.kafka())

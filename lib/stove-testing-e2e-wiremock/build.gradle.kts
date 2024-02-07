@@ -1,4 +1,4 @@
 dependencies {
-    api(project(":lib:stove-testing-e2e"))
-    api(testLibs.wiremock)
+    api(projects.lib.stoveTestingE2e)
+    api(libs.wiremock)
 }

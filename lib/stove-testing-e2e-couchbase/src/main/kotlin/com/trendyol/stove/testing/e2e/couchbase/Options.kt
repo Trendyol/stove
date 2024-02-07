@@ -13,6 +13,7 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.ValidationDsl
 import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.couchbase.BucketDefinition
 import org.testcontainers.couchbase.CouchbaseContainer
 
@@ -23,6 +24,7 @@ data class CouchbaseExposedConfiguration(
     val password: String
 ) : ExposedConfiguration
 
+@StoveDsl
 data class CouchbaseSystemOptions(
     val defaultBucket: String,
     val containerOptions: ContainerOptions = ContainerOptions(),
@@ -36,18 +38,21 @@ data class CouchbaseSystemOptions(
      * @see MigrationCollection
      * @see DatabaseMigration
      */
+    @StoveDsl
     fun migrations(migration: MigrationCollection<ReactiveCluster>.() -> Unit): CouchbaseSystemOptions =
         migration(
             migrationCollection
         ).let { this }
 }
 
+@StoveDsl
 data class CouchbaseContext(
     val bucket: BucketDefinition,
     val container: CouchbaseContainer,
     val options: CouchbaseSystemOptions
 )
 
+@StoveDsl
 data class ContainerOptions(
     val registry: String = DEFAULT_REGISTRY,
     val imageVersion: String = "latest"
@@ -71,6 +76,8 @@ internal fun TestSystem.couchbase(): CouchbaseSystem =
         throw SystemNotRegisteredException(CouchbaseSystem::class)
     }
 
+@StoveDsl
 fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem = this.testSystem.withCouchbase(configure())
 
+@StoveDsl
 suspend fun ValidationDsl.couchbase(validation: suspend CouchbaseSystem.() -> Unit): Unit = validation(this.testSystem.couchbase())

@@ -1,5 +1,5 @@
 dependencies {
-    api(project(":lib:stove-testing-e2e-rdbms"))
+    api(projects.lib.stoveTestingE2eRdbms)
     implementation(libs.r2dbc.postgresql)
-    implementation(testLibs.testcontainers.postgres)
+    implementation(libs.testcontainers.postgres)
 }

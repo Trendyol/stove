@@ -7,6 +7,7 @@ import com.trendyol.stove.testing.e2e.system.WithDsl
 import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithContext
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 
@@ -15,6 +16,7 @@ import org.springframework.context.ApplicationContext
  *
  * @property testSystem the test system to bridge.
  */
+@StoveDsl
 class BridgeSystem(override val testSystem: TestSystem) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
     /**
      * The application context used to resolve dependencies.
@@ -80,6 +82,7 @@ internal fun TestSystem.bridge(): BridgeSystem =
  * @return the bridge system.
  * @throws SystemNotRegisteredException if the bridge system is not registered.
  */
+@StoveDsl
 fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
 
 /**
@@ -100,4 +103,5 @@ fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
  * @param T the type of object being validated.
  * @param validation the validation function to apply to the object.
  */
+@StoveDsl
 inline fun <reified T : Any> ValidationDsl.using(validation: T.() -> Unit): Unit = this.testSystem.bridge().using(validation)

@@ -1,20 +1,17 @@
 package com.trendyol.stove.testing.e2e.rdbms
 
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
+import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.r2dbc.spi.ConnectionFactory
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
+@StoveDsl
 abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> protected constructor(
     final override val testSystem: TestSystem,
     protected val context: RelationalDatabaseContext<*>
@@ -64,7 +61,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     ): SELF {
         var results: List<T> = emptyList()
         internalSqlOperations.transaction {
-            results = it.select(query).map { r, rm -> mapper(r, rm, T::class) }.asFlow().toList()
+            results = select(query).map { r, rm -> mapper(r, rm, T::class) }.asFlow().toList()
         }
 
         assertion(results)
@@ -73,7 +70,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
 
     suspend fun shouldExecute(sql: String): SELF {
         sqlOperations.transaction {
-            it.execute(sql)
+            execute(sql)
         }
         return this as SELF
     }
