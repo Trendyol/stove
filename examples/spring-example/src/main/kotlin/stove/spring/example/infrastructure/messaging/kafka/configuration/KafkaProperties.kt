@@ -1,10 +1,8 @@
 package stove.spring.example.infrastructure.messaging.kafka.configuration
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
-import java.util.UUID
+import java.util.*
 
-@ConstructorBinding
 @ConfigurationProperties(prefix = "kafka")
 data class KafkaProperties(
     var bootstrapServers: String = "",

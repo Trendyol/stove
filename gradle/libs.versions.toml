@@ -2,9 +2,12 @@
 kotlin = "1.9.22"
 kotlinx = "1.7.3"
 spring-boot = "2.7.18"
-spring-dependency-management = "1.1.4"
 spring-framework = "5.3.31"
+spring-framework-6x = "6.1.3"
+spring-boot-3x = "3.2.2"
+spring-dependency-management = "1.1.4"
 spring-kafka = "2.9.13"
+spring-kafka-3x = "3.1.1"
 couchbase-client = "3.5.3"
 couchbase-client-metrics = "0.5.3"
 jackson = "2.16.1"
@@ -41,14 +44,6 @@ kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kot
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
-spring-boot-itself = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
-spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
-spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
-spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
-spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
-spring-framework-context = { module = "org.springframework:spring-context", version.ref = "spring-framework" }
-spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
-spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
 couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
 couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase-client-metrics" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
@@ -83,6 +78,23 @@ testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.14" }
 
+spring-boot = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
+spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
+spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
+spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
+spring-framework-context = { module = "org.springframework:spring-context", version.ref = "spring-framework" }
+spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
+spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+
+spring-boot-3x = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot-3x" }
+spring-boot-3x-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-3x" }
+spring-boot-3x-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot-3x" }
+spring-boot-3x-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot-3x" }
+spring-boot-3x-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot-3x" }
+spring-boot-3x-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka-3x" }
+spring-framework-6x-context = { module = "org.springframework:spring-context", version.ref = "spring-framework-6x" }
+spring-framework-6x-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework-6x" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }

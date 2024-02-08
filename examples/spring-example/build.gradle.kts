@@ -1,4 +1,3 @@
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.spring.plugin)
     alias(libs.plugins.spring.boot)
@@ -7,15 +6,15 @@ plugins {
 }
 
 dependencies {
-    annotationProcessor(libs.spring.boot.annotationProcessor)
-    implementation(libs.spring.boot.autoconfigure)
-    implementation(libs.spring.boot.itself)
-    implementation(libs.spring.boot.webflux)
-    implementation(libs.spring.boot.actuator)
+    implementation(libs.spring.boot.get3x())
+    implementation(libs.spring.boot.get3x().autoconfigure)
+    implementation(libs.spring.boot.get3x().webflux)
+    implementation(libs.spring.boot.get3x().actuator)
+    annotationProcessor(libs.spring.boot.get3x().annotationProcessor)
+    api(libs.spring.boot.get3x().kafka)
     implementation(libs.kotlinx.reactor)
     implementation(libs.kotlinx.core)
     implementation(libs.kotlinx.reactive)
-    api(libs.spring.boot.kafka)
     api(libs.couchbase.client)
     api(libs.couchbase.client.metrics)
     implementation(libs.jackson.kotlin)

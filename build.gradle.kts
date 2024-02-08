@@ -1,4 +1,5 @@
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm").version(libs.versions.kotlin)
@@ -69,10 +70,16 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
             }
         }
 
+        kotlin {
+            jvmToolchain(17)
+        }
+
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            dependsOn(lintKotlin)
-            kotlinOptions.jvmTarget = "16"
-            kotlinOptions.allWarningsAsErrors = true
+            dependsOn(formatKotlin, lintKotlin)
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_17)
+                allWarningsAsErrors = true
+            }
         }
     }
 }

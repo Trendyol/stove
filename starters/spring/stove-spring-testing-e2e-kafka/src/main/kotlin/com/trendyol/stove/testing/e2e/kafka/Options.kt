@@ -2,15 +2,13 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.containers.ContainerOptions
-import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
-import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
+import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.springframework.kafka.core.KafkaTemplate
 import org.testcontainers.containers.KafkaContainer
 
 @StoveDsl
@@ -26,12 +24,20 @@ data class KafkaContainerOptions(
     override val imageWithTag: String = "$image:$tag"
 ) : ContainerOptions
 
+data class KafkaOps<K, V>(
+    val send: suspend (
+        KafkaTemplate<K, V>,
+        ProducerRecord<K, V>
+    ) -> Unit = { kafkaTemplate, record -> kafkaTemplate.sendCompatible(record) }
+)
+
 @StoveDsl
 data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     val containerOptions: ContainerOptions = KafkaContainerOptions(),
+    val ops: KafkaOps<*, *> = KafkaOps<Any, Any>(),
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
@@ -39,7 +45,7 @@ data class KafkaSystemOptions(
 data class KafkaContext(
     val container: KafkaContainer,
     val objectMapper: ObjectMapper,
-    val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
+    val options: KafkaSystemOptions
 )
 
 internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem =
@@ -47,7 +53,7 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptio
         KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
             .withEmbeddedZookeeper()
             .withReuse(this.options.keepDependenciesRunning)
-    }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options.configureExposedConfiguration))) }
+    }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options))) }
         .let { this }
 
 internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }

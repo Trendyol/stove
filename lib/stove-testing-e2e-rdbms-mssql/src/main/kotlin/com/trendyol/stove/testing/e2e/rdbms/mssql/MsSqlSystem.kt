@@ -48,6 +48,7 @@ class MsSqlSystem internal constructor(
         }
         executeAsRoot("CREATE DATABASE ${context.options.databaseName}")
         sqlOperations = SqlOperations(connectionFactory(exposedConfiguration))
+        sqlOperations.open()
         context.options.migrationCollection.run(SqlMigrationContext(context.options, sqlOperations) { executeAsRoot(it) })
     }
 
@@ -66,7 +67,15 @@ class MsSqlSystem internal constructor(
     override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
     @MssqlDsl
-    suspend fun ops(operations: suspend SqlOperations.() -> Unit): Unit = operations(sqlOperations)
+    suspend fun ops(operations: suspend SqlOperations.() -> Unit) {
+        sqlOperations.isOpen().let {
+            if (it) {
+                operations(sqlOperations)
+            } else {
+                throw IllegalStateException("The connection is not open. Please check the connection status.")
+            }
+        }
+    }
 
     private fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
         MssqlConnectionConfiguration.builder().apply {

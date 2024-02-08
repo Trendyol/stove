@@ -18,7 +18,9 @@ class TestSystemConfig : AbstractProjectConfig() {
                 httpClient()
                 couchbase { CouchbaseSystemOptions("Stove") }
                 kafka {
-                    KafkaSystemOptions(containerOptions = KafkaContainerOptions(tag = "latest"))
+                    KafkaSystemOptions(
+                        containerOptions = KafkaContainerOptions(tag = "latest")
+                    )
                 }
                 bridge()
                 wiremock {

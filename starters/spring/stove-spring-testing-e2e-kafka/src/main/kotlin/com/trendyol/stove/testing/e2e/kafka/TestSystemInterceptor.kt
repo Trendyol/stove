@@ -8,13 +8,11 @@ import org.apache.kafka.clients.producer.*
 import org.slf4j.*
 import org.springframework.kafka.listener.*
 import org.springframework.kafka.support.ProducerListener
-import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-@Component
 class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     CompositeRecordInterceptor<String, String>(),
     ProducerListener<String, Any> {
