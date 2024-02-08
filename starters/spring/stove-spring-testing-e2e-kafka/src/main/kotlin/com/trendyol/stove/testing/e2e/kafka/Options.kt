@@ -24,10 +24,10 @@ data class KafkaContainerOptions(
     override val imageWithTag: String = "$image:$tag"
 ) : ContainerOptions
 
-data class KafkaOps<K, V>(
+data class KafkaOps(
     val send: suspend (
-        KafkaTemplate<K, V>,
-        ProducerRecord<K, V>
+        KafkaTemplate<*, *>,
+        ProducerRecord<*, *>
     ) -> Unit = { kafkaTemplate, record -> kafkaTemplate.sendCompatible(record) }
 )
 
@@ -37,7 +37,7 @@ data class KafkaSystemOptions(
     val ports: List<Int> = listOf(9092, 9093),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     val containerOptions: ContainerOptions = KafkaContainerOptions(),
-    val ops: KafkaOps<*, *> = KafkaOps<Any, Any>(),
+    val ops: KafkaOps = KafkaOps(),
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 

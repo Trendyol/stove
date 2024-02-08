@@ -25,7 +25,7 @@ class KafkaSystem(
     private lateinit var applicationContext: ApplicationContext
     private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
     private lateinit var exposedConfiguration: KafkaExposedConfiguration
-    val getInterceptor = { applicationContext.getBean(TestSystemKafkaInterceptor::class.java) }
+    val getInterceptor: () -> TestSystemKafkaInterceptor = { applicationContext.getBean() }
     private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> =
         StateOfSystem(testSystem.options, javaClass.kotlin, KafkaExposedConfiguration::class)
 

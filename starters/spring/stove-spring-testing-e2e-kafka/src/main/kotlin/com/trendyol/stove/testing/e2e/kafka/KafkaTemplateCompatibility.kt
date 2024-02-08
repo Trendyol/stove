@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture
  * This method is used to send a record to Kafka in a compatible way with different versions of Spring Kafka.
  * Supports Spring-Kafka 2.x and 3.x
  */
-suspend fun <K, V> KafkaTemplate<K, V>.sendCompatible(record: ProducerRecord<K, V>) {
+suspend fun KafkaTemplate<*, *>.sendCompatible(record: ProducerRecord<*, *>) {
     val method = this::class.java.getDeclaredMethod("send", ProducerRecord::class.java).apply { isAccessible = true }
     when (method.returnType.kotlin) {
         CompletableFuture::class -> (method.invoke(this, record) as CompletableFuture<*>).await()

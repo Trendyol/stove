@@ -98,13 +98,15 @@ class Setup : AbstractProjectConfig() {
         TestSystem()
             .with {
                 kafka {
-                    KafkaSystemOptions(configureExposedConfiguration = {
-                        listOf(
-                            "kafka.bootstrapServers=${it.bootstrapServers}",
-                            "kafka.groupId=test-group",
-                            "kafka.offset=earliest"
-                        )
-                    })
+                    KafkaSystemOptions(
+                        configureExposedConfiguration = {
+                            listOf(
+                                "kafka.bootstrapServers=${it.bootstrapServers}",
+                                "kafka.groupId=test-group",
+                                "kafka.offset=earliest"
+                            )
+                        }
+                    )
                 }
                 springBoot({ params ->
                     KafkaSystemTestAppRunner.run(params) {
