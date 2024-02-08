@@ -68,10 +68,8 @@ class MssqlSystemTests : ShouldSpec({
         validate {
             mssql {
                 ops {
-                    transaction {
-                        val result = select("SELECT 1")
-                        result.rowsUpdated.awaitFirstOrNull() shouldBe 1
-                    }
+                    val result = select("SELECT 1")
+                    result.rowsUpdated.awaitFirstOrNull() shouldBe 1
                 }
             }
         }

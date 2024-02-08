@@ -16,6 +16,9 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
      * Opens a connection from the factory.
      */
     suspend fun open() {
+        if (isOpen()) {
+            return
+        }
         connection = this.connectionFactory.create().awaitFirst()
     }
 

@@ -23,7 +23,7 @@ import kotlin.collections.listOf
 import kotlin.collections.plus
 import kotlin.collections.set
 
-@StoveDsl
+@MongoDsl
 class MongodbSystem internal constructor(
     override val testSystem: TestSystem,
     val context: MongodbContext

@@ -67,10 +67,10 @@ class MsSqlSystem internal constructor(
     override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
     @MssqlDsl
-    suspend fun ops(operations: suspend SqlOperations.() -> Unit) {
+    suspend fun ops(operations: suspend Handle.() -> Unit) {
         sqlOperations.isOpen().let {
             if (it) {
-                operations(sqlOperations)
+                sqlOperations.transaction(operations)
             } else {
                 throw IllegalStateException("The connection is not open. Please check the connection status.")
             }
