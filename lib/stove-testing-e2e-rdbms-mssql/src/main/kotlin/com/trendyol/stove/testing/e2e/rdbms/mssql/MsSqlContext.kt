@@ -19,12 +19,3 @@ data class SqlMigrationContext(
     val operations: SqlOperations,
     val executeAsRoot: suspend (String) -> Unit
 )
-
-suspend fun SqlOperations.use(block: suspend (SqlOperations) -> Unit) {
-    this.open()
-    try {
-        block(this)
-    } finally {
-        close()
-    }
-}

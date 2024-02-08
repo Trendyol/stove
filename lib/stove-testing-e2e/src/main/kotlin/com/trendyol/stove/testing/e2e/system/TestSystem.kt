@@ -76,7 +76,7 @@ class TestSystem(
         internal lateinit var instance: TestSystem
 
         @StoveDsl
-        suspend fun validate(validation: suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
+        suspend fun validate(validation: @StoveDsl suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
 
         fun stop(): Unit = instance.close()
     }

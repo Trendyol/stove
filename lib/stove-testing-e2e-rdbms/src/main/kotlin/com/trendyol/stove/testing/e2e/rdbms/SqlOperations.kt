@@ -19,6 +19,8 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
         connection = this.connectionFactory.create().awaitFirst()
     }
 
+    fun isOpen(): Boolean = this::connection.isInitialized
+
     suspend fun close() {
         connection.close().awaitFirstOrNull()
     }
@@ -26,6 +28,7 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
     /**
      * Open the connection within a transaction.
      */
+    @StoveDsl
     suspend fun <T> transaction(invoke: suspend Handle.() -> T): T {
         val handle = Handle(connection)
         connection.beginTransaction().awaitFirstOrNull()
@@ -43,10 +46,12 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
 /**
  * Wrapper for [Connection].
  */
+@StoveDsl
 class Handle(val connection: Connection) {
     /**
      * Change transaction isolation level.
      */
+    @StoveDsl
     fun transactionIsolationLevel(level: IsolationLevel) {
         require(connection.isAutoCommit)
         connection.transactionIsolationLevel = level
@@ -58,6 +63,7 @@ class Handle(val connection: Connection) {
      * @param parameters binding parameters
      * @return number of affected rows
      */
+    @StoveDsl
     suspend fun execute(
         sql: String,
         vararg parameters: Any
@@ -74,6 +80,7 @@ class Handle(val connection: Connection) {
      * @param sql sql statement
      * @return raw r2dbc result
      */
+    @StoveDsl
     suspend fun select(sql: String): Result = connection.createStatement(sql).execute().awaitFirst()
 
     /**
@@ -82,6 +89,7 @@ class Handle(val connection: Connection) {
      * @param parameters binding parameters
      * @return query result
      */
+    @StoveDsl
     suspend fun select(
         sql: String,
         vararg parameters: Any
@@ -102,6 +110,7 @@ class Handle(val connection: Connection) {
      * @param rowMapper row mapping function
      * @return query result
      */
+    @StoveDsl
     suspend inline fun <reified T : Any> select(
         sql: String,
         noinline rowMapper: (row: Row, rowMetadata: RowMetadata) -> T,

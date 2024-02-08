@@ -1,22 +1,51 @@
 package com.trendyol.stove.testing.e2e.rdbms.postgres
 
-import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
+import com.trendol.stove.testing.e2e.rdbms.postgres.*
+import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import org.slf4j.*
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
         TestSystem()
             .with {
-                postgresql()
+                postgresql {
+                    PostgresqlOptions(databaseName = "testing").migrations {
+                        register<InitialMigration>()
+                    }
+                }
                 applicationUnderTest(NoOpApplication())
             }.run()
 
     override suspend fun afterProject(): Unit = TestSystem.stop()
+}
+
+class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
+    private val logger: Logger = LoggerFactory.getLogger(InitialMigration::class.java)
+
+    override suspend fun execute(connection: PostgresSqlMigrationContext) {
+        logger.info("Executing InitialMigration")
+        connection.operations.transaction {
+            execute(
+                """
+                    DROP TABLE IF EXISTS MigrationHistory;
+                    CREATE TABLE IF NOT EXISTS MigrationHistory (
+                    	id serial PRIMARY KEY,
+                    	description VARCHAR (50)  NOT NULL
+                    );
+                    insert into MigrationHistory (description) values ('InitialMigration');
+                """.trimIndent()
+            )
+        }
+        logger.info("InitialMigration executed")
+    }
+
+    override val order: Int = 1
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
@@ -29,10 +58,21 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
 
 class PostgresqlSystemTests : FunSpec({
 
-    data class Dummy1(
+    data class IdAndDescription(
         val id: Long,
         val description: String
     )
+
+    test("initial migration should work") {
+        TestSystem.validate {
+            postgresql {
+                shouldQuery<IdAndDescription>("SELECT * FROM MigrationHistory") { actual ->
+                    actual.size shouldBeGreaterThan 0
+                    actual.first() shouldBe IdAndDescription(1, "InitialMigration")
+                }
+            }
+        }
+    }
 
     test("should save and get with immutable data class") {
         TestSystem.validate {
@@ -47,7 +87,7 @@ class PostgresqlSystemTests : FunSpec({
                     """.trimIndent()
                 )
                 shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
-                shouldQuery<Dummy1>("SELECT * FROM Dummies") { actual ->
+                shouldQuery<IdAndDescription>("SELECT * FROM Dummies") { actual ->
                     actual.size shouldBeGreaterThan 0
                     actual.first().description shouldBe testCase.name.testName
                 }
@@ -55,7 +95,7 @@ class PostgresqlSystemTests : FunSpec({
         }
     }
 
-    class Dummy2 {
+    class NullableIdAndDescription {
         var id: Long? = null
         var description: String? = null
     }
@@ -73,7 +113,7 @@ class PostgresqlSystemTests : FunSpec({
                     """.trimIndent()
                 )
                 shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
-                shouldQuery<Dummy2>("SELECT * FROM Dummies") { actual ->
+                shouldQuery<NullableIdAndDescription>("SELECT * FROM Dummies") { actual ->
                     actual.size shouldBeGreaterThan 0
                     actual.first().description shouldBe testCase.name.testName
                 }

@@ -48,7 +48,7 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
 
     tasks {
         test {
-            dependsOn(lintKotlin)
+            dependsOn(formatKotlin)
             useJUnitPlatform()
             testlogger {
                 setTheme("mocha")

@@ -55,6 +55,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
             )
     }
 
+    @StoveDsl
     suspend inline fun <reified T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit
@@ -68,6 +69,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
         return this as SELF
     }
 
+    @StoveDsl
     suspend fun shouldExecute(sql: String): SELF {
         sqlOperations.transaction {
             execute(sql)
