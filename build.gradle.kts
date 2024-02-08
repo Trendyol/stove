@@ -6,11 +6,10 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinter)
     alias(libs.plugins.gitVersioning)
-    `jacoco-report-aggregation`
     `test-report-aggregation`
-    id(libs.plugins.jacoco.get().pluginId)
     id("stove-publishing") apply false
     alias(testLibs.plugins.testLogger)
+    alias(libs.plugins.kover)
     java
 }
 group = "com.trendyol"
@@ -22,15 +21,36 @@ allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
 }
 
+koverReport {
+    filters {
+        excludes {
+            classes(
+                "com.trendyol.stove.functional.*",
+                "com.trendyol.stove.testing.e2e.system.abstractions.*",
+                "com.trendyol.stove.testing.e2e.system.annotations.*",
+                "com.trendyol.stove.testing.e2e.serialization.*",
+                "com.trendyol.stove.testing.e2e.standalone.*",
+                "stove.spring.example.*",
+                "stove.ktor.example.*",
+            )
+        }
+    }
+}
+val related = subprojects.of("lib", "spring", "examples", "ktor")
+dependencies {
+    related.forEach {
+        kover(it)
+    }
+}
+
 subprojects.of("lib", "spring", "examples", "ktor") {
     apply {
         plugin("kotlin")
         plugin(rootProject.libs.plugins.kotlinter.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
-        plugin(rootProject.libs.plugins.jacoco.get().pluginId)
-        plugin(rootProject.libs.plugins.jacocoReportAggregation.get().pluginId)
         plugin("test-report-aggregation")
         plugin(rootProject.testLibs.plugins.testLogger.get().pluginId)
+        plugin(rootProject.libs.plugins.kover.get().pluginId)
     }
 
     val testImplementation by configurations
@@ -50,29 +70,17 @@ subprojects.of("lib", "spring", "examples", "ktor") {
 
     tasks {
         test {
-            configure<JacocoTaskExtension> {
-                isIncludeNoLocationClasses = false
-            }
             dependsOn(formatKotlin)
             useJUnitPlatform()
-            ignoreFailures = true
             testlogger {
                 setTheme("mocha")
                 showStandardStreams = true
             }
+            ignoreFailures = true
             reports {
                 junitXml.required.set(true)
             }
         }
-        jacocoTestReport {
-            dependsOn(test)
-            reports {
-                xml.required.set(true)
-                csv.required.set(false)
-                html.required.set(true)
-            }
-        }
-
         kotlin {
             jvmToolchain(17)
         }
@@ -84,35 +92,6 @@ subprojects.of("lib", "spring", "examples", "ktor") {
                 allWarningsAsErrors = true
             }
         }
-    }
-}
-
-val related = subprojects.of("lib", "spring", "examples", "ktor")
-tasks.create<JacocoReport>("jacocoRootReport") {
-    group = "Reporting"
-    related.forEach { dependsOn(it.tasks.test) }
-    related.forEach {
-        sourceSets(it.sourceSets.getByName("main"))
-        executionData.from(it.layout.buildDirectory.file("jacoco/test.exec"))
-    }
-    classDirectories.setFrom(
-        files(classDirectories.map {
-            fileTree(it) {
-                exclude("**/contracts/**")
-                exclude("**/generated/**")
-                exclude("**/examples/**")
-                exclude("**/example/**")
-                exclude("**/standalone/**")
-                exclude("**/functional/**")
-                exclude("**/abstractions/**")
-                exclude("**/serialization/**")
-            }
-        })
-    )
-    reports {
-        html.required.set(true)
-        xml.required.set(true)
-        csv.required.set(false)
     }
 }
 

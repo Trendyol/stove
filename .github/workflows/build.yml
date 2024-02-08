@@ -26,20 +26,16 @@ jobs:
       - name: Gradle Build and Test
         uses: gradle/gradle-build-action@v3.0.0
         with:
-          arguments: --build-cache build test jacocoRootReport testAggregateXmlReports
+          arguments: --build-cache build test koverXmlReport testAggregateXmlReports
 
-      - name: Add coverage to PR
-        id: jacoco
-        uses: madrapps/jacoco-report@v1.6
+      - name: Add coverage report to PR
+        id: kover
+        uses: mi-kas/kover-report@v1
         with:
-          paths: "./build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
-          token: ${{ secrets.BOT_REPO_TOKEN }}
-          min-coverage-overall: 40
-          min-coverage-changed-files: 60
-        if: github.event_name == 'pull_request'
-
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always() # always run even if the previous step fails
-        with:
-          report_paths: "**/build/reports/xml/**/TEST-*.xml"
+          path: |
+            ${{ github.workspace }}/build/reports/kover/report.xml
+            title: Code Coverage
+            update-comment: true
+            min-coverage-overall: 80
+            min-coverage-changed-files: 80
+            coverage-counter-type: LINE
