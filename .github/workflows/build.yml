@@ -34,8 +34,14 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/build/reports/kover/report.xml
-            title: Code Coverage
-            update-comment: true
-            min-coverage-overall: 80
-            min-coverage-changed-files: 80
-            coverage-counter-type: LINE
+          title: Code Coverage
+          update-comment: true
+          min-coverage-overall: 80
+          min-coverage-changed-files: 80
+          coverage-counter-type: LINE
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        if: github.ref == 'refs/heads/main'
