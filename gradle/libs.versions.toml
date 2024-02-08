@@ -73,7 +73,7 @@ testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", ve
 testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
 testcontainers-mssql = { module = "org.testcontainers:mssqlserver", version.ref = "testcontainers" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.4.2.jre11" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.6.0.jre11" }
 testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis-junit", version = "1.6.4" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.14" }
