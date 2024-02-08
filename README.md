@@ -12,6 +12,8 @@
 
 > Report any issue or bug [in the GitHub repository.](https://github.com/Trendyol/stove4k/issues)
 
+[![codecov](https://codecov.io/gh/Trendyol/stove4k/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove4k)
+
 ## Supports
 
 Physical dependencies: 
