@@ -8,8 +8,8 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.kafka.listener.ConsumerAwareRecordInterceptor
 import org.springframework.kafka.listener.DefaultErrorHandler
+import org.springframework.kafka.listener.RecordInterceptor
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
 import org.springframework.util.backoff.FixedBackOff
 
@@ -17,7 +17,7 @@ import org.springframework.util.backoff.FixedBackOff
 @Configuration
 class KafkaConsumerConfiguration(
     private val objectMapper: ObjectMapper,
-    private val customConsumerInterceptor: ConsumerAwareRecordInterceptor<String, String>
+    private val interceptor: RecordInterceptor<String, String>
 ) {
     @Bean
     fun kafkaListenerContainerFactory(
@@ -35,7 +35,7 @@ class KafkaConsumerConfiguration(
             )
 
         factory.setCommonErrorHandler(errorHandler)
-        factory.setRecordInterceptor(customConsumerInterceptor)
+        factory.setRecordInterceptor(interceptor)
         return factory
     }
 
@@ -54,7 +54,7 @@ class KafkaConsumerConfiguration(
                 FixedBackOff(5000, 1)
             )
         factory.setCommonErrorHandler(errorHandler)
-        factory.setRecordInterceptor(customConsumerInterceptor)
+        factory.setRecordInterceptor(interceptor)
         return factory
     }
 

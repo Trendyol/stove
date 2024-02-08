@@ -1,38 +1,22 @@
 package com.trendyol.stove.testing.e2e.kafka
 
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.getOrElse
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
+import arrow.core.*
+import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import com.trendyol.stove.testing.e2e.system.abstractions.*
+import kotlinx.coroutines.*
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeader
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 import org.springframework.kafka.core.KafkaTemplate
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.MutableMap
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapOf
-import kotlin.collections.plus
 import kotlin.collections.set
-import kotlin.collections.toMutableMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+@KafkaDsl
 class KafkaSystem(
     override val testSystem: TestSystem,
     private val context: KafkaContext
@@ -41,7 +25,7 @@ class KafkaSystem(
     private lateinit var applicationContext: ApplicationContext
     private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
     private lateinit var exposedConfiguration: KafkaExposedConfiguration
-    val getInterceptor = { applicationContext.getBean(TestSystemKafkaInterceptor::class.java) }
+    val getInterceptor: () -> TestSystemKafkaInterceptor = { applicationContext.getBean() }
     private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> =
         StateOfSystem(testSystem.options, javaClass.kotlin, KafkaExposedConfiguration::class)
 
@@ -62,7 +46,7 @@ class KafkaSystem(
     }
 
     override fun configuration(): List<String> =
-        context.configureExposedConfiguration(exposedConfiguration) +
+        context.options.configureExposedConfiguration(exposedConfiguration) +
             listOf(
                 "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
                 "kafka.isSecure=false"
@@ -80,6 +64,7 @@ class KafkaSystem(
             }
         }
 
+    @KafkaDsl
     suspend fun publish(
         topic: String,
         message: Any,
@@ -87,54 +72,54 @@ class KafkaSystem(
         headers: Map<String, String> = mapOf(),
         testCase: Option<String> = None
     ): KafkaSystem {
-        val record =
-            ProducerRecord<String, Any>(
-                topic,
-                0,
-                key.getOrElse { "" },
-                context.objectMapper.writeValueAsString(message),
-                headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
-            )
-        return kafkaTemplate.usingCompletableFuture().send(record).await().let { this }
+        val record = ProducerRecord<String, Any>(
+            topic,
+            0,
+            key.getOrElse { "" },
+            context.objectMapper.writeValueAsString(message),
+            headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
+        )
+
+        return context.options.ops.send(kafkaTemplate, record).let { this }
     }
 
+    @KafkaDsl
     suspend inline fun <reified T : Any> shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
-    ): KafkaSystem =
-        coroutineScope {
-            shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
-                parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
-            }
-        }.let { this }
+    ): KafkaSystem = coroutineScope {
+        shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
+            parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+        }
+    }.let { this }
 
+    @KafkaDsl
     suspend inline fun <reified T : Any> shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: FailedObservedMessage<T>.() -> Boolean
-    ): KafkaSystem =
-        coroutineScope {
-            shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
-                parsed.message.message.isSome { o ->
-                    condition(
-                        FailedObservedMessage(
-                            o,
-                            parsed.message.metadata,
-                            parsed.reason
-                        )
+    ): KafkaSystem = coroutineScope {
+        shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
+            parsed.message.message.isSome { o ->
+                condition(
+                    FailedObservedMessage(
+                        o,
+                        parsed.message.metadata,
+                        parsed.reason
                     )
-                }
+                )
             }
-        }.let { this }
+        }
+    }.let { this }
 
+    @KafkaDsl
     suspend inline fun <reified T : Any> shouldBePublished(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
-    ): KafkaSystem =
-        coroutineScope {
-            shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
-                parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
-            }
-        }.let { this }
+    ): KafkaSystem = coroutineScope {
+        shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
+            parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+        }
+    }.let { this }
 
     @PublishedApi
     internal suspend fun <T : Any> shouldBeConsumedInternal(

@@ -11,12 +11,14 @@ import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.RestClient
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 import kotlin.time.Duration.Companion.minutes
 
+@StoveDsl
 data class ElasticsearchSystemOptions(
     val defaultIndex: DefaultIndex,
     val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),

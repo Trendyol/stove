@@ -19,21 +19,20 @@ const val TEST_BUCKET = "test-couchbase-bucket"
 
 class Setup : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
-        TestSystem {}
-            .with {
-                couchbase {
-                    CouchbaseSystemOptions(
-                        defaultBucket = TEST_BUCKET,
-                        containerOptions = ContainerOptions(
-                            imageVersion = "latest"
-                        )
+        TestSystem {}.with {
+            couchbase {
+                CouchbaseSystemOptions(
+                    defaultBucket = TEST_BUCKET,
+                    containerOptions = ContainerOptions(
+                        imageVersion = "latest"
                     )
-                        .migrations {
-                            register<DefaultMigration>()
-                        }
-                }
-                applicationUnderTest(NoOpApplication())
-            }.run()
+                )
+                    .migrations {
+                        register<DefaultMigration>()
+                    }
+            }
+            applicationUnderTest(NoOpApplication())
+        }.run()
 
     override suspend fun afterProject(): Unit = TestSystem.stop()
 }

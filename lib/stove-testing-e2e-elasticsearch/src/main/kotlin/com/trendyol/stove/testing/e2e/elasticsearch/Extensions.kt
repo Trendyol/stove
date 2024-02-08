@@ -3,10 +3,9 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 import arrow.core.getOrElse
 import arrow.integrations.jackson.module.registerArrowModule
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 
 /**
@@ -44,7 +43,11 @@ internal fun TestSystem.elasticsearch(): ElasticsearchSystem =
         throw SystemNotRegisteredException(ElasticsearchSystem::class)
     }
 
-fun WithDsl.elasticsearch(configure: () -> ElasticsearchSystemOptions): TestSystem = this.testSystem.withElasticsearch(configure())
+@StoveDsl
+fun WithDsl.elasticsearch(
+    configure: @StoveDsl () -> ElasticsearchSystemOptions
+): TestSystem = this.testSystem.withElasticsearch(configure())
 
-suspend fun ValidationDsl.elasticsearch(validation: suspend ElasticsearchSystem.() -> Unit): Unit =
+@StoveDsl
+suspend fun ValidationDsl.elasticsearch(validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =
     validation(this.testSystem.elasticsearch())

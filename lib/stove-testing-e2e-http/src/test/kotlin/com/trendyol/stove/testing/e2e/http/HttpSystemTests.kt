@@ -63,6 +63,7 @@ class HttpSystemTests : FunSpec({
             }
 
             http {
+
                 putAndExpectBodilessResponse("/put-without-response-body", None, None) { actual ->
                     actual.status shouldBe 200
                 }

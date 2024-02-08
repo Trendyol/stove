@@ -20,3 +20,9 @@ class SystemConfigurationException(
 ) : Throwable(
         "${system.simpleName} configuration got an error: $reason"
     )
+
+class SystemNotInitializedException(
+    system: KClass<*>
+) : Throwable(
+        "${system.simpleName} was not initialized. Make sure that you initialized your service on TestSystem"
+    )

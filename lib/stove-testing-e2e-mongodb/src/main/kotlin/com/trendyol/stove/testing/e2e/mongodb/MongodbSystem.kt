@@ -1,32 +1,29 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.module.kotlin.convertValue
-import com.mongodb.ConnectionString
-import com.mongodb.MongoClientSettings
-import com.mongodb.ReadConcern
-import com.mongodb.WriteConcern
+import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
-import com.mongodb.reactivestreams.client.MongoClient
-import com.mongodb.reactivestreams.client.MongoClients
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
+import com.mongodb.reactivestreams.client.*
+import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
+import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import kotlinx.coroutines.reactive.*
 import kotlinx.coroutines.runBlocking
-import org.bson.BsonDocument
-import org.bson.Document
+import org.bson.*
 import org.bson.conversions.Bson
 import org.bson.json.JsonWriterSettings
 import org.bson.types.ObjectId
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 import reactor.kotlin.core.publisher.toFlux
+import kotlin.collections.List
+import kotlin.collections.MutableMap
+import kotlin.collections.isNullOrEmpty
+import kotlin.collections.listOf
+import kotlin.collections.plus
+import kotlin.collections.set
 
+@StoveDsl
 class MongodbSystem internal constructor(
     override val testSystem: TestSystem,
     val context: MongodbContext
@@ -67,6 +64,7 @@ class MongodbSystem internal constructor(
             )
     }
 
+    @MongoDsl
     suspend inline fun <reified T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit
@@ -83,6 +81,7 @@ class MongodbSystem internal constructor(
             .also(assertion)
             .let { this }
 
+    @MongoDsl
     suspend inline fun <reified T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit
@@ -97,6 +96,7 @@ class MongodbSystem internal constructor(
             .also(assertion)
             .let { this }
 
+    @MongoDsl
     suspend fun shouldNotExist(key: String): MongodbSystem {
         val isExistById =
             !mongoClient.getDatabase(context.options.databaseOptions.default.name)
@@ -108,6 +108,7 @@ class MongodbSystem internal constructor(
         return this
     }
 
+    @MongoDsl
     suspend fun shouldDelete(key: String): MongodbSystem =
         mongoClient.getDatabase(context.options.databaseOptions.default.name)
             .getCollection(context.options.databaseOptions.default.collection)
@@ -116,6 +117,7 @@ class MongodbSystem internal constructor(
     /**
      * Saves the [instance] with given [id] to the [collection]
      */
+    @MongoDsl
     suspend fun <T : Any> save(
         collection: String,
         id: String,
@@ -132,6 +134,7 @@ class MongodbSystem internal constructor(
             .awaitFirst()
             .let { this }
 
+    @MongoDsl
     suspend fun <T : Any> saveToDefaultCollection(
         id: String,
         instance: T
@@ -164,7 +167,7 @@ class MongodbSystem internal constructor(
         /**
          * Exposes the [MongoClient] to the [MongodbSystem]
          */
-        @Suppress("unused")
+        @MongoDsl
         fun MongodbSystem.client(): MongoClient = mongoClient
     }
 }

@@ -17,7 +17,7 @@ jobs:
       - name: Configure JDK
         uses: actions/setup-java@v4
         with:
-          java-version: 16
+          java-version: 17
           distribution: 'temurin'
 
       - name: Check out Git repository
@@ -26,13 +26,13 @@ jobs:
       - name: Gradle Build and Test
         uses: gradle/gradle-build-action@v3.0.0
         with:
-          arguments: --build-cache build test codeCoverageReport testAggregateReports
+          arguments: --build-cache build test jacocoRootReport testAggregateXmlReports
 
       - name: Add coverage to PR
         id: jacoco
         uses: madrapps/jacoco-report@v1.6
         with:
-          paths: "./build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+          paths: "./build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
           token: ${{ secrets.BOT_REPO_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
@@ -43,14 +43,3 @@ jobs:
         if: always() # always run even if the previous step fails
         with:
           report_paths: "**/build/reports/xml/**/TEST-*.xml"
-
-
-#       - name: Upload coverage to Codecov
-#         uses: codecov/codecov-action@v3
-#         with:
-#           files: ./build/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml
-#           flags: unittests
-#           name: codecov-umbrella
-#           fail_ci_if_error: true
-#           verbose: true
-#           java-version: 11
