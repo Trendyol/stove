@@ -2,13 +2,10 @@ package com.trendyol.stove.testing.e2e.rdbms
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.r2dbc.spi.ColumnMetadata
-import io.r2dbc.spi.Row
-import io.r2dbc.spi.RowMetadata
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
+import io.kotest.matchers.*
+import io.r2dbc.spi.*
+import kotlinx.coroutines.reactor.mono
+import org.mockito.kotlin.*
 
 class R2DbcResultMapperKtTest : FunSpec({
 
@@ -195,5 +192,16 @@ class R2DbcResultMapperKtTest : FunSpec({
         // then
         result.id shouldBe givenId
         result.description shouldBe givenDescription
+    }
+
+    test("sqloperations should not be opened if it is already open") {
+        val connectionFactory = mock<ConnectionFactory> {
+            on { create() }.thenReturn(mono { mock<Connection>() })
+        }
+        val ops = SqlOperations(connectionFactory)
+        ops.open()
+        ops.isOpen() shouldBe true
+        ops.open()
+        verify(connectionFactory, times(1)).create()
     }
 })

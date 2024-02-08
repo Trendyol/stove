@@ -7,7 +7,6 @@ import com.mongodb.reactivestreams.client.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.reactive.*
 import kotlinx.coroutines.runBlocking
 import org.bson.*
