@@ -10,7 +10,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
 import com.trendyol.stove.testing.e2e.system.abstractions.StateOfSystem
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import com.trendyol.stove.testing.e2e.system.annotations.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -34,7 +34,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-@StoveDsl
+@KafkaDsl
 class KafkaSystem(
     override val testSystem: TestSystem,
     private val context: KafkaContext
@@ -82,6 +82,7 @@ class KafkaSystem(
             }
         }
 
+    @KafkaDsl
     suspend fun publish(
         topic: String,
         message: Any,
@@ -100,6 +101,7 @@ class KafkaSystem(
         return kafkaTemplate.usingCompletableFuture().send(record).await().let { this }
     }
 
+    @KafkaDsl
     suspend inline fun <reified T : Any> shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean
@@ -110,6 +112,7 @@ class KafkaSystem(
             }
         }.let { this }
 
+    @KafkaDsl
     suspend inline fun <reified T : Any> shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: FailedObservedMessage<T>.() -> Boolean
@@ -128,6 +131,7 @@ class KafkaSystem(
             }
         }.let { this }
 
+    @KafkaDsl
     suspend inline fun <reified T : Any> shouldBePublished(
         atLeastIn: Duration = 5.seconds,
         crossinline condition: ObservedMessage<T>.() -> Boolean

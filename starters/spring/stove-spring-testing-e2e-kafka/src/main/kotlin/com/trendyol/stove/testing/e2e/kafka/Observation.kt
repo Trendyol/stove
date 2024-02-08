@@ -20,17 +20,20 @@ internal data class FailedParsedMessage<T>(
     val reason: Throwable
 )
 
+@KafkaDsl
 open class ObservedMessage<T>(
     open val actual: T,
     open val metadata: MessageMetadata
 )
 
+@KafkaDsl
 data class FailedObservedMessage<T>(
     override val actual: T,
     override val metadata: MessageMetadata,
     val reason: Throwable
 ) : ObservedMessage<T>(actual, metadata)
 
+@KafkaDsl
 data class Failure<T>(
     val message: ObservedMessage<T>,
     val reason: Throwable

@@ -3,11 +3,8 @@ package com.trendyol.stove.testing.e2e.wiremock
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
 data class WireMockSystemOptions(
@@ -61,7 +58,8 @@ internal fun TestSystem.wiremock(): WireMockSystem =
     }
 
 @StoveDsl
-fun WithDsl.wiremock(configure: () -> WireMockSystemOptions): TestSystem = this.testSystem.withWireMock(configure())
+fun WithDsl.wiremock(configure: @StoveDsl () -> WireMockSystemOptions): TestSystem = this.testSystem.withWireMock(configure())
 
 @StoveDsl
-suspend fun ValidationDsl.wiremock(validation: suspend WireMockSystem.() -> Unit): Unit = validation(this.testSystem.wiremock())
+suspend fun ValidationDsl.wiremock(validation: @WiremockDsl suspend WireMockSystem.() -> Unit): Unit =
+    validation(this.testSystem.wiremock())

@@ -77,7 +77,9 @@ internal fun TestSystem.couchbase(): CouchbaseSystem =
     }
 
 @StoveDsl
-fun WithDsl.couchbase(configure: () -> CouchbaseSystemOptions): TestSystem = this.testSystem.withCouchbase(configure())
+fun WithDsl.couchbase(configure: @StoveDsl () -> CouchbaseSystemOptions): TestSystem = this.testSystem.withCouchbase(configure())
 
 @StoveDsl
-suspend fun ValidationDsl.couchbase(validation: suspend CouchbaseSystem.() -> Unit): Unit = validation(this.testSystem.couchbase())
+suspend fun ValidationDsl.couchbase(
+    validation: @CouchbaseDsl suspend CouchbaseSystem.() -> Unit
+): Unit = validation(this.testSystem.couchbase())

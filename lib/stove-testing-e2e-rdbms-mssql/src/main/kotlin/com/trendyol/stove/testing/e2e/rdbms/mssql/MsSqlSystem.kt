@@ -4,13 +4,12 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.r2dbc.mssql.*
 import io.r2dbc.spi.ConnectionFactory
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
 
-@StoveDsl
+@MssqlDsl
 class MsSqlSystem internal constructor(
     override val testSystem: TestSystem,
     private val context: MsSqlContext
@@ -66,6 +65,7 @@ class MsSqlSystem internal constructor(
 
     override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
+    @MssqlDsl
     suspend fun ops(operations: suspend SqlOperations.() -> Unit): Unit = operations(sqlOperations)
 
     private fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =

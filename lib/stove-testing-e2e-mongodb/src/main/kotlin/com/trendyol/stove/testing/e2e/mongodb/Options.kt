@@ -60,7 +60,9 @@ internal fun TestSystem.mongodb(): MongodbSystem =
 fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem = this.testSystem.withMongodb(configure())
 
 @StoveDsl
-fun WithDsl.mongodbDsl(configure: MongodbOptionsDsl.() -> Unit): TestSystem = this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
+fun WithDsl.mongodbDsl(
+    configure: @StoveDsl MongodbOptionsDsl.() -> Unit
+): TestSystem = this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
 
 @StoveDsl
-suspend fun ValidationDsl.mongodb(validation: suspend MongodbSystem.() -> Unit): Unit = validation(this.testSystem.mongodb())
+suspend fun ValidationDsl.mongodb(validation: @MongoDsl suspend MongodbSystem.() -> Unit): Unit = validation(this.testSystem.mongodb())

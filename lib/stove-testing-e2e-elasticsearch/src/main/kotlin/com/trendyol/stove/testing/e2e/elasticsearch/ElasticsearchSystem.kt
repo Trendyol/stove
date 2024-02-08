@@ -10,7 +10,6 @@ import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.*
 import org.apache.http.HttpHost
 import org.apache.http.auth.*
@@ -22,7 +21,7 @@ import org.slf4j.*
 import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
 
-@StoveDsl
+@ElasticDsl
 class ElasticsearchSystem internal constructor(
     override val testSystem: TestSystem,
     val context: ElasticsearchContext
@@ -66,6 +65,7 @@ class ElasticsearchSystem internal constructor(
 
     override suspend fun stop(): Unit = context.container.stop()
 
+    @ElasticDsl
     inline fun <reified T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit
@@ -80,6 +80,7 @@ class ElasticsearchSystem internal constructor(
             .also(assertion)
             .let { this }
 
+    @ElasticDsl
     inline fun <reified T : Any> shouldQuery(
         query: Query,
         assertion: (List<T>) -> Unit
@@ -92,6 +93,7 @@ class ElasticsearchSystem internal constructor(
             .also(assertion)
             .let { this }
 
+    @ElasticDsl
     inline fun <reified T : Any> shouldGet(
         index: String = context.index,
         key: String,
@@ -106,6 +108,7 @@ class ElasticsearchSystem internal constructor(
             .let { this }
     }
 
+    @ElasticDsl
     fun shouldNotExist(
         key: String,
         onIndex: String = context.index
@@ -117,6 +120,7 @@ class ElasticsearchSystem internal constructor(
         return this
     }
 
+    @ElasticDsl
     fun shouldDelete(
         key: String,
         fromIndex: String = context.index
@@ -125,6 +129,7 @@ class ElasticsearchSystem internal constructor(
             .delete(DeleteRequest.of { req -> req.index(fromIndex).id(key).refresh(Refresh.WaitFor) })
             .let { this }
 
+    @ElasticDsl
     fun <T : Any> save(
         id: String,
         instance: T,
@@ -195,6 +200,7 @@ class ElasticsearchSystem internal constructor(
          * This is useful for custom queries
          */
         @Suppress("unused")
+        @ElasticDsl
         fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
     }
 }

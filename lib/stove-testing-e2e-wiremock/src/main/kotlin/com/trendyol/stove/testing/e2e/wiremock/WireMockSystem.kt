@@ -20,7 +20,6 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
 import com.trendyol.stove.testing.e2e.system.abstractions.ValidatedSystem
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.Logger
 import wiremock.org.slf4j.LoggerFactory
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentMap
 typealias AfterStubRemoved = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
 typealias AfterRequestHandler = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
 
-@StoveDsl
+@WiremockDsl
 class WireMockSystem(
     override val testSystem: TestSystem,
     ctx: WireMockContext
@@ -57,6 +56,7 @@ class WireMockSystem(
 
     override suspend fun stop(): Unit = wireMock.stop()
 
+    @WiremockDsl
     fun mockGet(
         url: String,
         statusCode: Int,
@@ -71,6 +71,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockPost(
         url: String,
         statusCode: Int,
@@ -86,6 +87,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockPut(
         url: String,
         statusCode: Int,
@@ -105,6 +107,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockDelete(
         url: String,
         statusCode: Int,
@@ -119,6 +122,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockHead(
         url: String,
         statusCode: Int,
@@ -133,6 +137,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockPutConfigure(
         url: String,
         configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
@@ -143,6 +148,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockGetConfigure(
         url: String,
         configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
@@ -153,6 +159,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockHeadConfigure(
         url: String,
         configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
@@ -163,6 +170,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockDeleteConfigure(
         url: String,
         configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
@@ -173,6 +181,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     fun mockPostConfigure(
         url: String,
         configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
@@ -183,6 +192,7 @@ class WireMockSystem(
         return this
     }
 
+    @WiremockDsl
     override suspend fun validate() {
         data class ValidationResult(
             val url: String,
@@ -252,6 +262,7 @@ class WireMockSystem(
          * Exposes the [WireMockServer] instance for the given [WireMockSystem].
          */
         @Suppress("unused")
+        @WiremockDsl
         fun WireMockSystem.server(): WireMockServer = wireMock
     }
 }

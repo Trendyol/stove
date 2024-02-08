@@ -41,7 +41,7 @@ fun WithDsl.mssql(
 
 @StoveDsl
 suspend fun ValidationDsl.mssql(
-    validation: suspend MsSqlSystem.() -> Unit
+    validation: @MssqlDsl suspend MsSqlSystem.() -> Unit
 ): Unit = validation(this.testSystem.mssql())
 
 internal fun TestSystem.mssql(): MsSqlSystem =

@@ -1,5 +1,6 @@
 package com.trendyol.stove.testing.e2e
 
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.springframework.boot.context.event.ApplicationContextInitializedEvent
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationContextInitializer
@@ -7,6 +8,7 @@ import org.springframework.context.support.BeanDefinitionDsl
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.context.support.beans
 
+@StoveDsl
 abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl.() -> Unit = {}) :
     ApplicationContextInitializer<GenericApplicationContext> {
     private var registrations = mutableListOf<(BeanDefinitionDsl) -> Unit>()
@@ -16,6 +18,7 @@ abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl
         registrations.add(registration)
     }
 
+    @StoveDsl
     protected fun register(registration: BeanDefinitionDsl.() -> Unit): BaseApplicationContextInitializer {
         registrations.add(registration)
         return this

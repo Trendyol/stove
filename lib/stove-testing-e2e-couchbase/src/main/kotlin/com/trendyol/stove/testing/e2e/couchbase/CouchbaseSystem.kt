@@ -13,13 +13,12 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.couchbase.ClusterExtensions.executeQueryAs
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.reactive.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
 import reactor.core.publisher.Mono
 
-@StoveDsl
+@CouchbaseDsl
 class CouchbaseSystem internal constructor(
     override val testSystem: TestSystem,
     val context: CouchbaseContext
@@ -73,6 +72,7 @@ class CouchbaseSystem internal constructor(
             )
 
     @Suppress("unused")
+    @CouchbaseDsl
     suspend inline fun <reified T : Any> shouldQuery(
         query: String,
         assertion: (List<T>) -> Unit
@@ -88,6 +88,7 @@ class CouchbaseSystem internal constructor(
         return this
     }
 
+    @CouchbaseDsl
     suspend inline fun <reified T : Any> shouldGet(
         key: String,
         assertion: (T) -> Unit
@@ -97,6 +98,7 @@ class CouchbaseSystem internal constructor(
             .let(assertion)
             .let { this }
 
+    @CouchbaseDsl
     suspend inline fun <reified T : Any> shouldGet(
         collection: String,
         key: String,
@@ -109,6 +111,7 @@ class CouchbaseSystem internal constructor(
             .let(assertion)
             .let { this }
 
+    @CouchbaseDsl
     suspend fun shouldNotExist(key: String): CouchbaseSystem =
         when (
             collection.get(key)
@@ -123,7 +126,7 @@ class CouchbaseSystem internal constructor(
             else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
         }
 
-    @Suppress("unused")
+    @CouchbaseDsl
     suspend fun shouldNotExist(
         collection: String,
         key: String
@@ -144,12 +147,12 @@ class CouchbaseSystem internal constructor(
             else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
         }
 
-    @Suppress("unused")
+    @CouchbaseDsl
     suspend fun shouldDelete(key: String): CouchbaseSystem =
         collection.remove(key).awaitSingle()
             .let { this }
 
-    @Suppress("unused")
+    @CouchbaseDsl
     suspend fun shouldDelete(
         collection: String,
         key: String
@@ -163,7 +166,7 @@ class CouchbaseSystem internal constructor(
      * Saves the [instance] with given [id] to the [collection]
      * To save to the default collection use [saveToDefaultCollection]
      */
-
+    @CouchbaseDsl
     suspend fun <T : Any> save(
         collection: String,
         id: String,
@@ -183,7 +186,7 @@ class CouchbaseSystem internal constructor(
      * Saves the [instance] with given [id] to the default collection
      * In couchbase the default collection is `_default`
      */
-
+    @CouchbaseDsl
     suspend inline fun <reified T : Any> saveToDefaultCollection(
         id: String,
         instance: T
@@ -216,13 +219,13 @@ class CouchbaseSystem internal constructor(
         /**
          * Exposes the [ReactiveCluster] of the [CouchbaseSystem]
          */
-        @Suppress("unused")
+        @CouchbaseDsl
         fun CouchbaseSystem.cluster(): ReactiveCluster = this.cluster
 
         /**
          * Exposes the [ReactiveBucket] of the [CouchbaseSystem]
          */
-        @Suppress("unused")
+        @CouchbaseDsl
         fun CouchbaseSystem.bucket(): ReactiveBucket = this.cluster.bucket(this.context.bucket.name)
     }
 }

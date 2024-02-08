@@ -1,12 +1,8 @@
 package com.trendyol.stove.testing.e2e
 
 import arrow.core.getOrElse
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
@@ -52,6 +48,7 @@ class BridgeSystem(override val testSystem: TestSystem) : PluggedSystem, AfterRu
      * @param T the type of object being validated.
      * @param validation the validation function to apply to the object.
      */
+    @StoveDsl
     inline fun <reified T : Any> using(validation: T.() -> Unit): Unit = validation(resolve())
 }
 
@@ -104,4 +101,4 @@ fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
  * @param validation the validation function to apply to the object.
  */
 @StoveDsl
-inline fun <reified T : Any> ValidationDsl.using(validation: T.() -> Unit): Unit = this.testSystem.bridge().using(validation)
+inline fun <reified T : Any> ValidationDsl.using(validation: @StoveDsl T.() -> Unit): Unit = this.testSystem.bridge().using(validation)

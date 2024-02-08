@@ -18,7 +18,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
 import kotlin.reflect.KClass
 
-@StoveDsl
+@HttpDsl
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
 
 internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
@@ -32,15 +32,15 @@ internal fun TestSystem.http(): HttpSystem =
     }
 
 @StoveDsl
-fun WithDsl.httpClient(configure: () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
+fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
     this.testSystem.withHttpClient(configure())
 
 @StoveDsl
 suspend fun ValidationDsl.http(
-    validation: suspend HttpSystem.() -> Unit
+    validation: @HttpDsl suspend HttpSystem.() -> Unit
 ): Unit = validation(this.testSystem.http())
 
-@StoveDsl
+@HttpDsl
 class HttpSystem(
     override val testSystem: TestSystem,
     @PublishedApi internal val objectMapper: ObjectMapper
@@ -48,6 +48,7 @@ class HttpSystem(
     @PublishedApi
     internal val httpClient: HttpClient = httpClient()
 
+    @HttpDsl
     suspend fun getResponse(
         uri: String,
         queryParams: Map<String, String> = mapOf(),
@@ -67,6 +68,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend inline fun <reified T : Any> getResponse(
         uri: String,
         queryParams: Map<String, String> = mapOf(),
@@ -86,6 +88,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend inline fun <reified TExpected : Any> get(
         uri: String,
         queryParams: Map<String, String> = mapOf(),
@@ -100,6 +103,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend inline fun <reified TExpected : Any> getMany(
         uri: String,
         queryParams: Map<String, String> = mapOf(),
@@ -119,6 +123,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend fun postAndExpectBodilessResponse(
         uri: String,
         body: Option<Any>,
@@ -130,6 +135,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend inline fun <reified TExpected : Any> postAndExpectJson(
         uri: String,
         body: Option<Any> = None,
@@ -144,6 +150,7 @@ class HttpSystem(
     /**
      * Posts the given [body] to the given [uri] and expects the response to have a body.
      */
+    @HttpDsl
     suspend inline fun <reified TExpected : Any> postAndExpectBody(
         uri: String,
         body: Option<Any> = None,
@@ -155,6 +162,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend fun putAndExpectBodilessResponse(
         uri: String,
         body: Option<Any>,
@@ -166,6 +174,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend inline fun <reified TExpected : Any> putAndExpectJson(
         uri: String,
         body: Option<Any> = None,
@@ -177,6 +186,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend inline fun <reified TExpected : Any> putAndExpectBody(
         uri: String,
         body: Option<Any> = None,
@@ -188,6 +198,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     suspend fun deleteAndExpectBodilessResponse(
         uri: String,
         token: Option<String> = None,
@@ -201,6 +212,7 @@ class HttpSystem(
         this
     }
 
+    @HttpDsl
     override fun then(): TestSystem = testSystem
 
     @PublishedApi
@@ -298,6 +310,7 @@ class HttpSystem(
          * Exposes the [HttpClient] used by the [HttpSystem].
          */
         @Suppress("unused")
+        @HttpDsl
         fun HttpSystem.client(): HttpClient = this.httpClient
     }
 }

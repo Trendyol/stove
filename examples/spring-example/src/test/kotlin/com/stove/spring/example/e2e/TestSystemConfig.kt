@@ -1,19 +1,13 @@
 package com.stove.spring.example.e2e
 
-import com.trendyol.stove.testing.e2e.bridge
-import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystemOptions
-import com.trendyol.stove.testing.e2e.couchbase.couchbase
+import com.trendyol.stove.testing.e2e.*
+import com.trendyol.stove.testing.e2e.couchbase.*
 import com.trendyol.stove.testing.e2e.http.httpClient
-import com.trendyol.stove.testing.e2e.kafka.KafkaContainerOptions
-import com.trendyol.stove.testing.e2e.kafka.KafkaSystemOptions
-import com.trendyol.stove.testing.e2e.kafka.kafka
-import com.trendyol.stove.testing.e2e.springBoot
+import com.trendyol.stove.testing.e2e.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 
 class TestSystemConfig : AbstractProjectConfig() {
     private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
