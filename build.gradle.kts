@@ -6,10 +6,10 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinter)
     alias(libs.plugins.gitVersioning)
-    id(libs.plugins.jacocoReportAggregation.get().pluginId)
+    `jacoco-report-aggregation`
+    `test-report-aggregation`
     id(libs.plugins.jacoco.get().pluginId)
     id("stove-publishing") apply false
-    id("reporting")
     alias(testLibs.plugins.testLogger)
     java
 }
@@ -22,13 +22,14 @@ allprojects {
     extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
 }
 
-subprojectsOf("lib", "spring", "examples", "ktor") {
+subprojects.of("lib", "spring", "examples", "ktor") {
     apply {
         plugin("kotlin")
         plugin(rootProject.libs.plugins.kotlinter.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
         plugin(rootProject.libs.plugins.jacoco.get().pluginId)
         plugin(rootProject.libs.plugins.jacocoReportAggregation.get().pluginId)
+        plugin("test-report-aggregation")
         plugin(rootProject.testLibs.plugins.testLogger.get().pluginId)
     }
 
@@ -49,18 +50,19 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
 
     tasks {
         test {
+            configure<JacocoTaskExtension> {
+                isIncludeNoLocationClasses = false
+            }
             dependsOn(formatKotlin)
             useJUnitPlatform()
             testlogger {
                 setTheme("mocha")
-                this.showStandardStreams = true
+                showStandardStreams = true
             }
             reports {
                 junitXml.required.set(true)
-                html.required.set(true)
             }
         }
-
         jacocoTestReport {
             dependsOn(test)
             reports {
@@ -84,6 +86,48 @@ subprojectsOf("lib", "spring", "examples", "ktor") {
     }
 }
 
+val related = subprojects.of("lib", "spring", "examples", "ktor")
+tasks.create<JacocoReport>("jacocoRootReport") {
+    group = "Reporting"
+    related.forEach { dependsOn(it.tasks.test) }
+    related.forEach {
+        sourceSets(it.sourceSets.getByName("main"))
+        executionData.from(it.layout.buildDirectory.file("jacoco/test.exec"))
+    }
+    classDirectories.setFrom(
+        files(classDirectories.map {
+            fileTree(it) {
+                exclude("**/contracts/**")
+                exclude("**/generated/**")
+                exclude("**/examples/**")
+                exclude("**/example/**")
+                exclude("**/standalone/**")
+                exclude("**/functional/**")
+                exclude("**/abstractions/**")
+                exclude("**/serialization/**")
+            }
+        })
+    )
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.register<Copy>("testAggregateXmlReports") {
+    group = "Reporting"
+    related.forEach {
+        dependsOn(it.tasks.testAggregateTestReport)
+        mustRunAfter(it.tasks.testAggregateTestReport)
+    }
+    val testResults = related.map { it.tasks.test.get().outputs.files }
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from(testResults)
+    include("*.xml")
+    into(rootProject.layout.buildDirectory.dir("reports/xml"))
+}
+
 val publishedProjects = listOf(
     "stove-testing-e2e",
     "stove-testing-e2e-couchbase",
@@ -101,7 +145,7 @@ val publishedProjects = listOf(
     "stove-spring-testing-e2e-kafka"
 )
 
-subprojectsOf("lib", "spring", "ktor", filter = { p -> publishedProjects.contains(p.name) }) {
+subprojects.of("lib", "spring", "ktor", filter = { p -> publishedProjects.contains(p.name) }) {
     apply {
         plugin("java")
         plugin("stove-publishing")
@@ -116,14 +160,3 @@ subprojectsOf("lib", "spring", "ktor", filter = { p -> publishedProjects.contain
 tasks.withType<DokkaMultiModuleTask>().configureEach {
     outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
-
-fun subprojectsOf(
-    vararg parentProjects: String,
-    action: Action<Project>
-): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) }.forEach { action(it) }
-
-fun subprojectsOf(
-    vararg parentProjects: String,
-    filter: (Project) -> Boolean,
-    action: Action<Project>
-): Unit = subprojects.filter { parentProjects.contains(it.parent?.name) && filter(it) }.forEach { action(it) }
