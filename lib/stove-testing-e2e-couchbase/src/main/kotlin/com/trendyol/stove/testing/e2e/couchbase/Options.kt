@@ -1,21 +1,15 @@
 package com.trendyol.stove.testing.e2e.couchbase
 
 import arrow.core.getOrElse
-import com.couchbase.client.java.ReactiveCluster
-import com.couchbase.client.java.json.JsonValueModule
+import com.couchbase.client.kotlin.Cluster
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
-import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
-import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
-import com.trendyol.stove.testing.e2e.database.migrations.MigrationCollection
+import com.trendyol.stove.testing.e2e.containers.*
+import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.testcontainers.couchbase.BucketDefinition
-import org.testcontainers.couchbase.CouchbaseContainer
+import org.testcontainers.couchbase.*
 
 data class CouchbaseExposedConfiguration(
     val connectionString: String,
@@ -29,9 +23,9 @@ data class CouchbaseSystemOptions(
     val defaultBucket: String,
     val containerOptions: ContainerOptions = ContainerOptions(),
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(JsonValueModule()) }
+    val objectMapper: ObjectMapper = StoveObjectMapper.Default
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
-    internal val migrationCollection: MigrationCollection<ReactiveCluster> = MigrationCollection()
+    internal val migrationCollection: MigrationCollection<Cluster> = MigrationCollection()
 
     /**
      * Helps for registering migrations before the tests run.
@@ -39,7 +33,7 @@ data class CouchbaseSystemOptions(
      * @see DatabaseMigration
      */
     @StoveDsl
-    fun migrations(migration: MigrationCollection<ReactiveCluster>.() -> Unit): CouchbaseSystemOptions =
+    fun migrations(migration: MigrationCollection<Cluster>.() -> Unit): CouchbaseSystemOptions =
         migration(
             migrationCollection
         ).let { this }
@@ -60,11 +54,14 @@ data class ContainerOptions(
 
 internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSystem {
     val bucketDefinition = BucketDefinition(options.defaultBucket)
-    val couchbaseContainer =
-        withProvidedRegistry("couchbase/server:${options.containerOptions.imageVersion}", options.containerOptions.registry) {
-            CouchbaseContainer(it).withBucket(bucketDefinition)
-                .withReuse(this.options.keepDependenciesRunning)
-        }
+    val couchbaseContainer = withProvidedRegistry(
+        imageName = "couchbase/server:${options.containerOptions.imageVersion}",
+        registry = options.containerOptions.registry
+    ) {
+        CouchbaseContainer(it)
+            .withBucket(bucketDefinition)
+            .withReuse(this.options.keepDependenciesRunning)
+    }
     this.getOrRegister(
         CouchbaseSystem(this, CouchbaseContext(bucketDefinition, couchbaseContainer, options))
     )

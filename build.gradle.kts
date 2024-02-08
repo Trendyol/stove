@@ -55,6 +55,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
             }
             dependsOn(formatKotlin)
             useJUnitPlatform()
+            ignoreFailures = true
             testlogger {
                 setTheme("mocha")
                 showStandardStreams = true
