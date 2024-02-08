@@ -93,7 +93,9 @@ val publishedProjects = listOf(
     "stove-testing-e2e-mongodb",
     "stove-testing-e2e-rdbms",
     "stove-testing-e2e-rdbms-postgres",
+    "stove-testing-e2e-rdbms-mssql",
     "stove-testing-e2e-wiremock",
+    "stove-testing-e2e-redis",
     "stove-ktor-testing-e2e",
     "stove-spring-testing-e2e",
     "stove-spring-testing-e2e-kafka"
