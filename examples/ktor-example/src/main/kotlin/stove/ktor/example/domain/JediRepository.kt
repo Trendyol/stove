@@ -12,8 +12,8 @@ class JediRepository(private val postgresqlConnectionFactory: PostgresqlConnecti
     suspend fun findById(id: Long): Jedi {
         return connection.createStatement("SELECT * FROM Jedis WHERE id=$id").execute().awaitFirst().map { r, rm ->
             Jedi(
-                (r.get(Jedi::id.name, rm.getColumnMetadata(Jedi::id.name).javaType) as Int).toLong(),
-                r.get(Jedi::name.name, rm.getColumnMetadata(Jedi::name.name).javaType) as String
+                (r.get(Jedi::id.name, rm.getColumnMetadata(Jedi::id.name).javaType!!) as Int).toLong(),
+                r.get(Jedi::name.name, rm.getColumnMetadata(Jedi::name.name).javaType!!) as String
             )
         }.awaitSingle()
     }
