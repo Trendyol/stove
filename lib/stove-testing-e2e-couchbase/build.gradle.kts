@@ -1,6 +1,6 @@
 dependencies {
     api(projects.lib.stoveTestingE2e)
-    implementation(libs.couchbase.kotlin)
+    api(libs.couchbase.kotlin)
     implementation(libs.testcontainers.couchbase)
 }
 
