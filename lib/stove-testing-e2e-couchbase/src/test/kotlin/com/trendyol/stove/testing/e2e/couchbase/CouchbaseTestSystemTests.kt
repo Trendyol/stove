@@ -57,6 +57,8 @@ class DefaultMigration : DatabaseMigration<Cluster> {
             .collections.createCollection("_default", "another")
 
         connection.bucket(TEST_BUCKET).waitUntilReady(30.seconds)
+        connection.waitUntilIndexIsCreated("CREATE PRIMARY INDEX ON `${connection.bucket(TEST_BUCKET).name}`.`_default`.`another`", 30.seconds)
+        connection.waitForKeySpaceAvailability(TEST_BUCKET, "another", 30.seconds)
         logger.info("default migration is executed")
     }
 }
