@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.couchbase
 import com.couchbase.client.kotlin.*
 import com.couchbase.client.kotlin.Collection
 import com.couchbase.client.kotlin.codec.*
-import com.couchbase.client.kotlin.query.execute
+import com.couchbase.client.kotlin.query.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -70,7 +70,8 @@ class CouchbaseSystem internal constructor(
     ): CouchbaseSystem {
         val result = cluster.query(
             statement = query,
-            metrics = false
+            metrics = false,
+            consistency = QueryScanConsistency.requestPlus()
         ).execute().rows.map { it.contentAs<T>() }
         val objects = result
             .map { objectMapper.writeValueAsString(it) }

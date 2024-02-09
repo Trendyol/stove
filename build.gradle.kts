@@ -90,6 +90,11 @@ subprojects.of("lib", "spring", "examples", "ktor") {
             compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_17)
                 allWarningsAsErrors = true
+                freeCompilerArgs.addAll(
+                    "-Xjsr305=strict",
+                    "-Xcontext-receivers",
+                    "-Xsuppress-version-warnings"
+                )
             }
         }
     }
