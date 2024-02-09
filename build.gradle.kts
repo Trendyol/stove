@@ -75,8 +75,9 @@ subprojects.of("lib", "spring", "examples", "ktor") {
             testlogger {
                 setTheme("mocha")
                 showStandardStreams = true
+                showExceptions = true
+                showCauses = true
             }
-            ignoreFailures = true
             reports {
                 junitXml.required.set(true)
             }
