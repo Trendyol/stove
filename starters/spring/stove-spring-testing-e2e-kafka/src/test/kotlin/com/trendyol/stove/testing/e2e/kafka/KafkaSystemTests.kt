@@ -19,7 +19,8 @@ import org.springframework.context.support.beans
 import org.springframework.kafka.annotation.*
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
-import org.springframework.kafka.listener.RecordInterceptor
+import org.springframework.kafka.listener.*
+import org.springframework.util.backoff.FixedBackOff
 
 object KafkaSystemTestAppRunner {
     fun run(
@@ -51,6 +52,11 @@ open class KafkaTestSpringBotApplication {
     ): ConcurrentKafkaListenerContainerFactory<String, String> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
         factory.consumerFactory = consumerFactory
+        factory.setCommonErrorHandler(
+            DefaultErrorHandler(
+                FixedBackOff(5000, 1)
+            )
+        )
         factory.setRecordInterceptor(interceptor)
         return factory
     }
@@ -90,6 +96,12 @@ open class KafkaTestSpringBotApplication {
     @KafkaListener(topics = ["topic"], groupId = "group_id")
     fun listen(message: String) {
         logger.info("Received Message in consumer: $message")
+    }
+
+    @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
+    fun listen_failed(message: String) {
+        logger.info("Received Message in consumer: $message")
+        throw RuntimeException("Failed to consume message")
     }
 }
 
@@ -135,6 +147,22 @@ class KafkaSystemTests : ShouldSpec({
                 }
                 shouldBeConsumed<Any> {
                     actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic"
+                }
+            }
+        }
+    }
+
+    should("publish and consume with failed consumer") {
+        validate {
+            kafka {
+                val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
+                val headers = mapOf("x-user-id" to "1")
+                publish("topic-failed", message, headers = headers)
+                shouldBePublished<Any> {
+                    actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed"
+                }
+                shouldBeFailed<Any> {
+                    actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is RuntimeException
                 }
             }
         }

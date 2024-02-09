@@ -1,6 +1,6 @@
 dependencies {
     api(projects.lib.stoveTestingE2eRdbms)
-    implementation(libs.r2dbc.postgresql)
-    implementation(libs.testcontainers.postgres)
+    api(libs.r2dbc.postgresql)
+    api(libs.testcontainers.postgres)
     testImplementation(libs.logback.classic)
 }
