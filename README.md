@@ -25,6 +25,8 @@ Physical dependencies:
 - [x] PostgresSql
 - [x] ElasticSearch
 - [x] MongoDB
+- [x] MSSQL
+- [x] Redis 
 
 Frameworks:
 
