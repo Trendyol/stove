@@ -11,7 +11,7 @@ import kotlinx.coroutines.*
 import org.springframework.context.ConfigurableApplicationContext
 
 @StoveDsl
-fun TestSystem.systemUnderTest(
+internal fun TestSystem.systemUnderTest(
     runner: Runner<ConfigurableApplicationContext>,
     withParameters: List<String> = listOf()
 ): ReadyTestSystem {

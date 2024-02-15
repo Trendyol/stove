@@ -102,3 +102,58 @@ fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
  */
 @StoveDsl
 inline fun <reified T : Any> ValidationDsl.using(validation: @StoveDsl T.() -> Unit): Unit = this.testSystem.bridge().using(validation)
+
+@StoveDsl
+inline fun <
+    reified T1 : Any,
+    reified T2 : Any
+> ValidationDsl.using(validation: (T1, T2) -> Unit): Unit = testSystem.bridge().let {
+    val t1: T1 = it.resolve()
+    val t2: T2 = it.resolve()
+    validation(t1, t2)
+}
+
+@StoveDsl
+inline fun <
+    reified T1 : Any,
+    reified T2 : Any,
+    reified T3 : Any
+> ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = this.testSystem.bridge()
+    .let {
+        val t1: T1 = it.resolve()
+        val t2: T2 = it.resolve()
+        val t3: T3 = it.resolve()
+        validation(t1, t2, t3)
+    }
+
+@StoveDsl
+inline fun <
+    reified T1 : Any,
+    reified T2 : Any,
+    reified T3 : Any,
+    reified T4 : Any
+> ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = this.testSystem.bridge()
+    .let {
+        val t1: T1 = it.resolve()
+        val t2: T2 = it.resolve()
+        val t3: T3 = it.resolve()
+        val t4: T4 = it.resolve()
+        validation(t1, t2, t3, t4)
+    }
+
+@StoveDsl
+inline fun <
+    reified T1 : Any,
+    reified T2 : Any,
+    reified T3 : Any,
+    reified T4 : Any,
+    reified T5 : Any
+> ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = this.testSystem.bridge()
+    .let {
+        val t1: T1 = it.resolve()
+        val t2: T2 = it.resolve()
+        val t3: T3 = it.resolve()
+        val t4: T4 = it.resolve()
+        val t5: T5 = it.resolve()
+        validation(t1, t2, t3, t4, t5)
+    }

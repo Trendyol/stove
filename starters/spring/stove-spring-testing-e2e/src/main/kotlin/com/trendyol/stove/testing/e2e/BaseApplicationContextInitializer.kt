@@ -1,12 +1,9 @@
 package com.trendyol.stove.testing.e2e
 
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.springframework.boot.context.event.ApplicationContextInitializedEvent
 import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.support.BeanDefinitionDsl
-import org.springframework.context.support.GenericApplicationContext
-import org.springframework.context.support.beans
+import org.springframework.context.*
+import org.springframework.context.support.*
 
 @StoveDsl
 abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl.() -> Unit = {}) :
@@ -25,12 +22,10 @@ abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl
     }
 
     override fun initialize(applicationContext: GenericApplicationContext) {
-        applicationContext.addApplicationListener {
-            when (it) {
-                is ApplicationReadyEvent ->
-                    applicationReady(it.applicationContext as GenericApplicationContext)
-                is ApplicationContextInitializedEvent ->
-                    applicationReady(it.applicationContext as GenericApplicationContext)
+        applicationContext.addApplicationListener { event ->
+            when (event) {
+                is ApplicationReadyEvent -> applicationReady(event.applicationContext as GenericApplicationContext)
+                else -> onEvent(event)
             }
         }
         beans.initialize(applicationContext)
@@ -39,5 +34,5 @@ abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl
 
     protected open fun applicationReady(applicationContext: GenericApplicationContext) {}
 
-    protected open fun applicationContextInitialized(applicationContext: GenericApplicationContext) {}
+    protected open fun onEvent(event: ApplicationEvent) {}
 }
