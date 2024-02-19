@@ -78,7 +78,7 @@ r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.6.0.jre11" }
 testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis-junit", version = "1.6.4" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.1.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.14" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.0" }
 
 spring-boot = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
 spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
