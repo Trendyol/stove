@@ -11,11 +11,17 @@ import org.testcontainers.containers.PostgreSQLContainer
 
 const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
 
+data class PostgresqlContainerOptions(
+    override val registry: String = DEFAULT_REGISTRY,
+    override val image: String = DEFAULT_POSTGRES_IMAGE_NAME,
+    override val tag: String = "latest",
+    override val compatibleSubstitute: String? = null
+) : ContainerOptions
+
 @StoveDsl
 data class PostgresqlOptions(
     val databaseName: String = "stove-e2e-testing",
-    val registry: String = DEFAULT_REGISTRY,
-    val imageName: String = DEFAULT_POSTGRES_IMAGE_NAME,
+    val container: PostgresqlContainerOptions = PostgresqlContainerOptions(),
     override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
     val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
@@ -42,7 +48,7 @@ data class PostgresSqlMigrationContext(
 )
 
 internal fun TestSystem.withPostgresql(options: PostgresqlOptions = PostgresqlOptions()): TestSystem =
-    withProvidedRegistry(options.imageName, options.registry, "postgres") {
+    withProvidedRegistry(options.container.imageWithTag, options.container.registry, options.container.compatibleSubstitute) {
         PostgreSQLContainer(it)
             .withDatabaseName(options.databaseName)
             .withUsername("sa")

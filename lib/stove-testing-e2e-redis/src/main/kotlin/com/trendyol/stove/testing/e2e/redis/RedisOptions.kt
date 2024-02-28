@@ -7,11 +7,18 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
+data class RedisContainerOptions(
+    override val registry: String = DEFAULT_REGISTRY,
+    override val image: String = RedisContainer.DEFAULT_IMAGE_NAME.unversionedPart,
+    override val tag: String = RedisContainer.DEFAULT_TAG,
+    override val compatibleSubstitute: String? = null
+) : ContainerOptions
+
 @StoveDsl
 data class RedisOptions(
     val database: Int = 8,
     val password: String = "password",
-    val registry: String = DEFAULT_REGISTRY,
+    val container: RedisContainerOptions = RedisContainerOptions(),
     override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RedisExposedConfiguration>
 
@@ -42,7 +49,7 @@ internal fun TestSystem.redis(): RedisSystem =
     }
 
 internal fun TestSystem.withRedis(options: RedisOptions = RedisOptions()): TestSystem =
-    withProvidedRegistry(RedisContainer.DEFAULT_IMAGE_NAME.unversionedPart) {
+    withProvidedRegistry(options.container.image, options.container.registry, options.container.compatibleSubstitute) {
         RedisContainer(it)
             .withCommand("redis-server", "--requirepass", options.password)
             .withReuse(this.options.keepDependenciesRunning)

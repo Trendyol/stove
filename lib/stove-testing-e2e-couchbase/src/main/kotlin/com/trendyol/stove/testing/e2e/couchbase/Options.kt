@@ -10,6 +10,7 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.couchbase.*
+import org.testcontainers.utility.DockerImageName
 
 data class CouchbaseExposedConfiguration(
     val connectionString: String,
@@ -21,7 +22,7 @@ data class CouchbaseExposedConfiguration(
 @StoveDsl
 data class CouchbaseSystemOptions(
     val defaultBucket: String,
-    val containerOptions: ContainerOptions = ContainerOptions(),
+    val containerOptions: CouchbaseContainerOptions = CouchbaseContainerOptions(),
     override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
     val objectMapper: ObjectMapper = StoveObjectMapper.Default
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
@@ -47,20 +48,26 @@ data class CouchbaseContext(
 )
 
 @StoveDsl
-data class ContainerOptions(
-    val registry: String = DEFAULT_REGISTRY,
-    val imageVersion: String = "latest"
-)
+data class CouchbaseContainerOptions(
+    override val registry: String = DEFAULT_REGISTRY,
+    override val image: String = "couchbase/server",
+    override val tag: String = "latest",
+    override val compatibleSubstitute: String? = null,
+    val containerImageFn: DockerImageName.() -> DockerImageName = { this },
+    val containerFn: CouchbaseContainer.() -> CouchbaseContainer = { this }
+) : ContainerOptions
 
 internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSystem {
     val bucketDefinition = BucketDefinition(options.defaultBucket)
     val couchbaseContainer = withProvidedRegistry(
-        imageName = "couchbase/server:${options.containerOptions.imageVersion}",
-        registry = options.containerOptions.registry
+        imageName = options.containerOptions.imageWithTag,
+        registry = options.containerOptions.registry,
+        compatibleSubstitute = options.containerOptions.compatibleSubstitute
     ) {
-        CouchbaseContainer(it)
+        CouchbaseContainer(it.let(options.containerOptions.containerImageFn))
             .withBucket(bucketDefinition)
             .withReuse(this.options.keepDependenciesRunning)
+            .let(options.containerOptions.containerFn)
     }
     this.getOrRegister(
         CouchbaseSystem(this, CouchbaseContext(bucketDefinition, couchbaseContainer, options))
