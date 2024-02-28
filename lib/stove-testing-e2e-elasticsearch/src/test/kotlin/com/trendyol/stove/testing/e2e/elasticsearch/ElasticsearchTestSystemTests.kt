@@ -64,7 +64,7 @@ class Setup : AbstractProjectConfig() {
                                         RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
                                     }
                             ),
-                        ElasticContainerOptions(imageVersion = "8.9.0")
+                        ElasticContainerOptions(tag = "8.9.0")
                     ).migrations { register<AnotherIndexMigrator>() }
                 }
                 applicationUnderTest(NoOpApplication())
