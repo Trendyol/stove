@@ -10,7 +10,7 @@ interface ContainerOptions {
 
     val tag: String
 
-    val imageWithTag: String
+    val imageWithTag: String get() = "$image:$tag"
 
-    val compatibleSubstitute: String get() = image
+    val compatibleSubstitute: String?
 }

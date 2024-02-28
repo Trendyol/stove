@@ -21,7 +21,7 @@ data class KafkaContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "confluentinc/cp-kafka",
     override val tag: String = "latest",
-    override val imageWithTag: String = "$image:$tag"
+    override val compatibleSubstitute: String? = null
 ) : ContainerOptions
 
 data class KafkaOps(
@@ -49,7 +49,11 @@ data class KafkaContext(
 )
 
 internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem =
-    withProvidedRegistry(options.containerOptions.imageWithTag, registry = options.registry) {
+    withProvidedRegistry(
+        options.containerOptions.imageWithTag,
+        registry = options.registry,
+        compatibleSubstitute = options.containerOptions.compatibleSubstitute
+    ) {
         KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
             .withEmbeddedZookeeper()
             .withReuse(this.options.keepDependenciesRunning)

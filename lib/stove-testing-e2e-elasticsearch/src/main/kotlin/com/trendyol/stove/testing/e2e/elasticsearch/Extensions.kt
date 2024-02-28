@@ -21,18 +21,18 @@ internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): 
     options.objectMapper.registerArrowModule()
 
     return withProvidedRegistry(
-        imageName = "elasticsearch/elasticsearch:${options.containerOptions.imageVersion}",
-        registry = options.containerOptions.registry,
-        compatibleSubstitute = options.containerOptions.compatibleSubstitute.getOrNull()
+        imageName = options.container.imageWithTag,
+        registry = options.container.registry,
+        compatibleSubstitute = options.container.compatibleSubstitute
     ) { ElasticsearchContainer(it) }
         .apply {
-            addExposedPorts(*options.containerOptions.exposedPorts.toIntArray())
-            withPassword(options.containerOptions.password)
-            if (options.containerOptions.disableSecurity) {
+            addExposedPorts(*options.container.exposedPorts.toIntArray())
+            withPassword(options.container.password)
+            if (options.container.disableSecurity) {
                 withEnv("xpack.security.enabled", "false")
             }
             withReuse(this@withElasticsearch.options.keepDependenciesRunning)
-            options.containerOptions.configureContainer(this)
+            options.container.configureContainer(this)
         }
         .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
         .let { this }

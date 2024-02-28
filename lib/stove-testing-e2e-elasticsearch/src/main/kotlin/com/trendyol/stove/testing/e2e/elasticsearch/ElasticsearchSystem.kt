@@ -41,14 +41,14 @@ class ElasticsearchSystem internal constructor(
                 ElasticSearchExposedConfiguration(
                     context.container.host,
                     context.container.firstMappedPort,
-                    context.options.containerOptions.password,
+                    context.options.container.password,
                     determineCertificate()
                 )
             }
     }
 
     private fun determineCertificate(): Option<ElasticsearchExposedCertificate> =
-        when (context.options.containerOptions.disableSecurity) {
+        when (context.options.container.disableSecurity) {
             true -> None
             false ->
                 ElasticsearchExposedCertificate(
@@ -164,7 +164,7 @@ class ElasticsearchSystem internal constructor(
             .let { ElasticsearchClient(it) }
 
     private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
-        when (context.options.containerOptions.disableSecurity) {
+        when (context.options.container.disableSecurity) {
             true ->
                 RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port)).apply {
                     setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }

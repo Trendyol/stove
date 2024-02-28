@@ -13,7 +13,9 @@ class Setup : AbstractProjectConfig() {
         TestSystem()
             .with {
                 redis {
-                    RedisOptions()
+                    RedisOptions(
+                        container = RedisContainerOptions()
+                    )
                 }
                 applicationUnderTest(NoOpApplication())
             }.run()

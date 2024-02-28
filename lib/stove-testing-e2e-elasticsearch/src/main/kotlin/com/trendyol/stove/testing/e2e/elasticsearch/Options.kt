@@ -1,16 +1,12 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.none
+import arrow.core.*
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
-import com.trendyol.stove.testing.e2e.database.migrations.MigrationCollection
+import com.trendyol.stove.testing.e2e.containers.ContainerOptions
+import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
-import com.trendyol.stove.testing.e2e.system.abstractions.ConfiguresExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.ExposedConfiguration
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
@@ -22,7 +18,7 @@ import kotlin.time.Duration.Companion.minutes
 data class ElasticsearchSystemOptions(
     val defaultIndex: DefaultIndex,
     val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-    val containerOptions: ContainerOptions = ContainerOptions(),
+    val container: ElasticContainerOptions = ElasticContainerOptions(),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
@@ -54,15 +50,16 @@ data class ElasticsearchContext(
     val options: ElasticsearchSystemOptions
 )
 
-data class ContainerOptions(
-    val registry: String = "docker.elastic.co/",
-    val imageVersion: String = "8.6.1",
-    val compatibleSubstitute: Option<String> = None,
+data class ElasticContainerOptions(
+    override val registry: String = "docker.elastic.co/",
+    override val tag: String = "8.6.1",
+    override val image: String = "elasticsearch/elasticsearch",
+    override val compatibleSubstitute: String? = null,
     val exposedPorts: List<Int> = listOf(9200),
     val password: String = "password",
     val disableSecurity: Boolean = true,
     val configureContainer: ElasticsearchContainer.() -> Unit = {}
-)
+) : ContainerOptions
 
 data class ElasticClientConfigurer(
     val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
