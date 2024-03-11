@@ -1,12 +1,11 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.trendyol.stove.functional.Reflect
+import com.fasterxml.jackson.annotation.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
-import java.util.*
-import javax.net.ssl.SSLContext
+import java.io.ByteArrayInputStream
+import java.security.KeyStore
+import java.security.cert.CertificateFactory
+import javax.net.ssl.*
 
 data class ElasticsearchExposedCertificate(
     val bytes: ByteArray
@@ -22,31 +21,41 @@ data class ElasticsearchExposedCertificate(
 
         other as ElasticsearchExposedCertificate
 
-        if (!bytes.contentEquals(other.bytes)) return false
-        if (sslContext != other.sslContext) return false
-
-        return true
+        return bytes.contentEquals(other.bytes)
     }
 
-    override fun hashCode(): Int {
-        var result = bytes.contentHashCode()
-        result = 31 * result + sslContext.hashCode()
-        return result
-    }
+    override fun hashCode(): Int = bytes.contentHashCode()
 
     companion object {
         @JsonCreator
         @JvmStatic
         fun create(
             @JsonProperty bytes: ByteArray
-        ): ElasticsearchExposedCertificate {
-            val container = ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:latest")
-            Reflect(container) {
-                on<Optional<ByteArray>>("caCertAsBytes").then(Optional.of(bytes))
-            }
-            return ElasticsearchExposedCertificate(bytes).apply {
-                sslContext = container.createSslContextFromCa()
-            }
+        ): ElasticsearchExposedCertificate = ElasticsearchExposedCertificate(bytes).apply {
+            sslContext = createSslContextFromCa(bytes)
+        }
+
+        /**
+         * An SSL context based on the self-signed CA, so that using this SSL Context allows to connect to the Elasticsearch service
+         * @return a customized SSL Context
+         * @see ElasticsearchContainer.createSslContextFromCa
+         */
+        private fun createSslContextFromCa(bytes: ByteArray): SSLContext = try {
+            val factory = CertificateFactory.getInstance("X.509")
+            val trustedCa = factory.generateCertificate(
+                ByteArrayInputStream(bytes)
+            )
+            val trustStore = KeyStore.getInstance("pkcs12")
+            trustStore.load(null, null)
+            trustStore.setCertificateEntry("ca", trustedCa)
+
+            val sslContext = SSLContext.getInstance("TLSv1.3")
+            val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+            trustManagerFactory.init(trustStore)
+            sslContext.init(null, trustManagerFactory.trustManagers, null)
+            sslContext
+        } catch (e: Exception) {
+            throw RuntimeException(e)
         }
     }
 }

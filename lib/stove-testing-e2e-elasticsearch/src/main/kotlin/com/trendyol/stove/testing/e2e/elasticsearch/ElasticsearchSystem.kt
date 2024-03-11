@@ -35,16 +35,15 @@ class ElasticsearchSystem internal constructor(
         StateOfSystem(testSystem.options, ElasticsearchSystem::class, ElasticSearchExposedConfiguration::class)
 
     override suspend fun run() {
-        exposedConfiguration =
-            state.capture {
-                context.container.start()
-                ElasticSearchExposedConfiguration(
-                    context.container.host,
-                    context.container.firstMappedPort,
-                    context.options.container.password,
-                    determineCertificate()
-                )
-            }
+        exposedConfiguration = state.capture {
+            context.container.start()
+            ElasticSearchExposedConfiguration(
+                context.container.host,
+                context.container.firstMappedPort,
+                context.options.container.password,
+                determineCertificate()
+            )
+        }
     }
 
     private fun determineCertificate(): Option<ElasticsearchExposedCertificate> =
