@@ -6,9 +6,8 @@ import com.trendyol.stove.functional.get
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.StateWithProcess
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.*
 import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 
 class ElasticsearchExposedCertificateTest : FunSpec({
     test("ser/de") {
