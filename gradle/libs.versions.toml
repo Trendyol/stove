@@ -2,7 +2,7 @@
 kotlin = "1.9.23"
 kotlinx = "1.8.0"
 spring-boot = "2.7.18"
-spring-framework = "5.3.32"
+spring-framework = "5.3.33"
 spring-framework-6x = "6.1.4"
 spring-boot-3x = "3.2.3"
 spring-dependency-management = "1.1.4"
