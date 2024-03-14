@@ -2,7 +2,7 @@
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "stove4k"
+rootProject.name = "stove"
 include(
     "lib:stove-testing-e2e",
     "lib:stove-testing-e2e-wiremock",

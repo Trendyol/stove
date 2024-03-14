@@ -68,7 +68,7 @@ As you can see, we pass these configuration values as parameters. Since they are
 Second thing we need to do is tweak your consumer configuration. For that we will provide Stove-Kafka interceptor to your Kafka configuration.
 
 Locate to the point where you define your `ConcurrentKafkaListenerContainerFactory` or where you can set the interceptor. Interceptor needs to implement `ConsumerAwareRecordInterceptor<String, String>` since
-Stove-Kafka [relies on that](https://github.com/Trendyol/stove4k/blob/main/starters/spring/stove-spring-testing-e2e-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt).
+Stove-Kafka [relies on that](https://github.com/Trendyol/stove/blob/main/starters/spring/stove-spring-testing-e2e-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt).
 
 ```kotlin
 @EnableKafka

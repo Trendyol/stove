@@ -1,6 +1,6 @@
 # Testing a Spring Boot Application
 
-[Here](https://github.com/Trendyol/stove4k/tree/main/examples/spring-example) you can jump immediately to the Spring example application.
+[Here](https://github.com/Trendyol/stove/tree/main/examples/spring-example) you can jump immediately to the Spring example application.
 
 You need to add the Stove-Spring dependency to be able to write e2e tests for the Spring application.
 

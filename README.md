@@ -4,15 +4,15 @@
 
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
  
-[Check the documentation](https://trendyol.github.io/stove4k/)
+[Check the documentation](https://trendyol.github.io/stove/)
 
 > [!WARNING]
 > Stove is under development and, despite being heavily tested, its API isn't yet stabilized; _breaking changes
 > might happen on minor releases._ However, we will always provide migration guides.
 
-> Report any issue or bug [in the GitHub repository.](https://github.com/Trendyol/stove4k/issues)
+> Report any issue or bug [in the GitHub repository.](https://github.com/Trendyol/stove/issues)
 
-[![codecov](https://codecov.io/gh/Trendyol/stove4k/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove4k)
+[![codecov](https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove)
 
 ## Supports
 

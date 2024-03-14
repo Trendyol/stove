@@ -40,8 +40,8 @@ publishing {
                     }
                 }
                 scm {
-                    connection.set("scm:git@github.com:Trendyol/stove4k.git")
-                    developerConnection.set("scm:git:ssh://github.com:Trendyol/stove4k.git")
+                    connection.set("scm:git@github.com:Trendyol/stove.git")
+                    developerConnection.set("scm:git:ssh://github.com:Trendyol/stove.git")
                     url.set(project.properties["projectUrl"].toString())
                 }
             }
