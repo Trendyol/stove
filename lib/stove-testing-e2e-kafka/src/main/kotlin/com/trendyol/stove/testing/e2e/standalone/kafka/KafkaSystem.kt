@@ -51,6 +51,7 @@ data class KafkaSystemOptions(
     val ports: List<Int> = listOf(9092, 9093),
     val errorTopicSuffixes: List<String> = listOf("error", "errorTopic", "retry", "retryTopic"),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+    val containerOptionsConfigurer: KafkaContainer.() -> Unit = { },
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
@@ -64,8 +65,11 @@ internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrEls
 internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem {
     val kafka =
         withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
-            KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
+            KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
                 .withReuse(this.options.keepDependenciesRunning)
+                .apply {
+                    options.containerOptionsConfigurer(this)
+                }
         }
     getOrRegister(KafkaSystem(this, KafkaContext(kafka, options)))
     return this

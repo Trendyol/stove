@@ -8,7 +8,7 @@ import io.kotest.core.spec.style.FunSpec
 
 class KafkaSystemTests : FunSpec({
 
-    xtest("When publish then it should work") {
+    test("When publish then it should work") {
         TestSystem.validate {
             kafka {
                 publish("product", ProductCreated("1"))
@@ -20,7 +20,7 @@ class KafkaSystemTests : FunSpec({
         // delay(5000)
     }
 
-    xtest("When publish to a failing consumer should end-up throwing exception") {
+    test("When publish to a failing consumer should end-up throwing exception") {
         TestSystem.validate {
             kafka {
                 publish("productFailing", ProductFailingCreated("1"))
