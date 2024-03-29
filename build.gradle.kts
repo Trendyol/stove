@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     kotlin("jvm").version(libs.versions.kotlin)
     alias(libs.plugins.dokka)
-    alias(libs.plugins.kotlinter)
+    alias(libs.plugins.spotless)
     alias(libs.plugins.gitVersioning)
     `test-report-aggregation`
     id("stove-publishing") apply false
@@ -46,7 +46,7 @@ dependencies {
 subprojects.of("lib", "spring", "examples", "ktor") {
     apply {
         plugin("kotlin")
-        plugin(rootProject.libs.plugins.kotlinter.get().pluginId)
+        plugin(rootProject.libs.plugins.spotless.get().pluginId)
         plugin(rootProject.libs.plugins.dokka.get().pluginId)
         plugin("test-report-aggregation")
         plugin(rootProject.testLibs.plugins.testLogger.get().pluginId)
@@ -68,9 +68,15 @@ subprojects.of("lib", "spring", "examples", "ktor") {
         testImplementation(testLibs.kotest.property.jvm)
     }
 
+    spotless {
+        kotlin {
+            ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+        }
+    }
+
     tasks {
         test {
-            dependsOn(formatKotlin)
+            dependsOn(spotlessApply)
             useJUnitPlatform()
             testlogger {
                 setTheme("mocha")
@@ -87,7 +93,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            dependsOn(formatKotlin, lintKotlin)
+            dependsOn(spotlessApply)
             compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_17)
                 allWarningsAsErrors = true

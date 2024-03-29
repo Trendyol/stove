@@ -11,7 +11,8 @@ data class RedisContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = RedisContainer.DEFAULT_IMAGE_NAME.unversionedPart,
     override val tag: String = RedisContainer.DEFAULT_TAG,
-    override val compatibleSubstitute: String? = null
+    override val compatibleSubstitute: String? = null,
+    override val containerFn: ContainerFn<RedisContainer> = {}
 ) : ContainerOptions
 
 @StoveDsl
@@ -53,5 +54,6 @@ internal fun TestSystem.withRedis(options: RedisOptions = RedisOptions()): TestS
         RedisContainer(it)
             .withCommand("redis-server", "--requirepass", options.password)
             .withReuse(this.options.keepDependenciesRunning)
+            .apply(options.container.containerFn)
     }.let { getOrRegister(RedisSystem(this, RedisContext(it, options))) }
         .let { this }

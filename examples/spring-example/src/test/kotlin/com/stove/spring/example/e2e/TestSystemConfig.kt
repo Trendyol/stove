@@ -19,7 +19,8 @@ class TestSystemConfig : AbstractProjectConfig() {
                 couchbase { CouchbaseSystemOptions("Stove") }
                 kafka {
                     KafkaSystemOptions(
-                        containerOptions = KafkaContainerOptions(tag = "latest")
+                        containerOptions = KafkaContainerOptions(tag = "latest") {
+                        }
                     )
                 }
                 bridge()

@@ -32,7 +32,7 @@ internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): 
                 withEnv("xpack.security.enabled", "false")
             }
             withReuse(this@withElasticsearch.options.keepDependenciesRunning)
-            options.container.configureContainer(this)
+            options.container.containerFn(this)
         }
         .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
         .let { this }

@@ -10,7 +10,6 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.couchbase.*
-import org.testcontainers.utility.DockerImageName
 
 data class CouchbaseExposedConfiguration(
     val connectionString: String,
@@ -53,8 +52,7 @@ data class CouchbaseContainerOptions(
     override val image: String = "couchbase/server",
     override val tag: String = "latest",
     override val compatibleSubstitute: String? = null,
-    val containerImageFn: DockerImageName.() -> DockerImageName = { this },
-    val containerFn: CouchbaseContainer.() -> CouchbaseContainer = { this }
+    override val containerFn: ContainerFn<CouchbaseContainer> = { }
 ) : ContainerOptions
 
 internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSystem {
@@ -64,10 +62,10 @@ internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSyst
         registry = options.containerOptions.registry,
         compatibleSubstitute = options.containerOptions.compatibleSubstitute
     ) {
-        CouchbaseContainer(it.let(options.containerOptions.containerImageFn))
+        CouchbaseContainer(it)
             .withBucket(bucketDefinition)
             .withReuse(this.options.keepDependenciesRunning)
-            .let(options.containerOptions.containerFn)
+            .apply(options.containerOptions.containerFn)
     }
     this.getOrRegister(
         CouchbaseSystem(this, CouchbaseContext(bucketDefinition, couchbaseContainer, options))

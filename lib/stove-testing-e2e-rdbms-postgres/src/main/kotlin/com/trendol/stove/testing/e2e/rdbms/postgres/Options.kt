@@ -15,7 +15,8 @@ data class PostgresqlContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = DEFAULT_POSTGRES_IMAGE_NAME,
     override val tag: String = "latest",
-    override val compatibleSubstitute: String? = null
+    override val compatibleSubstitute: String? = null,
+    override val containerFn: ContainerFn<PostgreSQLContainer<*>> = {}
 ) : ContainerOptions
 
 @StoveDsl
@@ -54,6 +55,7 @@ internal fun TestSystem.withPostgresql(options: PostgresqlOptions = PostgresqlOp
             .withUsername("sa")
             .withPassword("sa")
             .withReuse(this.options.keepDependenciesRunning)
+            .apply(options.container.containerFn)
     }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options))) }
         .let { this }
 

@@ -1,7 +1,7 @@
 dependencies {
     api(projects.lib.stoveTestingE2e)
+    api(libs.testcontainers.kafka)
     implementation(libs.spring.boot.kafka)
-    implementation(libs.testcontainers.kafka)
 }
 
 dependencies {

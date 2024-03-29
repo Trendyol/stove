@@ -117,6 +117,8 @@ class Setup : AbstractProjectConfig() {
                                 "kafka.groupId=test-group",
                                 "kafka.offset=earliest"
                             )
+                        },
+                        containerOptions = KafkaContainerOptions {
                         }
                     )
                 }
