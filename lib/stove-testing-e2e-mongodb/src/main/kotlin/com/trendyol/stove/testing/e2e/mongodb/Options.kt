@@ -26,7 +26,8 @@ data class MongoContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "mongo",
     override val tag: String = "latest",
-    override val compatibleSubstitute: String? = null
+    override val compatibleSubstitute: String? = null,
+    override val containerFn: ContainerFn<MongoDBContainer> = {}
 ) : ContainerOptions
 
 @StoveDsl
@@ -47,6 +48,7 @@ internal fun TestSystem.withMongodb(options: MongodbSystemOptions): TestSystem {
     ) {
         MongoDBContainer(it)
             .withReuse(this.options.keepDependenciesRunning)
+            .apply(options.container.containerFn)
     }
     this.getOrRegister(
         MongodbSystem(this, MongodbContext(mongodbContainer, options))

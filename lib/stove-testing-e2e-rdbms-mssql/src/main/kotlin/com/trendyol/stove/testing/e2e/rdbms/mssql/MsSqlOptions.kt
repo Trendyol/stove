@@ -13,7 +13,8 @@ data class MssqlContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = MSSQLServerContainer.IMAGE,
     override val tag: String = "2017-CU12",
-    override val compatibleSubstitute: String? = null
+    override val compatibleSubstitute: String? = null,
+    override val containerFn: ContainerFn<MSSQLServerContainer<*>> = {}
 ) : ContainerOptions
 
 data class MsSqlOptions(
@@ -22,7 +23,6 @@ data class MsSqlOptions(
     val userName: String,
     val password: String,
     val container: MssqlContainerOptions = MssqlContainerOptions(),
-    val configureContainer: MSSQLServerContainer<*>.() -> MSSQLServerContainer<*> = { this },
     override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
     val migrationCollection: MigrationCollection<SqlMigrationContext> = MigrationCollection()
@@ -62,13 +62,13 @@ internal fun TestSystem.withMsSql(options: MsSqlOptions): TestSystem =
         options.container.registry,
         options.container.compatibleSubstitute
     ) {
-        val container = MSSQLServerContainer(it)
+        MSSQLServerContainer(it)
             .acceptLicense()
             .withEnv("MSSQL_USER", options.userName)
             .withEnv("MSSQL_SA_PASSWORD", options.password)
             .withEnv("MSSQL_DB", options.databaseName)
             .withPassword(options.password)
             .withReuse(this.options.keepDependenciesRunning)
-        options.configureContainer(container)
+            .apply(options.container.containerFn)
     }.let { getOrRegister(MsSqlSystem(this, MsSqlContext(it, options))) }
         .let { this }

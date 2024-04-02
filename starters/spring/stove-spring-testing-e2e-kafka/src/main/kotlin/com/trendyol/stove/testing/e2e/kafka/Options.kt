@@ -21,7 +21,8 @@ data class KafkaContainerOptions(
     override val registry: String = DEFAULT_REGISTRY,
     override val image: String = "confluentinc/cp-kafka",
     override val tag: String = "latest",
-    override val compatibleSubstitute: String? = null
+    override val compatibleSubstitute: String? = null,
+    override val containerFn: ContainerFn<KafkaContainer> = {}
 ) : ContainerOptions
 
 data class KafkaOps(
@@ -36,7 +37,7 @@ data class KafkaSystemOptions(
     val registry: String = DEFAULT_REGISTRY,
     val ports: List<Int> = listOf(9092, 9093),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-    val containerOptions: ContainerOptions = KafkaContainerOptions(),
+    val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
     val ops: KafkaOps = KafkaOps(),
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
@@ -54,8 +55,9 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptio
         registry = options.registry,
         compatibleSubstitute = options.containerOptions.compatibleSubstitute
     ) {
-        KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray())
-            .withEmbeddedZookeeper()
+        KafkaContainer(it)
+            .withExposedPorts(*options.ports.toTypedArray())
+            .apply { options.containerOptions.containerFn(this) }
             .withReuse(this.options.keepDependenciesRunning)
     }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options))) }
         .let { this }

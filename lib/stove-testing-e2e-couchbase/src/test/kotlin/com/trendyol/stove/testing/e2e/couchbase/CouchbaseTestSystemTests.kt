@@ -27,10 +27,9 @@ class Setup : AbstractProjectConfig() {
                     containerOptions = CouchbaseContainerOptions(
                         tag = "latest"
                     )
-                )
-                    .migrations {
-                        register<DefaultMigration>()
-                    }
+                ).migrations {
+                    register<DefaultMigration>()
+                }
             }
             applicationUnderTest(NoOpApplication())
         }.run()

@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 import arrow.core.*
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.containers.ContainerOptions
+import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -58,7 +58,7 @@ data class ElasticContainerOptions(
     val exposedPorts: List<Int> = listOf(9200),
     val password: String = "password",
     val disableSecurity: Boolean = true,
-    val configureContainer: ElasticsearchContainer.() -> Unit = {}
+    override val containerFn: ContainerFn<ElasticsearchContainer> = {}
 ) : ContainerOptions
 
 data class ElasticClientConfigurer(
