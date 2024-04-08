@@ -1,10 +1,6 @@
 package stove.spring.example.infrastructure.couchbase
 
-import com.couchbase.client.core.env.TimeoutConfig
-import com.couchbase.client.java.ClusterOptions
-import com.couchbase.client.java.ReactiveBucket
-import com.couchbase.client.java.ReactiveCluster
-import com.couchbase.client.java.ReactiveCollection
+import com.couchbase.client.java.*
 import com.couchbase.client.java.codec.JacksonJsonSerializer
 import com.couchbase.client.java.env.ClusterEnvironment
 import com.couchbase.client.java.json.JsonValueModule
@@ -12,9 +8,7 @@ import com.couchbase.client.metrics.micrometer.MicrometerMeter
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.*
 import stove.spring.example.infrastructure.ObjectMapperConfig
 import java.time.Duration
 
@@ -38,8 +32,7 @@ class CouchbaseConfiguration(
             .builder()
             .meter(MicrometerMeter.wrap(meterRegistry))
             .timeoutConfig {
-                TimeoutConfig.builder()
-                    .kvTimeout(Duration.ofMillis(couchbaseProperties.kvTimeout))
+                it.kvTimeout(Duration.ofMillis(couchbaseProperties.kvTimeout))
                     .connectTimeout(Duration.ofMillis(couchbaseProperties.connectTimeout))
                     .queryTimeout(Duration.ofMillis(couchbaseProperties.queryTimeout))
                     .viewTimeout(Duration.ofMillis(couchbaseProperties.viewTimeout))
