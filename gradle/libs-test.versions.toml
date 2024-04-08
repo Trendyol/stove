@@ -5,7 +5,7 @@ spring-kafka = "2.9.13"
 junit = "5.10.2"
 kotest = "5.8.1"
 mockito = "5.2.1"
-ktor = "2.3.9"
+ktor = "2.3.10"
 
 [libraries]
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
