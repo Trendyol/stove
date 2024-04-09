@@ -1,23 +1,16 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.setup
 
-import com.trendyol.stove.testing.e2e.standalone.kafka.KafkaSystemOptions
-import com.trendyol.stove.testing.e2e.standalone.kafka.StoveKafkaValueDeserializer
-import com.trendyol.stove.testing.e2e.standalone.kafka.StoveKafkaValueSerializer
-import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
+import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
+import io.github.nomisRev.kafka.publisher.*
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.listeners.AfterEachListener
-import io.kotest.core.listeners.BeforeEachListener
-import org.apache.kafka.clients.admin.AdminClient
-import org.apache.kafka.clients.admin.AdminClientConfig
-import org.apache.kafka.clients.admin.NewTopic
+import io.kotest.core.listeners.*
+import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.serialization.*
 
 class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
     private lateinit var client: AdminClient
@@ -45,13 +38,11 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
                 ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers"
             )
 
-        val producerSettings =
-            mapOf(
-                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java,
-                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-                ProducerConfig.ACKS_CONFIG to "1"
-            )
+        val producerSettings = PublisherSettings<String, String>(
+            bootStrapServers,
+            StringSerializer(),
+            StoveKafkaValueSerializer()
+        )
 
         val listeners = KafkaTestShared.consumers(consumerSettings, producerSettings)
         listeners.forEach { it.start() }

@@ -2,40 +2,24 @@
 
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.getOrElse
+import arrow.core.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
-import com.trendyol.stove.testing.e2e.containers.DEFAULT_REGISTRY
-import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
+import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
-import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.InterceptionOptions
-import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.TestSystemKafkaInterceptor
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
+import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import io.github.nomisRev.kafka.Admin
-import io.github.nomisRev.kafka.AdminSettings
-import io.github.nomisRev.kafka.receiver.KafkaReceiver
-import io.github.nomisRev.kafka.receiver.ReceiverSettings
-import io.github.nomisRev.kafka.sendAwait
+import io.github.nomisRev.kafka.*
+import io.github.nomisRev.kafka.publisher.*
+import io.github.nomisRev.kafka.receiver.*
 import kotlinx.coroutines.runBlocking
-import org.apache.kafka.clients.admin.Admin
-import org.apache.kafka.clients.admin.AdminClientConfig
+import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.Deserializer
-import org.apache.kafka.common.serialization.Serializer
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.kafka.common.serialization.StringSerializer
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.apache.kafka.common.serialization.*
+import org.slf4j.*
 import org.testcontainers.containers.KafkaContainer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -81,7 +65,7 @@ class KafkaSystem(
 ) : PluggedSystem, ExposesConfiguration, RunAware, AfterRunAware {
     private lateinit var exposedConfiguration: KafkaExposedConfiguration
     private lateinit var adminClient: Admin
-    private lateinit var kafkaProducer: KafkaProducer<String, Any>
+    private lateinit var kafkapublisher: KafkaPublisher<String, Any>
     private lateinit var subscribeToAllConsumer: SubscribeToAll
     private lateinit var interceptor: TestSystemKafkaInterceptor
     private val assertedMessages: MutableList<Any> = mutableListOf()
@@ -94,6 +78,30 @@ class KafkaSystem(
             KafkaExposedConfiguration::class
         )
 
+    override suspend fun run() {
+        exposedConfiguration =
+            state.capture {
+                context.container.start()
+                KafkaExposedConfiguration(context.container.bootstrapServers)
+            }
+        adminClient = createAdminClient(exposedConfiguration)
+        kafkapublisher = createPublisher(exposedConfiguration)
+    }
+
+    override suspend fun afterRun() {
+        interceptor = TestSystemKafkaInterceptor(
+            adminClient,
+            context.options.objectMapper,
+            InterceptionOptions(errorTopicSuffixes = context.options.errorTopicSuffixes)
+        )
+        subscribeToAllConsumer = SubscribeToAll(
+            adminClient,
+            consumer(exposedConfiguration),
+            interceptor
+        )
+        subscribeToAllConsumer.start()
+    }
+
     suspend fun publish(
         topic: String,
         message: Any,
@@ -103,18 +111,17 @@ class KafkaSystem(
     ): KafkaSystem {
         val record = ProducerRecord<String, Any>(topic, message)
         testCase.map { record.headers().add("testCase", it.toByteArray()) }
-        kafkaProducer.sendAwait(record)
+        kafkapublisher.publishScope { offer(record) }
         return this
     }
 
     suspend fun shouldBeConsumed(
         atLeastIn: Duration = 5.seconds,
         message: Any
-    ): KafkaSystem =
-        interceptor
-            .also { assertedMessages.add(message) }
-            .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.isSome { it == message } }
-            .let { this }
+    ): KafkaSystem = interceptor
+        .also { assertedMessages.add(message) }
+        .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.isSome { it == message } }
+        .let { this }
 
     suspend fun shouldBeFailed(
         atLeastIn: Duration = 5.seconds,
@@ -144,32 +151,6 @@ class KafkaSystem(
         TODO("Not yet implemented")
     }
 
-    override suspend fun run() {
-        exposedConfiguration =
-            state.capture {
-                context.container.start()
-                KafkaExposedConfiguration(context.container.bootstrapServers)
-            }
-        adminClient = createAdminClient(exposedConfiguration)
-        kafkaProducer = createProducer(exposedConfiguration)
-    }
-
-    override suspend fun afterRun() {
-        interceptor =
-            TestSystemKafkaInterceptor(
-                adminClient,
-                context.options.objectMapper,
-                InterceptionOptions(errorTopicSuffixes = context.options.errorTopicSuffixes)
-            )
-        subscribeToAllConsumer =
-            SubscribeToAll(
-                adminClient,
-                consumer(exposedConfiguration),
-                interceptor
-            )
-        subscribeToAllConsumer.start()
-    }
-
     private fun consumer(cfg: KafkaExposedConfiguration): KafkaReceiver<String, Any> =
         mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to cfg.bootstrapServers,
@@ -191,12 +172,11 @@ class KafkaSystem(
             )
         }
 
-    private fun createProducer(exposedConfiguration: KafkaExposedConfiguration): KafkaProducer<String, Any> =
-        mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java
-        ).let { KafkaProducer(it) }
+    private fun createPublisher(exposedConfiguration: KafkaExposedConfiguration): KafkaPublisher<String, Any> = PublisherSettings(
+        exposedConfiguration.bootstrapServers,
+        StringSerializer(),
+        StoveKafkaValueSerializer()
+    ).let { KafkaPublisher(it) }
 
     private fun createAdminClient(exposedConfiguration: KafkaExposedConfiguration): Admin =
         mapOf<String, Any>(
@@ -204,12 +184,11 @@ class KafkaSystem(
             AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
         ).let { Admin(AdminSettings(exposedConfiguration.bootstrapServers, it.toProperties())) }
 
-    override fun configuration(): List<String> =
-        context.options.configureExposedConfiguration(exposedConfiguration) +
-            listOf(
-                "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
-                "kafka.isSecure=false"
-            )
+    override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) +
+        listOf(
+            "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
+            "kafka.isSecure=false"
+        )
 
     override suspend fun stop(): Unit = context.container.stop()
 
@@ -217,7 +196,7 @@ class KafkaSystem(
         runBlocking {
             Try {
                 subscribeToAllConsumer.close()
-                kafkaProducer.close()
+                kafkapublisher.close()
                 executeWithReuseCheck { stop() }
             }
         }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
