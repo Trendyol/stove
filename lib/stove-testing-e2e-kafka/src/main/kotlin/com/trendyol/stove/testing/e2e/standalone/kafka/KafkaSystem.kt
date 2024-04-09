@@ -30,9 +30,17 @@ data class KafkaExposedConfiguration(
     val bootstrapServers: String
 ) : ExposedConfiguration
 
-data class KafkaSystemOptions(
-    val registry: String = DEFAULT_REGISTRY,
+data class KafkaContainerOptions(
+    override val registry: String = DEFAULT_REGISTRY,
+    override val image: String = "confluentinc/cp-kafka",
+    override val tag: String = "latest",
     val ports: List<Int> = listOf(9092, 9093),
+    override val compatibleSubstitute: String? = null,
+    override val containerFn: ContainerFn<KafkaContainer> = { }
+) : ContainerOptions
+
+class KafkaSystemOptions(
+    val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
     val errorTopicSuffixes: List<String> = listOf("error", "errorTopic", "retry", "retryTopic"),
     val objectMapper: ObjectMapper = StoveObjectMapper.Default,
     override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
@@ -47,8 +55,14 @@ internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrEls
 
 internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem {
     val kafka =
-        withProvidedRegistry("confluentinc/cp-kafka:latest", options.registry) {
-            KafkaContainer(it).withExposedPorts(*options.ports.toTypedArray()).withEmbeddedZookeeper()
+        withProvidedRegistry(
+            options.containerOptions.imageWithTag,
+            options.containerOptions.registry,
+            options.containerOptions.compatibleSubstitute
+        ) {
+            KafkaContainer(it)
+                .withExposedPorts(*options.containerOptions.ports.toTypedArray())
+                .apply(options.containerOptions.containerFn)
                 .withReuse(this.options.keepDependenciesRunning)
         }
     getOrRegister(KafkaSystem(this, KafkaContext(kafka, options)))

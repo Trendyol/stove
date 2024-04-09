@@ -4,7 +4,7 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import io.github.nomisRev.kafka.publisher.*
+import io.github.nomisRev.kafka.publisher.PublisherSettings
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.*
@@ -62,7 +62,6 @@ class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachList
             .with {
                 kafka {
                     KafkaSystemOptions(
-                        // ports = listOf(9094, 9095),
                         configureExposedConfiguration = { cfg ->
                             listOf("kafka.servers=${cfg.bootstrapServers}")
                         }
