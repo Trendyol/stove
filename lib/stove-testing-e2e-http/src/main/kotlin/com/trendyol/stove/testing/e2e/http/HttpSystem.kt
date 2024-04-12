@@ -3,6 +3,7 @@
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.*
@@ -16,7 +17,6 @@ import java.net.http.HttpClient.Version.HTTP_2
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
-import kotlin.reflect.KClass
 
 @HttpDsl
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
@@ -83,7 +83,7 @@ class HttpSystem(
             StoveHttpResponse.WithBody(
                 it.statusCode(),
                 it.headers().map()
-            ) { deserialize(it, T::class) }
+            ) { deserialize(it) }
         )
         this
     }
@@ -99,7 +99,7 @@ class HttpSystem(
         token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         request.GET()
     }.let {
-        expect(deserialize(it, TExpected::class))
+        expect(deserialize(it))
         this
     }
 
@@ -114,12 +114,7 @@ class HttpSystem(
         token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
         request.GET()
     }.let {
-        expect(
-            objectMapper.readValue(
-                it.body(),
-                objectMapper.typeFactory.constructCollectionType(List::class.java, TExpected::class.javaObjectType)
-            )
-        )
+        expect(deserialize(it))
         this
     }
 
@@ -143,7 +138,7 @@ class HttpSystem(
         token: Option<String> = None,
         expect: (actual: TExpected) -> Unit
     ): HttpSystem = doPostReq(uri, headers, token, body).let {
-        expect(deserialize(it, TExpected::class))
+        expect(deserialize(it))
         this
     }
 
@@ -158,7 +153,7 @@ class HttpSystem(
         token: Option<String> = None,
         expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
     ): HttpSystem = doPostReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it, TExpected::class) })
+        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it) })
         this
     }
 
@@ -182,7 +177,7 @@ class HttpSystem(
         token: Option<String> = None,
         expect: (actual: TExpected) -> Unit
     ): HttpSystem = doPUTReq(uri, headers, token, body).let {
-        expect(deserialize(it, TExpected::class))
+        expect(deserialize(it))
         this
     }
 
@@ -194,7 +189,7 @@ class HttpSystem(
         token: Option<String> = None,
         expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
     ): HttpSystem = doPUTReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it, TExpected::class) })
+        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it) })
         this
     }
 
@@ -284,12 +279,11 @@ class HttpSystem(
     }
 
     @PublishedApi
-    internal fun <TExpected : Any> deserialize(
-        it: HttpResponse<ByteArray>,
-        clazz: KClass<TExpected>
+    internal inline fun <reified TExpected : Any> deserialize(
+        it: HttpResponse<ByteArray>
     ): TExpected = when {
-        clazz.java.isAssignableFrom(String::class.java) -> String(it.body()) as TExpected
-        else -> objectMapper.readValue(it.body(), clazz.java)
+        TExpected::class.java.isAssignableFrom(String::class.java) -> String(it.body()) as TExpected
+        else -> objectMapper.readValue(it.body(), object : TypeReference<TExpected>() {})
     }
 
     override fun close() {}

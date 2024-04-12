@@ -109,6 +109,10 @@ class HttpSystemTests : FunSpec({
                 getMany<TestDto>("/get-many") { actual ->
                     actual[0] shouldBe TestDto(expectedGetDtoName)
                 }
+
+                get<List<TestDto>>("/get-many") { actual ->
+                    actual[0] shouldBe TestDto(expectedGetDtoName)
+                }
             }
         }
     }
