@@ -1,22 +1,28 @@
-@file:Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
+@file:Suppress("MemberVisibilityCanBePrivate")
 
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import kotlinx.coroutines.future.await
-import java.net.*
-import java.net.http.*
-import java.net.http.HttpClient.Redirect.ALWAYS
-import java.net.http.HttpClient.Version.HTTP_2
-import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.HttpResponse.BodyHandlers
-import java.time.Duration
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
+import io.ktor.util.*
+import org.slf4j.LoggerFactory
+import java.net.http.HttpClient
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 @HttpDsl
 data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
@@ -26,10 +32,9 @@ internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpCl
     return this
 }
 
-internal fun TestSystem.http(): HttpSystem =
-    getOrNone<HttpSystem>().getOrElse {
-        throw SystemNotRegisteredException(HttpSystem::class)
-    }
+internal fun TestSystem.http(): HttpSystem = getOrNone<HttpSystem>().getOrElse {
+    throw SystemNotRegisteredException(HttpSystem::class)
+}
 
 @StoveDsl
 fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
@@ -45,8 +50,10 @@ class HttpSystem(
     override val testSystem: TestSystem,
     @PublishedApi internal val objectMapper: ObjectMapper
 ) : PluggedSystem {
+    private val logger: org.slf4j.Logger = LoggerFactory.getLogger(javaClass)
+
     @PublishedApi
-    internal val httpClient: HttpClient = httpClient()
+    internal val ktorHttpClient: io.ktor.client.HttpClient = createHttpClient()
 
     @HttpDsl
     suspend fun getResponse(
@@ -55,18 +62,9 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        request
-    }.let {
-        expect(
-            StoveHttpResponse.Bodiless(
-                it.statusCode(),
-                it.headers().map()
-            )
-        )
-        this
-    }
+    ): HttpSystem = get(uri, headers, queryParams, token).also {
+        expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap()))
+    }.let { this }
 
     @HttpDsl
     suspend inline fun <reified T : Any> getResponse(
@@ -75,18 +73,9 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (StoveHttpResponse.WithBody<T>) -> Unit
-    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        request
-    }.let {
-        expect(
-            StoveHttpResponse.WithBody(
-                it.statusCode(),
-                it.headers().map()
-            ) { deserialize(it) }
-        )
-        this
-    }
+    ): HttpSystem = get(uri, headers, queryParams, token).also {
+        expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() })
+    }.let { this }
 
     @HttpDsl
     suspend inline fun <reified TExpected : Any> get(
@@ -95,13 +84,7 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (TExpected) -> Unit
-    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        request.GET()
-    }.let {
-        expect(deserialize(it))
-        this
-    }
+    ): HttpSystem = get(uri, headers, queryParams, token).also { expect(it.body()) }.let { this }
 
     @HttpDsl
     suspend inline fun <reified TExpected : Any> getMany(
@@ -110,13 +93,7 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (List<TExpected>) -> Unit
-    ): HttpSystem = httpClient.send(uri, headers = headers, queryParams = queryParams) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        request.GET()
-    }.let {
-        expect(deserialize(it))
-        this
-    }
+    ): HttpSystem = get(uri, headers, queryParams, token).also { expect(it.body()) }.let { this }
 
     @HttpDsl
     suspend fun postAndExpectBodilessResponse(
@@ -125,10 +102,11 @@ class HttpSystem(
         token: Option<String> = None,
         headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = doPostReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.Bodiless(it.statusCode(), it.headers().map()))
-        this
-    }
+    ): HttpSystem = ktorHttpClient.post(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        body.map { setBody(it) }
+    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }.let { this }
 
     @HttpDsl
     suspend inline fun <reified TExpected : Any> postAndExpectJson(
@@ -137,10 +115,11 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (actual: TExpected) -> Unit
-    ): HttpSystem = doPostReq(uri, headers, token, body).let {
-        expect(deserialize(it))
-        this
-    }
+    ): HttpSystem = ktorHttpClient.post(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        body.map { setBody(it) }
+    }.also { expect(it.body()) }.let { this }
 
     /**
      * Posts the given [body] to the given [uri] and expects the response to have a body.
@@ -152,10 +131,11 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
-    ): HttpSystem = doPostReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it) })
-        this
-    }
+    ): HttpSystem = ktorHttpClient.post(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        body.map { setBody(it) }
+    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }.let { this }
 
     @HttpDsl
     suspend fun putAndExpectBodilessResponse(
@@ -164,10 +144,12 @@ class HttpSystem(
         token: Option<String> = None,
         headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = doPUTReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.Bodiless(it.statusCode(), it.headers().map()))
-        this
-    }
+    ): HttpSystem = ktorHttpClient.put(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        body.map { setBody(it) }
+    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+        .let { this }
 
     @HttpDsl
     suspend inline fun <reified TExpected : Any> putAndExpectJson(
@@ -176,10 +158,12 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (actual: TExpected) -> Unit
-    ): HttpSystem = doPUTReq(uri, headers, token, body).let {
-        expect(deserialize(it))
-        this
-    }
+    ): HttpSystem = ktorHttpClient.put(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        body.map { setBody(it) }
+    }.also { expect(it.body()) }
+        .let { this }
 
     @HttpDsl
     suspend inline fun <reified TExpected : Any> putAndExpectBody(
@@ -188,10 +172,12 @@ class HttpSystem(
         headers: Map<String, String> = mapOf(),
         token: Option<String> = None,
         expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
-    ): HttpSystem = doPUTReq(uri, headers, token, body).let {
-        expect(StoveHttpResponse.WithBody(it.statusCode(), it.headers().map()) { deserialize(it) })
-        this
-    }
+    ): HttpSystem = ktorHttpClient.put(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        body.map { setBody(it) }
+    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }
+        .let { this }
 
     @HttpDsl
     suspend fun deleteAndExpectBodilessResponse(
@@ -199,102 +185,109 @@ class HttpSystem(
         token: Option<String> = None,
         headers: Map<String, String> = mapOf(),
         expect: suspend (StoveHttpResponse) -> Unit
-    ): HttpSystem = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        request.DELETE()
-    }.let {
-        expect(StoveHttpResponse.Bodiless(it.statusCode(), it.headers().map()))
-        this
-    }
+    ): HttpSystem = ktorHttpClient.delete(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+        .let { this }
+
+    @HttpDsl
+    suspend inline fun <reified TExpected : Any> postMultipartAndExpectResponse(
+        uri: String,
+        body: List<StoveMultiPartContent>,
+        headers: Map<String, String> = mapOf(),
+        token: Option<String> = None,
+        expect: (StoveHttpResponse.WithBody<TExpected>) -> Unit
+    ): HttpSystem = ktorHttpClient.submitForm {
+        url(relative(uri))
+        headers.forEach { (key, value) -> header(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        setBody(MultiPartFormDataContent(toFormData(body)))
+    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }.let { this }
 
     @HttpDsl
     override fun then(): TestSystem = testSystem
 
     @PublishedApi
-    internal suspend fun HttpClient.send(
-        uri: String,
-        headers: Map<String, String> = mapOf(),
-        queryParams: Map<String, String> = mapOf(),
-        configureRequest: (request: HttpRequest.Builder) -> HttpRequest.Builder
-    ): HttpResponse<ByteArray> {
-        val requestBuilder = HttpRequest.newBuilder()
-            .uri(relative(uri, queryParams))
-            .addHeaders(headers)
-        return sendAsync(configureRequest(requestBuilder).build(), BodyHandlers.ofByteArray()).await()
-    }
-
-    @PublishedApi
-    internal suspend fun doPUTReq(
+    internal suspend fun get(
         uri: String,
         headers: Map<String, String>,
-        token: Option<String>,
-        body: Option<Any>
-    ): HttpResponse<ByteArray> = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        body.fold(
-            ifEmpty = { request.PUT(BodyPublishers.noBody()) },
-            ifSome = { request.PUT(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
-        )
+        queryParams: Map<String, String>,
+        token: Option<String>
+    ) = ktorHttpClient.get(relative(uri)) {
+        headers.forEach { (key, value) -> header(key, value) }
+        queryParams.forEach { (key, value) -> parameter(key, value) }
+        token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
     }
 
     @PublishedApi
-    internal suspend fun doPostReq(
-        uri: String,
-        headers: Map<String, String>,
-        token: Option<String>,
-        body: Option<Any>
-    ): HttpResponse<ByteArray> = httpClient.send(uri, headers = headers) { request ->
-        token.map { request.setHeader(Headers.AUTHORIZATION, Headers.bearer(it)) }
-        body.fold(
-            ifEmpty = { request.POST(BodyPublishers.noBody()) },
-            ifSome = { request.POST(BodyPublishers.ofString(objectMapper.writeValueAsString(it))) }
-        )
-    }
-
-    private fun HttpRequest.Builder.addHeaders(
-        headers: Map<String, String>
-    ): HttpRequest.Builder = headers
-        .toMutableMap()
-        .apply { this[Headers.CONTENT_TYPE] = MediaType.APPLICATION_JSON }
-        .forEach { (key, value) -> setHeader(key, value) }
-        .let { this }
-
-    private fun relative(
-        uri: String,
-        queryParams: Map<String, String> = mapOf()
-    ): URI = URI.create(testSystem.baseUrl)
-        .resolve(uri + queryParams.toParamsString())
-
-    private fun Map<String, String>.toParamsString(): String = when {
-        this.any() -> "?${this.map { "${it.key}=${URLEncoder.encode(it.value, Charsets.UTF_8)}" }.joinToString("&")}"
-        else -> ""
-    }
-
-    private fun httpClient(): HttpClient {
-        val builder = HttpClient.newBuilder()
-        builder.connectTimeout(Duration.ofSeconds(5))
-        builder.followRedirects(ALWAYS)
-        builder.version(HTTP_2)
-        return builder.build()
-    }
+    internal fun relative(uri: String): Url = URLBuilder(testSystem.baseUrl).apply { path(uri) }.build()
 
     @PublishedApi
-    internal inline fun <reified TExpected : Any> deserialize(
-        it: HttpResponse<ByteArray>
-    ): TExpected = when {
-        TExpected::class.java.isAssignableFrom(String::class.java) -> String(it.body()) as TExpected
-        else -> objectMapper.readValue(it.body(), object : TypeReference<TExpected>() {})
+    internal fun toFormData(
+        body: List<StoveMultiPartContent>
+    ) = formData {
+        body.forEach {
+            when (it) {
+                is StoveMultiPartContent.Text -> append(it.param, it.value)
+                is StoveMultiPartContent.Binary -> append(
+                    it.param,
+                    it.content,
+                    Headers.build {
+                        append(HttpHeaders.ContentType, ContentType.Application.OctetStream)
+                    }
+                )
+                is StoveMultiPartContent.File -> append(
+                    it.param,
+                    it.content,
+                    Headers.build {
+                        append(HttpHeaders.ContentType, ContentType.parse(it.contentType))
+                        append(HttpHeaders.ContentDisposition, "filename=${it.fileName}")
+                    }
+                )
+            }
+        }
     }
 
-    override fun close() {}
-
-    companion object {
-        object MediaType {
-            const val APPLICATION_JSON = "application/json"
+    private fun createHttpClient(): io.ktor.client.HttpClient = HttpClient(OkHttp) {
+        engine {
+            config {
+                followRedirects(true)
+                followSslRedirects(true)
+                connectTimeout(5.seconds.toJavaDuration())
+                readTimeout(5.seconds.toJavaDuration())
+                callTimeout(5.seconds.toJavaDuration())
+            }
+        }
+        install(Logging) {
+            logger = object : Logger {
+                override fun log(message: String) {
+                    this@HttpSystem.logger.info(message)
+                }
+            }
         }
 
-        object Headers {
-            const val CONTENT_TYPE = "Content-Type"
+        install(ContentNegotiation) {
+            jackson {
+                setTypeFactory(objectMapper.typeFactory)
+                setConfig(objectMapper.deserializationConfig)
+                setConfig(objectMapper.serializationConfig)
+                setSerializerFactory(objectMapper.serializerFactory)
+                setNodeFactory(objectMapper.nodeFactory)
+            }
+        }
+
+        defaultRequest {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+        }
+    }
+
+    override fun close() {
+        ktorHttpClient.close()
+    }
+
+    companion object {
+        object HeaderConstants {
             const val AUTHORIZATION = "Authorization"
 
             fun bearer(token: String) = "Bearer $token"
@@ -305,6 +298,6 @@ class HttpSystem(
          */
         @Suppress("unused")
         @HttpDsl
-        fun HttpSystem.client(): HttpClient = this.httpClient
+        fun HttpSystem.client(): io.ktor.client.HttpClient = this.ktorHttpClient
     }
 }

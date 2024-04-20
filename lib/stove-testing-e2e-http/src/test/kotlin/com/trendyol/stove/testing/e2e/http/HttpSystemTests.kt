@@ -1,6 +1,8 @@
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.*
@@ -173,6 +175,62 @@ class HttpSystemTests : FunSpec({
             http {
                 postAndExpectBody<TestDto>("/post-with-response-body") { actual ->
                     actual.body().name shouldBe expectedPostDtoName
+                }
+            }
+        }
+    }
+
+    test("get with query params should work") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get?param=1", 200, responseBody = TestDto(expectedGetDtoName).some())
+            }
+
+            http {
+                get<TestDto>("/get", queryParams = mapOf("param" to "1")) { actual ->
+                    actual.name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
+
+    test("multipart post should work") {
+        val expectedPostDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockPostConfigure("/post-with-multipart") { req, _ ->
+                    req.withMultipartRequestBody(
+                        aMultipart()
+                            .matchingType(MultipartValuePattern.MatchingType.ANY)
+                            .withHeader("Content-Disposition", equalTo("form-data; name=name"))
+                            .withBody(equalTo(expectedPostDtoName))
+                    )
+                    req.withMultipartRequestBody(
+                        aMultipart()
+                            .matchingType(MultipartValuePattern.MatchingType.ANY)
+                            .withHeader("Content-Disposition", equalTo("form-data; name=file; filename=file.png"))
+                            .withBody(equalTo("file"))
+                    )
+                    req.willReturn(aResponse().withStatus(200).withBody("hoi!"))
+                }
+            }
+
+            http {
+                postMultipartAndExpectResponse<String>(
+                    "/post-with-multipart",
+                    body = listOf(
+                        StoveMultiPartContent.Text("name", expectedPostDtoName),
+                        StoveMultiPartContent.File(
+                            param = "file",
+                            fileName = "file.png",
+                            content = "file".toByteArray(),
+                            contentType = "application/octet-stream"
+                        )
+                    )
+                ) { actual ->
+                    actual.body() shouldBe "hoi!"
+                    actual.status shouldBe 200
                 }
             }
         }

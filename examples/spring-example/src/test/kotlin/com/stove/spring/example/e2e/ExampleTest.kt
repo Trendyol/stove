@@ -2,7 +2,7 @@ package com.stove.spring.example.e2e
 
 import arrow.core.some
 import com.trendyol.stove.testing.e2e.couchbase.couchbase
-import com.trendyol.stove.testing.e2e.http.http
+import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.using
@@ -10,6 +10,7 @@ import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import org.springframework.http.MediaType
 import stove.spring.example.application.handlers.*
 import stove.spring.example.application.services.SupplierPermission
 import stove.spring.example.infrastructure.couchbase.CouchbaseProperties
@@ -161,6 +162,27 @@ class ExampleTest : FunSpec({
 
                 shouldBeFailed<FailingEvent> {
                     actual == FailingEvent(5L) && reason is BusinessException
+                }
+            }
+        }
+    }
+
+    test("file import should work") {
+        TestSystem.validate {
+            http {
+                postMultipartAndExpectResponse<String>(
+                    "/api/product/import",
+                    body = listOf(
+                        StoveMultiPartContent.Text("name", "product name"),
+                        StoveMultiPartContent.File(
+                            "file",
+                            "file.txt",
+                            "file".toByteArray(),
+                            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE
+                        )
+                    )
+                ) { actual ->
+                    actual.body() shouldBe "File file.txt is imported with product name and content: file"
                 }
             }
         }
