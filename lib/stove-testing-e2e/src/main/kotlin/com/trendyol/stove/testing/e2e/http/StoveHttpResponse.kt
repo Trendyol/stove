@@ -12,6 +12,6 @@ sealed class StoveHttpResponse(
     data class WithBody<T>(
         override val status: Int,
         override val headers: Map<String, Any>,
-        val body: () -> T
+        val body: suspend () -> T
     ) : StoveHttpResponse(status, headers)
 }
