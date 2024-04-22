@@ -3,12 +3,14 @@ package com.trendyol.stove.testing.e2e.http
 import arrow.core.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
+import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.Instant
 import java.util.*
 
 class NoApplication : ApplicationUnderTest<Unit> {
@@ -25,7 +27,13 @@ class TestConfig : AbstractProjectConfig() {
     override suspend fun beforeProject(): Unit =
         TestSystem("http://localhost:8086")
             .with {
-                httpClient()
+                httpClient {
+                    HttpClientSystemOptions(
+                        objectMapper = StoveObjectMapper.byConfiguring {
+                            findAndRegisterModules()
+                        }
+                    )
+                }
 
                 wiremock {
                     WireMockSystemOptions(8086)
@@ -235,8 +243,28 @@ class HttpSystemTests : FunSpec({
             }
         }
     }
+
+    test("java time instant should work") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get", 200, responseBody = TestDtoWithInstant(expectedGetDtoName, Instant.now()).some())
+            }
+
+            http {
+                get<TestDtoWithInstant>("/get") { actual ->
+                    actual.name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
 })
 
 data class TestDto(
     val name: String
+)
+
+data class TestDtoWithInstant(
+    val name: String,
+    val instant: Instant
 )

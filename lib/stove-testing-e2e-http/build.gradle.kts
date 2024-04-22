@@ -10,4 +10,5 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.jackson.json)
     testImplementation(projects.lib.stoveTestingE2eWiremock)
+    testImplementation(libs.jackson.jsr310)
 }

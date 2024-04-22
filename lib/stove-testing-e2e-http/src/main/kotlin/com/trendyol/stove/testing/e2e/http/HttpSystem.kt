@@ -268,13 +268,7 @@ class HttpSystem(
         }
 
         install(ContentNegotiation) {
-            jackson {
-                setTypeFactory(objectMapper.typeFactory)
-                setConfig(objectMapper.deserializationConfig)
-                setConfig(objectMapper.serializationConfig)
-                setSerializerFactory(objectMapper.serializerFactory)
-                setNodeFactory(objectMapper.nodeFactory)
-            }
+            register(ContentType.Application.Json, JacksonConverter(objectMapper))
         }
 
         defaultRequest {
