@@ -28,7 +28,8 @@ formatting:
   Indentation:
     active: true
     indentSize: 2
-
+  NoWildcardImports:
+    active: false
 comments:
   active: true
   AbsentOrWrongFileLicense:
@@ -673,5 +674,3 @@ style:
     ignoreLateinitVar: false
   WildcardImport:
     active: false
-    excludeImports:
-      - 'java.util.*'
