@@ -8,18 +8,18 @@ import stove.ktor.example.LockProvider
 import java.time.Duration
 
 fun addTestSystemDependencies(): Module =
-    module {
-        singleOf(::NoOpLockProvider) { bind<LockProvider>() }
-    }
+  module {
+    singleOf(::NoOpLockProvider) { bind<LockProvider>() }
+  }
 
 class NoOpLockProvider : LockProvider {
-    override suspend fun acquireLock(
-        name: String,
-        duration: Duration
-    ): Boolean {
-        println("from NoOpLockProvider")
-        return true
-    }
+  override suspend fun acquireLock(
+    name: String,
+    duration: Duration
+  ): Boolean {
+    println("from NoOpLockProvider")
+    return true
+  }
 
-    override suspend fun releaseLock(name: String) {}
+  override suspend fun releaseLock(name: String) {}
 }

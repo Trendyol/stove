@@ -14,17 +14,17 @@ data class BusinessException(override val message: String) : RuntimeException(me
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")
 class FailingProductCreateConsumer {
-    private val logger = LoggerFactory.getLogger(javaClass)
+  private val logger = LoggerFactory.getLogger(javaClass)
 
-    @KafkaListener(
-        topics = ["#{@productFailingEventTopicConfig.topic}"],
-        groupId = "#{@consumerConfig.groupId}",
-        containerFactory = KafkaConsumerConfiguration.LISTENER_BEAN_NAME
-    )
-    fun listen(cr: ConsumerRecord<String, String>): Unit =
-        runBlocking(MDCContext()) {
-            logger.info("Received product failing event ${cr.value()}")
+  @KafkaListener(
+    topics = ["#{@productFailingEventTopicConfig.topic}"],
+    groupId = "#{@consumerConfig.groupId}",
+    containerFactory = KafkaConsumerConfiguration.LISTENER_BEAN_NAME
+  )
+  fun listen(cr: ConsumerRecord<String, String>): Unit =
+    runBlocking(MDCContext()) {
+      logger.info("Received product failing event ${cr.value()}")
 
-            throw BusinessException("Failing product create event")
-        }
+      throw BusinessException("Failing product create event")
+    }
 }

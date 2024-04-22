@@ -4,5 +4,5 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentMap
 
 internal interface RecordsAssertions {
-    val assertions: ConcurrentMap<UUID, KafkaAssertion<*>>
+  val assertions: ConcurrentMap<UUID, KafkaAssertion<*>>
 }

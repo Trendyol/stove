@@ -18,29 +18,29 @@ import java.time.temporal.TemporalAccessor
  * Instant serializer deserializer for jackson
  */
 class IsoInstantDeserializer : JsonDeserializer<Instant>() {
-    override fun deserialize(
-        parser: JsonParser,
-        context: DeserializationContext
-    ): Instant {
-        val string: String = parser.text.trim()
-        return Try {
-            DateTimeFormatter.ISO_INSTANT.parse(string) { temporal: TemporalAccessor ->
-                Instant.from(temporal)
-            } as Instant
-        }.recover { Instant.ofEpochSecond(string.toLong()) }.get()
-    }
+  override fun deserialize(
+    parser: JsonParser,
+    context: DeserializationContext
+  ): Instant {
+    val string: String = parser.text.trim()
+    return Try {
+      DateTimeFormatter.ISO_INSTANT.parse(string) { temporal: TemporalAccessor ->
+        Instant.from(temporal)
+      } as Instant
+    }.recover { Instant.ofEpochSecond(string.toLong()) }.get()
+  }
 }
 
 /**
  * Instant serializer for jackson
  */
 class IsoInstantSerializer : JsonSerializer<Instant>() {
-    @Throws(IOException::class, JsonProcessingException::class)
-    override fun serialize(
-        value: Instant,
-        gen: JsonGenerator,
-        serializers: SerializerProvider?
-    ) {
-        gen.writeString(value.toString())
-    }
+  @Throws(IOException::class, JsonProcessingException::class)
+  override fun serialize(
+    value: Instant,
+    gen: JsonGenerator,
+    serializers: SerializerProvider?
+  ) {
+    gen.writeString(value.toString())
+  }
 }

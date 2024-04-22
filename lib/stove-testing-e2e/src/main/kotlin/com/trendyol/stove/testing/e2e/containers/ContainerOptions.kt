@@ -6,15 +6,15 @@ typealias ContainerFn<T> = T.() -> Unit
  * Container options to run
  */
 interface ContainerOptions {
-    val registry: String
+  val registry: String
 
-    val image: String
+  val image: String
 
-    val tag: String
+  val tag: String
 
-    val imageWithTag: String get() = "$image:$tag"
+  val imageWithTag: String get() = "$image:$tag"
 
-    val compatibleSubstitute: String?
+  val compatibleSubstitute: String?
 
-    val containerFn: ContainerFn<*>
+  val containerFn: ContainerFn<*>
 }

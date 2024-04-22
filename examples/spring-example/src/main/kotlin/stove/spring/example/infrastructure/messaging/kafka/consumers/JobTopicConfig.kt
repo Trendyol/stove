@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @ConfigurationProperties(prefix = "kafka.consumers")
 class ConsumerConfig(
-    var enabled: Boolean = false,
-    var groupId: String = "",
-    var retryTopicSuffix: String = "",
-    var errorTopicSuffix: String = ""
+  var enabled: Boolean = false,
+  var groupId: String = "",
+  var retryTopicSuffix: String = "",
+  var errorTopicSuffix: String = ""
 )
 
 @Configuration
@@ -21,7 +21,7 @@ class ProductCreateEventTopicConfig : TopicConfig()
 class ProductFailingEventTopicConfig : TopicConfig()
 
 abstract class TopicConfig(
-    var topic: String = "",
-    var retryTopic: String = "",
-    var errorTopic: String = ""
+  var topic: String = "",
+  var retryTopic: String = "",
+  var errorTopic: String = ""
 )

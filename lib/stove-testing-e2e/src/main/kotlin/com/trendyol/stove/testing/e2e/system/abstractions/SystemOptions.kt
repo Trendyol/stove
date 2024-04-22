@@ -14,5 +14,5 @@ interface ExposedConfiguration
  * Interface that defines the function of how configurations can be exposed
  */
 interface ConfiguresExposedConfiguration<T : ExposedConfiguration> {
-    val configureExposedConfiguration: (T) -> List<String>
+  val configureExposedConfiguration: (T) -> List<String>
 }

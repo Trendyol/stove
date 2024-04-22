@@ -12,9 +12,9 @@ package com.trendyol.stove.testing.e2e.system.abstractions
  * @author Oguzhan Soykan
  */
 interface ExposesConfiguration {
-    /**
-     * Gets the configurations that dependency exposes.
-     * It is invoked after [RunAware.run], so docker instances are running at this stage.
-     */
-    fun configuration(): List<String>
+  /**
+   * Gets the configurations that dependency exposes.
+   * It is invoked after [RunAware.run], so docker instances are running at this stage.
+   */
+  fun configuration(): List<String>
 }

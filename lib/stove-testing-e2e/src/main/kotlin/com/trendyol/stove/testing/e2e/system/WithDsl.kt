@@ -7,8 +7,8 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 @JvmInline
 @StoveDsl
 value class WithDsl(val testSystem: TestSystem) {
-    @StoveDsl
-    fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>) {
-        this.testSystem.applicationUnderTest(applicationUnderTest)
-    }
+  @StoveDsl
+  fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>) {
+    this.testSystem.applicationUnderTest(applicationUnderTest)
+  }
 }

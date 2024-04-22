@@ -15,52 +15,52 @@ import java.time.Duration
 @Configuration
 @EnableConfigurationProperties(CouchbaseProperties::class)
 class CouchbaseConfiguration(
-    private val couchbaseProperties: CouchbaseProperties,
-    private val meterRegistry: MeterRegistry
+  private val couchbaseProperties: CouchbaseProperties,
+  private val meterRegistry: MeterRegistry
 ) {
-    companion object {
-        val objectMapper: ObjectMapper =
-            ObjectMapperConfig.createObjectMapperWithDefaults()
-                .registerModule(JsonValueModule())
-    }
+  companion object {
+    val objectMapper: ObjectMapper =
+      ObjectMapperConfig.createObjectMapperWithDefaults()
+        .registerModule(JsonValueModule())
+  }
 
-    @Primary
-    @Bean(destroyMethod = "shutdown")
-    fun clusterEnvironment(): ClusterEnvironment {
-        val cbSerializer = JacksonJsonSerializer.create(objectMapper)
-        return ClusterEnvironment
-            .builder()
-            .meter(MicrometerMeter.wrap(meterRegistry))
-            .timeoutConfig {
-                it.kvTimeout(Duration.ofMillis(couchbaseProperties.kvTimeout))
-                    .connectTimeout(Duration.ofMillis(couchbaseProperties.connectTimeout))
-                    .queryTimeout(Duration.ofMillis(couchbaseProperties.queryTimeout))
-                    .viewTimeout(Duration.ofMillis(couchbaseProperties.viewTimeout))
-            }
-            .jsonSerializer(cbSerializer)
-            .build()
-    }
+  @Primary
+  @Bean(destroyMethod = "shutdown")
+  fun clusterEnvironment(): ClusterEnvironment {
+    val cbSerializer = JacksonJsonSerializer.create(objectMapper)
+    return ClusterEnvironment
+      .builder()
+      .meter(MicrometerMeter.wrap(meterRegistry))
+      .timeoutConfig {
+        it.kvTimeout(Duration.ofMillis(couchbaseProperties.kvTimeout))
+          .connectTimeout(Duration.ofMillis(couchbaseProperties.connectTimeout))
+          .queryTimeout(Duration.ofMillis(couchbaseProperties.queryTimeout))
+          .viewTimeout(Duration.ofMillis(couchbaseProperties.viewTimeout))
+      }
+      .jsonSerializer(cbSerializer)
+      .build()
+  }
 
-    @Primary
-    @Bean(destroyMethod = "disconnect")
-    fun cluster(clusterEnvironment: ClusterEnvironment): ReactiveCluster {
-        val clusterOptions =
-            ClusterOptions
-                .clusterOptions(couchbaseProperties.username, couchbaseProperties.password)
-                .environment(clusterEnvironment)
+  @Primary
+  @Bean(destroyMethod = "disconnect")
+  fun cluster(clusterEnvironment: ClusterEnvironment): ReactiveCluster {
+    val clusterOptions =
+      ClusterOptions
+        .clusterOptions(couchbaseProperties.username, couchbaseProperties.password)
+        .environment(clusterEnvironment)
 
-        return ReactiveCluster.connect(couchbaseProperties.hosts.joinToString(","), clusterOptions)
-    }
+    return ReactiveCluster.connect(couchbaseProperties.hosts.joinToString(","), clusterOptions)
+  }
 
-    @Primary
-    @Bean
-    fun bucket(cluster: ReactiveCluster): ReactiveBucket {
-        return cluster.bucket(couchbaseProperties.bucketName)
-    }
+  @Primary
+  @Bean
+  fun bucket(cluster: ReactiveCluster): ReactiveBucket {
+    return cluster.bucket(couchbaseProperties.bucketName)
+  }
 
-    @Primary
-    @Bean
-    fun collection(bucket: ReactiveBucket): ReactiveCollection {
-        return bucket.defaultCollection()
-    }
+  @Primary
+  @Bean
+  fun collection(bucket: ReactiveBucket): ReactiveCollection {
+    return bucket.defaultCollection()
+  }
 }

@@ -6,12 +6,12 @@ import io.github.nomisRev.kafka.publisher.PublisherSettings
 import org.apache.kafka.clients.consumer.ConsumerRecord
 
 class ProductFailingConsumer(
-    consumerSettings: Map<String, Any>,
-    producerSettings: PublisherSettings<String, String>
+  consumerSettings: Map<String, Any>,
+  producerSettings: PublisherSettings<String, String>
 ) : StoveListener(consumerSettings, producerSettings) {
-    override val topicDefinition: TopicDefinition = TopicDefinition("productFailing", "productFailing.retry", "productFailing.error")
+  override val topicDefinition: TopicDefinition = TopicDefinition("productFailing", "productFailing.retry", "productFailing.error")
 
-    override suspend fun listen(record: ConsumerRecord<String, String>) {
-        throw Exception("exception occurred on purpose")
-    }
+  override suspend fun listen(record: ConsumerRecord<String, String>) {
+    throw Exception("exception occurred on purpose")
+  }
 }

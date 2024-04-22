@@ -8,13 +8,13 @@ import java.util.*
 import java.util.concurrent.ConcurrentMap
 
 class WireMockRequestListener(
-    private val stubLog: ConcurrentMap<UUID, StubMapping>,
-    private val afterRequest: AfterRequestHandler
+  private val stubLog: ConcurrentMap<UUID, StubMapping>,
+  private val afterRequest: AfterRequestHandler
 ) : ServeEventListener {
-    override fun getName(): String = WireMockRequestListener::class.java.simpleName
+  override fun getName(): String = WireMockRequestListener::class.java.simpleName
 
-    override fun beforeResponseSent(
-        serveEvent: ServeEvent?,
-        parameters: Parameters?
-    ): Unit = afterRequest(serveEvent!!, stubLog)
+  override fun beforeResponseSent(
+    serveEvent: ServeEvent?,
+    parameters: Parameters?
+  ): Unit = afterRequest(serveEvent!!, stubLog)
 }

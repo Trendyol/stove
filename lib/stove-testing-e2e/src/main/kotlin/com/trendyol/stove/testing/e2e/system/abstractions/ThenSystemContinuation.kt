@@ -7,18 +7,18 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
  * @author Oguzhan Soykan
  */
 interface ThenSystemContinuation {
-    val testSystem: TestSystem
+  val testSystem: TestSystem
 
-    fun then(): TestSystem = testSystem
+  fun then(): TestSystem = testSystem
 
-    /**
-     * Executes the given action if the dependencies are not kept running.
-     * @param action the action to be executed
-     */
-    suspend fun executeWithReuseCheck(action: suspend () -> Unit) {
-        if (testSystem.options.keepDependenciesRunning) {
-            return
-        }
-        action()
+  /**
+   * Executes the given action if the dependencies are not kept running.
+   * @param action the action to be executed
+   */
+  suspend fun executeWithReuseCheck(action: suspend () -> Unit) {
+    if (testSystem.options.keepDependenciesRunning) {
+      return
     }
+    action()
+  }
 }

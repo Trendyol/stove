@@ -20,39 +20,39 @@ import kotlinx.coroutines.coroutineScope
  */
 @StoveDsl
 internal fun TestSystem.systemUnderTest(
-    runner: Runner<ApplicationEngine>,
-    withParameters: List<String> = listOf()
+  runner: Runner<ApplicationEngine>,
+  withParameters: List<String> = listOf()
 ): ReadyTestSystem = applicationUnderTest(KtorApplicationUnderTest(this, runner, withParameters))
 
 @StoveDsl
 fun WithDsl.ktor(
-    runner: Runner<ApplicationEngine>,
-    withParameters: List<String> = listOf()
+  runner: Runner<ApplicationEngine>,
+  withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
 @StoveDsl
 class KtorApplicationUnderTest(
-    private val testSystem: TestSystem,
-    private val runner: Runner<ApplicationEngine>,
-    private val parameters: List<String>
+  private val testSystem: TestSystem,
+  private val runner: Runner<ApplicationEngine>,
+  private val parameters: List<String>
 ) : ApplicationUnderTest<ApplicationEngine> {
-    private lateinit var application: ApplicationEngine
+  private lateinit var application: ApplicationEngine
 
-    override suspend fun start(configurations: List<String>): ApplicationEngine =
-        coroutineScope {
-            val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
-            application = runner(allConfigurations)
-            testSystem.activeSystems
-                .map { it.value }
-                .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-                .map { it as RunnableSystemWithContext<ApplicationEngine> }
-                .map { async { it.afterRun(application) } }
-                .awaitAll()
+  override suspend fun start(configurations: List<String>): ApplicationEngine =
+    coroutineScope {
+      val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
+      application = runner(allConfigurations)
+      testSystem.activeSystems
+        .map { it.value }
+        .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
+        .map { it as RunnableSystemWithContext<ApplicationEngine> }
+        .map { async { it.afterRun(application) } }
+        .awaitAll()
 
-            application
-        }
+      application
+    }
 
-    override suspend fun stop(): Unit = application.stop()
+  override suspend fun stop(): Unit = application.stop()
 
-    private fun defaultConfigurations(): Array<String> = arrayOf("test-system=true")
+  private fun defaultConfigurations(): Array<String> = arrayOf("test-system=true")
 }

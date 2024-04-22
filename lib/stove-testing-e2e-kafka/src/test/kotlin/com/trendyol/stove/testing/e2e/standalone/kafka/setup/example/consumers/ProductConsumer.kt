@@ -6,11 +6,11 @@ import io.github.nomisRev.kafka.publisher.PublisherSettings
 import org.apache.kafka.clients.consumer.ConsumerRecord
 
 class ProductConsumer(
-    consumerSettings: Map<String, Any>,
-    producerSettings: PublisherSettings<String, String>
+  consumerSettings: Map<String, Any>,
+  producerSettings: PublisherSettings<String, String>
 ) : StoveListener(consumerSettings, producerSettings) {
-    override val topicDefinition: TopicDefinition = TopicDefinition("product", "product.retry", "product.error")
+  override val topicDefinition: TopicDefinition = TopicDefinition("product", "product.retry", "product.error")
 
-    override suspend fun listen(record: ConsumerRecord<String, String>) {
-    }
+  override suspend fun listen(record: ConsumerRecord<String, String>) {
+  }
 }

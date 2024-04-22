@@ -8,33 +8,33 @@ import io.r2dbc.spi.ConnectionFactory
 
 @StoveDsl
 class PostgresqlSystem internal constructor(
-    testSystem: TestSystem,
-    private val postgresContext: PostgresqlContext
+  testSystem: TestSystem,
+  private val postgresContext: PostgresqlContext
 ) : RelationalDatabaseSystem<PostgresqlSystem>(testSystem, postgresContext) {
-    override suspend fun run() {
-        super.run()
-        val executeAsRoot = { sql: String ->
-            postgresContext.container.execInContainer(
-                "/bin/bash",
-                "-c",
-                "psql -U ${postgresContext.container.username} -d ${postgresContext.container.databaseName} -c \"$sql\""
-            )
-        }
-        postgresContext.options.migrationCollection.run(
-            PostgresSqlMigrationContext(postgresContext.options, sqlOperations) {
-                executeAsRoot(
-                    it
-                )
-            }
-        )
+  override suspend fun run() {
+    super.run()
+    val executeAsRoot = { sql: String ->
+      postgresContext.container.execInContainer(
+        "/bin/bash",
+        "-c",
+        "psql -U ${postgresContext.container.username} -d ${postgresContext.container.databaseName} -c \"$sql\""
+      )
     }
+    postgresContext.options.migrationCollection.run(
+      PostgresSqlMigrationContext(postgresContext.options, sqlOperations) {
+        executeAsRoot(
+          it
+        )
+      }
+    )
+  }
 
-    override fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
-        PostgresqlConnectionConfiguration.builder().apply {
-            host(exposedConfiguration.host)
-            database(exposedConfiguration.database)
-            port(exposedConfiguration.port)
-            password(exposedConfiguration.password)
-            username(exposedConfiguration.username)
-        }.let { PostgresqlConnectionFactory(it.build()) }
+  override fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
+    PostgresqlConnectionConfiguration.builder().apply {
+      host(exposedConfiguration.host)
+      database(exposedConfiguration.database)
+      port(exposedConfiguration.port)
+      password(exposedConfiguration.password)
+      username(exposedConfiguration.username)
+    }.let { PostgresqlConnectionFactory(it.build()) }
 }

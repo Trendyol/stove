@@ -13,10 +13,10 @@ fun <T> Option<T>.get(): T = this.getOrElse { throw NoSuchElementException("get(
  * @return [Option] nested in a [Success] or [None] if this is a [Failure].
  */
 fun <T> Try<Option<T>>.flatten(): Option<T> =
-    when (this) {
-        is Success -> value
-        is Failure -> None
-    }
+  when (this) {
+    is Success -> value
+    is Failure -> None
+  }
 
 /**
  * Returns [Some] if this [Some] contains a [Success]. Otherwise, returns [None].
@@ -47,10 +47,10 @@ fun <T> Iterable<Option<T>>.flatten(): List<T> = flatMap { it.toList() }
  * @since 1.4.0
  */
 fun <T> Try<Option<T>>.evert(): Option<Try<T>> =
-    when (this) {
-        is Success -> value.map { Success(it) }
-        is Failure -> Some(this)
-    }
+  when (this) {
+    is Success -> value.map { Success(it) }
+    is Failure -> Some(this)
+  }
 
 /**
  * Moves inner [Try] outside of the outer [Option].
@@ -60,7 +60,7 @@ fun <T> Try<Option<T>>.evert(): Option<Try<T>> =
  * @since 1.4.0
  */
 fun <T> Option<Try<T>>.evert(): Try<Option<T>> =
-    when (this) {
-        is Some -> value.map { Some(it) }
-        is None -> Success(None)
-    }
+  when (this) {
+    is Some -> value.map { Some(it) }
+    is None -> Success(None)
+  }

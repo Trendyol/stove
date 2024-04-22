@@ -10,19 +10,19 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class ObjectMapperConfig {
-    companion object {
-        fun createObjectMapperWithDefaults(): ObjectMapper {
-            val isoInstantModule = SimpleModule()
-            return ObjectMapper()
-                .registerModule(KotlinModule.Builder().build())
-                .registerModule(isoInstantModule)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        }
+  companion object {
+    fun createObjectMapperWithDefaults(): ObjectMapper {
+      val isoInstantModule = SimpleModule()
+      return ObjectMapper()
+        .registerModule(KotlinModule.Builder().build())
+        .registerModule(isoInstantModule)
+        .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
+  }
 
-    @Bean
-    fun objectMapper(): ObjectMapper {
-        return createObjectMapperWithDefaults()
-    }
+  @Bean
+  fun objectMapper(): ObjectMapper {
+    return createObjectMapperWithDefaults()
+  }
 }

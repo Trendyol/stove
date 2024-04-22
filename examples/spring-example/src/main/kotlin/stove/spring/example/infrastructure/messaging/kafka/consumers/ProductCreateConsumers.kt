@@ -15,35 +15,35 @@ import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaCo
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")
 class ProductTransferConsumers(
-    private val objectMapper: ObjectMapper,
-    private val productCreator: ProductCreator
+  private val objectMapper: ObjectMapper,
+  private val productCreator: ProductCreator
 ) {
-    private val logger = LoggerFactory.getLogger(ProductTransferConsumers::class.java)
+  private val logger = LoggerFactory.getLogger(ProductTransferConsumers::class.java)
 
-    @KafkaListener(
-        topics = ["#{@productCreateEventTopicConfig.topic}"],
-        groupId = "#{@consumerConfig.groupId}",
-        containerFactory = KafkaConsumerConfiguration.LISTENER_BEAN_NAME
-    )
-    @KafkaListener(
-        topics = ["#{@productCreateEventTopicConfig.retryTopic}"],
-        groupId = "#{@consumerConfig.groupId}_retry",
-        containerFactory = KafkaConsumerConfiguration.RETRY_LISTENER_BEAN_NAME
-    )
-    fun listen(cr: ConsumerRecord<String, String>) =
-        runBlocking(MDCContext()) {
-            logger.info("Received product transfer command ${cr.value()}")
-            val command =
-                objectMapper.readValue(
-                    cr.value(),
-                    CreateProductCommand::class.java
-                )
-            productCreator.create(command.mapToCreateRequest())
-        }
+  @KafkaListener(
+    topics = ["#{@productCreateEventTopicConfig.topic}"],
+    groupId = "#{@consumerConfig.groupId}",
+    containerFactory = KafkaConsumerConfiguration.LISTENER_BEAN_NAME
+  )
+  @KafkaListener(
+    topics = ["#{@productCreateEventTopicConfig.retryTopic}"],
+    groupId = "#{@consumerConfig.groupId}_retry",
+    containerFactory = KafkaConsumerConfiguration.RETRY_LISTENER_BEAN_NAME
+  )
+  fun listen(cr: ConsumerRecord<String, String>) =
+    runBlocking(MDCContext()) {
+      logger.info("Received product transfer command ${cr.value()}")
+      val command =
+        objectMapper.readValue(
+          cr.value(),
+          CreateProductCommand::class.java
+        )
+      productCreator.create(command.mapToCreateRequest())
+    }
 }
 
 data class CreateProductCommand(
-    val id: Long,
-    val name: String,
-    val supplierId: Long
+  val id: Long,
+  val name: String,
+  val supplierId: Long
 )

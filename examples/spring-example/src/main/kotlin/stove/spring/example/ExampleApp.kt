@@ -9,7 +9,7 @@ import org.springframework.context.ConfigurableApplicationContext
 class ExampleApp
 
 fun main(args: Array<String>) {
-    run(args)
+  run(args)
 }
 
 /**
@@ -19,6 +19,6 @@ fun main(args: Array<String>) {
  * Spring itself opens this configuration higher order function to the outside.
  */
 fun run(
-    args: Array<String>,
-    init: SpringApplication.() -> Unit = {}
+  args: Array<String>,
+  init: SpringApplication.() -> Unit = {}
 ): ConfigurableApplicationContext = runApplication<ExampleApp>(*args, init = init)

@@ -23,150 +23,150 @@ import org.springframework.kafka.listener.*
 import org.springframework.util.backoff.FixedBackOff
 
 object KafkaSystemTestAppRunner {
-    fun run(
-        args: Array<String>,
-        init: SpringApplication.() -> Unit = {}
-    ): ConfigurableApplicationContext = runApplication<KafkaTestSpringBotApplication>(args = args) {
-        init()
-    }
+  fun run(
+    args: Array<String>,
+    init: SpringApplication.() -> Unit = {}
+  ): ConfigurableApplicationContext = runApplication<KafkaTestSpringBotApplication>(args = args) {
+    init()
+  }
 }
 
 @SpringBootApplication
 @EnableKafka
 @EnableConfigurationProperties(KafkaTestSpringBotApplication.KafkaTestSpringBotApplicationConfiguration::class)
 open class KafkaTestSpringBotApplication {
-    private val logger: Logger = org.slf4j.LoggerFactory.getLogger(javaClass)
+  private val logger: Logger = org.slf4j.LoggerFactory.getLogger(javaClass)
 
-    @ConfigurationProperties(prefix = "kafka")
-    @ConstructorBinding
-    data class KafkaTestSpringBotApplicationConfiguration(
-        val bootstrapServers: String,
-        val groupId: String,
-        val offset: String
+  @ConfigurationProperties(prefix = "kafka")
+  @ConstructorBinding
+  data class KafkaTestSpringBotApplicationConfiguration(
+    val bootstrapServers: String,
+    val groupId: String,
+    val offset: String
+  )
+
+  @Bean
+  open fun kafkaListenerContainerFactory(
+    consumerFactory: ConsumerFactory<String, String>,
+    interceptor: RecordInterceptor<String, String>
+  ): ConcurrentKafkaListenerContainerFactory<String, String> {
+    val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+    factory.consumerFactory = consumerFactory
+    factory.setCommonErrorHandler(
+      DefaultErrorHandler(
+        FixedBackOff(5000, 1)
+      )
     )
+    factory.setRecordInterceptor(interceptor)
+    return factory
+  }
 
-    @Bean
-    open fun kafkaListenerContainerFactory(
-        consumerFactory: ConsumerFactory<String, String>,
-        interceptor: RecordInterceptor<String, String>
-    ): ConcurrentKafkaListenerContainerFactory<String, String> {
-        val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-        factory.consumerFactory = consumerFactory
-        factory.setCommonErrorHandler(
-            DefaultErrorHandler(
-                FixedBackOff(5000, 1)
-            )
-        )
-        factory.setRecordInterceptor(interceptor)
-        return factory
-    }
+  @Bean
+  open fun consumerFactory(
+    config: KafkaTestSpringBotApplicationConfiguration
+  ): ConsumerFactory<String, String> = DefaultKafkaConsumerFactory(
+    mapOf(
+      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
+      ConsumerConfig.GROUP_ID_CONFIG to config.groupId,
+      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to config.offset,
+      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+      ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to 2000,
+      ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to 6000,
+      ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG to 6000
+    )
+  )
 
-    @Bean
-    open fun consumerFactory(
-        config: KafkaTestSpringBotApplicationConfiguration
-    ): ConsumerFactory<String, String> = DefaultKafkaConsumerFactory(
+  @Bean
+  open fun kafkaTemplate(
+    config: KafkaTestSpringBotApplicationConfiguration
+  ): KafkaTemplate<String, String> {
+    return KafkaTemplate(
+      DefaultKafkaProducerFactory(
         mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
-            ConsumerConfig.GROUP_ID_CONFIG to config.groupId,
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to config.offset,
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to 2000,
-            ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to 6000,
-            ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG to 6000
+          ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
+          ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+          ProducerConfig.ACKS_CONFIG to "all"
         )
+      )
     )
+  }
 
-    @Bean
-    open fun kafkaTemplate(
-        config: KafkaTestSpringBotApplicationConfiguration
-    ): KafkaTemplate<String, String> {
-        return KafkaTemplate(
-            DefaultKafkaProducerFactory(
-                mapOf(
-                    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
-                    ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-                    ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-                    ProducerConfig.ACKS_CONFIG to "all"
-                )
-            )
-        )
-    }
+  @KafkaListener(topics = ["topic"], groupId = "group_id")
+  fun listen(message: String) {
+    logger.info("Received Message in consumer: $message")
+  }
 
-    @KafkaListener(topics = ["topic"], groupId = "group_id")
-    fun listen(message: String) {
-        logger.info("Received Message in consumer: $message")
-    }
-
-    @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
-    fun listen_failed(message: String) {
-        logger.info("Received Message in consumer: $message")
-        throw RuntimeException("Failed to consume message")
-    }
+  @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
+  fun listen_failed(message: String) {
+    logger.info("Received Message in consumer: $message")
+    throw RuntimeException("Failed to consume message")
+  }
 }
 
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject(): Unit =
-        TestSystem()
-            .with {
-                kafka {
-                    KafkaSystemOptions(
-                        configureExposedConfiguration = {
-                            listOf(
-                                "kafka.bootstrapServers=${it.bootstrapServers}",
-                                "kafka.groupId=test-group",
-                                "kafka.offset=earliest"
-                            )
-                        },
-                        containerOptions = KafkaContainerOptions {
-                        }
-                    )
-                }
-                springBoot({ params ->
-                    KafkaSystemTestAppRunner.run(params) {
-                        addInitializers(
-                            beans {
-                                bean<TestSystemKafkaInterceptor>()
-                                bean { StoveObjectMapper.Default }
-                            }
-                        )
-                    }
-                })
-            }.run()
+  override suspend fun beforeProject(): Unit =
+    TestSystem()
+      .with {
+        kafka {
+          KafkaSystemOptions(
+            configureExposedConfiguration = {
+              listOf(
+                "kafka.bootstrapServers=${it.bootstrapServers}",
+                "kafka.groupId=test-group",
+                "kafka.offset=earliest"
+              )
+            },
+            containerOptions = KafkaContainerOptions {
+            }
+          )
+        }
+        springBoot({ params ->
+          KafkaSystemTestAppRunner.run(params) {
+            addInitializers(
+              beans {
+                bean<TestSystemKafkaInterceptor>()
+                bean { StoveObjectMapper.Default }
+              }
+            )
+          }
+        })
+      }.run()
 
-    override suspend fun afterProject(): Unit = TestSystem.stop()
+  override suspend fun afterProject(): Unit = TestSystem.stop()
 }
 
 class KafkaSystemTests : ShouldSpec({
-    should("publish and consume") {
-        validate {
-            kafka {
-                val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
-                val headers = mapOf("x-user-id" to "1")
-                publish("topic", message, headers = headers)
-                shouldBePublished<Any> {
-                    actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic"
-                }
-                shouldBeConsumed<Any> {
-                    actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic"
-                }
-            }
+  should("publish and consume") {
+    validate {
+      kafka {
+        val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
+        val headers = mapOf("x-user-id" to "1")
+        publish("topic", message, headers = headers)
+        shouldBePublished<Any> {
+          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic"
         }
+        shouldBeConsumed<Any> {
+          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic"
+        }
+      }
     }
+  }
 
-    should("publish and consume with failed consumer") {
-        validate {
-            kafka {
-                val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
-                val headers = mapOf("x-user-id" to "1")
-                publish("topic-failed", message, headers = headers)
-                shouldBePublished<Any> {
-                    actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed"
-                }
-                shouldBeFailed<Any> {
-                    actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is RuntimeException
-                }
-            }
+  should("publish and consume with failed consumer") {
+    validate {
+      kafka {
+        val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
+        val headers = mapOf("x-user-id" to "1")
+        publish("topic-failed", message, headers = headers)
+        shouldBePublished<Any> {
+          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed"
         }
+        shouldBeFailed<Any> {
+          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is RuntimeException
+        }
+      }
     }
+  }
 })

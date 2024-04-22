@@ -12,15 +12,15 @@ import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAware
  * @see AfterRunAware.afterRun
  */
 interface DatabaseMigration<in TConnection> {
-    /**
-     * [connection] is ready for executing operations
-     */
-    suspend fun execute(connection: TConnection)
+  /**
+   * [connection] is ready for executing operations
+   */
+  suspend fun execute(connection: TConnection)
 
-    val order: Int
+  val order: Int
 }
 
 enum class MigrationPriority(val value: Int) {
-    LOWEST(Int.MAX_VALUE),
-    HIGHEST(Int.MIN_VALUE)
+  LOWEST(Int.MAX_VALUE),
+  HIGHEST(Int.MIN_VALUE)
 }

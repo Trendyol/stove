@@ -32,237 +32,237 @@ typealias AfterRequestHandler = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -
 
 @WiremockDsl
 class WireMockSystem(
-    override val testSystem: TestSystem,
-    ctx: WireMockContext
+  override val testSystem: TestSystem,
+  ctx: WireMockContext
 ) : PluggedSystem, ValidatedSystem, RunAware {
-    private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
-    private var wireMock: WireMockServer
-    private val json: ObjectMapper = ctx.objectMapper
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+  private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
+  private var wireMock: WireMockServer
+  private val json: ObjectMapper = ctx.objectMapper
+  private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-    init {
-        val stoveExtensions = mutableListOf<Extension>()
-        val cfg = wireMockConfig().port(ctx.port).extensions(WireMockRequestListener(stubLog, ctx.afterRequest))
+  init {
+    val stoveExtensions = mutableListOf<Extension>()
+    val cfg = wireMockConfig().port(ctx.port).extensions(WireMockRequestListener(stubLog, ctx.afterRequest))
 
-        if (ctx.removeStubAfterRequestMatched) {
-            stoveExtensions.add(WireMockVacuumCleaner(stubLog, ctx.afterStubRemoved))
-        }
-        stoveExtensions.map { cfg.extensions(it) }
-        wireMock = WireMockServer(cfg)
-        stoveExtensions.filterIsInstance<WireMockVacuumCleaner>().forEach { it.wireMock(wireMock) }
+    if (ctx.removeStubAfterRequestMatched) {
+      stoveExtensions.add(WireMockVacuumCleaner(stubLog, ctx.afterStubRemoved))
     }
+    stoveExtensions.map { cfg.extensions(it) }
+    wireMock = WireMockServer(cfg)
+    stoveExtensions.filterIsInstance<WireMockVacuumCleaner>().forEach { it.wireMock(wireMock) }
+  }
 
-    override suspend fun run(): Unit = wireMock.start()
+  override suspend fun run(): Unit = wireMock.start()
 
-    override suspend fun stop(): Unit = wireMock.stop()
+  override suspend fun stop(): Unit = wireMock.stop()
 
-    @WiremockDsl
-    fun mockGet(
-        url: String,
-        statusCode: Int,
-        responseBody: Option<Any> = None,
-        metadata: Map<String, Any> = mapOf()
-    ): WireMockSystem {
-        val mockRequest = WireMock.get(WireMock.urlEqualTo(url))
-        mockRequest.withMetadata(metadata)
-        val mockResponse = configureBody(statusCode, responseBody)
-        val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockGet(
+    url: String,
+    statusCode: Int,
+    responseBody: Option<Any> = None,
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem {
+    val mockRequest = WireMock.get(WireMock.urlEqualTo(url))
+    mockRequest.withMetadata(metadata)
+    val mockResponse = configureBody(statusCode, responseBody)
+    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockPost(
-        url: String,
-        statusCode: Int,
-        requestBody: Option<Any> = None,
-        responseBody: Option<Any> = None,
-        metadata: Map<String, Any> = mapOf()
-    ): WireMockSystem {
-        val mockRequest = WireMock.post(WireMock.urlEqualTo(url))
-        configureBodyAndMetadata(mockRequest, metadata, requestBody)
-        val mockResponse = configureBody(statusCode, responseBody)
-        val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockPost(
+    url: String,
+    statusCode: Int,
+    requestBody: Option<Any> = None,
+    responseBody: Option<Any> = None,
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem {
+    val mockRequest = WireMock.post(WireMock.urlEqualTo(url))
+    configureBodyAndMetadata(mockRequest, metadata, requestBody)
+    val mockResponse = configureBody(statusCode, responseBody)
+    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockPut(
-        url: String,
-        statusCode: Int,
-        requestBody: Option<Any> = None,
-        responseBody: Option<Any> = None,
-        metadata: Map<String, Any> = mapOf()
-    ): WireMockSystem {
-        val res =
-            aResponse()
-                .withStatus(statusCode)
-                .withHeader("Content-Type", "application/json; charset=UTF-8")
-        responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
-        val req = WireMock.put(WireMock.urlEqualTo(url))
-        configureBodyAndMetadata(req, metadata, requestBody)
-        val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockPut(
+    url: String,
+    statusCode: Int,
+    requestBody: Option<Any> = None,
+    responseBody: Option<Any> = None,
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem {
+    val res =
+      aResponse()
+        .withStatus(statusCode)
+        .withHeader("Content-Type", "application/json; charset=UTF-8")
+    responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
+    val req = WireMock.put(WireMock.urlEqualTo(url))
+    configureBodyAndMetadata(req, metadata, requestBody)
+    val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockDelete(
-        url: String,
-        statusCode: Int,
-        metadata: Map<String, Any> = mapOf()
-    ): WireMockSystem {
-        val mockRequest = WireMock.delete(WireMock.urlEqualTo(url))
-        configureBodyAndMetadata(mockRequest, metadata, None)
+  @WiremockDsl
+  fun mockDelete(
+    url: String,
+    statusCode: Int,
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem {
+    val mockRequest = WireMock.delete(WireMock.urlEqualTo(url))
+    configureBodyAndMetadata(mockRequest, metadata, None)
 
-        val mockResponse = configureBody(statusCode, None)
-        val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+    val mockResponse = configureBody(statusCode, None)
+    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockHead(
-        url: String,
-        statusCode: Int,
-        metadata: Map<String, Any> = mapOf()
-    ): WireMockSystem {
-        val mockRequest = WireMock.head(WireMock.urlEqualTo(url))
-        configureBodyAndMetadata(mockRequest, metadata, None)
+  @WiremockDsl
+  fun mockHead(
+    url: String,
+    statusCode: Int,
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem {
+    val mockRequest = WireMock.head(WireMock.urlEqualTo(url))
+    configureBodyAndMetadata(mockRequest, metadata, None)
 
-        val mockResponse = configureBody(statusCode, None)
-        val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+    val mockResponse = configureBody(statusCode, None)
+    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockPutConfigure(
-        url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
-    ): WireMockSystem {
-        val req = WireMock.put(WireMock.urlEqualTo(url))
-        val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockPutConfigure(
+    url: String,
+    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+  ): WireMockSystem {
+    val req = WireMock.put(WireMock.urlEqualTo(url))
+    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockGetConfigure(
-        url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
-    ): WireMockSystem {
-        val req = WireMock.get(WireMock.urlEqualTo(url))
-        val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockGetConfigure(
+    url: String,
+    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+  ): WireMockSystem {
+    val req = WireMock.get(WireMock.urlEqualTo(url))
+    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockHeadConfigure(
-        url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
-    ): WireMockSystem {
-        val req = WireMock.head(WireMock.urlEqualTo(url))
-        val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockHeadConfigure(
+    url: String,
+    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+  ): WireMockSystem {
+    val req = WireMock.head(WireMock.urlEqualTo(url))
+    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockDeleteConfigure(
-        url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
-    ): WireMockSystem {
-        val req = WireMock.delete(WireMock.urlEqualTo(url))
-        val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockDeleteConfigure(
+    url: String,
+    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+  ): WireMockSystem {
+    val req = WireMock.delete(WireMock.urlEqualTo(url))
+    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    fun mockPostConfigure(
-        url: String,
-        configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
-    ): WireMockSystem {
-        val req = WireMock.post(WireMock.urlEqualTo(url))
-        val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-        stubLog.putIfAbsent(stub.id, stub)
-        return this
-    }
+  @WiremockDsl
+  fun mockPostConfigure(
+    url: String,
+    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+  ): WireMockSystem {
+    val req = WireMock.post(WireMock.urlEqualTo(url))
+    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    stubLog.putIfAbsent(stub.id, stub)
+    return this
+  }
 
-    @WiremockDsl
-    override suspend fun validate() {
-        data class ValidationResult(
-            val url: String,
-            val bodyAsString: String,
-            val queryParams: String
-        ) {
-            override fun toString(): String =
-                """
+  @WiremockDsl
+  override suspend fun validate() {
+    data class ValidationResult(
+      val url: String,
+      val bodyAsString: String,
+      val queryParams: String
+    ) {
+      override fun toString(): String =
+        """
                 Url: $url
                 Body: $bodyAsString
                 QueryParams: $queryParams
-                """.trimIndent()
+        """.trimIndent()
+    }
+    if (wireMock.findAllUnmatchedRequests().any()) {
+      val problems =
+        wireMock.findAllUnmatchedRequests().joinToString("\n") {
+          ValidationResult(
+            "${it.method.value()} ${it.url}",
+            it.bodyAsString,
+            json.writeValueAsString(it.queryParams)
+          ).toString()
         }
-        if (wireMock.findAllUnmatchedRequests().any()) {
-            val problems =
-                wireMock.findAllUnmatchedRequests().joinToString("\n") {
-                    ValidationResult(
-                        "${it.method.value()} ${it.url}",
-                        it.bodyAsString,
-                        json.writeValueAsString(it.queryParams)
-                    ).toString()
-                }
-            throw AssertionError(
-                "There are unmatched requests in the mock pipeline, please satisfy all the wanted requests.\n$problems"
-            )
-        }
+      throw AssertionError(
+        "There are unmatched requests in the mock pipeline, please satisfy all the wanted requests.\n$problems"
+      )
+    }
+  }
+
+  override fun close(): Unit =
+    runBlocking {
+      Try {
+        stop()
+      }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
     }
 
-    override fun close(): Unit =
-        runBlocking {
-            Try {
-                stop()
-            }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
-        }
-
-    private fun configureBodyAndMetadata(
-        request: MappingBuilder,
-        metadata: Map<String, Any>,
-        body: Option<Any>
-    ) {
-        request.withMetadata(metadata)
-        body.map {
-            request.withRequestBody(
-                equalToJson(
-                    json.writeValueAsString(it),
-                    true,
-                    false
-                )
-            ).withHeader("Content-Type", ContainsPattern("application/json"))
-        }
+  private fun configureBodyAndMetadata(
+    request: MappingBuilder,
+    metadata: Map<String, Any>,
+    body: Option<Any>
+  ) {
+    request.withMetadata(metadata)
+    body.map {
+      request.withRequestBody(
+        equalToJson(
+          json.writeValueAsString(it),
+          true,
+          false
+        )
+      ).withHeader("Content-Type", ContainsPattern("application/json"))
     }
+  }
 
-    private fun configureBody(
-        statusCode: Int,
-        responseBody: Option<Any>
-    ): ResponseDefinitionBuilder? {
-        val mockResponse =
-            aResponse()
-                .withStatus(statusCode)
-                .withHeader("Content-Type", "application/json; charset=UTF-8")
-        responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
-        return mockResponse
-    }
+  private fun configureBody(
+    statusCode: Int,
+    responseBody: Option<Any>
+  ): ResponseDefinitionBuilder? {
+    val mockResponse =
+      aResponse()
+        .withStatus(statusCode)
+        .withHeader("Content-Type", "application/json; charset=UTF-8")
+    responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
+    return mockResponse
+  }
 
-    companion object {
-        /**
-         * Exposes the [WireMockServer] instance for the given [WireMockSystem].
-         */
-        @Suppress("unused")
-        @WiremockDsl
-        fun WireMockSystem.server(): WireMockServer = wireMock
-    }
+  companion object {
+    /**
+     * Exposes the [WireMockServer] instance for the given [WireMockSystem].
+     */
+    @Suppress("unused")
+    @WiremockDsl
+    fun WireMockSystem.server(): WireMockServer = wireMock
+  }
 }

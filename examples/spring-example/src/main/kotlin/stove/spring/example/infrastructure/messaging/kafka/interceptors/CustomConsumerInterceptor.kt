@@ -12,17 +12,17 @@ import java.nio.charset.StandardCharsets
  */
 @Component
 class CustomConsumerInterceptor : RecordInterceptor<String, String> {
-    override fun intercept(
-        record: ConsumerRecord<String, String>,
-        consumer: Consumer<String, String>
-    ): ConsumerRecord<String, String>? {
-        val contextMap = HashMap<String, String>()
-        record.headers()
-            .filter { it.key().lowercase().startsWith("x-") }
-            .forEach { h: Header ->
-                contextMap[h.key()] = String(h.value(), StandardCharsets.UTF_8)
-            }
-        MDC.setContextMap(contextMap)
-        return record
-    }
+  override fun intercept(
+    record: ConsumerRecord<String, String>,
+    consumer: Consumer<String, String>
+  ): ConsumerRecord<String, String>? {
+    val contextMap = HashMap<String, String>()
+    record.headers()
+      .filter { it.key().lowercase().startsWith("x-") }
+      .forEach { h: Header ->
+        contextMap[h.key()] = String(h.value(), StandardCharsets.UTF_8)
+      }
+    MDC.setContextMap(contextMap)
+    return record
+  }
 }

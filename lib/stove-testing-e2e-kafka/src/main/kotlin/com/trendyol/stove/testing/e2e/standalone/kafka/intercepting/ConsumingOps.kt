@@ -11,32 +11,32 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 internal interface ConsumingOps : CommonOps {
-    val logger: Logger
-    val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, Any>>
+  val logger: Logger
+  val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, Any>>
 
-    suspend fun <T : Any> waitUntilConsumed(
-        atLeastIn: Duration,
-        clazz: KClass<T>,
-        condition: (Option<T>) -> Boolean
-    ) {
-        assertions.putIfAbsent(UUID.randomUUID(), KafkaAssertion(clazz, condition))
-        val getRecords = { consumedRecords.map { it.value.value() } }
-        getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
-            val outcome = readCatching(it, clazz)
-            outcome.isSuccess && condition(outcome.getOrNull().toOption())
-        }
-
-        throwIfFailed(clazz, condition)
+  suspend fun <T : Any> waitUntilConsumed(
+    atLeastIn: Duration,
+    clazz: KClass<T>,
+    condition: (Option<T>) -> Boolean
+  ) {
+    assertions.putIfAbsent(UUID.randomUUID(), KafkaAssertion(clazz, condition))
+    val getRecords = { consumedRecords.map { it.value.value() } }
+    getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
+      val outcome = readCatching(it, clazz)
+      outcome.isSuccess && condition(outcome.getOrNull().toOption())
     }
 
-    fun recordMessage(
-        record: ConsumerRecord<String, Any>,
-        consumer: Consumer<String, Any>
-    ): Unit =
-        runBlocking {
-            consumedRecords.putIfAbsent(UUID.randomUUID(), record)
-            logger.info(
-                """
+    throwIfFailed(clazz, condition)
+  }
+
+  fun recordMessage(
+    record: ConsumerRecord<String, Any>,
+    consumer: Consumer<String, Any>
+  ): Unit =
+    runBlocking {
+      consumedRecords.putIfAbsent(UUID.randomUUID(), record)
+      logger.info(
+        """
                 RECEIVED MESSAGE:
                 Consumer: ${consumer.groupMetadata().memberId()} | ${consumer.groupMetadata().groupId()}
                 Topic: ${record.topic()}
@@ -44,16 +44,16 @@ internal interface ConsumingOps : CommonOps {
                 Key: ${record.key()}
                 Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
                 TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-                """.trimIndent()
-            )
-        }
+        """.trimIndent()
+      )
+    }
 
-    fun recordError(record: ConsumerRecord<String, Any>): Unit =
-        runBlocking {
-            val exception = AssertionError(buildErrorMessage(record))
-            exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))
-            logger.error(
-                """
+  fun recordError(record: ConsumerRecord<String, Any>): Unit =
+    runBlocking {
+      val exception = AssertionError(buildErrorMessage(record))
+      exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))
+      logger.error(
+        """
                 CONSUMER GOT AN ERROR:
                 Topic: ${record.topic()}
                 Record: ${record.value()}
@@ -61,22 +61,22 @@ internal interface ConsumingOps : CommonOps {
                 Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
                 TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
                 Exception: $exception
-                """.trimIndent()
-            )
-        }
+        """.trimIndent()
+      )
+    }
 
-    private fun buildErrorMessage(record: ConsumerRecord<String, Any>): String =
-        """
+  private fun buildErrorMessage(record: ConsumerRecord<String, Any>): String =
+    """
         MESSAGE FAILED TO CONSUME:
         Topic: ${record.topic()}
         Record: ${record.value()}
         Key: ${record.key()}
         Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-        """.trimIndent()
+    """.trimIndent()
 
-    override fun dumpMessages(): String =
-        """
+  override fun dumpMessages(): String =
+    """
         CONSUMED MESSAGES: 
         ${consumedRecords.map { it.value.value() }.joinToString("\n")}
-        """.trimIndent()
+    """.trimIndent()
 }

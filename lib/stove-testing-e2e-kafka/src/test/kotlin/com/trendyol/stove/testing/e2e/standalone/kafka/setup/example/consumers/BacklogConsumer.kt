@@ -6,11 +6,11 @@ import io.github.nomisRev.kafka.publisher.PublisherSettings
 import org.apache.kafka.clients.consumer.ConsumerRecord
 
 class BacklogConsumer(
-    consumerSettings: Map<String, Any>,
-    producerSettings: PublisherSettings<String, String>
+  consumerSettings: Map<String, Any>,
+  producerSettings: PublisherSettings<String, String>
 ) : StoveListener(consumerSettings, producerSettings) {
-    override val topicDefinition: TopicDefinition = TopicDefinition("backlog", "backlog.retry", "backlog.error")
+  override val topicDefinition: TopicDefinition = TopicDefinition("backlog", "backlog.retry", "backlog.error")
 
-    override suspend fun listen(record: ConsumerRecord<String, String>) {
-    }
+  override suspend fun listen(record: ConsumerRecord<String, String>) {
+  }
 }

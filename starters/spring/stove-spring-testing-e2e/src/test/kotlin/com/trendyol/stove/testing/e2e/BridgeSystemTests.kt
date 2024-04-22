@@ -17,152 +17,152 @@ import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 
 object TestAppRunner {
-    fun run(
-        args: Array<String>,
-        init: SpringApplication.() -> Unit = {}
-    ): ConfigurableApplicationContext = runApplication<TestSpringBootApp>(args = args) {
-        init()
-    }
+  fun run(
+    args: Array<String>,
+    init: SpringApplication.() -> Unit = {}
+  ): ConfigurableApplicationContext = runApplication<TestSpringBootApp>(args = args) {
+    init()
+  }
 }
 
 @SpringBootApplication
 open class TestSpringBootApp
 
 fun interface GetUtcNow {
-    companion object {
-        val frozenTime: Instant = Instant.parse("2021-01-01T00:00:00Z")
-    }
+  companion object {
+    val frozenTime: Instant = Instant.parse("2021-01-01T00:00:00Z")
+  }
 
-    operator fun invoke(): Instant
+  operator fun invoke(): Instant
 }
 
 class SystemTimeGetUtcNow : GetUtcNow {
-    override fun invoke(): Instant = GetUtcNow.frozenTime
+  override fun invoke(): Instant = GetUtcNow.frozenTime
 }
 
 class TestAppInitializers : BaseApplicationContextInitializer({
-    bean<ObjectMapper> { StoveObjectMapper.Default }
-    bean { SystemTimeGetUtcNow() }
+  bean<ObjectMapper> { StoveObjectMapper.Default }
+  bean { SystemTimeGetUtcNow() }
 }) {
-    var onEvent: Boolean = false
-    var appReady: Boolean = false
+  var onEvent: Boolean = false
+  var appReady: Boolean = false
 
-    init {
-        register {
-            bean<ParameterCollectorOfSpringBoot>()
-            bean<TestAppInitializers> { this@TestAppInitializers }
-        }
+  init {
+    register {
+      bean<ParameterCollectorOfSpringBoot>()
+      bean<TestAppInitializers> { this@TestAppInitializers }
     }
+  }
 
-    override fun onEvent(event: ApplicationEvent) {
-        super.onEvent(event)
-        onEvent = true
-    }
+  override fun onEvent(event: ApplicationEvent) {
+    super.onEvent(event)
+    onEvent = true
+  }
 
-    override fun applicationReady(applicationContext: GenericApplicationContext) {
-        super.applicationReady(applicationContext)
-        appReady = true
-    }
+  override fun applicationReady(applicationContext: GenericApplicationContext) {
+    super.applicationReady(applicationContext)
+    appReady = true
+  }
 }
 
 @Component
 class ExampleService(
-    private val getUtcNow: GetUtcNow
+  private val getUtcNow: GetUtcNow
 ) {
-    fun whatIsTheTime(): Instant = getUtcNow()
+  fun whatIsTheTime(): Instant = getUtcNow()
 }
 
 class ParameterCollectorOfSpringBoot(
-    private val applicationArguments: ApplicationArguments
+  private val applicationArguments: ApplicationArguments
 ) {
-    val parameters: List<String>
-        get() = applicationArguments.sourceArgs.toList()
+  val parameters: List<String>
+    get() = applicationArguments.sourceArgs.toList()
 }
 
 class Setup : AbstractProjectConfig() {
-    override suspend fun beforeProject(): Unit =
-        TestSystem()
-            .with {
-                bridge()
-                springBoot(
-                    runner = { params ->
-                        TestAppRunner.run(params) {
-                            addInitializers(
-                                TestAppInitializers()
-                            )
-                        }
-                    },
-                    withParameters = listOf(
-                        "context=SetupOfBridgeSystemTests"
-                    )
-                )
-            }.run()
+  override suspend fun beforeProject(): Unit =
+    TestSystem()
+      .with {
+        bridge()
+        springBoot(
+          runner = { params ->
+            TestAppRunner.run(params) {
+              addInitializers(
+                TestAppInitializers()
+              )
+            }
+          },
+          withParameters = listOf(
+            "context=SetupOfBridgeSystemTests"
+          )
+        )
+      }.run()
 
-    override suspend fun afterProject(): Unit = TestSystem.stop()
+  override suspend fun afterProject(): Unit = TestSystem.stop()
 }
 
 class BridgeSystemTests : ShouldSpec({
-    should("bridge to application") {
-        validate {
-            using<ExampleService> {
-                whatIsTheTime() shouldBe GetUtcNow.frozenTime
-            }
+  should("bridge to application") {
+    validate {
+      using<ExampleService> {
+        whatIsTheTime() shouldBe GetUtcNow.frozenTime
+      }
 
-            using<ParameterCollectorOfSpringBoot> {
-                parameters shouldBe listOf(
-                    "--test-system=true",
-                    "--context=SetupOfBridgeSystemTests"
-                )
-            }
+      using<ParameterCollectorOfSpringBoot> {
+        parameters shouldBe listOf(
+          "--test-system=true",
+          "--context=SetupOfBridgeSystemTests"
+        )
+      }
 
-            delay(5.seconds)
-            using<TestAppInitializers> {
-                appReady shouldBe true
-                onEvent shouldBe true
-            }
-        }
+      delay(5.seconds)
+      using<TestAppInitializers> {
+        appReady shouldBe true
+        onEvent shouldBe true
+      }
     }
+  }
 
-    should("resolve multiple") {
-        validate {
-            using<GetUtcNow, TestAppInitializers> { getUtcNow: GetUtcNow, testAppInitializers: TestAppInitializers ->
-                getUtcNow() shouldBe GetUtcNow.frozenTime
-                testAppInitializers.appReady shouldBe true
-                testAppInitializers.onEvent shouldBe true
-            }
+  should("resolve multiple") {
+    validate {
+      using<GetUtcNow, TestAppInitializers> { getUtcNow: GetUtcNow, testAppInitializers: TestAppInitializers ->
+        getUtcNow() shouldBe GetUtcNow.frozenTime
+        testAppInitializers.appReady shouldBe true
+        testAppInitializers.onEvent shouldBe true
+      }
 
-            using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot> { getUtcNow, testAppInitializers, parameterCollectorOfSpringBoot ->
-                getUtcNow() shouldBe GetUtcNow.frozenTime
-                testAppInitializers.appReady shouldBe true
-                testAppInitializers.onEvent shouldBe true
-                parameterCollectorOfSpringBoot.parameters shouldBe listOf(
-                    "--test-system=true",
-                    "--context=SetupOfBridgeSystemTests"
-                )
-            }
+      using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot> { getUtcNow, testAppInitializers, parameterCollectorOfSpringBoot ->
+        getUtcNow() shouldBe GetUtcNow.frozenTime
+        testAppInitializers.appReady shouldBe true
+        testAppInitializers.onEvent shouldBe true
+        parameterCollectorOfSpringBoot.parameters shouldBe listOf(
+          "--test-system=true",
+          "--context=SetupOfBridgeSystemTests"
+        )
+      }
 
-            using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot, ExampleService> { getUtcNow, testAppInitializers, parameterCollectorOfSpringBoot, exampleService ->
-                getUtcNow() shouldBe GetUtcNow.frozenTime
-                testAppInitializers.appReady shouldBe true
-                testAppInitializers.onEvent shouldBe true
-                parameterCollectorOfSpringBoot.parameters shouldBe listOf(
-                    "--test-system=true",
-                    "--context=SetupOfBridgeSystemTests"
-                )
-                exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
-            }
+      using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot, ExampleService> { getUtcNow, testAppInitializers, parameterCollectorOfSpringBoot, exampleService ->
+        getUtcNow() shouldBe GetUtcNow.frozenTime
+        testAppInitializers.appReady shouldBe true
+        testAppInitializers.onEvent shouldBe true
+        parameterCollectorOfSpringBoot.parameters shouldBe listOf(
+          "--test-system=true",
+          "--context=SetupOfBridgeSystemTests"
+        )
+        exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
+      }
 
-            using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot, ExampleService, ObjectMapper> { getUtcNow, testAppInitializers, parameterCollectorOfSpringBoot, exampleService, objectMapper ->
-                getUtcNow() shouldBe GetUtcNow.frozenTime
-                testAppInitializers.appReady shouldBe true
-                testAppInitializers.onEvent shouldBe true
-                parameterCollectorOfSpringBoot.parameters shouldBe listOf(
-                    "--test-system=true",
-                    "--context=SetupOfBridgeSystemTests"
-                )
-                exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
-                objectMapper.writeValueAsString(mapOf("a" to "b")) shouldBe """{"a":"b"}"""
-            }
-        }
+      using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot, ExampleService, ObjectMapper> { getUtcNow, testAppInitializers, parameterCollectorOfSpringBoot, exampleService, objectMapper ->
+        getUtcNow() shouldBe GetUtcNow.frozenTime
+        testAppInitializers.appReady shouldBe true
+        testAppInitializers.onEvent shouldBe true
+        parameterCollectorOfSpringBoot.parameters shouldBe listOf(
+          "--test-system=true",
+          "--context=SetupOfBridgeSystemTests"
+        )
+        exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
+        objectMapper.writeValueAsString(mapOf("a" to "b")) shouldBe """{"a":"b"}"""
+      }
     }
+  }
 })

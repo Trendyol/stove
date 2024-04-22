@@ -7,57 +7,57 @@ import java.nio.file.Paths
 import kotlin.io.path.*
 
 class PropertiesFile {
-    companion object {
-        const val REUSE_ENABLED = "testcontainers.reuse.enable=true"
-    }
+  companion object {
+    const val REUSE_ENABLED = "testcontainers.reuse.enable=true"
+  }
 
-    private val l: Logger = LoggerFactory.getLogger(javaClass)
-    private val propertiesFile: Path = Paths.get(System.getProperty("user.home"), ".testcontainers.properties")
+  private val l: Logger = LoggerFactory.getLogger(javaClass)
+  private val propertiesFile: Path = Paths.get(System.getProperty("user.home"), ".testcontainers.properties")
 
-    fun detectAndLogStatus() {
-        if (propertiesFile.exists()) {
-            l.info("'.testcontainers.properties' file exists")
-            when {
-                propertiesFile.readText()
-                    .contains(REUSE_ENABLED) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
+  fun detectAndLogStatus() {
+    if (propertiesFile.exists()) {
+      l.info("'.testcontainers.properties' file exists")
+      when {
+        propertiesFile.readText()
+          .contains(REUSE_ENABLED) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
 
-                else ->
-                    l.info(
-                        """
+        else ->
+          l.info(
+            """
                         '.testcontainers.properties' does not contain 'testcontainers.reuse.enable=true'
                          | You need to create either by yourself or using '${TestSystemOptionsDsl::enableReuseForTestContainers.name}' method
-                        """.trimIndent()
-                    )
-            }
-        } else {
-            l.info(
-                """'.testcontainers.properties' file DOES NOT exist. 
+            """.trimIndent()
+          )
+      }
+    } else {
+      l.info(
+        """'.testcontainers.properties' file DOES NOT exist. 
                     |You need to create either by yourself or using '${TestSystemOptionsDsl::enableReuseForTestContainers.name} method
-                """.trimMargin()
-            )
-        }
+        """.trimMargin()
+      )
     }
+  }
 
-    fun enable() {
-        l.info(
-            """
+  fun enable() {
+    l.info(
+      """
             You will see a file `~/.testcontainers.properties', with the setting 'testcontainers.reuse.enable=true'.
             | If you don't see the file please create by yourself. 
             | Otherwise dependencies won't keep running.
-            """.trimIndent()
-        )
+      """.trimIndent()
+    )
+    when {
+      !propertiesFile.exists() -> propertiesFile.writeText(REUSE_ENABLED)
+      else ->
         when {
-            !propertiesFile.exists() -> propertiesFile.writeText(REUSE_ENABLED)
-            else ->
-                when {
-                    propertiesFile.readText()
-                        .contains(REUSE_ENABLED) ->
-                        l.info(
-                            "'.testcontainers.properties' looks good and contains reuse feature!"
-                        )
+          propertiesFile.readText()
+            .contains(REUSE_ENABLED) ->
+            l.info(
+              "'.testcontainers.properties' looks good and contains reuse feature!"
+            )
 
-                    else -> propertiesFile.appendText(REUSE_ENABLED)
-                }
+          else -> propertiesFile.appendText(REUSE_ENABLED)
         }
     }
+  }
 }

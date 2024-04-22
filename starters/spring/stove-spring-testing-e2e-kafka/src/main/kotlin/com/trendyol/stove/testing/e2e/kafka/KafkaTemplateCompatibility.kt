@@ -12,10 +12,10 @@ import java.util.concurrent.CompletableFuture
  * Supports Spring-Kafka 2.x and 3.x
  */
 suspend fun KafkaTemplate<*, *>.sendCompatible(record: ProducerRecord<*, *>) {
-    val method = this::class.java.getDeclaredMethod("send", ProducerRecord::class.java).apply { isAccessible = true }
-    when (method.returnType.kotlin) {
-        CompletableFuture::class -> (method.invoke(this, record) as CompletableFuture<*>).await()
-        ListenableFuture::class -> (method.invoke(this, record) as ListenableFuture<*>).completable().await()
-        else -> throw IllegalStateException("Unsupported return type for KafkaTemplate.send method: ${method.returnType}")
-    }
+  val method = this::class.java.getDeclaredMethod("send", ProducerRecord::class.java).apply { isAccessible = true }
+  when (method.returnType.kotlin) {
+    CompletableFuture::class -> (method.invoke(this, record) as CompletableFuture<*>).await()
+    ListenableFuture::class -> (method.invoke(this, record) as ListenableFuture<*>).completable().await()
+    else -> throw IllegalStateException("Unsupported return type for KafkaTemplate.send method: ${method.returnType}")
+  }
 }

@@ -12,6 +12,7 @@ ktlint_standard_function-signature = disabled
 [{*.kt,*.kts}]
 indent_style = space
 max_line_length = 140
+indent_size = 2
 ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
 ij_continuation_indent_size = 2
 ij_kotlin_allow_trailing_comma = false

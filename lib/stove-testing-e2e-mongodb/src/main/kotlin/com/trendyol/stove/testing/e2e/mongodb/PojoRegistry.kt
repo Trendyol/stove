@@ -9,16 +9,16 @@ import kotlin.reflect.KClass
 
 @StoveDsl
 data class PojoRegistry(
-    val registry: CodecRegistry = fromRegistries()
+  val registry: CodecRegistry = fromRegistries()
 ) {
-    private var builder: PojoCodecProvider.Builder =
-        PojoCodecProvider.builder().conventions(
-            Conventions.DEFAULT_CONVENTIONS
-        )
+  private var builder: PojoCodecProvider.Builder =
+    PojoCodecProvider.builder().conventions(
+      Conventions.DEFAULT_CONVENTIONS
+    )
 
-    inline fun <reified T : Any> register(): PojoRegistry = register(T::class)
+  inline fun <reified T : Any> register(): PojoRegistry = register(T::class)
 
-    fun <T : Any> register(clazz: KClass<T>): PojoRegistry = builder.register(clazz.java).let { this }
+  fun <T : Any> register(clazz: KClass<T>): PojoRegistry = builder.register(clazz.java).let { this }
 
-    fun build(): CodecRegistry = fromRegistries(registry, getDefaultCodecRegistry(), fromProviders(builder.build()))
+  fun build(): CodecRegistry = fromRegistries(registry, getDefaultCodecRegistry(), fromProviders(builder.build()))
 }

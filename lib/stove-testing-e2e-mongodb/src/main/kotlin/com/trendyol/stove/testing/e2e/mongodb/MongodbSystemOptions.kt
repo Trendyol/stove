@@ -8,8 +8,8 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
 @StoveDsl
 data class MongodbSystemOptions(
-    val databaseOptions: DatabaseOptions = DatabaseOptions(),
-    val container: MongoContainerOptions = MongoContainerOptions(),
-    override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String> = { _ -> listOf() },
-    val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(ObjectIdModule()) }
+  val databaseOptions: DatabaseOptions = DatabaseOptions(),
+  val container: MongoContainerOptions = MongoContainerOptions(),
+  override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String> = { _ -> listOf() },
+  val objectMapper: ObjectMapper = StoveObjectMapper.byConfiguring { registerModule(ObjectIdModule()) }
 ) : SystemOptions, ConfiguresExposedConfiguration<MongodbExposedConfiguration>

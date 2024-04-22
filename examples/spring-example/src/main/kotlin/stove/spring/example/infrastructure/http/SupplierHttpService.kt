@@ -9,18 +9,18 @@ import stove.spring.example.application.services.SupplierService
 
 @Component
 class SupplierHttpService(private val supplierHttpClient: WebClient) : SupplierService {
-    override suspend fun getSupplierPermission(id: Long): SupplierPermission {
-        return supplierHttpClient
-            .get()
-            .uri {
-                val builder =
-                    it
-                        .path("/suppliers/{id}/allowed")
-                builder.build(id)
-            }
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .bodyToMono(SupplierPermission::class.java)
-            .awaitFirst()
-    }
+  override suspend fun getSupplierPermission(id: Long): SupplierPermission {
+    return supplierHttpClient
+      .get()
+      .uri {
+        val builder =
+          it
+            .path("/suppliers/{id}/allowed")
+        builder.build(id)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .retrieve()
+      .bodyToMono(SupplierPermission::class.java)
+      .awaitFirst()
+  }
 }

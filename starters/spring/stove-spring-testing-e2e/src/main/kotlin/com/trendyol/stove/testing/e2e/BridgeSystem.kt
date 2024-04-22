@@ -14,42 +14,42 @@ import org.springframework.context.ApplicationContext
  */
 @StoveDsl
 class BridgeSystem(override val testSystem: TestSystem) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
-    /**
-     * The application context used to resolve dependencies.
-     */
-    lateinit var ctx: ApplicationContext
+  /**
+   * The application context used to resolve dependencies.
+   */
+  lateinit var ctx: ApplicationContext
 
-    /**
-     * Closes the bridge system.
-     */
-    override fun close(): Unit = Unit
+  /**
+   * Closes the bridge system.
+   */
+  override fun close(): Unit = Unit
 
-    /**
-     * Initializes the bridge system after the test run.
-     *
-     * @param context the application context.
-     */
-    override suspend fun afterRun(context: ApplicationContext) {
-        ctx = context
-    }
+  /**
+   * Initializes the bridge system after the test run.
+   *
+   * @param context the application context.
+   */
+  override suspend fun afterRun(context: ApplicationContext) {
+    ctx = context
+  }
 
-    /**
-     * Resolves a bean of the specified type from the application context.
-     *
-     * @param T the type of bean to resolve.
-     * @return the resolved bean.
-     */
-    @PublishedApi
-    internal inline fun <reified T : Any> resolve(): T = ctx.getBean()
+  /**
+   * Resolves a bean of the specified type from the application context.
+   *
+   * @param T the type of bean to resolve.
+   * @return the resolved bean.
+   */
+  @PublishedApi
+  internal inline fun <reified T : Any> resolve(): T = ctx.getBean()
 
-    /**
-     * Executes the specified validation function using the resolved bean.
-     *
-     * @param T the type of object being validated.
-     * @param validation the validation function to apply to the object.
-     */
-    @StoveDsl
-    inline fun <reified T : Any> using(validation: T.() -> Unit): Unit = validation(resolve())
+  /**
+   * Executes the specified validation function using the resolved bean.
+   *
+   * @param T the type of object being validated.
+   * @param validation the validation function to apply to the object.
+   */
+  @StoveDsl
+  inline fun <reified T : Any> using(validation: T.() -> Unit): Unit = validation(resolve())
 }
 
 /**
@@ -70,7 +70,7 @@ internal fun TestSystem.withBridgeSystem(): TestSystem = getOrRegister(BridgeSys
  */
 @PublishedApi
 internal fun TestSystem.bridge(): BridgeSystem =
-    getOrNone<BridgeSystem>().getOrElse { throw SystemNotRegisteredException(BridgeSystem::class) }
+  getOrNone<BridgeSystem>().getOrElse { throw SystemNotRegisteredException(BridgeSystem::class) }
 
 /**
  * Returns the bridge system associated with the test system.
@@ -105,55 +105,55 @@ inline fun <reified T : Any> ValidationDsl.using(validation: @StoveDsl T.() -> U
 
 @StoveDsl
 inline fun <
-    reified T1 : Any,
-    reified T2 : Any
+  reified T1 : Any,
+  reified T2 : Any
 > ValidationDsl.using(validation: (T1, T2) -> Unit): Unit = testSystem.bridge().let {
-    val t1: T1 = it.resolve()
-    val t2: T2 = it.resolve()
-    validation(t1, t2)
+  val t1: T1 = it.resolve()
+  val t2: T2 = it.resolve()
+  validation(t1, t2)
 }
 
 @StoveDsl
 inline fun <
-    reified T1 : Any,
-    reified T2 : Any,
-    reified T3 : Any
+  reified T1 : Any,
+  reified T2 : Any,
+  reified T3 : Any
 > ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = this.testSystem.bridge()
-    .let {
-        val t1: T1 = it.resolve()
-        val t2: T2 = it.resolve()
-        val t3: T3 = it.resolve()
-        validation(t1, t2, t3)
-    }
+  .let {
+    val t1: T1 = it.resolve()
+    val t2: T2 = it.resolve()
+    val t3: T3 = it.resolve()
+    validation(t1, t2, t3)
+  }
 
 @StoveDsl
 inline fun <
-    reified T1 : Any,
-    reified T2 : Any,
-    reified T3 : Any,
-    reified T4 : Any
+  reified T1 : Any,
+  reified T2 : Any,
+  reified T3 : Any,
+  reified T4 : Any
 > ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = this.testSystem.bridge()
-    .let {
-        val t1: T1 = it.resolve()
-        val t2: T2 = it.resolve()
-        val t3: T3 = it.resolve()
-        val t4: T4 = it.resolve()
-        validation(t1, t2, t3, t4)
-    }
+  .let {
+    val t1: T1 = it.resolve()
+    val t2: T2 = it.resolve()
+    val t3: T3 = it.resolve()
+    val t4: T4 = it.resolve()
+    validation(t1, t2, t3, t4)
+  }
 
 @StoveDsl
 inline fun <
-    reified T1 : Any,
-    reified T2 : Any,
-    reified T3 : Any,
-    reified T4 : Any,
-    reified T5 : Any
+  reified T1 : Any,
+  reified T2 : Any,
+  reified T3 : Any,
+  reified T4 : Any,
+  reified T5 : Any
 > ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = this.testSystem.bridge()
-    .let {
-        val t1: T1 = it.resolve()
-        val t2: T2 = it.resolve()
-        val t3: T3 = it.resolve()
-        val t4: T4 = it.resolve()
-        val t5: T5 = it.resolve()
-        validation(t1, t2, t3, t4, t5)
-    }
+  .let {
+    val t1: T1 = it.resolve()
+    val t2: T2 = it.resolve()
+    val t3: T3 = it.resolve()
+    val t4: T4 = it.resolve()
+    val t5: T5 = it.resolve()
+    validation(t1, t2, t3, t4, t5)
+  }

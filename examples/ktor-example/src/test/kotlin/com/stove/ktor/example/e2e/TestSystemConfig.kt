@@ -12,47 +12,47 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TestSystemConfig : AbstractProjectConfig() {
-    private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
+  private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
-    override suspend fun beforeProject() =
-        TestSystem(baseUrl = "http://localhost:8080")
-            .with {
-                httpClient()
-                postgresql {
-                    PostgresqlOptions(configureExposedConfiguration = { cfg ->
-                        listOf(
-                            "database.jdbcUrl=${cfg.jdbcUrl}",
-                            "database.host=${cfg.host}",
-                            "database.port=${cfg.port}",
-                            "database.databaseName=${cfg.database}",
-                            "database.username=${cfg.username}",
-                            "database.password=${cfg.password}"
-                        )
-                    })
-                }
-                wiremock {
-                    WireMockSystemOptions(
-                        port = 9090,
-                        removeStubAfterRequestMatched = true,
-                        afterRequest = { e, _ ->
-                            logger.info(e.request.toString())
-                        }
-                    )
-                }
-                ktor(
-                    withParameters =
-                        listOf(
-                            "ktor.server.port=8001"
-                        ),
-                    runner = { parameters ->
-                        stove.ktor.example.run(parameters) {
-                            addTestSystemDependencies()
-                        }
-                    }
-                )
-            }.run()
+  override suspend fun beforeProject() =
+    TestSystem(baseUrl = "http://localhost:8080")
+      .with {
+        httpClient()
+        postgresql {
+          PostgresqlOptions(configureExposedConfiguration = { cfg ->
+            listOf(
+              "database.jdbcUrl=${cfg.jdbcUrl}",
+              "database.host=${cfg.host}",
+              "database.port=${cfg.port}",
+              "database.databaseName=${cfg.database}",
+              "database.username=${cfg.username}",
+              "database.password=${cfg.password}"
+            )
+          })
+        }
+        wiremock {
+          WireMockSystemOptions(
+            port = 9090,
+            removeStubAfterRequestMatched = true,
+            afterRequest = { e, _ ->
+              logger.info(e.request.toString())
+            }
+          )
+        }
+        ktor(
+          withParameters =
+            listOf(
+              "ktor.server.port=8001"
+            ),
+          runner = { parameters ->
+            stove.ktor.example.run(parameters) {
+              addTestSystemDependencies()
+            }
+          }
+        )
+      }.run()
 
-    override suspend fun afterProject() {
-        TestSystem.stop()
-    }
+  override suspend fun afterProject() {
+    TestSystem.stop()
+  }
 }

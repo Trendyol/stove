@@ -10,9 +10,9 @@ import io.kotest.matchers.*
 import io.kotest.matchers.ints.shouldBeGreaterThan
 
 class ElasticsearchExposedCertificateTest : FunSpec({
-    test("ser/de") {
-        val state =
-            """
+  test("ser/de") {
+    val state =
+      """
             {
               "state": {
                 "host": "localhost",
@@ -24,15 +24,15 @@ class ElasticsearchExposedCertificateTest : FunSpec({
               },
               "processId": 10496
             }
-            """.trimIndent()
-        val j = StoveObjectMapper.byConfiguring { this.registerArrowModule() }
-        val stateWithProcess = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(state)
-        val serialize = j.writeValueAsString(stateWithProcess)
-        val stateWithProcess2 = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(serialize)
+      """.trimIndent()
+    val j = StoveObjectMapper.byConfiguring { this.registerArrowModule() }
+    val stateWithProcess = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(state)
+    val serialize = j.writeValueAsString(stateWithProcess)
+    val stateWithProcess2 = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(serialize)
 
-        val cert = stateWithProcess2.state.certificate.get()
-        cert.bytes.size shouldBeGreaterThan 0
-        cert.sslContext shouldNotBe null
-        cert.sslContext.protocol shouldBe "TLSv1.3"
-    }
+    val cert = stateWithProcess2.state.certificate.get()
+    cert.bytes.size shouldBeGreaterThan 0
+    cert.sslContext shouldNotBe null
+    cert.sslContext.protocol shouldBe "TLSv1.3"
+  }
 })

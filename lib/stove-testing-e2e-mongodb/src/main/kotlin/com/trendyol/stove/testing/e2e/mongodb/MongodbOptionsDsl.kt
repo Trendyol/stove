@@ -8,37 +8,37 @@ fun mongodb(init: MongodbOptionsDsl.() -> Unit): MongodbSystemOptions = MongodbO
 
 @StoveDsl
 class MongodbOptionsDsl internal constructor(private val init: MongodbOptionsDsl.() -> Unit) {
-    private var options: MongodbSystemOptions = MongodbSystemOptions()
+  private var options: MongodbSystemOptions = MongodbSystemOptions()
 
-    fun defaultDatabase(name: String) {
-        options =
-            options.copy(
-                databaseOptions =
-                    options.databaseOptions.copy(
-                        default = options.databaseOptions.default.copy(name = name)
-                    )
-            )
-    }
+  fun defaultDatabase(name: String) {
+    options =
+      options.copy(
+        databaseOptions =
+          options.databaseOptions.copy(
+            default = options.databaseOptions.default.copy(name = name)
+          )
+      )
+  }
 
-    fun image(image: String) {
-        options = options.copy(container = MongoContainerOptions(image = image))
-    }
+  fun image(image: String) {
+    options = options.copy(container = MongoContainerOptions(image = image))
+  }
 
-    fun registry(registry: String) {
-        options = options.copy(container = MongoContainerOptions(registry = registry))
-    }
+  fun registry(registry: String) {
+    options = options.copy(container = MongoContainerOptions(registry = registry))
+  }
 
-    fun tag(tag: String) {
-        options = options.copy(container = MongoContainerOptions(tag = tag))
-    }
+  fun tag(tag: String) {
+    options = options.copy(container = MongoContainerOptions(tag = tag))
+  }
 
-    fun exposedConfiguration(configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String> = { _ -> listOf() }) {
-        options = options.copy(configureExposedConfiguration = configureExposedConfiguration)
-    }
+  fun exposedConfiguration(configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String> = { _ -> listOf() }) {
+    options = options.copy(configureExposedConfiguration = configureExposedConfiguration)
+  }
 
-    fun objectMapper(objectMapper: ObjectMapper) {
-        options = options.copy(objectMapper = objectMapper)
-    }
+  fun objectMapper(objectMapper: ObjectMapper) {
+    options = options.copy(objectMapper = objectMapper)
+  }
 
-    internal operator fun invoke(): MongodbSystemOptions = init().let { options }
+  internal operator fun invoke(): MongodbSystemOptions = init().let { options }
 }

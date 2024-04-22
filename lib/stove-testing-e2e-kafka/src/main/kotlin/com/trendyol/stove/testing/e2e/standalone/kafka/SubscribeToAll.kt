@@ -11,41 +11,41 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SubscribeToAll(
-    private val adminClient: Admin,
-    private val receiver: KafkaReceiver<String, Any>,
-    private val interceptor: TestSystemKafkaInterceptor
+  private val adminClient: Admin,
+  private val receiver: KafkaReceiver<String, Any>,
+  private val interceptor: TestSystemKafkaInterceptor
 ) : AutoCloseable {
-    private lateinit var subscription: Job
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+  private lateinit var subscription: Job
+  private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-    @OptIn(DelicateCoroutinesApi::class)
-    suspend fun start() =
-        coroutineScope {
-            val topics = adminClient.listTopics().names().get()
-            if (!topics.any()) {
-                throw SystemConfigurationException(
-                    KafkaSystem::class,
-                    "Topics are not found, please enable creating topics before running e2e tests on them. " +
-                        "Stove depends on created topics to be able to understand what is consumed and published"
-                )
-            }
+  @OptIn(DelicateCoroutinesApi::class)
+  suspend fun start() =
+    coroutineScope {
+      val topics = adminClient.listTopics().names().get()
+      if (!topics.any()) {
+        throw SystemConfigurationException(
+          KafkaSystem::class,
+          "Topics are not found, please enable creating topics before running e2e tests on them. " +
+            "Stove depends on created topics to be able to understand what is consumed and published"
+        )
+      }
 
-            subscription =
-                GlobalScope.launch {
-                    while (!subscription.isCancelled) {
-                        receiver.withConsumer { consumer ->
-                            receiver
-                                .receive(topics)
-                                .collect {
-                                    Try { interceptor.onMessage(it, consumer) }
-                                        .recover { logger.warn("$javaClass got an exception: $it") }
-                                }
-                        }
-                    }
+      subscription =
+        GlobalScope.launch {
+          while (!subscription.isCancelled) {
+            receiver.withConsumer { consumer ->
+              receiver
+                .receive(topics)
+                .collect {
+                  Try { interceptor.onMessage(it, consumer) }
+                    .recover { logger.warn("$javaClass got an exception: $it") }
                 }
+            }
+          }
         }
-
-    override fun close() {
-        Try { subscription.cancel() }
     }
+
+  override fun close() {
+    Try { subscription.cancel() }
+  }
 }

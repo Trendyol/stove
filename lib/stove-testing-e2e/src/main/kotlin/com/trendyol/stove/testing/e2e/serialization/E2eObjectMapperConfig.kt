@@ -14,24 +14,24 @@ import java.time.Instant
  * This object mapper is used to serialize and deserialize request and response bodies.
  */
 class E2eObjectMapperConfig {
-    companion object {
-        /**
-         * Creates an object mapper with default configurations.
-         * This object mapper is used to serialize and deserialize request and response bodies.
-         */
-        fun createObjectMapperWithDefaults(): ObjectMapper {
-            val isoInstantModule =
-                SimpleModule()
-                    .addSerializer(Instant::class.java, IsoInstantSerializer())
-                    .addDeserializer(Instant::class.java, IsoInstantDeserializer())
+  companion object {
+    /**
+     * Creates an object mapper with default configurations.
+     * This object mapper is used to serialize and deserialize request and response bodies.
+     */
+    fun createObjectMapperWithDefaults(): ObjectMapper {
+      val isoInstantModule =
+        SimpleModule()
+          .addSerializer(Instant::class.java, IsoInstantSerializer())
+          .addDeserializer(Instant::class.java, IsoInstantDeserializer())
 
-            return JsonMapper.builder()
-                .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .serializationInclusion(JsonInclude.Include.NON_NULL)
-                .build()
-                .registerKotlinModule()
-                .registerModule(isoInstantModule)
-        }
+      return JsonMapper.builder()
+        .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .serializationInclusion(JsonInclude.Include.NON_NULL)
+        .build()
+        .registerKotlinModule()
+        .registerModule(isoInstantModule)
     }
+  }
 }

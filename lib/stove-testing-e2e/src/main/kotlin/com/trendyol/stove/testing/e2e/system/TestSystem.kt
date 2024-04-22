@@ -52,142 +52,142 @@ import kotlin.reflect.KClass
  */
 @StoveDsl
 class TestSystem(
-    val baseUrl: String = "http://localhost:8001",
-    configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}
+  val baseUrl: String = "http://localhost:8001",
+  configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}
 ) : ReadyTestSystem, AutoCloseable {
-    private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
+  private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
 
-    init {
-        configure(optionsDsl)
-    }
+  init {
+    configure(optionsDsl)
+  }
 
-    private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
-    val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
-    private lateinit var applicationUnderTest: ApplicationUnderTest<*>
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+  private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
+  val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
+  private lateinit var applicationUnderTest: ApplicationUnderTest<*>
+  private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-    val options: TestSystemOptions = optionsDsl.options
+  val options: TestSystemOptions = optionsDsl.options
 
-    companion object {
-        /**
-         * [instance] is created only once per project, and it is available throughout the lifetime of the all the tests.
-         * DO NOT access it before [run] completes
-         */
-        internal lateinit var instance: TestSystem
-
-        @StoveDsl
-        suspend fun validate(validation: @StoveDsl suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
-
-        fun stop(): Unit = instance.close()
-    }
-
+  companion object {
     /**
-     * Application under test, the tests run against the application provided.
-     * Usually a spring or generic application that can be hosted
+     * [instance] is created only once per project, and it is available throughout the lifetime of the all the tests.
+     * DO NOT access it before [run] completes
      */
-    fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): TestSystem {
-        this.applicationUnderTest = applicationUnderTest
-        return this
-    }
+    internal lateinit var instance: TestSystem
 
-    private lateinit var applicationUnderTestContext: Any
-
-    /**
-     * Runs the entire dependency tree that implements [RunnableSystemWithContext] since only the [RunnableSystemWithContext] can be run.
-     * Note that all the dependencies will run as parallel. It will invoke the runnable methods of [RunnableSystemWithContext]s with the order:
-     * - [RunnableSystemWithContext.beforeRun]
-     * - [RunnableSystemWithContext.run]
-     * - [RunnableSystemWithContext.afterRun]
-     */
-    override suspend fun run() {
-        coroutineScope {
-            val beforeRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<BeforeRunAware>()
-            val runAwareSystems = activeSystems.map { it.value }.filterIsInstance<RunAware>()
-
-            beforeRunAwareSystems.map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
-            runAwareSystems.map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
-
-            val dependencyConfigurations =
-                activeSystems
-                    .map { it.value }
-                    .filterIsInstance<ExposesConfiguration>()
-                    .flatMap { it.configuration() }
-
-            applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
-
-            val afterRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<AfterRunAware>()
-            afterRunAwareSystems.map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
-
-            activeSystems.forEach { cleanup.add { it.value.close() } }
-            cleanup.add { applicationUnderTest.stop() }
-        }
-
-        instance = this
-    }
-
-    /**
-     * Enables the DSL for constructing the entire system with the [PluggedSystem]s.
-     *
-     * Example:
-     * ```kotlin
-     *  TestSystem().with {
-     *    httpClient{
-     *      // configure the http client
-     *    }
-     *    kafka{
-     *      // configure kafka
-     *    }
-     *    couchbase {
-     *      // configure couchbase
-     *    }
-     *
-     *    // and so on...
-     *  }
-     * ```
-     */
     @StoveDsl
-    fun with(withDsl: WithDsl.() -> Unit): TestSystem {
-        withDsl(WithDsl(this))
-        return this
+    suspend fun validate(validation: @StoveDsl suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
+
+    fun stop(): Unit = instance.close()
+  }
+
+  /**
+   * Application under test, the tests run against the application provided.
+   * Usually a spring or generic application that can be hosted
+   */
+  fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): TestSystem {
+    this.applicationUnderTest = applicationUnderTest
+    return this
+  }
+
+  private lateinit var applicationUnderTestContext: Any
+
+  /**
+   * Runs the entire dependency tree that implements [RunnableSystemWithContext] since only the [RunnableSystemWithContext] can be run.
+   * Note that all the dependencies will run as parallel. It will invoke the runnable methods of [RunnableSystemWithContext]s with the order:
+   * - [RunnableSystemWithContext.beforeRun]
+   * - [RunnableSystemWithContext.run]
+   * - [RunnableSystemWithContext.afterRun]
+   */
+  override suspend fun run() {
+    coroutineScope {
+      val beforeRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<BeforeRunAware>()
+      val runAwareSystems = activeSystems.map { it.value }.filterIsInstance<RunAware>()
+
+      beforeRunAwareSystems.map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
+      runAwareSystems.map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
+
+      val dependencyConfigurations =
+        activeSystems
+          .map { it.value }
+          .filterIsInstance<ExposesConfiguration>()
+          .flatMap { it.configuration() }
+
+      applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
+
+      val afterRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<AfterRunAware>()
+      afterRunAwareSystems.map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
+
+      activeSystems.forEach { cleanup.add { it.value.close() } }
+      cleanup.add { applicationUnderTest.stop() }
     }
 
-    /**
-     * Gets or registers a [PluggedSystem] to the TestSystem. Use it when you want to register a new [PluggedSystem] to the TestSystem.
-     * That can be a system that comply your needs, for example; SchedulerSystem, GarbageCollectorSystem etc... These are only the names,
-     * so, you can implement these systems and register to the Test suite. When you register a new system to the test suite, it is wise to
-     * implement [AfterRunAwareWithContext.afterRun] to get the context/container of the system, so you can create your system methods based on that.
-     *
-     * Example:
-     * ```kotlin
-     * // plug the new system called scheduler
-     * TestSystem().withScheduler()
-     *
-     * // use it in testing
-     * testSystem.scheduler().advance()
-     * ```
-     */
-    inline fun <reified T : PluggedSystem> getOrRegister(system: T): T {
-        return activeSystems.getOrPut(T::class) { registerForDispose(system) } as T
+    instance = this
+  }
+
+  /**
+   * Enables the DSL for constructing the entire system with the [PluggedSystem]s.
+   *
+   * Example:
+   * ```kotlin
+   *  TestSystem().with {
+   *    httpClient{
+   *      // configure the http client
+   *    }
+   *    kafka{
+   *      // configure kafka
+   *    }
+   *    couchbase {
+   *      // configure couchbase
+   *    }
+   *
+   *    // and so on...
+   *  }
+   * ```
+   */
+  @StoveDsl
+  fun with(withDsl: WithDsl.() -> Unit): TestSystem {
+    withDsl(WithDsl(this))
+    return this
+  }
+
+  /**
+   * Gets or registers a [PluggedSystem] to the TestSystem. Use it when you want to register a new [PluggedSystem] to the TestSystem.
+   * That can be a system that comply your needs, for example; SchedulerSystem, GarbageCollectorSystem etc... These are only the names,
+   * so, you can implement these systems and register to the Test suite. When you register a new system to the test suite, it is wise to
+   * implement [AfterRunAwareWithContext.afterRun] to get the context/container of the system, so you can create your system methods based on that.
+   *
+   * Example:
+   * ```kotlin
+   * // plug the new system called scheduler
+   * TestSystem().withScheduler()
+   *
+   * // use it in testing
+   * testSystem.scheduler().advance()
+   * ```
+   */
+  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T {
+    return activeSystems.getOrPut(T::class) { registerForDispose(system) } as T
+  }
+
+  /**
+   * Gets the registered system or returns [None]
+   */
+  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> {
+    return activeSystems.getOrNone(T::class).map { it as T }
+  }
+
+  fun <T : AutoCloseable> registerForDispose(closeable: T): T {
+    cleanup.add { closeable.close() }
+    return closeable
+  }
+
+  @Suppress("UNCHECKED_CAST", "unused")
+  fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
+
+  override fun close(): Unit =
+    runBlocking {
+      Try { cleanup.forEach { it() } }
+        .recover { logger.warn("got an error while stopping the TestSystem: ${it.message}") }
     }
-
-    /**
-     * Gets the registered system or returns [None]
-     */
-    inline fun <reified T : PluggedSystem> getOrNone(): Option<T> {
-        return activeSystems.getOrNone(T::class).map { it as T }
-    }
-
-    fun <T : AutoCloseable> registerForDispose(closeable: T): T {
-        cleanup.add { closeable.close() }
-        return closeable
-    }
-
-    @Suppress("UNCHECKED_CAST", "unused")
-    fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
-
-    override fun close(): Unit =
-        runBlocking {
-            Try { cleanup.forEach { it() } }
-                .recover { logger.warn("got an error while stopping the TestSystem: ${it.message}") }
-        }
 }

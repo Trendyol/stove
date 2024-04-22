@@ -8,34 +8,34 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
 data class RedisContainerOptions(
-    override val registry: String = DEFAULT_REGISTRY,
-    override val image: String = RedisContainer.DEFAULT_IMAGE_NAME.unversionedPart,
-    override val tag: String = RedisContainer.DEFAULT_TAG,
-    override val compatibleSubstitute: String? = null,
-    override val containerFn: ContainerFn<RedisContainer> = {}
+  override val registry: String = DEFAULT_REGISTRY,
+  override val image: String = RedisContainer.DEFAULT_IMAGE_NAME.unversionedPart,
+  override val tag: String = RedisContainer.DEFAULT_TAG,
+  override val compatibleSubstitute: String? = null,
+  override val containerFn: ContainerFn<RedisContainer> = {}
 ) : ContainerOptions
 
 @StoveDsl
 data class RedisOptions(
-    val database: Int = 8,
-    val password: String = "password",
-    val container: RedisContainerOptions = RedisContainerOptions(),
-    override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String> = { _ -> listOf() }
+  val database: Int = 8,
+  val password: String = "password",
+  val container: RedisContainerOptions = RedisContainerOptions(),
+  override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RedisExposedConfiguration>
 
 @StoveDsl
 data class RedisExposedConfiguration(
-    val host: String,
-    val port: Int,
-    val redisUri: String,
-    val database: String,
-    val password: String
+  val host: String,
+  val port: Int,
+  val redisUri: String,
+  val database: String,
+  val password: String
 ) : ExposedConfiguration
 
 @StoveDsl
 data class RedisContext(
-    val container: RedisContainer,
-    val options: RedisOptions
+  val container: RedisContainer,
+  val options: RedisOptions
 )
 
 @StoveDsl
@@ -45,15 +45,15 @@ fun WithDsl.redis(configure: () -> RedisOptions = { RedisOptions() }): TestSyste
 suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.testSystem.redis())
 
 internal fun TestSystem.redis(): RedisSystem =
-    getOrNone<RedisSystem>().getOrElse {
-        throw SystemNotRegisteredException(RedisSystem::class)
-    }
+  getOrNone<RedisSystem>().getOrElse {
+    throw SystemNotRegisteredException(RedisSystem::class)
+  }
 
 internal fun TestSystem.withRedis(options: RedisOptions = RedisOptions()): TestSystem =
-    withProvidedRegistry(options.container.image, options.container.registry, options.container.compatibleSubstitute) {
-        RedisContainer(it)
-            .withCommand("redis-server", "--requirepass", options.password)
-            .withReuse(this.options.keepDependenciesRunning)
-            .apply(options.container.containerFn)
-    }.let { getOrRegister(RedisSystem(this, RedisContext(it, options))) }
-        .let { this }
+  withProvidedRegistry(options.container.image, options.container.registry, options.container.compatibleSubstitute) {
+    RedisContainer(it)
+      .withCommand("redis-server", "--requirepass", options.password)
+      .withReuse(this.options.keepDependenciesRunning)
+      .apply(options.container.containerFn)
+  }.let { getOrRegister(RedisSystem(this, RedisContext(it, options))) }
+    .let { this }

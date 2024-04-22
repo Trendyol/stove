@@ -16,60 +16,60 @@ import kotlin.time.Duration.Companion.minutes
 
 @StoveDsl
 data class ElasticsearchSystemOptions(
-    val defaultIndex: DefaultIndex,
-    val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-    val container: ElasticContainerOptions = ElasticContainerOptions(),
-    val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-    override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() }
+  val defaultIndex: DefaultIndex,
+  val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
+  val container: ElasticContainerOptions = ElasticContainerOptions(),
+  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
-    internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
+  internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
-    /**
-     * Helps for registering migrations before the tests run.
-     * @see MigrationCollection
-     * @see DatabaseMigration
-     */
-    fun migrations(migration: MigrationCollection<ElasticsearchClient>.() -> Unit): ElasticsearchSystemOptions =
-        migration(
-            migrationCollection
-        ).let {
-            this
-        }
+  /**
+   * Helps for registering migrations before the tests run.
+   * @see MigrationCollection
+   * @see DatabaseMigration
+   */
+  fun migrations(migration: MigrationCollection<ElasticsearchClient>.() -> Unit): ElasticsearchSystemOptions =
+    migration(
+      migrationCollection
+    ).let {
+      this
+    }
 }
 
 data class ElasticSearchExposedConfiguration(
-    val host: String,
-    val port: Int,
-    val password: String,
-    val certificate: Option<ElasticsearchExposedCertificate>
+  val host: String,
+  val port: Int,
+  val password: String,
+  val certificate: Option<ElasticsearchExposedCertificate>
 ) : ExposedConfiguration
 
 data class ElasticsearchContext(
-    val index: String,
-    val container: ElasticsearchContainer,
-    val options: ElasticsearchSystemOptions
+  val index: String,
+  val container: ElasticsearchContainer,
+  val options: ElasticsearchSystemOptions
 )
 
 data class ElasticContainerOptions(
-    override val registry: String = "docker.elastic.co/",
-    override val tag: String = "8.6.1",
-    override val image: String = "elasticsearch/elasticsearch",
-    override val compatibleSubstitute: String? = null,
-    val exposedPorts: List<Int> = listOf(9200),
-    val password: String = "password",
-    val disableSecurity: Boolean = true,
-    override val containerFn: ContainerFn<ElasticsearchContainer> = {}
+  override val registry: String = "docker.elastic.co/",
+  override val tag: String = "8.6.1",
+  override val image: String = "elasticsearch/elasticsearch",
+  override val compatibleSubstitute: String? = null,
+  val exposedPorts: List<Int> = listOf(9200),
+  val password: String = "password",
+  val disableSecurity: Boolean = true,
+  override val containerFn: ContainerFn<ElasticsearchContainer> = {}
 ) : ContainerOptions
 
 data class ElasticClientConfigurer(
-    val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
-        setDefaultRequestConfig(
-            RequestConfig.custom()
-                .setSocketTimeout(5.minutes.inWholeMilliseconds.toInt())
-                .setConnectTimeout(5.minutes.inWholeMilliseconds.toInt())
-                .setConnectionRequestTimeout(5.minutes.inWholeMilliseconds.toInt())
-                .build()
-        )
-    },
-    val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none()
+  val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
+    setDefaultRequestConfig(
+      RequestConfig.custom()
+        .setSocketTimeout(5.minutes.inWholeMilliseconds.toInt())
+        .setConnectTimeout(5.minutes.inWholeMilliseconds.toInt())
+        .setConnectionRequestTimeout(5.minutes.inWholeMilliseconds.toInt())
+        .build()
+    )
+  },
+  val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none()
 )

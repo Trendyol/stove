@@ -24,6 +24,11 @@ console-reports:
 output-reports:
   active: false
 
+formatting:
+  Indentation:
+    active: true
+    indentSize: 2
+
 comments:
   active: true
   AbsentOrWrongFileLicense:

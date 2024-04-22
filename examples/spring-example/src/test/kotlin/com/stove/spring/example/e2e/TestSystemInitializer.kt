@@ -5,10 +5,10 @@ import com.trendyol.stove.testing.e2e.kafka.TestSystemKafkaInterceptor
 import org.springframework.boot.SpringApplication
 
 fun SpringApplication.addTestSystemDependencies() {
-    this.addInitializers(TestSystemInitializer())
+  this.addInitializers(TestSystemInitializer())
 }
 
 class TestSystemInitializer :
-    BaseApplicationContextInitializer({
-        bean<TestSystemKafkaInterceptor>(isPrimary = true)
-    })
+  BaseApplicationContextInitializer({
+    bean<TestSystemKafkaInterceptor>(isPrimary = true)
+  })

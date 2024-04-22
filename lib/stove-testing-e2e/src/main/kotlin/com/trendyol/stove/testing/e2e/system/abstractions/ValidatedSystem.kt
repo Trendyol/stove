@@ -5,9 +5,9 @@ package com.trendyol.stove.testing.e2e.system.abstractions
  * @author Oguzhan Soykan
  */
 interface ValidatedSystem {
-    /**
-     * System that validates itself at any given moment
-     * Each system needs to implement its validation logic
-     */
-    suspend fun validate()
+  /**
+   * System that validates itself at any given moment
+   * Each system needs to implement its validation logic
+   */
+  suspend fun validate()
 }
