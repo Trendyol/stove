@@ -18,5 +18,9 @@ data class KafkaProperties(
 ) {
   val maxProducerConsumerBytes = "4194304"
 
-  fun createClientId() = UUID.randomUUID().toString().substring(0, 5)
+  fun createClientId() = UUID.randomUUID().toString().substring(0, SUBSTRING_LENGTH)
+
+  companion object {
+    private const val SUBSTRING_LENGTH = 5
+  }
 }

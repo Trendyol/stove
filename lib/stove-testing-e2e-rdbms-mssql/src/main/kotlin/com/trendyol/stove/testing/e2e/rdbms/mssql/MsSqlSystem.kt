@@ -40,10 +40,14 @@ class MsSqlSystem internal constructor(
     val executeAsRoot = { sql: String ->
       context.container.execInContainer(
         "/opt/mssql-tools/bin/sqlcmd",
-        "-S", "localhost",
-        "-U", context.options.userName,
-        "-P", context.options.password,
-        "-Q", sql
+        "-S",
+        "localhost",
+        "-U",
+        context.options.userName,
+        "-P",
+        context.options.password,
+        "-Q",
+        sql
       )
     }
     executeAsRoot("CREATE DATABASE ${context.options.databaseName}")
@@ -72,7 +76,7 @@ class MsSqlSystem internal constructor(
       if (it) {
         sqlOperations.transaction(operations)
       } else {
-        throw IllegalStateException("The connection is not open. Please check the connection status.")
+        error("The connection is not open. Please check the connection status.")
       }
     }
   }

@@ -29,24 +29,27 @@ internal interface CommonOps : RecordsAssertions {
   val serde: ObjectMapper
   val adminClient: Admin
 
+  companion object {
+    const val DELAY_MS = 50L
+  }
+
   suspend fun <T> (() -> Collection<T>).waitUntilConditionMet(
     duration: Duration,
     subject: String,
     condition: (T) -> Boolean
-  ): Collection<T> =
-    runCatching {
-      val collectionFunc = this
-      withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(50) }
-      return collectionFunc().filter { condition(it) }
-    }.recoverCatching {
-      when (it) {
-        is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
-        is ConcurrentModificationException ->
-          Result.success(waitUntilConditionMet(duration, subject, condition))
+  ): Collection<T> = runCatching {
+    val collectionFunc = this
+    withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(DELAY_MS) }
+    return collectionFunc().filter { condition(it) }
+  }.recoverCatching {
+    when (it) {
+      is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
+      is ConcurrentModificationException ->
+        Result.success(waitUntilConditionMet(duration, subject, condition))
 
-        else -> throw it
-      }.getOrThrow()
+      else -> throw it
     }.getOrThrow()
+  }.getOrThrow()
 
   fun <T : Any> throwIfFailed(
     clazz: KClass<T>,

@@ -101,7 +101,9 @@ fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem()
  * @param validation the validation function to apply to the object.
  */
 @StoveDsl
-inline fun <reified T : Any> ValidationDsl.using(validation: @StoveDsl T.() -> Unit): Unit = this.testSystem.bridge().using(validation)
+inline fun <reified T : Any> ValidationDsl.using(
+  validation: @StoveDsl T.() -> Unit
+): Unit = this.testSystem.bridge().using(validation)
 
 @StoveDsl
 inline fun <

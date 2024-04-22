@@ -11,6 +11,5 @@ class BacklogConsumer(
 ) : StoveListener(consumerSettings, producerSettings) {
   override val topicDefinition: TopicDefinition = TopicDefinition("backlog", "backlog.retry", "backlog.error")
 
-  override suspend fun listen(record: ConsumerRecord<String, String>) {
-  }
+  override suspend fun listen(record: ConsumerRecord<String, String>) = Unit
 }

@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 
 /**
- * if we use RecordInterceptor<String, String> we should change it as ConsumerAwareRecordInterceptor<String, String> for the stove e2e testing.
+ * if we use RecordInterceptor<String, String> we should change
+ * it as ConsumerAwareRecordInterceptor<String, String> for the stove e2e testing.
  */
 @Component
 class CustomConsumerInterceptor : RecordInterceptor<String, String> {

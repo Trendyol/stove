@@ -16,6 +16,6 @@ suspend fun KafkaTemplate<*, *>.sendCompatible(record: ProducerRecord<*, *>) {
   when (method.returnType.kotlin) {
     CompletableFuture::class -> (method.invoke(this, record) as CompletableFuture<*>).await()
     ListenableFuture::class -> (method.invoke(this, record) as ListenableFuture<*>).completable().await()
-    else -> throw IllegalStateException("Unsupported return type for KafkaTemplate.send method: ${method.returnType}")
+    else -> error("Unsupported return type for KafkaTemplate.send method: ${method.returnType}")
   }
 }

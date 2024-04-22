@@ -29,7 +29,7 @@ class KafkaSystem(
   private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> =
     StateOfSystem(testSystem.options, javaClass.kotlin, KafkaExposedConfiguration::class)
 
-  override suspend fun beforeRun() {}
+  override suspend fun beforeRun() = Unit
 
   override suspend fun run() {
     exposedConfiguration =

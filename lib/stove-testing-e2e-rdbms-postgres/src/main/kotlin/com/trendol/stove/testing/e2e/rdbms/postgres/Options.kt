@@ -23,7 +23,9 @@ data class PostgresqlContainerOptions(
 data class PostgresqlOptions(
   val databaseName: String = "stove-e2e-testing",
   val container: PostgresqlContainerOptions = PostgresqlContainerOptions(),
-  override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (
+    RelationalDatabaseExposedConfiguration
+  ) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
   val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
 

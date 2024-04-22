@@ -39,7 +39,9 @@ data class RedisContext(
 )
 
 @StoveDsl
-fun WithDsl.redis(configure: () -> RedisOptions = { RedisOptions() }): TestSystem = this.testSystem.withRedis(configure())
+fun WithDsl.redis(
+  configure: () -> RedisOptions = { RedisOptions() }
+): TestSystem = this.testSystem.withRedis(configure())
 
 @StoveDsl
 suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.testSystem.redis())

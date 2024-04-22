@@ -58,7 +58,9 @@ internal fun TestSystem.wiremock(): WireMockSystem =
   }
 
 @StoveDsl
-fun WithDsl.wiremock(configure: @StoveDsl () -> WireMockSystemOptions): TestSystem = this.testSystem.withWireMock(configure())
+fun WithDsl.wiremock(
+  configure: @StoveDsl () -> WireMockSystemOptions
+): TestSystem = this.testSystem.withWireMock(configure())
 
 @StoveDsl
 suspend fun ValidationDsl.wiremock(validation: @WiremockDsl suspend WireMockSystem.() -> Unit): Unit =

@@ -34,10 +34,14 @@ data class KafkaContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
   override val image: String = "confluentinc/cp-kafka",
   override val tag: String = "latest",
-  val ports: List<Int> = listOf(9092, 9093),
+  val ports: List<Int> = DEFAULT_KAFKA_PORTS,
   override val compatibleSubstitute: String? = null,
   override val containerFn: ContainerFn<KafkaContainer> = { }
-) : ContainerOptions
+) : ContainerOptions {
+  companion object {
+    val DEFAULT_KAFKA_PORTS = listOf(9092, 9093)
+  }
+}
 
 class KafkaSystemOptions(
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
@@ -51,7 +55,9 @@ data class KafkaContext(
   val options: KafkaSystemOptions
 )
 
-internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
+internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse {
+  throw SystemNotRegisteredException(KafkaSystem::class)
+}
 
 internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem {
   val kafka =

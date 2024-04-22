@@ -91,5 +91,9 @@ class MigrationCollection<TConnection> {
    * @return Unit
    */
   @StoveDsl
-  suspend fun run(connection: TConnection): Unit = types.map { it.value }.sortedBy { it.order }.forEach { it.execute(connection) }
+  suspend fun run(connection: TConnection): Unit = types.map {
+    it.value
+  }.sortedBy {
+    it.order
+  }.forEach { it.execute(connection) }
 }

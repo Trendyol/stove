@@ -32,6 +32,7 @@ class SqlOperations(private val connectionFactory: ConnectionFactory) {
    * Open the connection within a transaction.
    */
   @StoveDsl
+  @Suppress("TooGenericExceptionCaught")
   suspend fun <T> transaction(invoke: suspend Handle.() -> T): T {
     val handle = Handle(connection)
     connection.beginTransaction().awaitFirstOrNull()

@@ -10,7 +10,8 @@ import org.slf4j.LoggerFactory
 /**
  * Provides a default class for Elasticsearch when it is started successfully.
  * There is a default implementation [DefaultIndexMigrator] without any mapping. If you want to
- * modify the behaviour, you can implement [DatabaseMigration] and provide the instance to the [migrator] parameter. It will replace the default behaviour.
+ * modify the behaviour, you can implement [DatabaseMigration] and provide the instance to the [migrator] parameter.
+ * It will replace the default behaviour.
  */
 data class DefaultIndex(
   val index: String,

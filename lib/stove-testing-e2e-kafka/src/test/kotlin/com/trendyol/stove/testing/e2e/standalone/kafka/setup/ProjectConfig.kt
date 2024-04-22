@@ -23,7 +23,9 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
         AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers
       ).let { AdminClient.create(it) }
 
-    val newTopics = KafkaTestShared.topics.flatMap { listOf(it.topic, it.retryTopic, it.deadLetterTopic) }.map { NewTopic(it, 1, 1) }
+    val newTopics = KafkaTestShared.topics.flatMap {
+      listOf(it.topic, it.retryTopic, it.deadLetterTopic)
+    }.map { NewTopic(it, 1, 1) }
     client.createTopics(newTopics).all().get()
     startConsumers(bootstrapServers)
   }

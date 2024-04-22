@@ -39,17 +39,16 @@ class TestSystemConfig : AbstractProjectConfig() {
               this.addTestSystemDependencies()
             }
           },
-          withParameters =
-            listOf(
-              "server.port=8001",
-              "logging.level.root=info",
-              "logging.level.org.springframework.web=info",
-              "spring.profiles.active=default",
-              "kafka.heartbeatInSeconds=2",
-              "kafka.autoCreateTopics=true",
-              "kafka.offset=earliest",
-              "kafka.secureKafka=false"
-            )
+          withParameters = listOf(
+            "server.port=8001",
+            "logging.level.root=info",
+            "logging.level.org.springframework.web=info",
+            "spring.profiles.active=default",
+            "kafka.heartbeatInSeconds=2",
+            "kafka.autoCreateTopics=true",
+            "kafka.offset=earliest",
+            "kafka.secureKafka=false"
+          )
         )
       }.run()
 

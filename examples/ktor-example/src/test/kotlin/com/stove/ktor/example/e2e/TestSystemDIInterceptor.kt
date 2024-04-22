@@ -21,5 +21,5 @@ class NoOpLockProvider : LockProvider {
     return true
   }
 
-  override suspend fun releaseLock(name: String) {}
+  override suspend fun releaseLock(name: String) = Unit
 }

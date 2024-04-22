@@ -40,6 +40,7 @@ data class ElasticsearchExposedCertificate(
      * @return a customized SSL Context
      * @see ElasticsearchContainer.createSslContextFromCa
      */
+    @Suppress("TooGenericExceptionCaught", "TooGenericExceptionThrown")
     private fun createSslContextFromCa(bytes: ByteArray): SSLContext = try {
       val factory = CertificateFactory.getInstance("X.509")
       val trustedCa = factory.generateCertificate(

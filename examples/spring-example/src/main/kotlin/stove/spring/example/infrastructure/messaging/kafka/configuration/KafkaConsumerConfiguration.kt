@@ -7,7 +7,6 @@ import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.listener.DefaultErrorHandler
 import org.springframework.kafka.listener.RecordInterceptor
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
@@ -21,7 +20,6 @@ class KafkaConsumerConfiguration(
 ) {
   @Bean
   fun kafkaListenerContainerFactory(
-    kafkaTemplate: KafkaTemplate<String, Any>,
     consumerFactory: ConsumerFactory<String, Any>
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
@@ -41,7 +39,6 @@ class KafkaConsumerConfiguration(
 
   @Bean
   fun kafkaRetryListenerContainerFactory(
-    kafkaTemplate: KafkaTemplate<*, *>,
     consumerRetryFactory: ConsumerFactory<String, Any>
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
@@ -51,7 +48,7 @@ class KafkaConsumerConfiguration(
     factory.consumerFactory = consumerRetryFactory
     val errorHandler =
       DefaultErrorHandler(
-        FixedBackOff(5000, 1)
+        FixedBackOff(INTERVAL, 1)
       )
     factory.setCommonErrorHandler(errorHandler)
     factory.setRecordInterceptor(interceptor)
@@ -76,5 +73,6 @@ class KafkaConsumerConfiguration(
   companion object {
     const val RETRY_LISTENER_BEAN_NAME = "kafkaRetryListenerContainerFactory"
     const val LISTENER_BEAN_NAME = "kafkaListenerContainerFactory"
+    const val INTERVAL = 5000L
   }
 }

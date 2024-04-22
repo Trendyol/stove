@@ -23,7 +23,9 @@ data class MsSqlOptions(
   val userName: String,
   val password: String,
   val container: MssqlContainerOptions = MssqlContainerOptions(),
-  override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (
+    RelationalDatabaseExposedConfiguration
+  ) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
   val migrationCollection: MigrationCollection<SqlMigrationContext> = MigrationCollection()
 

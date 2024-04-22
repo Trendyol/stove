@@ -35,12 +35,16 @@ data class KafkaOps(
 @StoveDsl
 data class KafkaSystemOptions(
   val registry: String = DEFAULT_REGISTRY,
-  val ports: List<Int> = listOf(9092, 9093),
+  val ports: List<Int> = DEFAULT_KAFKA_PORTS,
   val objectMapper: ObjectMapper = StoveObjectMapper.Default,
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
   val ops: KafkaOps = KafkaOps(),
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
-) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
+) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration> {
+  companion object {
+    val DEFAULT_KAFKA_PORTS = listOf(9092, 9093)
+  }
+}
 
 @StoveDsl
 data class KafkaContext(
@@ -62,10 +66,16 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptio
   }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options))) }
     .let { this }
 
-internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse { throw SystemNotRegisteredException(KafkaSystem::class) }
+internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse {
+  throw SystemNotRegisteredException(KafkaSystem::class)
+}
 
 @StoveDsl
-fun WithDsl.kafka(configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }): TestSystem = this.testSystem.withKafka(configure())
+fun WithDsl.kafka(
+  configure: () -> KafkaSystemOptions = {
+    KafkaSystemOptions()
+  }
+): TestSystem = this.testSystem.withKafka(configure())
 
 @StoveDsl
 suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit = validation(this.testSystem.kafka())

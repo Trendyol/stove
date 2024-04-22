@@ -76,7 +76,9 @@ class TestSystem(
     internal lateinit var instance: TestSystem
 
     @StoveDsl
-    suspend fun validate(validation: @StoveDsl suspend ValidationDsl.() -> Unit): Unit = validation(ValidationDsl(instance))
+    suspend fun validate(
+      validation: @StoveDsl suspend ValidationDsl.() -> Unit
+    ): Unit = validation(ValidationDsl(instance))
 
     fun stop(): Unit = instance.close()
   }
@@ -94,7 +96,8 @@ class TestSystem(
 
   /**
    * Runs the entire dependency tree that implements [RunnableSystemWithContext] since only the [RunnableSystemWithContext] can be run.
-   * Note that all the dependencies will run as parallel. It will invoke the runnable methods of [RunnableSystemWithContext]s with the order:
+   * Note that all the dependencies will run as parallel.
+   * It will invoke the runnable methods of [RunnableSystemWithContext]s with the order:
    * - [RunnableSystemWithContext.beforeRun]
    * - [RunnableSystemWithContext.run]
    * - [RunnableSystemWithContext.afterRun]
@@ -155,7 +158,8 @@ class TestSystem(
    * Gets or registers a [PluggedSystem] to the TestSystem. Use it when you want to register a new [PluggedSystem] to the TestSystem.
    * That can be a system that comply your needs, for example; SchedulerSystem, GarbageCollectorSystem etc... These are only the names,
    * so, you can implement these systems and register to the Test suite. When you register a new system to the test suite, it is wise to
-   * implement [AfterRunAwareWithContext.afterRun] to get the context/container of the system, so you can create your system methods based on that.
+   * implement [AfterRunAwareWithContext.afterRun] to get the context/container of the system,
+   * so you can create your system methods based on that.
    *
    * Example:
    * ```kotlin

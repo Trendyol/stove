@@ -12,13 +12,13 @@ class PropertiesFile {
   }
 
   private val l: Logger = LoggerFactory.getLogger(javaClass)
-  private val propertiesFile: Path = Paths.get(System.getProperty("user.home"), ".testcontainers.properties")
+  private val propertiesFilePath: Path = Paths.get(System.getProperty("user.home"), ".testcontainers.properties")
 
   fun detectAndLogStatus() {
-    if (propertiesFile.exists()) {
+    if (propertiesFilePath.exists()) {
       l.info("'.testcontainers.properties' file exists")
       when {
-        propertiesFile.readText()
+        propertiesFilePath.readText()
           .contains(REUSE_ENABLED) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
 
         else ->
@@ -47,16 +47,16 @@ class PropertiesFile {
       """.trimIndent()
     )
     when {
-      !propertiesFile.exists() -> propertiesFile.writeText(REUSE_ENABLED)
+      !propertiesFilePath.exists() -> propertiesFilePath.writeText(REUSE_ENABLED)
       else ->
         when {
-          propertiesFile.readText()
+          propertiesFilePath.readText()
             .contains(REUSE_ENABLED) ->
             l.info(
               "'.testcontainers.properties' looks good and contains reuse feature!"
             )
 
-          else -> propertiesFile.appendText(REUSE_ENABLED)
+          else -> propertiesFilePath.appendText(REUSE_ENABLED)
         }
     }
   }

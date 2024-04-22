@@ -31,6 +31,7 @@ wiremock = "3.5.2"
 testcontainers = "1.19.7"
 r2dbc-mssql = "1.0.2.RELEASE"
 spotless = "6.25.0"
+detekt = "1.23.6"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -106,6 +107,8 @@ spring-boot-3x-kafka = { module = "org.springframework.kafka:spring-kafka", vers
 spring-framework-6x-context = { module = "org.springframework:spring-context", version.ref = "spring-framework-6x" }
 spring-framework-6x-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework-6x" }
 
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
@@ -117,4 +120,5 @@ knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 gitVersioning = { id = "com.palantir.git-version", version = "3.0.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 

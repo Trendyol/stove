@@ -35,11 +35,9 @@ class Setup : AbstractProjectConfig() {
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>) {
-  }
+  override suspend fun start(configurations: List<String>) = Unit
 
-  override suspend fun stop() {
-  }
+  override suspend fun stop() = Unit
 }
 
 class InitialMigration : DatabaseMigration<SqlMigrationContext> {

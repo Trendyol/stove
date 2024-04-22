@@ -14,6 +14,12 @@ interface ConsumerSettings : MapBasedSettings
 class DefaultConsumerSettings(
   val kafkaProperties: KafkaProperties
 ) : ConsumerSettings {
+  companion object {
+    const val AUTO_COMMIT_INTERVAL = 5L
+    const val SESSION_TIMEOUT = 120L
+    const val MAX_POLL_INTERVAL = 5L
+  }
+
   @Value("\${kafka.config.thread-count.basic-listener}")
   private val basicListenerThreadCount: String = "100"
 
@@ -35,10 +41,10 @@ class DefaultConsumerSettings(
     props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
     props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = kafkaProperties.offset
     props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = true
-    props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(5)
-    props[ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG] = ofSeconds(120)
+    props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(AUTO_COMMIT_INTERVAL)
+    props[ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG] = ofSeconds(SESSION_TIMEOUT)
     props[ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG] = ofSeconds(kafkaProperties.heartbeatInSeconds.toLong())
-    props[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = ofMinutes(5)
+    props[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = ofMinutes(MAX_POLL_INTERVAL)
     props[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = basicListenerThreadCount
     props[ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG] = kafkaProperties.defaultApiTimeout
     props[ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG] = kafkaProperties.requestTimeout

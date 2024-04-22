@@ -36,6 +36,7 @@ private fun <T : Any> dataClassMapper(
   return constructor.call(*args)
 }
 
+@Suppress("SwallowedException")
 private fun <T : Any> classMapper(
   clazz: KClass<T>,
   rowMetadata: RowMetadata,

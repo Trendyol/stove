@@ -99,6 +99,7 @@ open class KafkaTestSpringBotApplication {
   }
 
   @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
+  @Suppress("TooGenericExceptionThrown")
   fun listen_failed(message: String) {
     logger.info("Received Message in consumer: $message")
     throw RuntimeException("Failed to consume message")

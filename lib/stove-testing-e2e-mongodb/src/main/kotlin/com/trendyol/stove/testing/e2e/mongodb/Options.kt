@@ -70,4 +70,6 @@ fun WithDsl.mongodbDsl(
 ): TestSystem = this.testSystem.withMongodb(MongodbOptionsDsl(configure)())
 
 @StoveDsl
-suspend fun ValidationDsl.mongodb(validation: @MongoDsl suspend MongodbSystem.() -> Unit): Unit = validation(this.testSystem.mongodb())
+suspend fun ValidationDsl.mongodb(
+  validation: @MongoDsl suspend MongodbSystem.() -> Unit
+): Unit = validation(this.testSystem.mongodb())

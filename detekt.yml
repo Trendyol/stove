@@ -26,10 +26,23 @@ output-reports:
 
 formatting:
   Indentation:
-    active: true
+    active: false
     indentSize: 2
+    autoCorrect: true
   NoWildcardImports:
     active: false
+  MaximumLineLength:
+    active: true
+    maxLineLength: 140
+    excludes: [ '**/test/**', '**/test-e2e/**' ]
+  ArgumentListWrapping:
+    maxLineLength: 140
+    autoCorrect: true
+    active: true
+    indentSize: 2
+  Filename:
+    active: false
+
 comments:
   active: true
   AbsentOrWrongFileLicense:
@@ -674,3 +687,6 @@ style:
     ignoreLateinitVar: false
   WildcardImport:
     active: false
+    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**' ]
+    excludeImports:
+      - 'java.util.*'

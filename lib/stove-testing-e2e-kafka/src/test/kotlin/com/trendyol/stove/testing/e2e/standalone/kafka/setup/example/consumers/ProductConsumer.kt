@@ -11,6 +11,5 @@ class ProductConsumer(
 ) : StoveListener(consumerSettings, producerSettings) {
   override val topicDefinition: TopicDefinition = TopicDefinition("product", "product.retry", "product.error")
 
-  override suspend fun listen(record: ConsumerRecord<String, String>) {
-  }
+  override suspend fun listen(record: ConsumerRecord<String, String>) = Unit
 }

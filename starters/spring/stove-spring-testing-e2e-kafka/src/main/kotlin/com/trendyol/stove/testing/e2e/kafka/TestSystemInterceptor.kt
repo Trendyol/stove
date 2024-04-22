@@ -217,16 +217,17 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   private suspend fun <T : Any> (() -> Collection<T>).waitUntilConditionMet(
     duration: Duration,
     subject: String,
+    delayMs: Long = 50L,
     condition: (T) -> Boolean
   ): Collection<T> = runCatching {
     val collectionFunc = this
-    withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(50) }
+    withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(delayMs) }
     return collectionFunc().filter { condition(it) }
   }.recoverCatching {
     when (it) {
       is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
       is ConcurrentModificationException ->
-        Result.success(waitUntilConditionMet(duration, subject, condition))
+        Result.success(waitUntilConditionMet(duration, subject, delayMs, condition))
 
       else -> throw it
     }.getOrThrow()

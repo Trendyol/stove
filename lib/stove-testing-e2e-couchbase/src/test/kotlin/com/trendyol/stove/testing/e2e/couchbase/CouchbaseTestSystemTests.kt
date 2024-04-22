@@ -38,11 +38,9 @@ class Setup : AbstractProjectConfig() {
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>) {
-  }
+  override suspend fun start(configurations: List<String>) = Unit
 
-  override suspend fun stop() {
-  }
+  override suspend fun stop() = Unit
 }
 
 class DefaultMigration : DatabaseMigration<Cluster> {
@@ -176,7 +174,9 @@ class CouchbaseTestSystemUsesDslTests : FunSpec({
       couchbase {
         saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
         saveToDefaultCollection(id2, ExampleInstance(id = id2, description = testCase.name.testName))
-        shouldQuery<ExampleInstance>("SELECT c.id, c.* FROM `${this.bucket().name}`.`${this.collection.scope.name}`.`${this.collection.name}` c") { result ->
+        shouldQuery<ExampleInstance>(
+          "SELECT c.id, c.* FROM `${this.bucket().name}`.`${this.collection.scope.name}`.`${this.collection.name}` c"
+        ) { result ->
           result.size shouldBeGreaterThanOrEqual 2
           result.contains(ExampleInstance(id = id, description = testCase.name.testName)) shouldBe true
           result.contains(ExampleInstance(id = id2, description = testCase.name.testName)) shouldBe true

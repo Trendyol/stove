@@ -33,12 +33,16 @@ class SpringApplicationUnderTest(
 ) : ApplicationUnderTest<ConfigurableApplicationContext> {
   private lateinit var application: ConfigurableApplicationContext
 
+  companion object {
+    private const val DELAY = 500L
+  }
+
   override suspend fun start(configurations: List<String>): ConfigurableApplicationContext =
     coroutineScope {
       val allConfigurations = (configurations + defaultConfigurations() + parameters).map { "--$it" }.toTypedArray()
       application = runner(allConfigurations)
       while (!application.isRunning || !application.isActive) {
-        delay(500)
+        delay(DELAY)
         continue
       }
       testSystem.activeSystems

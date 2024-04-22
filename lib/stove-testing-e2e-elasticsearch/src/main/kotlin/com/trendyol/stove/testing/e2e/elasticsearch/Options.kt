@@ -55,11 +55,15 @@ data class ElasticContainerOptions(
   override val tag: String = "8.6.1",
   override val image: String = "elasticsearch/elasticsearch",
   override val compatibleSubstitute: String? = null,
-  val exposedPorts: List<Int> = listOf(9200),
+  val exposedPorts: List<Int> = listOf(DEFAULT_ELASTIC_PORT),
   val password: String = "password",
   val disableSecurity: Boolean = true,
   override val containerFn: ContainerFn<ElasticsearchContainer> = {}
-) : ContainerOptions
+) : ContainerOptions {
+  companion object {
+    const val DEFAULT_ELASTIC_PORT = 9200
+  }
+}
 
 data class ElasticClientConfigurer(
   val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {

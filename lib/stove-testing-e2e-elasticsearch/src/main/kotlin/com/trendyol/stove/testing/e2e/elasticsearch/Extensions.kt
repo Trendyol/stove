@@ -11,7 +11,8 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer
 /**
  * Integrates Elasticsearch with the TestSystem.
  *
- * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index. You can configure it by changing the implementation of migrator.
+ * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index.
+ * You can configure it by changing the implementation of migrator.
  */
 internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): TestSystem {
   options.migrations {

@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "TooGenericExceptionCaught")
 
 package com.trendyol.stove.functional
 

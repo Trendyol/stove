@@ -22,7 +22,7 @@ class KafkaProducer(
   private val logger: Logger = LoggerFactory.getLogger(KafkaProducer::class.java)
 
   suspend fun send(message: KafkaOutgoingMessage) {
-    val recordHeaders = message.headers.map { it ->
+    val recordHeaders = message.headers.map {
       RecordHeader(
         it.key,
         it.value.toByteArray()

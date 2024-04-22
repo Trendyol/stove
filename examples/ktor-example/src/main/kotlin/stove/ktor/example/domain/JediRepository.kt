@@ -30,7 +30,9 @@ class JediRepository(private val postgresqlConnectionFactory: PostgresqlConnecti
     try {
       invoke(this)
       connection.commitTransaction().awaitFirstOrNull()
-    } catch (ex: Exception) {
+    } catch (
+      @Suppress("TooGenericExceptionCaught") ex: Exception
+    ) {
       connection.rollbackTransaction().awaitFirstOrNull()
       throw ex
     }

@@ -16,11 +16,9 @@ class TestSystemConfig : AbstractProjectConfig() {
         }
         applicationUnderTest(
           object : ApplicationUnderTest<Unit> {
-            override suspend fun start(configurations: List<String>) {
-            }
+            override suspend fun start(configurations: List<String>) = Unit
 
-            override suspend fun stop() {
-            }
+            override suspend fun stop() = Unit
           }
         )
       }.run()

@@ -40,10 +40,9 @@ class TestSystemConfig : AbstractProjectConfig() {
           )
         }
         ktor(
-          withParameters =
-            listOf(
-              "ktor.server.port=8001"
-            ),
+          withParameters = listOf(
+            "ktor.server.port=8001"
+          ),
           runner = { parameters ->
             stove.ktor.example.run(parameters) {
               addTestSystemDependencies()
