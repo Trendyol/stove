@@ -258,6 +258,21 @@ class HttpSystemTests : FunSpec({
             }
         }
     }
+
+    test("keep path segments as is") {
+        val expectedGetDtoName = UUID.randomUUID().toString()
+        TestSystem.validate {
+            wiremock {
+                mockGet("/get?path=1", 200, responseBody = TestDto(expectedGetDtoName).some())
+            }
+
+            http {
+                get<TestDto>("/get?path=1") { actual ->
+                    actual.name shouldBe expectedGetDtoName
+                }
+            }
+        }
+    }
 })
 
 data class TestDto(

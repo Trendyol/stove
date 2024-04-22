@@ -221,7 +221,8 @@ class HttpSystem(
     }
 
     @PublishedApi
-    internal fun relative(uri: String): Url = URLBuilder(testSystem.baseUrl).apply { path(uri) }.build()
+    internal fun relative(uri: String): Url = URLBuilder(testSystem.baseUrl)
+        .apply { appendEncodedPathSegments(uri) }.build()
 
     @PublishedApi
     internal fun toFormData(
