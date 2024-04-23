@@ -16,7 +16,14 @@ class TestSystemConfig : AbstractProjectConfig() {
     TestSystem(baseUrl = "http://localhost:8001")
       .with {
         httpClient()
-        couchbase { CouchbaseSystemOptions("Stove") }
+        couchbase {
+          CouchbaseSystemOptions(
+            "Stove",
+            containerOptions = CouchbaseContainerOptions(tag = "latest") {
+              withStartupAttempts(3)
+            }
+          )
+        }
         kafka {
           KafkaSystemOptions(
             containerOptions = KafkaContainerOptions(tag = "latest") {

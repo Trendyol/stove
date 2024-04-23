@@ -26,7 +26,9 @@ class Setup : AbstractProjectConfig() {
           defaultBucket = TEST_BUCKET,
           containerOptions = CouchbaseContainerOptions(
             tag = "latest"
-          )
+          ) {
+            withStartupAttempts(3)
+          }
         ).migrations {
           register<DefaultMigration>()
         }
