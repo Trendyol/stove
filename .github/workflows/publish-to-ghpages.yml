@@ -15,7 +15,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install mkdocs mkdocs-material mkdocs-awesome-pages-plugin
+          pip install mkdocs mkdocs-material mkdocs-awesome-pages-plugin --use-deprecated=legacy-resolver
 
       - name: Build Site
         run: |
