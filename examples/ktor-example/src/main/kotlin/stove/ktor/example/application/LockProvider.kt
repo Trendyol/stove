@@ -1,4 +1,4 @@
-package stove.ktor.example
+package stove.ktor.example.application
 
 import kotlinx.coroutines.sync.Mutex
 import java.time.Duration

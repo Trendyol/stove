@@ -1,15 +1,13 @@
 package com.stove.ktor.example.e2e
 
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.bind
-import org.koin.core.module.dsl.singleOf
-import org.koin.dsl.module
-import stove.ktor.example.LockProvider
+import org.koin.dsl.*
+import stove.ktor.example.application.LockProvider
 import java.time.Duration
 
 fun addTestSystemDependencies(): Module =
   module {
-    singleOf(::NoOpLockProvider) { bind<LockProvider>() }
+    single { NoOpLockProvider() }.bind<LockProvider>()
   }
 
 class NoOpLockProvider : LockProvider {

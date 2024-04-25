@@ -10,6 +10,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.system.abstractions.ReadyTestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,39 +21,38 @@ import kotlinx.coroutines.coroutineScope
  */
 @StoveDsl
 internal fun TestSystem.systemUnderTest(
-  runner: Runner<ApplicationEngine>,
+  runner: Runner<Application>,
   withParameters: List<String> = listOf()
 ): ReadyTestSystem = applicationUnderTest(KtorApplicationUnderTest(this, runner, withParameters))
 
 @StoveDsl
 fun WithDsl.ktor(
-  runner: Runner<ApplicationEngine>,
+  runner: Runner<Application>,
   withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
 @StoveDsl
 class KtorApplicationUnderTest(
   private val testSystem: TestSystem,
-  private val runner: Runner<ApplicationEngine>,
+  private val runner: Runner<Application>,
   private val parameters: List<String>
-) : ApplicationUnderTest<ApplicationEngine> {
-  private lateinit var application: ApplicationEngine
+) : ApplicationUnderTest<Application> {
+  private lateinit var application: Application
 
-  override suspend fun start(configurations: List<String>): ApplicationEngine =
-    coroutineScope {
-      val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
-      application = runner(allConfigurations)
-      testSystem.activeSystems
-        .map { it.value }
-        .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-        .map { it as RunnableSystemWithContext<ApplicationEngine> }
-        .map { async { it.afterRun(application) } }
-        .awaitAll()
+  override suspend fun start(configurations: List<String>): Application = coroutineScope {
+    val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
+    application = runner(allConfigurations)
+    testSystem.activeSystems
+      .map { it.value }
+      .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
+      .map { it as AfterRunAwareWithContext<Application> }
+      .map { async { it.afterRun(application) } }
+      .awaitAll()
 
-      application
-    }
+    application
+  }
 
-  override suspend fun stop(): Unit = application.stop()
+  override suspend fun stop(): Unit = application.dispose()
 
   private fun defaultConfigurations(): Array<String> = arrayOf("test-system=true")
 }
