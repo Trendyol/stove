@@ -2,8 +2,8 @@ package com.stove.ktor.example.e2e
 
 import com.trendol.stove.testing.e2e.rdbms.postgres.PostgresqlOptions
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
+import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.httpClient
-import com.trendyol.stove.testing.e2e.ktor
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
@@ -18,6 +18,7 @@ class TestSystemConfig : AbstractProjectConfig() {
     TestSystem(baseUrl = "http://localhost:8080")
       .with {
         httpClient()
+        bridge()
         postgresql {
           PostgresqlOptions(configureExposedConfiguration = { cfg ->
             listOf(

@@ -1,6 +1,6 @@
 package stove.ktor.example.domain
 
-data class Jedi(
+data class Product(
   val id: Long,
   var name: String
 )
