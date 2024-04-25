@@ -48,18 +48,25 @@ open class KafkaTestSpringBotApplication {
   @Bean
   open fun kafkaListenerContainerFactory(
     consumerFactory: ConsumerFactory<String, String>,
-    interceptor: RecordInterceptor<String, String>
+    interceptor: RecordInterceptor<String, String>,
+    recoverer: ConsumerRecordRecoverer
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.consumerFactory = consumerFactory
     factory.setCommonErrorHandler(
       DefaultErrorHandler(
+        recoverer,
         FixedBackOff(5000, 1)
       )
     )
     factory.setRecordInterceptor(interceptor)
     return factory
   }
+
+  @Bean
+  open fun recoverer(
+    kafkaTemplate: KafkaTemplate<*, *>
+  ): DeadLetterPublishingRecoverer = DeadLetterPublishingRecoverer(kafkaTemplate)
 
   @Bean
   open fun consumerFactory(
@@ -101,8 +108,13 @@ open class KafkaTestSpringBotApplication {
   @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
   @Suppress("TooGenericExceptionThrown")
   fun listen_failed(message: String) {
-    logger.info("Received Message in consumer: $message")
+    logger.info("Received Message in failed consumer: $message")
     throw RuntimeException("Failed to consume message")
+  }
+
+  @KafkaListener(topics = ["topic-failed.DLT"], groupId = "group_id")
+  fun listen_dead_letter(message: String) {
+    logger.info("Received Message in the lead letter, and allowing the fail by just logging: $message")
   }
 }
 
