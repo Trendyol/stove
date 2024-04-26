@@ -7,7 +7,8 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.github.nomisRev.kafka.publisher.PublisherSettings
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.listeners.*
+import io.kotest.core.extensions.Extension
+import io.kotest.extensions.system.SystemEnvironmentProjectListener
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -66,7 +67,11 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 }
 
 @ExperimentalKotest
-class ProjectConfig : AbstractProjectConfig(), BeforeEachListener, AfterEachListener {
+class ProjectConfig : AbstractProjectConfig() {
+  override fun extensions(): List<Extension> {
+    return listOf(SystemEnvironmentProjectListener(mapOf(STOVE_KAFKA_BRIDGE_PORT to STOVE_KAFKA_BRIDGE_PORT_DEFAULT)))
+  }
+
   override suspend fun beforeProject(): Unit =
     TestSystem()
       .with {

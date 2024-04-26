@@ -7,8 +7,7 @@ import StoveKafkaObserverServiceClient
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.squareup.wire.*
 import com.trendyol.stove.functional.*
-import com.trendyol.stove.testing.e2e.standalone.kafka.KafkaSystem.Companion.STOVE_KAFKA_BRIDGE_PORT
-import com.trendyol.stove.testing.e2e.standalone.kafka.stoveKafkaObjectMapperRef
+import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import kotlinx.coroutines.runBlocking
 import okhttp3.*
 import org.apache.kafka.clients.consumer.*
@@ -98,7 +97,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   }
 
   private fun startGrpcClient(): StoveKafkaObserverServiceClient {
-    val onPort = System.getenv(STOVE_KAFKA_BRIDGE_PORT) ?: "50051"
+    val onPort = System.getenv(STOVE_KAFKA_BRIDGE_PORT) ?: STOVE_KAFKA_BRIDGE_PORT_DEFAULT
     logger.info("Connecting to Stove Kafka Bridge on port $onPort")
     return Try { createClient(onPort) }
       .map {

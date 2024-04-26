@@ -24,6 +24,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 var stoveKafkaObjectMapperRef: ObjectMapper = StoveObjectMapper.Default
+const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
+const val STOVE_KAFKA_BRIDGE_PORT_DEFAULT = "50051"
 
 @StoveDsl
 class KafkaSystem(
@@ -50,7 +52,7 @@ class KafkaSystem(
     kafkapublisher = createPublisher(exposedConfiguration)
     sink = TestSystemMessageSink(
       adminClient,
-      StoveObjectMapper.Default,
+      context.options.objectMapper,
       InterceptionOptions(context.options.errorTopicSuffixes)
     )
     startGrpcServer()
@@ -148,10 +150,6 @@ class KafkaSystem(
         executeWithReuseCheck { stop() }
       }
     }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
-
-  companion object {
-    const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
-  }
 }
 
 class StoveKafkaValueDeserializer<T : Any> : Deserializer<T> {
