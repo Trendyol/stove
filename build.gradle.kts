@@ -95,6 +95,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
       reports {
         junitXml.required.set(true)
       }
+      jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
     }
     kotlin {
       jvmToolchain(17)

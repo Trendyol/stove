@@ -68,22 +68,21 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 
 @ExperimentalKotest
 class ProjectConfig : AbstractProjectConfig() {
-  override fun extensions(): List<Extension> {
-    return listOf(SystemEnvironmentProjectListener(mapOf(STOVE_KAFKA_BRIDGE_PORT to STOVE_KAFKA_BRIDGE_PORT_DEFAULT)))
-  }
+  override fun extensions(): List<Extension> = listOf(
+    SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, STOVE_KAFKA_BRIDGE_PORT_DEFAULT)
+  )
 
-  override suspend fun beforeProject(): Unit =
-    TestSystem()
-      .with {
-        kafka {
-          KafkaSystemOptions(
-            configureExposedConfiguration = { cfg ->
-              listOf("kafka.servers=${cfg.bootstrapServers}")
-            }
-          )
-        }
-        applicationUnderTest(KafkaApplicationUnderTest())
-      }.run()
+  override suspend fun beforeProject(): Unit = TestSystem()
+    .with {
+      kafka {
+        KafkaSystemOptions(
+          configureExposedConfiguration = { cfg ->
+            listOf("kafka.servers=${cfg.bootstrapServers}")
+          }
+        )
+      }
+      applicationUnderTest(KafkaApplicationUnderTest())
+    }.run()
 
   override suspend fun afterProject(): Unit = TestSystem.stop()
 }
