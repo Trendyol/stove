@@ -32,6 +32,10 @@ testcontainers = "1.19.7"
 r2dbc-mssql = "1.0.2.RELEASE"
 spotless = "6.25.0"
 detekt = "1.23.6"
+wire = "5.0.0-alpha01"
+io-grpc = "1.63.0"
+io-grpc-kotlin = "1.4.1"
+google-protobuf-kotlin = "4.26.1"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -108,6 +112,16 @@ spring-framework-6x-context = { module = "org.springframework:spring-context", v
 spring-framework-6x-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework-6x" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+wire-grpc-server = { module = "com.squareup.wiregrpcserver:server", version = "1.0.0-alpha03" }
+wire-grpc-server-generator = { module = "com.squareup.wiregrpcserver:server-generator", version = "1.0.0-alpha03" }
+wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref = "wire" }
+wire-grpc-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
+io-grpc = { module = "io.grpc:grpc-core", version.ref = "io-grpc" }
+io-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
+io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
+io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
+io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
+google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
@@ -121,4 +135,5 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 gitVersioning = { id = "com.palantir.git-version", version = "3.0.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+wire = { id = "com.squareup.wire", version.ref = "wire" }
 

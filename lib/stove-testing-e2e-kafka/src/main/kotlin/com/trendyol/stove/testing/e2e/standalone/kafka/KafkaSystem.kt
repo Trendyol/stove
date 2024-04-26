@@ -6,79 +6,26 @@ import arrow.core.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.functional.*
-import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
-import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.github.nomisRev.kafka.*
 import io.github.nomisRev.kafka.publisher.*
-import io.github.nomisRev.kafka.receiver.*
+import io.grpc.ServerBuilder
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.admin.*
-import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
-import org.testcontainers.containers.KafkaContainer
 import kotlin.reflect.KClass
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-data class KafkaExposedConfiguration(
-  val bootstrapServers: String
-) : ExposedConfiguration
+var stoveKafkaObjectMapperRef: ObjectMapper = StoveObjectMapper.Default
 
-data class KafkaContainerOptions(
-  override val registry: String = DEFAULT_REGISTRY,
-  override val image: String = "confluentinc/cp-kafka",
-  override val tag: String = "latest",
-  val ports: List<Int> = DEFAULT_KAFKA_PORTS,
-  override val compatibleSubstitute: String? = null,
-  override val containerFn: ContainerFn<KafkaContainer> = { }
-) : ContainerOptions {
-  companion object {
-    val DEFAULT_KAFKA_PORTS = listOf(9092, 9093)
-  }
-}
-
-class KafkaSystemOptions(
-  val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
-  val errorTopicSuffixes: List<String> = listOf("error", "errorTopic", "retry", "retryTopic"),
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-  override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
-) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
-
-data class KafkaContext(
-  val container: KafkaContainer,
-  val options: KafkaSystemOptions
-)
-
-internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse {
-  throw SystemNotRegisteredException(KafkaSystem::class)
-}
-
-internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem {
-  val kafka =
-    withProvidedRegistry(
-      options.containerOptions.imageWithTag,
-      options.containerOptions.registry,
-      options.containerOptions.compatibleSubstitute
-    ) {
-      KafkaContainer(it)
-        .withExposedPorts(*options.containerOptions.ports.toTypedArray())
-        .apply(options.containerOptions.containerFn)
-        .withReuse(this.options.keepDependenciesRunning)
-    }
-  getOrRegister(KafkaSystem(this, KafkaContext(kafka, options)))
-  return this
-}
-
-suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit = validation(this.testSystem.kafka())
-
-fun WithDsl.kafka(configure: () -> KafkaSystemOptions): TestSystem = this.testSystem.withKafka(configure())
-
+@StoveDsl
 class KafkaSystem(
   override val testSystem: TestSystem,
   private val context: KafkaContext
@@ -86,42 +33,47 @@ class KafkaSystem(
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var adminClient: Admin
   private lateinit var kafkapublisher: KafkaPublisher<String, Any>
-  private lateinit var subscribeToAllConsumer: SubscribeToAll
-  private lateinit var interceptor: TestSystemKafkaInterceptor
-  private val assertedMessages: MutableList<Any> = mutableListOf()
-  private val assertedConditions: MutableList<(Any) -> Boolean> = mutableListOf()
+  private lateinit var sink: TestSystemMessageSink
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> =
-    StateOfSystem(
-      testSystem.options,
-      KafkaSystem::class,
-      KafkaExposedConfiguration::class
-    )
+  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
+    testSystem.options,
+    KafkaSystem::class,
+    KafkaExposedConfiguration::class
+  )
 
   override suspend fun run() {
-    exposedConfiguration =
-      state.capture {
-        context.container.start()
-        KafkaExposedConfiguration(context.container.bootstrapServers)
-      }
+    exposedConfiguration = state.capture {
+      context.container.start()
+      KafkaExposedConfiguration(context.container.bootstrapServers)
+    }
     adminClient = createAdminClient(exposedConfiguration)
     kafkapublisher = createPublisher(exposedConfiguration)
+    sink = TestSystemMessageSink(
+      adminClient,
+      StoveObjectMapper.Default,
+      InterceptionOptions(context.options.errorTopicSuffixes)
+    )
+    startGrpcServer()
   }
 
-  override suspend fun afterRun() {
-    interceptor = TestSystemKafkaInterceptor(
-      adminClient,
-      context.options.objectMapper,
-      InterceptionOptions(errorTopicSuffixes = context.options.errorTopicSuffixes)
-    )
-    subscribeToAllConsumer = SubscribeToAll(
-      adminClient,
-      consumer(exposedConfiguration),
-      interceptor
-    )
-    subscribeToAllConsumer.start()
+  private fun startGrpcServer() {
+    System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
+    Try {
+      ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
+        .addService(StoveKafkaObserverGrpcServerAdapter(sink))
+        .build()
+        .start()
+    }.recover {
+      logger.error("Failed to start Wire-Grpc-Server", it)
+      throw it
+    }.map {
+      logger.info("Wire-Grpc-Server started on port ${context.options.bridgeGrpcServerPort}")
+    }
   }
 
+  override suspend fun afterRun() = Unit
+
+  @StoveDsl
   suspend fun publish(
     topic: String,
     message: Any,
@@ -135,11 +87,11 @@ class KafkaSystem(
     return this
   }
 
+  @StoveDsl
   suspend fun shouldBeConsumed(
     atLeastIn: Duration = 5.seconds,
     message: Any
-  ): KafkaSystem = interceptor
-    .also { assertedMessages.add(message) }
+  ): KafkaSystem = sink
     .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.isSome { it == message } }
     .let { this }
 
@@ -152,18 +104,7 @@ class KafkaSystem(
   }
 
   @PublishedApi
-  internal suspend fun <T : Any> shouldBeConsumedOnCondition(
-    atLeastIn: Duration = 5.seconds,
-    condition: (T) -> Boolean,
-    clazz: KClass<T>
-  ): KafkaSystem =
-    interceptor
-      .also { assertedConditions.add(condition as (Any) -> Boolean) }
-      .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.isSome { condition(it) } }
-      .let { this }
-
-  @PublishedApi
-  internal suspend fun <T : Any> shouldBeFailedOnCondition(
+  internal suspend fun <T : Any> shouldBeFailed(
     atLeastIn: Duration = 5.seconds,
     condition: (T, Throwable) -> Boolean,
     clazz: KClass<T>
@@ -171,26 +112,14 @@ class KafkaSystem(
     TODO("Not yet implemented")
   }
 
-  private fun consumer(cfg: KafkaExposedConfiguration): KafkaReceiver<String, Any> =
-    mapOf(
-      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to cfg.bootstrapServers,
-      ConsumerConfig.GROUP_ID_CONFIG to "stove-kafka-subscribe-to-all",
-      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
-      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
-      ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to 2.milliseconds.inWholeMilliseconds.toInt()
-    ).let {
-      KafkaReceiver(
-        ReceiverSettings(
-          cfg.bootstrapServers,
-          StringDeserializer(),
-          StoveKafkaValueDeserializer(),
-          SUBSCRIBE_TO_ALL_GROUP_ID,
-          properties = it.toProperties()
-        )
-      )
-    }
+  @PublishedApi
+  internal suspend fun <T : Any> shouldBeConsumed(
+    atLeastIn: Duration = 5.seconds,
+    condition: (T) -> Boolean,
+    clazz: KClass<T>
+  ): KafkaSystem = sink
+    .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.isSome { condition(it) } }
+    .let { this }
 
   private fun createPublisher(exposedConfiguration: KafkaExposedConfiguration): KafkaPublisher<String, Any> = PublisherSettings(
     exposedConfiguration.bootstrapServers,
@@ -215,14 +144,13 @@ class KafkaSystem(
   override fun close(): Unit =
     runBlocking {
       Try {
-        subscribeToAllConsumer.close()
         kafkapublisher.close()
         executeWithReuseCheck { stop() }
       }
     }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
 
   companion object {
-    const val SUBSCRIBE_TO_ALL_GROUP_ID = "stove-kafka-subscribe-to-all"
+    const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
   }
 }
 

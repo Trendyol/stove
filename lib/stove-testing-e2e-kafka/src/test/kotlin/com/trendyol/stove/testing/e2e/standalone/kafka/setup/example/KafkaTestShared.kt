@@ -15,13 +15,14 @@ object KafkaTestShared {
     TopicDefinition("productFailing", "productFailing.retry", "productFailing.error"),
     TopicDefinition("backlog", "backlog.retry", "backlog.error")
   )
-  val consumers:
-    (consumerSettings: Map<String, Any>, producerSettings: PublisherSettings<String, String>) -> List<StoveListener> =
-    { a, b ->
-      listOf(
-        ProductConsumer(a, b),
-        BacklogConsumer(a, b),
-        ProductFailingConsumer(a, b)
-      )
-    }
+  val consumers: (
+    consumerSettings: Map<String, Any>,
+    producerSettings: PublisherSettings<String, String>
+  ) -> List<StoveListener> = { a, b ->
+    listOf(
+      ProductConsumer(a, b),
+      BacklogConsumer(a, b),
+      ProductFailingConsumer(a, b)
+    )
+  }
 }

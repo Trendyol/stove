@@ -3,31 +3,26 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.tests
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.DomainEvents.ProductCreated
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.DomainEvents.ProductFailingCreated
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
 
 class KafkaSystemTests : FunSpec({
 
-  xtest("When publish then it should work") {
-    TestSystem.validate {
+  test("When publish then it should work") {
+    validate {
       kafka {
         publish("product", ProductCreated("1"))
-        publish("product", ProductCreated("2"))
-        publish("product", ProductCreated("3"))
+        shouldBeConsumed(message = ProductCreated("1"))
       }
     }
-
-    // delay(5000)
   }
 
-  xtest("When publish to a failing consumer should end-up throwing exception") {
-    TestSystem.validate {
+  test("When publish to a failing consumer should end-up throwing exception") {
+    validate {
       kafka {
         publish("productFailing", ProductFailingCreated("1"))
         shouldBeConsumed(message = ProductFailingCreated("1"))
       }
     }
-
-    // delay(5000)
   }
 })

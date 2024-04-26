@@ -1,18 +1,21 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
+import CommittedMessage
+import ConsumedMessage
+import PublishedMessage
 import arrow.core.*
 import kotlinx.coroutines.runBlocking
-import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.Logger
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 internal interface ConsumingOps : CommonOps {
   val logger: Logger
-  val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, Any>>
+  val consumedRecords: ConcurrentMap<UUID, ConsumedMessage>
+  val publishedMessages: ConcurrentMap<UUID, PublishedMessage>
+  val committedMessages: ConcurrentMap<UUID, CommittedMessage>
 
   suspend fun <T : Any> waitUntilConsumed(
     atLeastIn: Duration,
@@ -20,63 +23,83 @@ internal interface ConsumingOps : CommonOps {
     condition: (Option<T>) -> Boolean
   ) {
     assertions.putIfAbsent(UUID.randomUUID(), KafkaAssertion(clazz, condition))
-    val getRecords = { consumedRecords.map { it.value.value() } }
+    val getRecords = { consumedRecords.map { it.value } }
     getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
-      val outcome = readCatching(it, clazz)
+      val outcome = readCatching(it.message, clazz)
       outcome.isSuccess && condition(outcome.getOrNull().toOption())
     }
 
     throwIfFailed(clazz, condition)
   }
 
-  fun recordMessage(
-    record: ConsumerRecord<String, Any>,
-    consumer: Consumer<String, Any>
-  ): Unit =
-    runBlocking {
-      consumedRecords.putIfAbsent(UUID.randomUUID(), record)
-      logger.info(
-        """
-                RECEIVED MESSAGE:
-                Consumer: ${consumer.groupMetadata().memberId()} | ${consumer.groupMetadata().groupId()}
-                Topic: ${record.topic()}
-                Record: ${record.value()}
-                Key: ${record.key()}
-                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-        """.trimIndent()
-      )
-    }
+  fun recordConsumedMessage(record: ConsumedMessage): Unit = runBlocking {
+    consumedRecords.putIfAbsent(UUID.randomUUID(), record)
+    logger.info(
+      """
+         RECEIVED MESSAGE:
+         Topic: ${record.topic}
+         Record: ${record.message}
+         Key: ${record.key}
+         Headers: ${record.headers.map { Pair(it.key, it.value) }}
+         TestCase: ${record.headers.firstNotNullOf { it.key == "testCase" }}
+      """.trimIndent()
+    )
+  }
 
-  fun recordError(record: ConsumerRecord<String, Any>): Unit =
+  fun recordPublishedMessage(record: PublishedMessage): Unit = runBlocking {
+    publishedMessages.putIfAbsent(UUID.randomUUID(), record)
+    logger.info(
+      """
+         PUBLISHED MESSAGE:
+         Topic: ${record.topic}
+         Record: ${record.message}
+         Key: ${record.key}
+         Headers: ${record.headers.map { Pair(it.key, it.value) }}
+         TestCase: ${record.headers.firstNotNullOf { it.key == "testCase" }}
+      """.trimIndent()
+    )
+  }
+
+  fun recordCommittedMessage(record: CommittedMessage): Unit = runBlocking {
+    committedMessages.putIfAbsent(UUID.randomUUID(), record)
+    logger.info(
+      """
+         COMMITTED MESSAGE:
+         Topic: ${record.topic}
+         Offset: ${record.offset}
+         Partition: ${record.partition}
+      """.trimIndent()
+    )
+  }
+
+  fun recordError(record: ConsumedMessage): Unit =
     runBlocking {
       val exception = AssertionError(buildErrorMessage(record))
-      exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic(), record.value(), exception))
+      exceptions.putIfAbsent(UUID.randomUUID(), Failure(record.topic, record.message, exception))
       logger.error(
         """
                 CONSUMER GOT AN ERROR:
-                Topic: ${record.topic()}
-                Record: ${record.value()}
-                Key: ${record.key()}
-                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
+                Topic: ${record.topic}
+                Record: ${record.message}
+                Key: ${record.key}
+                Headers: ${record.headers.map { Pair(it.key, it.value) }}
+                TestCase: ${record.headers.firstNotNullOf { it.key == "testCase" }}
                 Exception: $exception
         """.trimIndent()
       )
     }
 
-  private fun buildErrorMessage(record: ConsumerRecord<String, Any>): String =
+  private fun buildErrorMessage(record: ConsumedMessage): String =
     """
         MESSAGE FAILED TO CONSUME:
-        Topic: ${record.topic()}
-        Record: ${record.value()}
-        Key: ${record.key()}
-        Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
+        Topic: ${record.topic}
+        Record: ${record.message}
+        Key: ${record.key}
+        Headers: ${record.headers.map { Pair(it.key, it.value) }}
     """.trimIndent()
 
-  override fun dumpMessages(): String =
-    """
-        CONSUMED MESSAGES: 
-        ${consumedRecords.map { it.value.value() }.joinToString("\n")}
+  override fun dumpMessages(): String = """
+        CONSUMED MESSAGES SO FAR: 
+        ${consumedRecords.map { it.value }.joinToString("\n")}
     """.trimIndent()
 }

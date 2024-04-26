@@ -9,7 +9,10 @@ class BacklogConsumer(
   consumerSettings: Map<String, Any>,
   producerSettings: PublisherSettings<String, String>
 ) : StoveListener(consumerSettings, producerSettings) {
+  private val logger = org.slf4j.LoggerFactory.getLogger(javaClass)
   override val topicDefinition: TopicDefinition = TopicDefinition("backlog", "backlog.retry", "backlog.error")
 
-  override suspend fun listen(record: ConsumerRecord<String, String>) = Unit
+  override suspend fun listen(record: ConsumerRecord<String, String>) {
+    logger.info("Backlog consumed: ${record.value()}")
+  }
 }

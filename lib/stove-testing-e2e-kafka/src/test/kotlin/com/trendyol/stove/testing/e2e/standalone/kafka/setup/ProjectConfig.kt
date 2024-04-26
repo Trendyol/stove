@@ -10,7 +10,9 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.*
+import java.util.*
 
 class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
   private lateinit var client: AdminClient
@@ -31,19 +33,25 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
   }
 
   private suspend fun startConsumers(bootStrapServers: String) {
-    val consumerSettings =
-      mapOf(
-        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
-        ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-        ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers"
-      )
+    val consumerSettings = mapOf(
+      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
+      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
+      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+      ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers",
+      ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG to listOf("com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge")
+    )
 
     val producerSettings = PublisherSettings<String, String>(
       bootStrapServers,
       StringSerializer(),
-      StoveKafkaValueSerializer()
+      StoveKafkaValueSerializer(),
+      properties = Properties().apply {
+        put(
+          ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
+          listOf("com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge")
+        )
+      }
     )
 
     val listeners = KafkaTestShared.consumers(consumerSettings, producerSettings)
