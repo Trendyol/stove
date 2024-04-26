@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.TopicPartition
 import org.slf4j.Logger
+import java.nio.charset.Charset
 
 @Suppress("UNUSED")
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
@@ -70,12 +71,12 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     }
   }
 
-  private fun consumedMessages(records: ConsumerRecords<K, V>) = records.map {
+  private fun consumedMessages(records: ConsumerRecords<K, V>) = records.map { record ->
     ConsumedMessage(
-      key = it.key().toString(),
-      message = mapper.writeValueAsString(it.value()),
-      topic = it.topic(),
-      headers = it.headers().associate { it.key() to it.value().toString() }
+      key = record.key().toString(),
+      message = mapper.writeValueAsString(record.value()),
+      topic = record.topic(),
+      headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
     )
   }
 
@@ -83,7 +84,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     key = record.key().toString(),
     message = mapper.writeValueAsString(record.value()),
     topic = record.topic(),
-    headers = record.headers().associate { it.key() to it.value().toString() }
+    headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
   )
 
   private fun committedMessages(
