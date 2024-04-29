@@ -12,7 +12,9 @@ class KafkaSystemTests : FunSpec({
     validate {
       kafka {
         publish("product", ProductCreated("1"))
-        shouldBeConsumed(message = ProductCreated("1"))
+        shouldBeConsumed<ProductCreated> {
+          actual == ProductCreated("1")
+        }
       }
     }
   }
@@ -21,7 +23,9 @@ class KafkaSystemTests : FunSpec({
     validate {
       kafka {
         publish("productFailing", ProductFailingCreated("1"))
-        shouldBeConsumed(message = ProductFailingCreated("1"))
+        shouldBeConsumed<ProductFailingCreated> {
+          actual == ProductFailingCreated("1")
+        }
       }
     }
   }

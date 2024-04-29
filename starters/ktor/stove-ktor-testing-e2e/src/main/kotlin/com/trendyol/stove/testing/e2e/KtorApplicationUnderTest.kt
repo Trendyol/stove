@@ -2,19 +2,11 @@
 
 package com.trendyol.stove.testing.e2e
 
-import com.trendyol.stove.testing.e2e.system.Runner
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.AfterRunAwareWithContext
-import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import com.trendyol.stove.testing.e2e.system.abstractions.ReadyTestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunnableSystemWithContext
+import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 
 /**
  *  Definition for Application Under Test for Ktor enabled application
@@ -40,7 +32,10 @@ class KtorApplicationUnderTest(
   private lateinit var application: Application
 
   override suspend fun start(configurations: List<String>): Application = coroutineScope {
-    val allConfigurations = (configurations + defaultConfigurations() + parameters).toTypedArray()
+    val allConfigurations = (configurations + defaultConfigurations() + parameters)
+      .map { "--$it" }
+      .distinct()
+      .toTypedArray()
     application = runner(allConfigurations)
     testSystem.activeSystems
       .map { it.value }

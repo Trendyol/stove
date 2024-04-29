@@ -1,11 +1,11 @@
-@file:Suppress("UNCHECKED_CAST", "UNUSED_PARAMETER")
+@file:Suppress("UNUSED_PARAMETER")
 
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import arrow.core.*
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.messaging.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -14,10 +14,10 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.github.nomisRev.kafka.*
 import io.github.nomisRev.kafka.publisher.*
 import io.grpc.ServerBuilder
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.*
+import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -34,8 +34,10 @@ class KafkaSystem(
 ) : PluggedSystem, ExposesConfiguration, RunAware, AfterRunAware {
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var adminClient: Admin
-  private lateinit var kafkapublisher: KafkaPublisher<String, Any>
-  private lateinit var sink: TestSystemMessageSink
+  private lateinit var kafkaPublisher: KafkaPublisher<String, Any>
+
+  @PublishedApi
+  internal lateinit var sink: TestSystemMessageSink
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
     testSystem.options,
@@ -49,11 +51,11 @@ class KafkaSystem(
       KafkaExposedConfiguration(context.container.bootstrapServers)
     }
     adminClient = createAdminClient(exposedConfiguration)
-    kafkapublisher = createPublisher(exposedConfiguration)
+    kafkaPublisher = createPublisher(exposedConfiguration)
     sink = TestSystemMessageSink(
       adminClient,
       context.options.objectMapper,
-      InterceptionOptions(context.options.errorTopicSuffixes)
+      context.options.topicSuffixes
     )
     startGrpcServer()
   }
@@ -81,47 +83,82 @@ class KafkaSystem(
     message: Any,
     key: Option<String> = None,
     headers: Map<String, String> = mapOf(),
+    partition: Int = 0,
     testCase: Option<String> = None
   ): KafkaSystem {
-    val record = ProducerRecord<String, Any>(topic, message)
+    val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
     testCase.map { record.headers().add("testCase", it.toByteArray()) }
-    kafkapublisher.publishScope { offer(record) }
+    kafkaPublisher.publishScope { offer(record) }
     return this
   }
 
   @StoveDsl
-  suspend fun shouldBeConsumed(
+  suspend inline fun <reified T : Any> shouldBeConsumed(
     atLeastIn: Duration = 5.seconds,
-    message: Any
-  ): KafkaSystem = sink
-    .waitUntilConsumed(atLeastIn, message::class) { actual -> actual.isSome { it == message } }
-    .let { this }
+    crossinline condition: ObservedMessage<T>.() -> Boolean
+  ): KafkaSystem = shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
+    parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+  }.let { this }
 
-  suspend fun shouldBeFailed(
+  @StoveDsl
+  suspend inline fun <reified T : Any> shouldBePublished(
     atLeastIn: Duration = 5.seconds,
-    message: Any,
-    exception: Throwable
-  ): KafkaSystem {
-    TODO("Not yet implemented")
-  }
+    crossinline condition: ObservedMessage<T>.() -> Boolean
+  ): KafkaSystem = coroutineScope {
+    shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
+      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+    }
+  }.let { this }
+
+  @StoveDsl
+  suspend inline fun <reified T : Any> shouldBeFailed(
+    atLeastIn: Duration = 5.seconds,
+    crossinline condition: FailedObservedMessage<T>.() -> Boolean
+  ): KafkaSystem = coroutineScope {
+    shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
+      parsed.message.isSome { o -> condition(FailedObservedMessage(o, parsed.metadata, parsed.reason)) }
+    }
+  }.let { this }
+
+  @StoveDsl
+  suspend inline fun <reified T : Any> shouldBeRetried(
+    atLeastIn: Duration = 5.seconds,
+    times: Int = 1,
+    crossinline condition: ObservedMessage<T>.() -> Boolean
+  ): KafkaSystem = coroutineScope {
+    shouldBeRetriedInternal(T::class, atLeastIn, times) { parsed ->
+      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+    }
+  }.let { this }
 
   @PublishedApi
-  internal suspend fun <T : Any> shouldBeFailed(
-    atLeastIn: Duration = 5.seconds,
-    condition: (T, Throwable) -> Boolean,
-    clazz: KClass<T>
-  ): KafkaSystem {
-    TODO("Not yet implemented")
-  }
+  internal suspend fun <T : Any> shouldBeConsumedInternal(
+    clazz: KClass<T>,
+    atLeastIn: Duration,
+    condition: (message: ParsedMessage<T>) -> Boolean
+  ): Unit = coroutineScope { sink.waitUntilConsumed(atLeastIn, clazz, condition) }
 
   @PublishedApi
-  internal suspend fun <T : Any> shouldBeConsumed(
-    atLeastIn: Duration = 5.seconds,
-    condition: (T) -> Boolean,
-    clazz: KClass<T>
-  ): KafkaSystem = sink
-    .waitUntilConsumed(atLeastIn, clazz) { actual -> actual.isSome { condition(it) } }
-    .let { this }
+  internal suspend fun <T : Any> shouldBeFailedInternal(
+    clazz: KClass<T>,
+    atLeastIn: Duration,
+    condition: (message: FailedParsedMessage<T>) -> Boolean
+  ): Unit = coroutineScope { sink.waitUntilFailed(atLeastIn, clazz, condition) }
+
+  @PublishedApi
+  internal suspend fun <T : Any> shouldBePublishedInternal(
+    clazz: KClass<T>,
+    atLeastIn: Duration,
+    condition: (message: ParsedMessage<T>) -> Boolean
+  ): Unit = coroutineScope { sink.waitUntilPublished(atLeastIn, clazz, condition) }
+
+  @PublishedApi
+  internal suspend fun <T : Any> shouldBeRetriedInternal(
+    clazz: KClass<T>,
+    atLeastIn: Duration,
+    times: Int,
+    condition: (message: ParsedMessage<T>) -> Boolean
+  ): Unit = coroutineScope { sink.waitUntilRetried(atLeastIn, times, clazz, condition) }
 
   private fun createPublisher(exposedConfiguration: KafkaExposedConfiguration): KafkaPublisher<String, Any> = PublisherSettings(
     exposedConfiguration.bootstrapServers,
@@ -143,30 +180,10 @@ class KafkaSystem(
 
   override suspend fun stop(): Unit = context.container.stop()
 
-  override fun close(): Unit =
-    runBlocking {
-      Try {
-        kafkapublisher.close()
-        executeWithReuseCheck { stop() }
-      }
-    }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
-}
-
-class StoveKafkaValueDeserializer<T : Any> : Deserializer<T> {
-  private val objectMapper = StoveObjectMapper.Default
-
-  @Suppress("UNCHECKED_CAST")
-  override fun deserialize(
-    topic: String,
-    data: ByteArray
-  ): T = objectMapper.readValue<Any>(data) as T
-}
-
-class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
-  private val objectMapper = StoveObjectMapper.Default
-
-  override fun serialize(
-    topic: String,
-    data: T
-  ): ByteArray = objectMapper.writeValueAsBytes(data)
+  override fun close(): Unit = runBlocking {
+    Try {
+      kafkaPublisher.close()
+      executeWithReuseCheck { stop() }
+    }
+  }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
 }

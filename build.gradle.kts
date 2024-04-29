@@ -1,3 +1,4 @@
+import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -11,6 +12,7 @@ plugins {
   alias(testLibs.plugins.testLogger)
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
+  idea
   java
 }
 group = "com.trendyol"
@@ -53,6 +55,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     plugin(rootProject.testLibs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.kover.get().pluginId)
     plugin(rootProject.libs.plugins.detekt.get().pluginId)
+    plugin("idea")
   }
 
   val testImplementation by configurations
@@ -79,6 +82,12 @@ subprojects.of("lib", "spring", "examples", "ktor") {
   spotless {
     kotlin {
       ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+    }
+  }
+  the<IdeaModel>().apply {
+    module {
+      isDownloadSources = true
+      isDownloadJavadoc = true
     }
   }
 

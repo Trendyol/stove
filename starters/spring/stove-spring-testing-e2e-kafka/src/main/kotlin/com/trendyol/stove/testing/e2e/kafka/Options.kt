@@ -72,9 +72,7 @@ internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrEls
 
 @StoveDsl
 fun WithDsl.kafka(
-  configure: () -> KafkaSystemOptions = {
-    KafkaSystemOptions()
-  }
+  configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }
 ): TestSystem = this.testSystem.withKafka(configure())
 
 @StoveDsl

@@ -1,25 +1,31 @@
 syntax = "proto3";
 
+// buf:lint:ignore FILE_SAME_PACKAGE
+package com.trendyol.stove.testing.e2e.standalone.kafka;
+
 message ConsumedMessage {
-  string message = 1;
-  string topic = 2;
-  string partition = 3;
-  string offset = 4;
-  string key = 5;
-  map<string, string> headers = 8;
+  string id = 1;
+  string message = 2;
+  string topic = 3;
+  string partition = 4;
+  string offset = 5;
+  string key = 6;
+  map<string, string> headers = 7;
 }
 
 message PublishedMessage {
-  string message = 1;
-  string topic = 2;
-  string key = 3;
-  map<string, string> headers = 4;
+  string id = 1;
+  string message = 2;
+  string topic = 3;
+  string key = 4;
+  map<string, string> headers = 5;
 }
 
 message CommittedMessage {
-  string topic = 1;
-  int32 partition = 2;
-  int64 offset = 3;
+  string id = 1;
+  string topic = 2;
+  int32 partition = 3;
+  int64 offset = 4;
 }
 
 message Reply {

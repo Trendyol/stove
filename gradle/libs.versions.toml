@@ -36,6 +36,10 @@ wire = "5.0.0-alpha01"
 io-grpc = "1.63.0"
 io-grpc-kotlin = "1.4.1"
 google-protobuf-kotlin = "4.26.1"
+gradle-release = "3.0.2"
+nexusPublish = "2.0.0-rc-1"
+shadow = "8.1.1"
+hoplite = "2.8.0.RC3"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -122,6 +126,11 @@ io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
 io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
 io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
 google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin" }
+hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
+hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+
+shadowJar = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
@@ -136,4 +145,7 @@ gitVersioning = { id = "com.palantir.git-version", version = "3.0.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
+shadowJar = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
+nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 

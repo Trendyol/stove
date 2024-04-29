@@ -9,10 +9,10 @@ import kotlinx.coroutines.reactive.awaitSingle
 class ProductRepository(private val postgresqlConnectionFactory: PostgresqlConnectionFactory) {
   private lateinit var connection: PostgresqlConnection
 
-  suspend fun findById(id: Long): Product {
+  suspend fun findById(id: Int): Product {
     return connection.createStatement("SELECT * FROM Products WHERE id=$id").execute().awaitFirst().map { r, rm ->
       Product(
-        (r.get(Product::id.name, rm.getColumnMetadata(Product::id.name).javaType!!) as Int).toLong(),
+        (r.get(Product::id.name, rm.getColumnMetadata(Product::id.name).javaType!!) as Int).toInt(),
         r.get(Product::name.name, rm.getColumnMetadata(Product::name.name).javaType!!) as String
       )
     }.awaitSingle()
