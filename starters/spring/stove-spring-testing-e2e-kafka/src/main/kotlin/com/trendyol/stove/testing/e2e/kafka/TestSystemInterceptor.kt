@@ -2,6 +2,7 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.*
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.trendyol.stove.testing.e2e.messaging.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -114,7 +115,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     val getRecords = { consumedRecords.map { it.value } }
     getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
       val outcome = readCatching(it.value(), clazz)
-      outcome.isSuccess && condition(ParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
+      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
     }
 
     throwIfFailed(clazz, condition)
@@ -123,7 +124,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   internal suspend fun <T : Any> waitUntilFailed(
     atLeastIn: Duration,
     clazz: KClass<T>,
-    condition: (metadata: FailedParsedMessage<T>) -> Boolean
+    condition: (metadata: ParsedMessage<T>) -> Boolean
   ) {
     val getRecords = { exceptions.map { it.value } }
     getRecords.waitUntilConditionMet(atLeastIn, "While WAITING FOR FAILURE ${clazz.java.simpleName}") {
@@ -131,7 +132,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
       outcome.isSuccess &&
         condition(
           FailedParsedMessage(
-            ParsedMessage(outcome.getOrNull().toOption(), it.message.metadata),
+            outcome.getOrNull().toOption(),
+            it.message.metadata,
             it.reason
           )
         )
@@ -148,7 +150,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     val getRecords = { producedRecords.map { it.value } }
     getRecords.waitUntilConditionMet(atLeastIn, "While PUBLISHING ${clazz.java.simpleName}") {
       val outcome = readCatching(it.value().toString(), clazz)
-      outcome.isSuccess && condition(ParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
+      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
     }
 
     throwIfFailed(clazz, condition)
@@ -174,9 +176,10 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   ) = exceptions
     .filter {
       selector(
-        ParsedMessage(
+        FailedParsedMessage(
           readCatching(it.value.message.actual.toString(), clazz).getOrNull().toOption(),
-          it.value.message.metadata
+          MessageMetadata(it.value.message.metadata.topic, it.value.message.metadata.key, it.value.message.metadata.headers),
+          it.value.reason
         )
       )
     }
@@ -184,12 +187,13 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
 
   private fun <T : Any> throwIfSucceeded(
     clazz: KClass<T>,
-    selector: (FailedParsedMessage<T>) -> Boolean
+    selector: (ParsedMessage<T>) -> Boolean
   ): Unit = consumedRecords
     .filter { record ->
       selector(
         FailedParsedMessage(
-          ParsedMessage(readCatching(record.value.value(), clazz).getOrNull().toOption(), record.value.toMetadata()),
+          readCatching(record.value.value(), clazz).getOrNull().toOption(),
+          record.value.toMetadata(),
           getExceptionFor(clazz, selector)
         )
       )
@@ -204,10 +208,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     .first {
       selector(
         FailedParsedMessage(
-          ParsedMessage(
-            readCatching(it.message.actual.toString(), clazz).getOrNull().toOption(),
-            it.message.metadata
-          ),
+          readCatching(it.message.actual.toString(), clazz).getOrNull().toOption(),
+          it.message.metadata,
           it.reason
         )
       )

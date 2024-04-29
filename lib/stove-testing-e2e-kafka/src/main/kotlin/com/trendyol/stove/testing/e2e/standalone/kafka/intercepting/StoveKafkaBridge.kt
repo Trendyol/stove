@@ -1,9 +1,5 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
-import CommittedMessage
-import ConsumedMessage
-import PublishedMessage
-import StoveKafkaObserverServiceClient
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.squareup.wire.*
 import com.trendyol.stove.functional.*
@@ -15,6 +11,7 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.TopicPartition
 import org.slf4j.Logger
 import java.nio.charset.Charset
+import java.util.UUID
 
 @Suppress("UNUSED")
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
@@ -73,6 +70,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
 
   private fun consumedMessages(records: ConsumerRecords<K, V>) = records.map { record ->
     ConsumedMessage(
+      id = record.timestamp().toString(),
       key = record.key().toString(),
       message = mapper.writeValueAsString(record.value()),
       topic = record.topic(),
@@ -80,7 +78,8 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     )
   }
 
-  private fun publishedMessage(record: ProducerRecord<K, V>) = ConsumedMessage(
+  private fun publishedMessage(record: ProducerRecord<K, V>) = PublishedMessage(
+    id = record.timestamp().toString(),
     key = record.key().toString(),
     message = mapper.writeValueAsString(record.value()),
     topic = record.topic(),
@@ -91,6 +90,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     offsets: MutableMap<TopicPartition, OffsetAndMetadata>
   ): List<CommittedMessage> = offsets.map {
     CommittedMessage(
+      id = UUID.randomUUID().toString(),
       topic = it.key.topic(),
       partition = it.key.partition(),
       offset = it.value.offset()

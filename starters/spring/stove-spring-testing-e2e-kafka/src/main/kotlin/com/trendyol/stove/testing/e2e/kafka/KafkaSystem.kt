@@ -2,6 +2,7 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.messaging.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.*
@@ -45,12 +46,7 @@ class KafkaSystem(
     kafkaTemplate.setProducerListener(getInterceptor())
   }
 
-  override fun configuration(): List<String> =
-    context.options.configureExposedConfiguration(exposedConfiguration) +
-      listOf(
-        "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
-        "kafka.isSecure=false"
-      )
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   override suspend fun stop(): Unit = context.container.stop()
 
@@ -99,11 +95,12 @@ class KafkaSystem(
     crossinline condition: FailedObservedMessage<T>.() -> Boolean
   ): KafkaSystem = coroutineScope {
     shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
-      parsed.message.message.isSome { o ->
+      parsed as FailedParsedMessage<T>
+      parsed.message.isSome { o ->
         condition(
           FailedObservedMessage(
             o,
-            parsed.message.metadata,
+            parsed.metadata,
             parsed.reason
           )
         )
@@ -132,7 +129,7 @@ class KafkaSystem(
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
-    condition: (message: FailedParsedMessage<T>) -> Boolean
+    condition: (message: ParsedMessage<T>) -> Boolean
   ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
 
   @PublishedApi

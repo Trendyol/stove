@@ -3,12 +3,14 @@ package com.stove.ktor.example.e2e
 import arrow.core.*
 import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.http.http
+import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.using
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import stove.ktor.example.application.*
 import stove.ktor.example.domain.*
+import kotlin.random.Random
 
 class ExampleTest : FunSpec({
   data class ProductOfTest(
@@ -18,16 +20,16 @@ class ExampleTest : FunSpec({
 
   test("should save the product") {
     validate {
-      val givenId = 10L
+      val givenId = Random.nextInt()
       val givenName = "T-Shirt, Red, M"
       postgresql {
         shouldExecute(
           """
-                        DROP TABLE IF EXISTS Products;
-                        CREATE TABLE IF NOT EXISTS Products (
-                        	id serial PRIMARY KEY,
-                        	name VARCHAR (50)  NOT NULL
-                        );
+            DROP TABLE IF EXISTS Products;
+            CREATE TABLE IF NOT EXISTS Products (
+            	id serial PRIMARY KEY,
+            	name VARCHAR (50)  NOT NULL
+            );
           """.trimIndent()
         )
         shouldExecute("INSERT INTO Products (id, name) VALUES ('$givenId', 'T-Shirt, Red, S')")
@@ -51,6 +53,15 @@ class ExampleTest : FunSpec({
 
       using<ProductRepository> {
         this.findById(givenId) shouldBe Product(givenId, givenName)
+      }
+
+      kafka {
+        shouldBePublished<DomainEvents.ProductUpdated> {
+          actual.id == givenId && actual.name == givenName
+        }
+        shouldBeConsumed<DomainEvents.ProductUpdated> {
+          actual.id == givenId && actual.name == givenName
+        }
       }
     }
   }

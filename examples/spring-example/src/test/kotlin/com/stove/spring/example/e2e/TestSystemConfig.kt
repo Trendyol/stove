@@ -28,7 +28,12 @@ class TestSystemConfig : AbstractProjectConfig() {
           KafkaSystemOptions(
             containerOptions = KafkaContainerOptions(tag = "latest") {
             }
-          )
+          ) {
+            listOf(
+              "kafka.bootstrapServers=${it.bootstrapServers}",
+              "kafka.isSecure=false"
+            )
+          }
         }
         bridge()
         wiremock {

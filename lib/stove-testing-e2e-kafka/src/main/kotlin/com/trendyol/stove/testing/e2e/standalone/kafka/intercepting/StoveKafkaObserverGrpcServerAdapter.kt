@@ -1,10 +1,6 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
-import CommittedMessage
-import ConsumedMessage
-import PublishedMessage
-import Reply
-import StoveKafkaObserverServiceWireGrpc
+import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import org.slf4j.*
 
 class StoveKafkaObserverGrpcServerAdapter(

@@ -10,16 +10,16 @@ dependencies {
   implementation(libs.kotlinx.jdk8)
   implementation(libs.kotlinx.core)
   implementation(libs.kafkaKotlin)
-
-  api(libs.wire.grpc.server)
-  api(libs.wire.grpc.client)
-  api(libs.wire.grpc.runtime)
-  api(libs.io.grpc)
-  api(libs.io.grpc.protobuf)
-  api(libs.io.grpc.stub)
-  api(libs.io.grpc.kotlin)
-  api(libs.io.grpc.netty)
-  api(libs.google.protobuf.kotlin)
+  implementation(libs.wire.grpc.server)
+  implementation(libs.wire.grpc.client)
+  implementation(libs.wire.grpc.runtime)
+  implementation(libs.io.grpc)
+  implementation(libs.io.grpc.protobuf)
+  implementation(libs.io.grpc.stub)
+  implementation(libs.io.grpc.kotlin)
+  implementation(libs.io.grpc.netty)
+  implementation(libs.google.protobuf.kotlin)
+  implementation(libs.caffeine)
 }
 
 dependencies {
@@ -53,6 +53,6 @@ wire {
     exclusive = false
     singleMethodServices = false
     javaInterop = true
-    includes = listOf("StoveKafkaObserverService")
+    includes = listOf("com.trendyol.stove.testing.e2e.standalone.kafka.StoveKafkaObserverService")
   }
 }

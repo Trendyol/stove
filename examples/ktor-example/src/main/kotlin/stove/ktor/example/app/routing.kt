@@ -6,14 +6,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.get
-import stove.ktor.example.application.ProductService
-import stove.ktor.example.application.UpdateProductRequest
+import stove.ktor.example.application.*
 
 fun Application.configureRouting() {
   routing {
     post("/products/{id}") {
-      val id = call.parameters["id"]!!.toLong()
       try {
+        val id = call.parameters["id"]!!.toInt()
         val request = call.receive<UpdateProductRequest>()
         call.get<ProductService>().update(id, request)
         call.respond(HttpStatusCode.OK)

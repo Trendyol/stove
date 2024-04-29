@@ -1,15 +1,14 @@
 package com.stove.ktor.example.e2e
 
-import com.trendol.stove.testing.e2e.rdbms.postgres.PostgresqlOptions
-import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
+import com.trendol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.httpClient
+import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.wiremock.WireMockSystemOptions
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
+import stove.ktor.example.app.objectMapperRef
 
 class TestSystemConfig : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
@@ -25,11 +24,21 @@ class TestSystemConfig : AbstractProjectConfig() {
               "database.jdbcUrl=${cfg.jdbcUrl}",
               "database.host=${cfg.host}",
               "database.port=${cfg.port}",
-              "database.databaseName=${cfg.database}",
+              "database.name=${cfg.database}",
               "database.username=${cfg.username}",
               "database.password=${cfg.password}"
             )
           })
+        }
+        kafka {
+          stoveKafkaObjectMapperRef = objectMapperRef
+          KafkaSystemOptions(
+            TopicSuffixes(error = listOf("error"), retry = listOf("retry"))
+          ) {
+            listOf(
+              "kafka.bootstrapServers=${it.bootstrapServers}"
+            )
+          }
         }
         wiremock {
           WireMockSystemOptions(
@@ -42,7 +51,7 @@ class TestSystemConfig : AbstractProjectConfig() {
         }
         ktor(
           withParameters = listOf(
-            "ktor.server.port=8001"
+            "port=8080"
           ),
           runner = { parameters ->
             stove.ktor.example.run(parameters) {

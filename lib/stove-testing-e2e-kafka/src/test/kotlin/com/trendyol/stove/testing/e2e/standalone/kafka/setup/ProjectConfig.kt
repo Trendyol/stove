@@ -21,10 +21,9 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 
   override suspend fun start(configurations: List<String>) {
     val bootstrapServers = configurations.first { it.contains("kafka", true) }.split('=')[1]
-    client =
-      mapOf<String, Any>(
-        AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers
-      ).let { AdminClient.create(it) }
+    client = mapOf<String, Any>(
+      AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers
+    ).let { AdminClient.create(it) }
 
     val newTopics = KafkaTestShared.topics.flatMap {
       listOf(it.topic, it.retryTopic, it.deadLetterTopic)
