@@ -15,7 +15,7 @@ internal interface MessageSinkPublishOps : CommonOps {
   ) {
     store.assertion(MessagingAssertion(clazz, condition))
     val getRecords = { store.publishedMessages().map { it } }
-    getRecords.waitUntilConditionMet(atLeastIn, "While PUBLISHING ${clazz.java.simpleName}") {
+    getRecords.waitUntilConditionMet(atLeastIn, "While expecting Publishing of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message, clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), MessageMetadata(it.topic, it.key, it.headers)))
     }
@@ -26,14 +26,9 @@ internal interface MessageSinkPublishOps : CommonOps {
   fun recordPublishedMessage(record: PublishedMessage): Unit = runBlocking {
     store.record(record)
     logger.info(
-      """
-         PUBLISHED MESSAGE:
-         Topic: ${record.topic}
-         Record: ${record.message}
-         Key: ${record.key}
-         Headers: ${record.headers.map { Pair(it.key, it.value) }}
-         TestCase: ${record.headers.firstNotNullOf { it.key == "testCase" }}
-      """.trimIndent()
+      "Recorded Published Message: {}, testCase: {}",
+      record,
+      record.headers.firstNotNullOf { it.key == "testCase" }
     )
   }
 }

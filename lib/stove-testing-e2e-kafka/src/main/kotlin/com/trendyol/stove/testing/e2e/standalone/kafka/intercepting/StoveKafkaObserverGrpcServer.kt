@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import org.slf4j.*
 
-class StoveKafkaObserverGrpcServerAdapter(
+class StoveKafkaObserverGrpcServer(
   private val sink: TestSystemMessageSink
 ) : StoveKafkaObserverServiceWireGrpc.StoveKafkaObserverServiceImplBase() {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)

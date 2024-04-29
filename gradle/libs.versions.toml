@@ -131,6 +131,7 @@ hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "ho
 
 shadowJar = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
+pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }

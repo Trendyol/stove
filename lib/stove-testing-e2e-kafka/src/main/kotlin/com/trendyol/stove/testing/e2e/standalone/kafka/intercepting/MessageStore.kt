@@ -1,17 +1,17 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
-import com.trendyol.stove.testing.e2e.messaging.*
+import com.trendyol.stove.testing.e2e.messaging.MessagingAssertion
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
+import io.exoquery.pprint
 import java.util.*
 
-@Suppress("UNCHECKED_CAST")
 class MessageStore {
   private val consumed = Caching.of<String, ConsumedMessage>()
   private val published = Caching.of<String, PublishedMessage>()
   private val committed = Caching.of<String, CommittedMessage>()
   private val retried = Caching.of<String, ConsumedMessage>()
   private val assertions = Caching.of<String, MessagingAssertion<*>>()
-  private val exceptions = Caching.of<UUID, Failure<*>>()
+  private val failedMessages = Caching.of<String, ConsumedMessage>()
 
   fun record(message: ConsumedMessage) = consumed.put(message.id, message)
 
@@ -21,9 +21,9 @@ class MessageStore {
 
   fun recordRetry(message: ConsumedMessage) = retried.put(message.id, message)
 
-  fun <T> recordFailure(failure: Failure<T>) = exceptions.put(UUID.randomUUID(), failure)
+  fun recordFailure(message: ConsumedMessage) = failedMessages.put(message.id, message)
 
-  fun <T> failedMessages(): Collection<Failure<T>> = exceptions.asMap().values.map { it as Failure<T> }
+  fun failedMessages(): Collection<ConsumedMessage> = failedMessages.asMap().values
 
   fun consumedMessages(): Collection<ConsumedMessage> = consumed.asMap().values
 
@@ -37,12 +37,19 @@ class MessageStore {
 
   fun assertions(): Collection<MessagingAssertion<*>> = assertions.asMap().values
 
-  fun clear() {
-    consumed.invalidateAll()
-    published.invalidateAll()
-    committed.invalidateAll()
-    retried.invalidateAll()
-    assertions.invalidateAll()
-    exceptions.invalidateAll()
+  fun isCommitted(
+    topic: String,
+    offset: Long,
+    partition: Int
+  ): Boolean = committed.asMap().values.any {
+    it.offset == offset + 1 && it.partition == partition && it.topic == topic
   }
+
+  override fun toString(): String = """
+    |Consumed: ${pprint(consumedMessages())}
+    |Published: ${pprint(publishedMessages())}
+    |Committed: ${pprint(committedMessages())}
+    |Retried: ${pprint(retriedMessages())}
+    |Failed: ${pprint(failedMessages())}
+    """.trimIndent().trimMargin()
 }

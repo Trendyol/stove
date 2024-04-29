@@ -2,7 +2,8 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import arrow.core.toOption
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.messaging.FailedParsedMessage
+import com.trendyol.stove.testing.e2e.messaging.*
+import com.trendyol.stove.testing.e2e.standalone.kafka.metadata
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.Admin
 import org.slf4j.Logger
@@ -50,7 +51,11 @@ internal interface CommonOps {
     return collectionFunc()
   }.recoverCatching {
     when (it) {
-      is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $count items. ${dumpMessages()}")
+      is TimeoutCancellationException ->
+        throw AssertionError(
+          "GOT A TIMEOUT: While expecting $count items to be retried, but was ${this().size}.\n ${dumpMessages()}"
+        )
+
       is ConcurrentModificationException -> Result.success(waitUntilCount(duration, count))
       else -> throw it
     }.getOrThrow()
@@ -58,12 +63,37 @@ internal interface CommonOps {
 
   fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
-    selector: (message: FailedParsedMessage<T>) -> Boolean
-  ): Unit = store.failedMessages<T>()
+    selector: (message: ParsedMessage<T>) -> Boolean
+  ): Unit = store.failedMessages()
     .filter {
-      selector(FailedParsedMessage(readCatching(it.message.toString(), clazz).getOrNull().toOption(), it.message.metadata, it.reason))
-    }
-    .forEach { throw it.reason }
+      selector(SuccessfulParsedMessage(readCatching(it.message, clazz).getOrNull().toOption(), it.metadata()))
+    }.forEach { throw AssertionError("Message was expected to be consumed successfully, but failed: $it") }
+
+  fun <T : Any> throwIfRetried(
+    clazz: KClass<T>,
+    selector: (message: ParsedMessage<T>) -> Boolean
+  ): Unit = store.retriedMessages()
+    .filter {
+      selector(
+        SuccessfulParsedMessage(
+          readCatching(it.message, clazz).getOrNull().toOption(),
+          MessageMetadata(it.topic, it.key, it.headers)
+        )
+      )
+    }.forEach { throw AssertionError("Message was expected to be consumed successfully, but was retried: $it") }
+
+  fun <T : Any> throwIfSucceeded(
+    clazz: KClass<T>,
+    selector: (message: ParsedMessage<T>) -> Boolean
+  ): Unit = store.consumedMessages()
+    .filter {
+      selector(
+        SuccessfulParsedMessage(
+          readCatching(it.message, clazz).getOrNull().toOption(),
+          it.metadata()
+        )
+      ) && store.isCommitted(it.topic, it.offset, it.partition)
+    }.forEach { throw AssertionError("Message was expected to fail, but was consumed: $it") }
 
   fun <T : Any> readCatching(
     json: Any,

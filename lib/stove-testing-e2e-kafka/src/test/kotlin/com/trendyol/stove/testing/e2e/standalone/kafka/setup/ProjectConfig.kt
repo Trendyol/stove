@@ -38,11 +38,12 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
       ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
       ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers",
       ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG to listOf("com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge")
     )
 
-    val producerSettings = PublisherSettings<String, String>(
+    val producerSettings = PublisherSettings<String, Any>(
       bootStrapServers,
       StringSerializer(),
       StoveKafkaValueSerializer(),

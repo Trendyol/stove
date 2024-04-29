@@ -11,12 +11,11 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.TopicPartition
 import org.slf4j.Logger
 import java.nio.charset.Charset
-import java.util.UUID
+import java.util.*
 
 @Suppress("UNUSED")
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
   private val logger: Logger = org.slf4j.LoggerFactory.getLogger(StoveKafkaBridge::class.java)
-
   private val client: StoveKafkaObserverServiceClient by lazy { startGrpcClient() }
   private val mapper: ObjectMapper by lazy { stoveKafkaObjectMapperRef }
 
@@ -74,6 +73,8 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
       key = record.key().toString(),
       message = mapper.writeValueAsString(record.value()),
       topic = record.topic(),
+      offset = record.offset(),
+      partition = record.partition(),
       headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
     )
   }
@@ -93,7 +94,8 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
       id = UUID.randomUUID().toString(),
       topic = it.key.topic(),
       partition = it.key.partition(),
-      offset = it.value.offset()
+      offset = it.value.offset(),
+      metadata = it.value.metadata()
     )
   }
 

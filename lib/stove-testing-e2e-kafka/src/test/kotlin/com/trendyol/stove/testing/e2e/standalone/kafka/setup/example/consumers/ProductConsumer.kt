@@ -7,7 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 
 class ProductConsumer(
   consumerSettings: Map<String, Any>,
-  producerSettings: PublisherSettings<String, String>
+  producerSettings: PublisherSettings<String, Any>
 ) : StoveListener(consumerSettings, producerSettings) {
   private val logger = org.slf4j.LoggerFactory.getLogger(javaClass)
   override val topicDefinition: TopicDefinition = TopicDefinition("product", "product.retry", "product.error")

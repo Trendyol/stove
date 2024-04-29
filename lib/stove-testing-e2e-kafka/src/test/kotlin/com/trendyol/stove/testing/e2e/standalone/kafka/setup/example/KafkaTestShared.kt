@@ -17,7 +17,7 @@ object KafkaTestShared {
   )
   val consumers: (
     consumerSettings: Map<String, Any>,
-    producerSettings: PublisherSettings<String, String>
+    producerSettings: PublisherSettings<String, Any>
   ) -> List<StoveListener> = { a, b ->
     listOf(
       ProductConsumer(a, b),

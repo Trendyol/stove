@@ -1,19 +1,23 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.tests
 
+import arrow.core.some
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.DomainEvents.ProductCreated
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.DomainEvents.ProductFailingCreated
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
+import kotlin.random.Random
 
 class KafkaSystemTests : FunSpec({
+  val randomString = { Random.nextInt(0, Int.MAX_VALUE).toString() }
 
   test("When publish then it should work") {
     validate {
       kafka {
-        publish("product", ProductCreated("1"))
+        val productId = randomString() + "[productCreated]"
+        publish("product", message = ProductCreated(productId), key = randomString().some())
         shouldBeConsumed<ProductCreated> {
-          actual == ProductCreated("1")
+          actual.productId == productId
         }
       }
     }
@@ -22,9 +26,14 @@ class KafkaSystemTests : FunSpec({
   test("When publish to a failing consumer should end-up throwing exception") {
     validate {
       kafka {
-        publish("productFailing", ProductFailingCreated("1"))
-        shouldBeConsumed<ProductFailingCreated> {
-          actual == ProductFailingCreated("1")
+        val productId = randomString() + "[productFailingCreated]"
+        publish("productFailing", ProductFailingCreated(productId), key = randomString().some())
+        shouldBeRetried<ProductFailingCreated>(times = 3) {
+          actual.productId == productId
+        }
+
+        shouldBeFailed<ProductFailingCreated> {
+          actual.productId == productId
         }
       }
     }

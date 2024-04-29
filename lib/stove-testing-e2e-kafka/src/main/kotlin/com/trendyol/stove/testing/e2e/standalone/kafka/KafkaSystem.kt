@@ -64,7 +64,7 @@ class KafkaSystem(
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
     Try {
       ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
-        .addService(StoveKafkaObserverGrpcServerAdapter(sink))
+        .addService(StoveKafkaObserverGrpcServer(sink))
         .build()
         .start()
     }.recover {
@@ -87,6 +87,7 @@ class KafkaSystem(
     testCase: Option<String> = None
   ): KafkaSystem {
     val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
+    headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
     testCase.map { record.headers().add("testCase", it.toByteArray()) }
     kafkaPublisher.publishScope { offer(record) }
     return this
@@ -113,10 +114,10 @@ class KafkaSystem(
   @StoveDsl
   suspend inline fun <reified T : Any> shouldBeFailed(
     atLeastIn: Duration = 5.seconds,
-    crossinline condition: FailedObservedMessage<T>.() -> Boolean
+    crossinline condition: ObservedMessage<T>.() -> Boolean
   ): KafkaSystem = coroutineScope {
     shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
-      parsed.message.isSome { o -> condition(FailedObservedMessage(o, parsed.metadata, parsed.reason)) }
+      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
     }
   }.let { this }
 
@@ -142,7 +143,7 @@ class KafkaSystem(
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
-    condition: (message: FailedParsedMessage<T>) -> Boolean
+    condition: (message: ParsedMessage<T>) -> Boolean
   ): Unit = coroutineScope { sink.waitUntilFailed(atLeastIn, clazz, condition) }
 
   @PublishedApi
@@ -172,11 +173,7 @@ class KafkaSystem(
       AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
     ).let { Admin(AdminSettings(exposedConfiguration.bootstrapServers, it.toProperties())) }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration) +
-    listOf(
-      "kafka.bootstrapServers=${exposedConfiguration.bootstrapServers}",
-      "kafka.isSecure=false"
-    )
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   override suspend fun stop(): Unit = context.container.stop()
 
