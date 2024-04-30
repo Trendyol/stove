@@ -5,6 +5,7 @@ on:
    types: [created]
  create:
    tags:
+     - '*'
    
 jobs:
   publish:
