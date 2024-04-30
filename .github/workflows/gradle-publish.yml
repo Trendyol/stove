@@ -3,9 +3,9 @@ name: Publish to Maven
 on:
   release:
     types: [ created ]
-  create:
+  push:
     tags:
-      - '*.*.*'
+      - '*.*'
 
 jobs:
   publish:
