@@ -18,12 +18,11 @@ plugins {
 group = "com.trendyol"
 val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
 val details = versionDetails()
-if (details.branchName == "main") {
-  version = nextPatchSnapshot(details.lastTag)
+version = if (details.branchName == "main") {
+  nextPatchSnapshot(details.lastTag)
 } else {
-  version = details.lastTag
+  details.lastTag
 }
-println(version)
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
