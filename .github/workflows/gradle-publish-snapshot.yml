@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+env:
+  SNAPSHOT: true
 
 jobs:
   publish:

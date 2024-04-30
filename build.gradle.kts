@@ -18,11 +18,20 @@ plugins {
 group = "com.trendyol"
 val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
 val details = versionDetails()
-version = if (details.branchName == "main") {
-  nextPatchSnapshot(details.lastTag)
-} else {
-  details.lastTag
+
+fun determine(lastTag: String): String {
+  System.getenv("SNAPSHOT")?.let {
+    return nextPatchSnapshot(lastTag)
+  }
+  return lastTag
 }
+
+fun nextPatchSnapshot(version: String): String {
+  val (major, minor, patch) = version.split(".")
+  return "$major.$minor.${patch.toInt() + 1}-SNAPSHOT"
+}
+
+version = determine(details.lastTag)
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -173,9 +182,4 @@ subprojects.of("lib", "spring", "ktor", filter = { p -> publishedProjects.contai
 
 tasks.withType<DokkaMultiModuleTask>().configureEach {
   outputDirectory.set(file(rootDir.resolve("docs/source")))
-}
-
-fun nextPatchSnapshot(version: String): String {
-  val (major, minor, patch) = version.split(".")
-  return "$major.$minor.${patch.toInt() + 1}-SNAPSHOT"
 }
