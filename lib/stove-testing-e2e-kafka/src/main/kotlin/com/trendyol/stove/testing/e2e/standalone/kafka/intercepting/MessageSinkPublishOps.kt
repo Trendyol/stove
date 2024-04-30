@@ -18,8 +18,6 @@ internal interface MessageSinkPublishOps : CommonOps {
       val outcome = readCatching(it.message, clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), MessageMetadata(it.topic, it.key, it.headers)))
     }
-
-    throwIfFailed(clazz, condition)
   }
 
   fun recordPublishedMessage(record: PublishedMessage): Unit = runBlocking {
