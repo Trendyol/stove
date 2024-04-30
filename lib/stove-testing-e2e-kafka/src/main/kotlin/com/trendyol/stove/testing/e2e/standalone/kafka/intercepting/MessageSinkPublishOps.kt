@@ -13,7 +13,6 @@ internal interface MessageSinkPublishOps : CommonOps {
     clazz: KClass<T>,
     condition: (message: ParsedMessage<T>) -> Boolean
   ) {
-    store.assertion(MessagingAssertion(clazz, condition))
     val getRecords = { store.publishedMessages().map { it } }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting Publishing of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message, clazz)

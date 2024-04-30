@@ -10,7 +10,8 @@ message ConsumedMessage {
   int32 partition = 4;
   int64 offset = 5;
   string key = 6;
-  map<string, string> headers = 7;
+  repeated CommittedMessage offsets = 7;
+  map<string, string> headers = 8;
 }
 
 message PublishedMessage {

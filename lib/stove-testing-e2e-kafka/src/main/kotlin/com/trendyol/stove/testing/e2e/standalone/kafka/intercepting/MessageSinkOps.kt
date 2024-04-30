@@ -13,9 +13,7 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     logger.info(
       "Recorded Consumed Message: {}, testCase: {}",
       record,
-      record.headers.firstNotNullOf {
-        it.key == "testCase"
-      }
+      record.headers.firstNotNullOf { it.key == "testCase" }
     )
   }
 
@@ -24,9 +22,7 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     logger.info(
       "Recorded Retried Message: {}, testCase: {}",
       record,
-      record.headers.firstNotNullOf {
-        it.key == "testCase"
-      }
+      record.headers.firstNotNullOf { it.key == "testCase" }
     )
   }
 
@@ -45,7 +41,6 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     clazz: KClass<T>,
     condition: (metadata: ParsedMessage<T>) -> Boolean
   ) {
-    store.assertion(MessagingAssertion(clazz, condition))
     val getRecords = { store.consumedMessages() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting consuming of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message, clazz)
@@ -54,7 +49,7 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
           outcome.getOrNull().toOption(),
           it.metadata()
         )
-      ) && store.isCommitted(it.topic, it.offset, it.partition)
+      ) && store.isCommitted(it.topic, it.offsets(), it.partition)
     }
 
     throwIfFailed(clazz, condition)
@@ -66,7 +61,6 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     clazz: KClass<T>,
     condition: (ParsedMessage<T>) -> Boolean
   ) {
-    store.assertion(MessagingAssertion(clazz, condition))
     val getRecords = { store.failedMessages() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting Failure of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message, clazz)
@@ -81,7 +75,6 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     clazz: KClass<T>,
     condition: (message: ParsedMessage<T>) -> Boolean
   ) {
-    store.assertion(MessagingAssertion(clazz, condition))
     val getRecords = { store.retriedMessages() }
     val failedFunc = suspend {
       getRecords.waitUntilConditionMet(atLeastIn, "While expecting Retrying of ${clazz.java.simpleName}") {

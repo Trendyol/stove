@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 import arrow.core.toOption
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.messaging.*
-import com.trendyol.stove.testing.e2e.standalone.kafka.metadata
+import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.Admin
 import org.slf4j.Logger
@@ -30,14 +30,11 @@ internal interface CommonOps {
       while (!collectionFunc().any { condition(it) })
         delay(DELAY_MS)
     }
-    return collectionFunc().filter { condition(it) }
-  }.recoverCatching {
-    when (it) {
-      is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
-      is ConcurrentModificationException -> Result.success(waitUntilConditionMet(duration, subject, condition))
-      else -> throw it
-    }.getOrThrow()
-  }.getOrThrow()
+    collectionFunc().filter { condition(it) }
+  }.fold(
+    onFailure = { throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}") },
+    onSuccess = { it }
+  )
 
   suspend fun <T> (suspend () -> Collection<T>).waitUntilCount(
     duration: Duration,
@@ -48,18 +45,13 @@ internal interface CommonOps {
       while (collectionFunc().size < count)
         delay(DELAY_MS)
     }
-    return collectionFunc()
-  }.recoverCatching {
-    when (it) {
-      is TimeoutCancellationException ->
-        throw AssertionError(
-          "GOT A TIMEOUT: While expecting $count items to be retried, but was ${this().size}.\n ${dumpMessages()}"
-        )
-
-      is ConcurrentModificationException -> Result.success(waitUntilCount(duration, count))
-      else -> throw it
-    }.getOrThrow()
-  }.getOrThrow()
+    collectionFunc()
+  }.getOrElse {
+    throw AssertionError(
+      "GOT A TIMEOUT: While expecting $count items to be retried, " +
+        "but was ${this().size}.\n ${dumpMessages()}"
+    )
+  }
 
   fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
@@ -67,7 +59,9 @@ internal interface CommonOps {
   ): Unit = store.failedMessages()
     .filter {
       selector(SuccessfulParsedMessage(readCatching(it.message, clazz).getOrNull().toOption(), it.metadata()))
-    }.forEach { throw AssertionError("Message was expected to be consumed successfully, but failed: $it") }
+    }.forEach {
+      throw AssertionError("Message was expected to be consumed successfully, but failed: $it \n ${dumpMessages()}")
+    }
 
   fun <T : Any> throwIfRetried(
     clazz: KClass<T>,
@@ -80,7 +74,9 @@ internal interface CommonOps {
           MessageMetadata(it.topic, it.key, it.headers)
         )
       )
-    }.forEach { throw AssertionError("Message was expected to be consumed successfully, but was retried: $it") }
+    }.forEach {
+      throw AssertionError("Message was expected to be consumed successfully, but was retried: $it \n ${dumpMessages()}")
+    }
 
   fun <T : Any> throwIfSucceeded(
     clazz: KClass<T>,
@@ -92,8 +88,8 @@ internal interface CommonOps {
           readCatching(it.message, clazz).getOrNull().toOption(),
           it.metadata()
         )
-      ) && store.isCommitted(it.topic, it.offset, it.partition)
-    }.forEach { throw AssertionError("Message was expected to fail, but was consumed: $it") }
+      ) && store.isCommitted(it.topic, it.offsets(), it.partition)
+    }.forEach { throw AssertionError("Message was expected to fail, but was consumed: $it \n ${dumpMessages()}") }
 
   fun <T : Any> readCatching(
     json: Any,

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.squareup.wire.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
+import io.github.nomisRev.kafka.offsets
 import kotlinx.coroutines.runBlocking
 import okhttp3.*
 import org.apache.kafka.clients.consumer.*
@@ -74,6 +75,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
       message = mapper.writeValueAsString(record.value()),
       topic = record.topic(),
       offset = record.offset(),
+      offsets = committedMessages(record.offsets()),
       partition = record.partition(),
       headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
     )
@@ -88,7 +90,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   )
 
   private fun committedMessages(
-    offsets: MutableMap<TopicPartition, OffsetAndMetadata>
+    offsets: Map<TopicPartition, OffsetAndMetadata>
   ): List<CommittedMessage> = offsets.map {
     CommittedMessage(
       id = UUID.randomUUID().toString(),

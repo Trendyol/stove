@@ -1,16 +1,13 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
-import com.trendyol.stove.testing.e2e.messaging.MessagingAssertion
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import io.exoquery.pprint
-import java.util.*
 
 class MessageStore {
   private val consumed = Caching.of<String, ConsumedMessage>()
   private val published = Caching.of<String, PublishedMessage>()
   private val committed = Caching.of<String, CommittedMessage>()
   private val retried = Caching.of<String, ConsumedMessage>()
-  private val assertions = Caching.of<String, MessagingAssertion<*>>()
   private val failedMessages = Caching.of<String, ConsumedMessage>()
 
   fun record(message: ConsumedMessage) = consumed.put(message.id, message)
@@ -33,17 +30,12 @@ class MessageStore {
 
   fun retriedMessages(): Collection<ConsumedMessage> = retried.asMap().values
 
-  fun assertion(assertion: MessagingAssertion<*>) = assertions.put(UUID.randomUUID().toString(), assertion)
-
-  fun assertions(): Collection<MessagingAssertion<*>> = assertions.asMap().values
-
   fun isCommitted(
     topic: String,
-    offset: Long,
+    offsets: List<Long>,
     partition: Int
-  ): Boolean = committed.asMap().values.any {
-    it.offset == offset + 1 && it.partition == partition && it.topic == topic
-  }
+  ): Boolean = committedMessages()
+    .any { offsets.contains(it.offset) && it.partition == partition && it.topic == topic }
 
   override fun toString(): String = """
     |Consumed: ${pprint(consumedMessages())}

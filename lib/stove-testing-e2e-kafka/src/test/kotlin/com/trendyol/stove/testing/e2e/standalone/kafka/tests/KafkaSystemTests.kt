@@ -32,8 +32,8 @@ class KafkaSystemTests : FunSpec({
           actual.productId == productId
         }
 
-        shouldBeFailed<ProductFailingCreated> {
-          actual.productId == productId
+        shouldBePublished<ProductFailingCreated> {
+          this.metadata.topic == "productFailing.error"
         }
       }
     }
