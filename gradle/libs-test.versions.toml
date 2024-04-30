@@ -6,7 +6,7 @@ junit = "5.10.2"
 kotest = "5.8.1"
 mockito = "5.3.1"
 ktor = "2.3.10"
-stove = "0.9.9-SNAPSHOT"
+stove = "1f1ca59"
 
 [libraries]
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
