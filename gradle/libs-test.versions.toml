@@ -6,6 +6,7 @@ junit = "5.10.2"
 kotest = "5.8.1"
 mockito = "5.3.1"
 ktor = "2.3.10"
+stove = "0.9.9-SNAPSHOT"
 
 [libraries]
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
@@ -18,6 +19,17 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref 
 kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 kotest-framework-api-jvm = { module = "io.kotest:kotest-framework-api-jvm", version.ref = "kotest" }
 ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
+stove-testing = { module = "com.trendyol:stove-testing-e2e", version.ref = "stove" }
+stove-spring-testing = { module = "com.trendyol:stove-spring-testing-e2e", version.ref = "stove" }
+stove-ktor-testing = { module = "com.trendyol:stove-ktor-testing-e2e", version.ref = "stove" }
+stove-spring-testing-kafka = { module = "com.trendyol:stove-spring-testing-e2e-kafka", version.ref = "stove" }
+stove-testing-kafka = { module = "com.trendyol:stove-testing-e2e-kafka", version.ref = "stove" }
+stove-testing-http = { module = "com.trendyol:stove-testing-e2e-http", version.ref = "stove" }
+stove-testing-couchbase = { module = "com.trendyol:stove-testing-e2e-couchbase", version.ref = "stove" }
+stove-testing-redis = { module = "com.trendyol:stove-testing-e2e-redis", version.ref = "stove" }
+stove-testing-wiremock = { module = "com.trendyol:stove-testing-e2e-wiremock", version.ref = "stove" }
+stove-testing-elasticsearch = { module = "com.trendyol:stove-testing-e2e-elasticsearch", version.ref = "stove" }
+stove-testing-rdbms-postgres = { module = "com.trendyol:stove-testing-e2e-rdbms-postgres", version.ref = "stove" }
 
 [plugins]
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }

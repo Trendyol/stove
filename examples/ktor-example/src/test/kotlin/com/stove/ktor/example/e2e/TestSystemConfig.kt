@@ -32,9 +32,7 @@ class TestSystemConfig : AbstractProjectConfig() {
         }
         kafka {
           stoveKafkaObjectMapperRef = objectMapperRef
-          KafkaSystemOptions(
-            TopicSuffixes(error = listOf("error"), retry = listOf("retry"))
-          ) {
+          KafkaSystemOptions {
             listOf(
               "kafka.bootstrapServers=${it.bootstrapServers}"
             )

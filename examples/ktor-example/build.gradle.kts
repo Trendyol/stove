@@ -35,13 +35,23 @@ dependencies {
   testImplementation(testLibs.ktor.server.tests.jvm)
   testImplementation(testLibs.kotest.property.jvm)
   testImplementation(testLibs.kotest.runner.junit5)
+  testImplementation(libs.logback.classic)
+
   testImplementation(projects.stove.lib.stoveTestingE2eHttp)
   testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
   testImplementation(projects.stove.lib.stoveTestingE2eRdbmsPostgres)
   testImplementation(projects.stove.lib.stoveTestingE2eKafka)
   testImplementation(projects.stove.starters.ktor.stoveKtorTestingE2e)
+
+  // from snapshot
+//  testImplementation(testLibs.stove.testing.wiremock)
+//  testImplementation(testLibs.stove.ktor.testing)
+//  testImplementation(testLibs.stove.testing.http)
+//  testImplementation(testLibs.stove.testing.kafka)
+//  testImplementation(testLibs.stove.testing.rdbms.postgres)
 }
 
 repositories {
   mavenCentral()
+  maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 }
