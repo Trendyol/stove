@@ -1,11 +1,9 @@
-name: Publish to Maven
+name: Publish to Maven Snapshot
 
 on:
-  release:
-    types: [ created ]
   push:
     tags:
-      - '*.*'
+      - '*'
 
 jobs:
   publish:
