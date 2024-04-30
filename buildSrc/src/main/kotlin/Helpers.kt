@@ -32,8 +32,3 @@ fun Collection<Project>.of(
 infix fun <T> Property<T>.by(value: T) {
   set(value)
 }
-
-fun nextPatchSnapshot(version: String): String {
-  val (major, minor, patch) = version.split(".")
-  return "$major.$minor.${patch.toInt() + 1}-SNAPSHOT"
-}

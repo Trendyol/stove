@@ -174,3 +174,8 @@ subprojects.of("lib", "spring", "ktor", filter = { p -> publishedProjects.contai
 tasks.withType<DokkaMultiModuleTask>().configureEach {
   outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
+
+fun nextPatchSnapshot(version: String): String {
+  val (major, minor, patch) = version.split(".")
+  return "$major.$minor.${patch.toInt() + 1}-SNAPSHOT"
+}
