@@ -34,6 +34,7 @@ koverReport {
         "com.trendyol.stove.testing.e2e.serialization.*",
         "com.trendyol.stove.testing.e2e.standalone.*",
         "stove.spring.example.*",
+        "stove.spring.standalone.example.*",
         "stove.ktor.example.*"
       )
     }
