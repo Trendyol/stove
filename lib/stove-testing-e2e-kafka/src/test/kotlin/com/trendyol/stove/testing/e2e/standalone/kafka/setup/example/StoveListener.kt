@@ -25,7 +25,7 @@ abstract class StoveListener(
   suspend fun start() {
     consumer.subscribe(listOf(topicDefinition.topic, topicDefinition.retryTopic, topicDefinition.deadLetterTopic))
     consuming = GlobalScope.launch {
-      while (!consuming.isCancelled) {
+      while (!this.isActive) {
         consumer
           .poll(Duration.ofMillis(100))
           .forEach { message ->
@@ -84,7 +84,7 @@ abstract class StoveListener(
 
   abstract suspend fun listen(record: ConsumerRecord<String, String>)
 
-  override fun close() {
-    Try { consuming.cancel() }
+  override fun close(): Unit = runBlocking {
+    Try { consuming.cancelAndJoin() }
   }
 }
