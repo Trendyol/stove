@@ -8,14 +8,14 @@ import org.slf4j.*
 class TestSystemMessageSink(
   override val adminClient: Admin,
   override val serde: ObjectMapper,
-  private val options: TopicSuffixes
+  override val topicSuffixes: TopicSuffixes
 ) : MessageSinkOps, CommonOps {
   override val logger: Logger = LoggerFactory.getLogger(javaClass)
   override val store: MessageStore = MessageStore()
 
   fun onMessageConsumed(record: ConsumedMessage): Unit = when {
-    options.isErrorTopic(record.topic) -> recordError(record)
-    options.isRetryTopic(record.topic) -> recordRetry(record)
+    topicSuffixes.isErrorTopic(record.topic) -> recordError(record)
+    topicSuffixes.isRetryTopic(record.topic) -> recordRetry(record)
     else -> recordConsumed(record)
   }
 

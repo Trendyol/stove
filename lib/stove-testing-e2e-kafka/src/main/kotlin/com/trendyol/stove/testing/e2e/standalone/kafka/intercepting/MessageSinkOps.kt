@@ -61,12 +61,18 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     clazz: KClass<T>,
     condition: (ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { store.failedMessages() }
+    data class FailedMessage(val message: String, val metadata: MessageMetadata)
+
+    val getRecords = {
+      store.failedMessages().map { FailedMessage(it.message, it.metadata()) } +
+        store.publishedMessages()
+          .filter { topicSuffixes.isErrorTopic(it.topic) }
+          .map { FailedMessage(it.message, it.metadata()) }
+    }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting Failure of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message, clazz)
-      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata()))
+      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
-    throwIfSucceeded(clazz, condition)
   }
 
   suspend fun <T : Any> waitUntilRetried(

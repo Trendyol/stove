@@ -14,4 +14,10 @@ fun ConsumedMessage.metadata(): MessageMetadata = MessageMetadata(
   headers = headers
 )
 
+fun PublishedMessage.metadata(): MessageMetadata = MessageMetadata(
+  topic = topic,
+  key = key,
+  headers = headers
+)
+
 fun ConsumedMessage.offsets(): List<Long> = offsets.map { it.offset } + offset

@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: "stove"
+  servlet:
+    multipart:
+      max-request-size: 10MB
+
+server:
+  port: 8001
+  http2:
+    enabled: false
+
+couchbase:
+  hosts: localhost
+  username: user
+  password: pass
+  bucketName: Stove
+  kvTimeout: 3000
+  connectTimeout: 15000
+  queryTimeout: 5000
+  viewTimeout: 5000
+
+
+http-clients:
+  supplier-http:
+    url: http://localhost:9099
+    connectTimeout: 2000
+    readTimeout: 20000
+
+kafka:
+  bootstrapServers: localhost:9092
+  topicPrefix: stove-standalone-example
+  acks: 1
+  secureKafka: false
+  autoCreateTopics: false
+  offset: "latest"
+  heartbeatInSeconds: 30
+  request-timeout: "20000"
+  default-api-timeout: "20000"
+  interceptorClasses: []
+  config:
+    thread-count:
+      basic-listener: 25
+  producer:
+    prefix: stove-standalone-example
+    product-created:
+      topic-name: ${kafka.producer.prefix}.productCreated.1
+  consumers:
+    retryTopicSuffix: retry
+    errorTopicSuffix: error
+    enabled: true
+    groupId: stove-standalone-example
+    product-create:
+      topic: trendyol.stove.service.product.create.0
+      retryTopic: ${kafka.consumers.product-create.topic}.${kafka.consumers.retryTopicSuffix}
+      errorTopic: ${kafka.consumers.product-create.topic}.${kafka.consumers.errorTopicSuffix}
+    product-failing:
+      topic: trendyol.stove.service.product.failing.0
+      retryTopic: ${kafka.consumers.product-failing.topic}.${kafka.consumers.retryTopicSuffix}
+      errorTopic: ${kafka.consumers.product-failing.topic}.${kafka.consumers.errorTopicSuffix}

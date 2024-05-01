@@ -14,6 +14,7 @@ internal interface CommonOps {
   val store: MessageStore
   val serde: ObjectMapper
   val adminClient: Admin
+  val topicSuffixes: TopicSuffixes
   val logger: Logger
 
   companion object {

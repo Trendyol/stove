@@ -25,6 +25,7 @@ include(
 
 include(
   "examples:spring-example",
+  "examples:spring-standalone-example",
   "examples:ktor-example"
 )
 
