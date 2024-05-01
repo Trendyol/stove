@@ -9,7 +9,6 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import io.github.nomisRev.kafka.*
 import io.grpc.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.*
@@ -17,6 +16,8 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.*
 import java.util.concurrent.ScheduledThreadPoolExecutor
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -158,11 +159,12 @@ class KafkaSystem(
     )
   )
 
-  private fun createAdminClient(exposedConfiguration: KafkaExposedConfiguration): Admin =
-    mapOf<String, Any>(
-      AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
-      AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
-    ).let { Admin(AdminSettings(exposedConfiguration.bootstrapServers, it.toProperties())) }
+  private fun createAdminClient(
+    exposedConfiguration: KafkaExposedConfiguration
+  ): Admin = mapOf<String, Any>(
+    AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
+    AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
+  ).let { Admin.create(it.toProperties()) }
 
   private suspend fun startGrpcServer(): Server {
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
@@ -181,9 +183,8 @@ class KafkaSystem(
         .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
         .permitKeepAliveWithoutCalls(true)
         .build()
-        .start().also {
-          waitUntilHealthy(it)
-        }
+        .start()
+        .also { waitUntilHealthy(it, 30.seconds) }
     }.recover {
       logger.error("Failed to start Stove Message Sink Grpc Server", it)
       throw it
@@ -193,10 +194,10 @@ class KafkaSystem(
     }.get()
   }
 
-  private suspend fun waitUntilHealthy(server: Server) {
+  private suspend fun waitUntilHealthy(server: Server, duration: Duration) {
     val client = GrpcUtils.createClient(server.port.toString())
     var healthy = false
-    withTimeout(30.seconds) {
+    withTimeout(duration) {
       while (!healthy) {
         logger.info("Waiting for Stove Message Sink Grpc Server to be healthy")
         Try {

@@ -26,13 +26,13 @@ fun ConsumedMessage.offsets(): List<Long> = offsets.map { it.offset } + offset
 
 suspend inline fun <reified K : Any, reified V : Any> KafkaProducer<K, V>.dispatch(
   record: ProducerRecord<K, V>
-) = suspendCoroutine { continuation ->
+): RecordMetadata = suspendCoroutine { continuation ->
   val callback = Callback { metadata, exception ->
-    if (metadata == null) {
-      continuation.resumeWithException(exception!!)
+    if (exception != null) {
+      continuation.resumeWithException(exception)
     } else {
       continuation.resume(metadata)
     }
   }
-  this.send(record, callback)
+  send(record, callback)
 }

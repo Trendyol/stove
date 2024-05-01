@@ -9,7 +9,6 @@ dependencies {
   implementation(libs.kotlinx.io.reactor.extensions)
   implementation(libs.kotlinx.jdk8)
   implementation(libs.kotlinx.core)
-  implementation(libs.kafkaKotlin)
   implementation(libs.wire.grpc.server)
   implementation(libs.wire.grpc.client)
   implementation(libs.wire.grpc.runtime)
@@ -25,6 +24,7 @@ dependencies {
 
 dependencies {
   testImplementation(libs.logback.classic)
+  testImplementation(libs.kafkaKotlin)
 }
 
 buildscript {
