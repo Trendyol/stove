@@ -7,6 +7,7 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvent
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.minutes
 
 class KafkaSystemTests : FunSpec({
   val randomString = { Random.nextInt(0, Int.MAX_VALUE).toString() }
@@ -16,7 +17,7 @@ class KafkaSystemTests : FunSpec({
       kafka {
         val productId = randomString() + "[productCreated]"
         publish("product", message = ProductCreated(productId), key = randomString().some())
-        shouldBeConsumed<ProductCreated> {
+        shouldBeConsumed<ProductCreated>(1.minutes) {
           actual.productId == productId
         }
       }
@@ -28,7 +29,7 @@ class KafkaSystemTests : FunSpec({
       kafka {
         val productId = randomString() + "[productFailingCreated]"
         publish("productFailing", ProductFailingCreated(productId), key = randomString().some())
-        shouldBeRetried<ProductFailingCreated>(times = 3) {
+        shouldBeRetried<ProductFailingCreated>(atLeastIn = 1.minutes, times = 3) {
           actual.productId == productId
         }
 
