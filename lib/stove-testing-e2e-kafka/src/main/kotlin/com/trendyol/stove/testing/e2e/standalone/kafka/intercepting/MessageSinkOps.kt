@@ -89,7 +89,6 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     }
 
     failedFunc.waitUntilCount(atLeastIn, times)
-    throwIfFailed(clazz, condition)
   }
 
   override fun dumpMessages(): String = "Sink so far:\n$store"

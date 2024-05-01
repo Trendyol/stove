@@ -13,6 +13,6 @@ class ProductConsumer(
   override val topicDefinition: TopicDefinition = TopicDefinition("product", "product.retry", "product.error")
 
   override suspend fun listen(record: ConsumerRecord<String, String>) {
-    logger.info("Product consumed: ${record.value()}")
+    logger.info("Product consumed: ${record.value()} from topic: ${record.topic()} with key: ${record.key()}")
   }
 }

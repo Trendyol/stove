@@ -69,6 +69,10 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 
 @ExperimentalKotest
 class ProjectConfig : AbstractProjectConfig() {
+  init {
+    stoveKafkaBridgePortDefault = "50052"
+  }
+
   override fun extensions(): List<Extension> = listOf(
     SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   )

@@ -53,12 +53,11 @@ abstract class StoveListener(
             publisher.publishScope {
               offer(
                 ProducerRecord(
-                  // topic =
                   topicDefinition.retryTopic,
-                  // key =
+                  message.partition(),
                   message.key(),
-                  // value =
-                  message.value()
+                  message.value(),
+                  message.headers()
                 )
               )
             }
@@ -70,12 +69,11 @@ abstract class StoveListener(
         } else {
           logger.error("CONSUMER GOT an ERROR, retry limit exceeded: $message")
           val record = ProducerRecord<String, Any>(
-            // topic =
             topicDefinition.deadLetterTopic,
-            // key =
+            message.partition(),
             message.key(),
-            // value =
-            message.value()
+            message.value(),
+            message.headers()
           ).apply {
             headers().add("doNotFail", "true".toByteArray())
           }
