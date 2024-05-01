@@ -1,7 +1,9 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import com.trendyol.stove.testing.e2e.messaging.MessageMetadata
+import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
+import org.apache.kafka.common.TopicPartition
 import java.util.*
 import kotlin.coroutines.*
 
@@ -35,4 +37,14 @@ suspend inline fun <reified K : Any, reified V : Any> KafkaProducer<K, V>.dispat
     }
   }
   send(record, callback)
+}
+
+fun <K, V> ConsumerRecord<K, V>.offsets(
+  metadata: ((record: ConsumerRecord<K, V>) -> String)? = null
+): Map<TopicPartition, OffsetAndMetadata> = buildMap {
+  val key = TopicPartition(topic(), partition())
+  val value = metadata?.let {
+    OffsetAndMetadata(offset() + 1, leaderEpoch(), metadata(this@offsets))
+  } ?: OffsetAndMetadata(offset() + 1)
+  put(key, value)
 }

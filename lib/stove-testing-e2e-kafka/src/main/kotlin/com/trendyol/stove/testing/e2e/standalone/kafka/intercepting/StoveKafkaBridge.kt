@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import io.github.nomisRev.kafka.offsets
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
