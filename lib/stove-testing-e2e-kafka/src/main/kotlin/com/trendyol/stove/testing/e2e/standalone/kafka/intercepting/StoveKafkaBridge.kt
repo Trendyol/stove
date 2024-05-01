@@ -13,6 +13,8 @@ import org.apache.kafka.common.TopicPartition
 import org.slf4j.Logger
 import java.nio.charset.Charset
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 @Suppress("UNUSED")
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
@@ -112,8 +114,16 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   }
 
   private fun createClient(onPort: String) = GrpcClient.Builder()
-    .client(OkHttpClient.Builder().protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE)).build())
-    .baseUrl("http://localhost:$onPort".toHttpUrl())
+    .client(
+      OkHttpClient.Builder()
+        .protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE))
+        .callTimeout(30.seconds.toJavaDuration())
+        .readTimeout(30.seconds.toJavaDuration())
+        .writeTimeout(30.seconds.toJavaDuration())
+        .connectTimeout(30.seconds.toJavaDuration())
+        .build()
+    )
+    .baseUrl("http://0.0.0.0:$onPort".toHttpUrl())
     .build()
     .create<StoveKafkaObserverServiceClient>()
 }

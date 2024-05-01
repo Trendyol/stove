@@ -13,7 +13,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.github.nomisRev.kafka.*
 import io.github.nomisRev.kafka.publisher.*
-import io.grpc.ServerBuilder
+import io.grpc.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -35,6 +35,7 @@ class KafkaSystem(
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaPublisher<String, Any>
+  private lateinit var grpcServer: Server
 
   @PublishedApi
   internal lateinit var sink: TestSystemMessageSink
@@ -57,22 +58,7 @@ class KafkaSystem(
       context.options.objectMapper,
       context.options.topicSuffixes
     )
-    startGrpcServer()
-  }
-
-  private fun startGrpcServer() {
-    System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
-    Try {
-      ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
-        .addService(StoveKafkaObserverGrpcServer(sink))
-        .build()
-        .start()
-    }.recover {
-      logger.error("Failed to start Wire-Grpc-Server", it)
-      throw it
-    }.map {
-      logger.info("Wire-Grpc-Server started on port ${context.options.bridgeGrpcServerPort}")
-    }
+    grpcServer = startGrpcServer()
   }
 
   override suspend fun afterRun() = Unit
@@ -173,6 +159,37 @@ class KafkaSystem(
       AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
     ).let { Admin(AdminSettings(exposedConfiguration.bootstrapServers, it.toProperties())) }
 
+  private fun startGrpcServer(): Server {
+    System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
+    return Try {
+      ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
+        .addService(StoveKafkaObserverGrpcServer(sink))
+        .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .keepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .keepAliveTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .maxConnectionAge(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .maxConnectionAgeGrace(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .maxConnectionIdle(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+        .maxInboundMessageSize(MAX_MESSAGE_SIZE)
+        .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
+        .permitKeepAliveWithoutCalls(true)
+        .build()
+        .start()
+    }.recover {
+      logger.error("Failed to start Wire-Grpc-Server", it)
+      throw it
+    }.map {
+      logger.info("Wire-Grpc-Server started on port ${context.options.bridgeGrpcServerPort}")
+      it
+    }.get()
+  }
+
+  companion object {
+    private const val GRPC_TIMEOUT_IN_SECONDS = 300L
+    private const val MAX_MESSAGE_SIZE = 1024 * 1024 * 1024
+  }
+
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   override suspend fun stop(): Unit = context.container.stop()
@@ -180,6 +197,7 @@ class KafkaSystem(
   override fun close(): Unit = runBlocking {
     Try {
       kafkaPublisher.close()
+      grpcServer.shutdown()
       executeWithReuseCheck { stop() }
     }
   }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
