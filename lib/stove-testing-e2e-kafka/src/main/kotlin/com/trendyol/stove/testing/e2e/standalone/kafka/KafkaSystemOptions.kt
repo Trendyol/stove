@@ -5,7 +5,7 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 
 class KafkaSystemOptions(
   val topicSuffixes: TopicSuffixes = TopicSuffixes(error = listOf(".error"), retry = listOf(".retry")),
-  val bridgeGrpcServerPort: Int = STOVE_KAFKA_BRIDGE_PORT_DEFAULT.toInt(),
+  val bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
   val objectMapper: ObjectMapper = stoveKafkaObjectMapperRef,
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }

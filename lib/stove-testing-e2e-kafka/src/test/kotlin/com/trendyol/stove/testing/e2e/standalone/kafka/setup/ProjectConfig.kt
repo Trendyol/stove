@@ -35,7 +35,10 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
   private suspend fun startConsumers(bootStrapServers: String) {
     val consumerSettings = mapOf(
       ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
-      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
+      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "true",
+      ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG to "500",
+      ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to "1000",
+      ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG to "true",
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer::class.java,
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
       ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
@@ -69,7 +72,7 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 @ExperimentalKotest
 class ProjectConfig : AbstractProjectConfig() {
   override fun extensions(): List<Extension> = listOf(
-    SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, STOVE_KAFKA_BRIDGE_PORT_DEFAULT)
+    SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   )
 
   override suspend fun beforeProject(): Unit = TestSystem()

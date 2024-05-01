@@ -24,8 +24,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 var stoveKafkaObjectMapperRef: ObjectMapper = StoveObjectMapper.Default
+var stoveKafkaBridgePortDefault = "50051"
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
-const val STOVE_KAFKA_BRIDGE_PORT_DEFAULT = "50051"
 
 @StoveDsl
 class KafkaSystem(

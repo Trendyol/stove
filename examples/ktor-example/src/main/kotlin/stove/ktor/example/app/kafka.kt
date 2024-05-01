@@ -10,7 +10,6 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import stove.ktor.example.application.ExampleAppConsumer
 import java.util.*
-import kotlin.time.Duration.Companion.milliseconds
 
 fun kafka(): Module = module {
   single { createReceiver<Any>(get()) }
@@ -25,14 +24,13 @@ private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<St
     ExampleAppKafkaValueDeserializer<V>(),
     config.kafka.groupId,
     autoOffsetReset = AutoOffsetReset.Earliest,
-    commitStrategy = CommitStrategy.ByTime(300.milliseconds),
     properties = Properties().apply {
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
       put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
-      put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true)
-      put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000")
+      put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+      put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "500")
       put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
-      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "2000")
+      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "1000")
     }
   )
   return KafkaReceiver(settings)
