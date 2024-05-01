@@ -27,10 +27,8 @@ private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<St
     properties = Properties().apply {
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
       put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
-      put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
-      put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "500")
       put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
-      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "1000")
+      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "2000")
     }
   )
   return KafkaReceiver(settings)

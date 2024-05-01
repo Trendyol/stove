@@ -17,6 +17,10 @@ class ExampleAppConsumer<K, V>(
 
   private val topics = config.kafka.topics.values.fold(listOf<String>()) { acc, topic -> acc + topic.topic + topic.error + topic.retry }
 
+  companion object {
+    private const val TIMEOUT_MS = 500L
+  }
+
   fun start() {
     job = scope.launch {
       while (!job.isCancelled) {
@@ -24,7 +28,7 @@ class ExampleAppConsumer<K, V>(
           .withConsumer { consumer ->
             consumer.subscribe(topics)
             consumer
-              .poll(Duration.ofSeconds(1))
+              .poll(Duration.ofMillis(TIMEOUT_MS))
               .forEach { consume(it, consumer) }
           }
       }
@@ -33,7 +37,7 @@ class ExampleAppConsumer<K, V>(
 
   private fun consume(message: ConsumerRecord<K, V>, consumer: KafkaConsumer<K, V>) {
     println("Consumed message: $message")
-    consumer.commitAsync()
+    consumer.commitSync()
   }
 
   fun stop() {
