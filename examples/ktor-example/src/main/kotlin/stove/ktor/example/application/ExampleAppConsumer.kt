@@ -23,7 +23,7 @@ class ExampleAppConsumer<K, V>(
 
   fun start() {
     job = scope.launch {
-      while (!job.isCancelled) {
+      while (isActive) {
         kafkaReceiver
           .withConsumer { consumer ->
             consumer.subscribe(topics)
