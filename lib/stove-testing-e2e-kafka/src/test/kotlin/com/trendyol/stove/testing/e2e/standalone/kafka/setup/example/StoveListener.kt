@@ -25,7 +25,7 @@ abstract class StoveListener(
   suspend fun start() {
     consumer.subscribe(listOf(topicDefinition.topic, topicDefinition.retryTopic, topicDefinition.deadLetterTopic))
     consuming = GlobalScope.launch {
-      while (!this.isActive) {
+      while (isActive) {
         consumer
           .poll(Duration.ofMillis(100))
           .forEach { message ->
