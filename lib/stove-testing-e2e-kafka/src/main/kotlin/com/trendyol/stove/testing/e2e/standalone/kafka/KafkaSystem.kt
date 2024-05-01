@@ -17,7 +17,6 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.*
 import java.util.concurrent.ScheduledThreadPoolExecutor
-import kotlin.coroutines.coroutineContext
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -75,16 +74,7 @@ class KafkaSystem(
     val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
     headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
     testCase.map { record.headers().add("testCase", it.toByteArray()) }
-    val scope = Job(coroutineContext.job)
-    val callback = Callback { _, exception ->
-      if (exception != null) {
-        scope.completeExceptionally(exception)
-      } else {
-        scope.complete()
-      }
-    }
-    kafkaPublisher.send(record, callback)
-    scope.join()
+    kafkaPublisher.dispatch(record)
     return this
   }
 

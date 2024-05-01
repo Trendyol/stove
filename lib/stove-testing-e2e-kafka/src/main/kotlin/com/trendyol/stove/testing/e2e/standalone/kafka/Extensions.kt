@@ -1,7 +1,9 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import com.trendyol.stove.testing.e2e.messaging.MessageMetadata
+import org.apache.kafka.clients.producer.*
 import java.util.*
+import kotlin.coroutines.*
 
 fun <K, V> Map<K, V>.toProperties(): Properties =
   Properties().apply {
@@ -21,3 +23,16 @@ fun PublishedMessage.metadata(): MessageMetadata = MessageMetadata(
 )
 
 fun ConsumedMessage.offsets(): List<Long> = offsets.map { it.offset } + offset
+
+suspend inline fun <reified K : Any, reified V : Any> KafkaProducer<K, V>.dispatch(
+  record: ProducerRecord<K, V>
+) = suspendCoroutine { continuation ->
+  val callback = Callback { metadata, exception ->
+    if (metadata == null) {
+      continuation.resumeWithException(exception!!)
+    } else {
+      continuation.resume(metadata)
+    }
+  }
+  this.send(record, callback)
+}
