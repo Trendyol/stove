@@ -2,7 +2,7 @@ package stove.ktor.example.application
 
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import kotlinx.coroutines.*
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.consumer.*
 import stove.ktor.example.app.AppConfiguration
 import java.time.Duration
 
@@ -25,14 +25,15 @@ class ExampleAppConsumer<K, V>(
             consumer.subscribe(topics)
             consumer
               .poll(Duration.ofSeconds(1))
-              .forEach { consume(it) }
+              .forEach { consume(it, consumer) }
           }
       }
     }
   }
 
-  private fun consume(message: ConsumerRecord<K, V>) {
+  private fun consume(message: ConsumerRecord<K, V>, consumer: KafkaConsumer<K, V>) {
     println("Consumed message: $message")
+    consumer.commitAsync()
   }
 
   fun stop() {
