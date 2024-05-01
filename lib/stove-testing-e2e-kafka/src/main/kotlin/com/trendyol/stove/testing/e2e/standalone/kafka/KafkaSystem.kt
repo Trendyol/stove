@@ -1,5 +1,3 @@
-@file:Suppress("UNUSED_PARAMETER")
-
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import arrow.core.*
