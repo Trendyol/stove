@@ -15,7 +15,7 @@ import java.util.*
 @Suppress("UNUSED")
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
   private val logger: Logger = org.slf4j.LoggerFactory.getLogger(StoveKafkaBridge::class.java)
-  private val client: StoveKafkaObserverServiceClient = startGrpcClient()
+  private val client: StoveKafkaObserverServiceClient by lazy { startGrpcClient() }
   private val mapper: ObjectMapper by lazy { stoveKafkaObjectMapperRef }
 
   override fun onSend(record: ProducerRecord<K, V>): ProducerRecord<K, V> = runBlocking {
