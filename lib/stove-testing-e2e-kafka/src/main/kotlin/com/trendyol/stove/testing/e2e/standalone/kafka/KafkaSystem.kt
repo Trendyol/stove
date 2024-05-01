@@ -17,6 +17,7 @@ import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.*
+import java.util.concurrent.ScheduledThreadPoolExecutor
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -34,6 +35,7 @@ class KafkaSystem(
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaPublisher<String, Any>
   private lateinit var grpcServer: Server
+  private val grpcServerExecutor = ScheduledThreadPoolExecutor(1)
 
   @PublishedApi
   internal lateinit var sink: TestSystemMessageSink
@@ -161,6 +163,7 @@ class KafkaSystem(
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
     return Try {
       ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
+        .executor(grpcServerExecutor)
         .addService(StoveKafkaObserverGrpcServer(sink))
         .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
         .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
@@ -177,10 +180,10 @@ class KafkaSystem(
           waitUntilHealthy(it)
         }
     }.recover {
-      logger.error("Failed to start Wire-Grpc-Server", it)
+      logger.error("Failed to start Stove Message Sink Grpc Server", it)
       throw it
     }.map {
-      logger.info("Wire-Grpc-Server started on port ${context.options.bridgeGrpcServerPort}")
+      logger.info("Stove Sink Grpc Server started on port ${context.options.bridgeGrpcServerPort}")
       it
     }.get()
   }
@@ -190,15 +193,19 @@ class KafkaSystem(
     var healthy = false
     withTimeout(30.seconds) {
       while (!healthy) {
+        logger.info("Waiting for Stove Message Sink Grpc Server to be healthy")
         Try {
           val response = client.healthCheck().execute(HealthCheckRequest())
           healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
         }
+        delay(GRPC_SERVER_DELAY)
       }
+      logger.info("Stove Message Sink Grpc Server is healthy!")
     }
   }
 
   companion object {
+    private const val GRPC_SERVER_DELAY = 500L
     private const val GRPC_TIMEOUT_IN_SECONDS = 300L
     private const val MAX_MESSAGE_SIZE = 1024 * 1024 * 1024
   }
@@ -209,6 +216,7 @@ class KafkaSystem(
 
   override fun close(): Unit = runBlocking {
     Try {
+      grpcServerExecutor.shutdown()
       kafkaPublisher.close()
       grpcServer.shutdown()
       executeWithReuseCheck { stop() }
