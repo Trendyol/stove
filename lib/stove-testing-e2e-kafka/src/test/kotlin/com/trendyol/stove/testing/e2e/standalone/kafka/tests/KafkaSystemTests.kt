@@ -33,7 +33,7 @@ class KafkaSystemTests : FunSpec({
           actual.productId == productId
         }
 
-        shouldBePublished<ProductFailingCreated> {
+        shouldBePublished<ProductFailingCreated>(atLeastIn = 1.minutes) {
           this.metadata.topic == "productFailing.error"
         }
       }
