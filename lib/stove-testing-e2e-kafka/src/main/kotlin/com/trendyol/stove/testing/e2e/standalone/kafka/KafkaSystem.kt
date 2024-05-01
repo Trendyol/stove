@@ -157,7 +157,7 @@ class KafkaSystem(
       AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
     ).let { Admin(AdminSettings(exposedConfiguration.bootstrapServers, it.toProperties())) }
 
-  private fun startGrpcServer(): Server {
+  private suspend fun startGrpcServer(): Server {
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
     return Try {
       ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
@@ -173,7 +173,9 @@ class KafkaSystem(
         .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
         .permitKeepAliveWithoutCalls(true)
         .build()
-        .start()
+        .start().also {
+          waitUntilHealthy(it)
+        }
     }.recover {
       logger.error("Failed to start Wire-Grpc-Server", it)
       throw it
@@ -181,6 +183,19 @@ class KafkaSystem(
       logger.info("Wire-Grpc-Server started on port ${context.options.bridgeGrpcServerPort}")
       it
     }.get()
+  }
+
+  private suspend fun waitUntilHealthy(server: Server) {
+    val client = GrpcUtils.createClient(server.port.toString())
+    var healthy = false
+    withTimeout(30.seconds) {
+      while (!healthy) {
+        Try {
+          val response = client.healthCheck().execute(HealthCheckRequest())
+          healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
+        }
+      }
+    }
   }
 
   companion object {

@@ -8,6 +8,11 @@ class StoveKafkaObserverGrpcServer(
 ) : StoveKafkaObserverServiceWireGrpc.StoveKafkaObserverServiceImplBase() {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
+  override suspend fun healthCheck(request: HealthCheckRequest): HealthCheckResponse {
+    logger.info("Received health check request: $request")
+    return HealthCheckResponse(status = HealthCheckResponse.ServingStatus.SERVING)
+  }
+
   override suspend fun onPublishedMessage(request: PublishedMessage): Reply {
     logger.info("Received published message: $request")
     sink.onMessagePublished(request)

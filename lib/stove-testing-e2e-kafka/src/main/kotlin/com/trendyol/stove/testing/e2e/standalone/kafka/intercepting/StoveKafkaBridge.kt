@@ -1,20 +1,16 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.squareup.wire.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import io.github.nomisRev.kafka.offsets
 import kotlinx.coroutines.runBlocking
-import okhttp3.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.TopicPartition
 import org.slf4j.Logger
 import java.nio.charset.Charset
 import java.util.*
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 
 @Suppress("UNUSED")
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
@@ -111,24 +107,10 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   private fun startGrpcClient(): StoveKafkaObserverServiceClient {
     val onPort = System.getenv(STOVE_KAFKA_BRIDGE_PORT) ?: stoveKafkaBridgePortDefault
     logger.info("Connecting to Stove Kafka Bridge on port $onPort")
-    return Try { createClient(onPort) }
+    return Try { GrpcUtils.createClient(onPort) }
       .map {
         logger.info("Stove Kafka Observer Client created on port $onPort")
         it
       }.getOrElse { error("failed to connect Stove Kafka observer client") }
   }
-
-  private fun createClient(onPort: String) = GrpcClient.Builder()
-    .client(
-      OkHttpClient.Builder()
-        .protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE))
-        .callTimeout(30.seconds.toJavaDuration())
-        .readTimeout(30.seconds.toJavaDuration())
-        .writeTimeout(30.seconds.toJavaDuration())
-        .connectTimeout(30.seconds.toJavaDuration())
-        .build()
-    )
-    .baseUrl("http://0.0.0.0:$onPort".toHttpUrl())
-    .build()
-    .create<StoveKafkaObserverServiceClient>()
 }
