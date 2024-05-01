@@ -2,8 +2,8 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.tests
 
 import arrow.core.some
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
-import com.trendyol.stove.testing.e2e.standalone.kafka.setup.DomainEvents.ProductCreated
-import com.trendyol.stove.testing.e2e.standalone.kafka.setup.DomainEvents.ProductFailingCreated
+import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvents.ProductCreated
+import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvents.ProductFailingCreated
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
 import kotlin.random.Random

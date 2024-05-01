@@ -6,7 +6,6 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.Caching.getOrPut
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared.TopicDefinition
 import io.github.nomisRev.kafka.publisher.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.ProducerRecord
 import java.time.Duration
@@ -31,20 +30,19 @@ abstract class StoveListener(
       while (!consuming.isCancelled) {
         consumer
           .poll(Duration.ofMillis(100))
-          .asSequence()
-          .asFlow()
-          .collect { message ->
+          .forEach { message ->
             logger.info("Message RECEIVED on the application side: ${message.value()}")
-            consume(message)
+            consume(message, consumer)
           }
       }
     }
   }
 
-  private suspend fun consume(message: ConsumerRecord<String, String>) {
+  private suspend fun consume(message: ConsumerRecord<String, String>, consumer: KafkaConsumer<String, String>) {
     Try { listen(message) }
       .map {
         logger.info("Message COMMITTED on the application side: ${message.value()}")
+        consumer.commitAsync()
       }
       .recover {
         logger.warn("CONSUMER GOT an ERROR on the application side, exception: $it")

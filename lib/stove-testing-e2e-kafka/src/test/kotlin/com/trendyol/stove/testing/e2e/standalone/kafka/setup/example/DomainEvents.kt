@@ -1,4 +1,4 @@
-package com.trendyol.stove.testing.e2e.standalone.kafka.setup
+package com.trendyol.stove.testing.e2e.standalone.kafka.setup.example
 
 object DomainEvents {
   data class ProductCreated(val productId: String)
