@@ -97,21 +97,21 @@ class ExampleTest : FunSpec({
 
   test("should throw error when send product create event for the not allowed supplier") {
     TestSystem.validate {
-      val productCreateEvent = CreateProductCommand(3L, name = "product name", 97L)
-      val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = false)
+      val command = CreateProductCommand(3L, name = "product name", 97L)
+      val supplierPermission = SupplierPermission(command.supplierId, isAllowed = false)
 
       wiremock {
         mockGet(
-          "/suppliers/${productCreateEvent.id}/allowed",
+          "/suppliers/${command.id}/allowed",
           statusCode = 200,
           responseBody = supplierPermission.some()
         )
       }
 
       kafka {
-        publish("trendyol.stove.service.product.create.0", productCreateEvent)
+        publish("trendyol.stove.service.product.create.0", command)
         shouldBeConsumed<CreateProductCommand> {
-          actual.id == productCreateEvent.id
+          actual.id == command.id
         }
       }
     }

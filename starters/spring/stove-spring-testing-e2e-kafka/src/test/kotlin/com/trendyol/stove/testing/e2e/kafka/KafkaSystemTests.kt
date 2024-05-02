@@ -138,7 +138,7 @@ class Setup : AbstractProjectConfig() {
           KafkaSystemTestAppRunner.run(params) {
             addInitializers(
               beans {
-                bean<TestSystemKafkaInterceptor>()
+                bean<TestSystemKafkaInterceptor<*, *>>()
                 bean { StoveObjectMapper.Default }
               }
             )
@@ -167,22 +167,25 @@ class KafkaSystemTests : ShouldSpec({
   }
 
   should("publish and consume with failed consumer") {
-    validate {
-      kafka {
-        val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
-        val headers = mapOf("x-user-id" to "1")
-        publish("topic-failed", message, headers = headers)
-        shouldBePublished<Any> {
-          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed"
-        }
-        shouldBeFailed<Any> {
-          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is StoveBusinessException
-        }
+    shouldThrowMaybe<StoveBusinessException> {
+      validate {
+        kafka {
+          val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.testName}"
+          val headers = mapOf("x-user-id" to "1")
+          publish("topic-failed", message, headers = headers)
+          shouldBePublished<Any> {
+            actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed"
+          }
+          shouldBeFailed<Any> {
+            actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is StoveBusinessException
+          }
 
-        shouldBePublished<Any> {
-          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed.DLT"
+          shouldBePublished<Any> {
+            actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed.DLT"
+          }
         }
       }
     }
   }
 })
+

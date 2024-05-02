@@ -13,44 +13,41 @@ import org.springframework.kafka.support.ProducerListener
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
-  CompositeRecordInterceptor<String, String>(),
-  ProducerListener<String, Any> {
+class TestSystemKafkaInterceptor<K, V>(
+  private val objectMapper: ObjectMapper
+) : CompositeRecordInterceptor<K, V>(), ProducerListener<K, V> {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val store = MessageStore()
 
-  override fun success(
-    record: ConsumerRecord<String, String>,
-    consumer: Consumer<String, String>
-  ): Unit = runBlocking {
-    store.record(record)
-    logger.info("Successfully consumed:\n{}", pprint(record.toStoveConsumedMessage()))
-  }
-
   override fun onSuccess(
-    record: ProducerRecord<String, Any>,
+    record: ProducerRecord<K, V>,
     recordMetadata: RecordMetadata
-  ): Unit = runBlocking {
-    store.record(record)
-    logger.info("Successfully produced:\n{}", pprint(record.toStovePublishedMessage()))
+  ) {
+    store.record(record.toStoveMessage(objectMapper))
+    logger.info("Successfully produced:\n{}", pprint(record.toStoveMessage(objectMapper)))
   }
 
   override fun onError(
-    record: ProducerRecord<String, Any>,
+    record: ProducerRecord<K, V>,
     recordMetadata: RecordMetadata?,
     exception: Exception
-  ): Unit = runBlocking {
-    store.record(Failure(ObservedMessage(record.value().toString(), record.toMetadata()), extractCause(exception)))
-    logger.error("Error while producing:\n{}", pprint(record.toStovePublishedMessage()), exception)
+  ) {
+    store.record(Failure(ObservedMessage(record.toStoveMessage(objectMapper), record.toMetadata()), extractCause(exception)))
+    logger.error("Error while producing:\n{}", pprint(record.toStoveMessage(objectMapper)), exception)
+  }
+
+  override fun success(record: ConsumerRecord<K, V>, consumer: Consumer<K, V>) {
+    store.record(record.toStoveMessage(objectMapper))
+    logger.info("Successfully consumed:\n{}", pprint(record.toStoveMessage(objectMapper)))
   }
 
   override fun failure(
-    record: ConsumerRecord<String, String>,
+    record: ConsumerRecord<K, V>,
     exception: Exception,
-    consumer: Consumer<String, String>
-  ): Unit = runBlocking {
-    store.record(Failure(ObservedMessage(record.value(), record.toMetadata()), extractCause(exception)))
-    logger.error("Error while consuming:\n{}", pprint(record.toStoveConsumedMessage()), exception)
+    consumer: Consumer<K, V>
+  ) {
+    store.record(Failure(ObservedMessage(record.toStoveMessage(objectMapper), record.toMetadata()), extractCause(exception)))
+    logger.error("Error while consuming:\n{}", pprint(record.toStoveMessage(objectMapper)), exception)
   }
 
   internal suspend fun <T : Any> waitUntilConsumed(
@@ -60,8 +57,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   ) {
     val getRecords = { store.consumedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the consume of '${clazz.java.simpleName}'") {
-      val outcome = readCatching(it.value(), clazz)
-      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
+      val outcome = readCatching(it.value, clazz)
+      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
 
     throwIfFailed(clazz, condition)
@@ -74,7 +71,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   ) {
     val getRecords = { store.failedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the failure of '${clazz.java.simpleName}'") {
-      val outcome = readCatching(it.message.actual.toString(), clazz)
+      val outcome = readCatching(it.message.actual.value, clazz)
       outcome.isSuccess && condition(FailedParsedMessage(outcome.getOrNull().toOption(), it.message.metadata, it.reason))
     }
 
@@ -88,8 +85,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   ) {
     val getRecords = { store.producedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the publish of '${clazz.java.simpleName}'") {
-      val outcome = readCatching(it.value().toString(), clazz)
-      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
+      val outcome = readCatching(it.value, clazz)
+      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
 
     throwIfFailed(clazz, condition)
@@ -107,7 +104,9 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   private fun <T : Any> readCatching(
     json: String,
     clazz: KClass<T>
-  ): Result<T> = runCatching { objectMapper.readValue(json, clazz.java) }
+  ): Result<T> = runCatching {
+    objectMapper.readValue(json, clazz.java)
+  }
 
   private fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
@@ -116,7 +115,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     .filter {
       selector(
         FailedParsedMessage(
-          readCatching(it.message.actual.toString(), clazz).getOrNull().toOption(),
+          readCatching(it.message.actual.value, clazz).getOrNull().toOption(),
           MessageMetadata(it.message.metadata.topic, it.message.metadata.key, it.message.metadata.headers),
           it.reason
         )
@@ -131,8 +130,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     .filter { record ->
       selector(
         FailedParsedMessage(
-          readCatching(record.value(), clazz).getOrNull().toOption(),
-          record.toMetadata(),
+          readCatching(record.value, clazz).getOrNull().toOption(),
+          record.metadata,
           getExceptionFor(clazz, selector)
         )
       )
@@ -146,7 +145,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     .first {
       selector(
         FailedParsedMessage(
-          readCatching(it.message.actual.toString(), clazz).getOrNull().toOption(),
+          readCatching(it.message.actual.value, clazz).getOrNull().toOption(),
           it.message.metadata,
           it.reason
         )

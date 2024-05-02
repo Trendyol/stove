@@ -23,9 +23,9 @@ class KafkaSystem(
 ) : PluggedSystem, RunnableSystemWithContext<ApplicationContext>, ExposesConfiguration {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private lateinit var applicationContext: ApplicationContext
-  private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
+  private lateinit var kafkaTemplate: KafkaTemplate<Any, Any>
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
-  val getInterceptor: () -> TestSystemKafkaInterceptor = { applicationContext.getBean() }
+  val getInterceptor: () -> TestSystemKafkaInterceptor<Any, Any> = { applicationContext.getBean() }
   private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
     testSystem.options,
     javaClass.kotlin,
@@ -35,11 +35,10 @@ class KafkaSystem(
   override suspend fun beforeRun() = Unit
 
   override suspend fun run() {
-    exposedConfiguration =
-      state.capture {
-        context.container.start()
-        KafkaExposedConfiguration(context.container.bootstrapServers)
-      }
+    exposedConfiguration = state.capture {
+      context.container.start()
+      KafkaExposedConfiguration(context.container.bootstrapServers)
+    }
   }
 
   override suspend fun afterRun(context: ApplicationContext) {

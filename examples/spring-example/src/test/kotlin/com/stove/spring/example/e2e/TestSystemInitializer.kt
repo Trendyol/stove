@@ -8,7 +8,6 @@ fun SpringApplication.addTestSystemDependencies() {
   this.addInitializers(TestSystemInitializer())
 }
 
-class TestSystemInitializer :
-  BaseApplicationContextInitializer({
-    bean<TestSystemKafkaInterceptor>(isPrimary = true)
-  })
+class TestSystemInitializer : BaseApplicationContextInitializer({
+  bean<TestSystemKafkaInterceptor<String, String>>(isPrimary = true)
+})

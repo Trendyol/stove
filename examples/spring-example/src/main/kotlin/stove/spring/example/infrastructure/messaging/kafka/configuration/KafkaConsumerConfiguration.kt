@@ -16,7 +16,7 @@ import org.springframework.util.backoff.FixedBackOff
 @Configuration
 class KafkaConsumerConfiguration(
   private val objectMapper: ObjectMapper,
-  private val interceptor: RecordInterceptor<String, String>
+  private val interceptor: RecordInterceptor<*, *>
 ) {
   @Bean
   fun kafkaListenerContainerFactory(
@@ -33,7 +33,8 @@ class KafkaConsumerConfiguration(
       )
 
     factory.setCommonErrorHandler(errorHandler)
-    factory.setRecordInterceptor(interceptor)
+    @Suppress("UNCHECKED_CAST")
+    factory.setRecordInterceptor(interceptor as RecordInterceptor<String, String>)
     return factory
   }
 
@@ -51,7 +52,8 @@ class KafkaConsumerConfiguration(
         FixedBackOff(INTERVAL, 1)
       )
     factory.setCommonErrorHandler(errorHandler)
-    factory.setRecordInterceptor(interceptor)
+    @Suppress("UNCHECKED_CAST")
+    factory.setRecordInterceptor(interceptor as RecordInterceptor<String, String>)
     return factory
   }
 
