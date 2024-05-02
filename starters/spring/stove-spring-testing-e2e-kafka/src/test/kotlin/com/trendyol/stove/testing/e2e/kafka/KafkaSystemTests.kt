@@ -109,7 +109,7 @@ open class KafkaTestSpringBotApplication {
   @Suppress("TooGenericExceptionThrown")
   fun listen_failed(message: String) {
     logger.info("Received Message in failed consumer: $message")
-    throw RuntimeException("Failed to consume message")
+    throw StoveBusinessException("This exception is thrown intentionally for testing purposes.")
   }
 
   @KafkaListener(topics = ["topic-failed.DLT"], groupId = "group_id")
@@ -117,6 +117,8 @@ open class KafkaTestSpringBotApplication {
     logger.info("Received Message in the lead letter, and allowing the fail by just logging: $message")
   }
 }
+
+class StoveBusinessException(message: String) : Exception(message)
 
 class Setup : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
@@ -177,7 +179,7 @@ class KafkaSystemTests : ShouldSpec({
           actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed"
         }
         shouldBeFailed<Any> {
-          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is RuntimeException
+          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is StoveBusinessException
         }
       }
     }

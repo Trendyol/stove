@@ -12,7 +12,6 @@ import org.slf4j.*
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 import org.springframework.kafka.core.KafkaTemplate
-import kotlin.collections.set
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -27,8 +26,11 @@ class KafkaSystem(
   private lateinit var kafkaTemplate: KafkaTemplate<String, Any>
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   val getInterceptor: () -> TestSystemKafkaInterceptor = { applicationContext.getBean() }
-  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> =
-    StateOfSystem(testSystem.options, javaClass.kotlin, KafkaExposedConfiguration::class)
+  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
+    testSystem.options,
+    javaClass.kotlin,
+    KafkaExposedConfiguration::class
+  )
 
   override suspend fun beforeRun() = Unit
 
@@ -46,32 +48,19 @@ class KafkaSystem(
     kafkaTemplate.setProducerListener(getInterceptor())
   }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
-
-  override suspend fun stop(): Unit = context.container.stop()
-
-  override fun close(): Unit =
-    runBlocking {
-      Try {
-        kafkaTemplate.destroy()
-        executeWithReuseCheck { stop() }
-      }.recover {
-        logger.warn("got an error while closing KafkaSystem", it)
-      }
-    }
-
   @KafkaDsl
   suspend fun publish(
     topic: String,
     message: Any,
     key: Option<String> = None,
+    partition: Option<Int> = None,
     headers: Map<String, String> = mapOf(),
     testCase: Option<String> = None
   ): KafkaSystem {
     val record = ProducerRecord<String, Any>(
       topic,
-      0,
-      key.getOrElse { "" },
+      partition.getOrNull(),
+      key.getOrNull(),
       context.objectMapper.writeValueAsString(message),
       headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
     )
@@ -138,7 +127,17 @@ class KafkaSystem(
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
   ): Unit = coroutineScope { getInterceptor().waitUntilPublished(atLeastIn, clazz, condition) }
-}
 
-private fun (MutableMap<String, String>).addTestCase(testCase: Option<String>): MutableMap<String, String> =
-  if (this.containsKey("testCase")) this else testCase.map { this["testCase"] = it }.let { this }
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+
+  override suspend fun stop(): Unit = context.container.stop()
+
+  override fun close(): Unit = runBlocking {
+    Try {
+      kafkaTemplate.destroy()
+      executeWithReuseCheck { stop() }
+    }.recover {
+      logger.warn("got an error while closing KafkaSystem", it)
+    }
+  }
+}
