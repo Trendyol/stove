@@ -21,7 +21,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.*
 import org.springframework.util.backoff.FixedBackOff
-import java.lang.Exception
 
 object KafkaSystemTestAppRunner {
   fun run(
@@ -50,15 +49,15 @@ open class KafkaTestSpringBotApplication {
   open fun kafkaListenerContainerFactory(
     consumerFactory: ConsumerFactory<String, String>,
     interceptor: RecordInterceptor<String, String>,
-    recoverer: ConsumerRecordRecoverer
+    recoverer: DeadLetterPublishingRecoverer
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.consumerFactory = consumerFactory
     factory.setCommonErrorHandler(
       DefaultErrorHandler(
         recoverer,
-        FixedBackOff(5000, 1)
-      )
+        FixedBackOff(20, 1)
+      ).also { it.addNotRetryableExceptions(StoveBusinessException::class.java) }
     )
     factory.setRecordInterceptor(interceptor)
     return factory
@@ -88,18 +87,16 @@ open class KafkaTestSpringBotApplication {
   @Bean
   open fun kafkaTemplate(
     config: KafkaTestSpringBotApplicationConfiguration
-  ): KafkaTemplate<String, String> {
-    return KafkaTemplate(
-      DefaultKafkaProducerFactory(
-        mapOf(
-          ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
-          ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-          ProducerConfig.ACKS_CONFIG to "all"
-        )
+  ): KafkaTemplate<String, String> = KafkaTemplate(
+    DefaultKafkaProducerFactory(
+      mapOf(
+        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+        ProducerConfig.ACKS_CONFIG to "1"
       )
     )
-  }
+  )
 
   @KafkaListener(topics = ["topic"], groupId = "group_id")
   fun listen(message: String) {
@@ -107,7 +104,6 @@ open class KafkaTestSpringBotApplication {
   }
 
   @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
-  @Suppress("TooGenericExceptionThrown")
   fun listen_failed(message: String) {
     logger.info("Received Message in failed consumer: $message")
     throw StoveBusinessException("This exception is thrown intentionally for testing purposes.")
@@ -181,6 +177,10 @@ class KafkaSystemTests : ShouldSpec({
         }
         shouldBeFailed<Any> {
           actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed" && reason is StoveBusinessException
+        }
+
+        shouldBePublished<Any> {
+          actual == message && this.metadata.headers["x-user-id"] == "1" && this.metadata.topic == "topic-failed.DLT"
         }
       }
     }
