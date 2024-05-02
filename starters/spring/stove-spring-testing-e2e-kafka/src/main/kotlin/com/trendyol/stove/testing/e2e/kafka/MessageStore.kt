@@ -32,5 +32,6 @@ class MessageStore {
   override fun toString(): String = """
     |Consumed: ${pprint(consumedRecords())}
     |Published: ${pprint(producedRecords())}
+    |Failed: ${pprint(failedRecords())}
     """.trimIndent().trimMargin()
 }
