@@ -1,16 +1,15 @@
 package com.trendyol.stove.testing.e2e.kafka
 
-import arrow.core.*
+import arrow.core.toOption
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.messaging.*
+import io.exoquery.pprint
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.slf4j.*
 import org.springframework.kafka.listener.*
 import org.springframework.kafka.support.ProducerListener
-import java.util.*
-import java.util.concurrent.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -18,43 +17,22 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   CompositeRecordInterceptor<String, String>(),
   ProducerListener<String, Any> {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val consumedRecords: ConcurrentMap<UUID, ConsumerRecord<String, String>> = ConcurrentHashMap()
-  private val producedRecords: ConcurrentMap<UUID, ProducerRecord<String, Any>> = ConcurrentHashMap()
-  private val exceptions: ConcurrentMap<UUID, Failure<Any>> = ConcurrentHashMap()
+  private val store = MessageStore()
 
   override fun success(
     record: ConsumerRecord<String, String>,
     consumer: Consumer<String, String>
   ): Unit = runBlocking {
-    consumedRecords.putIfAbsent(UUID.randomUUID(), record)
-    logger.info(
-      """
-                SUCCESSFULLY CONSUMED:
-                Consumer: ${consumer.groupMetadata().memberId()}
-                Topic: ${record.topic()}
-                Record: ${record.value()}
-                Key: ${record.key()}
-                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-      """.trimIndent()
-    )
+    store.record(record)
+    logger.info("Successfully consumed:\n{}", pprint(record.toStoveConsumedMessage()))
   }
 
   override fun onSuccess(
     record: ProducerRecord<String, Any>,
     recordMetadata: RecordMetadata
   ): Unit = runBlocking {
-    producedRecords.putIfAbsent(UUID.randomUUID(), record)
-    logger.info(
-      """
-                SUCCESSFULLY PUBLISHED:
-                Topic: ${record.topic()}
-                Record: ${record.value()}
-                Key: ${record.key()}
-                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-      """.trimIndent()
-    )
+    store.record(record)
+    logger.info("Successfully produced:\n{}", pprint(record.toStovePublishedMessage()))
   }
 
   override fun onError(
@@ -62,24 +40,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     recordMetadata: RecordMetadata?,
     exception: Exception
   ): Unit = runBlocking {
-    exceptions.putIfAbsent(
-      UUID.randomUUID(),
-      Failure(
-        ObservedMessage(record.value().toString(), record.toMetadata()),
-        extractCause(exception)
-      )
-    )
-    logger.error(
-      """
-                PRODUCER GOT AN ERROR:
-                Topic: ${record.topic()}
-                Record: ${record.value()}
-                Key: ${record.key()}
-                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-                Exception: $exception
-      """.trimIndent()
-    )
+    store.record(Failure(ObservedMessage(record.value().toString(), record.toMetadata()), extractCause(exception)))
+    logger.error("Error while producing:\n{}", pprint(record.toStovePublishedMessage()), exception)
   }
 
   override fun failure(
@@ -87,24 +49,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     exception: Exception,
     consumer: Consumer<String, String>
   ): Unit = runBlocking {
-    exceptions.putIfAbsent(
-      UUID.randomUUID(),
-      Failure(
-        ObservedMessage(record.value().toString(), record.toMetadata()),
-        extractCause(exception)
-      )
-    )
-    logger.error(
-      """
-                CONSUMER GOT AN ERROR:
-                Topic: ${record.topic()}
-                Record: ${record.value()}
-                Key: ${record.key()}
-                Headers: ${record.headers().map { Pair(it.key(), String(it.value())) }}
-                TestCase: ${record.headers().firstOrNone { it.key() == "testCase" }.map { String(it.value()) }.getOrElse { "" }}
-                Exception: $exception
-      """.trimIndent()
-    )
+    store.record(Failure(ObservedMessage(record.value(), record.toMetadata()), extractCause(exception)))
+    logger.error("Error while consuming:\n{}", pprint(record.toStoveConsumedMessage()), exception)
   }
 
   internal suspend fun <T : Any> waitUntilConsumed(
@@ -112,8 +58,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     clazz: KClass<T>,
     condition: (metadata: ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { consumedRecords.map { it.value } }
-    getRecords.waitUntilConditionMet(atLeastIn, "While CONSUMING ${clazz.java.simpleName}") {
+    val getRecords = { store.consumedRecords() }
+    getRecords.waitUntilConditionMet(atLeastIn, "While expecting the consume of '${clazz.java.simpleName}'") {
       val outcome = readCatching(it.value(), clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
     }
@@ -126,17 +72,10 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     clazz: KClass<T>,
     condition: (metadata: ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { exceptions.map { it.value } }
-    getRecords.waitUntilConditionMet(atLeastIn, "While WAITING FOR FAILURE ${clazz.java.simpleName}") {
+    val getRecords = { store.failedRecords() }
+    getRecords.waitUntilConditionMet(atLeastIn, "While expecting the failure of '${clazz.java.simpleName}'") {
       val outcome = readCatching(it.message.actual.toString(), clazz)
-      outcome.isSuccess &&
-        condition(
-          FailedParsedMessage(
-            outcome.getOrNull().toOption(),
-            it.message.metadata,
-            it.reason
-          )
-        )
+      outcome.isSuccess && condition(FailedParsedMessage(outcome.getOrNull().toOption(), it.message.metadata, it.reason))
     }
 
     throwIfSucceeded(clazz, condition)
@@ -147,8 +86,8 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     clazz: KClass<T>,
     condition: (message: ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { producedRecords.map { it.value } }
-    getRecords.waitUntilConditionMet(atLeastIn, "While PUBLISHING ${clazz.java.simpleName}") {
+    val getRecords = { store.producedRecords() }
+    getRecords.waitUntilConditionMet(atLeastIn, "While expecting the publish of '${clazz.java.simpleName}'") {
       val outcome = readCatching(it.value().toString(), clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.toMetadata()))
     }
@@ -156,14 +95,14 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
     throwIfFailed(clazz, condition)
   }
 
-  private fun extractCause(listenerException: Throwable): Throwable =
-    when (listenerException) {
-      is ListenerExecutionFailedException ->
-        listenerException.cause
-          ?: AssertionError("No cause found: Listener was not able to capture the cause")
+  private fun extractCause(
+    listenerException: Throwable
+  ): Throwable = when (listenerException) {
+    is ListenerExecutionFailedException ->
+      listenerException.cause ?: AssertionError("No cause found: Listener was not able to capture the cause")
 
-      else -> listenerException
-    }
+    else -> listenerException
+  }
 
   private fun <T : Any> readCatching(
     json: String,
@@ -173,27 +112,27 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   private fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
     selector: (message: ParsedMessage<T>) -> Boolean
-  ) = exceptions
+  ) = store.failedRecords()
     .filter {
       selector(
         FailedParsedMessage(
-          readCatching(it.value.message.actual.toString(), clazz).getOrNull().toOption(),
-          MessageMetadata(it.value.message.metadata.topic, it.value.message.metadata.key, it.value.message.metadata.headers),
-          it.value.reason
+          readCatching(it.message.actual.toString(), clazz).getOrNull().toOption(),
+          MessageMetadata(it.message.metadata.topic, it.message.metadata.key, it.message.metadata.headers),
+          it.reason
         )
       )
     }
-    .forEach { throw it.value.reason }
+    .forEach { throw it.reason }
 
   private fun <T : Any> throwIfSucceeded(
     clazz: KClass<T>,
     selector: (ParsedMessage<T>) -> Boolean
-  ): Unit = consumedRecords
+  ): Unit = store.consumedRecords()
     .filter { record ->
       selector(
         FailedParsedMessage(
-          readCatching(record.value.value(), clazz).getOrNull().toOption(),
-          record.value.toMetadata(),
+          readCatching(record.value(), clazz).getOrNull().toOption(),
+          record.toMetadata(),
           getExceptionFor(clazz, selector)
         )
       )
@@ -203,8 +142,7 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   private fun <T : Any> getExceptionFor(
     clazz: KClass<T>,
     selector: (message: FailedParsedMessage<T>) -> Boolean
-  ): Throwable = exceptions
-    .map { it.value }
+  ): Throwable = store.failedRecords()
     .first {
       selector(
         FailedParsedMessage(
@@ -224,36 +162,11 @@ class TestSystemKafkaInterceptor(private val objectMapper: ObjectMapper) :
   ): Collection<T> = runCatching {
     val collectionFunc = this
     withTimeout(duration) { while (!collectionFunc().any { condition(it) }) delay(delayMs) }
-    return collectionFunc().filter { condition(it) }
-  }.recoverCatching {
-    when (it) {
-      is TimeoutCancellationException -> throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}")
-      is ConcurrentModificationException ->
-        Result.success(waitUntilConditionMet(duration, subject, delayMs, condition))
+    collectionFunc().filter { condition(it) }
+  }.fold(
+    onSuccess = { it },
+    onFailure = { throw AssertionError("GOT A TIMEOUT: $subject. ${dumpMessages()}") }
+  )
 
-      else -> throw it
-    }.getOrThrow()
-  }.getOrThrow()
-
-  private fun dumpMessages(): String =
-    """
-        Messages in the KafkaSystem so far:
-        PUBLISHED MESSAGES: 
-        ${producedRecords.map { it.value.value() }.joinToString("\n")}
-        ------------------------
-        CONSUMED MESSAGES: 
-        ${consumedRecords.map { it.value.value() }.joinToString("\n")}
-    """.trimIndent()
+  private fun dumpMessages(): String = "Messages so far:\n$store"
 }
-
-internal fun <K, V : Any> ProducerRecord<K, V>.toMetadata(): MessageMetadata = MessageMetadata(
-  this.topic(),
-  this.key().toString(),
-  this.headers().associate { h -> Pair(h.key(), String(h.value())) }
-)
-
-internal fun <K, V : Any> ConsumerRecord<K, V>.toMetadata(): MessageMetadata = MessageMetadata(
-  this.topic(),
-  this.key().toString(),
-  this.headers().associate { h -> Pair(h.key(), String(h.value())) }
-)

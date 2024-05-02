@@ -69,7 +69,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     ConsumedMessage(
       id = record.timestamp().toString(),
       key = record.key().toString(),
-      message = deserializeIfNotString(record.value()),
+      message = serializeIfNotString(record.value()),
       topic = record.topic(),
       offset = record.offset(),
       offsets = committedMessages(record.offsets()),
@@ -81,7 +81,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   private fun publishedMessage(record: ProducerRecord<K, V>) = PublishedMessage(
     id = record.timestamp().toString(),
     key = record.key().toString(),
-    message = deserializeIfNotString(record.value()),
+    message = serializeIfNotString(record.value()),
     topic = record.topic(),
     headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
   )
@@ -98,7 +98,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     )
   }
 
-  private fun deserializeIfNotString(value: V): String = when (value) {
+  private fun serializeIfNotString(value: V): String = when (value) {
     is String -> value
     else -> mapper.writeValueAsString(value)
   }

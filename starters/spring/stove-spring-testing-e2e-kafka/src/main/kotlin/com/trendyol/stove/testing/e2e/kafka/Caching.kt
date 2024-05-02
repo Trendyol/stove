@@ -1,4 +1,4 @@
-package com.trendyol.stove.testing.e2e.standalone.kafka
+package com.trendyol.stove.testing.e2e.kafka
 
 import com.github.benmanes.caffeine.cache.*
 
