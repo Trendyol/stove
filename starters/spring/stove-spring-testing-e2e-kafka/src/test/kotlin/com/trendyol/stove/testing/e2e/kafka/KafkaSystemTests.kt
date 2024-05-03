@@ -188,4 +188,3 @@ class KafkaSystemTests : ShouldSpec({
     }
   }
 })
-

@@ -12,6 +12,7 @@ import org.slf4j.*
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.listener.RecordInterceptor
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -43,8 +44,29 @@ class KafkaSystem(
 
   override suspend fun afterRun(context: ApplicationContext) {
     applicationContext = context
+    checkIfInterceptorConfiguredProperly(context)
     kafkaTemplate = context.getBean()
     kafkaTemplate.setProducerListener(getInterceptor())
+  }
+
+  private fun checkIfInterceptorConfiguredProperly(context: ApplicationContext) {
+    val registeredInterceptor: RecordInterceptor<*, *> = context.getBean()
+    if (registeredInterceptor !is TestSystemKafkaInterceptor) {
+      throw AssertionError(
+        "Kafka interceptor is not an instance of TestSystemKafkaInterceptor, " +
+          "please make sure that you have configured the Stove Kafka interceptor in your Spring Application properly." +
+          "You can use a TestSystemInitializer to add the interceptor to your Spring Application: " +
+          """
+              fun SpringApplication.addTestSystemDependencies() {
+                this.addInitializers(TestSystemInitializer())
+              }
+  
+              class TestSystemInitializer : BaseApplicationContextInitializer({
+                bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+              })            
+          """.trimIndent()
+      )
+    }
   }
 
   @KafkaDsl
