@@ -19,6 +19,7 @@ group = "com.trendyol"
 val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
 val details = versionDetails()
 version = determine(details.lastTag)
+println("Version: $version")
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -174,6 +175,7 @@ tasks.withType<DokkaMultiModuleTask>().configureEach {
 
 fun determine(lastTag: String): String {
   System.getenv("SNAPSHOT")?.let {
+    println("SNAPSHOT: $it")
     return project.properties["snapshot"].toString()
   }
   return lastTag
