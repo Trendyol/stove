@@ -63,8 +63,8 @@ publishing {
       name = "GitHubPackages"
       url = uri("https://maven.pkg.github.com/trendyol/stove")
       credentials {
-        username = "trendyol-bot"
-        password = getProperty("BOT_REPO_TOKEN", "BOT_REPO_TOKEN")
+        username = System.getenv("GITHUB_ACTOR")
+        password = System.getenv("GITHUB_TOKEN")
       }
     }
   }
