@@ -1,16 +1,13 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
+import java.net.http.*
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 
@@ -35,9 +32,8 @@ class WireMockDeletionTest : FunSpec({
     }
 
     val client = HttpClient.newBuilder().build()
-    val reqBuilder =
-      HttpRequest.newBuilder(URI("http://localhost:9098/post-url"))
-        .header("Content-Type", "application/json")
+    val reqBuilder = HttpRequest.newBuilder(URI("http://localhost:9098/post-url"))
+      .header("Content-Type", "application/json")
 
     withContext(Dispatchers.IO) {
       val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
@@ -71,9 +67,8 @@ class WireMockDeletionTest : FunSpec({
     }
 
     val client = HttpClient.newBuilder().build()
-    val reqBuilder =
-      HttpRequest.newBuilder(URI("http://localhost:9098$url"))
-        .header("Content-Type", "application/json")
+    val reqBuilder = HttpRequest.newBuilder(URI("http://localhost:9098$url"))
+      .header("Content-Type", "application/json")
 
     withContext(Dispatchers.IO) {
       val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()

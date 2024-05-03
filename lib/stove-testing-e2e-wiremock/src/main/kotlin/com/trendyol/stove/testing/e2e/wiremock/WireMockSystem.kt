@@ -1,41 +1,31 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
-import arrow.core.None
-import arrow.core.Option
+import arrow.core.*
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.benmanes.caffeine.cache.*
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.MappingBuilder
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.client.*
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent
-import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
+import com.github.tomakehurst.wiremock.stubbing.*
+import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.RunAware
-import com.trendyol.stove.testing.e2e.system.abstractions.ValidatedSystem
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.runBlocking
-import wiremock.org.slf4j.Logger
-import wiremock.org.slf4j.LoggerFactory
+import wiremock.org.slf4j.*
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 
-typealias AfterStubRemoved = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
-typealias AfterRequestHandler = (ServeEvent, ConcurrentMap<UUID, StubMapping>) -> Unit
+typealias AfterStubRemoved = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
+typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
 
 @WiremockDsl
 class WireMockSystem(
   override val testSystem: TestSystem,
   ctx: WireMockContext
 ) : PluggedSystem, ValidatedSystem, RunAware {
-  private val stubLog: ConcurrentMap<UUID, StubMapping> = ConcurrentHashMap()
+  private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private var wireMock: WireMockServer
   private val json: ObjectMapper = ctx.objectMapper
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -63,11 +53,11 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    val mockRequest = WireMock.get(WireMock.urlEqualTo(url))
+    val mockRequest = get(urlEqualTo(url))
     mockRequest.withMetadata(metadata)
     val mockResponse = configureBody(statusCode, responseBody)
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -79,11 +69,11 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    val mockRequest = WireMock.post(WireMock.urlEqualTo(url))
+    val mockRequest = post(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, requestBody)
     val mockResponse = configureBody(statusCode, responseBody)
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -100,10 +90,10 @@ class WireMockSystem(
         .withStatus(statusCode)
         .withHeader("Content-Type", "application/json; charset=UTF-8")
     responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
-    val req = WireMock.put(WireMock.urlEqualTo(url))
+    val req = put(urlEqualTo(url))
     configureBodyAndMetadata(req, metadata, requestBody)
     val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -113,12 +103,12 @@ class WireMockSystem(
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    val mockRequest = WireMock.delete(WireMock.urlEqualTo(url))
+    val mockRequest = delete(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, None)
 
     val mockResponse = configureBody(statusCode, None)
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -128,12 +118,12 @@ class WireMockSystem(
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    val mockRequest = WireMock.head(WireMock.urlEqualTo(url))
+    val mockRequest = head(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, None)
 
     val mockResponse = configureBody(statusCode, None)
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -142,9 +132,9 @@ class WireMockSystem(
     url: String,
     configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
   ): WireMockSystem {
-    val req = WireMock.put(WireMock.urlEqualTo(url))
+    val req = put(urlEqualTo(url))
     val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -153,9 +143,9 @@ class WireMockSystem(
     url: String,
     configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
   ): WireMockSystem {
-    val req = WireMock.get(WireMock.urlEqualTo(url))
+    val req = get(urlEqualTo(url))
     val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -164,9 +154,9 @@ class WireMockSystem(
     url: String,
     configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
   ): WireMockSystem {
-    val req = WireMock.head(WireMock.urlEqualTo(url))
+    val req = head(urlEqualTo(url))
     val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -175,9 +165,9 @@ class WireMockSystem(
     url: String,
     configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
   ): WireMockSystem {
-    val req = WireMock.delete(WireMock.urlEqualTo(url))
+    val req = delete(urlEqualTo(url))
     val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -186,9 +176,9 @@ class WireMockSystem(
     url: String,
     configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
   ): WireMockSystem {
-    val req = WireMock.post(WireMock.urlEqualTo(url))
+    val req = post(urlEqualTo(url))
     val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
-    stubLog.putIfAbsent(stub.id, stub)
+    stubLog.put(stub.id, stub)
     return this
   }
 
@@ -207,26 +197,24 @@ class WireMockSystem(
         """.trimIndent()
     }
     if (wireMock.findAllUnmatchedRequests().any()) {
-      val problems =
-        wireMock.findAllUnmatchedRequests().joinToString("\n") {
-          ValidationResult(
-            "${it.method.value()} ${it.url}",
-            it.bodyAsString,
-            json.writeValueAsString(it.queryParams)
-          ).toString()
-        }
+      val problems = wireMock.findAllUnmatchedRequests().joinToString("\n") {
+        ValidationResult(
+          "${it.method.value()} ${it.url}",
+          it.bodyAsString,
+          json.writeValueAsString(it.queryParams)
+        ).toString()
+      }
       throw AssertionError(
         "There are unmatched requests in the mock pipeline, please satisfy all the wanted requests.\n$problems"
       )
     }
   }
 
-  override fun close(): Unit =
-    runBlocking {
-      Try {
-        stop()
-      }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
-    }
+  override fun close(): Unit = runBlocking {
+    Try {
+      stop()
+    }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
+  }
 
   private fun configureBodyAndMetadata(
     request: MappingBuilder,
@@ -249,10 +237,9 @@ class WireMockSystem(
     statusCode: Int,
     responseBody: Option<Any>
   ): ResponseDefinitionBuilder? {
-    val mockResponse =
-      aResponse()
-        .withStatus(statusCode)
-        .withHeader("Content-Type", "application/json; charset=UTF-8")
+    val mockResponse = aResponse()
+      .withStatus(statusCode)
+      .withHeader("Content-Type", "application/json; charset=UTF-8")
     responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
     return mockResponse
   }

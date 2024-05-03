@@ -1,14 +1,12 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
-import com.github.tomakehurst.wiremock.extension.Parameters
-import com.github.tomakehurst.wiremock.extension.ServeEventListener
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent
-import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.tomakehurst.wiremock.extension.*
+import com.github.tomakehurst.wiremock.stubbing.*
 import java.util.*
-import java.util.concurrent.ConcurrentMap
 
 class WireMockRequestListener(
-  private val stubLog: ConcurrentMap<UUID, StubMapping>,
+  private val stubLog: Cache<UUID, StubMapping>,
   private val afterRequest: AfterRequestHandler
 ) : ServeEventListener {
   override fun getName(): String = WireMockRequestListener::class.java.simpleName

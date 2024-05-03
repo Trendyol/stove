@@ -1,19 +1,15 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.extension.Parameters
-import com.github.tomakehurst.wiremock.extension.ServeEventListener
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent
-import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import com.trendyol.stove.functional.Try
-import com.trendyol.stove.functional.recover
-import wiremock.org.slf4j.Logger
-import wiremock.org.slf4j.LoggerFactory
+import com.github.tomakehurst.wiremock.extension.*
+import com.github.tomakehurst.wiremock.stubbing.*
+import com.trendyol.stove.functional.*
+import wiremock.org.slf4j.*
 import java.util.*
-import java.util.concurrent.ConcurrentMap
 
 class WireMockVacuumCleaner(
-  private val stubLog: ConcurrentMap<UUID, StubMapping>,
+  private val stubLog: Cache<UUID, StubMapping>,
   private val afterStubRemoved: AfterStubRemoved
 ) : ServeEventListener {
   private lateinit var wireMock: WireMockServer
@@ -39,12 +35,10 @@ class WireMockVacuumCleaner(
 
     Try {
       synchronized(wireMock) {
-        val stubToBeRemoved = stubLog[serveEvent.stubMapping.id]
+        val stubToBeRemoved = stubLog.getIfPresent(serveEvent.stubMapping.id)
         wireMock.removeStub(stubToBeRemoved)
         wireMock.removeServeEvent(serveEvent.id)
-        synchronized(stubLog) {
-          stubLog.remove(serveEvent.stubMapping.id)
-        }
+        stubLog.invalidate(serveEvent.stubMapping.id)
         afterStubRemoved(serveEvent, stubLog)
       }
     }.recover { throwable -> logger.warn(throwable.message) }
