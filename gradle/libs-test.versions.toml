@@ -5,7 +5,7 @@ spring-kafka = "2.9.13"
 junit = "5.10.2"
 kotest = "5.8.1"
 mockito = "5.3.1"
-ktor = "2.3.10"
+ktor = "2.3.11"
 stove = "0.9.9-SNAPSHOT"
 
 [libraries]
