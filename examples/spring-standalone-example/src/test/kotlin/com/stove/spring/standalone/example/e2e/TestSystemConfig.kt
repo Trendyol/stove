@@ -41,7 +41,7 @@ class TestSystemConfig : AbstractProjectConfig() {
             listOf(
               "kafka.bootstrapServers=${it.bootstrapServers}",
               "kafka.isSecure=false",
-              "kafka.interceptorClasses=com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge"
+              "kafka.interceptorClasses=${it.interceptorClass}"
             )
           }
         }

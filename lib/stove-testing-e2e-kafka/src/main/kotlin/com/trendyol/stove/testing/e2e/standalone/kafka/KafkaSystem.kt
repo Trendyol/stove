@@ -49,7 +49,10 @@ class KafkaSystem(
   override suspend fun run() {
     exposedConfiguration = state.capture {
       context.container.start()
-      KafkaExposedConfiguration(context.container.bootstrapServers)
+      KafkaExposedConfiguration(
+        context.container.bootstrapServers,
+        StoveKafkaBridge::class.java.name
+      )
     }
     adminClient = createAdminClient(exposedConfiguration)
     kafkaPublisher = createPublisher(exposedConfiguration)
