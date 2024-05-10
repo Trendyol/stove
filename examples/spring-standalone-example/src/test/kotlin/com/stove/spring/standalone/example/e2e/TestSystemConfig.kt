@@ -22,6 +22,13 @@ class TestSystemConfig : AbstractProjectConfig() {
             "Stove",
             containerOptions = CouchbaseContainerOptions(tag = "latest") {
               withStartupAttempts(3)
+            },
+            configureExposedConfiguration = { cfg ->
+              listOf(
+                "couchbase.hosts=${cfg.hostsWithPort}",
+                "couchbase.username=${cfg.username}",
+                "couchbase.password=${cfg.password}"
+              )
             }
           )
         }

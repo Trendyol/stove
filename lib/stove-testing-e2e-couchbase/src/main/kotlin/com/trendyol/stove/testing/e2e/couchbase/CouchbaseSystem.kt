@@ -55,13 +55,7 @@ class CouchbaseSystem internal constructor(
 
   override suspend fun stop(): Unit = context.container.stop()
 
-  override fun configuration(): List<String> =
-    context.options.configureExposedConfiguration(exposedConfiguration) +
-      listOf(
-        "couchbase.hosts=${exposedConfiguration.hostsWithPort}",
-        "couchbase.username=${exposedConfiguration.username}",
-        "couchbase.password=${exposedConfiguration.password}"
-      )
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldQuery(
