@@ -1,5 +1,5 @@
 [versions]
-kotlinx = "1.8.0"
+kotlinx = "1.8.1"
 spring-boot = "2.7.18"
 spring-kafka = "2.9.13"
 junit = "5.10.2"
