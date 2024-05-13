@@ -1,6 +1,6 @@
 [versions]
 kotlin = "1.9.24"
-kotlinx = "1.8.0"
+kotlinx = "1.8.1"
 
 # Spring-Boot
 spring-boot = "3.2.5"
