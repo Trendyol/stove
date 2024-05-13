@@ -28,4 +28,4 @@ jobs:
       - name: Gradle Build and Test
         uses: gradle/gradle-build-action@v3.3.2
         with:
-          arguments: -p recipes --build-cache build test
+          arguments: -p recipes --build-cache build test e2eTest

@@ -1,6 +1,8 @@
 [versions]
 kotlin = "1.9.24"
 kotlinx = "1.8.1"
+scala2x = "2.13.14"
+scala3x = "3.4.1"
 
 # Spring-Boot
 spring-boot = "3.2.5"
@@ -185,6 +187,9 @@ stove-testing-redis = { module = "com.trendyol:stove-testing-e2e-redis", version
 stove-testing-wiremock = { module = "com.trendyol:stove-testing-e2e-wiremock", version.ref = "stove" }
 stove-testing-elasticsearch = { module = "com.trendyol:stove-testing-e2e-elasticsearch", version.ref = "stove" }
 stove-testing-rdbms-postgres = { module = "com.trendyol:stove-testing-e2e-rdbms-postgres", version.ref = "stove" }
+
+# Scala
+scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }
 
 
 [plugins]

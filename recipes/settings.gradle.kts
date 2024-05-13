@@ -8,7 +8,9 @@ include(
   "kotlin-recipes:ktor-recipe",
   "kotlin-recipes:spring-boot-recipe",
   "java-recipes",
-  "java-recipes:spring-boot-recipe"
+  "java-recipes:spring-boot-recipe",
+  "scala-recipes",
+  "scala-recipes:spring-boot-recipe",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
