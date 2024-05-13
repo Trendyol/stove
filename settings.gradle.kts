@@ -28,7 +28,6 @@ include(
   "examples:spring-standalone-example",
   "examples:ktor-example"
 )
-
 dependencyResolutionManagement {
   versionCatalogs {
     create("testLibs") { from(files("./gradle/libs-test.versions.toml")) }
