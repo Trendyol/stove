@@ -1,0 +1,205 @@
+[versions]
+kotlin = "1.9.24"
+kotlinx = "1.8.0"
+
+# Spring-Boot
+spring-boot = "3.2.5"
+spring-framework = "6.1.6"
+spring-dependency-management = "1.1.5"
+spring-kafka = "3.1.4"
+
+# arrow
+arrow = "1.2.4"
+
+# Jackson
+jackson = "2.17.1"
+
+# Couchbase
+couchbase-kotlin = "1.3.2"
+couchbase-client = "3.6.2"
+couchbase-client-metrics = "0.6.2"
+
+# Kafka
+kafka = "3.7.0"
+kafka-kotlin = "0.4.0"
+
+# Reactor
+io-reactor = "3.6.5"
+io-reactor-extensions = "1.2.2"
+
+# Logging
+slf4j = "2.0.13"
+
+# Ktor
+ktor = "2.3.10"
+koin = "3.5.6"
+
+# R2DBC
+r2dbc-spi = "1.0.0.RELEASE"
+r2dbc-postgresql = "0.8.13.RELEASE"
+r2dbc-mssql = "1.0.2.RELEASE"
+
+# elastic
+elastic = "8.13.3"
+
+# mongo
+mongodb = "5.1.0"
+
+# Grpc
+io-grpc = "1.63.0"
+io-grpc-kotlin = "1.4.1"
+
+# Tooling
+dokka = "1.9.20"
+knit = "0.5.0"
+kover = "0.7.6"
+spotless = "6.25.0"
+detekt = "1.23.6"
+wire = "5.0.0-alpha01"
+shadow = "8.1.1"
+lombok = "1.18.32"
+
+# Misc
+google-protobuf-kotlin = "4.26.1"
+hoplite = "2.8.0.RC3"
+
+# Testing
+testcontainers = "1.19.7"
+stove = "0.9.9-SNAPSHOT"
+junit = "5.10.2"
+kotest = "5.8.1"
+
+[libraries]
+# Kotlin
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlinx-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx" }
+kotlinx-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx" }
+kotlinx-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx" }
+kotlinx-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlinx" }
+kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinx" }
+kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
+kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
+kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
+
+# Arrow
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+
+# Spring
+spring-boot = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
+spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
+spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
+spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
+spring-framework-context = { module = "org.springframework:spring-context", version.ref = "spring-framework" }
+spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
+spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+
+kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
+kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
+couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }
+couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
+couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase-client-metrics" }
+
+# Jackson
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.14.1" }
+jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
+ktor-server = { module = "io.ktor:ktor-server", version.ref = "ktor" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-plugins-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-jackson-json = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
+r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
+elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
+mongodb-reactivestreams = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
+
+r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.6.1.jre11" }
+testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis-junit", version = "1.6.4" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.6" }
+
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+wire-grpc-server = { module = "com.squareup.wiregrpcserver:server", version = "1.0.0-alpha03" }
+wire-grpc-server-generator = { module = "com.squareup.wiregrpcserver:server-generator", version = "1.0.0-alpha03" }
+wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref = "wire" }
+wire-grpc-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
+io-grpc = { module = "io.grpc:grpc-core", version.ref = "io-grpc" }
+io-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
+io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
+io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
+io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
+google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin" }
+hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
+hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+
+# Tooling
+shadowJar = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
+pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
+# Testing
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.ref = "testcontainers" }
+testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
+testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
+testcontainers-mssql = { module = "org.testcontainers:mssqlserver", version.ref = "testcontainers" }
+
+
+kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
+junit = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+kotest-framework-api-jvm = { module = "io.kotest:kotest-framework-api-jvm", version.ref = "kotest" }
+
+# Stove
+stove-testing = { module = "com.trendyol:stove-testing-e2e", version.ref = "stove" }
+stove-spring-testing = { module = "com.trendyol:stove-spring-testing-e2e", version.ref = "stove" }
+stove-ktor-testing = { module = "com.trendyol:stove-ktor-testing-e2e", version.ref = "stove" }
+stove-spring-testing-kafka = { module = "com.trendyol:stove-spring-testing-e2e-kafka", version.ref = "stove" }
+stove-testing-kafka = { module = "com.trendyol:stove-testing-e2e-kafka", version.ref = "stove" }
+stove-testing-http = { module = "com.trendyol:stove-testing-e2e-http", version.ref = "stove" }
+stove-testing-couchbase = { module = "com.trendyol:stove-testing-e2e-couchbase", version.ref = "stove" }
+stove-testing-redis = { module = "com.trendyol:stove-testing-e2e-redis", version.ref = "stove" }
+stove-testing-wiremock = { module = "com.trendyol:stove-testing-e2e-wiremock", version.ref = "stove" }
+stove-testing-elasticsearch = { module = "com.trendyol:stove-testing-e2e-elasticsearch", version.ref = "stove" }
+stove-testing-rdbms-postgres = { module = "com.trendyol:stove-testing-e2e-rdbms-postgres", version.ref = "stove" }
+
+
+[plugins]
+spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.18.0" }
+kotlinter = { id = "org.jmailen.kotlinter", version = "4.3.0" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+gitVersioning = { id = "com.palantir.git-version", version = "3.0.0" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+wire = { id = "com.squareup.wire", version.ref = "wire" }
+testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
+
+

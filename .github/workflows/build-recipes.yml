@@ -1,0 +1,34 @@
+name: Build Recipes
+env:
+  PATH_RECIPES: 'recipes/**'
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - ${{ env.PATH_RECIPES }}
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ${{ env.PATH_RECIPES }}
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+    steps:
+      - name: Configure JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Gradle Build and Test
+        uses: gradle/gradle-build-action@v3.3.2
+        with:
+          arguments: --build-cache build test
