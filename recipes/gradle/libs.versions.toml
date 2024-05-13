@@ -69,7 +69,7 @@ hoplite = "2.8.0.RC3"
 testcontainers = "1.19.8"
 stove = "0.9.9-SNAPSHOT"
 junit = "5.10.2"
-kotest = "5.8.1"
+kotest = "5.9.0"
 
 [libraries]
 # Kotlin
