@@ -1,12 +1,4 @@
 name: Build
-env:
-  PATH_EXAMPLES: 'examples/**'
-  PATH_LIB: 'lib/**'
-  PATH_STARTERS: 'starters/**'
-  PATH_GRADLE: 'gradle/**'
-  PATH_GRADLE_KTS: 'build.gradle.kts'
-  PATH_SETTINGS_KTS: 'settings.gradle.kts'
-  PATH_BUILD_SRC: 'buildSrc/**'
 on:
   push:
     branches: [ main ]
@@ -28,6 +20,16 @@ on:
       - ${{ env.PATH_GRADLE_KTS }}
       - ${{ env.PATH_SETTINGS_KTS }}
       - ${{ env.PATH_BUILD_SRC }}
+
+env:
+  PATH_EXAMPLES: 'examples/**'
+  PATH_LIB: 'lib/**'
+  PATH_STARTERS: 'starters/**'
+  PATH_GRADLE: 'gradle/**'
+  PATH_GRADLE_KTS: 'build.gradle.kts'
+  PATH_SETTINGS_KTS: 'settings.gradle.kts'
+  PATH_BUILD_SRC: 'buildSrc/**'
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
