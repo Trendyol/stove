@@ -66,7 +66,7 @@ google-protobuf-kotlin = "4.26.1"
 hoplite = "2.8.0.RC3"
 
 # Testing
-testcontainers = "1.19.7"
+testcontainers = "1.19.8"
 stove = "0.9.9-SNAPSHOT"
 junit = "5.10.2"
 kotest = "5.8.1"
