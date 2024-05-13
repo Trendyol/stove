@@ -33,7 +33,7 @@ io-reactor-extensions = "1.2.2"
 slf4j = "2.0.13"
 
 # Ktor
-ktor = "2.3.10"
+ktor = "2.3.11"
 koin = "3.5.6"
 
 # R2DBC
