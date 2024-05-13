@@ -40,7 +40,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 r2dbc-mssql = "1.0.2.RELEASE"
 
 # elastic
-elastic = "8.13.3"
+elastic = "8.13.4"
 
 # mongo
 mongodb = "5.1.0"
