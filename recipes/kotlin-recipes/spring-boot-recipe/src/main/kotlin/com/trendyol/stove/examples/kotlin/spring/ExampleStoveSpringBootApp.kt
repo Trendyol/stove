@@ -5,6 +5,6 @@ import com.trendyol.stove.examples.domain.product.Product
 class ExampleStoveSpringBootApp
 
 fun main() {
-  val product = Product.create("Product 1", 100.0)
+  val product = Product.create("Product 1", 100.0, 1)
   println("Hello, Stove!, Product: $product")
 }

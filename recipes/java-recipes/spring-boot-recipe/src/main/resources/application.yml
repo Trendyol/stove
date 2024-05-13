@@ -1,6 +1,5 @@
 server:
   port: 8080
-
 couchbase:
   bucket: stove-java-spring-boot
   hosts: localhost
@@ -21,3 +20,7 @@ kafka:
       name: ${kafka.group-id}.product
       retry: ${kafka.topic.product}.retry
       dead-letter: ${kafka.topic.product}.error
+external-apis:
+  category:
+    url: http://localhost:9090
+    timeout: 30

@@ -9,6 +9,7 @@ import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 
 class TestProjectConfig : AbstractProjectConfig() {
@@ -20,6 +21,12 @@ class TestProjectConfig : AbstractProjectConfig() {
         )
       }
 
+      wiremock {
+        WireMockSystemOptions(
+          port = 9090,
+          objectMapper = JacksonConfiguration.defaultObjectMapper()
+        )
+      }
       couchbase {
         CouchbaseSystemOptions(
           defaultBucket = "stove-java-spring-boot",

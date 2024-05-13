@@ -11,6 +11,7 @@ dependencies {
   implementation(libs.couchbase.client)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.core)
+  implementation(projects.shared.application)
   annotationProcessor(libs.spring.boot.annotationProcessor)
 }
 

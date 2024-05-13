@@ -33,7 +33,7 @@ subprojects {
     }
   }
   dependencies {
-    implementation(rootProject.projects.sharedDomain)
+    implementation(rootProject.projects.shared.domain)
   }
 
   dependencies {

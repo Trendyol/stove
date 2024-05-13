@@ -6,9 +6,11 @@ import lombok.Data;
 public class ProductCreateRequest {
   String name;
   double price;
+  int categoryId;
 
-  public ProductCreateRequest(String name, double price) {
+  public ProductCreateRequest(String name, double price, int categoryId) {
     this.name = name;
     this.price = price;
+    this.categoryId = categoryId;
   }
 }

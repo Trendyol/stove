@@ -3,7 +3,6 @@
 rootProject.name = "recipes"
 
 include(
-  "shared-domain",
   "kotlin-recipes",
   "kotlin-recipes:ktor-recipe",
   "kotlin-recipes:spring-boot-recipe",
@@ -11,6 +10,9 @@ include(
   "java-recipes:spring-boot-recipe",
   "scala-recipes",
   "scala-recipes:spring-boot-recipe",
+  "shared",
+  "shared:domain",
+  "shared:application",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

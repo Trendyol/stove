@@ -1,6 +1,7 @@
 package com.trendyol.stove.examples.java.spring.infra.components.product.api;
 
 import com.trendyol.stove.examples.java.spring.application.product.command.ProductApplicationService;
+import com.trendyol.stove.recipes.shared.application.BusinessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,9 +19,10 @@ public class ProductController {
   }
 
   @PostMapping
-  public Mono<ResponseEntity<?>> createProduct(@RequestBody ProductCreateRequest request) {
+  public Mono<ResponseEntity<?>> createProduct(@RequestBody ProductCreateRequest request)
+      throws BusinessException {
     return productService
-        .create(request.getName(), request.getPrice())
+        .create(request.getName(), request.getPrice(), request.getCategoryId())
         .onErrorContinue((throwable, o) -> ResponseEntity.badRequest().build())
         .then(Mono.fromCallable(() -> ResponseEntity.ok().build()));
   }

@@ -34,7 +34,7 @@ subprojects {
   }
 
   dependencies {
-    implementation(rootProject.projects.sharedDomain)
+    implementation(rootProject.projects.shared.domain)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
   }
