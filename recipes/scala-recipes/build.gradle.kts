@@ -1,12 +1,14 @@
 plugins {
   java
   idea
+  alias(libs.plugins.spotless)
 }
 
 subprojects {
   apply {
     plugin("java")
     plugin("idea")
+    plugin(rootProject.libs.plugins.spotless.get().pluginId)
   }
   val libs = rootProject.libs
   sourceSets {
@@ -35,6 +37,12 @@ subprojects {
   }
 
   dependencies {
+  }
+
+  spotless {
+    scala {
+      scalafmt()
+    }
   }
 
   task<Test>("e2eTest") {
