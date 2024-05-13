@@ -10,7 +10,6 @@ on:
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'buildSrc/**'
-
   pull_request:
     branches: [ main ]
     paths:
@@ -21,7 +20,6 @@ on:
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'buildSrc/**'
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest

@@ -1,16 +1,13 @@
 name: Build Recipes
-env:
-  PATH_RECIPES: 'recipes/**'
-
 on:
   push:
     branches: [ main ]
     paths:
-      - ${{ env.PATH_RECIPES }}
+      - 'recipes/**'
   pull_request:
     branches: [ main ]
     paths:
-      - ${{ env.PATH_RECIPES }}
+      - 'recipes/**'
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
