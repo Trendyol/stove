@@ -68,7 +68,7 @@ hoplite = "2.8.0.RC3"
 kediatr = "3.0.0"
 
 # Testing
-stove = "0.9.9-SNAPSHOT"
+stove = "1.0.0-SNAPSHOT"
 junit = "5.10.2"
 kotest = "5.9.0"
 
