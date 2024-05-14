@@ -10,7 +10,6 @@ subprojects {
     plugin("idea")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
   }
-  val libs = rootProject.libs
   sourceSets {
     @Suppress("LocalVariableName", "ktlint:standard:property-naming")
     val `test-e2e` by creating {

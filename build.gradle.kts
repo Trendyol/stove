@@ -9,7 +9,7 @@ plugins {
   alias(libs.plugins.gitVersioning)
   `test-report-aggregation`
   id("stove-publishing") apply false
-  alias(testLibs.plugins.testLogger)
+  alias(libs.plugins.testLogger)
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
   idea
@@ -54,7 +54,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.dokka.get().pluginId)
     plugin("test-report-aggregation")
-    plugin(rootProject.testLibs.plugins.testLogger.get().pluginId)
+    plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.kover.get().pluginId)
     plugin(rootProject.libs.plugins.detekt.get().pluginId)
     plugin("idea")
@@ -62,8 +62,6 @@ subprojects.of("lib", "spring", "examples", "ktor") {
 
   val testImplementation by configurations
   val libs = rootProject.libs
-  val testLibs = rootProject.testLibs
-
   dependencies {
     api(libs.arrow.core)
   }
@@ -75,9 +73,9 @@ subprojects.of("lib", "spring", "examples", "ktor") {
   }
   dependencies {
     testImplementation(kotlin("test"))
-    testImplementation(testLibs.kotest.runner.junit5)
-    testImplementation(testLibs.kotest.framework.api.jvm)
-    testImplementation(testLibs.kotest.property.jvm)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.framework.api.jvm)
+    testImplementation(libs.kotest.property.jvm)
     detektPlugins(libs.detekt.formatting)
   }
 

@@ -29,10 +29,6 @@ include(
   "examples:ktor-example"
 )
 dependencyResolutionManagement {
-  versionCatalogs {
-    create("testLibs") { from(files("./gradle/libs-test.versions.toml")) }
-  }
-
   repositories {
     mavenCentral()
   }

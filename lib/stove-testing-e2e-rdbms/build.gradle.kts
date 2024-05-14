@@ -3,5 +3,5 @@ dependencies {
     api(libs.kotlinx.reactor)
     api(libs.r2dbc.spi)
     api(libs.testcontainers.jdbc)
-    testImplementation(testLibs.mockito.kotlin)
+    testImplementation(libs.mockito.kotlin)
 }

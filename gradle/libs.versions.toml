@@ -40,6 +40,9 @@ gradle-release = "3.0.2"
 nexusPublish = "2.0.0"
 shadow = "8.1.1"
 hoplite = "2.8.0.RC3"
+junit = "5.10.2"
+kotest = "5.9.0"
+mockito = "5.3.1"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -129,9 +132,16 @@ google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", versi
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
-shadowJar = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
+
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
+junit = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+kotest-framework-api-jvm = { module = "io.kotest:kotest-framework-api-jvm", version.ref = "kotest" }
+ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
@@ -149,4 +159,6 @@ wire = { id = "com.squareup.wire", version.ref = "wire" }
 shadowJar = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
+testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
+
 

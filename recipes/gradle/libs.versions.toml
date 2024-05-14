@@ -52,21 +52,15 @@ io-grpc = "1.63.0"
 io-grpc-kotlin = "1.4.1"
 
 # Tooling
-dokka = "1.9.20"
-knit = "0.5.0"
 kover = "0.7.6"
 spotless = "6.25.0"
 detekt = "1.23.6"
-wire = "5.0.0-alpha01"
-shadow = "8.1.1"
 lombok = "1.18.32"
 
 # Misc
-google-protobuf-kotlin = "4.26.1"
 hoplite = "2.8.0.RC3"
 
 # Testing
-testcontainers = "1.19.8"
 stove = "0.9.9-SNAPSHOT"
 junit = "5.10.2"
 kotest = "5.9.0"
@@ -80,7 +74,6 @@ kotlinx-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive
 kotlinx-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx" }
 kotlinx-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlinx" }
 kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinx" }
-kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
 kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
 
@@ -131,44 +124,18 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 mongodb-reactivestreams = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
 
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.6.1.jre11" }
-testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis-junit", version = "1.6.4" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.6" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-wire-grpc-server = { module = "com.squareup.wiregrpcserver:server", version = "1.0.0-alpha03" }
-wire-grpc-server-generator = { module = "com.squareup.wiregrpcserver:server-generator", version = "1.0.0-alpha03" }
-wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref = "wire" }
-wire-grpc-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
-io-grpc = { module = "io.grpc:grpc-core", version.ref = "io-grpc" }
-io-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
-io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
-io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
-io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
-google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
 # Tooling
-shadowJar = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
-pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 
 # Testing
-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
-testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
-testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.ref = "testcontainers" }
-testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
-testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
-testcontainers-mssql = { module = "org.testcontainers:mssqlserver", version.ref = "testcontainers" }
 
-
-kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx" }
 junit = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
@@ -191,20 +158,13 @@ stove-testing-rdbms-postgres = { module = "com.trendyol:stove-testing-e2e-rdbms-
 # Scala
 scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }
 
-
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
-ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.18.0" }
-kotlinter = { id = "org.jmailen.kotlinter", version = "4.3.0" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-gitVersioning = { id = "com.palantir.git-version", version = "3.0.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
-wire = { id = "com.squareup.wire", version.ref = "wire" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 
 

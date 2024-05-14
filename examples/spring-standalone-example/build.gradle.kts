@@ -22,8 +22,8 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(testLibs.kotest.property.jvm)
-  testImplementation(testLibs.kotest.runner.junit5)
+  testImplementation(libs.kotest.property.jvm)
+  testImplementation(libs.kotest.runner.junit5)
   testImplementation(projects.stove.lib.stoveTestingE2eHttp)
   testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
   testImplementation(projects.stove.lib.stoveTestingE2eCouchbase)
