@@ -44,7 +44,7 @@ class WireMockSystem(
 
   override suspend fun run(): Unit = wireMock.start()
 
-  override suspend fun stop(): Unit = wireMock.stop()
+  override suspend fun stop(): Unit = wireMock.shutdownServer()
 
   @WiremockDsl
   fun mockGet(
