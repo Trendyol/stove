@@ -1,24 +1,17 @@
 name: Publish to Snapshot Maven
-env:
-  SNAPSHOT: true
-  PATH_EXAMPLES: 'examples/**'
-  PATH_LIB: 'lib/**'
-  PATH_STARTERS: 'starters/**'
-  PATH_GRADLE: 'gradle/**'
-  PATH_GRADLE_KTS: 'build.gradle.kts'
-  PATH_SETTINGS_KTS: 'settings.gradle.kts'
-  PATH_BUILD_SRC: 'buildSrc/**'
 on:
   push:
     branches: [ main ]
     paths:
-      - ${{ env.PATH_EXAMPLES }}
-      - ${{ env.PATH_LIB }}
-      - ${{ env.PATH_STARTERS }}
-      - ${{ env.PATH_GRADLE }}
-      - ${{ env.PATH_GRADLE_KTS }}
-      - ${{ env.PATH_SETTINGS_KTS }}
-      - ${{ env.PATH_BUILD_SRC }}
+      - 'examples/**'
+      - 'lib/**'
+      - 'starters/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'buildSrc/**'
+env:
+  SNAPSHOT: true
 jobs:
   publish:
     runs-on: ubuntu-latest
