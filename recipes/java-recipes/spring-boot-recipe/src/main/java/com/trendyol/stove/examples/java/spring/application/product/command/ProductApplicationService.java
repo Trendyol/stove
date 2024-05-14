@@ -2,7 +2,7 @@ package com.trendyol.stove.examples.java.spring.application.product.command;
 
 import com.trendyol.stove.examples.domain.product.Product;
 import com.trendyol.stove.examples.java.spring.application.external.category.CategoryHttpApi;
-import com.trendyol.stove.examples.java.spring.domain.ProductRepository;
+import com.trendyol.stove.examples.java.spring.domain.ProductReactiveRepository;
 import com.trendyol.stove.recipes.shared.application.BusinessException;
 import com.trendyol.stove.recipes.shared.application.category.CategoryApiResponse;
 import org.springframework.stereotype.Component;
@@ -10,11 +10,11 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class ProductApplicationService {
-  private final ProductRepository productRepository;
+  private final ProductReactiveRepository productRepository;
   private final CategoryHttpApi categoryHttpApi;
 
   public ProductApplicationService(
-      ProductRepository productRepository, CategoryHttpApi categoryHttpApi) {
+      ProductReactiveRepository productRepository, CategoryHttpApi categoryHttpApi) {
     this.productRepository = productRepository;
     this.categoryHttpApi = categoryHttpApi;
   }

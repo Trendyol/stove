@@ -33,11 +33,15 @@ subprojects {
     java {
       removeUnusedImports()
       googleJavaFormat()
+      targetExclude("build")
+      targetExcludeIfContentContains("generated")
     }
     kotlin {
       ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      targetExcludeIfContentContains("generated")
     }
   }
+
   the<IdeaModel>().apply {
     module {
       isDownloadSources = true

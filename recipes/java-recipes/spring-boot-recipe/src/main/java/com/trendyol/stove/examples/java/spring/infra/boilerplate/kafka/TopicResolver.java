@@ -1,8 +1,5 @@
 package com.trendyol.stove.examples.java.spring.infra.boilerplate.kafka;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class TopicResolver {
   private final KafkaConfiguration kafkaConfiguration;
 

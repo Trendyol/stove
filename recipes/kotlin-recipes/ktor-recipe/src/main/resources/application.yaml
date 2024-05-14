@@ -1,0 +1,25 @@
+server:
+  port: 8081
+  host: "localhost"
+  name: "test"
+mongo:
+  database: stove-kotlin-ktor
+  uri: localhost:27017
+kafka:
+  bootstrap-servers: localhost:9092
+  group-id: stove-kotlin-ktor
+  heartbeat-interval-seconds: 2
+  request-timeout-seconds: 30
+  session-timeout-seconds: 10
+  auto-create-topics: true
+  auto-offset-reset: earliest
+  interceptor-classes: [ ]
+  topics:
+    product:
+      name: stove-kotlin-ktor.product
+      retry: stove-kotlin-ktor.retry
+      dead-letter: stove-kotlin-ktor.error
+external-apis:
+  category:
+    url: http://localhost:9090
+    timeout: 30

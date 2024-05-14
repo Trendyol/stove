@@ -12,6 +12,8 @@ spring-kafka = "3.1.4"
 
 # arrow
 arrow = "1.2.4"
+arrow-jackson = "0.14.1"
+arrowSuspendApp = "0.4.0"
 
 # Jackson
 jackson = "2.17.1"
@@ -31,10 +33,14 @@ io-reactor-extensions = "1.2.2"
 
 # Logging
 slf4j = "2.0.13"
+kotlinLogging = "6.0.9"
 
 # Ktor
 ktor = "2.3.11"
 koin = "3.5.6"
+koin-annotations = "1.3.1"
+
+cohort = "2.5.0"
 
 # R2DBC
 r2dbc-spi = "1.0.0.RELEASE"
@@ -59,6 +65,7 @@ lombok = "1.18.32"
 
 # Misc
 hoplite = "2.8.0.RC3"
+kediatr = "3.0.0"
 
 # Testing
 stove = "0.9.9-SNAPSHOT"
@@ -79,6 +86,12 @@ kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kot
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-jackson = { module = "io.arrow-kt:arrow-integrations-jackson-module", version.ref = "arrow-jackson" }
+arrow-suspendApp = { module = "io.arrow-kt:suspendapp", version.ref = "arrowSuspendApp" }
+arrow-suspendApp-ktor = { module = "io.arrow-kt:suspendapp-ktor", version.ref = "arrowSuspendApp" }
+arrow-continuations = { module = "io.arrow-kt:arrow-continuations", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
 
 # Spring
 spring-boot = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
@@ -105,23 +118,40 @@ jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref
 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
-ktor-server = { module = "io.ktor:ktor-server", version.ref = "ktor" }
-ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
-ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-config-yml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor" }
+ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm", version.ref = "ktor" }
+ktor-serialization-kotlinx-json-jvm = { module = "io.ktor:ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
+ktor-serialization-jackson-json = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+ktor-server-netty-jvm = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-statuspages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-callLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-autoHeadResponse = { module = "io.ktor:ktor-server-auto-head-response", version.ref = "ktor" }
+ktor-server-cachingHeaders = { module = "io.ktor:ktor-server-caching-headers", version.ref = "ktor" }
+ktor-server-callId = { module = "io.ktor:ktor-server-call-id-jvm", version.ref = "ktor" }
+ktor-server-conditionalHeaders = { module = "io.ktor:ktor-server-conditional-headers", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
+ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
+ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "2.9.0" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
-ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-plugins-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-serialization-jackson-json = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
+koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
+kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "1.9.1" }
+cohort = { module = "com.sksamuel.cohort:cohort-ktor", version.ref = "cohort" }
+cohort-logback = { module = "com.sksamuel.cohort:cohort-logback", version.ref = "cohort" }
 r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
 mongodb-reactivestreams = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
+mongodb-bson-kotlin = { module = "org.mongodb:bson-kotlin", version.ref = "mongodb" }
+mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
+kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
 
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
@@ -130,6 +160,11 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.6"
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+
+# kediatR
+kediatr-core = { module = "com.trendyol:kediatr-core", version.ref = "kediatr" }
+kediatr-spring = { module = "com.trendyol:kediatr-spring-starter", version.ref = "kediatr" }
+kediatr-koin = { module = "com.trendyol:kediatr-koin-starter", version.ref = "kediatr" }
 
 # Tooling
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
@@ -154,6 +189,7 @@ stove-testing-redis = { module = "com.trendyol:stove-testing-e2e-redis", version
 stove-testing-wiremock = { module = "com.trendyol:stove-testing-e2e-wiremock", version.ref = "stove" }
 stove-testing-elasticsearch = { module = "com.trendyol:stove-testing-e2e-elasticsearch", version.ref = "stove" }
 stove-testing-rdbms-postgres = { module = "com.trendyol:stove-testing-e2e-rdbms-postgres", version.ref = "stove" }
+stove-testing-mongodb = { module = "com.trendyol:stove-testing-e2e-mongodb", version.ref = "stove" }
 
 # Scala
 scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }
@@ -166,5 +202,6 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
+ksp = { id = "com.google.devtools.ksp", version = "1.9.23-1.0.20" }
 
 

@@ -3,7 +3,7 @@ package com.trendyol.stove.examples.java.spring.infra.boilerplate.kafka;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trendyol.stove.examples.domain.ddd.AggregateRoot;
-import com.trendyol.stove.examples.java.spring.domain.EventPublisher;
+import com.trendyol.stove.examples.domain.ddd.EventPublisher;
 import java.util.stream.Stream;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -39,9 +39,9 @@ public class KafkaDomainEventPublisher implements EventPublisher {
             event -> {
               var topic = topicResolver.resolve(aggregateRoot.getAggregateName());
               try {
-                logger.info("Publishing event {} to topic {}", event, topic.name);
+                logger.info("Publishing event {} to topic {}", event, topic.getName());
                 return new ProducerRecord<>(
-                    topic.name,
+                    topic.getName(),
                     aggregateRoot.getIdAsString(),
                     objectMapper.writeValueAsString(event));
               } catch (JsonProcessingException e) {

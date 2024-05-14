@@ -2,9 +2,7 @@ package com.trendyol.stove.examples.java.spring.infra.boilerplate.kafka;
 
 import java.util.Map;
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "kafka")
 public @Data class KafkaConfiguration {
   String bootstrapServers;
   String groupId;

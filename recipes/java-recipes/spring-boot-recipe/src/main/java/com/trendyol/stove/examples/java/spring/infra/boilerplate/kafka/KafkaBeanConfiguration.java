@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -19,6 +20,17 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaBeanConfiguration {
   private final Logger logger = org.slf4j.LoggerFactory.getLogger(KafkaBeanConfiguration.class);
+
+  @Bean
+  @ConfigurationProperties(prefix = "kafka")
+  public KafkaConfiguration kafkaConfiguration() {
+    return new KafkaConfiguration();
+  }
+
+  @Bean
+  public TopicResolver topicResolver(KafkaConfiguration kafkaConfiguration) {
+    return new TopicResolver(kafkaConfiguration);
+  }
 
   @Bean
   public Properties consumerProperties(KafkaConfiguration kafkaConfiguration) {
@@ -36,8 +48,9 @@ public class KafkaBeanConfiguration {
         ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,
         (int) Duration.ofSeconds(kafkaConfiguration.getSessionTimeoutSeconds()).toMillis());
     properties.put(
-        ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, kafkaConfiguration.autoCreateTopics);
-    properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfiguration.autoOffsetReset);
+        ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, kafkaConfiguration.isAutoCreateTopics());
+    properties.put(
+        ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfiguration.getAutoOffsetReset());
     properties.put(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
     properties.put(

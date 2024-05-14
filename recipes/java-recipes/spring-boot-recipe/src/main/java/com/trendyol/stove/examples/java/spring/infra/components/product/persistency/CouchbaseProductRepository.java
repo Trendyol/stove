@@ -4,18 +4,18 @@ import static com.trendyol.stove.examples.java.spring.infra.components.product.p
 
 import com.couchbase.client.java.ReactiveBucket;
 import com.couchbase.client.java.ReactiveCollection;
+import com.trendyol.stove.examples.domain.ddd.EventPublisher;
 import com.trendyol.stove.examples.domain.product.Product;
-import com.trendyol.stove.examples.java.spring.domain.EventPublisher;
-import com.trendyol.stove.examples.java.spring.domain.ProductRepository;
+import com.trendyol.stove.examples.java.spring.domain.ProductReactiveRepository;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
-public class ProductRepositoryImpl implements ProductRepository {
+public class CouchbaseProductRepository implements ProductReactiveRepository {
   private final ReactiveBucket bucket;
   private final EventPublisher eventPublisher;
 
-  public ProductRepositoryImpl(ReactiveBucket bucket, EventPublisher eventPublisher) {
+  public CouchbaseProductRepository(ReactiveBucket bucket, EventPublisher eventPublisher) {
     this.bucket = bucket;
     this.eventPublisher = eventPublisher;
   }
