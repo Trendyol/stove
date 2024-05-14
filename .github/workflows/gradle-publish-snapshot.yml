@@ -9,6 +9,7 @@ on:
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
+      - 'gradle.properties'
       - 'buildSrc/**'
 env:
   SNAPSHOT: true
