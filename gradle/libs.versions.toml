@@ -120,7 +120,7 @@ spring-framework-6x-beans = { module = "org.springframework:spring-beans", versi
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 wire-grpc-server = { module = "com.squareup.wiregrpcserver:server", version = "1.0.0-alpha04" }
-wire-grpc-server-generator = { module = "com.squareup.wiregrpcserver:server-generator", version = "1.0.0-alpha03" }
+wire-grpc-server-generator = { module = "com.squareup.wiregrpcserver:server-generator", version = "1.0.0-alpha04" }
 wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref = "wire" }
 wire-grpc-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
 io-grpc = { module = "io.grpc:grpc-core", version.ref = "io-grpc" }
