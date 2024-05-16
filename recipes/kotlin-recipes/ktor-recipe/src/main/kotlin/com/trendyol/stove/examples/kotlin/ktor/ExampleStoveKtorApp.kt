@@ -3,9 +3,11 @@ package com.trendyol.stove.examples.kotlin.ktor
 import com.trendyol.stove.examples.kotlin.ktor.application.RecipeAppConfig
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.*
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.http.registerHttpClient
+import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kafka.*
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kediatr.registerKediatR
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.mongo.configureMongo
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.serialization.*
+import com.trendyol.stove.examples.kotlin.ktor.infra.components.external.registerCategoryExternalHttpApi
 import com.trendyol.stove.examples.kotlin.ktor.infra.components.product.api.productApi
 import com.trendyol.stove.examples.kotlin.ktor.infra.components.product.registerProductComponents
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -40,14 +42,21 @@ fun Application.appModule(
 ) {
   install(Koin) {
     allowOverride(true)
-    modules(module { single { config } })
+    modules(
+      module {
+        single { config }
+        single { config.externalApis.category }
+      }
+    )
     registerAppDeps()
     registerHttpClient()
+    registerKafka(config.kafka)
     modules(overrides)
   }
   configureRouting()
   configureExceptionHandling()
   configureContentNegotiation()
+  configureConsumerEngine()
 }
 
 fun KoinApplication.registerAppDeps() {
@@ -55,6 +64,7 @@ fun KoinApplication.registerAppDeps() {
   configureJackson()
   registerKediatR()
   registerProductComponents()
+  registerCategoryExternalHttpApi()
 }
 
 fun Application.configureRouting() {

@@ -7,6 +7,7 @@ import com.mongodb.client.model.Filters
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import com.trendyol.stove.examples.domain.product.Product
 import com.trendyol.stove.examples.kotlin.ktor.domain.product.ProductRepository
+import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kafka.KafkaDomainEventPublisher
 import kotlinx.coroutines.flow.firstOrNull
 import org.bson.Document
 import org.bson.json.JsonWriterSettings
@@ -14,7 +15,8 @@ import org.bson.types.ObjectId
 
 class MongoProductRepository(
   mongo: MongoDatabase,
-  private val objectMapper: ObjectMapper
+  private val objectMapper: ObjectMapper,
+  private val eventPublisher: KafkaDomainEventPublisher
 ) : ProductRepository {
   private val collection = mongo.getCollection<Document>(PRODUCT_COLLECTION)
 
@@ -22,6 +24,7 @@ class MongoProductRepository(
     val doc = Document(objectMapper.convertValue<MutableMap<String, Any>>(product))
     doc[RESERVED_ID] = ObjectId.get()
     collection.insertOne(doc)
+    eventPublisher.publishFor(product)
   }
 
   override suspend fun findById(id: String): Option<Product> {

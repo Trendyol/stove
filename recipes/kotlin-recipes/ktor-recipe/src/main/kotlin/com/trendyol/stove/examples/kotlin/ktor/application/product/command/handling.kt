@@ -6,7 +6,7 @@ import org.koin.dsl.module
 fun KoinApplication.registerProductCommandHandling() {
   modules(
     module {
-      single { ProductCommandHandler(get()) }
+      single { ProductCommandHandler(get(), get()) }
     }
   )
 }

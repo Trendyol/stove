@@ -1,12 +1,20 @@
 package com.trendyol.stove.examples.kotlin.ktor.application
 
+import com.trendyol.stove.examples.kotlin.ktor.application.external.CategoryApiConfiguration
+import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kafka.Topic
+
 /**
  * Represents the main configuration
  */
 data class RecipeAppConfig(
   val server: ServerConfig,
   val kafka: KafkaConfiguration,
-  val mongo: MongoConfiguration
+  val mongo: MongoConfiguration,
+  val externalApis: ExternalApisConfig
+)
+
+data class ExternalApisConfig(
+  val category: CategoryApiConfiguration
 )
 
 /**
@@ -40,13 +48,5 @@ data class KafkaConfiguration(
   val interceptorClasses: List<String>,
   val topics: Map<String, Topic>
 ) {
-  fun flattenInterceptorClasses(): String {
-    return interceptorClasses.joinToString(",")
-  }
+  fun flattenInterceptorClasses(): String = interceptorClasses.joinToString(",")
 }
-
-data class Topic(
-  val name: String,
-  val retry: String,
-  val deadLetter: String
-)

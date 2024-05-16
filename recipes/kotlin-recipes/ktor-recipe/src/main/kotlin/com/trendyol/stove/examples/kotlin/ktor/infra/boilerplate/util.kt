@@ -3,6 +3,7 @@ package com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate
 import com.sksamuel.hoplite.*
 import com.sksamuel.hoplite.env.Environment
 import com.trendyol.stove.examples.kotlin.ktor.application.RecipeAppConfig
+import com.trendyol.stove.recipes.shared.application.BusinessException
 import io.github.oshai.kotlinlogging.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -91,8 +92,17 @@ fun startKtorApplication(config: RecipeAppConfig, wait: Boolean = true, configur
 fun Application.configureExceptionHandling(logging: KLogger = KotlinLogging.logger {}) {
   install(StatusPages) {
     exception<Throwable> { call, reason ->
-      logging.error(reason) { "An unexpected error occurred ${call.request.uri}" }
-      call.respond(HttpStatusCode.InternalServerError, "An unexpected error occurred, please try again later")
+      when (reason) {
+        is BusinessException -> {
+          logging.warn(reason) { "A business exception occurred ${call.request.uri}" }
+          call.respond(HttpStatusCode.Conflict, reason.message.toString())
+        }
+
+        else -> {
+          logging.error(reason) { "An unexpected error occurred ${call.request.uri}" }
+          call.respond(HttpStatusCode.InternalServerError, "An unexpected error occurred, please try again later")
+        }
+      }
     }
   }
 }

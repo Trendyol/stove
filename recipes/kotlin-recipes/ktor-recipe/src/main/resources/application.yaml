@@ -19,6 +19,8 @@ kafka:
       name: stove-kotlin-ktor.product
       retry: stove-kotlin-ktor.retry
       dead-letter: stove-kotlin-ktor.error
+      concurrency: 2
+      maxRetry: 1
 external-apis:
   category:
     url: http://localhost:9090

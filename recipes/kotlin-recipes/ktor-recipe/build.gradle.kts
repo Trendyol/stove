@@ -31,6 +31,7 @@ dependencies {
   implementation(libs.kediatr.koin)
   implementation(libs.mongodb.kotlin.coroutine)
   implementation(libs.mongodb.bson.kotlin)
+  implementation(libs.kafkaKotlin)
 }
 
 dependencies {

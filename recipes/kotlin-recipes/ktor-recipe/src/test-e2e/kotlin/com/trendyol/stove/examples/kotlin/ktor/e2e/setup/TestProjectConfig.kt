@@ -6,6 +6,7 @@ import com.trendyol.stove.examples.kotlin.ktor.infra.components.product.persiste
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.mongodb.*
+import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
@@ -25,6 +26,16 @@ class TestProjectConfig : AbstractProjectConfig() {
       wiremock {
         WireMockSystemOptions(
           port = 9090
+        )
+      }
+      kafka {
+        KafkaSystemOptions(
+          configureExposedConfiguration = { cfg ->
+            listOf(
+              "kafka.bootstrapServers=${cfg.bootstrapServers}",
+              "kafka.interceptor-classes=${cfg.interceptorClass}"
+            )
+          }
         )
       }
       mongodb {

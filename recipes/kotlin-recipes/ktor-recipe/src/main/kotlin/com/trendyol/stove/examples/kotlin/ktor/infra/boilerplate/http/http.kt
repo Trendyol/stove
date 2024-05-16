@@ -32,7 +32,8 @@ private fun createHttpClient(
   install(ContentNegotiation) {
     register(ContentType.Application.Json, JacksonConverter(objectMapper))
   }
-  val logger = KotlinLogging.logger("JourneyHttpClient")
+  val logger = KotlinLogging.logger("StoveHttpClient")
+  install(HttpTimeout) {}
   install(HttpRequestRetry) {
     maxRetries = 1
     retryOnServerErrors()
@@ -40,7 +41,7 @@ private fun createHttpClient(
     exponentialDelay()
     modifyRequest { request ->
       logger.warn(cause) { "Retrying request: ${request.url}" }
-      request.headers.append("x-retry-count", retryCount.toString())
+      request.headers.append("X-Retry-Count", retryCount.toString())
     }
   }
 

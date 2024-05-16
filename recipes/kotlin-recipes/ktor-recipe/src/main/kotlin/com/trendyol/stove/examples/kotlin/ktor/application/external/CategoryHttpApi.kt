@@ -5,3 +5,8 @@ import com.trendyol.stove.recipes.shared.application.category.CategoryApiRespons
 interface CategoryHttpApi {
   suspend fun getCategory(id: Int): CategoryApiResponse
 }
+
+data class CategoryApiConfiguration(
+  val url: String,
+  val timeout: Long
+)

@@ -13,7 +13,10 @@ class TestSystemConfig : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
   override suspend fun beforeProject(): Unit =
-    TestSystem(baseUrl = "http://localhost:8001")
+    TestSystem(baseUrl = "http://localhost:8001"){
+      this.enableReuseForTestContainers()
+      this.keepDependenciesRunning()
+    }
       .with {
         httpClient()
         couchbase {
