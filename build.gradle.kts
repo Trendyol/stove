@@ -25,19 +25,21 @@ allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
 }
 
-koverReport {
-  filters {
-    excludes {
-      classes(
-        "com.trendyol.stove.functional.*",
-        "com.trendyol.stove.testing.e2e.system.abstractions.*",
-        "com.trendyol.stove.testing.e2e.system.annotations.*",
-        "com.trendyol.stove.testing.e2e.serialization.*",
-        "com.trendyol.stove.testing.e2e.standalone.*",
-        "stove.spring.example.*",
-        "stove.spring.standalone.example.*",
-        "stove.ktor.example.*"
-      )
+kover {
+  reports {
+    filters {
+      excludes {
+        classes(
+          "com.trendyol.stove.functional.*",
+          "com.trendyol.stove.testing.e2e.system.abstractions.*",
+          "com.trendyol.stove.testing.e2e.system.annotations.*",
+          "com.trendyol.stove.testing.e2e.serialization.*",
+          "com.trendyol.stove.testing.e2e.standalone.*",
+          "stove.spring.example.*",
+          "stove.spring.standalone.example.*",
+          "stove.ktor.example.*"
+        )
+      }
     }
   }
 }
