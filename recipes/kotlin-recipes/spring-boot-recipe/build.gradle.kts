@@ -5,8 +5,8 @@ dependencies {
 }
 dependencies {
   testImplementation(libs.kotest.runner.junit5)
-  testImplementation(libs.kotest.framework.api.jvm)
-  testImplementation(libs.kotest.property.jvm)
+  testImplementation(libs.kotest.framework.api)
+  testImplementation(libs.kotest.property)
   testImplementation(libs.stove.testing)
   testImplementation(libs.stove.testing.couchbase)
   testImplementation(libs.stove.testing.http)

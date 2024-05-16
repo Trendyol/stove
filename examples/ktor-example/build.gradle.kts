@@ -33,7 +33,7 @@ dependencies {
 
 dependencies {
   testImplementation(libs.ktor.server.tests.jvm)
-  testImplementation(libs.kotest.property.jvm)
+  testImplementation(libs.kotest.property)
   testImplementation(libs.kotest.runner.junit5)
   testImplementation(libs.logback.classic)
 

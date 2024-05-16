@@ -7,11 +7,10 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.spotless)
   alias(libs.plugins.gitVersioning)
-  `test-report-aggregation`
-  id("stove-publishing") apply false
   alias(libs.plugins.testLogger)
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
+  id("stove-publishing") apply false
   idea
   java
 }
@@ -55,7 +54,6 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.dokka.get().pluginId)
-    plugin("test-report-aggregation")
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.kover.get().pluginId)
     plugin(rootProject.libs.plugins.detekt.get().pluginId)
@@ -76,8 +74,8 @@ subprojects.of("lib", "spring", "examples", "ktor") {
   dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.kotest.runner.junit5)
-    testImplementation(libs.kotest.framework.api.jvm)
-    testImplementation(libs.kotest.property.jvm)
+    testImplementation(libs.kotest.framework.api)
+    testImplementation(libs.kotest.property)
     detektPlugins(libs.detekt.formatting)
   }
 
@@ -125,19 +123,6 @@ subprojects.of("lib", "spring", "examples", "ktor") {
       }
     }
   }
-}
-
-tasks.register<Copy>("testAggregateXmlReports") {
-  group = "Reporting"
-  related.forEach {
-    dependsOn(it.tasks.testAggregateTestReport)
-    mustRunAfter(it.tasks.testAggregateTestReport)
-  }
-  val testResults = related.map { it.tasks.test.get().outputs.files }
-  duplicatesStrategy = DuplicatesStrategy.WARN
-  from(testResults)
-  include("*.xml")
-  into(rootProject.layout.buildDirectory.dir("reports/xml"))
 }
 
 val publishedProjects = listOf(
