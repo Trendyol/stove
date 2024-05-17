@@ -81,6 +81,7 @@ class ProjectConfig : AbstractProjectConfig() {
     .with {
       kafka {
         KafkaSystemOptions(
+          listenPublishedMessagesFromStove = true,
           configureExposedConfiguration = { cfg ->
             listOf("kafka.servers=${cfg.bootstrapServers}")
           }

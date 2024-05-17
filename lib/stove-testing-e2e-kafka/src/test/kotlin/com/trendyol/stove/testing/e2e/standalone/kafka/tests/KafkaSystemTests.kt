@@ -17,6 +17,9 @@ class KafkaSystemTests : FunSpec({
       kafka {
         val productId = randomString() + "[productCreated]"
         publish("product", message = ProductCreated(productId), key = randomString().some())
+        shouldBePublished<ProductCreated> {
+          actual.productId == productId
+        }
         shouldBeConsumed<ProductCreated>(1.minutes) {
           actual.productId == productId
         }

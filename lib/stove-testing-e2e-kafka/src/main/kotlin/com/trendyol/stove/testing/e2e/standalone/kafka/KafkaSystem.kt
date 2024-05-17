@@ -55,7 +55,7 @@ class KafkaSystem(
       )
     }
     adminClient = createAdminClient(exposedConfiguration)
-    kafkaPublisher = createPublisher(exposedConfiguration)
+    kafkaPublisher = createPublisher(exposedConfiguration, context.options.listenPublishedMessagesFromStove)
     sink = TestSystemMessageSink(
       adminClient,
       context.options.objectMapper,
@@ -151,7 +151,8 @@ class KafkaSystem(
   ): Unit = coroutineScope { sink.waitUntilRetried(atLeastIn, times, clazz, condition) }
 
   private fun createPublisher(
-    exposedConfiguration: KafkaExposedConfiguration
+    exposedConfiguration: KafkaExposedConfiguration,
+    listenKafkaSystemPublishedMessages: Boolean
   ): KafkaProducer<String, Any> = KafkaProducer(
     mapOf(
       ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
@@ -159,7 +160,9 @@ class KafkaSystem(
       ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java.name,
       ProducerConfig.CLIENT_ID_CONFIG to "stove-kafka-producer",
       ProducerConfig.ACKS_CONFIG to "1"
-    )
+    ) + (if (listenKafkaSystemPublishedMessages) mapOf(
+      ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to exposedConfiguration.interceptorClass
+    ) else emptyMap())
   )
 
   private fun createAdminClient(
