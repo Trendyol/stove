@@ -68,6 +68,8 @@ private fun kafkaReceiver(
     valueDeserializer = StoveKafkaValueDeserializer(),
     groupId = kafkaConfiguration.groupId,
     autoOffsetReset = kafkaConfiguration.autoOffsetReset(),
+    commitStrategy = CommitStrategy.ByTime(2.seconds),
+    pollTimeout = 1.seconds,
     properties = Properties().apply {
       putAll(
         mapOf(

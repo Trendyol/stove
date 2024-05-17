@@ -3,9 +3,8 @@ package com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kafka
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.flattenMerge
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import java.time.Duration
 
 abstract class ConsumerSupervisor<K, V>(
   private val kafkaReceiver: KafkaReceiver<K, V>,
@@ -13,35 +12,26 @@ abstract class ConsumerSupervisor<K, V>(
 ) {
   private val logger = KotlinLogging.logger("ConsumerSupervisor[${javaClass.simpleName}]")
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-  private val recordChannel = Channel<ConsumerRecord<K, V>>(maxConcurrency)
 
   abstract val topics: List<String>
 
-  fun start() {
-    scope.launch {
-      logger.info { "Receiving records from topics: $topics" }
-      subscribe()
-    }
-    logger.info { "Consuming records with concurrency: $maxConcurrency" }
+  fun start() = scope.launch {
+    logger.info { "Receiving records from topics: $topics" }
+    subscribe()
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Suppress("TooGenericExceptionCaught")
   private suspend fun subscribe() {
-    kafkaReceiver.withConsumer { consumer ->
-      consumer.subscribe(topics)
-      while (scope.isActive) {
-        val records = consumer.poll(Duration.ofMillis(100))
-        records.forEach { record ->
-          logger.debug { "Received record: $record" }
-          try {
-            consume(record)
-            consumer.commitAsync()
-          } catch (e: Exception) {
-            handleError(e, record)
-          }
+    kafkaReceiver.receiveAutoAck(topics)
+      .flattenMerge(maxConcurrency)
+      .collect {
+        try {
+          consume(it)
+        } catch (e: Exception) {
+          handleError(e, it)
         }
       }
-    }
   }
 
   abstract suspend fun consume(record: ConsumerRecord<K, V>)
@@ -53,21 +43,5 @@ abstract class ConsumerSupervisor<K, V>(
   fun cancel() {
     logger.info { "Cancelling consumer supervisor" }
     scope.cancel()
-  }
-
-  /**
-   * Offers the record to the channel. If the channel is full, it suspends until a space becomes available.
-   */
-  @Suppress("TooGenericExceptionCaught")
-  private fun consume() = repeat(maxConcurrency) {
-    scope.launch {
-      for (record in recordChannel) {
-        try {
-          consume(record)
-        } catch (e: Exception) {
-          handleError(e, record)
-        }
-      }
-    }
   }
 }
