@@ -67,7 +67,7 @@ class CreateTests : FunSpec({
           actual.price == 100.0 && actual.name == productName
         }
 
-        shouldBeConsumed<ProductCreatedEvent> {
+        shouldBeConsumed<ProductCreatedEvent>(10.seconds) {
           actual.price == 100.0 && actual.name == productName
         }
       }

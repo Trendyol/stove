@@ -1,6 +1,6 @@
 package com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kafka
 
-import com.mongodb.kotlin.client.coroutine.*
+import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.trendyol.stove.examples.domain.ddd.EventPublisher
 import com.trendyol.stove.examples.kotlin.ktor.application.KafkaConfiguration
 import io.github.nomisRev.kafka.publisher.*
@@ -68,8 +68,8 @@ private fun kafkaReceiver(
     valueDeserializer = StoveKafkaValueDeserializer(),
     groupId = kafkaConfiguration.groupId,
     autoOffsetReset = kafkaConfiguration.autoOffsetReset(),
-    commitStrategy = CommitStrategy.ByTime(2.seconds),
-    pollTimeout = 1.seconds,
+    commitStrategy = CommitStrategy.ByTime((kafkaConfiguration.heartbeatIntervalSeconds + 1).seconds),
+    pollTimeout = 2.seconds,
     properties = Properties().apply {
       putAll(
         mapOf(
