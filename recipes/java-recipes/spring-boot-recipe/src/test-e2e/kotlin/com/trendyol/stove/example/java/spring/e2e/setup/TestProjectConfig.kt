@@ -4,9 +4,9 @@ import com.trendyol.stove.example.java.spring.e2e.setup.migrations.CouchbaseMigr
 import com.trendyol.stove.examples.java.spring.ExampleSpringBootApp
 import com.trendyol.stove.examples.java.spring.infra.boilerplate.serialization.JacksonConfiguration
 import com.trendyol.stove.examples.java.spring.infra.components.product.persistency.CollectionConstants
+import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.couchbase.*
 import com.trendyol.stove.testing.e2e.http.*
-import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
@@ -21,6 +21,7 @@ class TestProjectConfig : AbstractProjectConfig() {
         )
       }
 
+      bridge()
       wiremock {
         WireMockSystemOptions(
           port = 9090,

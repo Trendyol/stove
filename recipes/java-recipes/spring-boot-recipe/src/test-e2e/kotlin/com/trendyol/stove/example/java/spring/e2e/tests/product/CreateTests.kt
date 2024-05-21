@@ -4,6 +4,7 @@ import arrow.core.some
 import com.trendyol.stove.example.java.spring.e2e.setup.TestData
 import com.trendyol.stove.examples.domain.product.Product
 import com.trendyol.stove.examples.domain.product.events.ProductCreatedEvent
+import com.trendyol.stove.examples.java.spring.domain.ProductReactiveRepository
 import com.trendyol.stove.examples.java.spring.infra.components.product.api.ProductCreateRequest
 import com.trendyol.stove.examples.java.spring.infra.components.product.persistency.CollectionConstants
 import com.trendyol.stove.recipes.shared.application.category.CategoryApiResponse
@@ -11,6 +12,7 @@ import com.trendyol.stove.testing.e2e.couchbase.couchbase
 import com.trendyol.stove.testing.e2e.http.http
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
+import com.trendyol.stove.testing.e2e.system.using
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -51,6 +53,13 @@ class CreateTests : FunSpec({
           actual.name shouldBe productName
           actual.price shouldBe 100.0
         }
+      }
+
+      using<ProductReactiveRepository> {
+        val product = findById(productId.toString()).toFuture().get()
+        product.name shouldBe productName
+        product.price shouldBe 100.0
+        product.categoryId shouldBe categoryApiResponse.id
       }
 
       kafka {

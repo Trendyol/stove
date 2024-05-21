@@ -20,6 +20,11 @@ public class CouchbaseProductRepository implements ProductReactiveRepository {
     this.eventPublisher = eventPublisher;
   }
 
+  @Override
+  public Mono<Product> findById(String id) {
+    return collection().get(id).map(result -> result.contentAs(Product.class));
+  }
+
   public Mono<Void> save(Product product) {
     return collection()
         .insert(product.getIdAsString(), product)
