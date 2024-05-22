@@ -1,5 +1,5 @@
 [versions]
-kotlin = "1.9.24"
+kotlin = "2.0.0"
 kotlinx = "1.8.1"
 scala2x = "2.13.14"
 scala3x = "3.4.1"
