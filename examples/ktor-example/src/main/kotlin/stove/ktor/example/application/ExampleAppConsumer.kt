@@ -2,12 +2,10 @@ package stove.ktor.example.application
 
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.flattenConcat
-import kotlinx.coroutines.flow.onEach
-import org.apache.kafka.clients.consumer.*
+import kotlinx.coroutines.flow.*
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import stove.ktor.example.app.AppConfiguration
 
-@OptIn(DelicateCoroutinesApi::class)
 class ExampleAppConsumer<K, V>(
   config: AppConfiguration,
   private val kafkaReceiver: KafkaReceiver<K, V>
@@ -20,14 +18,12 @@ class ExampleAppConsumer<K, V>(
     kafkaReceiver
       .receiveAutoAck(topics)
       .flattenConcat()
-      .onEach(::consume)
+      .collect(::consume)
   }
 
   private fun consume(message: ConsumerRecord<K, V>) {
     println("Consumed message: $message")
   }
 
-  fun stop() {
-    scope.cancel()
-  }
+  fun stop() = scope.cancel()
 }

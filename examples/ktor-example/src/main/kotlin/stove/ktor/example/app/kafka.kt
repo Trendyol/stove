@@ -19,14 +19,16 @@ fun kafka(): Module = module {
 }
 
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
-  val pollTimeoutSec = 1
+  val pollTimeoutSec = 2
   val heartbeatSec = pollTimeoutSec + 1
+  val commitInterval = heartbeatSec + 1
   val settings = ReceiverSettings(
     config.kafka.bootstrapServers,
     StringDeserializer(),
     ExampleAppKafkaValueDeserializer<V>(),
     config.kafka.groupId,
     autoOffsetReset = AutoOffsetReset.Earliest,
+    commitStrategy = CommitStrategy.ByTime(commitInterval.seconds),
     pollTimeout = pollTimeoutSec.seconds,
     properties = Properties().apply {
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
