@@ -44,12 +44,3 @@ interface RunnableSystemWithContext<TContext> : AutoCloseable, BeforeRunAware, R
 
   override fun close(): Unit = runBlocking { Try { stop() }.recover { logger.warn("got an error while stopping") } }
 }
-
-/**
- * @author Oguzhan Soykan
- */
-interface RunnableSystem : AutoCloseable, BeforeRunAware, RunAware, AfterRunAware {
-  private val logger: Logger get() = LoggerFactory.getLogger(javaClass)
-
-  override fun close(): Unit = runBlocking { Try { stop() }.recover { logger.warn("got an error while stopping") } }
-}

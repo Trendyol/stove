@@ -3,6 +3,10 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -16,22 +20,23 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   private val logger: Logger = org.slf4j.LoggerFactory.getLogger(StoveKafkaBridge::class.java)
   private val client: StoveKafkaObserverServiceClient by lazy { startGrpcClient() }
   private val mapper: ObjectMapper by lazy { stoveKafkaObjectMapperRef }
+  private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-  override fun onSend(record: ProducerRecord<K, V>): ProducerRecord<K, V> = runBlocking {
+  override fun onSend(record: ProducerRecord<K, V>): ProducerRecord<K, V> = runBlocking(scope.coroutineContext) {
     record.also { send(publishedMessage(it)) }
   }
 
-  override fun onConsume(records: ConsumerRecords<K, V>): ConsumerRecords<K, V> = runBlocking {
+  override fun onConsume(records: ConsumerRecords<K, V>): ConsumerRecords<K, V> = runBlocking(scope.coroutineContext) {
     records.also { consumedMessages(it).forEach { message -> send(message) } }
   }
 
-  override fun onCommit(offsets: MutableMap<TopicPartition, OffsetAndMetadata>) = runBlocking {
+  override fun onCommit(offsets: MutableMap<TopicPartition, OffsetAndMetadata>) = runBlocking(scope.coroutineContext) {
     committedMessages(offsets).forEach { send(it) }
   }
 
   override fun configure(configs: MutableMap<String, *>) = Unit
 
-  override fun close() = Unit
+  override fun close() = scope.cancel()
 
   override fun onAcknowledgement(metadata: RecordMetadata, exception: Exception) = Unit
 
@@ -67,7 +72,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
 
   private fun consumedMessages(records: ConsumerRecords<K, V>) = records.map { record ->
     ConsumedMessage(
-      id = record.timestamp().toString(),
+      id = UUID.randomUUID().toString(),
       key = record.key().toString(),
       message = serializeIfNotString(record.value()),
       topic = record.topic(),
@@ -79,7 +84,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   }
 
   private fun publishedMessage(record: ProducerRecord<K, V>) = PublishedMessage(
-    id = record.timestamp().toString(),
+    id = UUID.randomUUID().toString(),
     key = record.key().toString(),
     message = serializeIfNotString(record.value()),
     topic = record.topic(),

@@ -11,7 +11,7 @@ kafka:
   bootstrapServers: "localhost:9092"
   groupId: "test-group"
   clientId: "test-client"
-  interceptorClasses: ["com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge"]
+  interceptorClasses: []
   topics:
     product:
       topic: "product"

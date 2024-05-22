@@ -30,16 +30,7 @@ class ProductService(
       }
 
       kafkaPublisher.publishScope {
-        offer(
-          ProducerRecord(
-            // topic =
-            "product",
-            // key =
-            id.toString(),
-            // value =
-            DomainEvents.ProductUpdated(id, request.name)
-          )
-        )
+        offer(ProducerRecord("product", id.toString(), DomainEvents.ProductUpdated(id, request.name)))
       }
     } finally {
       lockProvider.releaseLock(::ProductService.name)

@@ -12,22 +12,18 @@ class KafkaSystemOptions(
    * If true, the system will listen to the messages published by the Kafka system.
    */
   val listenPublishedMessagesFromStove: Boolean = false,
-
   /**
    * The port of the bridge gRPC server that is used to communicate with the Kafka system.
    */
   val bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
-
   /**
    * The object mapper that is used to serialize and deserialize messages.
    */
   val objectMapper: ObjectMapper = stoveKafkaObjectMapperRef,
-
   /**
    * The options for the Kafka container.
    */
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
-
   /**
    * The options for the Kafka system that is exposed to the application
    */

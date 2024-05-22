@@ -15,7 +15,7 @@ import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.*
-import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.Executor
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.reflect.KClass
@@ -35,7 +35,7 @@ class KafkaSystem(
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaProducer<String, Any>
   private lateinit var grpcServer: Server
-  private val grpcServerExecutor = ScheduledThreadPoolExecutor(1)
+  private val grpcServerScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
   @PublishedApi
   internal lateinit var sink: TestSystemMessageSink
@@ -160,9 +160,15 @@ class KafkaSystem(
       ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java.name,
       ProducerConfig.CLIENT_ID_CONFIG to "stove-kafka-producer",
       ProducerConfig.ACKS_CONFIG to "1"
-    ) + (if (listenKafkaSystemPublishedMessages) mapOf(
-      ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to exposedConfiguration.interceptorClass
-    ) else emptyMap())
+    ) + (
+      if (listenKafkaSystemPublishedMessages) {
+        mapOf(
+          ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to exposedConfiguration.interceptorClass
+        )
+      } else {
+        emptyMap()
+      }
+    )
   )
 
   private fun createAdminClient(
@@ -176,7 +182,7 @@ class KafkaSystem(
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
     return Try {
       ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
-        .executor(grpcServerExecutor)
+        .executor(StoveCoroutineExecutor(grpcServerScope.also { it.ensureActive() }))
         .addService(StoveKafkaObserverGrpcServer(sink))
         .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
         .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
@@ -228,10 +234,21 @@ class KafkaSystem(
 
   override fun close(): Unit = runBlocking {
     Try {
-      grpcServerExecutor.shutdown()
+      grpcServer.shutdownNow()
+      grpcServerScope.cancel()
       kafkaPublisher.close()
-      grpcServer.shutdown()
       executeWithReuseCheck { stop() }
     }
   }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
+}
+
+private class StoveCoroutineExecutor(private val scope: CoroutineScope) : Executor {
+  private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  override fun execute(command: Runnable) {
+    scope.launch {
+      Either.catch { command.run() }
+        .mapLeft { logger.warn("got an error while executing command", it) }
+    }
+  }
 }

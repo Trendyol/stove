@@ -2,45 +2,32 @@ package stove.ktor.example.application
 
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.flattenConcat
+import kotlinx.coroutines.flow.onEach
 import org.apache.kafka.clients.consumer.*
 import stove.ktor.example.app.AppConfiguration
-import java.time.Duration
 
 @OptIn(DelicateCoroutinesApi::class)
 class ExampleAppConsumer<K, V>(
   config: AppConfiguration,
   private val kafkaReceiver: KafkaReceiver<K, V>
 ) {
-  private lateinit var job: Job
-
-  private val scope = GlobalScope
-
+  private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
   private val topics = config.kafka.topics.values.fold(listOf<String>()) { acc, topic -> acc + topic.topic + topic.error + topic.retry }
 
-  companion object {
-    private const val TIMEOUT_MS = 500L
+  @OptIn(ExperimentalCoroutinesApi::class)
+  fun start() = scope.launch {
+    kafkaReceiver
+      .receiveAutoAck(topics)
+      .flattenConcat()
+      .onEach(::consume)
   }
 
-  fun start() {
-    job = scope.launch {
-      while (isActive) {
-        kafkaReceiver
-          .withConsumer { consumer ->
-            consumer.subscribe(topics)
-            consumer
-              .poll(Duration.ofMillis(TIMEOUT_MS))
-              .forEach { consume(it, consumer) }
-          }
-      }
-    }
-  }
-
-  private fun consume(message: ConsumerRecord<K, V>, consumer: KafkaConsumer<K, V>) {
+  private fun consume(message: ConsumerRecord<K, V>) {
     println("Consumed message: $message")
-    consumer.commitSync()
   }
 
   fun stop() {
-    job.cancel()
+    scope.cancel()
   }
 }

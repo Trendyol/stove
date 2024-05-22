@@ -10,6 +10,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import stove.ktor.example.application.ExampleAppConsumer
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
 
 fun kafka(): Module = module {
   single { createReceiver<Any>(get()) }
@@ -18,17 +19,20 @@ fun kafka(): Module = module {
 }
 
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
+  val pollTimeoutSec = 1
+  val heartbeatSec = pollTimeoutSec + 1
   val settings = ReceiverSettings(
     config.kafka.bootstrapServers,
     StringDeserializer(),
     ExampleAppKafkaValueDeserializer<V>(),
     config.kafka.groupId,
     autoOffsetReset = AutoOffsetReset.Earliest,
+    pollTimeout = pollTimeoutSec.seconds,
     properties = Properties().apply {
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
       put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
       put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
-      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "2000")
+      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatSec.seconds.inWholeSeconds.toInt())
     }
   )
   return KafkaReceiver(settings)

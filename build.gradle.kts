@@ -1,6 +1,7 @@
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   kotlin("jvm").version(libs.versions.kotlin)
@@ -108,12 +109,10 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     }
     kotlin {
       jvmToolchain(17)
-    }
-
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-      dependsOn(spotlessApply)
       compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
+        languageVersion.set(KotlinVersion.KOTLIN_2_1)
+        apiVersion.set(KotlinVersion.KOTLIN_2_1)
         allWarningsAsErrors = true
         freeCompilerArgs.addAll(
           "-Xjsr305=strict",
@@ -121,6 +120,10 @@ subprojects.of("lib", "spring", "examples", "ktor") {
           "-Xsuppress-version-warnings"
         )
       }
+    }
+
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+      dependsOn(spotlessApply)
     }
   }
 }

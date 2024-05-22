@@ -18,13 +18,12 @@ abstract class StoveListener(
 
   private val consumer: KafkaConsumer<String, String> = KafkaConsumer<String, String>(consumerSettings)
   private val publisher: KafkaPublisher<String, Any> = KafkaPublisher(publisherSettings)
-
-  private lateinit var consuming: Job
+  private var scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
   @OptIn(DelicateCoroutinesApi::class)
   suspend fun start() {
     consumer.subscribe(listOf(topicDefinition.topic, topicDefinition.retryTopic, topicDefinition.deadLetterTopic))
-    consuming = GlobalScope.launch {
+    scope.launch {
       while (isActive) {
         consumer
           .poll(Duration.ofMillis(100))
@@ -84,7 +83,5 @@ abstract class StoveListener(
 
   abstract suspend fun listen(record: ConsumerRecord<String, String>)
 
-  override fun close(): Unit = runBlocking {
-    Try { consuming.cancelAndJoin() }
-  }
+  override fun close(): Unit = scope.cancel()
 }
