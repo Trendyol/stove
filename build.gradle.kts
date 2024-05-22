@@ -111,8 +111,6 @@ subprojects.of("lib", "spring", "examples", "ktor") {
       jvmToolchain(17)
       compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
-        languageVersion.set(KotlinVersion.KOTLIN_2_1)
-        apiVersion.set(KotlinVersion.KOTLIN_2_1)
         allWarningsAsErrors = true
         freeCompilerArgs.addAll(
           "-Xjsr305=strict",
