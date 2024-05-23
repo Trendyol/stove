@@ -5,7 +5,7 @@ scala2x = "2.13.14"
 scala3x = "3.4.1"
 
 # Spring-Boot
-spring-boot = "3.2.5"
+spring-boot = "3.2.6"
 spring-framework = "6.1.8"
 spring-dependency-management = "1.1.5"
 spring-kafka = "3.2.0"
