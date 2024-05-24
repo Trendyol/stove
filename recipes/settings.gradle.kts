@@ -8,6 +8,7 @@ include(
   "kotlin-recipes:spring-boot-recipe",
   "java-recipes",
   "java-recipes:spring-boot-recipe",
+  "java-recipes:quarkus-recipe",
   "scala-recipes",
   "scala-recipes:spring-boot-recipe",
   "shared",

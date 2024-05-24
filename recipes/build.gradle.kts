@@ -33,8 +33,9 @@ subprojects {
     java {
       removeUnusedImports()
       googleJavaFormat()
-      targetExclude("build")
+      targetExclude("build", "generated", "out")
       targetExcludeIfContentContains("generated")
+      targetExcludeIfContentContainsRegex(".*generated.*")
     }
     kotlin {
       ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
@@ -76,7 +77,6 @@ subprojects {
     }
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-      dependsOn(spotlessApply)
       compilerOptions {
         jvmTarget.set(JvmTarget.JVM_21)
         allWarningsAsErrors = true

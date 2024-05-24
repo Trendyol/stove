@@ -3,6 +3,7 @@ kotlin = "2.0.0"
 kotlinx = "1.8.1"
 scala2x = "2.13.14"
 scala3x = "3.4.1"
+quarkus = "3.11.0"
 
 # Spring-Boot
 spring-boot = "3.3.0"
@@ -102,6 +103,11 @@ spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-bo
 spring-framework-context = { module = "org.springframework:spring-context", version.ref = "spring-framework" }
 spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
 spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+
+# Quarkus
+quarkus = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }
+quarkus-rest = { module = "io.quarkus:quarkus-rest", version.ref = "quarkus" }
+quarkus-arc = { module = "io.quarkus.arc:arc", version.ref = "quarkus" }
 
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
@@ -203,5 +209,5 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 ksp = { id = "com.google.devtools.ksp", version = "2.0.0-1.0.21" }
-
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 
