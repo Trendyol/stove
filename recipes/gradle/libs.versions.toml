@@ -148,7 +148,7 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
-kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "1.9.1" }
+kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "2.0.0" }
 cohort = { module = "com.sksamuel.cohort:cohort-ktor", version.ref = "cohort" }
 cohort-logback = { module = "com.sksamuel.cohort:cohort-logback", version.ref = "cohort" }
 r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
