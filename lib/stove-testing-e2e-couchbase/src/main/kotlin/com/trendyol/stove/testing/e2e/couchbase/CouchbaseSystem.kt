@@ -7,7 +7,6 @@ import com.couchbase.client.kotlin.query.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*

@@ -6,7 +6,6 @@ import com.mongodb.client.model.Filters.eq
 import com.mongodb.reactivestreams.client.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.reactive.*
 import kotlinx.coroutines.runBlocking

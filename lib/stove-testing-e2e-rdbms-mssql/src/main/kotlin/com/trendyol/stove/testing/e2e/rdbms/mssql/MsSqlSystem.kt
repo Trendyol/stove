@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.rdbms.mssql
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import io.r2dbc.mssql.*
 import io.r2dbc.spi.ConnectionFactory
