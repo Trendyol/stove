@@ -7,6 +7,7 @@ import com.trendyol.stove.testing.e2e.messaging.*
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.grpc.*
@@ -39,11 +40,8 @@ class KafkaSystem(
   @PublishedApi
   internal lateinit var sink: TestSystemMessageSink
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
-    testSystem.options,
-    KafkaSystem::class,
-    KafkaExposedConfiguration::class
-  )
+  private val state: StateStorage<KafkaExposedConfiguration> =
+    testSystem.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
 
   override suspend fun run() {
     exposedConfiguration = state.capture {

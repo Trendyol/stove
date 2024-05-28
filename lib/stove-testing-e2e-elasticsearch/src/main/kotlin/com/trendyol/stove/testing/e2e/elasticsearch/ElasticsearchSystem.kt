@@ -9,6 +9,7 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.*
 import org.apache.http.HttpHost
@@ -31,8 +32,8 @@ class ElasticsearchSystem internal constructor(
 
   private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<ElasticsearchSystem, ElasticSearchExposedConfiguration> =
-    StateOfSystem(testSystem.options, ElasticsearchSystem::class, ElasticSearchExposedConfiguration::class)
+  private val state: StateStorage<ElasticSearchExposedConfiguration> =
+    testSystem.options.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>()
 
   override suspend fun run() {
     exposedConfiguration = state.capture {

@@ -3,6 +3,7 @@ package com.trendyol.stove.testing.e2e.rdbms.mssql
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import io.r2dbc.mssql.*
 import io.r2dbc.spi.ConnectionFactory
@@ -17,8 +18,8 @@ class MsSqlSystem internal constructor(
   private lateinit var sqlOperations: SqlOperations
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<MsSqlSystem, RelationalDatabaseExposedConfiguration> =
-    StateOfSystem(testSystem.options, javaClass.kotlin, RelationalDatabaseExposedConfiguration::class)
+  private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
+    testSystem.options.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>()
 
   override suspend fun run() {
     exposedConfiguration =

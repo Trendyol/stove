@@ -7,6 +7,7 @@ import com.couchbase.client.kotlin.query.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
@@ -27,11 +28,8 @@ class CouchbaseSystem internal constructor(
 
   private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<CouchbaseSystem, CouchbaseExposedConfiguration> = StateOfSystem(
-    testSystem.options,
-    CouchbaseSystem::class,
-    CouchbaseExposedConfiguration::class
-  )
+  private val state: StateStorage<CouchbaseExposedConfiguration> =
+    testSystem.options.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>()
 
   override suspend fun run() {
     exposedConfiguration =

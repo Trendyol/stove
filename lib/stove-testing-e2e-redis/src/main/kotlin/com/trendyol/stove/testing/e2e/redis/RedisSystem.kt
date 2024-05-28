@@ -2,6 +2,7 @@ package com.trendyol.stove.testing.e2e.redis
 
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.lettuce.core.*
@@ -17,8 +18,8 @@ class RedisSystem(
   private lateinit var client: RedisClient
   private lateinit var exposedConfiguration: RedisExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<RedisSystem, RedisExposedConfiguration> =
-    StateOfSystem(testSystem.options, RedisSystem::class, RedisExposedConfiguration::class)
+  private val state: StateStorage<RedisExposedConfiguration> =
+    testSystem.options.createStateStorage<RedisExposedConfiguration, RedisSystem>()
 
   override suspend fun run() {
     exposedConfiguration =

@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import stove.ktor.example.application.*
 import stove.ktor.example.domain.*
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 class ExampleTest : FunSpec({
   data class ProductOfTest(
@@ -56,10 +57,10 @@ class ExampleTest : FunSpec({
       }
 
       kafka {
-        shouldBePublished<DomainEvents.ProductUpdated> {
+        shouldBePublished<DomainEvents.ProductUpdated>(20.seconds) {
           actual.id == givenId && actual.name == givenName
         }
-        shouldBeConsumed<DomainEvents.ProductUpdated> {
+        shouldBeConsumed<DomainEvents.ProductUpdated>(20.seconds) {
           actual.id == givenId && actual.name == givenName
         }
       }
