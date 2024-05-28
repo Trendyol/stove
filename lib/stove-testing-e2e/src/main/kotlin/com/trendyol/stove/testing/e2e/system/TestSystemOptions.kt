@@ -7,8 +7,6 @@ data class TestSystemOptions(
   val stateStorageFactory: StateStorageFactory = DefaultStateStorageFactory(),
   val runMigrationsAlways: Boolean = false
 ) {
-  companion object {
-    inline fun <reified TState : Any, reified TSystem : Any> TestSystemOptions.createStateStorage(): StateStorage<TState> =
-      (this.stateStorageFactory(this, TSystem::class, TState::class))
-  }
+  inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(): StateStorage<TState> =
+    (this.stateStorageFactory(this, TSystem::class, TState::class))
 }

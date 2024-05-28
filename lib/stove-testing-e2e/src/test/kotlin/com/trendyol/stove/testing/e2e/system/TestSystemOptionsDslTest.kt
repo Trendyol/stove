@@ -40,10 +40,19 @@ class TestSystemOptionsDslTest : FunSpec({
       }
     }
 
+    data class Example1ExposedState(val id: Int = 1) : ExposedConfiguration
+
+    class Example1System(override val testSystem: TestSystem) : PluggedSystem {
+      override fun close() = Unit
+    }
+
     val anotherStateStorageFactory = AnotherStateStorageFactory()
     testSystemOptionsDsl.stateStorage(anotherStateStorageFactory)
 
     testSystemOptionsDsl.options.stateStorageFactory shouldBe anotherStateStorageFactory
+    val storage = testSystemOptionsDsl.options.createStateStorage<Example1ExposedState, Example1System>()
+    storage.isSubsequentRun() shouldBe false
+    storage.capture { Example1ExposedState() } shouldBe Example1ExposedState()
   }
 
   test("should run migrations always") {

@@ -4,7 +4,6 @@ import arrow.core.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.messaging.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.TestSystemOptions.Companion.createStateStorage
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.producer.ProducerRecord
