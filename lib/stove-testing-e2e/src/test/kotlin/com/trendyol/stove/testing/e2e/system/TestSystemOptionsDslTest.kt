@@ -15,7 +15,11 @@ class TestSystemOptionsDslTest : FunSpec({
 
   test("should check if running locally") {
     val testSystemOptionsDsl = TestSystemOptionsDsl()
-    testSystemOptionsDsl.isRunningLocally() shouldBe true
+    testSystemOptionsDsl.isRunningLocally() shouldBe (
+      System.getenv("CI") != "true" &&
+        System.getenv("GITLAB_CI") != "true" &&
+        System.getenv("GITHUB_ACTIONS") != "true"
+    )
   }
 
   test("should enable reuse for test containers") {
