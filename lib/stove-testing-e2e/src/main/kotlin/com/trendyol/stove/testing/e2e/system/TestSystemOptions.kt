@@ -4,7 +4,8 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 
 data class TestSystemOptions(
   val keepDependenciesRunning: Boolean = false,
-  val stateStorageFactory: StateStorageFactory = DefaultStateStorageFactory()
+  val stateStorageFactory: StateStorageFactory = DefaultStateStorageFactory(),
+  val runMigrationsAlways: Boolean = false
 ) {
   companion object {
     inline fun <reified TState : Any, reified TSystem : Any> TestSystemOptions.createStateStorage(): StateStorage<TState> =

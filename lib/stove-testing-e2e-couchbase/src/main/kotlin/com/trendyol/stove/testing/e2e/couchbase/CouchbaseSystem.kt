@@ -46,7 +46,7 @@ class CouchbaseSystem internal constructor(
 
     cluster = createCluster(exposedConfiguration)
     collection = cluster.bucket(context.bucket.name).defaultCollection()
-    if (!state.isSubsequentRun()) {
+    if (!state.isSubsequentRun() || testSystem.options.runMigrationsAlways) {
       context.options.migrationCollection.run(cluster)
     }
   }

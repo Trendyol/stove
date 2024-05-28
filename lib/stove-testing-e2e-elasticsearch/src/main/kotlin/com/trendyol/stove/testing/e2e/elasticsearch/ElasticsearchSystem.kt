@@ -58,7 +58,7 @@ class ElasticsearchSystem internal constructor(
 
   override suspend fun afterRun() {
     esClient = createEsClient(exposedConfiguration)
-    if (!state.isSubsequentRun()) {
+    if (!state.isSubsequentRun() || testSystem.options.runMigrationsAlways) {
       context.options.migrationCollection.run(esClient)
     }
   }

@@ -22,14 +22,6 @@ class GitlabStateStorageFactory : StateStorageFactory {
       return start()
     }
 
-    override suspend fun recover(otherwise: suspend () -> T): T {
-      return otherwise()
-    }
-
-    override fun saveStateForNextRun(state: T): T {
-      return state
-    }
-
     override fun isSubsequentRun(): Boolean {
       return false
     }

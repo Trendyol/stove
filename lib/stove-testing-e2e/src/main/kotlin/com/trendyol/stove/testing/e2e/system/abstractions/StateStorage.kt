@@ -14,10 +14,6 @@ import kotlin.reflect.KClass
 interface StateStorage<TState> {
   suspend fun capture(start: suspend () -> TState): TState
 
-  suspend fun recover(otherwise: suspend () -> TState): TState
-
-  fun saveStateForNextRun(state: TState): TState
-
   fun isSubsequentRun(): Boolean
 }
 
@@ -35,6 +31,17 @@ fun <T : Any> DefaultStateStorage(
   system: KClass<*>,
   state: KClass<T>
 ): StateStorage<T> = FileSystemStorage(options, system, state)
+
+/**
+ * Represents the state of the [TestSystem] which is being captured.
+ * @param TState the type of the state
+ * @param state the state of the [TestSystem]
+ * @param processId the process id of the [TestSystem]
+ */
+data class StateWithProcess<TState : Any>(
+  val state: TState,
+  val processId: Long
+)
 
 internal class FileSystemStorage<TState : Any>(
   val options: TestSystemOptions,
@@ -77,9 +84,14 @@ internal class FileSystemStorage<TState : Any>(
   }
 
   /**
+   * Returns true if the [TestSystem] is being run for the first time.
+   */
+  override fun isSubsequentRun(): Boolean = pathForSystem.exists() && options.keepDependenciesRunning && isDifferentProcess()
+
+  /**
    * Recovers the state of the [TestSystem] from the file system.
    */
-  override suspend fun recover(otherwise: suspend () -> TState): TState =
+  private suspend fun recover(otherwise: suspend () -> TState): TState =
     when {
       pathForSystem.exists() -> {
         l.info("State exists for ${name()}. System is being recovered from: ${pathForSystem.absolutePathString()}")
@@ -90,12 +102,7 @@ internal class FileSystemStorage<TState : Any>(
       else -> saveStateForNextRun(otherwise())
     }
 
-  /**
-   * Returns true if the [TestSystem] is being run for the first time.
-   */
-  override fun isSubsequentRun(): Boolean = pathForSystem.exists() && options.keepDependenciesRunning && isDifferentProcess()
-
-  override fun saveStateForNextRun(state: TState): TState =
+  private fun saveStateForNextRun(state: TState): TState =
     state.also {
       l.info("State does not exist for ${name()}. System is being saved to: ${pathForSystem.absolutePathString()}")
       pathForSystem.writeBytes(j.writeValueAsBytes(StateWithProcess(state, getPid())))

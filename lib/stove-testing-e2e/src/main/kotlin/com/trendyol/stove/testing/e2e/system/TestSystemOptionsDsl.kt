@@ -37,6 +37,12 @@ class TestSystemOptionsDsl {
     return this
   }
 
+  @StoveDsl
+  fun runMigrationsAlways(): TestSystemOptionsDsl {
+    options = options.copy(runMigrationsAlways = true)
+    return this
+  }
+
   private fun isRunningOnCI(): Boolean =
     System.getenv("CI") == "true" ||
       System.getenv("GITLAB_CI") == "true" ||
