@@ -39,11 +39,8 @@ class KafkaSystem(
   @PublishedApi
   internal lateinit var sink: TestSystemMessageSink
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
-    testSystem.options,
-    KafkaSystem::class,
-    KafkaExposedConfiguration::class
-  )
+  private val state: StateStorage<KafkaExposedConfiguration> =
+    testSystem.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
 
   override suspend fun run() {
     exposedConfiguration = state.capture {

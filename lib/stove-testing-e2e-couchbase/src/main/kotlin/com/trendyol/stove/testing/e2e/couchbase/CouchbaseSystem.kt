@@ -27,11 +27,8 @@ class CouchbaseSystem internal constructor(
 
   private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<CouchbaseSystem, CouchbaseExposedConfiguration> = StateOfSystem(
-    testSystem.options,
-    CouchbaseSystem::class,
-    CouchbaseExposedConfiguration::class
-  )
+  private val state: StateStorage<CouchbaseExposedConfiguration> =
+    testSystem.options.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>()
 
   override suspend fun run() {
     exposedConfiguration =
@@ -48,7 +45,7 @@ class CouchbaseSystem internal constructor(
 
     cluster = createCluster(exposedConfiguration)
     collection = cluster.bucket(context.bucket.name).defaultCollection()
-    if (!state.isSubsequentRun()) {
+    if (!state.isSubsequentRun() || testSystem.options.runMigrationsAlways) {
       context.options.migrationCollection.run(cluster)
     }
   }

@@ -17,8 +17,8 @@ class RedisSystem(
   private lateinit var client: RedisClient
   private lateinit var exposedConfiguration: RedisExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<RedisSystem, RedisExposedConfiguration> =
-    StateOfSystem(testSystem.options, RedisSystem::class, RedisExposedConfiguration::class)
+  private val state: StateStorage<RedisExposedConfiguration> =
+    testSystem.options.createStateStorage<RedisExposedConfiguration, RedisSystem>()
 
   override suspend fun run() {
     exposedConfiguration =

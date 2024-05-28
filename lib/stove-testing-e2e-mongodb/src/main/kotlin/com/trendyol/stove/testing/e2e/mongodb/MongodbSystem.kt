@@ -15,11 +15,6 @@ import org.bson.json.JsonWriterSettings
 import org.bson.types.ObjectId
 import org.slf4j.*
 import reactor.kotlin.core.publisher.toFlux
-import kotlin.collections.List
-import kotlin.collections.MutableMap
-import kotlin.collections.isNullOrEmpty
-import kotlin.collections.listOf
-import kotlin.collections.plus
 import kotlin.collections.set
 
 @MongoDsl
@@ -37,8 +32,8 @@ class MongodbSystem internal constructor(
     JsonWriterSettings.builder()
       .objectIdConverter { value, writer -> writer.writeString(value.toHexString()) }
       .build()
-  private val state: StateOfSystem<MongodbSystem, MongodbExposedConfiguration> =
-    StateOfSystem(testSystem.options, MongodbSystem::class, MongodbExposedConfiguration::class)
+  private val state: StateStorage<MongodbExposedConfiguration> =
+    testSystem.options.createStateStorage<MongodbExposedConfiguration, MongodbSystem>()
 
   override suspend fun run() {
     exposedConfiguration =

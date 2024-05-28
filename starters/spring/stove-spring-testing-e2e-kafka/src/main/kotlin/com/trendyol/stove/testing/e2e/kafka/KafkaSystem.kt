@@ -27,11 +27,8 @@ class KafkaSystem(
   private lateinit var kafkaTemplate: KafkaTemplate<Any, Any>
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   val getInterceptor: () -> TestSystemKafkaInterceptor<Any, Any> = { applicationContext.getBean() }
-  private val state: StateOfSystem<KafkaSystem, KafkaExposedConfiguration> = StateOfSystem(
-    testSystem.options,
-    javaClass.kotlin,
-    KafkaExposedConfiguration::class
-  )
+  private val state: StateStorage<KafkaExposedConfiguration> =
+    testSystem.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
 
   override suspend fun beforeRun() = Unit
 

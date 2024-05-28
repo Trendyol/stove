@@ -21,8 +21,8 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
 
   protected lateinit var sqlOperations: SqlOperations
-  protected val state: StateOfSystem<RelationalDatabaseSystem<SELF>, RelationalDatabaseExposedConfiguration> =
-    StateOfSystem(testSystem.options, javaClass.kotlin, RelationalDatabaseExposedConfiguration::class)
+  private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
+    testSystem.options.createStateStorage<RelationalDatabaseExposedConfiguration, RelationalDatabaseSystem<SELF>>()
 
   protected abstract fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory
 

@@ -17,8 +17,8 @@ class MsSqlSystem internal constructor(
   private lateinit var sqlOperations: SqlOperations
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<MsSqlSystem, RelationalDatabaseExposedConfiguration> =
-    StateOfSystem(testSystem.options, javaClass.kotlin, RelationalDatabaseExposedConfiguration::class)
+  private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
+    testSystem.options.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>()
 
   override suspend fun run() {
     exposedConfiguration =

@@ -31,8 +31,8 @@ class ElasticsearchSystem internal constructor(
 
   private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
-  private val state: StateOfSystem<ElasticsearchSystem, ElasticSearchExposedConfiguration> =
-    StateOfSystem(testSystem.options, ElasticsearchSystem::class, ElasticSearchExposedConfiguration::class)
+  private val state: StateStorage<ElasticSearchExposedConfiguration> =
+    testSystem.options.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>()
 
   override suspend fun run() {
     exposedConfiguration = state.capture {
@@ -57,7 +57,7 @@ class ElasticsearchSystem internal constructor(
 
   override suspend fun afterRun() {
     esClient = createEsClient(exposedConfiguration)
-    if (!state.isSubsequentRun()) {
+    if (!state.isSubsequentRun() || testSystem.options.runMigrationsAlways) {
       context.options.migrationCollection.run(esClient)
     }
   }

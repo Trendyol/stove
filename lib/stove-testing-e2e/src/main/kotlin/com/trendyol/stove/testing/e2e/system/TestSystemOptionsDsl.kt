@@ -1,8 +1,8 @@
 package com.trendyol.stove.testing.e2e.system
 
+import com.trendyol.stove.testing.e2e.system.abstractions.StateStorageFactory
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 
 @StoveDsl
 class TestSystemOptionsDsl {
@@ -30,6 +30,18 @@ class TestSystemOptionsDsl {
 
   @StoveDsl
   fun enableReuseForTestContainers(): Unit = propertiesFile.enable()
+
+  @StoveDsl
+  fun stateStorage(factory: StateStorageFactory): TestSystemOptionsDsl {
+    options = options.copy(stateStorageFactory = factory)
+    return this
+  }
+
+  @StoveDsl
+  fun runMigrationsAlways(): TestSystemOptionsDsl {
+    options = options.copy(runMigrationsAlways = true)
+    return this
+  }
 
   private fun isRunningOnCI(): Boolean =
     System.getenv("CI") == "true" ||
