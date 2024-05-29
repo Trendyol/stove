@@ -59,13 +59,13 @@ class MongodbTestSystemTests : FunSpec({
     val id = ObjectId()
     TestSystem.validate {
       mongodb {
-        saveToDefaultCollection(
-          id.toHexString(),
+        save(
           ExampleInstanceWithObjectId(
             id = id,
             aggregateId = id.toHexString(),
             description = testCase.name.testName
-          )
+          ),
+          id.toHexString()
         )
         shouldGet<ExampleInstanceWithObjectId>(id.toHexString()) { actual ->
           actual.aggregateId shouldBe id.toHexString()
@@ -79,13 +79,13 @@ class MongodbTestSystemTests : FunSpec({
     val id = ObjectId()
     TestSystem.validate {
       mongodb {
-        saveToDefaultCollection(
-          id.toHexString(),
+        save(
           ExampleInstanceWithStringObjectId(
             id = id.toHexString(),
             aggregateId = id.toHexString(),
             description = testCase.name.testName
-          )
+          ),
+          id.toHexString()
         )
         shouldGet<ExampleInstanceWithStringObjectId>(id.toHexString()) { actual ->
           actual.aggregateId shouldBe id.toHexString()
@@ -103,29 +103,29 @@ class MongodbTestSystemTests : FunSpec({
     val secondDesc = "different description"
     TestSystem.validate {
       mongodb {
-        saveToDefaultCollection(
-          id1.toHexString(),
+        save(
           ExampleInstanceWithObjectId(
             id = id1,
             aggregateId = id1.toHexString(),
             description = firstDesc
-          )
+          ),
+          id1.toHexString()
         )
-        saveToDefaultCollection(
-          id2.toHexString(),
+        save(
           ExampleInstanceWithObjectId(
             id = id2,
             aggregateId = id2.toHexString(),
             description = secondDesc
-          )
+          ),
+          id2.toHexString()
         )
-        saveToDefaultCollection(
-          id3.toHexString(),
+        save(
           ExampleInstanceWithObjectId(
             id = id3,
             aggregateId = id3.toHexString(),
             description = secondDesc
-          )
+          ),
+          id3.toHexString()
         )
         shouldQuery<ExampleInstanceWithObjectId>("{\"description\": \"$secondDesc\"}") { actual ->
           actual.count() shouldBe 2
@@ -141,17 +141,16 @@ class MongodbTestSystemTests : FunSpec({
   }
 
   test("should throw assertion error when document does exist") {
-
     val id1 = ObjectId()
     TestSystem.validate {
       mongodb {
-        saveToDefaultCollection(
-          id1.toHexString(),
+        save(
           ExampleInstanceWithObjectId(
             id = id1,
             aggregateId = id1.toHexString(),
             description = testCase.name.testName + "1"
-          )
+          ),
+          id1.toHexString()
         )
         shouldGet<ExampleInstanceWithStringObjectId>(id1.toHexString()) { actual ->
           actual.aggregateId shouldBe id1.toHexString()
@@ -174,13 +173,13 @@ class MongodbTestSystemTests : FunSpec({
     val id = ObjectId()
     TestSystem.validate {
       mongodb {
-        saveToDefaultCollection(
-          id.toHexString(),
+        save(
           ExampleInstanceWithObjectId(
             id = id,
             aggregateId = id.toHexString(),
             description = testCase.name.testName
-          )
+          ),
+          id.toHexString()
         )
         shouldQuery<ExampleInstanceWithObjectId>("{\"aggregateId\": \"${id.toHexString()}\"}") { actual ->
           actual.size shouldBe 1
