@@ -13,6 +13,8 @@ couchbase-client-metrics = "0.6.2"
 couchbase-kotlin = "1.3.2"
 jackson = "2.17.1"
 arrow = "1.2.4"
+arrowSuspendApp = "0.4.0"
+arrow-jackson = "0.14.1"
 io-reactor = "3.6.6"
 io-reactor-extensions = "1.2.2"
 slf4j = "2.0.13"
@@ -43,6 +45,8 @@ hoplite = "2.8.0.RC3"
 junit = "5.10.2"
 kotest = "5.9.0"
 mockito = "5.3.1"
+quiver = "0.5.4"
+akkurate = "0.8.0"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -55,18 +59,46 @@ kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", ver
 kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
 kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
+
+# Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-jackson = { module = "io.arrow-kt:arrow-integrations-jackson-module", version.ref = "arrow-jackson" }
+arrow-suspendApp = { module = "io.arrow-kt:suspendapp", version.ref = "arrowSuspendApp" }
+arrow-suspendApp-ktor = { module = "io.arrow-kt:suspendapp-ktor", version.ref = "arrowSuspendApp" }
+arrow-continuations = { module = "io.arrow-kt:arrow-continuations", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
+arrow-eval = { module = "io.arrow-kt:arrow-eval", version.ref = "arrow" }
+arrow-atomic = { module = "io.arrow-kt:arrow-atomic", version.ref = "arrow" }
+arrow-collectors = { module = "io.arrow-kt:arrow-collectors", version.ref = "arrow" }
+arrow-fx-stm = { module = "io.arrow-kt:arrow-fx-stm", version.ref = "arrow" }
+arrow-core-serialization = { module = "io.arrow-kt:arrow-core-serialization", version.ref = "arrow" }
+arrow-cache4k = { module = "io.arrow-kt:arrow-cache4k", version.ref = "arrow" }
+quiver = { module = "app.cash.quiver:lib", version.ref = "quiver" }
+akkurate-arrow = { module = "dev.nesk.akkurate:akkurate-arrow", version.ref = "akkurate" }
+akkurate-core = { module = "dev.nesk.akkurate:akkurate-core", version.ref = "akkurate" }
+akkurate-ksp-plugin = { module = "dev.nesk.akkurate:akkurate-ksp-plugin", version.ref = "akkurate" }
+
+# Kafka
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
+
+# Couchbase
 couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }
 couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
 couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase-client-metrics" }
+
+# Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.14.1" }
 jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+
+# Slfj4
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+# Ktor
 ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
 ktor-server = { module = "io.ktor:ktor-server", version.ref = "ktor" }
 ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
@@ -78,13 +110,28 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-plugins-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-jackson-json = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+
+# koin
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+
+# r2dbc
 r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
-elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
-mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb"}
 
+# elastic
+elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
+
+# mongo
+mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
+
+# misc
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.6" }
+r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.6.2.jre11" }
+
+### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
@@ -94,12 +141,9 @@ testcontainers-postgres = { module = "org.testcontainers:postgresql", version.re
 testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
 testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
 testcontainers-mssql = { module = "org.testcontainers:mssqlserver", version.ref = "testcontainers" }
-r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.6.2.jre11" }
 testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis-junit", version = "1.6.4" }
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.6" }
 
+# spring-boot 2x
 spring-boot = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
 spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
 spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
@@ -109,6 +153,7 @@ spring-framework-context = { module = "org.springframework:spring-context", vers
 spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
 spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
 
+# spring-boot 3x
 spring-boot-3x = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot-3x" }
 spring-boot-3x-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-3x" }
 spring-boot-3x-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot-3x" }
@@ -142,6 +187,26 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref 
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
 ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
+
+[bundles]
+arrow-stack = ["arrow-core",
+    "arrow-jackson",
+    "arrow-suspendApp",
+    "arrow-suspendApp-ktor",
+    "arrow-continuations",
+    "arrow-fx-coroutines",
+    "arrow-resilience",
+    "arrow-eval",
+    "arrow-atomic",
+    "arrow-collectors",
+    "arrow-fx-stm",
+    "arrow-core-serialization",
+    "arrow-cache4k",
+    "quiver",
+    "akkurate-arrow",
+    "akkurate-core",
+    "akkurate-ksp-plugin"
+]
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
