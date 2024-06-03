@@ -2,16 +2,12 @@ package com.trendyol.stove.testing.e2e.rdbms.mssql
 
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.testcontainers.containers.MSSQLServerContainer
 
 @StoveDsl
 class MsSqlContext(
-  container: MSSQLServerContainer<*>,
+  container: StoveMsSqlContainer,
   val options: MsSqlOptions
-) : RelationalDatabaseContext<MSSQLServerContainer<*>>(
-    container,
-    options.configureExposedConfiguration
-  )
+) : RelationalDatabaseContext<StoveMsSqlContainer>(container, options.configureExposedConfiguration)
 
 @StoveDsl
 data class SqlMigrationContext(

@@ -1,11 +1,15 @@
 package com.trendyol.stove.testing.e2e.containers
 
-typealias ContainerFn<T> = T.() -> Unit
+import org.testcontainers.utility.DockerImageName
+
+typealias ContainerFn<TIn> = TIn.() -> Unit
+
+typealias UseContainerFn<TContainer> = (DockerImageName) -> TContainer
 
 /**
  * Container options to run
  */
-interface ContainerOptions {
+interface ContainerOptions<TContainer : StoveContainer> {
   val registry: String
 
   val image: String
@@ -16,5 +20,7 @@ interface ContainerOptions {
 
   val compatibleSubstitute: String?
 
-  val containerFn: ContainerFn<*>
+  val useContainerFn: UseContainerFn<TContainer>
+
+  val containerFn: ContainerFn<TContainer>
 }

@@ -2,19 +2,19 @@ package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.annotation.JsonAlias
 import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAny
 import io.kotest.matchers.shouldBe
-import org.bson.codecs.pojo.annotations.BsonCreator
-import org.bson.codecs.pojo.annotations.BsonId
-import org.bson.codecs.pojo.annotations.BsonProperty
+import kotlinx.coroutines.delay
+import org.bson.codecs.pojo.annotations.*
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.assertThrows
 
 class Setup : AbstractProjectConfig() {
-  override suspend fun beforeProject(): Unit =
+  override suspend fun beforeProject() {
     TestSystem()
       .with {
         mongodbDsl {
@@ -22,6 +22,24 @@ class Setup : AbstractProjectConfig() {
         }
         applicationUnderTest(NoOpApplication())
       }.run()
+
+    validate {
+      mongodb {
+        println("pausing...")
+        pause()
+
+        delay(1000)
+
+        println("unpausing...")
+        unpause()
+
+        delay(1000)
+
+        println("operating normally...")
+        println(inspect())
+      }
+    }
+  }
 
   override suspend fun afterProject(): Unit = TestSystem.stop()
 }

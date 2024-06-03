@@ -12,6 +12,7 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.elasticsearch.client.RestClient
 import org.testcontainers.elasticsearch.ElasticsearchContainer
+import org.testcontainers.utility.DockerImageName
 import kotlin.time.Duration.Companion.minutes
 
 @StoveDsl
@@ -46,9 +47,13 @@ data class ElasticSearchExposedConfiguration(
 
 data class ElasticsearchContext(
   val index: String,
-  val container: ElasticsearchContainer,
+  val container: StoveElasticSearchContainer,
   val options: ElasticsearchSystemOptions
 )
+
+open class StoveElasticSearchContainer(
+  override val imageNameAccess: DockerImageName
+) : ElasticsearchContainer(imageNameAccess), StoveContainer
 
 data class ElasticContainerOptions(
   override val registry: String = "docker.elastic.co/",
@@ -58,8 +63,9 @@ data class ElasticContainerOptions(
   val exposedPorts: List<Int> = listOf(DEFAULT_ELASTIC_PORT),
   val password: String = "password",
   val disableSecurity: Boolean = true,
-  override val containerFn: ContainerFn<ElasticsearchContainer> = {}
-) : ContainerOptions {
+  override val useContainerFn: UseContainerFn<StoveElasticSearchContainer> = { StoveElasticSearchContainer(it) },
+  override val containerFn: ContainerFn<StoveElasticSearchContainer> = { }
+) : ContainerOptions<StoveElasticSearchContainer> {
   companion object {
     const val DEFAULT_ELASTIC_PORT = 9200
   }

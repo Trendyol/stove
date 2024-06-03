@@ -6,7 +6,6 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.testcontainers.elasticsearch.ElasticsearchContainer
 
 /**
  * Integrates Elasticsearch with the TestSystem.
@@ -25,7 +24,7 @@ internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): 
     imageName = options.container.imageWithTag,
     registry = options.container.registry,
     compatibleSubstitute = options.container.compatibleSubstitute
-  ) { ElasticsearchContainer(it) }
+  ) { StoveElasticSearchContainer(it) }
     .apply {
       addExposedPorts(*options.container.exposedPorts.toIntArray())
       withPassword(options.container.password)

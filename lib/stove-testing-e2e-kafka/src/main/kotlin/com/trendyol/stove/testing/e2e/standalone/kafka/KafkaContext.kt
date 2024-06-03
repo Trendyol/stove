@@ -5,10 +5,9 @@ import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.testcontainers.containers.KafkaContainer
 
 data class KafkaContext(
-  val container: KafkaContainer,
+  val container: StoveKafkaContainer,
   val options: KafkaSystemOptions
 )
 
@@ -22,10 +21,11 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptio
     options.containerOptions.registry,
     options.containerOptions.compatibleSubstitute
   ) {
-    KafkaContainer(it)
+    options.containerOptions.useContainerFn(it)
       .withExposedPorts(*options.containerOptions.ports.toTypedArray())
-      .apply(options.containerOptions.containerFn)
       .withReuse(this.options.keepDependenciesRunning)
+      .let { c -> c as StoveKafkaContainer }
+      .apply(options.containerOptions.containerFn)
   }
   getOrRegister(KafkaSystem(this, KafkaContext(kafka, options)))
   return this

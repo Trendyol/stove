@@ -8,16 +8,22 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
 
 const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
+
+open class StovePostgresqlContainer(
+  override val imageNameAccess: DockerImageName
+) : PostgreSQLContainer<StovePostgresqlContainer>(imageNameAccess), StoveContainer
 
 data class PostgresqlContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
   override val image: String = DEFAULT_POSTGRES_IMAGE_NAME,
   override val tag: String = "latest",
   override val compatibleSubstitute: String? = null,
-  override val containerFn: ContainerFn<PostgreSQLContainer<*>> = {}
-) : ContainerOptions
+  override val useContainerFn: UseContainerFn<StovePostgresqlContainer> = { StovePostgresqlContainer(it) },
+  override val containerFn: ContainerFn<StovePostgresqlContainer> = { }
+) : ContainerOptions<StovePostgresqlContainer>
 
 @StoveDsl
 data class PostgresqlOptions(
@@ -39,7 +45,7 @@ data class PostgresqlOptions(
 }
 
 internal class PostgresqlContext(
-  container: PostgreSQLContainer<*>,
+  container: StovePostgresqlContainer,
   val options: PostgresqlOptions
 ) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, options.configureExposedConfiguration)
 
@@ -52,7 +58,7 @@ data class PostgresSqlMigrationContext(
 
 internal fun TestSystem.withPostgresql(options: PostgresqlOptions = PostgresqlOptions()): TestSystem =
   withProvidedRegistry(options.container.imageWithTag, options.container.registry, options.container.compatibleSubstitute) {
-    PostgreSQLContainer(it)
+    options.container.useContainerFn(it)
       .withDatabaseName(options.databaseName)
       .withUsername("sa")
       .withPassword("sa")
