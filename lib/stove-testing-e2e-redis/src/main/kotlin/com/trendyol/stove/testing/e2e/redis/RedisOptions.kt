@@ -6,14 +6,20 @@ import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import org.testcontainers.utility.DockerImageName
+
+open class StoveRedisContainer(
+  override val imageNameAccess: DockerImageName
+) : RedisContainer(imageNameAccess), StoveContainer
 
 data class RedisContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
   override val image: String = RedisContainer.DEFAULT_IMAGE_NAME.unversionedPart,
   override val tag: String = RedisContainer.DEFAULT_TAG,
   override val compatibleSubstitute: String? = null,
-  override val containerFn: ContainerFn<RedisContainer> = {}
-) : ContainerOptions
+  override val useContainerFn: UseContainerFn<StoveRedisContainer> = { StoveRedisContainer(it) },
+  override val containerFn: ContainerFn<StoveRedisContainer> = { }
+) : ContainerOptions<StoveRedisContainer>
 
 @StoveDsl
 data class RedisOptions(
@@ -53,9 +59,10 @@ internal fun TestSystem.redis(): RedisSystem =
 
 internal fun TestSystem.withRedis(options: RedisOptions = RedisOptions()): TestSystem =
   withProvidedRegistry(options.container.image, options.container.registry, options.container.compatibleSubstitute) {
-    RedisContainer(it)
+    options.container.useContainerFn(it)
       .withCommand("redis-server", "--requirepass", options.password)
       .withReuse(this.options.keepDependenciesRunning)
+      .let { c -> c as StoveRedisContainer }
       .apply(options.container.containerFn)
   }.let { getOrRegister(RedisSystem(this, RedisContext(it, options))) }
     .let { this }

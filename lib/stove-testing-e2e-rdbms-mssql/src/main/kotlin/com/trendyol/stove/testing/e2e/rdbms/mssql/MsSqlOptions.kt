@@ -8,14 +8,20 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.MSSQLServerContainer
+import org.testcontainers.utility.DockerImageName
+
+open class StoveMsSqlContainer(
+  override val imageNameAccess: DockerImageName
+) : MSSQLServerContainer<StoveMsSqlContainer>(imageNameAccess), StoveContainer
 
 data class MssqlContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
   override val image: String = MSSQLServerContainer.IMAGE,
   override val tag: String = "2017-CU12",
   override val compatibleSubstitute: String? = null,
-  override val containerFn: ContainerFn<MSSQLServerContainer<*>> = {}
-) : ContainerOptions
+  override val useContainerFn: UseContainerFn<StoveMsSqlContainer> = { StoveMsSqlContainer(it) },
+  override val containerFn: ContainerFn<StoveMsSqlContainer> = { }
+) : ContainerOptions<StoveMsSqlContainer>
 
 data class MsSqlOptions(
   val applicationName: String,
@@ -64,7 +70,7 @@ internal fun TestSystem.withMsSql(options: MsSqlOptions): TestSystem =
     options.container.registry,
     options.container.compatibleSubstitute
   ) {
-    MSSQLServerContainer(it)
+    options.container.useContainerFn(it)
       .acceptLicense()
       .withEnv("MSSQL_USER", options.userName)
       .withEnv("MSSQL_SA_PASSWORD", options.password)

@@ -6,6 +6,7 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 
 @StoveDsl
 data class MongodbExposedConfiguration(
@@ -17,9 +18,13 @@ data class MongodbExposedConfiguration(
 
 @StoveDsl
 data class MongodbContext(
-  val container: MongoDBContainer,
+  val container: StoveMongoContainer,
   val options: MongodbSystemOptions
 )
+
+open class StoveMongoContainer(
+  override val imageNameAccess: DockerImageName
+) : MongoDBContainer(imageNameAccess), StoveContainer
 
 @StoveDsl
 data class MongoContainerOptions(
@@ -27,8 +32,9 @@ data class MongoContainerOptions(
   override val image: String = "mongo",
   override val tag: String = "latest",
   override val compatibleSubstitute: String? = null,
-  override val containerFn: ContainerFn<MongoDBContainer> = {}
-) : ContainerOptions
+  override val useContainerFn: UseContainerFn<StoveMongoContainer> = { StoveMongoContainer(it) },
+  override val containerFn: ContainerFn<StoveMongoContainer> = { }
+) : ContainerOptions<StoveMongoContainer>
 
 @StoveDsl
 data class DatabaseOptions(
@@ -46,8 +52,9 @@ internal fun TestSystem.withMongodb(options: MongodbSystemOptions): TestSystem {
     options.container.registry,
     options.container.compatibleSubstitute
   ) {
-    MongoDBContainer(it)
+    options.container.useContainerFn(it)
       .withReuse(this.options.keepDependenciesRunning)
+      .let { c -> c as StoveMongoContainer }
       .apply(options.container.containerFn)
   }
   this.getOrRegister(

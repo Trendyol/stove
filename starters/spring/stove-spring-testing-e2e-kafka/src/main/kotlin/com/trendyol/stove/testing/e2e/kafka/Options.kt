@@ -10,6 +10,11 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.springframework.kafka.core.KafkaTemplate
 import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.utility.DockerImageName
+
+open class StoveKafkaContainer(
+  override val imageNameAccess: DockerImageName
+) : KafkaContainer(imageNameAccess), StoveContainer
 
 @StoveDsl
 data class KafkaExposedConfiguration(
@@ -22,8 +27,9 @@ data class KafkaContainerOptions(
   override val image: String = "confluentinc/cp-kafka",
   override val tag: String = "latest",
   override val compatibleSubstitute: String? = null,
-  override val containerFn: ContainerFn<KafkaContainer> = {}
-) : ContainerOptions
+  override val useContainerFn: UseContainerFn<StoveKafkaContainer> = { StoveKafkaContainer(it) },
+  override val containerFn: ContainerFn<StoveKafkaContainer> = { }
+) : ContainerOptions<StoveKafkaContainer>
 
 data class KafkaOps(
   val send: suspend (
@@ -48,7 +54,7 @@ data class KafkaSystemOptions(
 
 @StoveDsl
 data class KafkaContext(
-  val container: KafkaContainer,
+  val container: StoveKafkaContainer,
   val objectMapper: ObjectMapper,
   val options: KafkaSystemOptions
 )
@@ -59,10 +65,11 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptio
     registry = options.registry,
     compatibleSubstitute = options.containerOptions.compatibleSubstitute
   ) {
-    KafkaContainer(it)
+    options.containerOptions.useContainerFn(it)
       .withExposedPorts(*options.ports.toTypedArray())
-      .apply { options.containerOptions.containerFn(this) }
       .withReuse(this.options.keepDependenciesRunning)
+      .let { c -> c as StoveKafkaContainer }
+      .apply(options.containerOptions.containerFn)
   }.let { getOrRegister(KafkaSystem(this, KafkaContext(it, options.objectMapper, options))) }
     .let { this }
 

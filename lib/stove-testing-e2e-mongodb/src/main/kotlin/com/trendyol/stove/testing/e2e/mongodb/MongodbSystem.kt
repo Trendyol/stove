@@ -5,6 +5,7 @@ import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.containers.StoveContainerInspectInformation
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.flow.*
@@ -112,6 +113,12 @@ class MongodbSystem internal constructor(
       it.insertOne(Document(map))
     }
     .let { this }
+
+  fun pause(): MongodbSystem = context.container.pause().let { this }
+
+  fun unpause(): MongodbSystem = context.container.unpause().let { this }
+
+  fun inspect(): StoveContainerInspectInformation = context.container.inspect()
 
   override fun close(): Unit = runBlocking {
     Try {

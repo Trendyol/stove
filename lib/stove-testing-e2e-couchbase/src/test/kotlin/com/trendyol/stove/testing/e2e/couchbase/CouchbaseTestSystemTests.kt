@@ -13,10 +13,26 @@ import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.*
+import org.testcontainers.couchbase.CouchbaseService
+import org.testcontainers.utility.DockerImageName
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 const val TEST_BUCKET = "test-couchbase-bucket"
+
+class ExtendedCouchbaseContainer(dockerImageName: DockerImageName) : StoveCouchbaseContainer(dockerImageName) {
+  private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  override fun start() {
+    logger.info("starting extended couchbase container")
+    super.start()
+  }
+
+  override fun stop() {
+    logger.info("stopping extended couchbase container")
+    super.stop()
+  }
+}
 
 class Setup : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
@@ -25,9 +41,11 @@ class Setup : AbstractProjectConfig() {
         CouchbaseSystemOptions(
           defaultBucket = TEST_BUCKET,
           containerOptions = CouchbaseContainerOptions(
-            tag = "latest"
+            useContainerFn = { ExtendedCouchbaseContainer(it) },
+            tag = "7.6.1"
           ) {
             withStartupAttempts(3)
+            withEnabledServices(CouchbaseService.KV, CouchbaseService.INDEX, CouchbaseService.QUERY)
           }
         ).migrations {
           register<DefaultMigration>()
