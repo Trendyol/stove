@@ -84,7 +84,10 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (TExpected) -> Unit
-  ): HttpSystem = get(uri, headers, queryParams, token).also { expect(it.body()) }.let { this }
+  ): HttpSystem = get(uri, headers, queryParams, token).also {
+    check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
+    expect(it.body())
+  }.let { this }
 
   @HttpDsl
   suspend inline fun <reified TExpected : Any> getMany(
@@ -93,7 +96,10 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (List<TExpected>) -> Unit
-  ): HttpSystem = get(uri, headers, queryParams, token).also { expect(it.body()) }.let { this }
+  ): HttpSystem = get(uri, headers, queryParams, token).also {
+    check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
+    expect(it.body())
+  }.let { this }
 
   @HttpDsl
   suspend fun postAndExpectBodilessResponse(
@@ -119,7 +125,10 @@ class HttpSystem(
     headers.forEach { (key, value) -> header(key, value) }
     token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
     body.map { setBody(it) }
-  }.also { expect(it.body()) }.let { this }
+  }.also {
+    check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
+    expect(it.body())
+  }.let { this }
 
   /**
    * Posts the given [body] to the given [uri] and expects the response to have a body.
@@ -162,8 +171,10 @@ class HttpSystem(
     headers.forEach { (key, value) -> header(key, value) }
     token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
     body.map { setBody(it) }
-  }.also { expect(it.body()) }
-    .let { this }
+  }.also {
+    check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
+    expect(it.body())
+  }.let { this }
 
   @HttpDsl
   suspend inline fun <reified TExpected : Any> putAndExpectBody(
@@ -238,6 +249,7 @@ class HttpSystem(
             append(HttpHeaders.ContentType, ContentType.Application.OctetStream)
           }
         )
+
         is StoveMultiPartContent.File -> append(
           it.param,
           it.content,
