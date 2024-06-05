@@ -217,7 +217,7 @@ kotlinter = { id = "org.jmailen.kotlinter", version = "4.3.0" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-gitVersioning = { id = "com.palantir.git-version", version = "3.0.0" }
+gitVersioning = { id = "com.palantir.git-version", version = "3.1.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
