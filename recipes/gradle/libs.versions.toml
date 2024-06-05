@@ -3,7 +3,7 @@ kotlin = "2.0.0"
 kotlinx = "1.8.1"
 scala2x = "2.13.14"
 scala3x = "3.4.1"
-quarkus = "3.11.0"
+quarkus = "3.11.1"
 
 # Spring-Boot
 spring-boot = "3.3.0"
