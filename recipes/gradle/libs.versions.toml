@@ -71,7 +71,7 @@ kediatr = "3.0.0"
 # Testing
 stove = "1.0.0-SNAPSHOT"
 junit = "5.10.2"
-kotest = "5.9.0"
+kotest = "5.9.1"
 
 [libraries]
 # Kotlin
