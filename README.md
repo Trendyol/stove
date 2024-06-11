@@ -36,6 +36,8 @@ Frameworks:
 
 ## Show me the code
 
+[📹 Youtube Session about how to use](https://youtu.be/DJ0CI5cBanc?t=669) _(Turkish)_
+
 ### Setting-up all the physical dependencies with application
 
 ```kotlin
