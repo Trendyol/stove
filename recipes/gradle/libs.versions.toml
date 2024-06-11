@@ -29,7 +29,7 @@ kafka = "3.7.0"
 kafka-kotlin = "0.4.0"
 
 # Reactor
-io-reactor = "3.6.6"
+io-reactor = "3.6.7"
 io-reactor-extensions = "1.2.2"
 
 # Logging
