@@ -35,7 +35,11 @@ class MessageStore {
     offsets: List<Long>,
     partition: Int
   ): Boolean = committedMessages()
-    .any { offsets.contains(it.offset) && it.partition == partition && it.topic == topic }
+    .any {
+      (offsets.contains(it.offset) || offsets.all { o -> o <= it.offset }) &&
+        it.partition == partition &&
+        it.topic == topic
+    }
 
   override fun toString(): String = """
     |Consumed: ${pprint(consumedMessages())}

@@ -6,6 +6,7 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvent
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvents.ProductFailingCreated
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
+import kotlinx.coroutines.async
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 
@@ -23,6 +24,16 @@ class KafkaSystemTests : FunSpec({
         shouldBeConsumed<ProductCreated>(1.minutes) {
           actual.productId == productId
         }
+      }
+    }
+  }
+  test("lots of messages") {
+    validate {
+      kafka {
+        val messages = ProductCreated.randoms(100)
+        messages.map { async { publish("product", it, key = randomString().some()) } }
+        messages.map { async { shouldBePublished<ProductCreated> { actual.productId == it.productId } } }
+        messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }
       }
     }
   }
