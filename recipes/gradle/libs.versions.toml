@@ -22,7 +22,7 @@ jackson = "2.17.1"
 # Couchbase
 couchbase-kotlin = "1.3.2"
 couchbase-client = "3.6.2"
-couchbase-client-metrics = "0.6.2"
+couchbase-client-metrics = "0.7.0"
 
 # Kafka
 kafka = "3.7.0"
