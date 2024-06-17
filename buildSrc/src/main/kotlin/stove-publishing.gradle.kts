@@ -58,7 +58,9 @@ publishing {
         name = getProperty("nexus_username", "nexus_username")
         value = getProperty("nexus_password", "nexus_password")
       }
-
+      authentication {
+        create<HttpHeaderAuthentication>("header")
+      }
     }
     maven {
       name = "GitHubPackages"
