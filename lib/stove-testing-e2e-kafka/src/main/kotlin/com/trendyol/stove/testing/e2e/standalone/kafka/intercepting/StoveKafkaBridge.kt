@@ -1,6 +1,7 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.squareup.wire.GrpcException
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import kotlinx.coroutines.runBlocking
@@ -41,7 +42,10 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     }.map {
       logger.info("Consumed message sent to Stove Kafka Bridge: $consumedMessage")
     }.recover { e ->
-      logger.error("Failed to send consumed message to Stove Kafka Bridge: $consumedMessage", e)
+      when {
+        e is GrpcException && e.grpcStatus.code == 2 && e.grpcStatus.name == "UNKNOWN" -> Unit
+        else -> logger.error("Failed to send consumed message to Stove Kafka Bridge: $consumedMessage", e)
+      }
     }
   }
 
@@ -51,7 +55,10 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     }.map {
       logger.info("Committed message sent to Stove Kafka Bridge: $committedMessage")
     }.recover { e ->
-      logger.error("Failed to send committed message to Stove Kafka Bridge: $committedMessage", e)
+      when {
+        e is GrpcException && e.grpcStatus.code == 2 && e.grpcStatus.name == "UNKNOWN" -> Unit
+        else -> logger.error("Failed to send committed message to Stove Kafka Bridge: $committedMessage", e)
+      }
     }
   }
 
@@ -61,7 +68,10 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     }.map {
       logger.info("Published message sent to Stove Kafka Bridge: $publishedMessage")
     }.recover { e ->
-      logger.error("Failed to send published message to Stove Kafka Bridge: $publishedMessage", e)
+      when {
+        e is GrpcException && e.grpcStatus.code == 2 && e.grpcStatus.name == "UNKNOWN" -> Unit
+        else -> logger.error("Failed to send published message to Stove Kafka Bridge: $publishedMessage", e)
+      }
     }
   }
 

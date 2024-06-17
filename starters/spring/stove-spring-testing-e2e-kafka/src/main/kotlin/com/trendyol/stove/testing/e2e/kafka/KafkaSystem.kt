@@ -148,6 +148,20 @@ class KafkaSystem(
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @KafkaDsl
+  fun pause(): KafkaSystem = context.container.pause().let { this }
+
+  /**
+   * Unpauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @KafkaDsl
+  fun unpause(): KafkaSystem = context.container.unpause().let { this }
+
   override suspend fun stop(): Unit = context.container.stop()
 
   override fun close(): Unit = runBlocking {

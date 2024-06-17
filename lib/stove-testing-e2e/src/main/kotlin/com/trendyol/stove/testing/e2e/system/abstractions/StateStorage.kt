@@ -19,18 +19,22 @@ interface StateStorage<TState> {
 
 interface StateStorageFactory {
   operator fun <T : Any> invoke(options: TestSystemOptions, system: KClass<*>, state: KClass<T>): StateStorage<T>
-}
 
-fun DefaultStateStorageFactory(): StateStorageFactory = object : StateStorageFactory {
-  override fun <T : Any> invoke(options: TestSystemOptions, system: KClass<*>, state: KClass<T>): StateStorage<T> =
-    DefaultStateStorage(options, system, state)
-}
+  companion object {
+    fun Default(): StateStorageFactory = DefaultStateStorageFactory()
 
-fun <T : Any> DefaultStateStorage(
-  options: TestSystemOptions,
-  system: KClass<*>,
-  state: KClass<T>
-): StateStorage<T> = FileSystemStorage(options, system, state)
+    private fun DefaultStateStorageFactory(): StateStorageFactory = object : StateStorageFactory {
+      override fun <T : Any> invoke(options: TestSystemOptions, system: KClass<*>, state: KClass<T>): StateStorage<T> =
+        DefaultStateStorage(options, system, state)
+    }
+  }
+
+  fun <T : Any> DefaultStateStorage(
+    options: TestSystemOptions,
+    system: KClass<*>,
+    state: KClass<T>
+  ): StateStorage<T> = FileSystemStorage(options, system, state)
+}
 
 /**
  * Represents the state of the [TestSystem] which is being captured.

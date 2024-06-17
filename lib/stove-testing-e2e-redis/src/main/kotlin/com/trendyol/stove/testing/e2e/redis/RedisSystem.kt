@@ -46,6 +46,18 @@ class RedisSystem(
     )
   }
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  fun pause(): RedisSystem = context.container.pause().let { this }
+
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  fun unpause(): RedisSystem = context.container.unpause().let { this }
+
   override suspend fun stop(): Unit = context.container.stop()
 
   override fun close(): Unit = runBlocking {

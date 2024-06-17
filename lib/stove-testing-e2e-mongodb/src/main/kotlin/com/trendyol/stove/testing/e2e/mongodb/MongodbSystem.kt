@@ -114,10 +114,21 @@ class MongodbSystem internal constructor(
     }
     .let { this }
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @MongoDsl
   fun pause(): MongodbSystem = context.container.pause().let { this }
 
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @MongoDsl
   fun unpause(): MongodbSystem = context.container.unpause().let { this }
 
+  @MongoDsl
   fun inspect(): StoveContainerInspectInformation = context.container.inspect()
 
   override fun close(): Unit = runBlocking {

@@ -141,6 +141,20 @@ class ElasticsearchSystem internal constructor(
         .refresh(Refresh.WaitFor)
     }.let { this }
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @ElasticDsl
+  fun pause(): ElasticsearchSystem = context.container.pause().let { this }
+
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @ElasticDsl
+  fun unpause(): ElasticsearchSystem = context.container.unpause().let { this }
+
   override fun close(): Unit =
     runBlocking(context = Dispatchers.IO) {
       Try {

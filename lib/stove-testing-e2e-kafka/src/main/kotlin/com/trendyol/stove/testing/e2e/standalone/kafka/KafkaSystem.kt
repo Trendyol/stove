@@ -117,6 +117,20 @@ class KafkaSystem(
     }
   }.let { this }
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @StoveDsl
+  fun pause(): KafkaSystem = context.container.pause().let { this }
+
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @StoveDsl
+  fun unpause(): KafkaSystem = context.container.unpause().let { this }
+
   @PublishedApi
   internal suspend fun <T : Any> shouldBeConsumedInternal(
     clazz: KClass<T>,
@@ -164,7 +178,7 @@ class KafkaSystem(
       } else {
         emptyMap()
       }
-    )
+      )
   )
 
   private fun createAdminClient(

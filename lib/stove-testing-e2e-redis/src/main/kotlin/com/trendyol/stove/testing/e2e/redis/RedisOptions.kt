@@ -40,7 +40,7 @@ data class RedisExposedConfiguration(
 
 @StoveDsl
 data class RedisContext(
-  val container: RedisContainer,
+  val container: StoveRedisContainer,
   val options: RedisOptions
 )
 

@@ -151,6 +151,20 @@ class CouchbaseSystem internal constructor(
     instance: T
   ): CouchbaseSystem = this.save("_default", id, instance)
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @CouchbaseDsl
+  fun pause(): CouchbaseSystem = context.container.pause().let { this }
+
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @CouchbaseDsl
+  fun unpause(): CouchbaseSystem = context.container.unpause().let { this }
+
   override fun close(): Unit = runBlocking {
     Try {
       cluster.disconnect()

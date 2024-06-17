@@ -81,6 +81,20 @@ class MsSqlSystem internal constructor(
     }
   }
 
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @MssqlDsl
+  fun pause(): MsSqlSystem = context.container.pause().let { this }
+
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * @return KafkaSystem
+   */
+  @MssqlDsl
+  fun unpause(): MsSqlSystem = context.container.unpause().let { this }
+
   private fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
     MssqlConnectionConfiguration.builder().apply {
       host(exposedConfiguration.host)

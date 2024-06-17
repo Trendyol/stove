@@ -47,7 +47,7 @@ data class PostgresqlOptions(
 internal class PostgresqlContext(
   container: StovePostgresqlContainer,
   val options: PostgresqlOptions
-) : RelationalDatabaseContext<PostgreSQLContainer<*>>(container, options.configureExposedConfiguration)
+) : RelationalDatabaseContext<StovePostgresqlContainer>(container, options.configureExposedConfiguration)
 
 @StoveDsl
 data class PostgresSqlMigrationContext(

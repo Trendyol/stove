@@ -54,7 +54,8 @@ import kotlin.reflect.KClass
 class TestSystem(
   val baseUrl: String = "http://localhost:8001",
   configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}
-) : ReadyTestSystem, AutoCloseable {
+) : ReadyTestSystem,
+  AutoCloseable {
   private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
 
   init {
@@ -78,7 +79,10 @@ class TestSystem(
     @StoveDsl
     suspend fun validate(
       validation: @StoveDsl suspend ValidationDsl.() -> Unit
-    ): Unit = validation(ValidationDsl(instance))
+    ) {
+      check(::instance.isInitialized) { "TestSystem is not initialized yet, do not forget to call TestSystem#run" }
+      validation(ValidationDsl(instance))
+    }
 
     fun stop(): Unit = instance.close()
   }
@@ -170,16 +174,12 @@ class TestSystem(
    * testSystem.scheduler().advance()
    * ```
    */
-  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T {
-    return activeSystems.getOrPut(T::class) { registerForDispose(system) } as T
-  }
+  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = activeSystems.getOrPut(T::class) { registerForDispose(system) } as T
 
   /**
    * Gets the registered system or returns [None]
    */
-  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> {
-    return activeSystems.getOrNone(T::class).map { it as T }
-  }
+  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> = activeSystems.getOrNone(T::class).map { it as T }
 
   fun <T : AutoCloseable> registerForDispose(closeable: T): T {
     cleanup.add { closeable.close() }
