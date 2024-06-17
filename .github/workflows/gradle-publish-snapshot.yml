@@ -38,5 +38,5 @@ jobs:
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}
           nexus_username: ${{ secrets.sonar_username }}
-          nexus_password: ${{ secrets.sonar_password }}
+          nexus_password: ${{ secrets.sonar_token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
