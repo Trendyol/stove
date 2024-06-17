@@ -34,7 +34,9 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
 
   override fun close() = Unit
 
-  override fun onAcknowledgement(metadata: RecordMetadata, exception: Exception) = Unit
+  override fun onAcknowledgement(metadata: RecordMetadata?, exception: Exception?) = runBlocking {
+    ackedMessages(metadata, exception).forEach { send(it) }
+  }
 
   private suspend fun send(consumedMessage: ConsumedMessage) {
     Try {
@@ -73,6 +75,30 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
         else -> logger.error("Failed to send published message to Stove Kafka Bridge: $publishedMessage", e)
       }
     }
+  }
+
+  private suspend fun send(ackedMessage: AcknowledgedMessage) {
+    Try {
+      client.onAcknowledgedMessage().execute(ackedMessage)
+    }.map {
+      logger.info("Acknowledged message sent to Stove Kafka Bridge: $ackedMessage")
+    }.recover { e ->
+      when {
+        e is GrpcException && e.grpcStatus.code == 2 && e.grpcStatus.name == "UNKNOWN" -> Unit
+        else -> logger.error("Failed to send acknowledged message to Stove Kafka Bridge: $ackedMessage", e)
+      }
+    }
+  }
+
+  private fun ackedMessages(metadata: RecordMetadata?, exception: Exception?): List<AcknowledgedMessage> {
+    val ackedMessage = AcknowledgedMessage(
+      id = UUID.randomUUID().toString(),
+      topic = metadata?.topic() ?: "",
+      partition = metadata?.partition() ?: -1,
+      offset = metadata?.offset() ?: -1,
+      exception = exception?.message ?: ""
+    )
+    return listOf(ackedMessage)
   }
 
   private fun consumedMessages(records: ConsumerRecords<K, V>) = records.map { record ->

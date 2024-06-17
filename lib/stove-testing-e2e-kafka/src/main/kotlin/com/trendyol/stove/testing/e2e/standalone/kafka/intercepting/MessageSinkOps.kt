@@ -31,6 +31,11 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     logger.info("Recorded Committed Message:{}", record)
   }
 
+  fun recordAcknowledgedMessage(record: AcknowledgedMessage): Unit = runBlocking {
+    store.record(record)
+    logger.info("Recorded Acknowledged Message:{}", record)
+  }
+
   fun recordError(record: ConsumedMessage): Unit = runBlocking {
     store.recordFailure(record)
     logger.info("Recorded Failed Message: {}", record)

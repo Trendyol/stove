@@ -22,4 +22,6 @@ class TestSystemMessageSink(
   fun onMessagePublished(record: PublishedMessage): Unit = recordPublishedMessage(record)
 
   fun onMessageCommitted(record: CommittedMessage): Unit = recordCommittedMessage(record)
+
+  fun onMessageAcknowledged(record: AcknowledgedMessage): Unit = recordAcknowledgedMessage(record)
 }

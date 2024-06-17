@@ -179,7 +179,7 @@ class KafkaSystem(
       } else {
         emptyMap()
       }
-      )
+    )
   )
 
   private fun createAdminClient(

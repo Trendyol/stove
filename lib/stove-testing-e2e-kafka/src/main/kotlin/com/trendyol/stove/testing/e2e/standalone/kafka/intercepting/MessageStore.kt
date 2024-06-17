@@ -9,12 +9,15 @@ class MessageStore {
   private val committed = Caching.of<String, CommittedMessage>()
   private val retried = Caching.of<String, ConsumedMessage>()
   private val failedMessages = Caching.of<String, ConsumedMessage>()
+  private val acknowledged = Caching.of<String, AcknowledgedMessage>()
 
   fun record(message: ConsumedMessage) = consumed.put(message.id, message)
 
   fun record(message: PublishedMessage) = published.put(message.id, message)
 
   fun record(message: CommittedMessage) = committed.put(message.id, message)
+
+  fun record(message: AcknowledgedMessage) = acknowledged.put(message.id, message)
 
   fun recordRetry(message: ConsumedMessage) = retried.put(message.id, message)
 

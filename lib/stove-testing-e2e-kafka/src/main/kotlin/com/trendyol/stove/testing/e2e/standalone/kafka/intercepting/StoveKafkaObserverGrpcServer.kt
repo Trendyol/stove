@@ -30,4 +30,10 @@ class StoveKafkaObserverGrpcServer(
     sink.onMessageCommitted(request)
     return Reply(status = 200)
   }
+
+  override suspend fun onAcknowledgedMessage(request: AcknowledgedMessage): Reply {
+    logger.info("Received acknowledged message: $request")
+    sink.onMessageAcknowledged(request)
+    return Reply(status = 200)
+  }
 }
