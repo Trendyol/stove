@@ -174,7 +174,9 @@ class TestSystem(
    * testSystem.scheduler().advance()
    * ```
    */
-  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = activeSystems.getOrPut(T::class) { registerForDispose(system) } as T
+  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = activeSystems.getOrPut(T::class) {
+    registerForDispose(system)
+  } as T
 
   /**
    * Gets the registered system or returns [None]

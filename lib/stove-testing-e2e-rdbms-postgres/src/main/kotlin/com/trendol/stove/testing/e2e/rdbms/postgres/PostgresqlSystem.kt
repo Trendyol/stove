@@ -34,7 +34,7 @@ class PostgresqlSystem internal constructor(
    * @return KafkaSystem
    */
   @PostgresDsl
-  fun pause():  PostgresqlSystem = postgresContext.container.pause().let { this }
+  fun pause(): PostgresqlSystem = postgresContext.container.pause().let { this }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
