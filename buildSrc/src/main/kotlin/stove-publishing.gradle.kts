@@ -54,13 +54,9 @@ publishing {
       val snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
       url = if (rootProject.version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
       // url = rootProject.buildDir.resolve("publications").toURI()
-      credentials(HttpHeaderCredentials::class) {
-        name = getProperty("nexus_username", "nexus_username")
-        value = getProperty("nexus_password", "nexus_password")
-      }
-
-      authentication {
-        create<HttpHeaderAuthentication>("header")
+      credentials {
+        username = getProperty("nexus_username", "nexus_username")
+        password = getProperty("nexus_password", "nexus_password")
       }
     }
     maven {
