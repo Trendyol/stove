@@ -213,7 +213,7 @@ spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotl
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.18.0" }
-kotlinter = { id = "org.jmailen.kotlinter", version = "4.3.0" }
+kotlinter = { id = "org.jmailen.kotlinter", version = "4.4.0" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
