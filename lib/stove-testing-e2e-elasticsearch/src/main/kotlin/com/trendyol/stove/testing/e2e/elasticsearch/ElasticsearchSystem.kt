@@ -10,7 +10,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
 import org.apache.http.auth.*
 import org.apache.http.client.CredentialsProvider
@@ -24,7 +24,7 @@ import kotlin.jvm.optionals.getOrElse
 @ElasticDsl
 class ElasticsearchSystem internal constructor(
   override val testSystem: TestSystem,
-  val context: ElasticsearchContext
+  private val context: ElasticsearchContext
 ) : PluggedSystem, RunAware, AfterRunAware, ExposesConfiguration {
   @PublishedApi
   internal lateinit var esClient: ElasticsearchClient
@@ -67,38 +67,40 @@ class ElasticsearchSystem internal constructor(
   @ElasticDsl
   inline fun <reified T : Any> shouldQuery(
     query: String,
+    index: String,
     assertion: (List<T>) -> Unit
-  ): ElasticsearchSystem =
-    esClient.search(
-      SearchRequest.of { req ->
-        req.index(context.index).query { q -> q.withJson(query.reader()) }
-      },
+  ): ElasticsearchSystem {
+    require(index.isNotBlank()) { "Index cannot be blank" }
+    require(query.isNotBlank()) { "Query cannot be blank" }
+    return esClient.search(
+      SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
       T::class.java
     ).hits().hits()
       .mapNotNull { it.source() }
       .also(assertion)
       .let { this }
+  }
 
   @ElasticDsl
   inline fun <reified T : Any> shouldQuery(
     query: Query,
     assertion: (List<T>) -> Unit
-  ): ElasticsearchSystem =
-    esClient.search(
-      SearchRequest.of { q -> q.query(query) },
-      T::class.java
-    ).hits().hits()
-      .mapNotNull { it.source() }
-      .also(assertion)
-      .let { this }
+  ): ElasticsearchSystem = esClient.search(
+    SearchRequest.of { q -> q.query(query) },
+    T::class.java
+  ).hits().hits()
+    .mapNotNull { it.source() }
+    .also(assertion)
+    .let { this }
 
   @ElasticDsl
   inline fun <reified T : Any> shouldGet(
-    index: String = context.index,
+    index: String,
     key: String,
     assertion: (T) -> Unit
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
+    require(key.isNotBlank()) { "Key cannot be blank" }
     return esClient
       .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
       .source().toOption()
@@ -110,9 +112,11 @@ class ElasticsearchSystem internal constructor(
   @ElasticDsl
   fun shouldNotExist(
     key: String,
-    onIndex: String = context.index
+    index: String
   ): ElasticsearchSystem {
-    val exists = esClient.exists { req -> req.index(onIndex).id(key) }
+    require(index.isNotBlank()) { "Index cannot be blank" }
+    require(key.isNotBlank()) { "Key cannot be blank" }
+    val exists = esClient.exists { req -> req.index(index).id(key) }
     if (exists.value()) {
       throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
@@ -122,24 +126,30 @@ class ElasticsearchSystem internal constructor(
   @ElasticDsl
   fun shouldDelete(
     key: String,
-    fromIndex: String = context.index
-  ): ElasticsearchSystem =
-    esClient
-      .delete(DeleteRequest.of { req -> req.index(fromIndex).id(key).refresh(Refresh.WaitFor) })
+    index: String
+  ): ElasticsearchSystem {
+    require(index.isNotBlank()) { "Index cannot be blank" }
+    require(key.isNotBlank()) { "Key cannot be blank" }
+    return esClient
+      .delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
       .let { this }
+  }
 
   @ElasticDsl
   fun <T : Any> save(
     id: String,
     instance: T,
-    toIndex: String = context.index
-  ): ElasticsearchSystem =
-    esClient.index { req ->
-      req.index(toIndex)
+    index: String
+  ): ElasticsearchSystem {
+    require(index.isNotBlank()) { "Index cannot be blank" }
+    require(id.isNotBlank()) { "Id cannot be blank" }
+    return esClient.index { req ->
+      req.index(index)
         .id(id)
         .document(instance)
         .refresh(Refresh.WaitFor)
     }.let { this }
+  }
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
@@ -155,20 +165,14 @@ class ElasticsearchSystem internal constructor(
   @ElasticDsl
   fun unpause(): ElasticsearchSystem = context.container.unpause().let { this }
 
-  override fun close(): Unit =
-    runBlocking(context = Dispatchers.IO) {
-      Try {
-        esClient._transport().close()
-        executeWithReuseCheck { stop() }
-      }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
-    }
+  override fun close(): Unit = runBlocking {
+    Try {
+      esClient._transport().close()
+      executeWithReuseCheck { stop() }
+    }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
+  }
 
-  override fun configuration(): List<String> =
-    context.options.configureExposedConfiguration(exposedConfiguration) +
-      listOf(
-        "elasticsearch.host=${exposedConfiguration.host}",
-        "elasticsearch.port=${exposedConfiguration.port}"
-      )
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
     context.options.clientConfigurer.restClientOverrideFn
@@ -195,9 +199,8 @@ class ElasticsearchSystem internal constructor(
       AuthScope.ANY,
       UsernamePasswordCredentials("elastic", exposedConfiguration.password)
     )
-    val builder: RestClientBuilder =
-      RestClient
-        .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
+    val builder: RestClientBuilder = RestClient
+      .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
 
     return builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
       clientBuilder.setSSLContext(sslContext)
