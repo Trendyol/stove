@@ -5,8 +5,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
-import com.trendyol.stove.testing.e2e.database.migrations.MigrationPriority
+import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
@@ -15,8 +14,7 @@ import io.kotest.matchers.shouldBe
 import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
 import org.junit.jupiter.api.assertThrows
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.*
 import java.util.*
 
 const val TEST_INDEX = "stove-test-index"
@@ -51,24 +49,21 @@ class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
 }
 
 class Setup : AbstractProjectConfig() {
-  override suspend fun beforeProject(): Unit =
-    TestSystem()
-      .with {
-        elasticsearch {
-          ElasticsearchSystemOptions(
-            DefaultIndex(index = TEST_INDEX, migrator = TestIndexMigrator()),
-            clientConfigurer =
-              ElasticClientConfigurer(
-                restClientOverrideFn =
-                  Some { cfg ->
-                    RestClient.builder(HttpHost(cfg.host, cfg.port)).build()
-                  }
-              ),
-            ElasticContainerOptions(tag = "8.9.0")
-          ).migrations { register<AnotherIndexMigrator>() }
+  override suspend fun beforeProject(): Unit = TestSystem()
+    .with {
+      elasticsearch {
+        ElasticsearchSystemOptions(
+          clientConfigurer = ElasticClientConfigurer(
+            restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
+          ),
+          ElasticContainerOptions(tag = "8.9.0")
+        ).migrations {
+          register<TestIndexMigrator>()
+          register<AnotherIndexMigrator>()
         }
-        applicationUnderTest(NoOpApplication())
-      }.run()
+      }
+      applicationUnderTest(NoOpApplication())
+    }.run()
 
   override suspend fun afterProject(): Unit = TestSystem.stop()
 }
@@ -90,8 +85,8 @@ class ElasticsearchTestSystemTests : FunSpec({
     val exampleInstance = ExampleInstance("1", "1312")
     TestSystem.validate {
       elasticsearch {
-        save(exampleInstance.id, exampleInstance)
-        shouldGet<ExampleInstance>(key = exampleInstance.id) {
+        save(exampleInstance.id, exampleInstance, TEST_INDEX)
+        shouldGet<ExampleInstance>(key = exampleInstance.id, index = TEST_INDEX) {
           it.description shouldBe exampleInstance.description
         }
       }
@@ -118,14 +113,14 @@ class ElasticsearchTestSystemTests : FunSpec({
     val queryAsString = queryByDesc.asJsonString()
     TestSystem.validate {
       elasticsearch {
-        save(exampleInstance1.id, exampleInstance1)
-        save(exampleInstance2.id, exampleInstance2)
+        save(exampleInstance1.id, exampleInstance1, TEST_INDEX)
+        save(exampleInstance2.id, exampleInstance2, TEST_INDEX)
         shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
           it.size shouldBe 2
         }
-        shouldDelete(exampleInstance1.id)
-        shouldGet<ExampleInstance>(key = exampleInstance2.id) {}
-        shouldQuery<ExampleInstance>(queryAsString) {
+        shouldDelete(exampleInstance1.id, TEST_INDEX)
+        shouldGet<ExampleInstance>(key = exampleInstance2.id, index = TEST_INDEX) {}
+        shouldQuery<ExampleInstance>(queryAsString, TEST_INDEX) {
           it.size shouldBe 1
         }
       }
@@ -137,12 +132,12 @@ class ElasticsearchTestSystemTests : FunSpec({
     val exampleInstance = ExampleInstance(existDocId, "1312")
     TestSystem.validate {
       elasticsearch {
-        save(exampleInstance.id, exampleInstance)
-        shouldGet<ExampleInstance>(key = exampleInstance.id) {
+        save(exampleInstance.id, exampleInstance, TEST_INDEX)
+        shouldGet<ExampleInstance>(key = exampleInstance.id, index = TEST_INDEX) {
           it.description shouldBe exampleInstance.description
         }
 
-        assertThrows<AssertionError> { shouldNotExist(existDocId) }
+        assertThrows<AssertionError> { shouldNotExist(existDocId, index = TEST_INDEX) }
       }
     }
   }
@@ -151,7 +146,7 @@ class ElasticsearchTestSystemTests : FunSpec({
     val notExistDocId = UUID.randomUUID().toString()
     TestSystem.validate {
       elasticsearch {
-        shouldNotExist(notExistDocId)
+        shouldNotExist(notExistDocId, index = TEST_INDEX)
       }
     }
   }

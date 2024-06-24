@@ -10,14 +10,10 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 /**
  * Integrates Elasticsearch with the TestSystem.
  *
- * Provides an [options] class to define [DefaultIndex] parameter to create an index as default index.
+ * Provides an [options] class to configure the Elasticsearch container.
  * You can configure it by changing the implementation of migrator.
  */
 internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): TestSystem {
-  options.migrations {
-    register<DefaultIndexMigrator> { options.defaultIndex.migrator }
-  }
-
   options.objectMapper.registerArrowModule()
 
   return withProvidedRegistry(
@@ -34,7 +30,7 @@ internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): 
       withReuse(this@withElasticsearch.options.keepDependenciesRunning)
       options.container.containerFn(this)
     }
-    .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(options.defaultIndex.index, it, options))) }
+    .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(it, options))) }
     .let { this }
 }
 

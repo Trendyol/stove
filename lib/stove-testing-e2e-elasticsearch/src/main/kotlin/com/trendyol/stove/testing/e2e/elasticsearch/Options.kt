@@ -17,7 +17,6 @@ import kotlin.time.Duration.Companion.minutes
 
 @StoveDsl
 data class ElasticsearchSystemOptions(
-  val defaultIndex: DefaultIndex,
   val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
   val container: ElasticContainerOptions = ElasticContainerOptions(),
   val objectMapper: ObjectMapper = StoveObjectMapper.Default,
@@ -46,7 +45,6 @@ data class ElasticSearchExposedConfiguration(
 ) : ExposedConfiguration
 
 data class ElasticsearchContext(
-  val index: String,
   val container: StoveElasticSearchContainer,
   val options: ElasticsearchSystemOptions
 )
