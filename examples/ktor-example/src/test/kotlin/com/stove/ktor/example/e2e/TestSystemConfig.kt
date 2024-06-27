@@ -6,7 +6,6 @@ import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.extensions.system.SystemEnvironmentProjectListener
@@ -73,15 +72,6 @@ class TestSystemConfig : AbstractProjectConfig() {
           "kafka.interceptorClasses=${it.interceptorClass}"
         )
       }
-    }
-    wiremock {
-      WireMockSystemOptions(
-        port = 9090,
-        removeStubAfterRequestMatched = true,
-        afterRequest = { e, _ ->
-          logger.info(e.request.toString())
-        }
-      )
     }
     ktor(
       withParameters = listOf(
