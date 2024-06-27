@@ -1,7 +1,7 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
 import com.trendyol.stove.recipes.quarkus.QuarkusRecipeApp
-import com.trendyol.stove.testing.e2e.http.httpClient
+import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -10,9 +10,13 @@ import kotlinx.coroutines.*
 
 class ProjectConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem("http://localhost:8080")
+    TestSystem()
       .with {
-        httpClient()
+        httpClient {
+          HttpClientSystemOptions(
+            baseUrl = "http://localhost:8080"
+          )
+        }
         quarkus(
           runner = { params ->
             QuarkusRecipeApp.main(params)

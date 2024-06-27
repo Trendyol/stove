@@ -16,9 +16,10 @@ private val database = "stove-kotlin-ktor"
 
 class TestProjectConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem("http://localhost:8081").with {
+    TestSystem().with {
       httpClient {
         HttpClientSystemOptions(
+          baseUrl = "http://localhost:8081",
           objectMapper = JacksonConfiguration.default
         )
       }

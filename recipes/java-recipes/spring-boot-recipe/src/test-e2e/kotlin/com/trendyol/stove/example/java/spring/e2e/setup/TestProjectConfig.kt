@@ -14,9 +14,10 @@ import io.kotest.core.config.AbstractProjectConfig
 
 class TestProjectConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem("http://localhost:8080").with {
+    TestSystem().with {
       httpClient {
         HttpClientSystemOptions(
+          baseUrl = "http://localhost:8080",
           objectMapper = JacksonConfiguration.defaultObjectMapper()
         )
       }
