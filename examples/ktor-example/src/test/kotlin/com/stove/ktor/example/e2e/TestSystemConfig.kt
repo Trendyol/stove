@@ -2,7 +2,7 @@ package com.stove.ktor.example.e2e
 
 import com.trendol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.*
-import com.trendyol.stove.testing.e2e.http.httpClient
+import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -31,57 +31,59 @@ class GitlabStateStorageFactory : StateStorageFactory {
 class TestSystemConfig : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
-  override suspend fun beforeProject() =
-    TestSystem(baseUrl = "http://localhost:8080") {
-//      this.stateStorage(GitlabStateStorageFactory())
-      if (this.isRunningLocally()) {
-        enableReuseForTestContainers()
-        keepDependenciesRunning()
-      }
-    }.with {
-      httpClient()
-      bridge()
-      postgresql {
-        PostgresqlOptions(configureExposedConfiguration = { cfg ->
-          listOf(
-            "database.jdbcUrl=${cfg.jdbcUrl}",
-            "database.host=${cfg.host}",
-            "database.port=${cfg.port}",
-            "database.name=${cfg.database}",
-            "database.username=${cfg.username}",
-            "database.password=${cfg.password}"
-          )
-        })
-      }
-      kafka {
-        stoveKafkaObjectMapperRef = objectMapperRef
-        KafkaSystemOptions {
-          listOf(
-            "kafka.bootstrapServers=${it.bootstrapServers}",
-            "kafka.interceptorClasses=${it.interceptorClass}"
-          )
-        }
-      }
-      wiremock {
-        WireMockSystemOptions(
-          port = 9090,
-          removeStubAfterRequestMatched = true,
-          afterRequest = { e, _ ->
-            logger.info(e.request.toString())
-          }
+  override suspend fun beforeProject() = TestSystem {
+    if (this.isRunningLocally()) {
+      enableReuseForTestContainers()
+      keepDependenciesRunning()
+    }
+  }.with {
+    httpClient {
+      HttpClientSystemOptions(
+        baseUrl = "http://localhost:8080"
+      )
+    }
+    bridge()
+    postgresql {
+      PostgresqlOptions(configureExposedConfiguration = { cfg ->
+        listOf(
+          "database.jdbcUrl=${cfg.jdbcUrl}",
+          "database.host=${cfg.host}",
+          "database.port=${cfg.port}",
+          "database.name=${cfg.database}",
+          "database.username=${cfg.username}",
+          "database.password=${cfg.password}"
+        )
+      })
+    }
+    kafka {
+      stoveKafkaObjectMapperRef = objectMapperRef
+      KafkaSystemOptions {
+        listOf(
+          "kafka.bootstrapServers=${it.bootstrapServers}",
+          "kafka.interceptorClasses=${it.interceptorClass}"
         )
       }
-      ktor(
-        withParameters = listOf(
-          "port=8080"
-        ),
-        runner = { parameters ->
-          stove.ktor.example.run(parameters) {
-            addTestSystemDependencies()
-          }
+    }
+    wiremock {
+      WireMockSystemOptions(
+        port = 9090,
+        removeStubAfterRequestMatched = true,
+        afterRequest = { e, _ ->
+          logger.info(e.request.toString())
         }
       )
-    }.run()
+    }
+    ktor(
+      withParameters = listOf(
+        "port=8080"
+      ),
+      runner = { parameters ->
+        stove.ktor.example.run(parameters) {
+          addTestSystemDependencies()
+        }
+      }
+    )
+  }.run()
 
   override suspend fun afterProject() {
     TestSystem.stop()

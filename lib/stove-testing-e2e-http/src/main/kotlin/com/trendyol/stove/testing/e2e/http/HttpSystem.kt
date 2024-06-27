@@ -25,10 +25,13 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
 @HttpDsl
-data class HttpClientSystemOptions(val objectMapper: ObjectMapper = StoveObjectMapper.Default) : SystemOptions
+data class HttpClientSystemOptions(
+  val baseUrl: String,
+  val objectMapper: ObjectMapper = StoveObjectMapper.Default
+) : SystemOptions
 
-internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions = HttpClientSystemOptions()): TestSystem {
-  this.getOrRegister(HttpSystem(this, options.objectMapper))
+internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions): TestSystem {
+  this.getOrRegister(HttpSystem(this, options))
   return this
 }
 
@@ -37,7 +40,7 @@ internal fun TestSystem.http(): HttpSystem = getOrNone<HttpSystem>().getOrElse {
 }
 
 @StoveDsl
-fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions = { HttpClientSystemOptions() }): TestSystem =
+fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): TestSystem =
   this.testSystem.withHttpClient(configure())
 
 @StoveDsl
@@ -48,7 +51,7 @@ suspend fun ValidationDsl.http(
 @HttpDsl
 class HttpSystem(
   override val testSystem: TestSystem,
-  @PublishedApi internal val objectMapper: ObjectMapper
+  @PublishedApi internal val options: HttpClientSystemOptions
 ) : PluggedSystem {
   private val logger: org.slf4j.Logger = LoggerFactory.getLogger(javaClass)
 
@@ -232,7 +235,7 @@ class HttpSystem(
   }
 
   @PublishedApi
-  internal fun relative(uri: String): Url = URLBuilder(testSystem.baseUrl)
+  internal fun relative(uri: String): Url = URLBuilder(options.baseUrl)
     .apply { appendEncodedPathSegments(uri) }.build()
 
   @PublishedApi
@@ -281,7 +284,7 @@ class HttpSystem(
     }
 
     install(ContentNegotiation) {
-      register(ContentType.Application.Json, JacksonConverter(objectMapper))
+      register(ContentType.Application.Json, JacksonConverter(options.objectMapper))
     }
 
     defaultRequest {

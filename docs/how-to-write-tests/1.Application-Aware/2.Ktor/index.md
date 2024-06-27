@@ -25,9 +25,13 @@
 ## Example Setup
 
 ```kotlin
-TestSystem(baseUrl = "http://localhost:8080")
+TestSystem()
     .with {
-        httpClient()
+        httpClient {
+          HttpClientSystemOptions {
+              baseUrl = "http://localhost:8080"
+          }
+        }
         bridge()
         postgresql {
             PostgresqlOptions(configureExposedConfiguration = { cfg ->

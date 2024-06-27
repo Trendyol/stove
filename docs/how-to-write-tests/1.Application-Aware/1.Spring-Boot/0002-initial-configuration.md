@@ -17,9 +17,13 @@ it is time to run your application for the first time from the test-context with
     class TestSystemConfig : AbstractProjectConfig() {
     
         override suspend fun beforeProject(): Unit = 
-            TestSystem(baseUrl = "http://localhost:8001")
+            TestSystem()
                 .with {
-                    httpClient()
+                    httpClient {
+                        HttpClientSystemOptions {
+                            baseUrl = "http://localhost:8001"
+                        }
+                    }
                     springBoot(
                         runner = { parameters ->
                             /* 
@@ -49,9 +53,13 @@ it is time to run your application for the first time from the test-context with
     
         @BeforeAll
         fun beforeProject() = runBlocking {
-             TestSystem(baseUrl = "http://localhost:8001")
+             TestSystem()
                 .with {
-                    httpClient()
+                    httpClient {
+                        HttpClientSystemOptions {
+                            baseUrl = "http://localhost:8001"
+                        }
+                    }
                     springBoot(
                         runner = { parameters ->
                             /* 

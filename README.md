@@ -41,7 +41,7 @@ Frameworks:
 ### Setting-up all the physical dependencies with application
 
 ```kotlin
-TestSystem(baseUrl = "http://localhost:8001") {
+TestSystem() {
     if (isRunningLocally()) {
         enableReuseForTestContainers()
         keepDendenciesRunning() // this will keep the dependencies running after the tests are finished, so next run will be blazing fast :)
@@ -50,7 +50,11 @@ TestSystem(baseUrl = "http://localhost:8001") {
     // Enables http client 
     // to make real http calls 
     // against the application under test
-    http()
+    httpClient {
+        HttpClientSystemOptions(
+          baseUrl = "http://localhost:8001",
+        )
+    }
 
     // Enables Couchbase physically 
     // and exposes the configuration 

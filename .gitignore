@@ -83,3 +83,4 @@ kotlin-ide/
 
 # Ignore Gradle build output directory
 build
+.kotlin
