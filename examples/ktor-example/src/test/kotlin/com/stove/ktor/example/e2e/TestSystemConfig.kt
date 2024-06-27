@@ -33,9 +33,7 @@ class TestSystemConfig : AbstractProjectConfig() {
   init {
     stoveKafkaBridgePortDefault = "50053"
   }
-
-  private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
-
+  
   override fun extensions(): List<Extension> = listOf(
     SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   )
