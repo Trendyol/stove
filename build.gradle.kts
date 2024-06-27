@@ -6,7 +6,6 @@ plugins {
   kotlin("jvm").version(libs.versions.kotlin)
   alias(libs.plugins.dokka)
   alias(libs.plugins.spotless)
-  alias(libs.plugins.gitVersioning)
   alias(libs.plugins.testLogger)
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
@@ -15,10 +14,7 @@ plugins {
   java
 }
 group = "com.trendyol"
-val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-val details = versionDetails()
-version = determine(details.lastTag)
-println("Version: $version")
+version = version()
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -92,6 +88,9 @@ subprojects.of("lib", "spring", "examples", "ktor") {
   }
 
   tasks {
+    compileKotlin {
+      incremental = true
+    }
     test {
       dependsOn(spotlessApply)
       useJUnitPlatform()
@@ -158,15 +157,11 @@ tasks.withType<DokkaMultiModuleTask>().configureEach {
   outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
 
-fun determine(lastTag: String): String {
-  System.getenv("SNAPSHOT")?.let {
-    println("SNAPSHOT: $it")
-    return project.properties["snapshot"].toString()
+fun version(): String = when {
+  System.getenv("SNAPSHOT") != null -> {
+    println("SNAPSHOT: ${System.getenv("SNAPSHOT")}")
+    project.properties["snapshot"].toString()
   }
-  return lastTag
-}
 
-fun nextPatchSnapshot(version: String): String {
-  val (major, minor, patch) = version.split(".")
-  return "$major.$minor.${patch.toInt() + 1}-SNAPSHOT"
+  else -> project.properties["version"].toString()
 }

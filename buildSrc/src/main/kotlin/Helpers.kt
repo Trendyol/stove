@@ -1,5 +1,4 @@
-import org.gradle.api.Action
-import org.gradle.api.Project
+import org.gradle.api.*
 import org.gradle.api.provider.Property
 import org.gradle.kotlin.dsl.invoke
 
@@ -32,3 +31,12 @@ fun Collection<Project>.of(
 infix fun <T> Property<T>.by(value: T) {
   set(value)
 }
+
+val runningOnCI: Boolean
+  get() = System.getenv("CI") != null
+    || System.getenv("GITHUB_ACTIONS") != null
+    || System.getenv("GITLAB_CI") != null
+    || System.getenv("CIRCLECI") != null
+    || System.getenv("TRAVIS") != null
+    || System.getenv("TEAMCITY_VERSION") != null
+    || System.getenv("JENKINS_URL") != null

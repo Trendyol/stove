@@ -74,7 +74,7 @@ publishing {
 val signingKey = getProperty(projectKey = "gpg.key", environmentKey = "gpg_private_key")
 val passPhrase = getProperty(projectKey = "gpg.passphrase", environmentKey = "gpg_passphrase")
 signing {
-  if (passPhrase == null) {
+  if (passPhrase == null && runningOnCI) {
     logger.warn(
       "The passphrase for the signing key was not found. " +
         "Either provide it as env variable 'gpg_passphrase' or " +
