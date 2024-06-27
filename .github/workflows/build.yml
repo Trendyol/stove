@@ -40,7 +40,7 @@ jobs:
       - name: Gradle Build and Test
         uses: gradle/gradle-build-action@v3.4.2
         with:
-          arguments: --build-cache build test koverXmlReport
+          arguments: --build-cache --configuration-cache build test koverXmlReport
 
       - name: Add coverage report to PR
         id: kover
