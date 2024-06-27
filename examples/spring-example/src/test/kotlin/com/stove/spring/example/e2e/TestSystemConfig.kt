@@ -50,7 +50,7 @@ class TestSystemConfig : AbstractProjectConfig() {
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 9099,
+            port = 9098,
             removeStubAfterRequestMatched = true,
             afterRequest = { e, _ ->
               logger.info(e.request.toString())
