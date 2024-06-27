@@ -309,5 +309,11 @@ class HttpSystem(
     @Suppress("unused")
     @HttpDsl
     fun HttpSystem.client(): io.ktor.client.HttpClient = this.ktorHttpClient
+
+    @Suppress("unused")
+    @HttpDsl
+    suspend fun HttpSystem.usingClient(block: suspend (client: io.ktor.client.HttpClient, baseUrl: URLBuilder) -> Unit) {
+      block(client(), URLBuilder(this.options.baseUrl))
+    }
   }
 }

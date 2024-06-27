@@ -3,6 +3,7 @@ package com.trendyol.stove.testing.e2e.http
 import arrow.core.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
+import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.usingClient
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
@@ -10,6 +11,8 @@ import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.ktor.client.request.*
+import io.ktor.http.*
 import java.time.Instant
 import java.util.*
 
@@ -270,6 +273,16 @@ class HttpSystemTests : FunSpec({
       http {
         get<TestDto>("/get?path=1") { actual ->
           actual.name shouldBe expectedGetDtoName
+        }
+
+        usingClient { client, host ->
+          val resp = client.get(
+            host.apply {
+              path("/get")
+              parameters.append("path", "1")
+            }.build()
+          )
+          resp.status shouldBe HttpStatusCode.OK
         }
       }
     }
