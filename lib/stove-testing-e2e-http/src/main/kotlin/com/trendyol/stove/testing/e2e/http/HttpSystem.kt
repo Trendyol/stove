@@ -31,7 +31,7 @@ data class HttpClientSystemOptions(
   val baseUrl: String,
   val objectMapper: ObjectMapper = StoveObjectMapper.Default,
   val timeout: Duration = 30.seconds,
-  val createClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, objectMapper) }
+  val createJsonClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, objectMapper) }
 ) : SystemOptions {
   companion object {
     internal fun jsonHttpClient(
@@ -94,7 +94,7 @@ class HttpSystem(
   @PublishedApi internal val options: HttpClientSystemOptions
 ) : PluggedSystem {
   @PublishedApi
-  internal val ktorHttpClient: io.ktor.client.HttpClient = options.createClient()
+  internal val ktorHttpClient: io.ktor.client.HttpClient = options.createJsonClient()
 
   @HttpDsl
   suspend fun getResponse(
