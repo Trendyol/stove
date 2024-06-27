@@ -70,7 +70,7 @@ kediatr = "3.0.0"
 
 # Testing
 stove = "1.0.0-SNAPSHOT"
-junit = "5.10.2"
+junit = "5.10.3"
 kotest = "5.9.1"
 
 [libraries]
