@@ -18,7 +18,7 @@ class TestSystemConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8001"
+            baseUrl = "http://localhost:8004"
           )
         }
         couchbase {
@@ -64,7 +64,7 @@ class TestSystemConfig : AbstractProjectConfig() {
             }
           },
           withParameters = listOf(
-            "server.port=8001",
+            "server.port=8004",
             "logging.level.root=info",
             "logging.level.org.springframework.web=info",
             "spring.profiles.active=default",
