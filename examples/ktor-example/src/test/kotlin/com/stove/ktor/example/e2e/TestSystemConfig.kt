@@ -8,6 +8,8 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
+import io.kotest.extensions.system.SystemEnvironmentProjectListener
 import org.slf4j.*
 import stove.ktor.example.app.objectMapperRef
 import kotlin.reflect.KClass
@@ -29,7 +31,15 @@ class GitlabStateStorageFactory : StateStorageFactory {
 }
 
 class TestSystemConfig : AbstractProjectConfig() {
+  init {
+    stoveKafkaBridgePortDefault = "50053"
+  }
+
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
+
+  override fun extensions(): List<Extension> = listOf(
+    SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
+  )
 
   override suspend fun beforeProject() = TestSystem {
     if (this.isRunningLocally()) {
