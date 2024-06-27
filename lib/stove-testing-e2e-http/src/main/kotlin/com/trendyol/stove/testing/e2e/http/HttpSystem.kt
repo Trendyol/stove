@@ -21,14 +21,54 @@ import io.ktor.serialization.jackson.*
 import io.ktor.util.*
 import org.slf4j.LoggerFactory
 import java.net.http.HttpClient
+import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
+
+private val httpSystemLogger = LoggerFactory.getLogger(HttpSystem::class.java)
 
 @HttpDsl
 data class HttpClientSystemOptions(
   val baseUrl: String,
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default
-) : SystemOptions
+  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  val timeout: Duration = 30.seconds,
+  val createClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, objectMapper) }
+) : SystemOptions {
+  companion object {
+    internal fun jsonHttpClient(
+      timeout: Duration,
+      objectMapper: ObjectMapper
+    ): io.ktor.client.HttpClient = HttpClient(OkHttp) {
+      engine {
+        config {
+          followRedirects(true)
+          followSslRedirects(true)
+          connectTimeout(timeout.toJavaDuration())
+          readTimeout(timeout.toJavaDuration())
+          callTimeout(timeout.toJavaDuration())
+          writeTimeout(timeout.toJavaDuration())
+        }
+      }
+      install(Logging) {
+        logger = object : Logger {
+          override fun log(message: String) {
+            httpSystemLogger.info(message)
+          }
+        }
+      }
+
+      install(ContentNegotiation) {
+        register(ContentType.Application.Json, JacksonConverter(objectMapper))
+        register(ContentType.Application.ProblemJson, JacksonConverter(objectMapper))
+        register(ContentType.parse("application/x-ndjson"), JacksonConverter(objectMapper))
+      }
+
+      defaultRequest {
+        header(HttpHeaders.ContentType, ContentType.Application.Json)
+        header(HttpHeaders.Accept, ContentType.Application.Json)
+      }
+    }
+  }
+}
 
 internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions): TestSystem {
   this.getOrRegister(HttpSystem(this, options))
@@ -53,10 +93,8 @@ class HttpSystem(
   override val testSystem: TestSystem,
   @PublishedApi internal val options: HttpClientSystemOptions
 ) : PluggedSystem {
-  private val logger: org.slf4j.Logger = LoggerFactory.getLogger(javaClass)
-
   @PublishedApi
-  internal val ktorHttpClient: io.ktor.client.HttpClient = createHttpClient()
+  internal val ktorHttpClient: io.ktor.client.HttpClient = options.createClient()
 
   @HttpDsl
   suspend fun getResponse(
@@ -265,33 +303,6 @@ class HttpSystem(
     }
   }
 
-  private fun createHttpClient(): io.ktor.client.HttpClient = HttpClient(OkHttp) {
-    engine {
-      config {
-        followRedirects(true)
-        followSslRedirects(true)
-        connectTimeout(5.seconds.toJavaDuration())
-        readTimeout(5.seconds.toJavaDuration())
-        callTimeout(5.seconds.toJavaDuration())
-      }
-    }
-    install(Logging) {
-      logger = object : Logger {
-        override fun log(message: String) {
-          this@HttpSystem.logger.info(message)
-        }
-      }
-    }
-
-    install(ContentNegotiation) {
-      register(ContentType.Application.Json, JacksonConverter(options.objectMapper))
-    }
-
-    defaultRequest {
-      header(HttpHeaders.ContentType, ContentType.Application.Json)
-    }
-  }
-
   override fun close() {
     ktorHttpClient.close()
   }
@@ -312,7 +323,9 @@ class HttpSystem(
 
     @Suppress("unused")
     @HttpDsl
-    suspend fun HttpSystem.usingClient(block: suspend (client: io.ktor.client.HttpClient, baseUrl: URLBuilder) -> Unit) {
+    suspend fun HttpSystem.usingClient(
+      block: suspend (client: io.ktor.client.HttpClient, baseUrl: URLBuilder) -> Unit
+    ) {
       block(client(), URLBuilder(this.options.baseUrl))
     }
   }

@@ -141,8 +141,10 @@ ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", v
 ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "3.0.1" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-plugins-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
