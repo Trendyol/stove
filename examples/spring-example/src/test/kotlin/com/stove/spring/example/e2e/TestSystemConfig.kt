@@ -2,7 +2,7 @@ package com.stove.spring.example.e2e
 
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.couchbase.*
-import com.trendyol.stove.testing.e2e.http.httpClient
+import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
@@ -12,10 +12,15 @@ import org.slf4j.*
 class TestSystemConfig : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
+  @Suppress("LongMethod")
   override suspend fun beforeProject(): Unit =
-    TestSystem(baseUrl = "http://localhost:8001")
+    TestSystem()
       .with {
-        httpClient()
+        httpClient {
+          HttpClientSystemOptions(
+            baseUrl = "http://localhost:8001"
+          )
+        }
         couchbase {
           CouchbaseSystemOptions(
             "Stove",

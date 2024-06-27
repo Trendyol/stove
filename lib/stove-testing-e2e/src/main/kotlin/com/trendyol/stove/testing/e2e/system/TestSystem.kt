@@ -11,51 +11,70 @@ import kotlin.reflect.KClass
 /**
  * Entrance of entire TestSystem.
  * Expects an url and port combination that are available also in the configuration of System Under Test.
- * For example; if your Spring application starts at :8081 then you need to change [baseUrl] to `http://localhost:8081`
+ * For example; if your Spring application starts at :8081 then you need to change httpClient.baseUrl to `http://localhost:8081`
  *
  * TestSystem should be initialized only once for project, because it will start all the dependencies you plugged into it.
  * See also: [PluggedSystem]
  *
  * As a full example of TestSystem:
  * ```kotlin
- * TestSystem(baseUrl = "http://localhost:8001")
- *     .withDefaultHttp()
- *     .withCouchbase(bucket = "Stove") { cfg -> listOf("couchbase.hosts=${cfg.hostsWithPort}") }
- *     .withKafka(
- *         configureExposedConfiguration = { cfg ->
- *             listOf("kafka.bootstrapServers=${cfg.boostrapServers}")
- *         }
- *     )
- *     .withWireMock(
- *         port = 9090,
- *         WireMockSystemOptions(
- *             removeStubAfterRequestMatched = true,
- *             afterRequest = { e, _, _ ->
- *                 logger.info(e.request.toString())
- *             }
- *         )
- *     )
- *     .systemUnderTest(
- *         runner = { parameters ->
- *             stove.spring.example.run(parameters) { it.addTestSystemDependencies() }
- *         },
- *         withParameters =
+ * TestSystem {
+ *     if (this.isRunningLocally()) {
+ *       enableReuseForTestContainers()
+ *       keepDependenciesRunning()
+ *     }
+ *   }.with {
+ *     httpClient {
+ *       HttpClientSystemOptions(
+ *         baseUrl = "http://localhost:8080",
+ *       )
+ *     }
+ *     bridge()
+ *     postgresql {
+ *       PostgresqlOptions(configureExposedConfiguration = { cfg ->
  *         listOf(
- *             "server.port=8001",
- *             "logging.level.root=warn",
- *             "logging.level.org.springframework.web=warn",
- *             "spring.profiles.active=default",
- *             "kafka.heartbeatInSeconds=2"
+ *           "database.jdbcUrl=${cfg.jdbcUrl}",
+ *           "database.host=${cfg.host}",
+ *           "database.port=${cfg.port}",
+ *           "database.name=${cfg.database}",
+ *           "database.username=${cfg.username}",
+ *           "database.password=${cfg.password}"
  *         )
+ *       })
+ *     }
+ *     kafka {
+ *       stoveKafkaObjectMapperRef = objectMapperRef
+ *       KafkaSystemOptions {
+ *         listOf(
+ *           "kafka.bootstrapServers=${it.bootstrapServers}",
+ *           "kafka.interceptorClasses=${it.interceptorClass}"
+ *         )
+ *       }
+ *     }
+ *     wiremock {
+ *       WireMockSystemOptions(
+ *         port = 9090,
+ *         removeStubAfterRequestMatched = true,
+ *         afterRequest = { e, _ ->
+ *           logger.info(e.request.toString())
+ *         }
+ *       )
+ *     }
+ *     ktor(
+ *       withParameters = listOf(
+ *         "port=8080"
+ *       ),
+ *       runner = { parameters ->
+ *         stove.ktor.example.run(parameters) {
+ *           addTestSystemDependencies()
+ *         }
+ *       }
  *     )
+ *   }.run()
  * ```
  */
 @StoveDsl
-class TestSystem(
-  val baseUrl: String = "http://localhost:8001",
-  configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}
-) : ReadyTestSystem,
-  AutoCloseable {
+class TestSystem(configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}) : ReadyTestSystem, AutoCloseable {
   private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
 
   init {

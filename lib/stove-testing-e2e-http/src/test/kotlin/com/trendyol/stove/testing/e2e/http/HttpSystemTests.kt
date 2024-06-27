@@ -25,10 +25,11 @@ class NoApplication : ApplicationUnderTest<Unit> {
 
 class TestConfig : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
-    TestSystem("http://localhost:8086")
+    TestSystem()
       .with {
         httpClient {
           HttpClientSystemOptions(
+            baseUrl = "http://localhost:8086",
             objectMapper = StoveObjectMapper.byConfiguring {
               findAndRegisterModules()
             }
