@@ -4,36 +4,17 @@ import com.trendol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.extensions.system.SystemEnvironmentProjectListener
-import org.slf4j.*
 import stove.ktor.example.app.objectMapperRef
-import kotlin.reflect.KClass
-
-class GitlabStateStorageFactory : StateStorageFactory {
-  override fun <T : Any> invoke(
-    options: TestSystemOptions,
-    system: KClass<*>,
-    state: KClass<T>
-  ): StateStorage<T> = object : StateStorage<T> {
-    override suspend fun capture(start: suspend () -> T): T {
-      return start()
-    }
-
-    override fun isSubsequentRun(): Boolean {
-      return false
-    }
-  }
-}
 
 class TestSystemConfig : AbstractProjectConfig() {
   init {
     stoveKafkaBridgePortDefault = "50053"
   }
-  
+
   override fun extensions(): List<Extension> = listOf(
     SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   )
