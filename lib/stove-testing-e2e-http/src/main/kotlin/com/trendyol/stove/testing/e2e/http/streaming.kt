@@ -6,15 +6,18 @@ import io.ktor.util.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.*
 
-@OptIn(InternalAPI::class)
 @Suppress("unused")
 suspend fun <T> HttpStatement.readJsonStream(transform: (line: String) -> T): Flow<T> = flow {
-  execute {
-    check(it.status.isSuccess()) { "Request failed with status: ${it.status}" }
-    while (!it.content.isClosedForRead) {
-      it.content.readUTF8Line()?.let { line ->
-        emit(transform(line))
-      }
+  execute { it.readJsonStream(transform) }
+}
+
+@OptIn(InternalAPI::class)
+@Suppress("unused")
+suspend fun <T> HttpResponse.readJsonStream(transform: (line: String) -> T): Flow<T> = flow {
+  check(this@readJsonStream.status.isSuccess()) { "Request failed with status: ${this@readJsonStream.status}" }
+  while (!this@readJsonStream.content.isClosedForRead) {
+    this@readJsonStream.content.readUTF8Line()?.let { line ->
+      emit(transform(line))
     }
   }
 }
