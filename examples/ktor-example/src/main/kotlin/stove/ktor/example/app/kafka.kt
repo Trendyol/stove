@@ -19,9 +19,9 @@ fun kafka(): Module = module {
 }
 
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
-  val pollTimeoutSec = 2
-  val heartbeatSec = pollTimeoutSec + 1
-  val commitInterval = heartbeatSec + 1
+  val pollTimeoutSec = 10
+  val heartbeatSec = 1
+  val commitInterval = 1
   val settings = ReceiverSettings(
     config.kafka.bootstrapServers,
     StringDeserializer(),
