@@ -321,12 +321,15 @@ class HttpSystem(
     @HttpDsl
     fun HttpSystem.client(): io.ktor.client.HttpClient = this.ktorHttpClient
 
+    /**
+     * Exposes the [HttpClient] used by the [HttpSystem].
+     */
     @Suppress("unused")
     @HttpDsl
-    suspend fun HttpSystem.usingClient(
-      block: suspend (client: io.ktor.client.HttpClient, baseUrl: URLBuilder) -> Unit
+    suspend fun HttpSystem.client(
+      block: suspend io.ktor.client.HttpClient.(baseUrl: URLBuilder) -> Unit
     ) {
-      block(client(), URLBuilder(this.options.baseUrl))
+      block(this.ktorHttpClient, URLBuilder(this.options.baseUrl))
     }
   }
 }
