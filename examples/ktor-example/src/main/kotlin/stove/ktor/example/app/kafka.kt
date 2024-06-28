@@ -19,6 +19,7 @@ fun kafka(): Module = module {
 }
 
 private const val POLL_TIMEOUT_SECONDS = 5
+
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
   val pollTimeoutSec = POLL_TIMEOUT_SECONDS
   val heartbeatSec = pollTimeoutSec + 1
