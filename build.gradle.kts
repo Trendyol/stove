@@ -78,6 +78,9 @@ subprojects.of("lib", "spring", "examples", "ktor") {
   spotless {
     kotlin {
       ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      targetExclude("build", "generated", "out")
+      targetExcludeIfContentContains("generated")
+      targetExcludeIfContentContainsRegex(".*generated.*")
     }
   }
   the<IdeaModel>().apply {
