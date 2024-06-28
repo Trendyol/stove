@@ -19,12 +19,7 @@ class TestSystemConfig : AbstractProjectConfig() {
     SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   )
 
-  override suspend fun beforeProject() = TestSystem {
-    if (this.isRunningLocally()) {
-      enableReuseForTestContainers()
-      keepDependenciesRunning()
-    }
-  }.with {
+  override suspend fun beforeProject() = TestSystem().with {
     httpClient {
       HttpClientSystemOptions(
         baseUrl = "http://localhost:8080"
