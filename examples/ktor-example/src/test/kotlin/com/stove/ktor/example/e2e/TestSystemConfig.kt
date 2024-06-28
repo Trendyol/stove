@@ -11,8 +11,10 @@ import io.kotest.extensions.system.SystemEnvironmentProjectListener
 import stove.ktor.example.app.objectMapperRef
 
 class TestSystemConfig : AbstractProjectConfig() {
-  init {
-    stoveKafkaBridgePortDefault = "50053"
+  companion object {
+    init {
+      stoveKafkaBridgePortDefault = "50053"
+    }
   }
 
   override fun extensions(): List<Extension> = listOf(

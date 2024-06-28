@@ -92,11 +92,10 @@ subprojects.of("lib", "spring", "examples", "ktor") {
       incremental = true
     }
     test {
-      dependsOn(spotlessApply)
       useJUnitPlatform()
       testlogger {
         setTheme("mocha")
-        showStandardStreams = true
+        showStandardStreams = !runningOnCI
         showExceptions = true
         showCauses = true
       }
@@ -116,10 +115,6 @@ subprojects.of("lib", "spring", "examples", "ktor") {
           "-Xsuppress-version-warnings"
         )
       }
-    }
-
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-      dependsOn(spotlessApply)
     }
   }
 }

@@ -11,7 +11,7 @@ data class WireMockSystemOptions(
   /**
    * Port of wiremock server
    */
-  val port: Int = 8080,
+  val port: Int = 9090,
   /**
    * Removes the stub when request matches/completes
    * Default value is false
