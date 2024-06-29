@@ -3,6 +3,6 @@ ignore:
   - "lib/stove-testing-e2e/src/main/kotlin/com/trendyol/stove/testing/e2e/system/abstractions"
   - "lib/stove-testing-e2e/src/main/kotlin/com/trendyol/stove/testing/e2e/system/annotations"
   - "lib/stove-testing-e2e/src/main/kotlin/com/trendyol/stove/testing/e2e/serialization"
-  - "lib/stove-testing-e2e-kafka"
   - "examples/spring-example"
+  - "examples/spring-standalone-example"
   - "examples/ktor-example"
