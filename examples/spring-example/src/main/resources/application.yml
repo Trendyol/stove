@@ -23,7 +23,7 @@ couchbase:
 
 http-clients:
   supplier-http:
-    url: http://localhost:9098
+    url: http://localhost:7078
     connectTimeout: 2000
     readTimeout: 20000
 
