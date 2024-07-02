@@ -22,6 +22,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.reflect.KClass
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 var stoveKafkaObjectMapperRef: ObjectMapper = StoveObjectMapper.Default
@@ -59,6 +60,11 @@ class KafkaSystem(
             HashMap()
           )
           kafka = EmbeddedKafka.start(config)
+          withTimeout(30.seconds) {
+            while (!EmbeddedKafka.isRunning()) {
+              delay(500.milliseconds)
+            }
+          }
           KafkaExposedConfiguration(
             "localhost:${config.kafkaPort()}",
             StoveKafkaBridge::class.java.name
