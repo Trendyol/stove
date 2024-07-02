@@ -82,6 +82,7 @@ akkurate-ksp-plugin = { module = "dev.nesk.akkurate:akkurate-ksp-plugin", versio
 # Kafka
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
+embedded-kafka = { module = "io.github.embeddedkafka:embedded-kafka_2.13", version = "3.7.0" }
 
 # Couchbase
 couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }

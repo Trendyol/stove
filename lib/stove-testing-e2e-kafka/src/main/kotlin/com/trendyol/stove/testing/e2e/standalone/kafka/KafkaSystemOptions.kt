@@ -25,6 +25,11 @@ class KafkaSystemOptions(
    */
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
   /**
+   * If true, the system will use the embedded Kafka system instead of the containerized Kafka system.
+   * So, the containerOptions will be ignored.
+   */
+  val useEmbeddedKafka: Boolean = false,
+  /**
    * The options for the Kafka system that is exposed to the application
    */
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }

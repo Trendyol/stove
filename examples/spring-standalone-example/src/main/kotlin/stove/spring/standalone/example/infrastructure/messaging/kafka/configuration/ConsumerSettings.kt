@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
 import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 interface ConsumerSettings : MapBasedSettings
 
@@ -41,10 +42,10 @@ class DefaultConsumerSettings(
     props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
     props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = kafkaProperties.offset
     props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = true
-    props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(AUTO_COMMIT_INTERVAL)
+//    props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(AUTO_COMMIT_INTERVAL)
     props[ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG] = ofSeconds(SESSION_TIMEOUT)
     props[ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG] = ofSeconds(kafkaProperties.heartbeatInSeconds.toLong())
-    props[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = ofMinutes(MAX_POLL_INTERVAL)
+    props[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 3.seconds.inWholeMilliseconds.toInt()
     props[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = basicListenerThreadCount
     props[ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG] = kafkaProperties.defaultApiTimeout
     props[ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG] = kafkaProperties.requestTimeout

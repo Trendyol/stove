@@ -36,6 +36,7 @@ private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<St
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
       put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
       put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
+      put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, (pollTimeoutSec + 1).seconds.inWholeMilliseconds.toInt())
       put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatSec.seconds.inWholeSeconds.toInt())
     }
   )
