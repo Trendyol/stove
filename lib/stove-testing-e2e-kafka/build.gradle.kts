@@ -20,6 +20,7 @@ dependencies {
   implementation(libs.google.protobuf.kotlin)
   implementation(libs.caffeine)
   implementation(libs.pprint)
+  implementation(libs.embedded.kafka)
 }
 
 dependencies {

@@ -41,12 +41,16 @@ class TestSystemConfig : AbstractProjectConfig() {
           stoveKafkaObjectMapperRef = ObjectMapperConfig.createObjectMapperWithDefaults()
           KafkaSystemOptions(
             objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults(),
+            useEmbeddedKafka = true,
             containerOptions = KafkaContainerOptions(tag = "latest") { }
           ) {
             listOf(
               "kafka.bootstrapServers=${it.bootstrapServers}",
-              "kafka.isSecure=false",
-              "kafka.interceptorClasses=${it.interceptorClass}"
+              "kafka.interceptorClasses=${it.interceptorClass}",
+              "kafka.heartbeatInSeconds=2",
+              "kafka.autoCreateTopics=true",
+              "kafka.offset=earliest",
+              "kafka.secureKafka=false"
             )
           }
         }
@@ -68,11 +72,7 @@ class TestSystemConfig : AbstractProjectConfig() {
             "server.port=8001",
             "logging.level.root=info",
             "logging.level.org.springframework.web=info",
-            "spring.profiles.active=default",
-            "kafka.heartbeatInSeconds=2",
-            "kafka.autoCreateTopics=true",
-            "kafka.offset=earliest",
-            "kafka.secureKafka=false"
+            "spring.profiles.active=default"
           )
         )
       }.run()

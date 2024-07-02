@@ -14,6 +14,7 @@ import stove.spring.standalone.example.application.handlers.*
 import stove.spring.standalone.example.application.services.SupplierPermission
 import stove.spring.standalone.example.infrastructure.couchbase.CouchbaseProperties
 import stove.spring.standalone.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
+import kotlin.time.Duration.Companion.seconds
 
 class ExampleTest : FunSpec({
   test("bridge should work") {
@@ -97,8 +98,8 @@ class ExampleTest : FunSpec({
 
   test("should throw error when send product create event for the not allowed supplier") {
     TestSystem.validate {
-      val productCreateEvent = CreateProductCommand(3L, name = "product name", 97L)
-      val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = false)
+      val command = CreateProductCommand(3L, name = "product name", 97L)
+      val supplierPermission = SupplierPermission(command.supplierId, isAllowed = false)
 
       wiremock {
         mockGet(
@@ -109,9 +110,9 @@ class ExampleTest : FunSpec({
       }
 
       kafka {
-        publish("trendyol.stove.service.product.create.0", productCreateEvent)
-        shouldBeConsumed<CreateProductCommand> {
-          actual.id == productCreateEvent.id
+        publish("trendyol.stove.service.product.create.0", command)
+        shouldBeConsumed<CreateProductCommand>(10.seconds) {
+          actual.id == command.id
         }
       }
     }

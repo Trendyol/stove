@@ -42,7 +42,9 @@ class TestSystemConfig : AbstractProjectConfig() {
     }
     kafka {
       stoveKafkaObjectMapperRef = objectMapperRef
-      KafkaSystemOptions {
+      KafkaSystemOptions(
+        useEmbeddedKafka = true
+      ) {
         listOf(
           "kafka.bootstrapServers=${it.bootstrapServers}",
           "kafka.interceptorClasses=${it.interceptorClass}"
