@@ -18,7 +18,7 @@ fun kafka(): Module = module {
   single { ExampleAppConsumer<String, Any>(get(), get()) }
 }
 
-private const val POLL_TIMEOUT_SECONDS = 5
+private const val POLL_TIMEOUT_SECONDS = 10
 
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
   val pollTimeoutSec = POLL_TIMEOUT_SECONDS
@@ -36,7 +36,6 @@ private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<St
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
       put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
       put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
-      put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, (pollTimeoutSec + 1).seconds.inWholeMilliseconds.toInt())
       put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatSec.seconds.inWholeSeconds.toInt())
     }
   )
