@@ -62,6 +62,7 @@ class KafkaSystem(
           kafka = EmbeddedKafka.start(config)
           withTimeout(30.seconds) {
             while (!EmbeddedKafka.isRunning()) {
+              logger.info("Waiting for Embedded Kafka to be ready")
               delay(500.milliseconds)
             }
           }
@@ -220,7 +221,7 @@ class KafkaSystem(
       } else {
         emptyMap()
       }
-    )
+      )
   )
 
   private fun createAdminClient(
