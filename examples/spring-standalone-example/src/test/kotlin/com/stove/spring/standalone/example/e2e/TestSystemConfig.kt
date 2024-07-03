@@ -41,7 +41,7 @@ class TestSystemConfig : AbstractProjectConfig() {
           stoveKafkaObjectMapperRef = ObjectMapperConfig.createObjectMapperWithDefaults()
           KafkaSystemOptions(
             objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults(),
-            useEmbeddedKafka = true,
+            useEmbeddedKafka = false,
             containerOptions = KafkaContainerOptions(tag = "latest") { }
           ) {
             listOf(
