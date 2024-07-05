@@ -52,7 +52,7 @@ class KafkaSystemTests : FunSpec({
         messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }.awaitAll()
 
         peekConsumedMessages(topic = "product") {
-          it.offsets.contains(100)
+          it.offset == 100L
         }
 
         peekCommittedMessages(topic = "product") { record ->
