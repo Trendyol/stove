@@ -244,6 +244,7 @@ class KafkaSystem(
   )
 
   @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+  @Suppress("MagicNumber")
   private suspend fun <K : Any, V : Any> consume(
     autoOffsetReset: String,
     readOnly: Boolean,
@@ -282,13 +283,9 @@ class KafkaSystem(
         false
       }
       channel.onReceive {
-        try {
-          onConsume(it)
-          if (!readOnly) c.commitSync()
-          !channel.isClosedForReceive
-        } catch (e: Exception) {
-          throw e
-        }
+        onConsume(it)
+        if (!readOnly) c.commitSync()
+        !channel.isClosedForReceive
       }
     }
   }
@@ -363,7 +360,7 @@ class KafkaSystem(
       } else {
         emptyMap()
       }
-    )
+      )
   )
 
   private fun createAdminClient(
