@@ -6,6 +6,7 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.StoveListen
 import io.github.nomisRev.kafka.publisher.PublisherSettings
 import org.apache.kafka.clients.consumer.ConsumerRecord
 
+// TODO: Convert into in-flight consumer
 @Suppress("TooGenericExceptionCaught", "TooGenericExceptionThrown")
 class ProductFailingConsumer(
   consumerSettings: Map<String, Any>,
