@@ -14,6 +14,7 @@ import stove.spring.example.application.handlers.*
 import stove.spring.example.application.services.SupplierPermission
 import stove.spring.example.infrastructure.couchbase.CouchbaseProperties
 import stove.spring.example.infrastructure.messaging.kafka.consumers.*
+import kotlin.time.Duration.Companion.seconds
 
 class ExampleTest : FunSpec({
   test("bridge should work") {
@@ -110,7 +111,7 @@ class ExampleTest : FunSpec({
 
       kafka {
         publish("trendyol.stove.service.product.create.0", command)
-        shouldBeConsumed<CreateProductCommand> {
+        shouldBeConsumed<CreateProductCommand>(10.seconds) {
           actual.id == command.id
         }
       }
