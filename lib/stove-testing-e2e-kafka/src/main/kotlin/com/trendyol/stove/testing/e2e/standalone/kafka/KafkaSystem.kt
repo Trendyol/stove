@@ -11,14 +11,19 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.grpc.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.selects.*
 import org.apache.kafka.clients.admin.*
+import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
-import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.serialization.*
 import org.slf4j.*
+import java.util.*
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.reflect.KClass
-import kotlin.time.Duration
+import kotlin.time.*
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 var stoveKafkaObjectMapperRef: ObjectMapper = StoveObjectMapper.Default
@@ -200,6 +205,95 @@ class KafkaSystem(
   }
 
   /**
+   * Creates an inflight consumer that consumes messages from the given topic.
+   * @param topic String
+   * @param readOnly Boolean If true, the consumer will not commit the messages.
+   * @param autoOffsetReset String The offset reset strategy. Default is "earliest".
+   * @param autoCreateTopics Boolean If true, the consumer will create the topic if it does not exist.
+   * @param config Function1<Properties, Unit> Additional configuration for the consumer.
+   * @param keyDeserializer Deserializer<K> The key deserializer. Default is StoveKafkaValueDeserializer.
+   * @param valueDeserializer Deserializer<V> The value deserializer. Default is StoveKafkaValueDeserializer.
+   * @param keepConsumingAtLeastFor Duration The duration to keep consuming messages.
+   * @param pollTimeout Duration The poll timeout for the consumer.
+   * @param onConsume Function1<ConsumerRecord<K, V>, Unit> The function to be executed when a message is consumed.
+   */
+  suspend fun <K : Any, V : Any> consumer(
+    topic: String,
+    readOnly: Boolean = true,
+    autoOffsetReset: String = "earliest",
+    autoCreateTopics: Boolean = false,
+    config: (Properties) -> Unit = {},
+    keyDeserializer: Deserializer<K> = StoveKafkaValueDeserializer(),
+    valueDeserializer: Deserializer<V> = StoveKafkaValueDeserializer(),
+    keepConsumingAtLeastFor: Duration = 5.seconds,
+    pollTimeout: Duration = (keepConsumingAtLeastFor.inWholeMilliseconds / 2).milliseconds,
+    groupId: String = UUID.randomUUID().toString(),
+    onConsume: suspend (ConsumerRecord<K, V>) -> Unit
+  ) = consume(
+    autoOffsetReset,
+    readOnly,
+    autoCreateTopics,
+    config,
+    keyDeserializer,
+    valueDeserializer,
+    topic,
+    pollTimeout,
+    keepConsumingAtLeastFor,
+    groupId,
+    onConsume
+  )
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private suspend fun <K : Any, V : Any> consume(
+    autoOffsetReset: String,
+    readOnly: Boolean,
+    autoCreateTopics: Boolean,
+    config: (Properties) -> Unit,
+    keyDeserializer: Deserializer<K>,
+    valueDeserializer: Deserializer<V>,
+    topic: String,
+    pollTimeout: Duration,
+    keepConsumingAtLeastFor: Duration,
+    groupId: String,
+    onConsume: suspend (ConsumerRecord<K, V>) -> Unit
+  ) = coroutineScope {
+    val props = Properties()
+      .apply {
+        this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = exposedConfiguration.bootstrapServers
+        this[ConsumerConfig.GROUP_ID_CONFIG] = groupId
+        this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = autoOffsetReset
+        this[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
+        this[ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG] = autoCreateTopics
+        this[ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG] = exposedConfiguration.interceptorClass
+      }.apply(config)
+    val c = KafkaConsumer(props, keyDeserializer, valueDeserializer)
+    c.subscribe(listOf(topic))
+    val channel = Channel<ConsumerRecord<K, V>>()
+    val job = launch {
+      while (isActive) {
+        c.poll(pollTimeout.toJavaDuration()).forEach { channel.send(it) }
+        delay(100)
+      }
+    }
+    whileSelect {
+      onTimeout(keepConsumingAtLeastFor) {
+        c.close()
+        job.cancelAndJoin()
+        false
+      }
+      channel.onReceive {
+        try {
+          onConsume(it)
+          if (!readOnly) c.commitSync()
+          true
+        } catch (e: Exception) {
+          throw e
+        }
+      }
+    }
+  }
+
+  /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
    * @return KafkaSystem
    */
@@ -218,6 +312,9 @@ class KafkaSystem(
    */
   @StoveDsl
   fun messageStore(): MessageStore = this.sink.store
+
+  @StoveDsl
+  suspend fun adminOperations(block: suspend Admin.() -> Unit) = block(adminClient)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeConsumedInternal(
