@@ -142,7 +142,7 @@ class KafkaSystem(
       sink.store.consumedMessages()
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
-        .map { ConsumedRecord(it.topic, it.key, it.message, it.headers, it.offsets(), it.partition) }
+        .map { ConsumedRecord(it.topic, it.key, it.message, it.headers, it.offsets(), it.offset, it.partition) }
         .forEach {
           loop = !condition(it)
         }

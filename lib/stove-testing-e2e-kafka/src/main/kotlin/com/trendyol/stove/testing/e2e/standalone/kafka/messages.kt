@@ -20,5 +20,6 @@ data class ConsumedRecord(
   val value: String,
   val headers: Map<String, String>,
   val offsets: List<Long>,
+  val offset: Long,
   val partition: Int
 )
