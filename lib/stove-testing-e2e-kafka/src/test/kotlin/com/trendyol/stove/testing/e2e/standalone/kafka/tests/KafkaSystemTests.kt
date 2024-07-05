@@ -41,7 +41,11 @@ class KafkaSystemTests : FunSpec({
     validate {
       kafka {
         val messages = ProductCreated.randoms(100)
-        messages.map { async { publish("product", it, key = randomString().some(), headers = mapOf("testCase" to testCase.name.testName)) } }
+        messages.map {
+          async {
+            publish("product", it, key = randomString().some(), headers = mapOf("testCase" to testCase.name.testName))
+          }
+        }
         messages.map { async { shouldBePublished<ProductCreated> { actual.productId == it.productId } } }
         messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }
 

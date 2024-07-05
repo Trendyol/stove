@@ -125,6 +125,7 @@ class KafkaSystem(
    * @param condition Function1<ConsumedMessage, Boolean>
    */
   @StoveDsl
+  @Suppress("MagicNumber")
   suspend inline fun peekConsumedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
@@ -151,6 +152,7 @@ class KafkaSystem(
    * @param condition Function1<ConsumedMessage, Boolean>
    */
   @StoveDsl
+  @Suppress("MagicNumber")
   suspend inline fun peekCommittedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
@@ -177,6 +179,7 @@ class KafkaSystem(
    * @param condition Function1<ConsumedMessage, Boolean>
    */
   @StoveDsl
+  @Suppress("MagicNumber")
   suspend inline fun peekPublishedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
@@ -263,7 +266,7 @@ class KafkaSystem(
       } else {
         emptyMap()
       }
-      )
+    )
   )
 
   private fun createAdminClient(
