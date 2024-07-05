@@ -6,7 +6,7 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvent
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.DomainEvents.ProductFailingCreated
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 
@@ -41,13 +41,9 @@ class KafkaSystemTests : FunSpec({
     validate {
       kafka {
         val messages = ProductCreated.randoms(100)
-        messages.map {
-          async {
-            publish("product", it, key = randomString().some(), headers = mapOf("testCase" to testCase.name.testName))
-          }
-        }
-        messages.map { async { shouldBePublished<ProductCreated> { actual.productId == it.productId } } }
-        messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }
+        messages.map { async { publish("product", it, key = randomString().some()) } }.awaitAll()
+        messages.map { async { shouldBePublished<ProductCreated> { actual.productId == it.productId } } }.awaitAll()
+        messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }.awaitAll()
 
         peekConsumedMessages(topic = "product") {
           it.offsets.contains(100)
