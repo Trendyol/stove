@@ -108,7 +108,6 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
       message = serializeIfNotString(record.value()),
       topic = record.topic(),
       offset = record.offset(),
-      offsets = committedMessages(record.offsets()),
       partition = record.partition(),
       headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
     )

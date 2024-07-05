@@ -35,14 +35,11 @@ class MessageStore {
 
   internal fun isCommitted(
     topic: String,
-    offsets: List<Long>,
+    offset: Long,
     partition: Int
   ): Boolean = committedMessages()
-    .any {
-      (offsets.contains(it.offset) || offsets.all { o -> o <= it.offset }) &&
-        it.partition == partition &&
-        it.topic == topic
-    }
+    .filter { it.topic == topic && it.partition == partition }
+    .any { committed -> committed.offset == offset || committed.offset >= offset }
 
   override fun toString(): String = """
     |Consumed: ${pprint(consumedMessages())}

@@ -54,7 +54,7 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
           outcome.getOrNull().toOption(),
           it.metadata()
         )
-      ) && store.isCommitted(it.topic, it.offsets(), it.partition)
+      ) && store.isCommitted(it.topic, it.offset, it.partition)
     }
 
     throwIfFailed(clazz, condition)

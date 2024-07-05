@@ -142,7 +142,7 @@ class KafkaSystem(
       sink.store.consumedMessages()
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
-        .map { ConsumedRecord(it.topic, it.key, it.message, it.headers, it.offsets(), it.offset, it.partition) }
+        .map { ConsumedRecord(it.topic, it.key, it.message, it.headers, it.offset, it.partition) }
         .forEach {
           loop = !condition(it)
         }
@@ -190,12 +190,12 @@ class KafkaSystem(
     topic: String,
     crossinline condition: (PublishedRecord) -> Boolean
   ) = withTimeout(atLeastIn) {
-    val seenIds = mutableListOf<String>()
+    val seenIds = mutableMapOf<String, PublishedMessage>()
     var loop = true
     while (loop) {
       sink.store.publishedMessages()
-        .filter { it.topic == topic && it.id !in seenIds }
-        .onEach { seenIds.add(it.id) }
+        .filter { it.topic == topic && !seenIds.containsKey(it.id) }
+        .onEach { seenIds[it.id] = it }
         .map { PublishedRecord(it.topic, it.key, it.message, it.headers) }
         .forEach {
           loop = !condition(it)
@@ -217,6 +217,7 @@ class KafkaSystem(
    * @param pollTimeout Duration The poll timeout for the consumer.
    * @param onConsume Function1<ConsumerRecord<K, V>, Unit> The function to be executed when a message is consumed.
    */
+  @StoveDsl
   suspend fun <K : Any, V : Any> consumer(
     topic: String,
     readOnly: Boolean = true,

@@ -89,7 +89,7 @@ internal interface CommonOps {
           readCatching(it.message, clazz).getOrNull().toOption(),
           it.metadata()
         )
-      ) && store.isCommitted(it.topic, it.offsets(), it.partition)
+      ) && store.isCommitted(it.topic, it.offset, it.partition)
     }.forEach { throw AssertionError("Message was expected to fail, but was consumed: $it \n ${dumpMessages()}") }
 
   fun <T : Any> readCatching(

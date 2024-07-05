@@ -5,7 +5,7 @@ plugins {
 dependencies {
   api(projects.lib.stoveTestingE2e)
   api(libs.testcontainers.kafka)
-  implementation(libs.kafka)
+  api(libs.kafka)
   implementation(libs.kotlinx.io.reactor.extensions)
   implementation(libs.kotlinx.jdk8)
   implementation(libs.kotlinx.core)
