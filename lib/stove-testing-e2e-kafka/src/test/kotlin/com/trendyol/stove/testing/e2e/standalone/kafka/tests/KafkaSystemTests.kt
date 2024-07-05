@@ -16,13 +16,23 @@ class KafkaSystemTests : FunSpec({
   test("When publish then it should work") {
     validate {
       kafka {
-        val productId = randomString() + "[productCreated]"
-        publish("product", message = ProductCreated(productId), key = randomString().some())
+        val key = randomString()
+        val productId = "$key[productCreated]"
+        publish("product", message = ProductCreated(productId), key = key.some())
         shouldBePublished<ProductCreated> {
           actual.productId == productId
         }
+
+        peekPublishedMessages(topic = "product") {
+          it.key == key
+        }
+
         shouldBeConsumed<ProductCreated>(1.minutes) {
           actual.productId == productId
+        }
+
+        peekConsumedMessages(topic = "product") {
+          it.key == key
         }
       }
     }
@@ -31,9 +41,17 @@ class KafkaSystemTests : FunSpec({
     validate {
       kafka {
         val messages = ProductCreated.randoms(100)
-        messages.map { async { publish("product", it, key = randomString().some()) } }
+        messages.map { async { publish("product", it, key = randomString().some(), headers = mapOf("testCase" to testCase.name.testName)) } }
         messages.map { async { shouldBePublished<ProductCreated> { actual.productId == it.productId } } }
         messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }
+
+        peekConsumedMessages(topic = "product") {
+          it.offsets.contains(100)
+        }
+
+        peekCommittedMessages(topic = "product") { record ->
+          record.offset == 101L // next offset
+        }
       }
     }
   }
@@ -41,14 +59,20 @@ class KafkaSystemTests : FunSpec({
   test("When publish to a failing consumer should end-up throwing exception") {
     validate {
       kafka {
-        val productId = randomString() + "[productFailingCreated]"
-        publish("productFailing", ProductFailingCreated(productId), key = randomString().some())
+        val string = randomString()
+        val productId = "$string[productFailingCreated]"
+        val key = string.some()
+        publish("productFailing", ProductFailingCreated(productId), key = key)
         shouldBeRetried<ProductFailingCreated>(atLeastIn = 1.minutes, times = 3) {
           actual.productId == productId
         }
 
         shouldBePublished<ProductFailingCreated>(atLeastIn = 1.minutes) {
           this.metadata.topic == "productFailing.error"
+        }
+
+        peekPublishedMessages(topic = "productFailing.error") {
+          it.key == string
         }
       }
     }

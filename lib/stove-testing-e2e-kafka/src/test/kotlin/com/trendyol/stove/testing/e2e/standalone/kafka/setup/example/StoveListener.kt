@@ -20,7 +20,6 @@ abstract class StoveListener(
   private val publisher: KafkaPublisher<String, Any> = KafkaPublisher(publisherSettings)
   private var scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-  @OptIn(DelicateCoroutinesApi::class)
   suspend fun start() {
     consumer.subscribe(listOf(topicDefinition.topic, topicDefinition.retryTopic, topicDefinition.deadLetterTopic))
     scope.launch {

@@ -119,6 +119,84 @@ class KafkaSystem(
   }.let { this }
 
   /**
+   * Waits until the consumed message is seen. This does not mean committed.
+   * @param atLeastIn Duration
+   * @param topic String
+   * @param condition Function1<ConsumedMessage, Boolean>
+   */
+  @StoveDsl
+  suspend inline fun peekConsumedMessages(
+    atLeastIn: Duration = 5.seconds,
+    topic: String,
+    crossinline condition: (ConsumedRecord) -> Boolean
+  ) = withTimeout(atLeastIn) {
+    var offset = -1L
+    var loop = true
+    while (loop) {
+      sink.store.consumedMessages()
+        .filter { it.topic == topic && it.offset > offset }
+        .onEach { offset = it.offset }
+        .map { ConsumedRecord(it.topic, it.key, it.message, it.headers, it.offsets(), it.partition) }
+        .forEach {
+          loop = !condition(it)
+        }
+      delay(100)
+    }
+  }
+
+  /**
+   * Waits until the committed message is seen with the given condition.
+   * @param atLeastIn Duration
+   * @param topic String
+   * @param condition Function1<ConsumedMessage, Boolean>
+   */
+  @StoveDsl
+  suspend inline fun peekCommittedMessages(
+    atLeastIn: Duration = 5.seconds,
+    topic: String,
+    crossinline condition: (CommittedRecord) -> Boolean
+  ) = withTimeout(atLeastIn) {
+    var offset = -1L
+    var loop = true
+    while (loop) {
+      sink.store.committedMessages()
+        .filter { it.topic == topic && it.offset > offset }
+        .onEach { offset = it.offset }
+        .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
+        .forEach {
+          loop = !condition(it)
+        }
+      delay(100)
+    }
+  }
+
+  /**
+   * Waits until the committed message is seen with the given condition.
+   * @param atLeastIn Duration
+   * @param topic String
+   * @param condition Function1<ConsumedMessage, Boolean>
+   */
+  @StoveDsl
+  suspend inline fun peekPublishedMessages(
+    atLeastIn: Duration = 5.seconds,
+    topic: String,
+    crossinline condition: (PublishedRecord) -> Boolean
+  ) = withTimeout(atLeastIn) {
+    val seenIds = mutableListOf<String>()
+    var loop = true
+    while (loop) {
+      sink.store.publishedMessages()
+        .filter { it.topic == topic && it.id !in seenIds }
+        .onEach { seenIds.add(it.id) }
+        .map { PublishedRecord(it.topic, it.key, it.message, it.headers) }
+        .forEach {
+          loop = !condition(it)
+        }
+      delay(100)
+    }
+  }
+
+  /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
    * @return KafkaSystem
    */
