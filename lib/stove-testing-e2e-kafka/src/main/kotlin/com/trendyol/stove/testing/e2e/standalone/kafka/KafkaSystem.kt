@@ -243,7 +243,7 @@ class KafkaSystem(
     onConsume
   )
 
-  @OptIn(ExperimentalCoroutinesApi::class)
+  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
   private suspend fun <K : Any, V : Any> consume(
     autoOffsetReset: String,
     readOnly: Boolean,
@@ -285,7 +285,7 @@ class KafkaSystem(
         try {
           onConsume(it)
           if (!readOnly) c.commitSync()
-          true
+          !channel.isClosedForReceive
         } catch (e: Exception) {
           throw e
         }
