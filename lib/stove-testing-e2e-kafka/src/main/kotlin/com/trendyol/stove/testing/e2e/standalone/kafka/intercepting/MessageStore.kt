@@ -11,17 +11,17 @@ class MessageStore {
   private val failedMessages = Caching.of<String, ConsumedMessage>()
   private val acknowledged = Caching.of<String, AcknowledgedMessage>()
 
-  fun record(message: ConsumedMessage) = consumed.put(message.id, message)
+  internal fun record(message: ConsumedMessage) = consumed.put(message.id, message)
 
-  fun record(message: PublishedMessage) = published.put(message.id, message)
+  internal fun record(message: PublishedMessage) = published.put(message.id, message)
 
-  fun record(message: CommittedMessage) = committed.put(message.id, message)
+  internal fun record(message: CommittedMessage) = committed.put(message.id, message)
 
-  fun record(message: AcknowledgedMessage) = acknowledged.put(message.id, message)
+  internal fun record(message: AcknowledgedMessage) = acknowledged.put(message.id, message)
 
-  fun recordRetry(message: ConsumedMessage) = retried.put(message.id, message)
+  internal fun recordRetry(message: ConsumedMessage) = retried.put(message.id, message)
 
-  fun recordFailure(message: ConsumedMessage) = failedMessages.put(message.id, message)
+  internal fun recordFailure(message: ConsumedMessage) = failedMessages.put(message.id, message)
 
   fun failedMessages(): Collection<ConsumedMessage> = failedMessages.asMap().values
 
@@ -33,7 +33,7 @@ class MessageStore {
 
   fun retriedMessages(): Collection<ConsumedMessage> = retried.asMap().values
 
-  fun isCommitted(
+  internal fun isCommitted(
     topic: String,
     offsets: List<Long>,
     partition: Int

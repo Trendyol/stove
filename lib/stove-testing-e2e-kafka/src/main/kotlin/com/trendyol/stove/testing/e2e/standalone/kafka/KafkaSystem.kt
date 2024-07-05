@@ -210,6 +210,12 @@ class KafkaSystem(
   @StoveDsl
   fun unpause(): KafkaSystem = context.container.unpause().let { this }
 
+  /**
+   * Provides access to the message store of the KafkaSystem.
+   */
+  @StoveDsl
+  fun messageStore(): MessageStore = this.sink.store
+
   @PublishedApi
   internal suspend fun <T : Any> shouldBeConsumedInternal(
     clazz: KClass<T>,
@@ -257,7 +263,7 @@ class KafkaSystem(
       } else {
         emptyMap()
       }
-    )
+      )
   )
 
   private fun createAdminClient(
