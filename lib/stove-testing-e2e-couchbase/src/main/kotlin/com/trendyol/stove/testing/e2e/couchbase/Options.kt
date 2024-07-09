@@ -22,8 +22,8 @@ data class CouchbaseExposedConfiguration(
 data class CouchbaseSystemOptions(
   val defaultBucket: String,
   val containerOptions: CouchbaseContainerOptions = CouchbaseContainerOptions(),
-  override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() },
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default
+  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<Cluster> = MigrationCollection()
 
