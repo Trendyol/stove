@@ -59,7 +59,7 @@ io-grpc = "1.63.0"
 io-grpc-kotlin = "1.4.1"
 
 # Tooling
-kover = "0.8.2"
+kover = "0.8.3"
 spotless = "6.25.0"
 detekt = "1.23.6"
 lombok = "1.18.34"
