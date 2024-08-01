@@ -20,7 +20,7 @@ arrowSuspendApp = "0.4.0"
 jackson = "2.17.2"
 
 # Couchbase
-couchbase-kotlin = "1.4.0"
+couchbase-kotlin = "1.4.1"
 couchbase-client = "3.7.1"
 couchbase-client-metrics = "0.7.1"
 
