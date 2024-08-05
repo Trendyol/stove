@@ -45,7 +45,7 @@ hoplite = "2.8.0.RC3"
 junit = "5.10.3"
 kotest = "5.9.1"
 mockito = "5.4.0"
-quiver = "0.5.8"
+quiver = "0.5.9"
 akkurate = "0.8.0"
 
 [libraries]
