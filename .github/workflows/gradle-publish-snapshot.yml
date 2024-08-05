@@ -30,10 +30,13 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      - name: Publish to Maven Repository
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          arguments: --build-cache publish --parallel
+          gradle-version: 8.9
+      
+      - name: Publish to Maven Repository
+        run: gradle --build-cache publish --parallel
         env:
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}
