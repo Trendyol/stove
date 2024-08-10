@@ -33,7 +33,7 @@ io-reactor = "3.6.8"
 io-reactor-extensions = "1.2.2"
 
 # Logging
-slf4j = "2.0.15"
+slf4j = "2.0.16"
 kotlinLogging = "7.0.0"
 
 # Ktor
