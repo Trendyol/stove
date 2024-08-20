@@ -3,13 +3,13 @@ kotlin = "2.0.10"
 kotlinx = "1.8.1"
 scala2x = "2.13.14"
 scala3x = "3.4.1"
-quarkus = "3.13.2"
+quarkus = "3.13.3"
 
 # Spring-Boot
 spring-boot = "3.3.2"
 spring-framework = "6.1.12"
 spring-dependency-management = "1.1.6"
-spring-kafka = "3.2.2"
+spring-kafka = "3.2.3"
 
 # arrow
 arrow = "1.2.4"
