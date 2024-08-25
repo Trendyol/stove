@@ -1,12 +1,12 @@
 [versions]
-kotlin = "2.0.10"
+kotlin = "2.0.20"
 kotlinx = "1.8.1"
 scala2x = "2.13.14"
 scala3x = "3.4.1"
 quarkus = "3.14.0"
 
 # Spring-Boot
-spring-boot = "3.3.2"
+spring-boot = "3.3.3"
 spring-framework = "6.1.12"
 spring-dependency-management = "1.1.6"
 spring-kafka = "3.2.3"
@@ -210,6 +210,6 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
-ksp = { id = "com.google.devtools.ksp", version = "2.0.10-1.0.24" }
+ksp = { id = "com.google.devtools.ksp", version = "2.0.20-1.0.24" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 

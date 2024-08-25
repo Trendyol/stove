@@ -1,10 +1,10 @@
 [versions]
-kotlin = "2.0.10"
+kotlin = "2.0.20"
 kotlinx = "1.8.1"
 spring-boot = "2.7.18"
 spring-framework = "5.3.39"
 spring-framework-6x = "6.1.12"
-spring-boot-3x = "3.3.2"
+spring-boot-3x = "3.3.3"
 spring-dependency-management = "1.1.6"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.2.3"
@@ -129,7 +129,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.4.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.7" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.0.jre11" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.1.jre11" }
 
 ### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
@@ -212,7 +212,7 @@ arrow-stack = ["arrow-core",
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
-ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.19.0" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.20.0" }
 kotlinter = { id = "org.jmailen.kotlinter", version = "4.4.1" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
