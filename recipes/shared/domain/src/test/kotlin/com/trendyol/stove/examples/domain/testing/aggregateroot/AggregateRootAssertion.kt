@@ -5,10 +5,8 @@ import com.trendyol.stove.examples.domain.ddd.*
 import io.kotest.assertions.*
 import io.kotest.assertions.print.Printed
 import io.kotest.common.mapError
-import io.kotest.core.test.TestScope
 import io.kotest.matchers.shouldBe
 
-context(TestScope)
 class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
   val root: AggregateRoot<TId>
 ) {
@@ -36,7 +34,6 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
       )
     }
 
-  context(TestScope)
   inline fun <reified T : DomainEvent> shouldNotContain() =
     root.domainEvents().map { it.javaClass }
       .firstOrNone { it == T::class.java }
@@ -55,7 +52,6 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
   }
 
   companion object {
-    context(TestScope)
     inline fun <TId, TAggregateRoot : AggregateRoot<TId>> assertEvents(
       root: TAggregateRoot,
       block: (AggregateRootAssertion<TId, TAggregateRoot>).() -> Unit
