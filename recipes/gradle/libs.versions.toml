@@ -52,7 +52,7 @@ r2dbc-mssql = "1.0.2.RELEASE"
 elastic = "8.15.0"
 
 # mongo
-mongodb = "5.1.3"
+mongodb = "5.1.4"
 
 # Grpc
 io-grpc = "1.63.0"
