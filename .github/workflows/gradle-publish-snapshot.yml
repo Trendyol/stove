@@ -36,7 +36,7 @@ jobs:
           gradle-version: current
       
       - name: Publish to Maven Repository
-        run: gradle --build-cache publish --parallel
+        run: gradle publish --parallel
         env:
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}

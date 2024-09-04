@@ -27,7 +27,7 @@ jobs:
           gradle-version: current
 
       - name: Gradle Build and Test
-        run: --build-cache publish
+        run: gradle publish --parallel
         env:
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}

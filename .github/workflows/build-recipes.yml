@@ -31,4 +31,4 @@ jobs:
           gradle-version: current
 
       - name: Gradle Build and Test
-        run: -p recipes --build-cache build test e2eTest
+        run: gradle -p recipes --build-cache build test e2eTest
