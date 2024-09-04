@@ -11,8 +11,6 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - 'buildSrc/**'
-env:
-  SNAPSHOT: true
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -34,10 +32,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
-      
+
       - name: Publish to Maven Repository
-        run: gradle publish --parallel
+        run: gradle publish
         env:
+          SNAPSHOT: true
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}
           nexus_username: ${{ secrets.nexus_username }}
