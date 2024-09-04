@@ -21,7 +21,22 @@ publishing {
       version = rootProject.version.toString()
       println("version to be published: ${rootProject.version}")
       artifactId = project.name
-      from(components["java"])
+      val javaComponent = components["java"]
+      from(javaComponent)
+
+      javaComponent as AdhocComponentWithVariants
+
+      configurations.findByName("testFixturesApiElements")?.let {
+        javaComponent.withVariantsFromConfiguration(it) {
+          skip()
+        }
+      }
+      configurations.findByName("testFixturesRuntimeElements")?.let {
+        javaComponent.withVariantsFromConfiguration(it) {
+          skip()
+        }
+      }
+
       pom {
         name.set(project.name)
         description.set(project.properties["projectDescription"].toString())
