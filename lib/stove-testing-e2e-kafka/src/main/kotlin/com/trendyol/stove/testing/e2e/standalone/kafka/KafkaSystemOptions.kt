@@ -27,7 +27,7 @@ class KafkaSystemOptions(
   /**
    * The options for the Kafka system that is exposed to the application
    */
-  override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 /**

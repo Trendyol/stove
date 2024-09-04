@@ -26,7 +26,7 @@ data class RedisOptions(
   val database: Int = 8,
   val password: String = "password",
   val container: RedisContainerOptions = RedisContainerOptions(),
-  override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<RedisExposedConfiguration>
 
 @StoveDsl
@@ -46,7 +46,7 @@ data class RedisContext(
 
 @StoveDsl
 fun WithDsl.redis(
-  configure: () -> RedisOptions = { RedisOptions() }
+  configure: () -> RedisOptions
 ): TestSystem = this.testSystem.withRedis(configure())
 
 @StoveDsl
@@ -57,7 +57,7 @@ internal fun TestSystem.redis(): RedisSystem =
     throw SystemNotRegisteredException(RedisSystem::class)
   }
 
-internal fun TestSystem.withRedis(options: RedisOptions = RedisOptions()): TestSystem =
+internal fun TestSystem.withRedis(options: RedisOptions): TestSystem =
   withProvidedRegistry(options.container.image, options.container.registry, options.container.compatibleSubstitute) {
     options.container.useContainerFn(it)
       .withCommand("redis-server", "--requirepass", options.password)

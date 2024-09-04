@@ -31,7 +31,7 @@ data class PostgresqlOptions(
   val container: PostgresqlContainerOptions = PostgresqlContainerOptions(),
   override val configureExposedConfiguration: (
     RelationalDatabaseExposedConfiguration
-  ) -> List<String> = { _ -> listOf() }
+  ) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
   val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
 
@@ -56,7 +56,7 @@ data class PostgresSqlMigrationContext(
   val executeAsRoot: suspend (String) -> Unit
 )
 
-internal fun TestSystem.withPostgresql(options: PostgresqlOptions = PostgresqlOptions()): TestSystem =
+internal fun TestSystem.withPostgresql(options: PostgresqlOptions): TestSystem =
   withProvidedRegistry(options.container.imageWithTag, options.container.registry, options.container.compatibleSubstitute) {
     options.container.useContainerFn(it)
       .withDatabaseName(options.databaseName)
@@ -73,7 +73,7 @@ internal fun TestSystem.postgresql(): PostgresqlSystem =
   }
 
 @StoveDsl
-fun WithDsl.postgresql(configure: () -> PostgresqlOptions = { PostgresqlOptions() }): TestSystem =
+fun WithDsl.postgresql(configure: () -> PostgresqlOptions): TestSystem =
   this.testSystem.withPostgresql(configure())
 
 @StoveDsl

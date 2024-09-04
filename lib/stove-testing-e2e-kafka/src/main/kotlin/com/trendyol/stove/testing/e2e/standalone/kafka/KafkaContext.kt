@@ -15,7 +15,7 @@ internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrEls
   throw SystemNotRegisteredException(KafkaSystem::class)
 }
 
-internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem {
+internal fun TestSystem.withKafka(options: KafkaSystemOptions): TestSystem {
   val kafka = withProvidedRegistry(
     options.containerOptions.imageWithTag,
     options.containerOptions.registry,

@@ -14,7 +14,8 @@ class Setup : AbstractProjectConfig() {
       .with {
         redis {
           RedisOptions(
-            container = RedisContainerOptions()
+            container = RedisContainerOptions(),
+            configureExposedConfiguration = { _ -> listOf() }
           )
         }
         applicationUnderTest(NoOpApplication())

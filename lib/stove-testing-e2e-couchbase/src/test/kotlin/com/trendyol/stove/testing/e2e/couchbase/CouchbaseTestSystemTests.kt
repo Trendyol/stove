@@ -40,6 +40,9 @@ class Setup : AbstractProjectConfig() {
       couchbase {
         CouchbaseSystemOptions(
           defaultBucket = TEST_BUCKET,
+          configureExposedConfiguration = { _ ->
+            listOf()
+          },
           containerOptions = CouchbaseContainerOptions(
             useContainerFn = { ExtendedCouchbaseContainer(it) },
             tag = "7.6.1"

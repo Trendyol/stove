@@ -45,7 +45,7 @@ data class KafkaSystemOptions(
   val objectMapper: ObjectMapper = StoveObjectMapper.Default,
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
   val ops: KafkaOps = KafkaOps(),
-  override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration> {
   companion object {
     val DEFAULT_KAFKA_PORTS = listOf(9092, 9093)
@@ -59,7 +59,7 @@ data class KafkaContext(
   val options: KafkaSystemOptions
 )
 
-internal fun TestSystem.withKafka(options: KafkaSystemOptions = KafkaSystemOptions()): TestSystem =
+internal fun TestSystem.withKafka(options: KafkaSystemOptions): TestSystem =
   withProvidedRegistry(
     options.containerOptions.imageWithTag,
     registry = options.registry,
@@ -79,7 +79,7 @@ internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrEls
 
 @StoveDsl
 fun WithDsl.kafka(
-  configure: () -> KafkaSystemOptions = { KafkaSystemOptions() }
+  configure: () -> KafkaSystemOptions
 ): TestSystem = this.testSystem.withKafka(configure())
 
 @StoveDsl

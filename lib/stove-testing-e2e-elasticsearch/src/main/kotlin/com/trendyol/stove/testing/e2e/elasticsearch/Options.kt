@@ -20,7 +20,7 @@ data class ElasticsearchSystemOptions(
   val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
   val container: ElasticContainerOptions = ElasticContainerOptions(),
   val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-  override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 

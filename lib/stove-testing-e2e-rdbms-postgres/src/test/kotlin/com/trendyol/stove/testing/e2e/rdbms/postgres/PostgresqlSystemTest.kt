@@ -15,7 +15,12 @@ class Setup : AbstractProjectConfig() {
     TestSystem()
       .with {
         postgresql {
-          PostgresqlOptions(databaseName = "testing").migrations {
+          PostgresqlOptions(
+            databaseName = "testing",
+            configureExposedConfiguration = { _ ->
+              listOf()
+            }
+          ).migrations {
             register<InitialMigration>()
           }
         }

@@ -56,7 +56,10 @@ class Setup : AbstractProjectConfig() {
           clientConfigurer = ElasticClientConfigurer(
             restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
           ),
-          ElasticContainerOptions(tag = "8.9.0")
+          ElasticContainerOptions(tag = "8.9.0"),
+          configureExposedConfiguration = { _ ->
+            listOf()
+          }
         ).migrations {
           register<TestIndexMigrator>()
           register<AnotherIndexMigrator>()

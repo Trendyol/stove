@@ -31,7 +31,7 @@ data class MsSqlOptions(
   val container: MssqlContainerOptions = MssqlContainerOptions(),
   override val configureExposedConfiguration: (
     RelationalDatabaseExposedConfiguration
-  ) -> List<String> = { _ -> listOf() }
+  ) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
   val migrationCollection: MigrationCollection<SqlMigrationContext> = MigrationCollection()
 

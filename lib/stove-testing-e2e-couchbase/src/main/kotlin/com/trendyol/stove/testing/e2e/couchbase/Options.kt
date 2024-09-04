@@ -23,7 +23,7 @@ data class CouchbaseSystemOptions(
   val defaultBucket: String,
   val containerOptions: CouchbaseContainerOptions = CouchbaseContainerOptions(),
   val objectMapper: ObjectMapper = StoveObjectMapper.Default,
-  override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String> = { _ -> listOf() }
+  override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<Cluster> = MigrationCollection()
 
@@ -33,10 +33,9 @@ data class CouchbaseSystemOptions(
    * @see DatabaseMigration
    */
   @StoveDsl
-  fun migrations(migration: MigrationCollection<Cluster>.() -> Unit): CouchbaseSystemOptions =
-    migration(
-      migrationCollection
-    ).let { this }
+  fun migrations(
+    migration: MigrationCollection<Cluster>.() -> Unit
+  ): CouchbaseSystemOptions = migration(migrationCollection).let { this }
 }
 
 @StoveDsl

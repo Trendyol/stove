@@ -8,31 +8,29 @@ fun mongodb(init: MongodbOptionsDsl.() -> Unit): MongodbSystemOptions = MongodbO
 
 @StoveDsl
 class MongodbOptionsDsl internal constructor(private val init: MongodbOptionsDsl.() -> Unit) {
-  private var options: MongodbSystemOptions = MongodbSystemOptions()
+  private var options: MongodbSystemOptions = MongodbSystemOptions(configureExposedConfiguration = { listOf() })
 
   fun defaultDatabase(name: String) {
-    options =
-      options.copy(
-        databaseOptions =
-          options.databaseOptions.copy(
-            default = options.databaseOptions.default.copy(name = name)
-          )
+    options = options.copy(
+      databaseOptions = options.databaseOptions.copy(
+        default = options.databaseOptions.default.copy(name = name)
       )
+    )
   }
 
   fun image(image: String) {
-    options = options.copy(container = MongoContainerOptions(image = image))
+    options = options.copy(container = options.container.copy(image = image))
   }
 
   fun registry(registry: String) {
-    options = options.copy(container = MongoContainerOptions(registry = registry))
+    options = options.copy(container = options.container.copy(registry = registry))
   }
 
   fun tag(tag: String) {
-    options = options.copy(container = MongoContainerOptions(tag = tag))
+    options = options.copy(container = options.container.copy(tag = tag))
   }
 
-  fun exposedConfiguration(configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String> = { _ -> listOf() }) {
+  fun exposedConfiguration(configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>) {
     options = options.copy(configureExposedConfiguration = configureExposedConfiguration)
   }
 
@@ -40,5 +38,7 @@ class MongodbOptionsDsl internal constructor(private val init: MongodbOptionsDsl
     options = options.copy(objectMapper = objectMapper)
   }
 
-  internal operator fun invoke(): MongodbSystemOptions = init().let { options }
+  internal operator fun invoke(): MongodbSystemOptions {
+    return init().let { options }
+  }
 }

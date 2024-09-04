@@ -23,6 +23,9 @@ class Setup : AbstractProjectConfig() {
             password = "Password12!",
             container = MssqlContainerOptions {
               dockerImageName = "mcr.microsoft.com/mssql/server:2017-latest"
+            },
+            configureExposedConfiguration = { _ ->
+              listOf()
             }
           ).migrations {
             register<InitialMigration>()
