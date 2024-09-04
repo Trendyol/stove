@@ -31,14 +31,13 @@ class WireMockSystem(
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   init {
-    val stoveExtensions = mutableListOf<Extension>()
     val cfg = wireMockConfig().port(ctx.port).extensions(WireMockRequestListener(stubLog, ctx.afterRequest))
-
+    val stoveExtensions = mutableListOf<Extension>()
     if (ctx.removeStubAfterRequestMatched) {
       stoveExtensions.add(WireMockVacuumCleaner(stubLog, ctx.afterStubRemoved))
     }
     stoveExtensions.map { cfg.extensions(it) }
-    wireMock = WireMockServer(cfg)
+    wireMock = WireMockServer(cfg.let(ctx.configure))
     stoveExtensions.filterIsInstance<WireMockVacuumCleaner>().forEach { it.wireMock(wireMock) }
   }
 

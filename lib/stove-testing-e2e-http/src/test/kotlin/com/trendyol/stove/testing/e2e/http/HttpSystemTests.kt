@@ -3,14 +3,17 @@ package com.trendyol.stove.testing.e2e.http
 import arrow.core.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
+import com.trendyol.stove.ConsoleSpec
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.client
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.*
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.*
+import io.kotest.matchers.string.shouldContain
 import io.ktor.client.request.*
 import io.ktor.http.*
 import java.time.Instant
@@ -287,6 +290,27 @@ class HttpSystemTests : FunSpec({
           resp.status shouldBe HttpStatusCode.OK
         }
       }
+    }
+  }
+})
+
+class HttpConsoleTesting : ConsoleSpec({ capturedOutput ->
+  test("should return error when request bodies do not match") {
+    val expectedGetDtoName = UUID.randomUUID().toString()
+    TestSystem.validate {
+      wiremock {
+        mockPost("/post-with-response-body", 200, requestBody = TestDto("lol").some(), responseBody = TestDto(expectedGetDtoName).some())
+      }
+
+      shouldThrow<Throwable> {
+        http {
+          postAndExpectJson<TestDto>("/post-with-response-body2", body = TestDto("no-match").some()) { actual ->
+            actual.name shouldBe expectedGetDtoName
+          }
+        }
+      }
+
+      capturedOutput.out shouldContain "[equalToJson]                                              |                                                     <<<<< Body does not match\n"
     }
   }
 })

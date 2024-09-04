@@ -2,6 +2,8 @@ package com.trendyol.stove.testing.e2e.wiremock
 
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.tomakehurst.wiremock.common.ConsoleNotifier
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -12,6 +14,10 @@ data class WireMockSystemOptions(
    * Port of wiremock server
    */
   val port: Int = 9090,
+  /**
+   * Configures wiremock server
+   */
+  val configure: WireMockConfiguration.() -> WireMockConfiguration = { this.notifier(ConsoleNotifier(true)) },
   /**
    * Removes the stub when request matches/completes
    * Default value is false
@@ -36,7 +42,8 @@ data class WireMockContext(
   val removeStubAfterRequestMatched: Boolean,
   val afterStubRemoved: AfterStubRemoved,
   val afterRequest: AfterRequestHandler,
-  val objectMapper: ObjectMapper
+  val objectMapper: ObjectMapper,
+  val configure: WireMockConfiguration.() -> WireMockConfiguration
 )
 
 internal fun TestSystem.withWireMock(options: WireMockSystemOptions = WireMockSystemOptions()): TestSystem =
@@ -47,7 +54,8 @@ internal fun TestSystem.withWireMock(options: WireMockSystemOptions = WireMockSy
       options.removeStubAfterRequestMatched,
       options.afterStubRemoved,
       options.afterRequest,
-      options.objectMapper
+      options.objectMapper,
+      options.configure
     )
   ).also { getOrRegister(it) }
     .let { this }
