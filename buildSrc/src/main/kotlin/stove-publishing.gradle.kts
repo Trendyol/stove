@@ -16,22 +16,15 @@ fun getProperty(
 
 publishing {
   publications {
+    val javaComponent = components["java"] as AdhocComponentWithVariants
+    configurations.findByName("testFixturesApiElements")?.let { javaComponent.withVariantsFromConfiguration(it) { skip() } }
+    configurations.findByName("testFixturesRuntimeElements")?.let { javaComponent.withVariantsFromConfiguration(it) { skip() } }
+
     create<MavenPublication>("publish-${project.name}") {
       groupId = rootProject.group.toString()
       version = rootProject.version.toString()
       println("version to be published: ${rootProject.version}")
       artifactId = project.name
-      val javaComponent = components["java"] as AdhocComponentWithVariants
-      configurations.findByName("testFixturesApiElements")?.let {
-        javaComponent.withVariantsFromConfiguration(it) {
-          skip()
-        }
-      }
-      configurations.findByName("testFixturesRuntimeElements")?.let {
-        javaComponent.withVariantsFromConfiguration(it) {
-          skip()
-        }
-      }
       from(javaComponent)
       pom {
         name.set(project.name)
