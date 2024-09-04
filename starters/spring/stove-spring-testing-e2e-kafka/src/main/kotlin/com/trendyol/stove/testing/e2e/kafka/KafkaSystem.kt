@@ -78,8 +78,8 @@ class KafkaSystem(
   }
 
   private fun checkIfInterceptorConfiguredProperly(context: ApplicationContext) {
-    val registeredInterceptor: RecordInterceptor<*, *> = context.getBean()
-    if (registeredInterceptor !is TestSystemKafkaInterceptor) {
+    val interceptors: Map<String, RecordInterceptor<*, *>> = context.getBeansOfType()
+    if (interceptors.values.any { it !is TestSystemKafkaInterceptor<*, *> }) {
       throw AssertionError(
         "Kafka interceptor is not an instance of TestSystemKafkaInterceptor, " +
           "please make sure that you have configured the Stove Kafka interceptor in your Spring Application properly." +
