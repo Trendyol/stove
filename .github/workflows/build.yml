@@ -37,10 +37,13 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Gradle Build and Test
-        uses: gradle/gradle-build-action@v3.5.0
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          arguments: --build-cache --configuration-cache build test koverXmlReport
+          gradle-version: current
+
+      - name: Gradle Build and Test
+        run: gradle --build-cache --configuration-cache build test koverXmlReport
 
       - name: Add coverage report to PR
         id: kover
