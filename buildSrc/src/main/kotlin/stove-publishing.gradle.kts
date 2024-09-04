@@ -19,6 +19,7 @@ publishing {
     create<MavenPublication>("publish-${project.name}") {
       groupId = rootProject.group.toString()
       version = rootProject.version.toString()
+      println("version to be published: ${rootProject.version}")
       artifactId = project.name
       from(components["java"])
       pom {
@@ -53,8 +54,6 @@ publishing {
       val releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
       val snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
       url = if (rootProject.version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-      // url = rootProject.buildDir.resolve("publications").toURI()
-
       credentials {
         username = getProperty("nexus_username", "nexus_username")
         password = getProperty("nexus_password", "nexus_password")
