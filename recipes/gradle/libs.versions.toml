@@ -49,7 +49,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 r2dbc-mssql = "1.0.2.RELEASE"
 
 # elastic
-elastic = "8.15.0"
+elastic = "8.15.1"
 
 # mongo
 mongodb = "5.1.4"
@@ -61,7 +61,7 @@ io-grpc-kotlin = "1.4.1"
 # Tooling
 kover = "0.8.3"
 spotless = "6.25.0"
-detekt = "1.23.6"
+detekt = "1.23.7"
 lombok = "1.18.34"
 
 # Misc
@@ -163,7 +163,7 @@ kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.re
 
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.4.0.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.7" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.8" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
@@ -210,6 +210,6 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
-ksp = { id = "com.google.devtools.ksp", version = "2.0.20-1.0.24" }
+ksp = { id = "com.google.devtools.ksp", version = "2.0.20-1.0.25" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 

@@ -27,13 +27,13 @@ ktor = "2.3.12"
 koin = "3.5.6"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.15.0"
+elastic = "8.15.1"
 mongodb = "5.1.4"
 wiremock = "3.9.1"
 testcontainers = "1.20.1"
 r2dbc-mssql = "1.0.2.RELEASE"
 spotless = "6.25.0"
-detekt = "1.23.6"
+detekt = "1.23.7"
 wire = "5.0.0"
 io-grpc = "1.66.0"
 io-grpc-kotlin = "1.4.1"
@@ -127,7 +127,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.4.0.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.7" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.8" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.1.jre11" }
 
