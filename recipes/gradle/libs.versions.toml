@@ -1,13 +1,13 @@
 [versions]
 kotlin = "2.0.20"
-kotlinx = "1.8.1"
+kotlinx = "1.9.0"
 scala2x = "2.13.14"
 scala3x = "3.4.1"
-quarkus = "3.14.2"
+quarkus = "3.14.4"
 
 # Spring-Boot
 spring-boot = "3.3.3"
-spring-framework = "6.1.12"
+spring-framework = "6.1.13"
 spring-dependency-management = "1.1.6"
 spring-kafka = "3.2.3"
 
@@ -29,7 +29,7 @@ kafka = "3.8.0"
 kafka-kotlin = "0.4.0"
 
 # Reactor
-io-reactor = "3.6.9"
+io-reactor = "3.6.10"
 io-reactor-extensions = "1.2.3"
 
 # Logging
