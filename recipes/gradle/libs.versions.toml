@@ -9,7 +9,7 @@ quarkus = "3.14.4"
 spring-boot = "3.3.3"
 spring-framework = "6.1.13"
 spring-dependency-management = "1.1.6"
-spring-kafka = "3.2.3"
+spring-kafka = "3.2.4"
 
 # arrow
 arrow = "1.2.4"
@@ -65,7 +65,7 @@ detekt = "1.23.7"
 lombok = "1.18.34"
 
 # Misc
-hoplite = "2.8.0.RC3"
+hoplite = "2.8.0"
 kediatr = "3.0.0"
 
 # Testing
