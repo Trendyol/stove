@@ -1,6 +1,6 @@
 <h1 align="center">Stove</h1>
 
-<p align="center">The easiest way of writing e2e tests for your back-end API in Kotlin</p>
+<p align="center">The easiest way of writing e2e/component tests for your back-end API in Kotlin</p>
 
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
  
@@ -44,7 +44,11 @@ Frameworks:
 TestSystem() {
     if (isRunningLocally()) {
         enableReuseForTestContainers()
-        keepDendenciesRunning() // this will keep the dependencies running after the tests are finished, so next run will be blazing fast :)
+
+        // this will keep the dependencies running
+        // after the tests are finished,
+        // so next run will be blazing fast :)
+        keepDendenciesRunning()
     }
 }.with {
     // Enables http client 
@@ -131,13 +135,13 @@ TestSystem.validate {
     kafka {
         shouldBePublished<ExampleMessage> {
             actual.aggregateId == 123 
-                    && actual.metadata.topic = "example-topic" 
-                    && actual.metadata.headers["example-header"] == "example-value"
+                    && metadata.topic = "example-topic" 
+                    && metadata.headers["example-header"] == "example-value"
         }
         shouldBeConsumed<ExampleMessage> {
             actual.aggregateId == 123
-                    && actual.metadata.topic = "example-topic"
-                    && actual.metadata.headers["example-header"] == "example-value"
+                    && metadata.topic = "example-topic"
+                    && metadata.headers["example-header"] == "example-value"
         }
     }
 
