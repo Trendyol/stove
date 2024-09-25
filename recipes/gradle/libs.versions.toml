@@ -20,9 +20,9 @@ arrowSuspendApp = "0.4.0"
 jackson = "2.17.2"
 
 # Couchbase
-couchbase-kotlin = "1.4.2"
-couchbase-client = "3.7.2"
-couchbase-client-metrics = "0.7.2"
+couchbase-kotlin = "1.4.3"
+couchbase-client = "3.7.3"
+couchbase-client-metrics = "0.7.3"
 
 # Kafka
 kafka = "3.8.0"
@@ -52,7 +52,7 @@ r2dbc-mssql = "1.0.2.RELEASE"
 elastic = "8.15.1"
 
 # mongo
-mongodb = "5.1.4"
+mongodb = "5.2.0"
 
 # Grpc
 io-grpc = "1.63.0"
@@ -70,7 +70,7 @@ kediatr = "3.0.0"
 
 # Testing
 stove = "1.0.0-SNAPSHOT"
-junit = "5.11.0"
+junit = "5.11.1"
 kotest = "5.9.1"
 
 [libraries]
