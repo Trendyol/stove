@@ -3,7 +3,7 @@ kotlin = "2.0.20"
 kotlinx = "1.9.0"
 scala2x = "2.13.15"
 scala3x = "3.4.1"
-quarkus = "3.15.0"
+quarkus = "3.15.1"
 
 # Spring-Boot
 spring-boot = "3.3.4"
@@ -49,7 +49,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 r2dbc-mssql = "1.0.2.RELEASE"
 
 # elastic
-elastic = "8.15.1"
+elastic = "8.15.2"
 
 # mongo
 mongodb = "5.2.0"
