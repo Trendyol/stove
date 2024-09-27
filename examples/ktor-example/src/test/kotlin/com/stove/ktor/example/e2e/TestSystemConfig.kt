@@ -34,7 +34,6 @@ class TestSystemConfig : AbstractProjectConfig() {
           "database.jdbcUrl=${cfg.jdbcUrl}",
           "database.host=${cfg.host}",
           "database.port=${cfg.port}",
-          "database.name=${cfg.database}",
           "database.username=${cfg.username}",
           "database.password=${cfg.password}"
         )

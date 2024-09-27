@@ -4,11 +4,10 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import io.r2dbc.spi.ConnectionFactory
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.sql.Database
 import org.slf4j.*
+import java.sql.ResultSet
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 @StoveDsl
@@ -20,60 +19,42 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
 
   protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
 
-  protected lateinit var sqlOperations: SqlOperations
+  protected lateinit var sqlOperations: NativeSqlOperations
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
     testSystem.options.createStateStorage<RelationalDatabaseExposedConfiguration, RelationalDatabaseSystem<SELF>>()
 
-  protected abstract fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory
+  protected abstract fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Database
 
   override suspend fun run() {
-    exposedConfiguration =
-      state.capture {
-        context.container.start()
-        RelationalDatabaseExposedConfiguration(
-          jdbcUrl = context.container.jdbcUrl,
-          host = context.container.host,
-          database = context.container.databaseName,
-          port = context.container.firstMappedPort,
-          password = context.container.password,
-          username = context.container.username
-        )
-      }
-    sqlOperations = SqlOperations(connectionFactory(exposedConfiguration))
-    sqlOperations.open()
+    exposedConfiguration = state.capture {
+      context.container.start()
+      RelationalDatabaseExposedConfiguration(
+        jdbcUrl = context.container.jdbcUrl,
+        host = context.container.host,
+        port = context.container.firstMappedPort,
+        password = context.container.password,
+        username = context.container.username
+      )
+    }
+    sqlOperations = NativeSqlOperations(database(exposedConfiguration))
   }
 
-  override fun configuration(): List<String> {
-    return context.configureExposedConfiguration(exposedConfiguration) +
-      listOf(
-        "database.jdbcUrl=${exposedConfiguration.jdbcUrl}",
-        "database.host=${exposedConfiguration.host}",
-        "database.database=${exposedConfiguration.database}",
-        "database.port=${exposedConfiguration.port}",
-        "database.password=${exposedConfiguration.password}",
-        "database.username=${exposedConfiguration.username}"
-      )
-  }
+  override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
   @StoveDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
+    crossinline mapper: (ResultSet) -> T,
     assertion: (List<T>) -> Unit
   ): SELF {
-    var results: List<T> = emptyList()
-    internalSqlOperations.transaction {
-      results = select(query).map { r, rm -> mapper(r, rm, T::class) }.asFlow().toList()
-    }
-
+    val results = internalSqlOperations.select(query) { mapper(it) }
     assertion(results)
     return this as SELF
   }
 
   @StoveDsl
-  suspend fun shouldExecute(sql: String): SELF {
-    sqlOperations.transaction {
-      execute(sql)
-    }
+  fun shouldExecute(sql: String): SELF {
+    check(internalSqlOperations.execute(sql) >= 0) { "Failed to execute sql: $sql" }
     return this as SELF
   }
 
@@ -90,17 +71,16 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     }
 
   @PublishedApi
-  internal var internalSqlOperations: SqlOperations
+  internal var internalSqlOperations: NativeSqlOperations
     get() = sqlOperations
     set(value) {
       sqlOperations = value
     }
 
   companion object {
-    /**
-     * Exposes the [SqlOperations] of the [RelationalDatabaseSystem].
-     */
     @Suppress("unused")
-    fun RelationalDatabaseSystem<*>.operations(): SqlOperations = this.sqlOperations
+    fun RelationalDatabaseSystem<*>.operations(): NativeSqlOperations = this.sqlOperations
   }
 }
+
+typealias AssertionCollectionFunction<T> = (List<T>) -> Unit

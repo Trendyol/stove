@@ -12,6 +12,6 @@ class MsSqlContext(
 @StoveDsl
 data class SqlMigrationContext(
   val options: MsSqlOptions,
-  val operations: SqlOperations,
+  val operations: NativeSqlOperations,
   val executeAsRoot: suspend (String) -> Unit
 )

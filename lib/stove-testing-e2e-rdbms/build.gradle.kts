@@ -1,7 +1,7 @@
 dependencies {
-    api(projects.lib.stoveTestingE2e)
-    api(libs.kotlinx.reactor)
-    api(libs.r2dbc.spi)
-    api(libs.testcontainers.jdbc)
-    testImplementation(libs.mockito.kotlin)
+  api(projects.lib.stoveTestingE2e)
+  api(libs.testcontainers.jdbc)
+  api(libs.exposed.core)
+  api(libs.exposed.jdbc)
+  testImplementation(libs.mockito.kotlin)
 }

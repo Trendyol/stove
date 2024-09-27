@@ -35,18 +35,17 @@ class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
 
   override suspend fun execute(connection: PostgresSqlMigrationContext) {
     logger.info("Executing InitialMigration")
-    connection.operations.transaction {
-      execute(
-        """
+    connection.operations.execute(
+      """
                     DROP TABLE IF EXISTS MigrationHistory;
                     CREATE TABLE IF NOT EXISTS MigrationHistory (
                     	id serial PRIMARY KEY,
                     	description VARCHAR (50)  NOT NULL
                     );
                     insert into MigrationHistory (description) values ('InitialMigration');
-        """.trimIndent()
-      )
-    }
+      """.trimIndent()
+    )
+
     logger.info("InitialMigration executed")
   }
 
@@ -69,7 +68,12 @@ class PostgresqlSystemTests : FunSpec({
   test("initial migration should work") {
     TestSystem.validate {
       postgresql {
-        shouldQuery<IdAndDescription>("SELECT * FROM MigrationHistory") { actual ->
+        shouldQuery<IdAndDescription>(
+          "SELECT * FROM MigrationHistory",
+          mapper = { row ->
+            IdAndDescription(row.getLong("id"), row.getString("description"))
+          }
+        ) { actual ->
           actual.size shouldBeGreaterThan 0
           actual.first() shouldBe IdAndDescription(1, "InitialMigration")
         }
@@ -90,7 +94,9 @@ class PostgresqlSystemTests : FunSpec({
           """.trimIndent()
         )
         shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
-        shouldQuery<IdAndDescription>("SELECT * FROM Dummies") { actual ->
+        shouldQuery<IdAndDescription>("SELECT * FROM Dummies", mapper = {
+          IdAndDescription(it.getLong("id"), it.getString("description"))
+        }) { actual ->
           actual.size shouldBeGreaterThan 0
           actual.first().description shouldBe testCase.name.testName
         }
@@ -116,7 +122,15 @@ class PostgresqlSystemTests : FunSpec({
           """.trimIndent()
         )
         shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
-        shouldQuery<NullableIdAndDescription>("SELECT * FROM Dummies") { actual ->
+        shouldQuery<NullableIdAndDescription>(
+          "SELECT * FROM Dummies",
+          mapper = { row ->
+            val result = NullableIdAndDescription()
+            result.id = row.getLong("id")
+            result.description = row.getString("description")
+            result
+          }
+        ) { actual ->
           actual.size shouldBeGreaterThan 0
           actual.first().description shouldBe testCase.name.testName
         }

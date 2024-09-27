@@ -46,7 +46,9 @@ class ExampleTest : FunSpec({
       }
 
       postgresql {
-        shouldQuery<ProductOfTest>("Select * FROM Products WHERE id=$givenId") {
+        shouldQuery<ProductOfTest>("Select * FROM Products WHERE id=$givenId", mapper = { row ->
+          ProductOfTest(row.getLong("id"), row.getString("name"))
+        }) {
           it.count() shouldBe 1
           it.first().name shouldBe givenName
         }

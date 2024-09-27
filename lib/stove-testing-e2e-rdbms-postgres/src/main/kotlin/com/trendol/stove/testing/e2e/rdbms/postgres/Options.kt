@@ -27,7 +27,9 @@ data class PostgresqlContainerOptions(
 
 @StoveDsl
 data class PostgresqlOptions(
-  val databaseName: String = "stove-e2e-testing",
+  val databaseName: String = "stove",
+  val username: String = "sa",
+  val password: String = "sa",
   val container: PostgresqlContainerOptions = PostgresqlContainerOptions(),
   override val configureExposedConfiguration: (
     RelationalDatabaseExposedConfiguration
@@ -52,7 +54,7 @@ internal class PostgresqlContext(
 @StoveDsl
 data class PostgresSqlMigrationContext(
   val options: PostgresqlOptions,
-  val operations: SqlOperations,
+  val operations: NativeSqlOperations,
   val executeAsRoot: suspend (String) -> Unit
 )
 
@@ -60,8 +62,8 @@ internal fun TestSystem.withPostgresql(options: PostgresqlOptions): TestSystem =
   withProvidedRegistry(options.container.imageWithTag, options.container.registry, options.container.compatibleSubstitute) {
     options.container.useContainerFn(it)
       .withDatabaseName(options.databaseName)
-      .withUsername("sa")
-      .withPassword("sa")
+      .withUsername(options.username)
+      .withPassword(options.password)
       .withReuse(this.options.keepDependenciesRunning)
       .apply(options.container.containerFn)
   }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options))) }
@@ -77,5 +79,5 @@ fun WithDsl.postgresql(configure: () -> PostgresqlOptions): TestSystem =
   this.testSystem.withPostgresql(configure())
 
 @StoveDsl
-suspend fun ValidationDsl.postgresql(validation: @PostgresDsl suspend PostgresqlSystem.() -> Unit): Unit =
+suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
   validation(this.testSystem.postgresql())

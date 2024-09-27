@@ -10,6 +10,16 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.MSSQLServerContainer
 import org.testcontainers.utility.DockerImageName
 
+sealed class ToolsPath(open val path: String) {
+  data object Before2019 : ToolsPath("mssql-tools")
+
+  data object After2019 : ToolsPath("mssql-tools18")
+
+  data class Custom(override val path: String) : ToolsPath(path)
+
+  override fun toString(): String = path
+}
+
 open class StoveMsSqlContainer(
   override val imageNameAccess: DockerImageName
 ) : MSSQLServerContainer<StoveMsSqlContainer>(imageNameAccess), StoveContainer
@@ -17,8 +27,13 @@ open class StoveMsSqlContainer(
 data class MssqlContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
   override val image: String = MSSQLServerContainer.IMAGE,
-  override val tag: String = "2017-CU12",
+  override val tag: String = "2022-latest",
   override val compatibleSubstitute: String? = null,
+  /**
+   * There is a breaking change introduced in the mssql-tools path after 2019.
+   * Depending on your tag, you may need to set this value.
+   */
+  val toolsPath: ToolsPath = ToolsPath.After2019,
   override val useContainerFn: UseContainerFn<StoveMsSqlContainer> = { StoveMsSqlContainer(it) },
   override val containerFn: ContainerFn<StoveMsSqlContainer> = { }
 ) : ContainerOptions<StoveMsSqlContainer>
@@ -56,7 +71,7 @@ fun WithDsl.mssql(
 
 @StoveDsl
 suspend fun ValidationDsl.mssql(
-  validation: @MssqlDsl suspend MsSqlSystem.() -> Unit
+  validation: @StoveDsl suspend MsSqlSystem.() -> Unit
 ): Unit = validation(this.testSystem.mssql())
 
 internal fun TestSystem.mssql(): MsSqlSystem =

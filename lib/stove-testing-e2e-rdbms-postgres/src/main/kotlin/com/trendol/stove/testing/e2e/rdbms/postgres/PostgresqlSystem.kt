@@ -3,8 +3,7 @@ package com.trendol.stove.testing.e2e.rdbms.postgres
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import io.r2dbc.postgresql.*
-import io.r2dbc.spi.ConnectionFactory
+import org.jetbrains.exposed.sql.Database
 
 @StoveDsl
 class PostgresqlSystem internal constructor(
@@ -18,14 +17,15 @@ class PostgresqlSystem internal constructor(
         "/bin/bash",
         "-c",
         "psql -U ${postgresContext.container.username} -d ${postgresContext.container.databaseName} -c \"$sql\""
-      )
+      ).let {
+        check(it.exitCode == 0) { "Failed to execute sql: $sql, reason: ${it.stderr}" }
+      }
     }
     postgresContext.options.migrationCollection.run(
-      PostgresSqlMigrationContext(postgresContext.options, sqlOperations) {
-        executeAsRoot(
-          it
-        )
-      }
+      PostgresSqlMigrationContext(
+        postgresContext.options,
+        sqlOperations
+      ) { executeAsRoot(it) }
     )
   }
 
@@ -33,22 +33,22 @@ class PostgresqlSystem internal constructor(
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
    * @return KafkaSystem
    */
-  @PostgresDsl
+  @StoveDsl
   fun pause(): PostgresqlSystem = postgresContext.container.pause().let { this }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
    * @return KafkaSystem
    */
-  @PostgresDsl
+  @StoveDsl
   fun unpause(): PostgresqlSystem = postgresContext.container.unpause().let { this }
 
-  override fun connectionFactory(exposedConfiguration: RelationalDatabaseExposedConfiguration): ConnectionFactory =
-    PostgresqlConnectionConfiguration.builder().apply {
-      host(exposedConfiguration.host)
-      database(exposedConfiguration.database)
-      port(exposedConfiguration.port)
-      password(exposedConfiguration.password)
-      username(exposedConfiguration.username)
-    }.let { PostgresqlConnectionFactory(it.build()) }
+  override fun database(
+    exposedConfiguration: RelationalDatabaseExposedConfiguration
+  ): Database = Database.connect(
+    url = exposedConfiguration.jdbcUrl,
+    driver = "org.postgresql.Driver",
+    user = exposedConfiguration.username,
+    password = exposedConfiguration.password
+  )
 }

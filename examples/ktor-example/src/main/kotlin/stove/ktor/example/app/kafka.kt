@@ -20,23 +20,23 @@ fun kafka(): Module = module {
 
 private const val POLL_TIMEOUT_SECONDS = 5
 
+@Suppress("MagicNumber")
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
   val pollTimeoutSec = POLL_TIMEOUT_SECONDS
   val heartbeatSec = pollTimeoutSec + 1
-  val commitInterval = heartbeatSec + 1
   val settings = ReceiverSettings(
     config.kafka.bootstrapServers,
     StringDeserializer(),
     ExampleAppKafkaValueDeserializer<V>(),
     config.kafka.groupId,
     autoOffsetReset = AutoOffsetReset.Earliest,
-    commitStrategy = CommitStrategy.ByTime(commitInterval.seconds),
     pollTimeout = pollTimeoutSec.seconds,
     properties = Properties().apply {
       put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
       put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
       put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
       put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatSec.seconds.inWholeSeconds.toInt())
+      put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true)
     }
   )
   return KafkaReceiver(settings)
