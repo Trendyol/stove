@@ -10,6 +10,8 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.slf4j.*
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
 
 class Setup : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
@@ -23,6 +25,8 @@ class Setup : AbstractProjectConfig() {
             password = "Password12!",
             container = MssqlContainerOptions {
               dockerImageName = "mcr.microsoft.com/mssql/server:2017-latest"
+              withStartupTimeout(3.minutes.toJavaDuration())
+              withStartupAttempts(3)
             },
             configureExposedConfiguration = { _ ->
               listOf()
