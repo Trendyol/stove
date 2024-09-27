@@ -33,6 +33,7 @@ Frameworks:
 - [x] Spring
 - [x] Ktor
 - [ ] Quarkus _(up for grabs)_
+- [ ] Micronaut _(up for grabs)_
 
 ## Show me the code
 
