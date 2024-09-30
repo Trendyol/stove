@@ -65,7 +65,7 @@ detekt = "1.23.7"
 lombok = "1.18.34"
 
 # Misc
-hoplite = "2.8.0"
+hoplite = "2.8.2"
 kediatr = "3.0.0"
 
 # Testing
