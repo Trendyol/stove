@@ -1,16 +1,9 @@
 name: Publish to Snapshot Maven
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'examples/**'
-      - 'lib/**'
-      - 'starters/**'
-      - 'gradle/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle.properties'
-      - 'buildSrc/**'
+  workflow_run:
+    workflows: [ "Build" ]
+    types:
+      - completed
 jobs:
   publish:
     runs-on: ubuntu-latest
