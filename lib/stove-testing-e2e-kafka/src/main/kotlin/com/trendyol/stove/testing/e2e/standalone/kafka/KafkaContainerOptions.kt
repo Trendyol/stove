@@ -1,12 +1,12 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import com.trendyol.stove.testing.e2e.containers.*
-import org.testcontainers.kafka.KafkaContainer
+import org.testcontainers.kafka.ConfluentKafkaContainer
 import org.testcontainers.utility.DockerImageName
 
 open class StoveKafkaContainer(
   override val imageNameAccess: DockerImageName
-) : KafkaContainer(imageNameAccess), StoveContainer
+) : ConfluentKafkaContainer(imageNameAccess), StoveContainer
 
 data class KafkaContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
