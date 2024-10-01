@@ -1,7 +1,7 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import com.trendyol.stove.testing.e2e.containers.*
-import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 
 open class StoveKafkaContainer(
