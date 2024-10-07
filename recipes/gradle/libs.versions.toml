@@ -184,6 +184,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.20.2" }
 
 # Stove
 stove-testing = { module = "com.trendyol:stove-testing-e2e", version.ref = "stove" }
