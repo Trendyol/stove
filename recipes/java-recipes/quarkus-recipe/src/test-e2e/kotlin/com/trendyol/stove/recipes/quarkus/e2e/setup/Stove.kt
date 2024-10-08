@@ -8,7 +8,7 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.kotest.core.config.AbstractProjectConfig
 import kotlinx.coroutines.*
 
-class ProjectConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     TestSystem()
       .with {

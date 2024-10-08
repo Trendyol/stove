@@ -14,7 +14,7 @@ import org.koin.dsl.module
 
 private val database = "stove-kotlin-ktor"
 
-class TestProjectConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     TestSystem().with {
       httpClient {

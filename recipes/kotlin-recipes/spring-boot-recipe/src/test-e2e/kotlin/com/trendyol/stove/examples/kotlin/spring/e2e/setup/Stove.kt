@@ -5,7 +5,7 @@ import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.config.AbstractProjectConfig
 
-class TestConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     TestSystem().with {
       httpClient {
