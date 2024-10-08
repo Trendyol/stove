@@ -131,7 +131,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.4.0.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.8" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.9" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.1.jre11" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
