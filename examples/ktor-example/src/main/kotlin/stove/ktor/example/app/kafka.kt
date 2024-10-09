@@ -18,7 +18,7 @@ fun kafka(): Module = module {
   single { ExampleAppConsumer<String, Any>(get(), get()) }
 }
 
-private const val POLL_TIMEOUT_SECONDS = 5
+private const val POLL_TIMEOUT_SECONDS = 2
 
 @Suppress("MagicNumber")
 private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
