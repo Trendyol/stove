@@ -20,9 +20,9 @@ arrowSuspendApp = "0.4.0"
 jackson = "2.18.0"
 
 # Couchbase
-couchbase-kotlin = "1.4.3"
-couchbase-client = "3.7.3"
-couchbase-client-metrics = "0.7.3"
+couchbase-kotlin = "1.4.4"
+couchbase-client = "3.7.4"
+couchbase-client-metrics = "0.7.4"
 
 # Kafka
 kafka = "3.8.0"
