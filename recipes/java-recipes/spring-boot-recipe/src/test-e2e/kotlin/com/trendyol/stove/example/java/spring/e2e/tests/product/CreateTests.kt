@@ -64,8 +64,9 @@ class CreateTests : FunSpec({
 
       kafka {
         shouldBePublished<ProductCreatedEvent>(10.seconds) {
-          actual.price == 100.0 && actual.name == productName
+          actual.price == 99.0 && actual.name == productName
         }
+
 
         shouldBeConsumed<ProductCreatedEvent> {
           actual.price == 100.0 && actual.name == productName

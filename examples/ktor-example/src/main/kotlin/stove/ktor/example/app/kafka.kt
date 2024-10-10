@@ -1,56 +1,49 @@
 package stove.ktor.example.app
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.github.nomisRev.kafka.publisher.*
-import io.github.nomisRev.kafka.receiver.*
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.consumer.*
+import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import stove.ktor.example.application.ExampleAppConsumer
-import java.util.*
+import stove.ktor.example.application.*
 import kotlin.time.Duration.Companion.seconds
 
 fun kafka(): Module = module {
-  single { createReceiver<Any>(get()) }
-  single { createPublisher(get()) }
+  single { createConsumer<Any>(get()) }
+  single { createProducer(get()) }
   single { ExampleAppConsumer<String, Any>(get(), get()) }
 }
 
-private const val POLL_TIMEOUT_SECONDS = 2
-
 @Suppress("MagicNumber")
-private fun <V : Any> createReceiver(config: AppConfiguration): KafkaReceiver<String, V> {
+private fun <V : Any> createConsumer(config: AppConfiguration): KafkaConsumer<String, V> {
   val pollTimeoutSec = POLL_TIMEOUT_SECONDS
   val heartbeatSec = pollTimeoutSec + 1
-  val settings = ReceiverSettings(
-    config.kafka.bootstrapServers,
-    StringDeserializer(),
-    ExampleAppKafkaValueDeserializer<V>(),
-    config.kafka.groupId,
-    autoOffsetReset = AutoOffsetReset.Earliest,
-    pollTimeout = pollTimeoutSec.seconds,
-    properties = Properties().apply {
-      put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
-      put(ConsumerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
-      put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true)
-      put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatSec.seconds.inWholeSeconds.toInt())
-      put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true)
-    }
+  return KafkaConsumer(
+    mapOf(
+      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to config.kafka.bootstrapServers,
+      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ExampleAppKafkaValueDeserializer::class.java,
+      ConsumerConfig.GROUP_ID_CONFIG to config.kafka.groupId,
+      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+      ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG to config.kafka.interceptorClasses,
+      ConsumerConfig.CLIENT_ID_CONFIG to config.kafka.clientId,
+      ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG to true,
+      ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to heartbeatSec.seconds.inWholeSeconds.toInt(),
+      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true
+    )
   )
-  return KafkaReceiver(settings)
 }
 
-private fun createPublisher(config: AppConfiguration): KafkaPublisher<String, Any> = PublisherSettings(
-  config.kafka.bootstrapServers,
-  StringSerializer(),
-  ExampleAppKafkaValueSerializer(),
-  properties = Properties().apply {
-    put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, config.kafka.interceptorClasses)
-    put(ProducerConfig.CLIENT_ID_CONFIG, config.kafka.clientId)
-  }
-).let { KafkaPublisher(it) }
+private fun createProducer(config: AppConfiguration): KafkaProducer<String, Any> = KafkaProducer(
+  mapOf(
+    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to config.kafka.bootstrapServers,
+    ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+    ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to ExampleAppKafkaValueSerializer::class.java,
+    ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to config.kafka.interceptorClasses,
+    ProducerConfig.CLIENT_ID_CONFIG to config.kafka.clientId
+  )
+)
 
 @Suppress("UNCHECKED_CAST")
 class ExampleAppKafkaValueDeserializer<T : Any> : Deserializer<T> {
