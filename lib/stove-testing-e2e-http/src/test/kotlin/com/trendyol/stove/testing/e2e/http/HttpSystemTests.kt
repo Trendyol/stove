@@ -110,6 +110,26 @@ class HttpSystemTests : FunSpec({
     }
   }
 
+  test("PATCH and expect bodiless/JSON response") {
+    val expectedPatchDtoName = UUID.randomUUID().toString()
+    TestSystem.validate {
+      wiremock {
+        mockPatch("/patch-with-response-body", 200, None, responseBody = TestDto(expectedPatchDtoName).some())
+        mockPatch("/patch-without-response-body", 200, None, responseBody = None)
+      }
+
+      http {
+
+        patchAndExpectBodilessResponse("/patch-without-response-body", None, None) { actual ->
+          actual.status shouldBe 200
+        }
+        patchAndExpectJson<TestDto>("/patch-with-response-body") { actual ->
+          actual.name shouldBe expectedPatchDtoName
+        }
+      }
+    }
+  }
+
   test("GET and expect JSON response") {
     val expectedGetDtoName = UUID.randomUUID().toString()
     TestSystem.validate {
@@ -190,6 +210,21 @@ class HttpSystemTests : FunSpec({
       http {
         postAndExpectBody<TestDto>("/post-with-response-body") { actual ->
           actual.body().name shouldBe expectedPostDtoName
+        }
+      }
+    }
+  }
+
+  test("patch and expect body") {
+    val expectedPatchDtoName = UUID.randomUUID().toString()
+    TestSystem.validate {
+      wiremock {
+        mockPatch("/patch-with-response-body", 200, None, responseBody = TestDto(expectedPatchDtoName).some())
+      }
+
+      http {
+        patchAndExpectBody<TestDto>("/patch-with-response-body") { actual ->
+          actual.body().name shouldBe expectedPatchDtoName
         }
       }
     }

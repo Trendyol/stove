@@ -97,6 +97,26 @@ class WireMockSystem(
   }
 
   @WiremockDsl
+  fun mockPatch(
+    url: String,
+    statusCode: Int,
+    requestBody: Option<Any> = None,
+    responseBody: Option<Any> = None,
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem {
+    val res =
+      aResponse()
+        .withStatus(statusCode)
+        .withHeader("Content-Type", "application/json; charset=UTF-8")
+    responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
+    val req = patch(urlEqualTo(url))
+    configureBodyAndMetadata(req, metadata, requestBody)
+    val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
+    stubLog.put(stub.id, stub)
+    return this
+  }
+
+  @WiremockDsl
   fun mockDelete(
     url: String,
     statusCode: Int,
@@ -132,6 +152,17 @@ class WireMockSystem(
     configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
   ): WireMockSystem {
     val req = put(urlEqualTo(url))
+    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    stubLog.put(stub.id, stub)
+    return this
+  }
+
+  @WiremockDsl
+  fun mockPatchConfigure(
+    url: String,
+    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+  ): WireMockSystem {
+    val req = patch(urlEqualTo(url))
     val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
