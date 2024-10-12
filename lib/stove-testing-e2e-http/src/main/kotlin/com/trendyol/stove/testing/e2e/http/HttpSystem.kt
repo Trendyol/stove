@@ -88,6 +88,7 @@ suspend fun ValidationDsl.http(
   validation: @HttpDsl suspend HttpSystem.() -> Unit
 ): Unit = validation(this.testSystem.http())
 
+@Suppress("TooManyFunction")
 @HttpDsl
 class HttpSystem(
   override val testSystem: TestSystem,
