@@ -138,7 +138,7 @@ ktor-server-callId = { module = "io.ktor:ktor-server-call-id-jvm", version.ref =
 ktor-server-conditionalHeaders = { module = "io.ktor:ktor-server-conditional-headers", version.ref = "ktor" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
 ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "3.5.0" }
+ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "3.5.1" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
@@ -163,7 +163,7 @@ kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.re
 
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.4.0.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.9" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.10" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
