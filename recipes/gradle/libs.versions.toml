@@ -37,7 +37,7 @@ slf4j = "2.0.16"
 kotlinLogging = "7.0.0"
 
 # Ktor
-ktor = "2.3.12"
+ktor = "3.0.0"
 koin = "4.0.0"
 koin-annotations = "1.3.1"
 
