@@ -86,15 +86,15 @@ Every physical component that your testing needs is a separate module in Stove. 
 needs.
 Stove supports the following components:
 
-- [Kafka](/Components/02-kafka/)
-- [MongoDB](/Components/07-mongodb/)
-- [MSSQL](/Components/08-mssql/)
-- [PostgreSQL](/Components/06-postgresql/)
-- [Redis](/Components/10-redis/)
-- [Elasticsearch](/Components/03-elasticsearch/)
-- [Couchbase](/Components/01-couchbase/)
-- [Wiremock](/Components/04-wiremock/)
-- [HTTP](/Components/05-http/)
+- [Kafka](Components/02-kafka/)
+- [MongoDB](Components/07-mongodb/)
+- [MSSQL](Components/08-mssql/)
+- [PostgreSQL](Components/06-postgresql/)
+- [Redis](Components/10-redis/)
+- [Elasticsearch](Components/03-elasticsearch/)
+- [Couchbase](Components/01-couchbase/)
+- [Wiremock](Components/04-wiremock/)
+- [HTTP](Components/05-http/)
 
 === "Gradle"
 
