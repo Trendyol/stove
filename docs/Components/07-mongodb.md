@@ -18,15 +18,5 @@
         }
     ```
 
-=== "Maven"
-
-    ```xml
-     <dependency>
-        <groupId>com.trendyol</groupId>
-        <artifactId>stove-testing-e2e-mongodb</artifactId>
-        <version>${stove-version}</version>
-     </dependency>
-    ```
-
 ## Configure
 

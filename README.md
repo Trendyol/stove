@@ -3,8 +3,60 @@
 <p align="center">The easiest way of writing e2e/component tests for your back-end API in Kotlin</p>
 
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
- 
-[Check the documentation](https://trendyol.github.io/stove/)
+
+# What is Stove?
+
+Stove is an end-to-end testing framework that spins up physical dependencies and your application all together. So you
+have a control over dependencies via Kotlin code.
+
+In the JVM world, thanks to code interoperability, you application code and test can be written with different JVM
+languages and can be run together.
+For example, you can write your application code with Java and write your tests with Kotlin, or Application code with
+Scala and test with Kotlin, etc.
+Stove uses this ability and provides a way to write your tests in Kotlin.
+
+Your tests will be infra agnostic, but component aware, so they can use easily necessary physical components with Stove
+provided APIs.
+All the infra is **pluggable**, and can be added easily. You can also create your own infra needs by using the
+abstractions
+that Stove provides.
+Having said that, the only dependency is `docker` since Stove is
+using [testcontainers](https://github.com/testcontainers/testcontainers-java) underlying.
+
+You can use JUnit and Kotest for running the tests. You can run all the tests on your CI, too.
+But that needs **DinD(docker-in-docker)** integration.
+
+The medium story about the motivation behind the framework:
+[A New Approach to the API End-to-End Testing in Kotlin](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)
+
+_Note: Stove is not a replacement for the unit tests, it is a framework for end-to-end/component tests._
+
+> [!NOTE]
+> Some people tend to call these tests as _integration tests_, some call them as _component tests_, some call them as
+> end-to-end tests. In this documentation, we will use the term end-to-end tests.
+> We think that the **e2e/component tests** term is more serving to the purpose of message we want to convey.
+
+## What is the problem?
+
+In the JVM world, we have a lot of frameworks for the application code, but we don't have a mature framework for
+end-to-end/component testing.
+The use-cases that led us develop the Stove are to increase the productivity of the developers while keeping the quality
+of the codebase high and coherent.
+
+Those use-cases are:
+- Kotlin app with Spring-Boot
+- Kotlin app with Ktor
+- Java app with Spring-Boot
+- Java app with Micronaut
+- Java app with Quarkus
+- Scala app with Spring-Boot
+
+So, people have different tech stacks and each time when they want to write e2e tests, they need to write a lot of boilerplate code.
+Stove is here to solve this problem. It provides a single API to write e2e tests for all the tech stacks.
+
+**Stove unifies the testing experience whatever you use.**
+
+For more info and how to use: [Check the documentation](https://trendyol.github.io/stove/)
 
 > [!WARNING]
 > Stove is under development and, despite being heavily tested, its API isn't yet stabilized; _breaking changes

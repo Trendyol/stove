@@ -18,16 +18,6 @@
         }
     ```
 
-=== "Maven"
-
-    ```xml
-     <dependency>
-        <groupId>com.trendyol</groupId>
-        <artifactId>stove-testing-e2e-couchbase</artifactId>
-        <version>${stove-version}</version>
-     </dependency>
-    ```
-
 ## Configure
 
 After getting the library from the maven source, while configuring TestSystem you will have access to `withCouchbase` function.

@@ -1,4 +1,4 @@
-# 2. Ktor
+# Ktor
 
 [Here](https://github.com/Trendyol/stove/tree/main/examples/ktor-example) you can jump immediately to the Ktor example application.
 
@@ -9,17 +9,19 @@
     ```kotlin
     dependencies {
         testImplementation("com.trendyol:stove-ktor-testing-e2e:$version")
+        
+        // You can add other components if you need
+        testImplementation("com.trendyol:stove-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-mongodb:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-mssql:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-postgresql:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-redis:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-elasticsearch:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-couchbase:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-wiremock:$version")
+        testImplementation("com.trendyol:stove-testing-e2e-http:$version")
     }
-    ```
-
-=== "Maven"
-
-    ```xml
-     <dependency>
-        <groupId>com.trendyol</groupId>
-        <artifactId>stove-ktor-testing-e2e</artifactId>
-        <version>${stove-version}</version>
-     </dependency>
     ```
 
 ## Example Setup
