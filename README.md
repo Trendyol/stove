@@ -51,7 +51,7 @@ Those use-cases are:
 - Java app with Quarkus
 - Scala app with Spring-Boot
 
-So, people have different tech stacks and each time when they want to write e2e tests, they need to write a lot of boilerplate code.
+People have different tech stacks and each time when they want to write e2e tests, they need to write a lot of boilerplate code.
 Stove is here to solve this problem. It provides a single API to write e2e tests for all the tech stacks.
 
 **Stove unifies the testing experience whatever you use.**
