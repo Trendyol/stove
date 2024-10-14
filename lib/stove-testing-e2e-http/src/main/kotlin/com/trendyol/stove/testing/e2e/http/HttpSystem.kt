@@ -88,6 +88,7 @@ suspend fun ValidationDsl.http(
   validation: @HttpDsl suspend HttpSystem.() -> Unit
 ): Unit = validation(this.testSystem.http())
 
+@Suppress("TooManyFunctions")
 @HttpDsl
 class HttpSystem(
   override val testSystem: TestSystem,
@@ -225,6 +226,50 @@ class HttpSystem(
     token: Option<String> = None,
     expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
   ): HttpSystem = ktorHttpClient.put(relative(uri)) {
+    headers.forEach { (key, value) -> header(key, value) }
+    token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+    body.map { setBody(it) }
+  }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }
+    .let { this }
+
+  @HttpDsl
+  suspend fun patchAndExpectBodilessResponse(
+    uri: String,
+    body: Option<Any>,
+    token: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    expect: suspend (StoveHttpResponse) -> Unit
+  ): HttpSystem = ktorHttpClient.patch(relative(uri)) {
+    headers.forEach { (key, value) -> header(key, value) }
+    token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+    body.map { setBody(it) }
+  }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+    .let { this }
+
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> patchAndExpectJson(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    expect: (actual: TExpected) -> Unit
+  ): HttpSystem = ktorHttpClient.patch(relative(uri)) {
+    headers.forEach { (key, value) -> header(key, value) }
+    token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+    body.map { setBody(it) }
+  }.also {
+    check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
+    expect(it.body())
+  }.let { this }
+
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> patchAndExpectBody(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
+  ): HttpSystem = ktorHttpClient.patch(relative(uri)) {
     headers.forEach { (key, value) -> header(key, value) }
     token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
     body.map { setBody(it) }
