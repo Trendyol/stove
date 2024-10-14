@@ -53,14 +53,26 @@ class KafkaSystem(
         it.setProducerListener(getInterceptor())
         it.setCloseTimeout(1.seconds.toJavaDuration())
       }
-      .firstOrNone {
-        it.producerFactory.configurationProperties[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] == exposedConfiguration.bootstrapServers
-      }
+      .firstOrNone { safeContains(it, exposedConfiguration) }
       .getOrElse {
         logger.warn("No KafkaTemplate found for the configured bootstrap servers, using a fallback KafkaTemplate")
         createFallbackTemplate(exposedConfiguration)
       }
   }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun safeContains(
+    it: KafkaTemplate<Any, Any>,
+    exposedConfiguration: KafkaExposedConfiguration
+  ): Boolean = it.producerFactory.configurationProperties[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG]
+    .toOption()
+    .map {
+      when (it) {
+        is String -> it
+        is List<*> -> (it as List<String>).joinToString(",")
+        else -> ""
+      }
+    }.isSome { it.contains(exposedConfiguration.bootstrapServers) }
 
   private fun createFallbackTemplate(exposedConfiguration: KafkaExposedConfiguration): KafkaTemplate<Any, Any> {
     val producerFactory = DefaultKafkaProducerFactory<Any, Any>(
