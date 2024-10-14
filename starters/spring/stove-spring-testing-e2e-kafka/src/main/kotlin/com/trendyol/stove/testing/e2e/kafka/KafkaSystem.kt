@@ -69,8 +69,8 @@ class KafkaSystem(
     .map {
       when (it) {
         is String -> it
-        is List<*> -> (it as List<String>).joinToString(",")
-        else -> ""
+        is Iterable<*> -> (it as Iterable<String>).joinToString(",")
+        else -> it.toString()
       }
     }.isSome { it.contains(exposedConfiguration.bootstrapServers) }
 
