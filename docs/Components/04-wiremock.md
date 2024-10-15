@@ -1,7 +1,5 @@
 # Wiremock
 
-## How to get?
-
 === "Gradle"
 
     ``` kotlin

@@ -4,7 +4,7 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-rdbms-postgres:$version")
+            testImplementation("com.trendyol:stove-testing-e2e-rdbms-mssql:$version")
         }
     ```
 

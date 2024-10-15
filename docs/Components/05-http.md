@@ -1,7 +1,5 @@
 # HttpClient
 
-## How to get?
-
 === "Gradle"
 
     ``` kotlin

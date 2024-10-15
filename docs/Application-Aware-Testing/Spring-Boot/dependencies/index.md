@@ -1,3 +1,0 @@
-# Dependencies
-
-- [Kafka](kafka.md)
