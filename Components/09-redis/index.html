@@ -9,10 +9,8 @@
       
       
       
-        <link rel="prev" href="../Ktor/">
+        <link rel="prev" href="../08-mssql/">
       
-      
-        <link rel="next" href="0001-tuning-app/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +18,7 @@
     
     
       
-        <title>Testing a Spring Boot Application - Stove</title>
+        <title>Redis - Stove</title>
       
     
     
@@ -74,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#testing-a-spring-boot-application" class="md-skip">
+        <a href="#redis" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Testing a Spring Boot Application
+              Redis
             
           </span>
         </div>
@@ -264,7 +262,7 @@
         
   
   <span class="md-ellipsis">
-    What is Stove?
+    Stove
   </span>
   
 
@@ -289,7 +287,19 @@
         
       
         
-          
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
         
       
         
@@ -315,7 +325,7 @@
               
   
   <span class="md-ellipsis">
-    Application Aware Testing
+    Components
   </span>
   
 
@@ -331,440 +341,6 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Application Aware Testing
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Ktor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Ktor
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked>
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
-              
-  
-  <span class="md-ellipsis">
-    Spring Boot
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link md-nav__link--active" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2_3">
-            <span class="md-nav__icon md-icon"></span>
-            Spring Boot
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="0001-tuning-app/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tuning the application's entry point
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="0002-initial-configuration/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Initial Configuration
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="0003-writing-tests/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Writing Tests
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_3_5" id="__nav_2_3_5_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    Advanced
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_3_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_3_5">
-            <span class="md-nav__icon md-icon"></span>
-            Advanced
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="advanced/0001-Replacing%20Dependencies%20for%20Better%20Testability/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Replacing Dependencies For Better Testability
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="advanced/0002-writing-your-own-test-system/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Writing Your Own TestSystem
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="advanced/0003-Writing-A-Test-Initializer/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Writing a TestInitializer
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-    
-    
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3_6" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="dependencies/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Dependencies
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_2_3_6" id="__nav_2_3_6_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_3_6">
-            <span class="md-nav__icon md-icon"></span>
-            Dependencies
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="dependencies/kafka/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Kafka
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../Components/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Components
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
             Components
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -778,7 +354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/01-couchbase/" class="md-nav__link">
+      <a href="../01-couchbase/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -799,7 +375,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/02-kafka/" class="md-nav__link">
+      <a href="../02-kafka/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -820,7 +396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/03-elasticsearch/" class="md-nav__link">
+      <a href="../03-elasticsearch/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -841,7 +417,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/04-wiremock/" class="md-nav__link">
+      <a href="../04-wiremock/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -862,7 +438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/05-http/" class="md-nav__link">
+      <a href="../05-http/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -883,7 +459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/06-postgresql/" class="md-nav__link">
+      <a href="../06-postgresql/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -904,7 +480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/07-mongodb/" class="md-nav__link">
+      <a href="../07-mongodb/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -913,6 +489,97 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-mssql/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Postgresql
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Redis
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Redis
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -943,35 +610,18 @@
   
 
 
-<h1 id="testing-a-spring-boot-application">Testing a Spring Boot Application<a class="headerlink" href="#testing-a-spring-boot-application" title="Permanent link">&para;</a></h1>
-<p><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-example">Here</a> you can jump immediately to the Spring example application.</p>
-<p>You need to add the Stove-Spring dependency to be able to write e2e tests for the Spring application.</p>
-<p><code>$version = please check the current version</code></p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Gradle</label><label for="__tabbed_1_2">Maven</label></div>
+<h1 id="redis">Redis<a class="headerlink" href="#redis" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Gradle</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e-http:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w"> </span><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>com.trendyol<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>stove-spring-testing-e2e<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>${stove-version}<span class="nt">&lt;/version&gt;</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w"> </span><span class="nt">&lt;/dependency&gt;</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w"> </span><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>com.trendyol<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>stove-testing-e2e-http<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>${stove-version}<span class="nt">&lt;/version&gt;</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w"> </span><span class="nt">&lt;/dependency&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e-redis:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<p><a href="../../../index.md#how-to-get">Do not forget to add</a> the other dependencies and configure your maven repository settings first.</p>
+<h2 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
 
 
 
@@ -1009,7 +659,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../Ktor/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Ktor">
+          <a href="../08-mssql/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Postgresql">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1019,27 +669,11 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Ktor
+                Postgresql
               </div>
             </div>
           </a>
         
-        
-          
-          <a href="0001-tuning-app/" class="md-footer__link md-footer__link--next" aria-label="Next: Tuning the application&#39;s entry point">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Tuning the application's entry point
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
         
       </nav>
     
