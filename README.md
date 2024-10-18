@@ -38,8 +38,9 @@ _Note: Stove is not a replacement for the unit tests, it is a framework for end-
 
 ## What is the problem?
 
-In the JVM world, we have a lot of frameworks for the application code, but we don't have a mature framework for
-end-to-end/component testing.
+In the JVM world, we have a lot of frameworks for the application code, but when it comes to integration/component/e2e testing we don't have a single framework that can be used for all the tech stacks. 
+We have testcontainers but you still need to do lots of plumbing to make it work with your tech stack.
+
 The use-cases that led us develop the Stove are to increase the productivity of the developers while keeping the quality
 of the codebase high and coherent.
 
