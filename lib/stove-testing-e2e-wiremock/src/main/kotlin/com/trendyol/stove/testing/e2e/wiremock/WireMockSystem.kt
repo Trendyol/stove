@@ -213,6 +213,15 @@ class WireMockSystem(
   }
 
   @WiremockDsl
+  fun behaviourFor(
+    url: String,
+    method: (String) -> MappingBuilder,
+    block: StubBehaviourBuilder.(ObjectMapper) -> Unit
+  ) {
+    stubBehaviour(wireMock, objectMapper = json, url, method, block)
+  }
+
+  @WiremockDsl
   override suspend fun validate() {
     data class ValidationResult(
       val url: String,

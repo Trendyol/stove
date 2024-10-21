@@ -1,6 +1,7 @@
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
 import com.trendyol.stove.ConsoleSpec
@@ -323,6 +324,37 @@ class HttpSystemTests : FunSpec({
             }.build()
           )
           resp.status shouldBe HttpStatusCode.OK
+        }
+      }
+    }
+  }
+
+  test("behavioural tests") {
+    val expectedGetDtoName = UUID.randomUUID().toString()
+    TestSystem.validate {
+      wiremock {
+        behaviourFor("/get-behaviour", WireMock::get) {
+          initially {
+            aResponse()
+              .withStatus(503)
+              .withBody("Service unavailable")
+          }
+          then {
+            aResponse()
+              .withHeader("Content-Type", "application/json")
+              .withStatus(200)
+              .withBody(it.writeValueAsString(TestDto(expectedGetDtoName)))
+          }
+        }
+      }
+
+      http {
+        this.getResponse("/get-behaviour") { actual ->
+          actual.status shouldBe 503
+        }
+
+        get<TestDto>("/get-behaviour") { actual ->
+          actual.name shouldBe expectedGetDtoName
         }
       }
     }
