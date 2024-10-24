@@ -6,7 +6,7 @@ scala3x = "3.4.1"
 quarkus = "3.16.0"
 
 # Spring-Boot
-spring-boot = "3.3.4"
+spring-boot = "3.3.5"
 spring-framework = "6.1.14"
 spring-dependency-management = "1.1.6"
 spring-kafka = "3.2.4"
