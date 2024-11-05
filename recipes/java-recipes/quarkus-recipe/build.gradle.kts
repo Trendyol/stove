@@ -9,6 +9,8 @@ dependencies {
   implementation(libs.couchbase.client)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.core)
+  implementation(libs.logback.classic)
+  implementation(libs.slf4j.api)
   implementation(projects.shared.application)
 }
 
