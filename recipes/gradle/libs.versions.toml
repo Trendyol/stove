@@ -66,7 +66,7 @@ lombok = "1.18.34"
 
 # Misc
 hoplite = "2.8.2"
-kediatr = "3.1.1"
+kediatr = "3.1.2"
 
 # Testing
 stove = "1.0.0-SNAPSHOT"
