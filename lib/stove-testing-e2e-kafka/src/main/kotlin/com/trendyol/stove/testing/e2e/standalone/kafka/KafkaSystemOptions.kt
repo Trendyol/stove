@@ -2,6 +2,8 @@ package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.Serializer
 
 class KafkaSystemOptions(
   /**
@@ -20,6 +22,10 @@ class KafkaSystemOptions(
    * The object mapper that is used to serialize and deserialize messages.
    */
   val objectMapper: ObjectMapper = stoveKafkaObjectMapperRef,
+  /**
+   * The Value serializer that is used to serialize messages.
+   */
+  val valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
   /**
    * The options for the Kafka container.
    */
