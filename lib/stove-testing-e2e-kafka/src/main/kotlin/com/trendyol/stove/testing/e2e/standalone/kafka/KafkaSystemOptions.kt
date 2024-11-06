@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.system.abstractions.*
-import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serializer
 
 class KafkaSystemOptions(
