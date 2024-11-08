@@ -3,7 +3,7 @@ kotlin = "2.0.21"
 kotlinx = "1.9.0"
 scala2x = "2.13.15"
 scala3x = "3.4.1"
-quarkus = "3.16.1"
+quarkus = "3.16.2"
 
 # Spring-Boot
 spring-boot = "3.3.5"
@@ -20,12 +20,12 @@ arrowSuspendApp = "0.4.0"
 jackson = "2.18.1"
 
 # Couchbase
-couchbase-kotlin = "1.4.4"
-couchbase-client = "3.7.4"
-couchbase-client-metrics = "0.7.4"
+couchbase-kotlin = "1.4.5"
+couchbase-client = "3.7.5"
+couchbase-client-metrics = "0.7.5"
 
 # Kafka
-kafka = "3.8.1"
+kafka = "3.9.0"
 kafka-kotlin = "0.4.0"
 
 # Reactor
@@ -52,7 +52,7 @@ r2dbc-mssql = "1.0.2.RELEASE"
 elastic = "8.15.3"
 
 # mongo
-mongodb = "5.2.0"
+mongodb = "5.2.1"
 
 # Grpc
 io-grpc = "1.63.0"
@@ -211,6 +211,6 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
-ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.26" }
+ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.27" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 
