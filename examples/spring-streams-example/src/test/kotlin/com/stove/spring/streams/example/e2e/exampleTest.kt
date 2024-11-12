@@ -6,7 +6,8 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
+import org.apache.kafka.common.serialization.StringDeserializer
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.extension.ExtendWith
 import stove.example.protobuf.*
 import stove.example.protobuf.Input1Value.Input1
@@ -90,6 +91,16 @@ class ExampleTest : StoveBase() {
           if (message == null) false else helper.assertMessage(message, Output.getDescriptor().name) {
             Output.parseFrom(message.toByteArray()) == outputMessage
           }
+        }
+
+        // Assert joined message is correctly published
+        consumer<String, ByteArray>(
+          "output",
+          valueDeserializer = StoveKafkaValueDeserializer<ByteArray>(),
+          keyDeserializer = StringDeserializer()
+        ) { record ->
+          val value = protobufSerde.deserializer().deserialize("output", record.value())
+          Assertions.assertTrue(Output.parseFrom(value.toByteArray()) == outputMessage)
         }
       }
     }
