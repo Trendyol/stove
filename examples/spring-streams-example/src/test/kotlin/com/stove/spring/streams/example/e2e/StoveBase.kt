@@ -6,7 +6,7 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.admin.NewTopic
-import org.apache.kafka.common.serialization.*
+import org.apache.kafka.common.serialization.Serializer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
@@ -22,13 +22,6 @@ class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
       else -> protobufSerde.serializer().serialize(topic, data as Message)
     }
   }
-}
-
-class StoveKafkaValueDeserializer<T : Any> : Deserializer<ByteArray> {
-  override fun deserialize(
-    topic: String,
-    data: ByteArray
-  ): ByteArray = data
 }
 
 abstract class StoveBase {
