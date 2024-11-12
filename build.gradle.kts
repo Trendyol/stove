@@ -30,8 +30,10 @@ kover {
           "com.trendyol.stove.testing.e2e.system.annotations.*",
           "com.trendyol.stove.testing.e2e.serialization.*",
           "com.trendyol.stove.testing.e2e.standalone.*",
+          "com.trendyol.stove.testing.e2e.streams.*",
           "stove.spring.example.*",
           "stove.spring.standalone.example.*",
+          "stove.spring.streams.example.*",
           "stove.ktor.example.*"
         )
       }

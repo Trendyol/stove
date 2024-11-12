@@ -26,7 +26,8 @@ include(
 include(
   "examples:spring-example",
   "examples:spring-standalone-example",
-  "examples:ktor-example"
+  "examples:ktor-example",
+  "examples:spring-streams-example"
 )
 dependencyResolutionManagement {
   repositories {
