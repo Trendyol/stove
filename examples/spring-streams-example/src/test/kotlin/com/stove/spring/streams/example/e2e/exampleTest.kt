@@ -6,13 +6,16 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import kotlinx.coroutines.runBlocking
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import stove.example.protobuf.*
+import stove.example.protobuf.input1
+import stove.example.protobuf.input2
+import stove.example.protobuf.output
 import stove.example.protobuf.Input1Value.Input1
 import stove.example.protobuf.Input2Value.Input2
 import stove.example.protobuf.OutputValue.Output
-import java.util.*
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
 @ExtendWith(Init::class)
@@ -90,6 +93,15 @@ class ExampleTest : StoveBase() {
           if (message == null) false else helper.assertMessage(message, Output.getDescriptor().name) {
             Output.parseFrom(message.toByteArray()) == outputMessage
           }
+        }
+
+        // Assert joins
+        consumer<String, Message>(
+          "output",
+          valueDeserializer = StoveKafkaValueDeserializer<ByteArray>(),
+          keyDeserializer = StringDeserializer(),
+        ) { record ->
+          if (Output.parseFrom(record.value().toByteArray()) != outputMessage) throw AssertionError()
         }
       }
     }

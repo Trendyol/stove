@@ -7,6 +7,7 @@ import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.common.serialization.Serializer
+import org.apache.kafka.common.serialization.Deserializer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
@@ -21,6 +22,17 @@ class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
       is ByteArray -> data
       else -> protobufSerde.serializer().serialize(topic, data as Message)
     }
+  }
+}
+
+class StoveKafkaValueDeserializer<T : Any> : Deserializer<Message> {
+  private val protobufSerde: KafkaProtobufSerde<Message> = TestHelper().createConfiguredSerdeForRecordValues()
+
+  override fun deserialize(
+    topic: String,
+    data: ByteArray
+  ): Message {
+    return protobufSerde.deserializer().deserialize(topic, data)
   }
 }
 

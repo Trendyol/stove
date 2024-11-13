@@ -2,11 +2,11 @@ import com.google.protobuf.gradle.*
 
 plugins {
   alias(libs.plugins.spring.plugin)
-  alias(libs.plugins.spring.boot)
   idea
   application
   id("com.google.protobuf") version "0.8.19"
   id("io.spring.dependency-management") version "1.1.6"
+  id("org.springframework.boot") version "3.3.4"
 }
 
 apply {
@@ -14,16 +14,14 @@ apply {
 }
 
 dependencies {
-//  implementation(libs.spring.boot.get3x())
-//  implementation(libs.spring.boot.get3x().autoconfigure)
-//  annotationProcessor(libs.spring.boot.get3x().annotationProcessor)
-//  implementation(libs.spring.boot.get3x().kafka)
+  implementation(libs.spring.boot.get3x())
+  implementation(libs.spring.boot.get3x().autoconfigure)
+  annotationProcessor(libs.spring.boot.get3x().annotationProcessor)
+  implementation(libs.spring.boot.get3x().kafka)
   implementation(libs.jackson.kotlin)
 
-  implementation("org.springframework.boot:spring-boot-starter")
   implementation("org.apache.kafka:kafka-streams")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
-  implementation("org.springframework.kafka:spring-kafka")
   implementation("com.google.protobuf:protobuf-kotlin:3.25.5")
   implementation("com.google.protobuf:protobuf-java:3.25.5")
   implementation("io.confluent:kafka-streams-protobuf-serde:7.7.1")
@@ -34,7 +32,11 @@ dependencies {
   testImplementation(projects.stove.starters.spring.stoveSpringTestingE2e)
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+  testImplementation("org.testcontainers:kafka:1.20.3")
+
 }
+
+application { mainClass.set("stove.spring.streams.example.ExampleAppkt") }
 
 java.sourceSets["main"].java {
   srcDir("build/generated/source/proto/main/java")
