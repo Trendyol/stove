@@ -10,16 +10,17 @@ class CustomProductionExceptionHandler : ProductionExceptionHandler {
     private val logger = LoggerFactory.getLogger(CustomProductionExceptionHandler::class.java)
   }
 
+  @Deprecated("Deprecated")
   override fun handle(
-    record: ProducerRecord<ByteArray, ByteArray>?,
-    exception: Exception?
+    record: ProducerRecord<ByteArray, ByteArray>,
+    exception: Exception
   ): ProductionExceptionHandler.ProductionExceptionHandlerResponse {
     logger.error(
-      "Deserialization exception in [${record?.topic()}]: [${exception?.message}] Caused by: ${exception?.cause?.message}"
+      "Deserialization exception in [${record.topic()}]: [${exception.message}] Caused by: ${exception.cause?.message}"
     )
     return ProductionExceptionHandler.ProductionExceptionHandlerResponse.CONTINUE
   }
 
-  override fun configure(configs: MutableMap<String, *>?) {
+  override fun configure(configs: MutableMap<String, *>) {
   }
 }

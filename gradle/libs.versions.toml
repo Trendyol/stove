@@ -20,6 +20,7 @@ io-reactor-extensions = "1.2.3"
 slf4j = "2.0.16"
 kafka = "3.9.0"
 kafka-kotlin = "0.4.0"
+kafka-streams-registry = "7.7.1"
 dokka = "1.9.20"
 knit = "0.5.0"
 kover = "0.8.3"
@@ -38,6 +39,8 @@ wire = "5.1.0"
 io-grpc = "1.68.1"
 io-grpc-kotlin = "1.4.1"
 google-protobuf-kotlin = "4.28.3"
+google-protobuf-kotlin-3x = "3.25.5"
+google-protobuf-java-3x = "3.25.5"
 gradle-release = "3.0.2"
 nexusPublish = "2.0.0"
 shadow = "8.1.1"
@@ -48,6 +51,7 @@ mockito = "5.4.0"
 quiver = "0.5.12"
 akkurate = "0.10.0"
 exposed = "0.56.0"
+protobuf-plugin = "0.9.4"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -83,6 +87,8 @@ akkurate-ksp-plugin = { module = "dev.nesk.akkurate:akkurate-ksp-plugin", versio
 # Kafka
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
+kafka-streams = { module = "org.apache.kafka:kafka-streams", version.ref = "kafka" }
+kafka-streams-registry = { module = "io.confluent:kafka-streams-protobuf-serde", version.ref = "kafka-streams-registry" }
 
 # Couchbase
 couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }
@@ -180,6 +186,8 @@ io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
 io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
 io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
 google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin" }
+google-protobuf-kotlin-3x = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin-3x" }
+google-protobuf-java-3x = { module = "com.google.protobuf:protobuf-java", version.ref = "google-protobuf-java-3x" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
@@ -231,5 +239,6 @@ shadowJar = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin"}
 
 

@@ -12,13 +12,14 @@ class CustomDeserializationExceptionHandler : DeserializationExceptionHandler {
     private val logger = LoggerFactory.getLogger(CustomDeserializationExceptionHandler::class.java)
   }
 
+  @Deprecated("Deprecated")
   override fun handle(
     context: ProcessorContext?,
-    record: ConsumerRecord<ByteArray, ByteArray>?,
-    exception: Exception?
+    record: ConsumerRecord<ByteArray, ByteArray>,
+    exception: Exception
   ): DeserializationHandlerResponse {
     logger.error(
-      "Deserialization exception in [${record?.topic()}]: [${exception?.message}] Caused by: ${exception?.cause?.message}"
+      "Deserialization exception in [${record.topic()}]: [${exception.message}] Caused by: ${exception.cause?.message}"
     )
     return DeserializationHandlerResponse.CONTINUE
   }
