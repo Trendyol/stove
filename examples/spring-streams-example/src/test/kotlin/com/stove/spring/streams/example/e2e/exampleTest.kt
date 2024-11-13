@@ -95,7 +95,8 @@ class ExampleTest : StoveBase() {
           }
         }
 
-        // Assert joins
+        // Assert joined message is correctly published
+        // Similar to test above, but is able to run even if no messages are published
         consumer<String, Message>(
           "output",
           valueDeserializer = StoveKafkaValueDeserializer<ByteArray>(),
