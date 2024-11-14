@@ -7,6 +7,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: github.repository == 'Trendyol/stove'
     permissions:
       contents: read
       packages: write
