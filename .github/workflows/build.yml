@@ -48,6 +48,7 @@ jobs:
       - name: Add coverage report to PR
         id: kover
         uses: mi-kas/kover-report@v1
+        if: github.repository == 'Trendyol/stove'
         with:
           path: |
             ${{ github.workspace }}/build/reports/kover/report.xml
@@ -58,6 +59,7 @@ jobs:
           coverage-counter-type: LINE
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
+        if: github.repository == 'Trendyol/stove'
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
