@@ -9,7 +9,7 @@ import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 
 @Component
-class CustomSerDer(
+class CustomSerDe(
   private val env: Environment
 ) {
   @Value("\${kafka.schema-registry-url}")

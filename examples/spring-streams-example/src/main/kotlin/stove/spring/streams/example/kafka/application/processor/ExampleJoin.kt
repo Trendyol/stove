@@ -15,15 +15,15 @@ import org.springframework.stereotype.Component
 import stove.example.protobuf.Input1Value.Input1
 import stove.example.protobuf.Input2Value.Input2
 import stove.example.protobuf.output
-import stove.spring.streams.example.kafka.CustomSerDer
+import stove.spring.streams.example.kafka.CustomSerDe
 
 @Component
 @EnableKafka
 @EnableKafkaStreams
 class ExampleJoin(
-  private val customSerDer: CustomSerDer
+  private val customSerDe: CustomSerDe
 ) {
-  protected val protobufSerde: KafkaProtobufSerde<Message> = customSerDer.createConfiguredSerdeForRecordValues()
+  protected val protobufSerde: KafkaProtobufSerde<Message> = customSerDe.createConfiguredSerdeForRecordValues()
   protected val byteArraySerde: Serde<ByteArray> = Serdes.ByteArray()
   protected val stringSerde: Serde<String> = Serdes.String()
 
