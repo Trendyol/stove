@@ -33,7 +33,6 @@ dependencies {
   testImplementation(libs.kotest.property)
   testImplementation(libs.kotest.runner.junit5)
   testImplementation(libs.testcontainers.kafka)
-
 }
 
 application { mainClass.set("stove.spring.streams.example.ExampleAppkt") }
@@ -64,6 +63,15 @@ protobuf {
       it.builtins {
         id("kotlin")
       }
+    }
+  }
+}
+
+configurations.matching { it.name == "detekt" }.all {
+  resolutionStrategy.eachDependency {
+    if (requested.group == "org.jetbrains.kotlin") {
+      @Suppress("UnstableApiUsage")
+      useVersion(io.gitlab.arturbosch.detekt.getSupportedKotlinVersion())
     }
   }
 }

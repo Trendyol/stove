@@ -5,7 +5,6 @@ import org.apache.kafka.streams.errors.DeserializationExceptionHandler
 import org.apache.kafka.streams.errors.DeserializationExceptionHandler.DeserializationHandlerResponse
 import org.apache.kafka.streams.processor.ProcessorContext
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 
 class CustomDeserializationExceptionHandler : DeserializationExceptionHandler {
   companion object {
@@ -24,6 +23,5 @@ class CustomDeserializationExceptionHandler : DeserializationExceptionHandler {
     return DeserializationHandlerResponse.CONTINUE
   }
 
-  override fun configure(configs: MutableMap<String, *>?) {
-  }
+  override fun configure(configs: MutableMap<String, *>?) = Unit
 }

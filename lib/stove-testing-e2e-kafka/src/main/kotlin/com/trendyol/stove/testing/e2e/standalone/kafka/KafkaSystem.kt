@@ -19,8 +19,6 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
 import java.util.*
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.reflect.KClass
 import kotlin.time.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -60,7 +58,8 @@ class KafkaSystem(
     kafkaPublisher = createPublisher(
       exposedConfiguration,
       context.options.listenPublishedMessagesFromStove,
-      context.options.valueSerializer)
+      context.options.valueSerializer
+    )
     sink = TestSystemMessageSink(
       adminClient,
       context.options.objectMapper,

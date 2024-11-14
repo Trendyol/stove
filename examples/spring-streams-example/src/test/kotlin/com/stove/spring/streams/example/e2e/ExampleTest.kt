@@ -97,7 +97,7 @@ class ExampleTest : FunSpec({
         consumer<String, Message>(
           "output",
           valueDeserializer = StoveKafkaValueDeserializer<ByteArray>(),
-          keyDeserializer = StringDeserializer(),
+          keyDeserializer = StringDeserializer()
         ) { record ->
           if (Output.parseFrom(record.value().toByteArray()) != outputMessage) throw AssertionError()
         }

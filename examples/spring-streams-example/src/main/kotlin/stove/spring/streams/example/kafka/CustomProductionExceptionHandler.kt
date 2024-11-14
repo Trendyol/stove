@@ -3,7 +3,6 @@ package stove.spring.streams.example.kafka
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.streams.errors.ProductionExceptionHandler
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 
 class CustomProductionExceptionHandler : ProductionExceptionHandler {
   companion object {
@@ -21,6 +20,5 @@ class CustomProductionExceptionHandler : ProductionExceptionHandler {
     return ProductionExceptionHandler.ProductionExceptionHandlerResponse.CONTINUE
   }
 
-  override fun configure(configs: MutableMap<String, *>) {
-  }
+  override fun configure(configs: MutableMap<String, *>) = Unit
 }

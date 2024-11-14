@@ -4,13 +4,9 @@ import com.google.protobuf.Message
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import org.apache.kafka.common.serialization.*
 import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.kstream.Consumed
-import org.apache.kafka.streams.kstream.KTable
-import org.apache.kafka.streams.kstream.Materialized
-import org.apache.kafka.streams.kstream.Produced
+import org.apache.kafka.streams.kstream.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.kafka.annotation.EnableKafka
-import org.springframework.kafka.annotation.EnableKafkaStreams
+import org.springframework.kafka.annotation.*
 import org.springframework.stereotype.Component
 import stove.example.protobuf.Input1Value.Input1
 import stove.example.protobuf.Input2Value.Input2
@@ -20,12 +16,10 @@ import stove.spring.streams.example.kafka.CustomSerDe
 @Component
 @EnableKafka
 @EnableKafkaStreams
-class ExampleJoin(
-  private val customSerDe: CustomSerDe
-) {
-  protected val protobufSerde: KafkaProtobufSerde<Message> = customSerDe.createConfiguredSerdeForRecordValues()
-  protected val byteArraySerde: Serde<ByteArray> = Serdes.ByteArray()
-  protected val stringSerde: Serde<String> = Serdes.String()
+class ExampleJoin(customSerDe: CustomSerDe) {
+  private val protobufSerde: KafkaProtobufSerde<Message> = customSerDe.createConfiguredSerdeForRecordValues()
+  private val byteArraySerde: Serde<ByteArray> = Serdes.ByteArray()
+  private val stringSerde: Serde<String> = Serdes.String()
 
   @Autowired
   fun buildPipeline(streamsBuilder: StreamsBuilder) {
