@@ -5,13 +5,10 @@ import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 
 @Component
-class CustomSerDe(
-  private val env: Environment
-) {
+class CustomSerDe {
   @Value("\${kafka.schema-registry-url}")
   val schemaRegistryUrl = ""
 
