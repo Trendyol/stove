@@ -20,11 +20,11 @@ dependencies {
   annotationProcessor(libs.spring.boot.get3x().annotationProcessor)
   implementation(libs.spring.boot.get3x().kafka)
   implementation(libs.jackson.kotlin)
+  implementation(libs.kafka)
   implementation(libs.kafka.streams)
   implementation(libs.kotlin.reflect)
   implementation(libs.google.protobuf.kotlin.get3x())
   implementation(libs.google.protobuf.java.get3x())
-  implementation("org.apache.kafka:kafka-streams:3.7.1")
   implementation(libs.kafka.streams.registry)
 }
 
