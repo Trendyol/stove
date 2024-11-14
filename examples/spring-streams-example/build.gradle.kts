@@ -31,7 +31,8 @@ dependencies {
 dependencies {
   testImplementation(projects.stove.lib.stoveTestingE2eKafka)
   testImplementation(projects.stove.starters.spring.stoveSpringTestingE2e)
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+  testImplementation(libs.kotest.property)
+  testImplementation(libs.kotest.runner.junit5)
   testImplementation(libs.testcontainers.kafka)
 
 }

@@ -5,27 +5,48 @@ import com.google.protobuf.Message
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
-import kotlinx.coroutines.runBlocking
+import io.kotest.core.spec.style.FunSpec
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import stove.example.protobuf.input1
-import stove.example.protobuf.input2
-import stove.example.protobuf.output
 import stove.example.protobuf.Input1Value.Input1
 import stove.example.protobuf.Input2Value.Input2
 import stove.example.protobuf.OutputValue.Output
+import stove.example.protobuf.input1
+import stove.example.protobuf.input2
+import stove.example.protobuf.output
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
-@ExtendWith(Init::class)
-class ExampleTest : StoveBase() {
-  private val helper: TestHelper = TestHelper()
+class ExampleTest : FunSpec ({
+  val helper = TestHelper()
 
-  private val protobufSerde: KafkaProtobufSerde<Message> = helper.createConfiguredSerdeForRecordValues()
+  val protobufSerde: KafkaProtobufSerde<Message> = helper.createConfiguredSerdeForRecordValues()
 
-  @Test
-  fun `expect join`() = runBlocking {
+  // Topics
+  val inputTopic1 = "input1"
+  val inputTopic2 = "input2"
+  val outputTopic = "output"
+
+  beforeSpec {
+    TestSystem.validate {
+      kafka {
+        adminOperations {
+          createTopics(
+            listOf(
+              NewTopic(inputTopic1, 1, 1),
+              NewTopic(inputTopic2, 1, 1),
+              NewTopic(outputTopic, 1, 1)
+            )
+          )
+          Thread.sleep(1000)
+        }
+      }
+    }
+  }
+
+  afterEach { Thread.sleep(5000) }
+
+  test("expect join") {
       /*-------------------------
         |  Create test data
         --------------------------*/
@@ -107,4 +128,4 @@ class ExampleTest : StoveBase() {
       }
     }
   }
-}
+})
