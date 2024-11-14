@@ -190,6 +190,7 @@ google-protobuf-kotlin-3x = { module = "com.google.protobuf:protobuf-kotlin", ve
 google-protobuf-java-3x = { module = "com.google.protobuf:protobuf-java", version.ref = "google-protobuf-java-3x" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+protoc = { module = "com.google.protobuf:protoc", version = "3.25.5" }
 
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
@@ -225,6 +226,7 @@ arrow-stack = ["arrow-core",
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-boot-3x = { id = "org.springframework.boot", version.ref = "spring-boot-3x" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.21.0" }
 kotlinter = { id = "org.jmailen.kotlinter", version = "4.4.1" }
@@ -239,6 +241,6 @@ shadowJar = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin"}
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
 
 

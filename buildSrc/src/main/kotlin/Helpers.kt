@@ -1,6 +1,8 @@
 import org.gradle.api.*
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.invoke
+import org.gradle.plugin.use.PluginDependency
 
 fun Collection<Project>.of(
   vararg parentProjects: String,
@@ -40,3 +42,6 @@ val runningOnCI: Boolean
     || System.getenv("TRAVIS") != null
     || System.getenv("TEAMCITY_VERSION") != null
     || System.getenv("JENKINS_URL") != null
+
+val Provider<PluginDependency>.pluginId: String
+  get() = get().pluginId

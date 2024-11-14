@@ -1,17 +1,16 @@
-import com.google.protobuf.gradle.*
+import com.google.protobuf.gradle.id
 
 plugins {
   alias(libs.plugins.spring.plugin)
-//  alias(libs.plugins.spring.boot)
+  alias(libs.plugins.spring.boot.get3x())
   alias(libs.plugins.spring.dependencyManagement)
   alias(libs.plugins.protobuf)
   idea
   application
-  id("org.springframework.boot") version "3.3.4" //todo place in libs
 }
 
 apply {
-  plugin("com.google.protobuf")
+  plugin(libs.plugins.protobuf.pluginId)
 }
 
 dependencies {
@@ -50,7 +49,7 @@ tasks.withType<Test> {
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:3.25.5"
+    artifact = libs.protoc.get().toString()
   }
 
   generateProtoTasks {
