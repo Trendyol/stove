@@ -52,9 +52,6 @@ class ExampleTest : FunSpec({
         publish(INPUT_TOPIC, input1Message, Option("test"))
         publish(INPUT_TOPIC2, input2Message, Option("test"))
 
-        // Give time to process
-        // Thread.sleep(10000), I don't think we need this
-
         /*---------------------------
          |  verify messages consumed
          ----------------------------*/
