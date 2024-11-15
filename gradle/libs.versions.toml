@@ -38,9 +38,7 @@ detekt = "1.23.7"
 wire = "5.1.0"
 io-grpc = "1.68.1"
 io-grpc-kotlin = "1.4.1"
-google-protobuf-kotlin = "4.28.3"
-google-protobuf-kotlin-3x = "4.28.3"
-google-protobuf-java-3x = "4.28.3"
+google-protobuf = "3.25.5"
 gradle-release = "3.0.2"
 nexusPublish = "2.0.0"
 shadow = "8.1.1"
@@ -51,7 +49,6 @@ mockito = "5.4.0"
 quiver = "0.5.12"
 akkurate = "0.10.0"
 exposed = "0.56.0"
-protobuf-plugin = "0.9.4"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -185,12 +182,10 @@ io-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
 io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
 io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
 io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
-google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin" }
-google-protobuf-kotlin-3x = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf-kotlin-3x" }
-google-protobuf-java-3x = { module = "com.google.protobuf:protobuf-java", version.ref = "google-protobuf-java-3x" }
+google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf" }
+protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
-protoc = { module = "com.google.protobuf:protoc", version = "3.25.5" }
 
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
@@ -241,6 +236,6 @@ shadowJar = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
+protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 
 

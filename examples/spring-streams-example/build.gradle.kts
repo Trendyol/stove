@@ -9,10 +9,6 @@ plugins {
   application
 }
 
-apply {
-  plugin(libs.plugins.protobuf.pluginId)
-}
-
 dependencies {
   implementation(libs.spring.boot.get3x())
   implementation(libs.spring.boot.get3x().autoconfigure)
@@ -22,8 +18,7 @@ dependencies {
   implementation(libs.kafka)
   implementation(libs.kafka.streams)
   implementation(libs.kotlin.reflect)
-  implementation(libs.google.protobuf.kotlin.get3x())
-  implementation(libs.google.protobuf.java.get3x())
+  implementation(libs.google.protobuf.kotlin)
   implementation(libs.kafka.streams.registry)
 }
 
