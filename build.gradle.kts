@@ -30,8 +30,10 @@ kover {
           "com.trendyol.stove.testing.e2e.system.annotations.*",
           "com.trendyol.stove.testing.e2e.serialization.*",
           "com.trendyol.stove.testing.e2e.standalone.*",
+          "com.trendyol.stove.testing.e2e.streams.*",
           "stove.spring.example.*",
           "stove.spring.standalone.example.*",
+          "stove.spring.streams.example.*",
           "stove.ktor.example.*"
         )
       }
@@ -78,9 +80,9 @@ subprojects.of("lib", "spring", "examples", "ktor") {
   spotless {
     kotlin {
       ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
-      targetExclude("build", "generated", "out")
+      targetExclude("build/", "generated/", "out/")
       targetExcludeIfContentContains("generated")
-      targetExcludeIfContentContainsRegex(".*generated.*")
+      targetExcludeIfContentContainsRegex("generated.*")
     }
   }
   the<IdeaModel>().apply {

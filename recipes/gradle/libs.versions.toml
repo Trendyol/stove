@@ -27,6 +27,7 @@ couchbase-client-metrics = "0.7.5"
 # Kafka
 kafka = "3.9.0"
 kafka-kotlin = "0.4.0"
+kafka-streams-registry = "7.7.1"
 
 # Reactor
 io-reactor = "3.7.0"
@@ -73,6 +74,9 @@ stove = "1.0.0-SNAPSHOT"
 junit = "5.11.3"
 kotest = "5.9.1"
 
+#protobuf
+protobuf-plugin = "0.9.4"
+
 [libraries]
 # Kotlin
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -111,6 +115,8 @@ quarkus-arc = { module = "io.quarkus.arc:arc", version.ref = "quarkus" }
 
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
+kafka-streams = { module = "org.apache.kafka:kafka-streams", version.ref = "kafka" }
+kafka-streams-registry = { module = "io.confluent:kafka-streams-protobuf-serde", version.ref = "kafka-streams-registry" }
 couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }
 couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
 couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase-client-metrics" }
@@ -213,4 +219,4 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.27" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
-
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin"}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package stove.example.protobuf;
+
+message Output {
+  string firstName = 1;
+  string lastName = 2;
+  string bsn = 3;
+  int32 age = 4;
+}
+

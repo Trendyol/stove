@@ -19,8 +19,6 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
 import java.util.*
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.reflect.KClass
 import kotlin.time.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -57,7 +55,11 @@ class KafkaSystem(
       )
     }
     adminClient = createAdminClient(exposedConfiguration)
-    kafkaPublisher = createPublisher(exposedConfiguration, context.options.listenPublishedMessagesFromStove)
+    kafkaPublisher = createPublisher(
+      exposedConfiguration,
+      context.options.listenPublishedMessagesFromStove,
+      context.options.valueSerializer
+    )
     sink = TestSystemMessageSink(
       adminClient,
       context.options.objectMapper,
@@ -345,12 +347,13 @@ class KafkaSystem(
 
   private fun createPublisher(
     exposedConfiguration: KafkaExposedConfiguration,
-    listenKafkaSystemPublishedMessages: Boolean
+    listenKafkaSystemPublishedMessages: Boolean,
+    kafkaValueSerializerClass: Serializer<Any>
   ): KafkaProducer<String, Any> = KafkaProducer(
     mapOf(
       ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java.name,
-      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer::class.java.name,
+      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to kafkaValueSerializerClass::class.java.name,
       ProducerConfig.CLIENT_ID_CONFIG to "stove-kafka-producer",
       ProducerConfig.ACKS_CONFIG to "1"
     ) + (

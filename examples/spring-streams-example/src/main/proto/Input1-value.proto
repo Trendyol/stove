@@ -1,0 +1,8 @@
+syntax = "proto3";
+package stove.example.protobuf;
+
+message Input1 {
+  string firstName = 1;
+  string lastName = 2;
+}
+

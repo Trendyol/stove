@@ -26,10 +26,14 @@ include(
 include(
   "examples:spring-example",
   "examples:spring-standalone-example",
-  "examples:ktor-example"
+  "examples:ktor-example",
+  "examples:spring-streams-example"
 )
 dependencyResolutionManagement {
   repositories {
     mavenCentral()
+    maven {
+      url = uri("https://packages.confluent.io/maven/")
+    }
   }
 }
