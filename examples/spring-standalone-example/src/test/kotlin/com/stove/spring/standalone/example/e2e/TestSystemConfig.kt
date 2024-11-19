@@ -40,6 +40,7 @@ class TestSystemConfig : AbstractProjectConfig() {
         kafka {
           stoveKafkaObjectMapperRef = ObjectMapperConfig.createObjectMapperWithDefaults()
           KafkaSystemOptions(
+            topicSuffixes = TopicSuffixes().copy(error = listOf(".error", ".DLT", "dlt")),
             objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults(),
             containerOptions = KafkaContainerOptions(tag = "latest") { }
           ) {
