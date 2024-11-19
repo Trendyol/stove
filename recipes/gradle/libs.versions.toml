@@ -9,7 +9,7 @@ quarkus = "3.16.3"
 spring-boot = "3.3.5"
 spring-framework = "6.2.0"
 spring-dependency-management = "1.1.6"
-spring-kafka = "3.2.4"
+spring-kafka = "3.3.0"
 
 # arrow
 arrow = "1.2.4"
