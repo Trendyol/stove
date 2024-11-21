@@ -359,6 +359,44 @@ class HttpSystemTests : FunSpec({
       }
     }
   }
+
+  test("if there is no initial step, can not place `then`") {
+    TestSystem.validate {
+      wiremock {
+        behaviourFor("/get-behaviour", WireMock::get) {
+          shouldThrow<IllegalStateException> {
+            then {
+              aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withStatus(200)
+                .withBody(it.writeValueAsString(TestDto(UUID.randomUUID().toString())))
+            }
+          }
+        }
+      }
+    }
+  }
+
+  test("should only call initially once") {
+    TestSystem.validate {
+      wiremock {
+        behaviourFor("/get-behaviour", WireMock::get) {
+          initially {
+            aResponse()
+              .withStatus(503)
+              .withBody("Service unavailable")
+          }
+          shouldThrow<IllegalStateException> {
+            initially {
+              aResponse()
+                .withStatus(503)
+                .withBody("Service unavailable")
+            }
+          }
+        }
+      }
+    }
+  }
 })
 
 class HttpConsoleTesting : ConsoleSpec({ capturedOutput ->
