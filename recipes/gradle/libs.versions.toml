@@ -6,7 +6,7 @@ scala3x = "3.4.1"
 quarkus = "3.17.0"
 
 # Spring-Boot
-spring-boot = "3.3.5"
+spring-boot = "3.3.6"
 spring-framework = "6.2.0"
 spring-dependency-management = "1.1.6"
 spring-kafka = "3.3.0"
@@ -50,7 +50,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 r2dbc-mssql = "1.0.2.RELEASE"
 
 # elastic
-elastic = "8.16.0"
+elastic = "8.16.1"
 
 # mongo
 mongodb = "5.2.1"
