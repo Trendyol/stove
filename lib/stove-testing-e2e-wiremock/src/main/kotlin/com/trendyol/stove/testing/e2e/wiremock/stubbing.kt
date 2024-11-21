@@ -24,15 +24,19 @@ class StubBehaviourBuilder(
   private val scenarioName = "Scenario for $url"
   private var previousState: String = STARTED
   private var stateCounter = 0
+  private var initializedCounter = 0
 
   fun initially(step: () -> ResponseDefinitionBuilder) {
+    check(initializedCounter == 0) { "You should call initially only once" }
     stateCounter++
     val nextState = "State$stateCounter"
     createStub(step(), previousState, nextState)
     previousState = nextState
+    initializedCounter++
   }
 
   fun then(step: () -> ResponseDefinitionBuilder) {
+    check(previousState != STARTED) { "You should call initially before calling then" }
     stateCounter++
     val nextState = "State$stateCounter"
     createStub(step(), previousState, nextState)
