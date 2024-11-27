@@ -132,7 +132,7 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
-mongojack = { module = "org.mongojack:mongojack", version = "5.0.0" }
+mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.0.RELEASE" }
