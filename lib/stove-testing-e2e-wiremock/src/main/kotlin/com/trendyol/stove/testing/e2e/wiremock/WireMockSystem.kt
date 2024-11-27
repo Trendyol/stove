@@ -1,7 +1,8 @@
+@file:Suppress("unused")
+
 package com.trendyol.stove.testing.e2e.wiremock
 
 import arrow.core.*
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.benmanes.caffeine.cache.*
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.*
@@ -11,6 +12,7 @@ import com.github.tomakehurst.wiremock.extension.Extension
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.runBlocking
@@ -27,7 +29,7 @@ class WireMockSystem(
 ) : PluggedSystem, ValidatedSystem, RunAware {
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private var wireMock: WireMockServer
-  private val json: ObjectMapper = ctx.objectMapper
+  private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   init {
@@ -88,7 +90,7 @@ class WireMockSystem(
       aResponse()
         .withStatus(statusCode)
         .withHeader("Content-Type", "application/json; charset=UTF-8")
-    responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
+    responseBody.map { res.withBody(serde.serialize(it)) }
     val req = put(urlEqualTo(url))
     configureBodyAndMetadata(req, metadata, requestBody)
     val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
@@ -108,7 +110,7 @@ class WireMockSystem(
       aResponse()
         .withStatus(statusCode)
         .withHeader("Content-Type", "application/json; charset=UTF-8")
-    responseBody.map { res.withBody(json.writeValueAsBytes(it)) }
+    responseBody.map { res.withBody(serde.serialize(it)) }
     val req = patch(urlEqualTo(url))
     configureBodyAndMetadata(req, metadata, requestBody)
     val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
@@ -149,10 +151,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockPutConfigure(
     url: String,
-    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
     val req = put(urlEqualTo(url))
-    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -160,10 +162,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockPatchConfigure(
     url: String,
-    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
     val req = patch(urlEqualTo(url))
-    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -171,10 +173,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockGetConfigure(
     url: String,
-    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
     val req = get(urlEqualTo(url))
-    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -182,10 +184,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockHeadConfigure(
     url: String,
-    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
     val req = head(urlEqualTo(url))
-    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -193,10 +195,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockDeleteConfigure(
     url: String,
-    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
     val req = delete(urlEqualTo(url))
-    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -204,10 +206,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockPostConfigure(
     url: String,
-    configure: (MappingBuilder, ObjectMapper) -> MappingBuilder
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
     val req = post(urlEqualTo(url))
-    val stub = wireMock.stubFor(configure(req, json).withId(UUID.randomUUID()))
+    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -216,9 +218,9 @@ class WireMockSystem(
   fun behaviourFor(
     url: String,
     method: (String) -> MappingBuilder,
-    block: StubBehaviourBuilder.(ObjectMapper) -> Unit
+    block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
   ) {
-    stubBehaviour(wireMock, objectMapper = json, url, method, block)
+    stubBehaviour(wireMock, serde = serde, url, method, block)
   }
 
   @WiremockDsl
@@ -240,7 +242,7 @@ class WireMockSystem(
         ValidationResult(
           "${it.method.value()} ${it.url}",
           it.bodyAsString,
-          json.writeValueAsString(it.queryParams)
+          serde.serialize(it.queryParams).decodeToString()
         ).toString()
       }
       throw AssertionError(
@@ -264,7 +266,7 @@ class WireMockSystem(
     body.map {
       request.withRequestBody(
         equalToJson(
-          json.writeValueAsString(it),
+          serde.serialize(it).decodeToString(),
           true,
           false
         )
@@ -279,7 +281,7 @@ class WireMockSystem(
     val mockResponse = aResponse()
       .withStatus(statusCode)
       .withHeader("Content-Type", "application/json; charset=UTF-8")
-    responseBody.map { mockResponse.withBody(json.writeValueAsBytes(it)) }
+    responseBody.map { mockResponse.withBody(serde.serialize(it)) }
     return mockResponse
   }
 

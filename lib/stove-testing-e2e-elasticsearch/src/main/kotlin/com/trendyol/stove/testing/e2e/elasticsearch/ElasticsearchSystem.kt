@@ -5,7 +5,6 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch.core.*
-import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -177,7 +176,7 @@ class ElasticsearchSystem internal constructor(
   private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
     context.options.clientConfigurer.restClientOverrideFn
       .getOrElse { { cfg -> restClient(cfg) } }
-      .let { RestClientTransport(it(exposedConfiguration), JacksonJsonpMapper(context.options.objectMapper)) }
+      .let { RestClientTransport(it(exposedConfiguration), context.options.jsonpMapper) }
       .let { ElasticsearchClient(it) }
 
   private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =

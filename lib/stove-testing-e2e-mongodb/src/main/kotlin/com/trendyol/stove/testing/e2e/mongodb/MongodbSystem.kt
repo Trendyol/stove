@@ -1,6 +1,5 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
-import com.fasterxml.jackson.module.kotlin.convertValue
 import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.kotlin.client.coroutine.MongoClient
@@ -11,10 +10,10 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.bson.*
+import org.bson.codecs.EncoderContext
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.slf4j.*
-import kotlin.collections.set
 
 @MongoDsl
 class MongodbSystem internal constructor(
@@ -53,8 +52,8 @@ class MongodbSystem internal constructor(
   ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
     .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
     .getCollection<Document>(collection)
+    .withDocumentClass(T::class.java)
     .find(BsonDocument.parse(query))
-    .map { context.options.objectMapper.convertValue(it, T::class.java) }
     .toList()
     .also(assertion)
     .let { this }
@@ -66,9 +65,9 @@ class MongodbSystem internal constructor(
     assertion: (T) -> Unit
   ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
+    .withDocumentClass<T>()
     .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
     .find(filterById(objectId))
-    .map { context.options.objectMapper.convertValue(it, T::class.java) }
     .first()
     .also(assertion)
     .let { this }
@@ -100,17 +99,19 @@ class MongodbSystem internal constructor(
    * Saves the [instance] with given [objectId] to the [collection]
    */
   @MongoDsl
-  suspend fun <T : Any> save(
+  suspend inline fun <reified T : Any> save(
     instance: T,
     objectId: String = ObjectId().toHexString(),
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(instance::class).build()) }
+    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
     .getCollection<Document>(collection)
-    .let {
-      val map = context.options.objectMapper.convertValue<MutableMap<String, Any>>(instance)
-      map[RESERVED_ID] = ObjectId(objectId)
-      it.insertOne(Document(map))
+    .also { coll ->
+      val bson = BsonDocument()
+      context.options.codecRegistry.get(T::class.java)
+        .encode(BsonDocumentWriter(bson), instance, EncoderContext.builder().build())
+      val doc = Document(bson).append(RESERVED_ID, ObjectId(objectId))
+      coll.insertOne(doc)
     }
     .let { this }
 
@@ -150,7 +151,7 @@ class MongodbSystem internal constructor(
     .build().let { MongoClient.create(it) }
 
   companion object {
-    private const val RESERVED_ID = "_id"
+    const val RESERVED_ID = "_id"
 
     @PublishedApi
     internal fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))

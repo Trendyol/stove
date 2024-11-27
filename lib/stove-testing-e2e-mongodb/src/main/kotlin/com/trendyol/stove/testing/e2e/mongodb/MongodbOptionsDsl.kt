@@ -1,6 +1,5 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 
 @StoveDsl
@@ -32,10 +31,6 @@ class MongodbOptionsDsl internal constructor(private val init: MongodbOptionsDsl
 
   fun exposedConfiguration(configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>) {
     options = options.copy(configureExposedConfiguration = configureExposedConfiguration)
-  }
-
-  fun objectMapper(objectMapper: ObjectMapper) {
-    options = options.copy(objectMapper = objectMapper)
   }
 
   internal operator fun invoke(): MongodbSystemOptions {

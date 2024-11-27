@@ -1,9 +1,8 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.integrations.jackson.module.registerArrowModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.functional.get
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.*
 import com.trendyol.stove.testing.e2e.system.abstractions.StateWithProcess
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.*
@@ -25,7 +24,7 @@ class ElasticsearchExposedCertificateTest : FunSpec({
               "processId": 10496
             }
       """.trimIndent()
-    val j = StoveObjectMapper.byConfiguring { this.registerArrowModule() }
+    val j = StoveSerde.jackson.default
     val stateWithProcess = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(state)
     val serialize = j.writeValueAsString(stateWithProcess)
     val stateWithProcess2 = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(serialize)

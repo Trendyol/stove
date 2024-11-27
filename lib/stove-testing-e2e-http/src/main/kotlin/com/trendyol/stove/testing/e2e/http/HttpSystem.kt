@@ -3,8 +3,7 @@
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -17,6 +16,7 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.serialization.*
 import io.ktor.serialization.jackson.*
 import io.ktor.util.*
 import org.slf4j.LoggerFactory
@@ -29,14 +29,14 @@ private val httpSystemLogger = LoggerFactory.getLogger(HttpSystem::class.java)
 @HttpDsl
 data class HttpClientSystemOptions(
   val baseUrl: String,
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  val contentConverter: ContentConverter = JacksonConverter(StoveSerde.jackson.default),
   val timeout: Duration = 30.seconds,
-  val createClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, objectMapper) }
+  val createClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, contentConverter) }
 ) : SystemOptions {
   companion object {
     internal fun jsonHttpClient(
       timeout: Duration,
-      objectMapper: ObjectMapper
+      converter: ContentConverter
     ): io.ktor.client.HttpClient = HttpClient(OkHttp) {
       engine {
         config {
@@ -57,9 +57,9 @@ data class HttpClientSystemOptions(
       }
 
       install(ContentNegotiation) {
-        register(ContentType.Application.Json, JacksonConverter(objectMapper))
-        register(ContentType.Application.ProblemJson, JacksonConverter(objectMapper))
-        register(ContentType.parse("application/x-ndjson"), JacksonConverter(objectMapper))
+        register(ContentType.Application.Json, converter)
+        register(ContentType.Application.ProblemJson, converter)
+        register(ContentType.parse("application/x-ndjson"), converter)
       }
 
       defaultRequest {

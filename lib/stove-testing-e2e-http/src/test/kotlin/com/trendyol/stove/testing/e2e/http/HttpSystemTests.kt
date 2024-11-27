@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
 import com.trendyol.stove.ConsoleSpec
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.client
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.*
@@ -36,10 +35,7 @@ class TestConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8086",
-            objectMapper = StoveObjectMapper.byConfiguring {
-              findAndRegisterModules()
-            }
+            baseUrl = "http://localhost:8086"
           )
         }
 
@@ -343,7 +339,7 @@ class HttpSystemTests : FunSpec({
             aResponse()
               .withHeader("Content-Type", "application/json")
               .withStatus(200)
-              .withBody(it.writeValueAsString(TestDto(expectedGetDtoName)))
+              .withBody(it.serialize(TestDto(expectedGetDtoName)))
           }
         }
       }
@@ -369,7 +365,7 @@ class HttpSystemTests : FunSpec({
               aResponse()
                 .withHeader("Content-Type", "application/json")
                 .withStatus(200)
-                .withBody(it.writeValueAsString(TestDto(UUID.randomUUID().toString())))
+                .withBody(it.serialize(TestDto(UUID.randomUUID().toString())))
             }
           }
         }

@@ -9,7 +9,7 @@ import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import org.slf4j.*
 
-class TestSystemConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
   @Suppress("LongMethod")

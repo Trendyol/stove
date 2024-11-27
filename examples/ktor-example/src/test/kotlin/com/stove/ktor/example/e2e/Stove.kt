@@ -10,7 +10,7 @@ import io.kotest.core.extensions.Extension
 import io.kotest.extensions.system.SystemEnvironmentProjectListener
 import stove.ktor.example.app.objectMapperRef
 
-class TestSystemConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   companion object {
     init {
       stoveKafkaBridgePortDefault = "50053"

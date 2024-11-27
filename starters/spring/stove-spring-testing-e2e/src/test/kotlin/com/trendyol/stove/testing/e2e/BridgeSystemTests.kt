@@ -1,7 +1,7 @@
 package com.trendyol.stove.testing.e2e
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.config.AbstractProjectConfig
@@ -41,7 +41,7 @@ class SystemTimeGetUtcNow : GetUtcNow {
 }
 
 class TestAppInitializers : BaseApplicationContextInitializer({
-  bean<ObjectMapper> { StoveObjectMapper.Default }
+  bean<ObjectMapper> { StoveSerde.jackson.default }
   bean { SystemTimeGetUtcNow() }
 }) {
   var onEvent: Boolean = false

@@ -3,7 +3,7 @@ package com.trendyol.stove.testing.e2e.kafka
 import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.containers.*
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -42,7 +42,7 @@ data class KafkaOps(
 data class KafkaSystemOptions(
   val registry: String = DEFAULT_REGISTRY,
   val ports: List<Int> = DEFAULT_KAFKA_PORTS,
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  val objectMapper: ObjectMapper = StoveSerde.jackson.default,
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
   val ops: KafkaOps = KafkaOps(),
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
