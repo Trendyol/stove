@@ -17,8 +17,10 @@ class Setup : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     TestSystem()
       .with {
-        mongodbDsl {
-          tag("latest")
+        mongodb {
+          MongodbSystemOptions {
+            listOf()
+          }
         }
         applicationUnderTest(NoOpApplication())
       }.run()

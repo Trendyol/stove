@@ -13,10 +13,10 @@ import org.mongojack.JacksonCodecRegistry
 data class MongodbSystemOptions(
   val databaseOptions: DatabaseOptions = DatabaseOptions(),
   val container: MongoContainerOptions = MongoContainerOptions(),
-  override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>,
   val codecRegistry: CodecRegistry = JacksonCodecRegistry(
     StoveSerde.jackson.byConfiguring { addModule(ObjectIdModule()) },
     ProvidersCodecRegistry(listOf(PojoCodecProvider.builder().automatic(true).build())),
     UuidRepresentation.STANDARD
-  )
+  ),
+  override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<MongodbExposedConfiguration>
