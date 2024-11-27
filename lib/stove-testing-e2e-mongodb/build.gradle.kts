@@ -12,5 +12,5 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(libs.slf4j.simple)
+  testImplementation(libs.logback.classic)
 }

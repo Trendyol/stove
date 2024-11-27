@@ -208,4 +208,48 @@ class MongodbTestSystemTests : FunSpec({
       }
     }
   }
+
+  test("complex type") {
+    data class Nested(
+      val id: String,
+      val name: String
+    )
+
+    data class ComplexType(
+      val id: String,
+      val name: String,
+      val nested: Nested
+    )
+
+    val id = ObjectId()
+    val nestedId = ObjectId()
+    validate {
+      mongodb {
+        save(
+          ComplexType(
+            id = id.toHexString(),
+            name = "name",
+            nested = Nested(
+              id = nestedId.toHexString(),
+              name = "nested"
+            )
+          ),
+          id.toHexString()
+        )
+        shouldGet<ComplexType>(id.toHexString()) { actual ->
+          actual.id shouldBe id.toHexString()
+          actual.name shouldBe "name"
+          actual.nested.id shouldBe actual.nested.id
+          actual.nested.name shouldBe "nested"
+        }
+
+        shouldQuery<ComplexType>(
+          query = "{\"nested.id\": \"${nestedId.toHexString()}\"}"
+        ) { actual ->
+          actual.size shouldBe 1
+          actual.first().id shouldBe id.toHexString()
+        }
+      }
+    }
+  }
 })
