@@ -1,7 +1,6 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.getOrElse
-import arrow.integrations.jackson.module.registerArrowModule
 import com.trendyol.stove.testing.e2e.containers.withProvidedRegistry
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
@@ -13,26 +12,22 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
  * Provides an [options] class to configure the Elasticsearch container.
  * You can configure it by changing the implementation of migrator.
  */
-internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): TestSystem {
-  options.objectMapper.registerArrowModule()
-
-  return withProvidedRegistry(
-    imageName = options.container.imageWithTag,
-    registry = options.container.registry,
-    compatibleSubstitute = options.container.compatibleSubstitute
-  ) { StoveElasticSearchContainer(it) }
-    .apply {
-      addExposedPorts(*options.container.exposedPorts.toIntArray())
-      withPassword(options.container.password)
-      if (options.container.disableSecurity) {
-        withEnv("xpack.security.enabled", "false")
-      }
-      withReuse(this@withElasticsearch.options.keepDependenciesRunning)
-      options.container.containerFn(this)
+internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): TestSystem = withProvidedRegistry(
+  imageName = options.container.imageWithTag,
+  registry = options.container.registry,
+  compatibleSubstitute = options.container.compatibleSubstitute
+) { StoveElasticSearchContainer(it) }
+  .apply {
+    addExposedPorts(*options.container.exposedPorts.toIntArray())
+    withPassword(options.container.password)
+    if (options.container.disableSecurity) {
+      withEnv("xpack.security.enabled", "false")
     }
-    .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(it, options))) }
-    .let { this }
-}
+    withReuse(this@withElasticsearch.options.keepDependenciesRunning)
+    options.container.containerFn(this)
+  }
+  .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(it, options))) }
+  .let { this }
 
 internal fun TestSystem.elasticsearch(): ElasticsearchSystem =
   getOrNone<ElasticsearchSystem>().getOrElse {

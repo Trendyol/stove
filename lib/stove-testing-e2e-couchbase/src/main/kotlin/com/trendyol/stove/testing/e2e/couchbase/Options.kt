@@ -2,10 +2,10 @@ package com.trendyol.stove.testing.e2e.couchbase
 
 import arrow.core.getOrElse
 import com.couchbase.client.kotlin.Cluster
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.couchbase.client.kotlin.codec.*
 import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.E2eObjectMapperConfig
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -22,7 +22,8 @@ data class CouchbaseExposedConfiguration(
 data class CouchbaseSystemOptions(
   val defaultBucket: String,
   val containerOptions: CouchbaseContainerOptions = CouchbaseContainerOptions(),
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  val clusterSerDe: JsonSerializer = JacksonJsonSerializer(E2eObjectMapperConfig.createObjectMapperWithDefaults()),
+  val clusterTranscoder: Transcoder = JsonTranscoder(clusterSerDe),
   override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<Cluster> = MigrationCollection()

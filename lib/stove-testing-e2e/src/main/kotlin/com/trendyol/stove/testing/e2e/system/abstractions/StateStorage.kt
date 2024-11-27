@@ -3,7 +3,7 @@
 package com.trendyol.stove.testing.e2e.system.abstractions
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.*
 import com.trendyol.stove.testing.e2e.system.*
 import org.slf4j.*
 import java.nio.file.*
@@ -59,7 +59,7 @@ internal class FileSystemStorage<TState : Any>(
     )
 
   private val pathForSystem: Path = folderForSystem.resolve("stove-e2e-${system.simpleName!!.lowercase(Locale.getDefault())}.lock")
-  private val j = StoveObjectMapper.Default
+  private val j = StoveSerde.jackson.default
   private val l: Logger = LoggerFactory.getLogger(javaClass)
 
   init {

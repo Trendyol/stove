@@ -1,10 +1,9 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
 import arrow.core.getOrElse
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -34,7 +33,7 @@ data class WireMockSystemOptions(
   /**
    * ObjectMapper for serialization/deserialization
    */
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default
+  val serde: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde()
 ) : SystemOptions
 
 data class WireMockContext(
@@ -42,7 +41,7 @@ data class WireMockContext(
   val removeStubAfterRequestMatched: Boolean,
   val afterStubRemoved: AfterStubRemoved,
   val afterRequest: AfterRequestHandler,
-  val objectMapper: ObjectMapper,
+  val serde: StoveSerde<Any, ByteArray>,
   val configure: WireMockConfiguration.() -> WireMockConfiguration
 )
 
@@ -54,7 +53,7 @@ internal fun TestSystem.withWireMock(options: WireMockSystemOptions = WireMockSy
       options.removeStubAfterRequestMatched,
       options.afterStubRemoved,
       options.afterRequest,
-      options.objectMapper,
+      options.serde,
       options.configure
     )
   ).also { getOrRegister(it) }

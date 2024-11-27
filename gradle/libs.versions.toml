@@ -61,6 +61,7 @@ kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", ver
 kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
 kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
+kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm", version = "1.7.3" }
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -131,10 +132,13 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
+mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.12" }
+logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.12" }
+log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.2" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.1.jre11" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
@@ -186,6 +190,8 @@ google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", versi
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+google-gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
+
 
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
@@ -237,5 +243,6 @@ gradle-release = { id = "net.researchgate.release", version.ref = "gradle-releas
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 
