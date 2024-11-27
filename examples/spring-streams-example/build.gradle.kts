@@ -41,6 +41,10 @@ tasks.withType<Test> {
   useJUnitPlatform()
 }
 
+tasks.spotlessKotlin {
+  enabled = false
+}
+
 protobuf {
   protoc {
     artifact = libs.protoc.get().toString()
