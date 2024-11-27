@@ -10,7 +10,7 @@ import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.config.AbstractProjectConfig
 import org.apache.kafka.clients.admin.NewTopic
 
-class TestSystemConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   @Suppress("LongMethod")
   override suspend fun beforeProject(): Unit = TestSystem()
     .also {

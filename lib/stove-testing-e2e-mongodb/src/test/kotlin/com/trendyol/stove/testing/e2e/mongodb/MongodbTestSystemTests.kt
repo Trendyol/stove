@@ -51,31 +51,24 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
 }
 
 class MongodbTestSystemTests : FunSpec({
+  data class ExampleInstanceWithObjectId(
+    @BsonId
+    @JsonAlias("_id")
+    val id: ObjectId,
+    @BsonProperty("aggregateId") val aggregateId: String,
+    @BsonProperty("description") val description: String
+  )
 
-  data class ExampleInstanceWithObjectId
-    @BsonCreator
-    constructor(
-      @BsonId
-      @JsonAlias("_id")
-      val id: ObjectId,
-      @BsonProperty("aggregateId") val aggregateId: String,
-      @BsonProperty("description") val description: String
-    )
-
-  data class ExampleInstanceWithStringObjectId
-    @BsonCreator
-    constructor(
-      @BsonId
-      @JsonAlias("_id")
-      val id: String,
-      @BsonProperty("aggregateId") val aggregateId: String,
-      @BsonProperty("description") val description: String
-    )
+  data class ExampleInstanceWithStringObjectId(
+    @JsonAlias("_id")
+    val id: String,
+    @BsonProperty("aggregateId") val aggregateId: String,
+    @BsonProperty("description") val description: String
+  )
 
   test("should save and get with objectId") {
-
     val id = ObjectId()
-    TestSystem.validate {
+    validate {
       mongodb {
         save(
           ExampleInstanceWithObjectId(
@@ -95,7 +88,7 @@ class MongodbTestSystemTests : FunSpec({
 
   test("should save and get with string objectId") {
     val id = ObjectId()
-    TestSystem.validate {
+    validate {
       mongodb {
         save(
           ExampleInstanceWithStringObjectId(
@@ -113,13 +106,17 @@ class MongodbTestSystemTests : FunSpec({
     }
   }
 
+  data class ExampleInstanceWithObjectIdForQuery(
+    val id: String,
+    val description: String
+  )
   test("Get with query should work") {
     val id1 = ObjectId()
     val id2 = ObjectId()
     val id3 = ObjectId()
     val firstDesc = "same description"
     val secondDesc = "different description"
-    TestSystem.validate {
+    validate {
       mongodb {
         save(
           ExampleInstanceWithObjectId(
@@ -145,10 +142,10 @@ class MongodbTestSystemTests : FunSpec({
           ),
           id3.toHexString()
         )
-        shouldQuery<ExampleInstanceWithObjectId>("{\"description\": \"$secondDesc\"}") { actual ->
+        shouldQuery<ExampleInstanceWithObjectIdForQuery>("{\"description\": \"$secondDesc\"}") { actual ->
           actual.count() shouldBe 2
-          actual.forAny { it.id shouldBe id2 }
-          actual.forAny { it.id shouldBe id3 }
+          actual.forAny { it.id shouldBe id2.toHexString() }
+          actual.forAny { it.id shouldBe id3.toHexString() }
         }
         shouldQuery<ExampleInstanceWithObjectId>("{\"description\": \"$firstDesc\"}") { actual ->
           actual.count() shouldBe 1
@@ -160,7 +157,7 @@ class MongodbTestSystemTests : FunSpec({
 
   test("should throw assertion error when document does exist") {
     val id1 = ObjectId()
-    TestSystem.validate {
+    validate {
       mongodb {
         save(
           ExampleInstanceWithObjectId(
@@ -180,7 +177,7 @@ class MongodbTestSystemTests : FunSpec({
 
   test("should not throw exception when given does not exist id") {
     val notExistDocId = ObjectId()
-    TestSystem.validate {
+    validate {
       mongodb {
         shouldNotExist(notExistDocId.toHexString())
       }
@@ -189,7 +186,7 @@ class MongodbTestSystemTests : FunSpec({
 
   test("should delete") {
     val id = ObjectId()
-    TestSystem.validate {
+    validate {
       mongodb {
         save(
           ExampleInstanceWithObjectId(

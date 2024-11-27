@@ -1,13 +1,12 @@
 package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.kotlin.*
-import com.couchbase.client.kotlin.Collection
-import com.couchbase.client.kotlin.codec.*
+import com.couchbase.client.kotlin.codec.typeRef
 import com.couchbase.client.kotlin.query.*
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
 
@@ -20,10 +19,7 @@ class CouchbaseSystem internal constructor(
   internal lateinit var cluster: Cluster
 
   @PublishedApi
-  internal lateinit var collection: Collection
-
-  @PublishedApi
-  internal val objectMapper: ObjectMapper = context.options.objectMapper
+  internal lateinit var collection: com.couchbase.client.kotlin.Collection
 
   private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -55,21 +51,19 @@ class CouchbaseSystem internal constructor(
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @CouchbaseDsl
-  suspend inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T> shouldQuery(
     query: String,
-    assertion: (List<T>) -> Unit
+    crossinline assertion: (List<T>) -> Unit
   ): CouchbaseSystem {
-    val result = cluster.query(
-      statement = query,
-      metrics = false,
-      consistency = QueryScanConsistency.requestPlus()
-    ).execute().rows.map { it.contentAs<T>() }
-    val objects = result
-      .map { objectMapper.writeValueAsString(it) }
-      .map { objectMapper.readValue(it, T::class.java) }
-
-    assertion(objects)
-    return this
+    val typeRef = typeRef<T>()
+    return flow {
+      cluster.query(
+        statement = query,
+        metrics = false,
+        consistency = QueryScanConsistency.requestPlus(),
+        serializer = context.options.clusterSerDe
+      ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
+    }.toList().also(assertion).let { this }
   }
 
   @CouchbaseDsl
@@ -174,16 +168,13 @@ class CouchbaseSystem internal constructor(
     }
   }
 
-  private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): Cluster {
-    val jackson = JacksonJsonSerializer(objectMapper)
-    return Cluster.connect(
-      exposedConfiguration.hostsWithPort,
-      exposedConfiguration.username,
-      exposedConfiguration.password
-    ) {
-      jsonSerializer = jackson
-      transcoder = JsonTranscoder(jackson)
-    }
+  private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): Cluster = Cluster.connect(
+    exposedConfiguration.hostsWithPort,
+    exposedConfiguration.username,
+    exposedConfiguration.password
+  ) {
+    jsonSerializer = context.options.clusterSerDe
+    transcoder = context.options.clusterTranscoder
   }
 
   companion object {

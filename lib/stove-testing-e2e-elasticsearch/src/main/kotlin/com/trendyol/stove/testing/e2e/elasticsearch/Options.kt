@@ -2,10 +2,11 @@ package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.*
 import co.elastic.clients.elasticsearch.ElasticsearchClient
-import com.fasterxml.jackson.databind.ObjectMapper
+import co.elastic.clients.json.JsonpMapper
+import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.apache.http.client.config.RequestConfig
@@ -19,7 +20,7 @@ import kotlin.time.Duration.Companion.minutes
 data class ElasticsearchSystemOptions(
   val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
   val container: ElasticContainerOptions = ElasticContainerOptions(),
-  val objectMapper: ObjectMapper = StoveObjectMapper.Default,
+  val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()

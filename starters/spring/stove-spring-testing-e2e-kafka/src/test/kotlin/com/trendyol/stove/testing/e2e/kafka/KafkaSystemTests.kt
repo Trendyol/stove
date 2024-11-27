@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.kafka
 
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
@@ -139,7 +139,7 @@ class Setup : AbstractProjectConfig() {
             addInitializers(
               beans {
                 bean<TestSystemKafkaInterceptor<*, *>>()
-                bean { StoveObjectMapper.Default }
+                bean { StoveSerde.jackson.default }
               }
             )
           }
