@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.bson.*
 import org.bson.codecs.EncoderContext
+import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.slf4j.*
@@ -49,8 +50,8 @@ class MongodbSystem internal constructor(
     query: String,
     collection: String = context.options.databaseOptions.default.collection,
     assertion: (List<T>) -> Unit
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
     .withDocumentClass(T::class.java)
     .find(BsonDocument.parse(query))
@@ -63,13 +64,34 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection,
     assertion: (T) -> Unit
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
     .withDocumentClass<T>()
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
     .find(filterById(objectId))
     .first()
     .also(assertion)
+    .let { this }
+
+  /**
+   * Saves the [instance] with given [objectId] to the [collection]
+   */
+  @MongoDsl
+  suspend inline fun <reified T : Any> save(
+    instance: T,
+    objectId: String = ObjectId().toHexString(),
+    collection: String = context.options.databaseOptions.default.collection,
+    codecRegistry: CodecRegistry = context.options.codecRegistry
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
+    .getCollection<Document>(collection)
+    .also { coll ->
+      val bson = BsonDocument()
+      codecRegistry.get(T::class.java)
+        .encode(BsonDocumentWriter(bson), instance, EncoderContext.builder().build())
+      val doc = Document(bson).append(RESERVED_ID, ObjectId(objectId))
+      coll.insertOne(doc)
+    }
     .let { this }
 
   @MongoDsl
@@ -77,7 +99,8 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    val exists = mongoClient.getDatabase(context.options.databaseOptions.default.name)
+    val exists = mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
       .getCollection<Document>(collection)
       .find(filterById(objectId))
       .firstOrNull() != null
@@ -91,29 +114,10 @@ class MongodbSystem internal constructor(
   suspend fun shouldDelete(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
     .deleteOne(filterById(objectId)).let { this }
-
-  /**
-   * Saves the [instance] with given [objectId] to the [collection]
-   */
-  @MongoDsl
-  suspend inline fun <reified T : Any> save(
-    instance: T,
-    objectId: String = ObjectId().toHexString(),
-    collection: String = context.options.databaseOptions.default.collection
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
-    .getCollection<Document>(collection)
-    .also { coll ->
-      val bson = BsonDocument()
-      context.options.codecRegistry.get(T::class.java)
-        .encode(BsonDocumentWriter(bson), instance, EncoderContext.builder().build())
-      val doc = Document(bson).append(RESERVED_ID, ObjectId(objectId))
-      coll.insertOne(doc)
-    }
-    .let { this }
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.

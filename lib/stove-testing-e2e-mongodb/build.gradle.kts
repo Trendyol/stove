@@ -1,7 +1,9 @@
 dependencies {
   api(projects.lib.stoveTestingE2e)
   api(libs.testcontainers.mongodb)
-  api(libs.mongojack)
+  api(libs.mongojack) {
+    exclude(group = "org.mongodb", module = "mongodb-driver-sync")
+  }
   implementation(libs.mongodb.kotlin.coroutine)
   implementation(libs.kotlinx.io.reactor.extensions)
   implementation(libs.kotlinx.reactive)
