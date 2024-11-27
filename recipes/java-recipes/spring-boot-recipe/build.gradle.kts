@@ -28,3 +28,7 @@ dependencies {
   testImplementation(libs.stove.spring.testing)
   testImplementation(libs.jackson.kotlin)
 }
+
+tasks.spotlessKotlin {
+  enabled = false
+}
