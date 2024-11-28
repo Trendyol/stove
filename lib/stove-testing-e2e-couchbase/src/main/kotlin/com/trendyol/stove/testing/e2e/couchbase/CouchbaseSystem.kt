@@ -51,7 +51,7 @@ class CouchbaseSystem internal constructor(
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @CouchbaseDsl
-  suspend inline fun <reified T: Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     assertion: (List<T>) -> Unit
   ): CouchbaseSystem {
