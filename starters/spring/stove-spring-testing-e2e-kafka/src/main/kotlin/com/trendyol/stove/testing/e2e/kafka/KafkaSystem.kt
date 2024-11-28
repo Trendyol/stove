@@ -98,7 +98,7 @@ class KafkaSystem(
   }.let { this }
 
   /**
-   * Asserts that a message is consumed.
+   * Asserts that a message is failed.
    */
   @KafkaDsl
   suspend inline fun <reified T : Any> shouldBeFailed(
