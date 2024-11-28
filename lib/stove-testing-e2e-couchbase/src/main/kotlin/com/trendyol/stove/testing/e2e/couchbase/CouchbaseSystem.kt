@@ -51,9 +51,9 @@ class CouchbaseSystem internal constructor(
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @CouchbaseDsl
-  suspend inline fun <reified T> shouldQuery(
+  suspend inline fun <reified T: Any> shouldQuery(
     query: String,
-    crossinline assertion: (List<T>) -> Unit
+    assertion: (List<T>) -> Unit
   ): CouchbaseSystem {
     val typeRef = typeRef<T>()
     return flow {
