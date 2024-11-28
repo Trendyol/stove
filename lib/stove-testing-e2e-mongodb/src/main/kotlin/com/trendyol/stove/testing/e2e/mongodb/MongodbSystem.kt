@@ -10,8 +10,6 @@ import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.bson.*
-import org.bson.codecs.EncoderContext
-import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.slf4j.*
@@ -53,7 +51,7 @@ class MongodbSystem internal constructor(
   ): MongodbSystem = mongoClient
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
-    .withDocumentClass(T::class.java)
+    .withDocumentClass<T>()
     .find(BsonDocument.parse(query))
     .toList()
     .also(assertion)
@@ -81,16 +79,15 @@ class MongodbSystem internal constructor(
     instance: T,
     objectId: String = ObjectId().toHexString(),
     collection: String = context.options.databaseOptions.default.collection,
-    codecRegistry: CodecRegistry = context.options.codecRegistry
   ): MongodbSystem = mongoClient
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
     .also { coll ->
-      val bson = BsonDocument()
-      codecRegistry.get(T::class.java)
-        .encode(BsonDocumentWriter(bson), instance, EncoderContext.builder().build())
-      val doc = Document(bson).append(RESERVED_ID, ObjectId(objectId))
-      coll.insertOne(doc)
+      context.options.serde.serialize(instance)
+        .let { BsonDocument.parse(it) }
+        .let { doc -> Document(doc) }
+        .append(RESERVED_ID, ObjectId(objectId))
+        .let { coll.insertOne(it) }
     }
     .let { this }
 
@@ -152,7 +149,9 @@ class MongodbSystem internal constructor(
     .retryWrites(true)
     .readConcern(ReadConcern.MAJORITY)
     .writeConcern(WriteConcern.MAJORITY)
-    .build().let { MongoClient.create(it) }
+    .apply(context.options.configureClient)
+    .build()
+    .let { MongoClient.create(it) }
 
   companion object {
     const val RESERVED_ID = "_id"
