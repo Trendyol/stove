@@ -1,19 +1,19 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 
 internal fun stubBehaviour(
   wireMockServer: WireMockServer,
-  objectMapper: ObjectMapper,
+  serde: StoveSerde<Any, ByteArray>,
   url: String,
   method: (String) -> MappingBuilder,
-  block: StubBehaviourBuilder.(ObjectMapper) -> Unit
+  block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
 ) {
   val builder = StubBehaviourBuilder(wireMockServer, url, method)
-  builder.block(objectMapper)
+  builder.block(serde)
 }
 
 class StubBehaviourBuilder(

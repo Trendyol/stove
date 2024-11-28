@@ -1,6 +1,5 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
-import com.fasterxml.jackson.module.kotlin.convertValue
 import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.kotlin.client.coroutine.MongoClient
@@ -14,7 +13,6 @@ import org.bson.*
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.slf4j.*
-import kotlin.collections.set
 
 @MongoDsl
 class MongodbSystem internal constructor(
@@ -50,11 +48,11 @@ class MongodbSystem internal constructor(
     query: String,
     collection: String = context.options.databaseOptions.default.collection,
     assertion: (List<T>) -> Unit
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
+    .withDocumentClass<T>()
     .find(BsonDocument.parse(query))
-    .map { context.options.objectMapper.convertValue(it, T::class.java) }
     .toList()
     .also(assertion)
     .let { this }
@@ -64,13 +62,33 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection,
     assertion: (T) -> Unit
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(T::class).build()) }
+    .withDocumentClass<T>()
     .find(filterById(objectId))
-    .map { context.options.objectMapper.convertValue(it, T::class.java) }
     .first()
     .also(assertion)
+    .let { this }
+
+  /**
+   * Saves the [instance] with given [objectId] to the [collection]
+   */
+  @MongoDsl
+  suspend inline fun <reified T : Any> save(
+    instance: T,
+    objectId: String = ObjectId().toHexString(),
+    collection: String = context.options.databaseOptions.default.collection
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
+    .getCollection<Document>(collection)
+    .also { coll ->
+      context.options.serde.serialize(instance)
+        .let { BsonDocument.parse(it) }
+        .let { doc -> Document(doc) }
+        .append(RESERVED_ID, ObjectId(objectId))
+        .let { coll.insertOne(it) }
+    }
     .let { this }
 
   @MongoDsl
@@ -78,7 +96,8 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    val exists = mongoClient.getDatabase(context.options.databaseOptions.default.name)
+    val exists = mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
       .getCollection<Document>(collection)
       .find(filterById(objectId))
       .firstOrNull() != null
@@ -92,27 +111,10 @@ class MongodbSystem internal constructor(
   suspend fun shouldDelete(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
+  ): MongodbSystem = mongoClient
+    .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
     .deleteOne(filterById(objectId)).let { this }
-
-  /**
-   * Saves the [instance] with given [objectId] to the [collection]
-   */
-  @MongoDsl
-  suspend fun <T : Any> save(
-    instance: T,
-    objectId: String = ObjectId().toHexString(),
-    collection: String = context.options.databaseOptions.default.collection
-  ): MongodbSystem = mongoClient.getDatabase(context.options.databaseOptions.default.name)
-    .let { it.withCodecRegistry(PojoRegistry(it.codecRegistry).register(instance::class).build()) }
-    .getCollection<Document>(collection)
-    .let {
-      val map = context.options.objectMapper.convertValue<MutableMap<String, Any>>(instance)
-      map[RESERVED_ID] = ObjectId(objectId)
-      it.insertOne(Document(map))
-    }
-    .let { this }
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
@@ -147,10 +149,12 @@ class MongodbSystem internal constructor(
     .retryWrites(true)
     .readConcern(ReadConcern.MAJORITY)
     .writeConcern(WriteConcern.MAJORITY)
-    .build().let { MongoClient.create(it) }
+    .apply(context.options.configureClient)
+    .build()
+    .let { MongoClient.create(it) }
 
   companion object {
-    private const val RESERVED_ID = "_id"
+    const val RESERVED_ID = "_id"
 
     @PublishedApi
     internal fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))

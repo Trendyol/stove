@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
 import com.trendyol.stove.ConsoleSpec
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.client
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.*
@@ -17,6 +16,7 @@ import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.flow.toList
 import java.time.Instant
 import java.util.*
 
@@ -36,10 +36,7 @@ class TestConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8086",
-            objectMapper = StoveObjectMapper.byConfiguring {
-              findAndRegisterModules()
-            }
+            baseUrl = "http://localhost:8086"
           )
         }
 
@@ -343,7 +340,7 @@ class HttpSystemTests : FunSpec({
             aResponse()
               .withHeader("Content-Type", "application/json")
               .withStatus(200)
-              .withBody(it.writeValueAsString(TestDto(expectedGetDtoName)))
+              .withBody(it.serialize(TestDto(expectedGetDtoName)))
           }
         }
       }
@@ -369,7 +366,7 @@ class HttpSystemTests : FunSpec({
               aResponse()
                 .withHeader("Content-Type", "application/json")
                 .withStatus(200)
-                .withBody(it.writeValueAsString(TestDto(UUID.randomUUID().toString())))
+                .withBody(it.serialize(TestDto(UUID.randomUUID().toString())))
             }
           }
         }
@@ -393,6 +390,31 @@ class HttpSystemTests : FunSpec({
                 .withBody("Service unavailable")
             }
           }
+        }
+      }
+    }
+  }
+
+  test("serialize to application/x-ndjson") {
+    val expectedGetDtoName = UUID.randomUUID().toString()
+    val items = (1..10).map { TestDto(expectedGetDtoName) }
+
+    TestSystem.validate {
+      wiremock {
+        mockGetConfigure("/get-ndjson") { builder, serde ->
+          builder.willReturn(
+            aResponse()
+              .withHeader("Content-Type", "application/x-ndjson")
+              .withBody(serde.serializeToStreamJson(items))
+          )
+        }
+      }
+
+      http {
+        readJsonStream<TestDto>("/get-ndjson") { actual ->
+          val collected = actual.toList()
+          collected.size shouldBe 10
+          collected.forEach { it.name shouldBe expectedGetDtoName }
         }
       }
     }

@@ -10,7 +10,7 @@ import io.kotest.core.config.AbstractProjectConfig
 import org.slf4j.*
 import stove.spring.standalone.example.infrastructure.ObjectMapperConfig
 
-class TestSystemConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
   @Suppress("LongMethod")
