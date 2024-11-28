@@ -19,7 +19,7 @@ dependencies {
   implementation(libs.kafka.streams)
   implementation(libs.kotlin.reflect)
   implementation(libs.google.protobuf.kotlin)
-  implementation(libs.kafka.streams.registry)
+  implementation(libs.kafka.streams.protobuf.serde)
 }
 
 dependencies {

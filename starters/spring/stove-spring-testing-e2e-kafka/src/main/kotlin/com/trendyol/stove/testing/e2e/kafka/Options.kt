@@ -47,17 +47,14 @@ data class FallbackTemplateSerde(
 
 @StoveDsl
 data class KafkaSystemOptions(
-
   /**
    * The registry of the Kafka image. The default value is `DEFAULT_REGISTRY`.
    */
   val registry: String = DEFAULT_REGISTRY,
-
   /**
    * The ports of the Kafka container. The default value is `DEFAULT_KAFKA_PORTS`.
    */
   val ports: List<Int> = DEFAULT_KAFKA_PORTS,
-
   /**
    * The serde that is used while publishing the messages. The default value is [StoveSerde.jackson].
    * You can also pass ser/de during the publish operation.
@@ -68,26 +65,22 @@ data class KafkaSystemOptions(
    * ```
    */
   val serdeForPublish: StoveSerde<Any, *> = StoveSerde.jackson.anyJsonStringSerde(),
-
   /**
    * The fallback serde for Kafka. It is used to serialize and deserialize the messages before sending them to Kafka.
    * If no [KafkaTemplate] is provided, it will be used to create a new [KafkaTemplate].
    * Most of the time you won't need this.
    */
   val fallbackSerde: FallbackTemplateSerde = FallbackTemplateSerde(),
-
   /**
    * Container options for Kafka.
    */
   val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
-
   /**
    * Operations for Kafka. It is used to customize the operations of Kafka.
    * The reason why this exists is to provide a way to interact with lower versions of Spring-Kafka dependencies.
    * @see KafkaOps
    */
   val ops: KafkaOps = KafkaOps(),
-
   /**
    * The configuration of the Kafka settings that is exposed to the Application Under Test(AUT).
    */

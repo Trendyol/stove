@@ -7,3 +7,5 @@ class Setup : AbstractProjectConfig() {
   @ExperimentalKotest
   override val concurrentSpecs: Int = 1
 }
+
+class StoveBusinessException(message: String) : Exception(message)
