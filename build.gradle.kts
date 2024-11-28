@@ -14,7 +14,7 @@ plugins {
   java
 }
 group = "com.trendyol"
-version = version()
+version = CI.version(project)
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -157,11 +157,3 @@ tasks.withType<DokkaMultiModuleTask>().configureEach {
   outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
 
-fun version(): String = when {
-  System.getenv("SNAPSHOT") != null -> {
-    println("SNAPSHOT: ${System.getenv("SNAPSHOT")}")
-    project.properties["snapshot"].toString()
-  }
-
-  else -> project.properties["version"].toString()
-}

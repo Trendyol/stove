@@ -28,6 +28,7 @@ jobs:
         run: gradle publish --parallel
         env:
           SNAPSHOT: true
+          BUILD_NUMBER: ${{ github.run_number }}
           gpg_private_key: ${{ secrets.gpg_private_key }}
           gpg_passphrase: ${{ secrets.gpg_passphrase }}
           nexus_username: ${{ secrets.nexus_username }}
