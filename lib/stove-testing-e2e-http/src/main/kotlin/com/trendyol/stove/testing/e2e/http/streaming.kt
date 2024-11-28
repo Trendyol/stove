@@ -13,9 +13,10 @@ fun <T> HttpStatement.readJsonTextStream(transform: suspend (line: String) -> T)
   execute {
     check(it.status.isSuccess()) { "Request failed with status: ${it.status}" }
     while (!it.content.isClosedForRead) {
-      val line = it.content.readUTF8Line() ?: break
-      if (line.isBlank()) continue
-      emit(transform(line))
+      it.content.readUTF8Line()?.let { line ->
+        if (line.isBlank()) return@let
+        emit(transform(line))
+      }
     }
   }
 }
@@ -26,9 +27,10 @@ fun <T> HttpStatement.readJsonContentStream(transform: suspend (line: ByteReadCh
   execute {
     check(it.status.isSuccess()) { "Request failed with status: ${it.status}" }
     while (!it.content.isClosedForRead) {
-      val line = it.content.readUTF8Line() ?: break
-      if (line.isBlank()) continue
-      emit(transform(ByteReadChannel(line)))
+      it.content.readUTF8Line()?.let { line ->
+        if (line.isBlank()) return@let
+        emit(transform(ByteReadChannel(line.toByteArray())))
+      }
     }
   }
 }
