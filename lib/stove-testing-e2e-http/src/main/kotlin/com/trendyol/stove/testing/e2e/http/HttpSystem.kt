@@ -3,7 +3,7 @@
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
-import com.trendyol.stove.testing.e2e.serialization.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -19,8 +19,11 @@ import io.ktor.http.*
 import io.ktor.serialization.*
 import io.ktor.serialization.jackson.*
 import io.ktor.util.*
+import io.ktor.util.reflect.*
+import kotlinx.coroutines.flow.Flow
 import org.slf4j.LoggerFactory
 import java.net.http.HttpClient
+import java.nio.charset.Charset
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -142,6 +145,21 @@ class HttpSystem(
     check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
     expect(it.body())
   }.let { this }
+
+  suspend inline fun <reified TExpected : Any> readJsonStream(
+    uri: String,
+    queryParams: Map<String, String> = mapOf(),
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    expect: (Flow<TExpected>) -> Unit
+  ): HttpSystem = ktorHttpClient.prepareGet(relative(uri)) {
+    headers.forEach { (key, value) -> header(key, value) }
+    header(HttpHeaders.Accept, "application/x-ndjson")
+    queryParams.forEach { (key, value) -> parameter(key, value) }
+    token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+  }.readJsonContentStream {
+    options.contentConverter.deserialize(Charset.defaultCharset(), typeInfo<TExpected>(), it) as TExpected
+  }.also { expect(it) }.let { return this }
 
   @HttpDsl
   suspend fun postAndExpectBodilessResponse(

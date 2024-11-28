@@ -16,6 +16,7 @@ import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.flow.toList
 import java.time.Instant
 import java.util.*
 
@@ -389,6 +390,31 @@ class HttpSystemTests : FunSpec({
                 .withBody("Service unavailable")
             }
           }
+        }
+      }
+    }
+  }
+
+  test("serialize to application/x-ndjson") {
+    val expectedGetDtoName = UUID.randomUUID().toString()
+    val items = (1..10).map { TestDto(expectedGetDtoName) }
+
+    TestSystem.validate {
+      wiremock {
+        mockGetConfigure("/get-ndjson") { builder, serde ->
+          builder.willReturn(
+            aResponse()
+              .withHeader("Content-Type", "application/x-ndjson")
+              .withBody(serde.serializeToStreamJson(items))
+          )
+        }
+      }
+
+      http {
+        readJsonStream<TestDto>("/get-ndjson") { actual ->
+          val collected = actual.toList()
+          collected.size shouldBe 10
+          collected.forEach { it.name shouldBe expectedGetDtoName }
         }
       }
     }

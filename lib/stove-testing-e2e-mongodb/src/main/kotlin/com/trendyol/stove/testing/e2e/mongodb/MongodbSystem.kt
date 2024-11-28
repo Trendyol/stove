@@ -78,7 +78,7 @@ class MongodbSystem internal constructor(
   suspend inline fun <reified T : Any> save(
     instance: T,
     objectId: String = ObjectId().toHexString(),
-    collection: String = context.options.databaseOptions.default.collection,
+    collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem = mongoClient
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
