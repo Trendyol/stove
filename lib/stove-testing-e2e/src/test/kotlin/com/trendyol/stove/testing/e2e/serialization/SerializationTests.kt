@@ -1,12 +1,18 @@
 package com.trendyol.stove.testing.e2e.serialization
 
+import arrow.core.None
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.MapperFeature
 import com.google.gson.JsonSyntaxException
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde.Companion.deserialize
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde.Companion.deserializeOption
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde.StoveSerdeProblem
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.*
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.*
 
 class SerializerTest : FunSpec({
@@ -53,6 +59,18 @@ class SerializerTest : FunSpec({
         serializer.deserialize("invalid json", TestData::class.java)
       }
     }
+
+    test("should return None when invalid JSON is deserialized") {
+      val a = serializer.deserializeOption<TestData>("invalid json")
+      a shouldBe None
+    }
+
+    test("should return Left when invalid JSON is deserialized") {
+      val op = serializer.deserializeEither("invalid json", TestData::class.java)
+      op.shouldBeLeft()
+      op.value.message shouldContain "Unrecognized token 'invalid': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')"
+      op.value.shouldBeInstanceOf<StoveSerdeProblem.BecauseOfDeserialization>()
+    }
   }
 
   context("StoveGsonStringSerializer") {
@@ -89,8 +107,10 @@ class SerializerTest : FunSpec({
     test("should serialize and deserialize object correctly") {
       val serialized = serializer.serialize(testData)
       val deserialized = serializer.deserialize(serialized, TestData::class.java)
+      val deserializedTyped = serializer.deserialize<TestData>(serialized)
 
       deserialized shouldBe testData
+      deserializedTyped shouldBe testData
       serialized shouldContain "\"id\":1"
       serialized shouldContain "\"name\":\"Test Item\""
     }

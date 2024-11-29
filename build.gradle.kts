@@ -74,6 +74,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.framework.api)
     testImplementation(libs.kotest.property)
+    testImplementation(libs.kotest.arrow)
     detektPlugins(libs.detekt.formatting)
   }
 

@@ -203,6 +203,7 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref 
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
 ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
+kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "1.4.0" }
 
 [bundles]
 arrow-stack = ["arrow-core",
