@@ -5,15 +5,15 @@ import io.exoquery.pprint
 import java.util.*
 
 internal class MessageStore {
-  private val consumed = Caching.of<UUID, StoveMessage.StoveConsumedMessage>()
-  private val produced = Caching.of<UUID, StoveMessage.StovePublishedMessage>()
+  private val consumed = Caching.of<UUID, StoveMessage.Consumed>()
+  private val produced = Caching.of<UUID, StoveMessage.Published>()
   private val failures = Caching.of<UUID, Failure<StoveMessage>>()
 
-  fun record(record: StoveMessage.StoveConsumedMessage) {
+  fun record(record: StoveMessage.Consumed) {
     consumed.put(UUID.randomUUID(), record)
   }
 
-  fun record(record: StoveMessage.StovePublishedMessage) {
+  fun record(record: StoveMessage.Published) {
     produced.put(UUID.randomUUID(), record)
   }
 
@@ -21,15 +21,15 @@ internal class MessageStore {
     failures.put(UUID.randomUUID(), failure)
   }
 
-  fun consumedRecords(): List<StoveMessage.StoveConsumedMessage> = consumed.asMap().values.toList()
+  fun consumedRecords(): List<StoveMessage.Consumed> = consumed.asMap().values.toList()
 
-  fun producedRecords(): List<StoveMessage.StovePublishedMessage> = produced.asMap().values.toList()
+  fun producedRecords(): List<StoveMessage.Published> = produced.asMap().values.toList()
 
   fun failedRecords(): List<Failure<StoveMessage>> = failures.asMap().values.toList()
 
   override fun toString(): String = """
-    |Consumed: ${pprint(consumedRecords())}
-    |Published: ${pprint(producedRecords())}
+    |Consumed: ${pprint(consumedRecords().map { it.copy(value = ByteArray(0)) })}
+    |Published: ${pprint(producedRecords().map { it.copy(value = ByteArray(0)) })}
     |Failed: ${pprint(failedRecords())}
     """.trimIndent().trimMargin()
 }

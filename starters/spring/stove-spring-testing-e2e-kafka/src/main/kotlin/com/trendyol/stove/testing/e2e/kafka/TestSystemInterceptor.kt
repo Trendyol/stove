@@ -1,9 +1,8 @@
 package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.toOption
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.messaging.*
-import io.exoquery.pprint
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -13,8 +12,17 @@ import org.springframework.kafka.support.ProducerListener
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
+/**
+ * This is the main actor between your Kafka Spring Boot application and the test system.
+ * It is responsible for intercepting the messages that are produced and consumed by the application.
+ * It also provides a way to wait until a message is consumed or produced.
+ *
+ * @param serde The serializer/deserializer that will be used to serialize/deserialize the messages.
+ * It is important to use the same serde that is used in the application. For example, if the application uses Avro, then you should use Avro serde here.
+ * Target of the serialization is ByteArray, so the serde should be able to serialize the message to ByteArray.
+ */
 class TestSystemKafkaInterceptor<K, V>(
-  private val objectMapper: ObjectMapper
+  private val serde: StoveSerde<Any, ByteArray>
 ) : CompositeRecordInterceptor<K, V>(), ProducerListener<K, V> {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val store = MessageStore()
@@ -23,8 +31,9 @@ class TestSystemKafkaInterceptor<K, V>(
     record: ProducerRecord<K, V>,
     recordMetadata: RecordMetadata
   ) {
-    store.record(record.toStoveMessage(objectMapper))
-    logger.info("Successfully produced:\n{}", pprint(record.toStoveMessage(objectMapper)))
+    val message = record.toStoveMessage(serde)
+    store.record(message)
+    logger.info("Successfully produced:\n{}", message)
   }
 
   override fun onError(
@@ -32,13 +41,15 @@ class TestSystemKafkaInterceptor<K, V>(
     recordMetadata: RecordMetadata?,
     exception: Exception
   ) {
-    store.record(Failure(ObservedMessage(record.toStoveMessage(objectMapper), record.toMetadata()), extractCause(exception)))
-    logger.error("Error while producing:\n{}", pprint(record.toStoveMessage(objectMapper)), exception)
+    val message = record.toStoveMessage(serde)
+    store.record(Failure(ObservedMessage(message, record.toMetadata()), extractCause(exception)))
+    logger.error("Error while producing:\n{}", message, exception)
   }
 
   override fun success(record: ConsumerRecord<K, V>, consumer: Consumer<K, V>) {
-    store.record(record.toStoveMessage(objectMapper))
-    logger.info("Successfully consumed:\n{}", pprint(record.toStoveMessage(objectMapper)))
+    val message = record.toStoveMessage(serde)
+    store.record(message)
+    logger.info("Successfully consumed:\n{}", message)
   }
 
   override fun failure(
@@ -46,8 +57,9 @@ class TestSystemKafkaInterceptor<K, V>(
     exception: Exception,
     consumer: Consumer<K, V>
   ) {
-    store.record(Failure(ObservedMessage(record.toStoveMessage(objectMapper), record.toMetadata()), extractCause(exception)))
-    logger.error("Error while consuming:\n{}", pprint(record.toStoveMessage(objectMapper)), exception)
+    val message = record.toStoveMessage(serde)
+    store.record(Failure(ObservedMessage(message, record.toMetadata()), extractCause(exception)))
+    logger.error("Error while consuming:\n{}", message, exception)
   }
 
   internal suspend fun <T : Any> waitUntilConsumed(
@@ -57,7 +69,7 @@ class TestSystemKafkaInterceptor<K, V>(
   ) {
     val getRecords = { store.consumedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the consume of '${clazz.java.simpleName}'") {
-      val outcome = readCatching(it.value, clazz)
+      val outcome = deserializeCatching(it.value, clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
 
@@ -71,7 +83,7 @@ class TestSystemKafkaInterceptor<K, V>(
   ) {
     val getRecords = { store.failedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the failure of '${clazz.java.simpleName}'") {
-      val outcome = readCatching(it.message.actual.value, clazz)
+      val outcome = deserializeCatching(it.message.actual.value, clazz)
       outcome.isSuccess && condition(FailedParsedMessage(outcome.getOrNull().toOption(), it.message.metadata, it.reason))
     }
 
@@ -85,7 +97,7 @@ class TestSystemKafkaInterceptor<K, V>(
   ) {
     val getRecords = { store.producedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the publish of '${clazz.java.simpleName}'") {
-      val outcome = readCatching(it.value, clazz)
+      val outcome = deserializeCatching(it.value, clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
 
@@ -101,12 +113,11 @@ class TestSystemKafkaInterceptor<K, V>(
     else -> listenerException
   }
 
-  private fun <T : Any> readCatching(
-    json: String,
+  private fun <T : Any> deserializeCatching(
+    value: ByteArray,
     clazz: KClass<T>
-  ): Result<T> = runCatching {
-    objectMapper.readValue(json, clazz.java)
-  }
+  ): Result<T> = runCatching { serde.deserialize(value, clazz.java) }
+    .onFailure { logger.error("[Stove#deserializeCatching] Error while deserializing: '{}'", String(value), it) }
 
   private fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
@@ -115,7 +126,7 @@ class TestSystemKafkaInterceptor<K, V>(
     .filter {
       selector(
         FailedParsedMessage(
-          readCatching(it.message.actual.value, clazz).getOrNull().toOption(),
+          deserializeCatching(it.message.actual.value, clazz).getOrNull().toOption(),
           MessageMetadata(it.message.metadata.topic, it.message.metadata.key, it.message.metadata.headers),
           it.reason
         )
@@ -130,7 +141,7 @@ class TestSystemKafkaInterceptor<K, V>(
     .filter { record ->
       selector(
         FailedParsedMessage(
-          readCatching(record.value, clazz).getOrNull().toOption(),
+          deserializeCatching(record.value, clazz).getOrNull().toOption(),
           record.metadata,
           getExceptionFor(clazz, selector)
         )
@@ -145,7 +156,7 @@ class TestSystemKafkaInterceptor<K, V>(
     .first {
       selector(
         FailedParsedMessage(
-          readCatching(it.message.actual.value, clazz).getOrNull().toOption(),
+          deserializeCatching(it.message.actual.value, clazz).getOrNull().toOption(),
           it.message.metadata,
           it.reason
         )
