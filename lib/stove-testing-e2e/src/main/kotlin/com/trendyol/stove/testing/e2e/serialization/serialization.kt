@@ -51,19 +51,24 @@ interface StoveSerde<TIn : Any, TOut : Any> {
     /**
      * Deserializes data from the target format into the specified type.
      */
-    inline fun <reified T : Any> StoveSerde<Any, ByteArray>.deserialize(value: ByteArray): T = deserialize(value, T::class.java)
+    inline fun <reified T : Any> StoveSerde<Any, ByteArray>.deserialize(
+      value: ByteArray
+    ): T = deserialize(value, T::class.java)
 
     /**
      * Deserializes data from the target format into the specified type.
      * Returns a [None] if deserialization fails.
      */
-    inline fun <reified T : Any> StoveSerde<Any, ByteArray>.deserializeOption(value: ByteArray): Option<T> =
-      deserializeEither(value, T::class.java).getOrNone()
+    inline fun <reified T : Any> StoveSerde<Any, ByteArray>.deserializeOption(
+      value: ByteArray
+    ): Option<T> = deserializeEither(value, T::class.java).getOrNone()
 
     /**
      * Deserializes data from the target format into the specified type.
      */
-    inline fun <reified T : Any> StoveSerde<Any, String>.deserialize(value: String): T = deserialize(value, T::class.java)
+    inline fun <reified T : Any> StoveSerde<Any, String>.deserialize(
+      value: String
+    ): T = deserialize(value, T::class.java)
 
     /**
      * Deserializes data from the target format into the specified type.
