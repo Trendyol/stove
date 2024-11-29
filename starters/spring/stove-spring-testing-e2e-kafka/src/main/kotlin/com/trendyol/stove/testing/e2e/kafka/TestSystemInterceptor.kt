@@ -12,6 +12,15 @@ import org.springframework.kafka.support.ProducerListener
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
+/**
+ * This is the main actor between your Kafka Spring Boot application and the test system.
+ * It is responsible for intercepting the messages that are produced and consumed by the application.
+ * It also provides a way to wait until a message is consumed or produced.
+ *
+ * @param serde The serializer/deserializer that will be used to serialize/deserialize the messages.
+ * It is important to use the same serde that is used in the application. For example, if the application uses Avro, then you should use Avro serde here.
+ * Target of the serialization is ByteArray, so the serde should be able to serialize the message to ByteArray.
+ */
 class TestSystemKafkaInterceptor<K, V>(
   private val serde: StoveSerde<Any, ByteArray>
 ) : CompositeRecordInterceptor<K, V>(), ProducerListener<K, V> {
