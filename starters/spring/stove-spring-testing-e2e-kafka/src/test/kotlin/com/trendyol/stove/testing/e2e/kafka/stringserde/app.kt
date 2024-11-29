@@ -98,17 +98,17 @@ open class KafkaTestSpringBotApplicationForStringSerde {
 
   @KafkaListener(topics = ["topic"], groupId = "group_id")
   fun listen(message: String) {
-    logger.info("Received Message in consumer: $message")
+    logger.info("Received Message in consumer: \n$message")
   }
 
   @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
   fun listenFailed(message: String) {
-    logger.info("Received Message in failed consumer: $message")
+    logger.info("Received Message in failed consumer: \n$message")
     throw StoveBusinessException("This exception is thrown intentionally for testing purposes.")
   }
 
   @KafkaListener(topics = ["topic-failed.DLT"], groupId = "group_id")
   fun listenDeadLetter(message: String) {
-    logger.info("Received Message in the lead letter, and allowing the fail by just logging: $message")
+    logger.info("Received Message in the lead letter, and allowing the fail by just logging: \n$message")
   }
 }

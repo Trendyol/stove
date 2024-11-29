@@ -1,8 +1,8 @@
 package com.trendyol.stove.testing.e2e.kafka.protobufserde
 
-import com.google.protobuf.*
-import com.trendyol.stove.spring.testing.e2e.kafka.v1.Example.Product
-import com.trendyol.stove.spring.testing.e2e.kafka.v1.product
+import com.google.protobuf.Message
+import com.trendyol.stove.spring.testing.e2e.kafka.v1.*
+import com.trendyol.stove.spring.testing.e2e.kafka.v1.Example.*
 import com.trendyol.stove.testing.e2e.kafka.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.springBoot
@@ -17,18 +17,28 @@ import kotlin.random.Random
 @Suppress("UNCHECKED_CAST")
 @OptIn(ExperimentalSerializationApi::class)
 class StoveProtobufSerde : StoveSerde<Any, ByteArray> {
+  private val parseFromMethod = "parseFrom"
   private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
 
   override fun serialize(value: Any): ByteArray = protobufSerde.serializer().serialize("any", value as Message)
 
   override fun <T : Any> deserialize(value: ByteArray, clazz: Class<T>): T {
-    val ret: Message = protobufSerde.deserializer().deserialize("any", value)
-    ret as DynamicMessage
-    val parseFromMethod = clazz.getDeclaredMethod("parseFrom", ByteArray::class.java)
-    val obj = parseFromMethod(ret, ret.toByteArray()) as T
-    return obj
+    val incoming: Message = protobufSerde.deserializer().deserialize("any", value)
+    incoming.isAssignableFrom(clazz).also { isAssignableFrom ->
+      require(isAssignableFrom) {
+        "Expected '${clazz.simpleName}' but got '${incoming.descriptorForType.name}'. " +
+          "This could be transient ser/de problem since the message stream is constantly checked if the expected message is arrived, " +
+          "so you can ignore this error if you are sure that the message is the expected one."
+      }
+    }
+
+    val parseFromMethod = clazz.getDeclaredMethod(parseFromMethod, ByteArray::class.java)
+    val parsed = parseFromMethod(incoming, incoming.toByteArray()) as T
+    return parsed
   }
 }
+
+private fun Message.isAssignableFrom(clazz: Class<*>): Boolean = this.descriptorForType.name == clazz.simpleName
 
 class ProtobufSerdeKafkaSystemTest : ShouldSpec({
   beforeSpec {
@@ -76,7 +86,7 @@ class ProtobufSerdeKafkaSystemTest : ShouldSpec({
       kafka {
         val userId = Random.nextInt().toString()
         val productId = Random.nextInt().toString()
-        val message = product {
+        val product = product {
           id = productId
           name = "product-${Random.nextInt()}"
           price = Random.nextDouble()
@@ -84,12 +94,27 @@ class ProtobufSerdeKafkaSystemTest : ShouldSpec({
           description = "description-${Random.nextInt()}"
         }
         val headers = mapOf("x-user-id" to userId)
-        publish("topic-protobuf", message, headers = headers)
+        publish("topic-protobuf", product, headers = headers)
         shouldBePublished<Product> {
-          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          actual == product && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
         }
         shouldBeConsumed<Product> {
-          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          actual == product && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+        }
+
+        val orderId = Random.nextInt().toString()
+        val order = order {
+          id = orderId
+          customerId = userId
+          products += product
+        }
+        publish("topic-protobuf", order, headers = headers)
+        shouldBePublished<Order> {
+          actual == order && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+        }
+
+        shouldBeConsumed<Order> {
+          actual == order && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
         }
       }
     }
