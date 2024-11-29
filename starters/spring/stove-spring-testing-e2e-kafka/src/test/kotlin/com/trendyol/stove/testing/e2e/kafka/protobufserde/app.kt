@@ -40,7 +40,7 @@ sealed class KafkaRegistry(open val url: String) {
   }
 }
 
-class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
+class ProtobufValueSerializer<T : Any> : Serializer<T> {
   private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
 
   override fun serialize(
@@ -52,7 +52,7 @@ class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
   }
 }
 
-class StoveKafkaValueDeserializer : Deserializer<Message> {
+class ProtobufValueDeserializer : Deserializer<Message> {
   private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
 
   override fun deserialize(
@@ -130,7 +130,7 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
       ConsumerConfig.GROUP_ID_CONFIG to config.groupId,
       ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to config.offset,
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to Serdes.String().deserializer().javaClass,
-      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StoveKafkaValueDeserializer().javaClass,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ProtobufValueDeserializer().javaClass,
       ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to 2000,
       ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to 6000,
       ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG to 6000
@@ -145,7 +145,7 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
       mapOf(
         ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to Serdes.String().serializer().javaClass,
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StoveKafkaValueSerializer<Any>().javaClass,
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to ProtobufValueSerializer<Any>().javaClass,
         ProducerConfig.ACKS_CONFIG to "1"
       )
     )
