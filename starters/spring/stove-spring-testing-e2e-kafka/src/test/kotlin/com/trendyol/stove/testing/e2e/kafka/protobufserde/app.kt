@@ -26,7 +26,7 @@ sealed class KafkaRegistry(open val url: String) {
   data class Defined(override val url: String) : KafkaRegistry(url)
 
   companion object {
-    fun createSerdeBasedOnRegistry(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {
+    fun createSerde(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {
       val schemaRegistryClient = when (registry) {
         is Mock -> MockSchemaRegistry.getClientForScope("mock-registry")
         is Defined -> MockSchemaRegistry.getClientForScope(registry.url)
@@ -41,7 +41,7 @@ sealed class KafkaRegistry(open val url: String) {
 }
 
 class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
-  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerdeBasedOnRegistry()
+  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
 
   override fun serialize(
     topic: String,
@@ -53,7 +53,7 @@ class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
 }
 
 class StoveKafkaValueDeserializer : Deserializer<Message> {
-  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerdeBasedOnRegistry()
+  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
 
   override fun deserialize(
     topic: String,
@@ -95,7 +95,7 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
       config.schemaRegistryUrl.contains("mock://") -> KafkaRegistry.Mock
       else -> KafkaRegistry.Defined(config.schemaRegistryUrl)
     }
-    return KafkaRegistry.createSerdeBasedOnRegistry(registry)
+    return KafkaRegistry.createSerde(registry)
   }
 
   @Bean

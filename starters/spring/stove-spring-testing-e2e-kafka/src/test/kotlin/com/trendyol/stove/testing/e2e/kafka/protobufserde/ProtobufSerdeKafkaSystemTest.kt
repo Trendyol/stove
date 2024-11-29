@@ -17,7 +17,7 @@ import kotlin.random.Random
 @Suppress("UNCHECKED_CAST")
 @OptIn(ExperimentalSerializationApi::class)
 class StoveProtobufSerde : StoveSerde<Any, ByteArray> {
-  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerdeBasedOnRegistry()
+  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
 
   override fun serialize(value: Any): ByteArray = protobufSerde.serializer().serialize("any", value as Message)
 
