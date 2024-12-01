@@ -30,7 +30,7 @@ r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.16.1"
 mongodb = "5.2.1"
-wiremock = "3.9.2"
+wiremock = "3.10.0"
 testcontainers = "1.20.4"
 r2dbc-mssql = "1.0.2.RELEASE"
 spotless = "6.25.0"
@@ -137,7 +137,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.12" }
 logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.12" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.2" }
