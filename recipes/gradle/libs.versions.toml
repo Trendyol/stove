@@ -27,7 +27,7 @@ couchbase-client-metrics = "0.7.5"
 # Kafka
 kafka = "3.9.0"
 kafka-kotlin = "0.4.0"
-kafka-streams-registry = "7.7.2"
+kafka-streams-registry = "7.8.0"
 
 # Reactor
 io-reactor = "3.7.0"
