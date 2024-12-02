@@ -1,10 +1,11 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.squareup.wire.GrpcException
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import kotlinx.coroutines.runBlocking
+import okio.ByteString.Companion.toByteString
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.TopicPartition
@@ -16,7 +17,7 @@ import java.util.*
 class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
   private val logger: Logger = org.slf4j.LoggerFactory.getLogger(StoveKafkaBridge::class.java)
   private val client: StoveKafkaObserverServiceClient by lazy { startGrpcClient() }
-  private val mapper: ObjectMapper by lazy { stoveKafkaObjectMapperRef }
+  private val serde: StoveSerde<Any, ByteArray> by lazy { stoveSerdeRef }
 
   override fun onSend(record: ProducerRecord<K, V>): ProducerRecord<K, V> = runBlocking {
     record.also { send(publishedMessage(it)) }
@@ -105,7 +106,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     ConsumedMessage(
       id = UUID.randomUUID().toString(),
       key = record.key().toString(),
-      message = serializeIfNotString(record.value()),
+      message = serializeIfNotYet(record.value()).toByteString(),
       topic = record.topic(),
       offset = record.offset(),
       partition = record.partition(),
@@ -116,7 +117,7 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
   private fun publishedMessage(record: ProducerRecord<K, V>) = PublishedMessage(
     id = UUID.randomUUID().toString(),
     key = record.key().toString(),
-    message = serializeIfNotString(record.value()),
+    message = serializeIfNotYet(record.value()).toByteString(),
     topic = record.topic(),
     headers = record.headers().associate { it.key() to it.value().toString(Charset.defaultCharset()) }
   )
@@ -133,9 +134,9 @@ class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K,
     )
   }
 
-  private fun serializeIfNotString(value: V): String = when (value) {
-    is String -> value
-    else -> mapper.writeValueAsString(value)
+  private fun serializeIfNotYet(value: V): ByteArray = when (value) {
+    is ByteArray -> value
+    else -> serde.serialize(value as Any)
   }
 
   private fun startGrpcClient(): StoveKafkaObserverServiceClient {

@@ -42,36 +42,36 @@ class ExampleTest : FunSpec({
 
   test("should create new product when send product create request from api for the allowed supplier") {
     TestSystem.validate {
-      val productCreateRequest = ProductCreateRequest(1L, name = "product name", 99L)
-      val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = true)
+      val request = ProductCreateRequest(1L, name = "product name", 99L)
+      val permission = SupplierPermission(request.supplierId, isAllowed = true)
 
       wiremock {
         mockGet(
-          "/suppliers/${supplierPermission.id}/allowed",
+          "/suppliers/${permission.id}/allowed",
           statusCode = 200,
-          responseBody = supplierPermission.some()
+          responseBody = permission.some()
         )
       }
 
       http {
-        postAndExpectBodilessResponse(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
+        postAndExpectBodilessResponse(uri = "/api/product/create", body = request.some()) { actual ->
           actual.status shouldBe 200
         }
       }
 
       kafka {
         shouldBePublished<ProductCreatedEvent> {
-          actual.id == productCreateRequest.id &&
-            actual.name == productCreateRequest.name &&
-            actual.supplierId == productCreateRequest.supplierId
+          actual.id == request.id &&
+            actual.name == request.name &&
+            actual.supplierId == request.supplierId
         }
       }
 
       couchbase {
-        shouldGet<ProductCreateRequest>("product:${productCreateRequest.id}") { actual ->
-          actual.id shouldBe productCreateRequest.id
-          actual.name shouldBe productCreateRequest.name
-          actual.supplierId shouldBe productCreateRequest.supplierId
+        shouldGet<ProductCreateRequest>("product:${request.id}") { actual ->
+          actual.id shouldBe request.id
+          actual.name shouldBe request.name
+          actual.supplierId shouldBe request.supplierId
         }
       }
     }
@@ -79,18 +79,18 @@ class ExampleTest : FunSpec({
 
   test("should throw error when send product create request from api for for the not allowed supplier") {
     TestSystem.validate {
-      val productCreateRequest = ProductCreateRequest(2L, name = "product name", 98L)
-      val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = false)
+      val request = ProductCreateRequest(2L, name = "product name", 98L)
+      val permission = SupplierPermission(request.supplierId, isAllowed = false)
       wiremock {
         mockGet(
-          "/suppliers/${supplierPermission.id}/allowed",
+          "/suppliers/${permission.id}/allowed",
           statusCode = 200,
-          responseBody = supplierPermission.some()
+          responseBody = permission.some()
         )
       }
       http {
-        postAndExpectJson<String>(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
-          actual shouldBe "Supplier with the given id(${productCreateRequest.supplierId}) is not allowed for product creation"
+        postAndExpectJson<String>(uri = "/api/product/create", body = request.some()) { actual ->
+          actual shouldBe "Supplier with the given id(${request.supplierId}) is not allowed for product creation"
         }
       }
     }
@@ -98,8 +98,8 @@ class ExampleTest : FunSpec({
 
   test("should throw error when send product create event for the not allowed supplier") {
     TestSystem.validate {
-      val productCreateEvent = CreateProductCommand(3L, name = "product name", 97L)
-      val supplierPermission = SupplierPermission(productCreateEvent.supplierId, isAllowed = false)
+      val command = CreateProductCommand(3L, name = "product name", 97L)
+      val supplierPermission = SupplierPermission(command.supplierId, isAllowed = false)
 
       wiremock {
         mockGet(
@@ -110,9 +110,9 @@ class ExampleTest : FunSpec({
       }
 
       kafka {
-        publish("trendyol.stove.service.product.create.0", productCreateEvent)
+        publish("trendyol.stove.service.product.create.0", command)
         shouldBeConsumed<CreateProductCommand>(10.seconds) {
-          actual.id == productCreateEvent.id
+          actual.id == command.id
         }
       }
     }
@@ -120,8 +120,8 @@ class ExampleTest : FunSpec({
 
   test("should create new product when send product create event for the allowed supplier") {
     TestSystem.validate {
-      val createProductCommand = CreateProductCommand(4L, name = "product name", 96L)
-      val supplierPermission = SupplierPermission(createProductCommand.supplierId, isAllowed = true)
+      val command = CreateProductCommand(4L, name = "product name", 96L)
+      val supplierPermission = SupplierPermission(command.supplierId, isAllowed = true)
 
       wiremock {
         mockGet(
@@ -132,26 +132,26 @@ class ExampleTest : FunSpec({
       }
 
       kafka {
-        publish("trendyol.stove.service.product.create.0", createProductCommand)
+        publish("trendyol.stove.service.product.create.0", command)
         shouldBeConsumed<CreateProductCommand> {
-          actual.id == createProductCommand.id &&
-            actual.name == createProductCommand.name &&
-            actual.supplierId == createProductCommand.supplierId
+          actual.id == command.id &&
+            actual.name == command.name &&
+            actual.supplierId == command.supplierId
         }
 
         shouldBePublished<ProductCreatedEvent> {
-          actual.id == createProductCommand.id &&
-            actual.name == createProductCommand.name &&
-            actual.supplierId == createProductCommand.supplierId &&
+          actual.id == command.id &&
+            actual.name == command.name &&
+            actual.supplierId == command.supplierId &&
             metadata.headers["X-UserEmail"] == "stove@trendyol.com"
         }
       }
 
       couchbase {
-        shouldGet<ProductCreateRequest>("product:${createProductCommand.id}") { actual ->
-          actual.id shouldBe createProductCommand.id
-          actual.name shouldBe createProductCommand.name
-          actual.supplierId shouldBe createProductCommand.supplierId
+        shouldGet<ProductCreateRequest>("product:${command.id}") { actual ->
+          actual.id shouldBe command.id
+          actual.name shouldBe command.name
+          actual.supplierId shouldBe command.supplierId
         }
       }
     }

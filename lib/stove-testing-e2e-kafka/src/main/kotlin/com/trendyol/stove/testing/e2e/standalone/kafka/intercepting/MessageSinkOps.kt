@@ -48,7 +48,7 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
   ) {
     val getRecords = { store.consumedMessages() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting consuming of ${clazz.java.simpleName}") {
-      val outcome = readCatching(it.message, clazz)
+      val outcome = readCatching(it.message.toByteArray(), clazz)
       outcome.isSuccess && condition(
         SuccessfulParsedMessage(
           outcome.getOrNull().toOption(),
@@ -66,13 +66,13 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     clazz: KClass<T>,
     condition: (ParsedMessage<T>) -> Boolean
   ) {
-    data class FailedMessage(val message: String, val metadata: MessageMetadata)
+    class FailedMessage(val message: ByteArray, val metadata: MessageMetadata)
 
     val getRecords = {
-      store.failedMessages().map { FailedMessage(it.message, it.metadata()) } +
+      store.failedMessages().map { FailedMessage(it.message.toByteArray(), it.metadata()) } +
         store.publishedMessages()
           .filter { topicSuffixes.isErrorTopic(it.topic) }
-          .map { FailedMessage(it.message, it.metadata()) }
+          .map { FailedMessage(it.message.toByteArray(), it.metadata()) }
     }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting Failure of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message, clazz)
@@ -89,7 +89,7 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     val getRecords = { store.retriedMessages() }
     val failedFunc = suspend {
       getRecords.waitUntilConditionMet(atLeastIn, "While expecting Retrying of ${clazz.java.simpleName}") {
-        val outcome = readCatching(it.message, clazz)
+        val outcome = readCatching(it.message.toByteArray(), clazz)
         outcome.isSuccess && condition(
           SuccessfulParsedMessage(
             outcome.getOrNull().toOption(),

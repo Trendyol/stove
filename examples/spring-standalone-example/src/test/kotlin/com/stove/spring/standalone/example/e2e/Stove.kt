@@ -3,6 +3,7 @@ package com.stove.spring.standalone.example.e2e
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.couchbase.*
 import com.trendyol.stove.testing.e2e.http.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
@@ -38,10 +39,9 @@ class Stove : AbstractProjectConfig() {
           )
         }
         kafka {
-          stoveKafkaObjectMapperRef = ObjectMapperConfig.createObjectMapperWithDefaults()
           KafkaSystemOptions(
             topicSuffixes = TopicSuffixes().copy(error = listOf(".error", ".DLT", "dlt")),
-            objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults(),
+            serde = StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default),
             containerOptions = KafkaContainerOptions(tag = "latest") { }
           ) {
             listOf(

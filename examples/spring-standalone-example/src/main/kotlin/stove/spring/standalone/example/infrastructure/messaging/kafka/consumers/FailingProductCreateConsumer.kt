@@ -21,9 +21,8 @@ class FailingProductCreateConsumer {
     groupId = "#{@consumerConfig.groupId}",
     containerFactory = KafkaConsumerConfiguration.LISTENER_BEAN_NAME
   )
-  fun listen(cr: ConsumerRecord<String, String>): Unit = runBlocking(MDCContext()) {
-    logger.info("Received product failing event ${cr.value()}")
-
+  fun listen(record: ConsumerRecord<*, *>): Unit = runBlocking(MDCContext()) {
+    logger.info("Received product failing event ${record.value()}")
     throw BusinessException("Failing product create event")
   }
 }

@@ -20,6 +20,7 @@ class Stove : AbstractProjectConfig() {
       kafka {
         KafkaSystemOptions(
           listenPublishedMessagesFromStove = false,
+          serde = StoveProtobufSerde(),
           valueSerializer = StoveKafkaValueSerializer(),
           containerOptions = KafkaContainerOptions(tag = "latest") { }
         ) {

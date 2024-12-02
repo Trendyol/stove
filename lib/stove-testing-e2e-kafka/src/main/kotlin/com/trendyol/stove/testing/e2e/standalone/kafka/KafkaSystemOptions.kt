@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import org.apache.kafka.common.serialization.Serializer
 
@@ -18,9 +18,20 @@ class KafkaSystemOptions(
    */
   val bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
   /**
-   * The object mapper that is used to serialize and deserialize messages.
+   * The Serde that is used while asserting the messages,
+   * serializing while bridging the messages. Take a look at the [serde] property for more information.
+   *
+   * The default value is [StoveSerde.jackson]'s anyByteArraySerde.
+   * Depending on your application's needs you might want to change this value.
+   *
+   * The places where it was used listed below:
+   *
+   * @see [com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge] for bridging the messages.
+   * @see StoveKafkaValueSerializer for serializing the messages.
+   * @see StoveKafkaValueDeserializer for deserializing the messages.
+   * @see valueSerializer for serializing the messages.
    */
-  val objectMapper: ObjectMapper = stoveKafkaObjectMapperRef,
+  val serde: StoveSerde<Any, ByteArray> = stoveSerdeRef,
   /**
    * The Value serializer that is used to serialize messages.
    */

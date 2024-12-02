@@ -35,7 +35,7 @@ class ProductCreator(
         key = req.id.toString(),
         headers = mapOf(Headers.EVENT_TYPE to ProductCreatedEvent::class.simpleName!!),
         partition = 0,
-        payload = objectMapper.writeValueAsString(req.mapToProductCreatedEvent())
+        payload = req.mapToProductCreatedEvent()
       )
     )
     return "OK"

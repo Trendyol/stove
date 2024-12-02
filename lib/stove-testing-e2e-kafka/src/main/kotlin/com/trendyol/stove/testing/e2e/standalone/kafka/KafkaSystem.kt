@@ -1,10 +1,9 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import arrow.core.*
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.messaging.*
-import com.trendyol.stove.testing.e2e.serialization.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -24,17 +23,17 @@ import kotlin.time.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-var stoveKafkaObjectMapperRef: ObjectMapper = StoveSerde.jackson.default
+var stoveSerdeRef: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde()
 var stoveKafkaBridgePortDefault = "50051"
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
 internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "unused")
 @StoveDsl
 class KafkaSystem(
   override val testSystem: TestSystem,
   private val context: KafkaContext
-) : PluggedSystem, ExposesConfiguration, RunAware, AfterRunAware {
+) : PluggedSystem, ExposesConfiguration, RunAware, AfterRunAware, BeforeRunAware {
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaProducer<String, Any>
@@ -45,6 +44,10 @@ class KafkaSystem(
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<KafkaExposedConfiguration> =
     testSystem.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
+
+  override suspend fun beforeRun() {
+    stoveSerdeRef = context.options.serde
+  }
 
   override suspend fun run() {
     exposedConfiguration = state.capture {
@@ -62,7 +65,7 @@ class KafkaSystem(
     )
     sink = TestSystemMessageSink(
       adminClient,
-      context.options.objectMapper,
+      context.options.serde,
       context.options.topicSuffixes
     )
     grpcServer = startGrpcServer()
@@ -144,7 +147,7 @@ class KafkaSystem(
       sink.store.consumedMessages()
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
-        .map { ConsumedRecord(it.topic, it.key, it.message, it.headers, it.offset, it.partition) }
+        .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
         .forEach {
           loop = !condition(it)
         }
@@ -198,7 +201,7 @@ class KafkaSystem(
       sink.store.publishedMessages()
         .filter { it.topic == topic && !seenIds.containsKey(it.id) }
         .onEach { seenIds[it.id] = it }
-        .map { PublishedRecord(it.topic, it.key, it.message, it.headers) }
+        .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
         .forEach {
           loop = !condition(it)
         }
@@ -358,9 +361,7 @@ class KafkaSystem(
       ProducerConfig.ACKS_CONFIG to "1"
     ) + (
       if (listenKafkaSystemPublishedMessages) {
-        mapOf(
-          ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to exposedConfiguration.interceptorClass
-        )
+        mapOf(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to exposedConfiguration.interceptorClass)
       } else {
         emptyMap()
       }

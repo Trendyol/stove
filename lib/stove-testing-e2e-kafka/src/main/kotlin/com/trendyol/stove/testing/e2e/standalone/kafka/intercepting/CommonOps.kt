@@ -1,8 +1,8 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import arrow.core.toOption
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.messaging.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.Admin
@@ -12,7 +12,7 @@ import kotlin.time.Duration
 
 internal interface CommonOps {
   val store: MessageStore
-  val serde: ObjectMapper
+  val serde: StoveSerde<Any, ByteArray>
   val adminClient: Admin
   val topicSuffixes: TopicSuffixes
   val logger: Logger
@@ -59,7 +59,7 @@ internal interface CommonOps {
     selector: (message: ParsedMessage<T>) -> Boolean
   ): Unit = store.failedMessages()
     .filter {
-      selector(SuccessfulParsedMessage(readCatching(it.message, clazz).getOrNull().toOption(), it.metadata()))
+      selector(SuccessfulParsedMessage(readCatching(it.message.toByteArray(), clazz).getOrNull().toOption(), it.metadata()))
     }.forEach {
       throw AssertionError("Message was expected to be consumed successfully, but failed: $it \n ${dumpMessages()}")
     }
@@ -71,7 +71,7 @@ internal interface CommonOps {
     .filter {
       selector(
         SuccessfulParsedMessage(
-          readCatching(it.message, clazz).getOrNull().toOption(),
+          readCatching(it.message.toByteArray(), clazz).getOrNull().toOption(),
           MessageMetadata(it.topic, it.key, it.headers)
         )
       )
@@ -79,28 +79,11 @@ internal interface CommonOps {
       throw AssertionError("Message was expected to be consumed successfully, but was retried: $it \n ${dumpMessages()}")
     }
 
-  fun <T : Any> throwIfSucceeded(
-    clazz: KClass<T>,
-    selector: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = store.consumedMessages()
-    .filter {
-      selector(
-        SuccessfulParsedMessage(
-          readCatching(it.message, clazz).getOrNull().toOption(),
-          it.metadata()
-        )
-      ) && store.isCommitted(it.topic, it.offset, it.partition)
-    }.forEach { throw AssertionError("Message was expected to fail, but was consumed: $it \n ${dumpMessages()}") }
-
   fun <T : Any> readCatching(
-    json: Any,
+    value: ByteArray,
     clazz: KClass<T>
-  ): Result<T> = runCatching {
-    when (json) {
-      is String -> serde.readValue(json, clazz.java)
-      else -> serde.convertValue(json, clazz.java)
-    }
-  }
+  ): Result<T> = runCatching { serde.deserialize(value, clazz.java) }
+    .onFailure { exception -> logger.error("Failed to deserialize message: ${String(value)}", exception) }
 
   fun dumpMessages(): String
 }

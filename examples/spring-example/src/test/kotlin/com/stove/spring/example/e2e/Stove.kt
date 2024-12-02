@@ -38,8 +38,7 @@ class Stove : AbstractProjectConfig() {
         }
         kafka {
           KafkaSystemOptions(
-            containerOptions = KafkaContainerOptions(tag = "latest") {
-            }
+            containerOptions = KafkaContainerOptions(tag = "latest") { }
           ) {
             listOf(
               "kafka.bootstrapServers=${it.bootstrapServers}",
