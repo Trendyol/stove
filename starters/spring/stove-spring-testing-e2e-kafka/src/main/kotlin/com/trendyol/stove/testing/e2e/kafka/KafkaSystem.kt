@@ -71,7 +71,7 @@ class KafkaSystem(
       topic,
       partition.getOrNull(),
       key.getOrNull(),
-      serde.getOrElse { context.options.serdeForPublish }.serialize(message),
+      message,
       headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
     )
 
@@ -172,9 +172,7 @@ class KafkaSystem(
     }
   }
 
-  override suspend fun beforeRun() {
-    stoveKafkaPublishSerdeRef = context.options.serdeForPublish
-  }
+  override suspend fun beforeRun() = Unit
 
   override suspend fun run() {
     exposedConfiguration = state.capture {

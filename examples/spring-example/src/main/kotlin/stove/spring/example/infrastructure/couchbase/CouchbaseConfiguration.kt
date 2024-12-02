@@ -20,7 +20,7 @@ class CouchbaseConfiguration(
 ) {
   companion object {
     val objectMapper: ObjectMapper =
-      ObjectMapperConfig.createObjectMapperWithDefaults()
+      ObjectMapperConfig.default()
         .registerModule(JsonValueModule())
   }
 

@@ -11,6 +11,8 @@ import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaCo
 
 data class BusinessException(override val message: String) : RuntimeException(message)
 
+data class FailingEvent(val id: Long)
+
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")
 class FailingProductCreateConsumer {
@@ -21,10 +23,8 @@ class FailingProductCreateConsumer {
     groupId = "#{@consumerConfig.groupId}",
     containerFactory = KafkaConsumerConfiguration.LISTENER_BEAN_NAME
   )
-  fun listen(cr: ConsumerRecord<String, String>): Unit =
-    runBlocking(MDCContext()) {
-      logger.info("Received product failing event ${cr.value()}")
-
-      throw BusinessException("Failing product create event")
-    }
+  fun listen(record: ConsumerRecord<*, *>): Unit = runBlocking(MDCContext()) {
+    logger.info("Received product failing event $record")
+    throw BusinessException("Failing product create event")
+  }
 }

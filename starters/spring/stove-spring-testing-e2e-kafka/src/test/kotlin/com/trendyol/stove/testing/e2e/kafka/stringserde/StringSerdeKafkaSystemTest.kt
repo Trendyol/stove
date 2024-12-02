@@ -10,7 +10,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import org.apache.kafka.clients.admin.NewTopic
 import org.springframework.context.support.beans
-import org.springframework.kafka.support.JacksonUtils
 import kotlin.random.Random
 
 class StringSerdeKafkaSystemTests : ShouldSpec({
@@ -19,7 +18,6 @@ class StringSerdeKafkaSystemTests : ShouldSpec({
       .with {
         kafka {
           KafkaSystemOptions(
-            serdeForPublish = StoveSerde.jackson.anyJsonStringSerde(JacksonUtils.enhancedObjectMapper()),
             configureExposedConfiguration = {
               listOf(
                 "kafka.bootstrapServers=${it.bootstrapServers}",

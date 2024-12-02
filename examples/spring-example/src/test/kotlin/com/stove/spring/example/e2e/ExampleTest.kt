@@ -133,7 +133,7 @@ class ExampleTest : FunSpec({
 
       kafka {
         publish("trendyol.stove.service.product.create.0", createProductCommand)
-        shouldBePublished<ProductCreatedEvent> {
+        shouldBeConsumed<CreateProductCommand> {
           actual.id == createProductCommand.id &&
             actual.name == createProductCommand.name &&
             actual.supplierId == createProductCommand.supplierId &&
@@ -148,11 +148,18 @@ class ExampleTest : FunSpec({
           actual.supplierId shouldBe createProductCommand.supplierId
         }
       }
+
+      kafka {
+        shouldBePublished<ProductCreatedEvent> {
+          actual.id == createProductCommand.id &&
+            actual.name == createProductCommand.name &&
+            actual.supplierId == createProductCommand.supplierId
+        }
+      }
     }
   }
 
   test("when failing event is published then it should be validated") {
-    data class FailingEvent(val id: Long)
     TestSystem.validate {
       kafka {
         publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))

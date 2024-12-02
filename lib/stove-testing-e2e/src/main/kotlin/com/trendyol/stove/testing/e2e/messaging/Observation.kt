@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.messaging
 
 import arrow.core.Option
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import kotlin.reflect.KClass
 
 data class MessageMetadata(
   val topic: String,
@@ -43,9 +42,4 @@ data class FailedObservedMessage<T>(
 data class Failure<T>(
   val message: ObservedMessage<T>,
   val reason: Throwable
-)
-
-data class MessagingAssertion<T : Any>(
-  val clazz: KClass<T>,
-  val condition: (ParsedMessage<T>) -> Boolean
 )

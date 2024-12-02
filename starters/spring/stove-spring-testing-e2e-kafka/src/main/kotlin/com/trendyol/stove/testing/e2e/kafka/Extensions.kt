@@ -30,6 +30,19 @@ internal fun <K, V> ConsumerRecord<K, V>.toStoveMessage(
   this.offset()
 )
 
+internal fun <K, V> ConsumerRecord<K, V>.toFailedStoveMessage(
+  serde: StoveSerde<Any, ByteArray>,
+  exception: Exception
+): StoveMessage.Failed = StoveMessage.failed(
+  this.topic(),
+  serializeIfNotYet(this.value(), serde),
+  this.toMetadata(),
+  exception,
+  this.partition(),
+  this.key()?.toString() ?: "",
+  this.timestamp()
+)
+
 internal fun <K, V> ProducerRecord<K, V>.toStoveMessage(
   serde: StoveSerde<Any, ByteArray>
 ): StoveMessage.Published = StoveMessage.published(
@@ -41,12 +54,24 @@ internal fun <K, V> ProducerRecord<K, V>.toStoveMessage(
   this.timestamp()
 )
 
+internal fun <K, V> ProducerRecord<K, V>.toFailedStoveMessage(
+  serde: StoveSerde<Any, ByteArray>,
+  exception: Exception
+): StoveMessage.Failed = StoveMessage.failed(
+  this.topic(),
+  serializeIfNotYet(this.value(), serde),
+  this.toMetadata(),
+  exception,
+  this.partition(),
+  this.key()?.toString() ?: "",
+  this.timestamp()
+)
+
 private fun <V> serializeIfNotYet(
   value: V,
   serde: StoveSerde<Any, ByteArray>
 ): ByteArray = when (value) {
   is ByteArray -> value
-  is String -> value.toByteArray()
   else -> serde.serialize(value as Any)
 }
 

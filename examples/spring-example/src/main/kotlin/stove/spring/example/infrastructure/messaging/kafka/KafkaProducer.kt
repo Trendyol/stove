@@ -7,10 +7,10 @@ import org.slf4j.*
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
 
-data class KafkaOutgoingMessage(
+data class KafkaOutgoingMessage<K, V>(
   val topic: String,
-  val key: String?,
-  val payload: String,
+  val key: K,
+  val payload: V,
   val headers: Map<String, String>,
   val partition: Int? = null
 )
@@ -21,13 +21,8 @@ class KafkaProducer(
 ) {
   private val logger: Logger = LoggerFactory.getLogger(KafkaProducer::class.java)
 
-  suspend fun send(message: KafkaOutgoingMessage) {
-    val recordHeaders = message.headers.map {
-      RecordHeader(
-        it.key,
-        it.value.toByteArray()
-      )
-    }.toMutableList()
+  suspend fun send(message: KafkaOutgoingMessage<String, Any>) {
+    val recordHeaders = message.headers.map { RecordHeader(it.key, it.value.toByteArray()) }
     val record = ProducerRecord<String, Any>(
       message.topic,
       message.partition,
@@ -36,7 +31,6 @@ class KafkaProducer(
       recordHeaders
     )
     logger.info("Kafka message has published $message")
-
     kafkaTemplate.send(record).await()
   }
 }

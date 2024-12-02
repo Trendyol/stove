@@ -7,7 +7,7 @@ import java.util.*
 internal class MessageStore {
   private val consumed = Caching.of<UUID, StoveMessage.Consumed>()
   private val produced = Caching.of<UUID, StoveMessage.Published>()
-  private val failures = Caching.of<UUID, Failure<StoveMessage>>()
+  private val failures = Caching.of<UUID, Failure<StoveMessage.Failed>>()
 
   fun record(record: StoveMessage.Consumed) {
     consumed.put(UUID.randomUUID(), record)
@@ -17,7 +17,7 @@ internal class MessageStore {
     produced.put(UUID.randomUUID(), record)
   }
 
-  fun record(failure: Failure<StoveMessage>) {
+  fun record(failure: Failure<StoveMessage.Failed>) {
     failures.put(UUID.randomUUID(), failure)
   }
 
@@ -25,11 +25,11 @@ internal class MessageStore {
 
   fun producedRecords(): List<StoveMessage.Published> = produced.asMap().values.toList()
 
-  fun failedRecords(): List<Failure<StoveMessage>> = failures.asMap().values.toList()
+  fun failedRecords(): List<StoveMessage.Failed> = failures.asMap().values.map { failure -> failure.message.actual }.toList()
 
   override fun toString(): String = """
     |Consumed: ${pprint(consumedRecords().map { it.copy(value = ByteArray(0)) })}
     |Published: ${pprint(producedRecords().map { it.copy(value = ByteArray(0)) })}
-    |Failed: ${pprint(failedRecords())}
+    |Failed: ${pprint(failedRecords().map { it.copy(value = ByteArray(0)) })}
     """.trimIndent().trimMargin()
 }

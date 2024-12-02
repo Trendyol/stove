@@ -73,6 +73,23 @@ internal sealed class StoveMessage : MessageProperties {
     override fun toString(): String = pprint(this.copy(value = ByteArray(0))).toString()
   }
 
+  data class Failed(
+    override val topic: String,
+    override val value: ByteArray,
+    override val metadata: MessageMetadata,
+    override val partition: Int?,
+    override val key: String?,
+    override val timestamp: Long?,
+    val reason: Throwable,
+    override val valueAsString: String = String(value)
+  ) : StoveMessage() {
+    override fun hashCode(): Int = super.hashCode() + reason.hashCode()
+
+    override fun equals(other: Any?): Boolean = super.equals(other) && other is Failed && reason == other.reason
+
+    override fun toString(): String = pprint(this.copy(value = ByteArray(0))).toString()
+  }
+
   companion object {
     fun consumed(
       topic: String,
@@ -92,5 +109,15 @@ internal sealed class StoveMessage : MessageProperties {
       key: String? = null,
       timestamp: Long? = null
     ): Published = Published(topic, value, metadata, partition, key, timestamp)
+
+    fun failed(
+      topic: String,
+      value: ByteArray,
+      metadata: MessageMetadata,
+      reason: Throwable,
+      partition: Int? = null,
+      key: String? = null,
+      timestamp: Long? = null
+    ): Failed = Failed(topic, value, metadata, partition, key, timestamp, reason)
   }
 }
