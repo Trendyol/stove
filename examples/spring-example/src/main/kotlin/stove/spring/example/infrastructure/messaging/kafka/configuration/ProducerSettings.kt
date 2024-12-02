@@ -3,6 +3,7 @@ package stove.spring.example.infrastructure.messaging.kafka.configuration
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.stereotype.Component
 import stove.spring.example.infrastructure.messaging.kafka.interceptors.CustomProducerInterceptor
 
@@ -15,7 +16,7 @@ class DefaultProducerSettings(private val kafkaProperties: KafkaProperties) : Pr
     val props: MutableMap<String, Any> = HashMap()
     props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaProperties.bootstrapServers
     props[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-    props[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+    props[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = JsonSerializer::class.java
     props[ProducerConfig.INTERCEPTOR_CLASSES_CONFIG] = CustomProducerInterceptor::class.java.name
     props[ProducerConfig.ACKS_CONFIG] = kafkaProperties.acks
     props[ProducerConfig.COMPRESSION_TYPE_CONFIG] = kafkaProperties.compression

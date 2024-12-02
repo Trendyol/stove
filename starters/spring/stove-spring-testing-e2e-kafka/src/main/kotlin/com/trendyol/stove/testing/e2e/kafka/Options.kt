@@ -2,7 +2,6 @@ package com.trendyol.stove.testing.e2e.kafka
 
 import arrow.core.getOrElse
 import com.trendyol.stove.testing.e2e.containers.*
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -38,8 +37,6 @@ data class KafkaOps(
   ) -> Unit = { kafkaTemplate, record -> kafkaTemplate.sendCompatible(record) }
 )
 
-var stoveKafkaPublishSerdeRef: StoveSerde<Any, *> = StoveSerde.jackson.anyByteArraySerde()
-
 data class FallbackTemplateSerde(
   val keySerializer: Serializer<*> = StringSerializer(),
   val valueSerializer: Serializer<*> = StringSerializer()
@@ -55,16 +52,6 @@ data class KafkaSystemOptions(
    * The ports of the Kafka container. The default value is `DEFAULT_KAFKA_PORTS`.
    */
   val ports: List<Int> = DEFAULT_KAFKA_PORTS,
-  /**
-   * The serde that is used while publishing the messages. The default value is [StoveSerde.jackson].
-   * You can also pass ser/de during the publish operation.
-   * ```kotlin
-   * kafka {
-   *   publish("topic", "key", "value", serde = StoveSerde.jackson.stringSerde().some())
-   * }
-   * ```
-   */
-  val serdeForPublish: StoveSerde<Any, *> = StoveSerde.jackson.anyJsonStringSerde(),
   /**
    * The fallback serde for Kafka. It is used to serialize and deserialize the messages before sending them to Kafka.
    * If no [KafkaTemplate] is provided, it will be used to create a new [KafkaTemplate].

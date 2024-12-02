@@ -36,7 +36,7 @@ class WebClientConfiguration(private val webClientConfigurationProperties: WebCl
 
   @Bean
   fun webClientObjectMapper(): ObjectMapper {
-    return ObjectMapperConfig.createObjectMapperWithDefaults()
+    return ObjectMapperConfig.default()
       .configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false)
   }
 

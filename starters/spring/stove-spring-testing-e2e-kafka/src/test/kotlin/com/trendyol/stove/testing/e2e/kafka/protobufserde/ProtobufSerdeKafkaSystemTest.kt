@@ -46,7 +46,6 @@ class ProtobufSerdeKafkaSystemTest : ShouldSpec({
       .with {
         kafka {
           KafkaSystemOptions(
-            serdeForPublish = StoveProtobufSerde(),
             configureExposedConfiguration = {
               listOf(
                 "kafka.bootstrapServers=${it.bootstrapServers}",

@@ -8,10 +8,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import stove.spring.example.infrastructure.Headers
 import stove.spring.example.infrastructure.http.SupplierHttpService
-import stove.spring.example.infrastructure.messaging.kafka.KafkaOutgoingMessage
-import stove.spring.example.infrastructure.messaging.kafka.KafkaProducer
+import stove.spring.example.infrastructure.messaging.kafka.*
 import stove.spring.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
-import java.util.Date
+import java.time.Instant
 
 @Component
 class ProductCreator(
@@ -38,26 +37,27 @@ class ProductCreator(
         key = req.id.toString(),
         headers = mapOf(Headers.EVENT_TYPE to ProductCreatedEvent::class.simpleName!!),
         partition = 0,
-        payload = objectMapper.writeValueAsString(req.mapToProductCreatedEvent())
+        payload = req.mapToProductCreatedEvent()
       )
     )
     return "OK"
   }
 }
 
-fun CreateProductCommand.mapToCreateRequest(): ProductCreateRequest {
-  return ProductCreateRequest(this.id, this.name, this.supplierId)
-}
+fun CreateProductCommand.mapToCreateRequest(): ProductCreateRequest = ProductCreateRequest(this.id, this.name, this.supplierId)
 
-fun ProductCreateRequest.mapToProductCreatedEvent(): ProductCreatedEvent {
-  return ProductCreatedEvent(this.id, this.name, this.supplierId, Date())
-}
+fun ProductCreateRequest.mapToProductCreatedEvent(): ProductCreatedEvent = ProductCreatedEvent(
+  this.id,
+  this.name,
+  this.supplierId,
+  Instant.now()
+)
 
 data class ProductCreatedEvent(
   val id: Long,
   val name: String,
   val supplierId: Long,
-  val createdDate: Date,
+  val createdDate: Instant,
   val type: String = ProductCreatedEvent::class.simpleName!!
 )
 

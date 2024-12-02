@@ -4,6 +4,7 @@ import com.trendyol.stove.testing.e2e.BaseApplicationContextInitializer
 import com.trendyol.stove.testing.e2e.kafka.TestSystemKafkaInterceptor
 import com.trendyol.stove.testing.e2e.serialization.*
 import org.springframework.boot.SpringApplication
+import stove.spring.example.infrastructure.ObjectMapperConfig
 
 fun SpringApplication.addTestSystemDependencies() {
   this.addInitializers(TestSystemInitializer())
@@ -11,5 +12,5 @@ fun SpringApplication.addTestSystemDependencies() {
 
 class TestSystemInitializer : BaseApplicationContextInitializer({
   bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
-  bean { StoveSerde.jackson.anyByteArraySerde() }
+  bean { StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default()) }
 })

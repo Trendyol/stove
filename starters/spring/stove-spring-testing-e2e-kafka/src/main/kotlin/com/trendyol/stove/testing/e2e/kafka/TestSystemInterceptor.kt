@@ -42,8 +42,9 @@ class TestSystemKafkaInterceptor<K, V>(
     recordMetadata: RecordMetadata?,
     exception: Exception
   ) {
-    val message = record.toStoveMessage(serde)
-    store.record(Failure(ObservedMessage(message, record.toMetadata()), extractCause(exception)))
+    val underlyingReason = extractCause(exception)
+    val message = record.toFailedStoveMessage<K, V>(serde, underlyingReason)
+    store.record(Failure(ObservedMessage(message, record.toMetadata()), underlyingReason))
     logger.error("Error while producing:\n{}", message, exception)
   }
 
@@ -58,8 +59,9 @@ class TestSystemKafkaInterceptor<K, V>(
     exception: Exception,
     consumer: Consumer<K, V>
   ) {
-    val message = record.toStoveMessage(serde)
-    store.record(Failure(ObservedMessage(message, record.toMetadata()), extractCause(exception)))
+    val underlyingReason = extractCause(exception)
+    val message = record.toFailedStoveMessage(serde, underlyingReason)
+    store.record(Failure(ObservedMessage(message, record.toMetadata()), underlyingReason))
     logger.error("Error while consuming:\n{}", message, exception)
   }
 
@@ -84,8 +86,8 @@ class TestSystemKafkaInterceptor<K, V>(
   ) {
     val getRecords = { store.failedRecords() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting the failure of '${clazz.java.simpleName}'") {
-      val outcome = deserializeCatching(it.message.actual.value, clazz)
-      outcome.isSuccess && condition(FailedParsedMessage(outcome.getOrNull().toOption(), it.message.metadata, it.reason))
+      val outcome = deserializeCatching(it.value, clazz)
+      outcome.isSuccess && condition(FailedParsedMessage(outcome.getOrNull().toOption(), it.metadata, it.reason))
     }
 
     throwIfSucceeded(clazz, condition)
@@ -106,13 +108,14 @@ class TestSystemKafkaInterceptor<K, V>(
   }
 
   private fun extractCause(
-    listenerException: Throwable
-  ): Throwable = when (listenerException) {
+    listenerException: Exception
+  ): Exception = when (listenerException) {
     is ListenerExecutionFailedException ->
-      listenerException.cause ?: AssertionError("No cause found: Listener was not able to capture the cause")
+      listenerException.cause
+        ?: AssertionError("No cause found: Listener was not able to capture the cause")
 
     else -> listenerException
-  }
+  } as Exception
 
   private fun <T : Any> deserializeCatching(
     value: ByteArray,
@@ -127,8 +130,8 @@ class TestSystemKafkaInterceptor<K, V>(
     .filter {
       selector(
         FailedParsedMessage(
-          deserializeCatching(it.message.actual.value, clazz).getOrNull().toOption(),
-          MessageMetadata(it.message.metadata.topic, it.message.metadata.key, it.message.metadata.headers),
+          deserializeCatching(it.value, clazz).getOrNull().toOption(),
+          MessageMetadata(it.metadata.topic, it.metadata.key, it.metadata.headers),
           it.reason
         )
       )
@@ -155,15 +158,8 @@ class TestSystemKafkaInterceptor<K, V>(
     selector: (message: FailedParsedMessage<T>) -> Boolean
   ): Throwable = store.failedRecords()
     .first {
-      selector(
-        FailedParsedMessage(
-          deserializeCatching(it.message.actual.value, clazz).getOrNull().toOption(),
-          it.message.metadata,
-          it.reason
-        )
-      )
-    }
-    .reason
+      selector(FailedParsedMessage(deserializeCatching(it.value, clazz).getOrNull().toOption(), it.metadata, it.reason))
+    }.reason
 
   private suspend fun <T : Any> (() -> Collection<T>).waitUntilConditionMet(
     duration: Duration,

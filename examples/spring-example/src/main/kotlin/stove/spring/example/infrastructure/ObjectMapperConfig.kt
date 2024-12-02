@@ -1,28 +1,32 @@
 package stove.spring.example.infrastructure
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
+import org.springframework.boot.autoconfigure.AutoConfigureBefore
+import org.springframework.boot.autoconfigure.jackson.*
+import org.springframework.context.annotation.*
 
 @Configuration
+@AutoConfigureBefore(JacksonAutoConfiguration::class)
 class ObjectMapperConfig {
   companion object {
-    fun createObjectMapperWithDefaults(): ObjectMapper {
-      val isoInstantModule = SimpleModule()
-      return ObjectMapper()
-        .registerModule(KotlinModule.Builder().build())
-        .registerModule(isoInstantModule)
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    }
+    fun default(): ObjectMapper = ObjectMapper()
+      .registerModule(KotlinModule.Builder().build())
+      .findAndRegisterModules()
+      .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+      .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
   }
 
   @Bean
-  fun objectMapper(): ObjectMapper {
-    return createObjectMapperWithDefaults()
+  @Primary
+  fun objectMapper(): ObjectMapper = default()
+
+  @Bean
+  fun jacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer {
+    val default = default()
+    return Jackson2ObjectMapperBuilderCustomizer { builder ->
+      builder.factory(default.factory)
+    }
   }
 }

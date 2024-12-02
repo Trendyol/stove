@@ -1,21 +1,16 @@
 package stove.spring.example.infrastructure.messaging.kafka.configuration
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.*
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-import org.springframework.kafka.core.ConsumerFactory
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory
-import org.springframework.kafka.listener.DefaultErrorHandler
-import org.springframework.kafka.listener.RecordInterceptor
-import org.springframework.kafka.support.converter.StringJsonMessageConverter
+import org.springframework.kafka.core.*
+import org.springframework.kafka.listener.*
 import org.springframework.util.backoff.FixedBackOff
 
 @EnableKafka
 @Configuration
+@Suppress("UNCHECKED_CAST")
 class KafkaConsumerConfiguration(
-  private val objectMapper: ObjectMapper,
   private val interceptor: RecordInterceptor<*, *>
 ) {
   @Bean
@@ -26,14 +21,8 @@ class KafkaConsumerConfiguration(
     factory.setConcurrency(1)
     factory.consumerFactory = consumerFactory
     factory.containerProperties.isDeliveryAttemptHeader = true
-    factory.setRecordMessageConverter(stringJsonMessageConverter())
-    val errorHandler =
-      DefaultErrorHandler(
-        FixedBackOff(0, 0)
-      )
-
+    val errorHandler = DefaultErrorHandler(FixedBackOff(0, 0))
     factory.setCommonErrorHandler(errorHandler)
-    @Suppress("UNCHECKED_CAST")
     factory.setRecordInterceptor(interceptor as RecordInterceptor<String, String>)
     return factory
   }
@@ -44,33 +33,23 @@ class KafkaConsumerConfiguration(
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.setConcurrency(1)
-    factory.setRecordMessageConverter(stringJsonMessageConverter())
     factory.containerProperties.isDeliveryAttemptHeader = true
     factory.consumerFactory = consumerRetryFactory
-    val errorHandler =
-      DefaultErrorHandler(
-        FixedBackOff(INTERVAL, 1)
-      )
+    val errorHandler = DefaultErrorHandler(FixedBackOff(INTERVAL, 1))
     factory.setCommonErrorHandler(errorHandler)
-    @Suppress("UNCHECKED_CAST")
     factory.setRecordInterceptor(interceptor as RecordInterceptor<String, String>)
     return factory
   }
 
   @Bean
-  fun consumerFactory(consumerSettings: ConsumerSettings): ConsumerFactory<String, Any> {
-    return DefaultKafkaConsumerFactory(consumerSettings.settings())
-  }
+  fun consumerFactory(
+    consumerSettings: ConsumerSettings
+  ): ConsumerFactory<String, Any> = DefaultKafkaConsumerFactory(consumerSettings.settings())
 
   @Bean
-  fun consumerRetryFactory(consumerSettings: ConsumerSettings): ConsumerFactory<String, Any> {
-    return DefaultKafkaConsumerFactory(consumerSettings.settings())
-  }
-
-  @Bean
-  fun stringJsonMessageConverter(): StringJsonMessageConverter {
-    return StringJsonMessageConverter(objectMapper)
-  }
+  fun consumerRetryFactory(
+    consumerSettings: ConsumerSettings
+  ): ConsumerFactory<String, Any> = DefaultKafkaConsumerFactory(consumerSettings.settings())
 
   companion object {
     const val RETRY_LISTENER_BEAN_NAME = "kafkaRetryListenerContainerFactory"
