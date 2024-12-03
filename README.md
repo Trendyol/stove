@@ -6,8 +6,6 @@
 
 ![Release](https://img.shields.io/maven-central/v/com.trendyol/stove-testing-e2e?versionPrefix=0&label=latest-release&color=blue) [<img src="https://img.shields.io/nexus/s/com.trendyol/stove-testing-e2e?server=https%3A%2F%2Foss.sonatype.org&queryOpt=:v=1.0.0.*&label=latest-snapshot"/>](https://oss.sonatype.org/content/repositories/snapshots/com/trendyol/stove-testing-e2e/) [![codecov](https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove)
 
-
-
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
 
 # What is Stove?
@@ -52,12 +50,18 @@ Frameworks:
 ### Add the dependency
 
 ```kotlin
+// Add the following dependencies to your build.gradle.kts
 testImplementation("com.trendyol:stove-testing-e2e:${version}")
-// and the one of the following for the infrastructure you want to use
+
+// And the any of the following for the infrastructure you want to use, for example Kafka
+// you can also use Couchbase, PostgreSQL, ElasticSearch, MongoDB, MSSQL, Redis, HTTP Client, WireMock
+// as much as you want
 testImplementation("com.trendyol:stove-testing-e2e-kafka:${version}")
-// and Application Under Test (AUT)
+
+// And Application Under Test (AUT)
 testImplementation("com.trendyol:stove-ktor-testing-e2e:${version}")
-//or
+
+// Or
 testImplementation("com.trendyol:stove-spring-testing-e2e:${version}")
 ```
 
