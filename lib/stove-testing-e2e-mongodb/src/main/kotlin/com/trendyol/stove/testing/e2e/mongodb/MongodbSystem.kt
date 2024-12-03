@@ -51,8 +51,8 @@ class MongodbSystem internal constructor(
   ): MongodbSystem = mongoClient
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
-    .withDocumentClass<T>()
     .find(BsonDocument.parse(query))
+    .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
     .toList()
     .also(assertion)
     .let { this }
@@ -65,8 +65,8 @@ class MongodbSystem internal constructor(
   ): MongodbSystem = mongoClient
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
-    .withDocumentClass<T>()
     .find(filterById(objectId))
+    .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
     .first()
     .also(assertion)
     .let { this }
