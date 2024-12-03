@@ -1,6 +1,5 @@
 package com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kafka
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.examples.domain.ddd.*
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
 import kotlinx.coroutines.runBlocking
@@ -9,8 +8,7 @@ import org.slf4j.*
 
 class KafkaDomainEventPublisher(
   private val publisher: KafkaPublisher<String, Any>,
-  private val topicResolver: TopicResolver,
-  private val objectMapper: ObjectMapper
+  private val topicResolver: TopicResolver
 ) : EventPublisher {
   private val logger: Logger = LoggerFactory.getLogger(KafkaDomainEventPublisher::class.java)
 
@@ -28,7 +26,7 @@ class KafkaDomainEventPublisher(
       ProducerRecord<String, Any>(
         topic.name,
         aggregateRoot.idAsString,
-        objectMapper.writeValueAsString(event)
+        event
       )
     }
 }

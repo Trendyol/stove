@@ -1,5 +1,6 @@
 package com.trendyol.stove.example.java.spring.e2e.setup
 
+import com.couchbase.client.kotlin.codec.JacksonJsonSerializer
 import com.trendyol.stove.example.java.spring.e2e.setup.migrations.CouchbaseMigration
 import com.trendyol.stove.examples.java.spring.ExampleSpringBootApp
 import com.trendyol.stove.examples.java.spring.infra.boilerplate.serialization.JacksonConfiguration
@@ -7,10 +8,13 @@ import com.trendyol.stove.examples.java.spring.infra.components.product.persiste
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.couchbase.*
 import com.trendyol.stove.testing.e2e.http.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
+import io.ktor.serialization.jackson.*
+import org.springframework.kafka.support.serializer.JsonSerializer
 
 class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
@@ -18,7 +22,7 @@ class Stove : AbstractProjectConfig() {
       httpClient {
         HttpClientSystemOptions(
           baseUrl = "http://localhost:8080",
-          objectMapper = JacksonConfiguration.defaultObjectMapper()
+          contentConverter = JacksonConverter(JacksonConfiguration.defaultObjectMapper())
         )
       }
 
@@ -26,7 +30,7 @@ class Stove : AbstractProjectConfig() {
       wiremock {
         WireMockSystemOptions(
           port = 9090,
-          objectMapper = JacksonConfiguration.defaultObjectMapper()
+          serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper())
         )
       }
       couchbase {
@@ -36,7 +40,7 @@ class Stove : AbstractProjectConfig() {
             withStartupAttempts(3)
             dockerImageName = "couchbase/server:7.2.5"
           },
-          objectMapper = JacksonConfiguration.defaultObjectMapper(),
+          clusterSerDe = JacksonJsonSerializer(JacksonConfiguration.defaultObjectMapper()),
           configureExposedConfiguration = { cfg ->
             listOf(
               "couchbase.bucket=${CollectionConstants.BUCKET_NAME}",
@@ -53,7 +57,8 @@ class Stove : AbstractProjectConfig() {
 
       kafka {
         KafkaSystemOptions(
-          objectMapper = JacksonConfiguration.defaultObjectMapper(),
+          serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper()),
+          valueSerializer = JsonSerializer(JacksonConfiguration.defaultObjectMapper()),
           containerOptions = KafkaContainerOptions {
             withStartupAttempts(3)
           },

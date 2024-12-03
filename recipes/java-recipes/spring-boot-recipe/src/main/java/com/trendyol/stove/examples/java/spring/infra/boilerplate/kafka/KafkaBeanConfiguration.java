@@ -15,6 +15,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
@@ -51,10 +54,16 @@ public class KafkaBeanConfiguration {
         ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, kafkaConfiguration.isAutoCreateTopics());
     properties.put(
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfiguration.getAutoOffsetReset());
+
     properties.put(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
     properties.put(
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class.getName());
+    properties.put(
+        ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
+    properties.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+    properties.put(JsonDeserializer.VALUE_DEFAULT_TYPE, Object.class.getName());
+
     properties.put(
         ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, kafkaConfiguration.flattenInterceptorClasses());
     logger.info("Kafka consumer properties: {}", properties);
@@ -67,7 +76,7 @@ public class KafkaBeanConfiguration {
     properties.put(
         ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfiguration.getBootstrapServers());
     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-    properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class.getName());
     properties.put(
         ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, kafkaConfiguration.flattenInterceptorClasses());
     return properties;

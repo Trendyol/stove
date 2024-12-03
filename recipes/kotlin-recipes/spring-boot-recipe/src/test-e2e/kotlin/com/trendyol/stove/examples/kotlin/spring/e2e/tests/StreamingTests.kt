@@ -1,9 +1,9 @@
 package com.trendyol.stove.examples.kotlin.spring.e2e.tests
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.examples.kotlin.spring.ExampleData
 import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.serialization.StoveObjectMapper
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde.Companion.deserialize
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.FunSpec
 import io.ktor.client.*
@@ -32,7 +32,7 @@ class StreamingTests : FunSpec({
             contentType(ContentType.parse("application/x-ndjson"))
           }.also { response ->
             response.readJsonStream { line ->
-              StoveObjectMapper.Default.readValue<ExampleData>(line)
+              StoveSerde.jackson.anyJsonStringSerde().deserialize<ExampleData>(line)
             }.collect { data ->
               println(data)
             }

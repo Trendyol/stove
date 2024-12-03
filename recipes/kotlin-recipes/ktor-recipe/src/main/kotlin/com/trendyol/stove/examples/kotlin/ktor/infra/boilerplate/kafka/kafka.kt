@@ -22,7 +22,7 @@ fun KoinApplication.registerKafka(kafkaConfiguration: KafkaConfiguration) {
       single { kafkaPublisher(get()) }
       single { kafkaReceiver(get()) }
       single { ConsumerEngine(getAll()) }
-      single { KafkaDomainEventPublisher(get(), get(), get()) }.bind<EventPublisher>()
+      single { KafkaDomainEventPublisher(get(), get()) }.bind<EventPublisher>()
       single { TopicResolver(get()) }
     }
   )
