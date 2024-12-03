@@ -225,8 +225,7 @@ Stove solves these challenges by providing:
 
 > [!WARNING]
 > While Stove is production-ready and extensively used, the API is not yet fully stabilized. Breaking changes may
-> occur
-> in minor releases, but migration guides will always be provided.
+> occur in minor releases, but migration guides will always be provided.
 
 ## Contributing
 
