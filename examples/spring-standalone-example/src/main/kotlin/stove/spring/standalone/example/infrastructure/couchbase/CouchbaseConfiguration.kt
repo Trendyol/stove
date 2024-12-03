@@ -19,9 +19,7 @@ class CouchbaseConfiguration(
   private val meterRegistry: MeterRegistry
 ) {
   companion object {
-    val objectMapper: ObjectMapper =
-      ObjectMapperConfig.createObjectMapperWithDefaults()
-        .registerModule(JsonValueModule())
+    val objectMapper: ObjectMapper = ObjectMapperConfig.default.registerModule(JsonValueModule())
   }
 
   @Primary

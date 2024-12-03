@@ -12,14 +12,29 @@ class CustomSerDe {
   @Value("\${kafka.schema-registry-url}")
   val schemaRegistryUrl = ""
 
-  fun createConfiguredSerdeForRecordValues(): KafkaProtobufSerde<Message> {
-    var serde: KafkaProtobufSerde<Message> = KafkaProtobufSerde<Message>()
-    if (schemaRegistryUrl.contains("mock://")) {
-      serde = KafkaProtobufSerde<Message>(MockSchemaRegistry.getClientForScope("mock-registry"))
+  fun createSerdeForValues(): KafkaProtobufSerde<Message> = KafkaRegistry.createSerde(schemaRegistryUrl)
+}
+
+sealed class KafkaRegistry(open val url: String) {
+  object Mock : KafkaRegistry("mock://mock-registry")
+
+  data class Defined(override val url: String) : KafkaRegistry(url)
+
+  companion object {
+    fun createSerde(fromUrl: String): KafkaProtobufSerde<Message> = createSerde(
+      if (fromUrl.contains(Mock.url)) Mock else Defined(fromUrl)
+    )
+
+    fun createSerde(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {
+      val schemaRegistryClient = when (registry) {
+        is Mock -> MockSchemaRegistry.getClientForScope("mock-registry")
+        is Defined -> MockSchemaRegistry.getClientForScope(registry.url)
+      }
+      val serde: KafkaProtobufSerde<Message> = KafkaProtobufSerde<Message>(schemaRegistryClient)
+      val serdeConfig: MutableMap<String, Any?> = HashMap()
+      serdeConfig[SCHEMA_REGISTRY_URL_CONFIG] = registry.url
+      serde.configure(serdeConfig, false)
+      return serde
     }
-    val serdeConfig: MutableMap<String, Any?> = HashMap()
-    serdeConfig[SCHEMA_REGISTRY_URL_CONFIG] = schemaRegistryUrl
-    serde.configure(serdeConfig, false)
-    return serde
   }
 }

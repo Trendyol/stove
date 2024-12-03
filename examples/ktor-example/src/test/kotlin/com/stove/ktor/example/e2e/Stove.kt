@@ -3,6 +3,7 @@ package com.stove.ktor.example.e2e
 import com.trendol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.config.AbstractProjectConfig
@@ -40,8 +41,9 @@ class Stove : AbstractProjectConfig() {
       })
     }
     kafka {
-      stoveKafkaObjectMapperRef = objectMapperRef
-      KafkaSystemOptions {
+      KafkaSystemOptions(
+        serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef)
+      ) {
         listOf(
           "kafka.bootstrapServers=${it.bootstrapServers}",
           "kafka.interceptorClasses=${it.interceptorClass}"

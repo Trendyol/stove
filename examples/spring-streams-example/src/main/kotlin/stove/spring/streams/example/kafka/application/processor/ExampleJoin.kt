@@ -17,7 +17,7 @@ import stove.spring.streams.example.kafka.CustomSerDe
 @EnableKafka
 @EnableKafkaStreams
 class ExampleJoin(customSerDe: CustomSerDe) {
-  private val protobufSerde: KafkaProtobufSerde<Message> = customSerDe.createConfiguredSerdeForRecordValues()
+  private val protobufSerde: KafkaProtobufSerde<Message> = customSerDe.createSerdeForValues()
   private val byteArraySerde: Serde<ByteArray> = Serdes.ByteArray()
   private val stringSerde: Serde<String> = Serdes.String()
 
@@ -31,21 +31,20 @@ class ExampleJoin(customSerDe: CustomSerDe) {
       .stream("input2", Consumed.with(stringSerde, protobufSerde))
       .toTable(Materialized.with(stringSerde, protobufSerde))
 
-    val joinedTable =
-      input1.join(
-        input2,
-        { input1Message: Message, input2Message: Message ->
-          protobufSerde.serializer().serialize(
-            "output",
-            output {
-              this.firstName = Input1.parseFrom(input1Message.toByteArray()).firstName
-              this.lastName = Input1.parseFrom(input1Message.toByteArray()).lastName
-              this.bsn = Input2.parseFrom(input2Message.toByteArray()).bsn
-              this.age = Input2.parseFrom(input2Message.toByteArray()).age
-            }
-          )
-        }
-      )
+    val joinedTable = input1.join(
+      input2,
+      { input1Message: Message, input2Message: Message ->
+        protobufSerde.serializer().serialize(
+          "output",
+          output {
+            this.firstName = Input1.parseFrom(input1Message.toByteArray()).firstName
+            this.lastName = Input1.parseFrom(input1Message.toByteArray()).lastName
+            this.bsn = Input2.parseFrom(input2Message.toByteArray()).bsn
+            this.age = Input2.parseFrom(input2Message.toByteArray()).age
+          }
+        )
+      }
+    )
     joinedTable.toStream().to("output", Produced.with(stringSerde, byteArraySerde))
   }
 }

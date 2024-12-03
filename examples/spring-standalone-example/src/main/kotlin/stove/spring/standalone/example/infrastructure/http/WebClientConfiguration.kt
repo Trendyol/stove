@@ -1,6 +1,6 @@
 package stove.spring.standalone.example.infrastructure.http
 
-import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.netty.channel.ChannelOption
 import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -11,7 +11,6 @@ import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.http.codec.json.*
 import org.springframework.web.reactive.function.client.*
 import reactor.netty.http.client.HttpClient
-import stove.spring.standalone.example.infrastructure.ObjectMapperConfig
 import java.util.concurrent.TimeUnit
 
 @Configuration
@@ -30,12 +29,6 @@ class WebClientConfiguration(private val webClientConfigurationProperties: WebCl
     )
       .exchangeStrategies(exchangeStrategies)
       .build()
-
-  @Bean
-  fun webClientObjectMapper(): ObjectMapper {
-    return ObjectMapperConfig.createObjectMapperWithDefaults()
-      .configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false)
-  }
 
   @Bean
   fun exchangeStrategies(webClientObjectMapper: ObjectMapper): ExchangeStrategies {

@@ -24,7 +24,6 @@ class KafkaConsumerConfiguration(
     factory.setConcurrency(1)
     factory.consumerFactory = consumerFactory
     factory.containerProperties.isDeliveryAttemptHeader = true
-    factory.setRecordMessageConverter(stringJsonMessageConverter())
     val errorHandler = DefaultErrorHandler(
       DeadLetterPublishingRecoverer(kafkaTemplate),
       FixedBackOff(0, 0)
@@ -41,7 +40,6 @@ class KafkaConsumerConfiguration(
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.setConcurrency(1)
-    factory.setRecordMessageConverter(stringJsonMessageConverter())
     factory.containerProperties.isDeliveryAttemptHeader = true
     factory.consumerFactory = consumerRetryFactory
     val errorHandler = DefaultErrorHandler(
@@ -54,14 +52,12 @@ class KafkaConsumerConfiguration(
   }
 
   @Bean
-  fun consumerFactory(consumerSettings: ConsumerSettings): ConsumerFactory<String, Any> {
-    return DefaultKafkaConsumerFactory(consumerSettings.settings())
-  }
+  fun consumerFactory(consumerSettings: ConsumerSettings): ConsumerFactory<String, Any> =
+    DefaultKafkaConsumerFactory(consumerSettings.settings())
 
   @Bean
-  fun consumerRetryFactory(consumerSettings: ConsumerSettings): ConsumerFactory<String, Any> {
-    return DefaultKafkaConsumerFactory(consumerSettings.settings())
-  }
+  fun consumerRetryFactory(consumerSettings: ConsumerSettings): ConsumerFactory<String, Any> =
+    DefaultKafkaConsumerFactory(consumerSettings.settings())
 
   @Bean
   fun stringJsonMessageConverter(): StringJsonMessageConverter = StringJsonMessageConverter(objectMapper)

@@ -2,15 +2,16 @@ package com.stove.spring.streams.example.e2e
 
 import arrow.core.*
 import com.google.protobuf.Message
-import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
+import kotlinx.serialization.ExperimentalSerializationApi
 import okio.ByteString.Companion.toByteString
 import org.apache.kafka.common.serialization.*
+import stove.spring.streams.example.kafka.KafkaRegistry
 import java.util.*
 
 class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
-  private val protobufSerde: KafkaProtobufSerde<Message> = createConfiguredSerdeForRecordValues()
+  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde(KafkaRegistry.Mock)
 
   override fun serialize(
     topic: String,
@@ -21,8 +22,8 @@ class StoveKafkaValueSerializer<T : Any> : Serializer<T> {
   }
 }
 
-class StoveKafkaValueDeserializer<T : Any> : Deserializer<Message> {
-  private val protobufSerde: KafkaProtobufSerde<Message> = createConfiguredSerdeForRecordValues()
+class StoveKafkaValueDeserializer : Deserializer<Message> {
+  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde(KafkaRegistry.Mock)
 
   override fun deserialize(
     topic: String,
@@ -30,14 +31,31 @@ class StoveKafkaValueDeserializer<T : Any> : Deserializer<Message> {
   ): Message = protobufSerde.deserializer().deserialize(topic, data)
 }
 
-fun createConfiguredSerdeForRecordValues(): KafkaProtobufSerde<Message> {
-  val schemaRegistryClient = MockSchemaRegistry.getClientForScope("mock-registry")
-  val serde: KafkaProtobufSerde<Message> = KafkaProtobufSerde<Message>(schemaRegistryClient)
-  val serdeConfig: MutableMap<String, Any?> = HashMap()
-  serdeConfig[SCHEMA_REGISTRY_URL_CONFIG] = "mock://mock-registry"
-  serde.configure(serdeConfig, false)
-  return serde
+@Suppress("UNCHECKED_CAST")
+@OptIn(ExperimentalSerializationApi::class)
+class StoveProtobufSerde : StoveSerde<Any, ByteArray> {
+  private val parseFromMethod = "parseFrom"
+  private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde(KafkaRegistry.Mock)
+
+  override fun serialize(value: Any): ByteArray = protobufSerde.serializer().serialize("any", value as Message)
+
+  override fun <T : Any> deserialize(value: ByteArray, clazz: Class<T>): T {
+    val incoming: Message = protobufSerde.deserializer().deserialize("any", value)
+    incoming.isAssignableFrom(clazz).also { isAssignableFrom ->
+      require(isAssignableFrom) {
+        "Expected '${clazz.simpleName}' but got '${incoming.descriptorForType.name}'. " +
+          "This could be transient ser/de problem since the message stream is constantly checked if the expected message is arrived, " +
+          "so you can ignore this error if you are sure that the message is the expected one."
+      }
+    }
+
+    val parseFromMethod = clazz.getDeclaredMethod(parseFromMethod, ByteArray::class.java)
+    val parsed = parseFromMethod(incoming, incoming.toByteArray()) as T
+    return parsed
+  }
 }
+
+private fun Message.isAssignableFrom(clazz: Class<*>): Boolean = this.descriptorForType.name == clazz.simpleName
 
 fun KafkaProtobufSerde<Message>.messageAsBase64(
   message: Any

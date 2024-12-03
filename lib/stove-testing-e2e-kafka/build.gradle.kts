@@ -39,7 +39,7 @@ wire {
     rpcRole = "client"
     rpcCallStyle = "suspending"
     exclusive = false
-    javaInterop = true
+    javaInterop = false
   }
   kotlin {
     custom {

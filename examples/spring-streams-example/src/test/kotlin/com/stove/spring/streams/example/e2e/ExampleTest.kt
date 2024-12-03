@@ -4,7 +4,6 @@ import arrow.core.Option
 import com.google.protobuf.Message
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import io.kotest.core.spec.style.FunSpec
 import org.apache.kafka.common.serialization.StringDeserializer
 import stove.example.protobuf.*
@@ -15,8 +14,6 @@ import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 class ExampleTest : FunSpec({
-  val protobufSerde: KafkaProtobufSerde<Message> = createConfiguredSerdeForRecordValues()
-
   test("expect join") {
     /*-------------------------
       |  Create test data
@@ -57,23 +54,13 @@ class ExampleTest : FunSpec({
          ----------------------------*/
 
         //  Assert input1 message is consumed
-        shouldBeConsumed<Any> {
-          protobufSerde.messageAsBase64(actual)
-            .isSome { message ->
-              message.onMatchingAssert(Input1.getDescriptor().name) {
-                Input1.parseFrom(it.toByteArray()) == input1Message
-              }
-            }
+        shouldBeConsumed<Input1> {
+          actual == input1Message
         }
 
         //  Assert input2 message is consumed
-        shouldBeConsumed<Any> {
-          protobufSerde.messageAsBase64(actual)
-            .isSome { message ->
-              message.onMatchingAssert(Input2.getDescriptor().name) {
-                Input2.parseFrom(it.toByteArray()) == input2Message
-              }
-            }
+        shouldBeConsumed<Input2> {
+          actual == input2Message
         }
 
         /*---------------------------
@@ -81,19 +68,15 @@ class ExampleTest : FunSpec({
          ----------------------------*/
 
         // Assert joined message is correctly published
-        shouldBePublished<Any>(atLeastIn = 20.seconds) {
-          protobufSerde.messageAsBase64(actual).isSome { message ->
-            message.onMatchingAssert(Output.getDescriptor().name) {
-              Output.parseFrom(it.toByteArray()) == outputMessage
-            }
-          }
+        shouldBePublished<Output>(atLeastIn = 20.seconds) {
+          actual.bsn == bsn
         }
 
         // Assert joined message is correctly published
         // Similar to test above, but is able to run even if no messages are published
         consumer<String, Message>(
           "output",
-          valueDeserializer = StoveKafkaValueDeserializer<ByteArray>(),
+          valueDeserializer = StoveKafkaValueDeserializer(),
           keyDeserializer = StringDeserializer()
         ) { record ->
           if (Output.parseFrom(record.value().toByteArray()) != outputMessage) throw AssertionError()
