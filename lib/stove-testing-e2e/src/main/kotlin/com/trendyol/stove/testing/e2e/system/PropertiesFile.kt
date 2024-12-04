@@ -18,7 +18,8 @@ class PropertiesFile {
     if (propertiesFilePath.exists()) {
       l.info("'.testcontainers.properties' file exists")
       when {
-        propertiesFilePath.readText()
+        propertiesFilePath
+          .readText()
           .contains(REUSE_ENABLED) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
 
         else ->
@@ -50,7 +51,8 @@ class PropertiesFile {
       !propertiesFilePath.exists() -> propertiesFilePath.writeText(REUSE_ENABLED)
       else ->
         when {
-          propertiesFilePath.readText()
+          propertiesFilePath
+            .readText()
             .contains(REUSE_ENABLED) ->
             l.info(
               "'.testcontainers.properties' looks good and contains reuse feature!"

@@ -14,7 +14,9 @@ import kotlin.reflect.KClass
 @StoveDsl
 class SpringBridgeSystem(
   override val testSystem: TestSystem
-) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext>, BridgeSystem<ApplicationContext>(testSystem) {
+) : BridgeSystem<ApplicationContext>(testSystem),
+  PluggedSystem,
+  AfterRunAwareWithContext<ApplicationContext> {
   override fun <D : Any> get(klass: KClass<D>): D = ctx.getBean(klass.java)
 }
 

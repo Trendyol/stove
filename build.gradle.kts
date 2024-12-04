@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.libs
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -80,7 +81,7 @@ subprojects.of("lib", "spring", "examples", "ktor") {
 
   spotless {
     kotlin {
-      ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExclude("build/", "generated/", "out/")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")

@@ -58,83 +58,84 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class PostgresqlSystemTests : FunSpec({
+class PostgresqlSystemTests :
+  FunSpec({
 
-  data class IdAndDescription(
-    val id: Long,
-    val description: String
-  )
+    data class IdAndDescription(
+      val id: Long,
+      val description: String
+    )
 
-  test("initial migration should work") {
-    TestSystem.validate {
-      postgresql {
-        shouldQuery<IdAndDescription>(
-          "SELECT * FROM MigrationHistory",
-          mapper = { row ->
-            IdAndDescription(row.getLong("id"), row.getString("description"))
+    test("initial migration should work") {
+      TestSystem.validate {
+        postgresql {
+          shouldQuery<IdAndDescription>(
+            "SELECT * FROM MigrationHistory",
+            mapper = { row ->
+              IdAndDescription(row.getLong("id"), row.getString("description"))
+            }
+          ) { actual ->
+            actual.size shouldBeGreaterThan 0
+            actual.first() shouldBe IdAndDescription(1, "InitialMigration")
           }
-        ) { actual ->
-          actual.size shouldBeGreaterThan 0
-          actual.first() shouldBe IdAndDescription(1, "InitialMigration")
         }
       }
     }
-  }
 
-  test("should save and get with immutable data class") {
-    TestSystem.validate {
-      postgresql {
-        shouldExecute(
-          """
+    test("should save and get with immutable data class") {
+      TestSystem.validate {
+        postgresql {
+          shouldExecute(
+            """
                     DROP TABLE IF EXISTS Dummies;                    
                     CREATE TABLE IF NOT EXISTS Dummies (
                     	id serial PRIMARY KEY,
                     	description VARCHAR (50)  NOT NULL
                     );
-          """.trimIndent()
-        )
-        shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
-        shouldQuery<IdAndDescription>("SELECT * FROM Dummies", mapper = {
-          IdAndDescription(it.getLong("id"), it.getString("description"))
-        }) { actual ->
-          actual.size shouldBeGreaterThan 0
-          actual.first().description shouldBe testCase.name.testName
+            """.trimIndent()
+          )
+          shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
+          shouldQuery<IdAndDescription>("SELECT * FROM Dummies", mapper = {
+            IdAndDescription(it.getLong("id"), it.getString("description"))
+          }) { actual ->
+            actual.size shouldBeGreaterThan 0
+            actual.first().description shouldBe testCase.name.testName
+          }
         }
       }
     }
-  }
 
-  class NullableIdAndDescription {
-    var id: Long? = null
-    var description: String? = null
-  }
+    class NullableIdAndDescription {
+      var id: Long? = null
+      var description: String? = null
+    }
 
-  test("should save and get with mutable class") {
-    TestSystem.validate {
-      postgresql {
-        shouldExecute(
-          """
+    test("should save and get with mutable class") {
+      TestSystem.validate {
+        postgresql {
+          shouldExecute(
+            """
                     DROP TABLE IF EXISTS Dummies;
                     CREATE TABLE IF NOT EXISTS Dummies (
                     	id serial PRIMARY KEY,
                     	description VARCHAR (50)  NOT NULL
                     );
-          """.trimIndent()
-        )
-        shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
-        shouldQuery<NullableIdAndDescription>(
-          "SELECT * FROM Dummies",
-          mapper = { row ->
-            val result = NullableIdAndDescription()
-            result.id = row.getLong("id")
-            result.description = row.getString("description")
-            result
+            """.trimIndent()
+          )
+          shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
+          shouldQuery<NullableIdAndDescription>(
+            "SELECT * FROM Dummies",
+            mapper = { row ->
+              val result = NullableIdAndDescription()
+              result.id = row.getLong("id")
+              result.description = row.getString("description")
+              result
+            }
+          ) { actual ->
+            actual.size shouldBeGreaterThan 0
+            actual.first().description shouldBe testCase.name.testName
           }
-        ) { actual ->
-          actual.size shouldBeGreaterThan 0
-          actual.first().description shouldBe testCase.name.testName
         }
       }
     }
-  }
-})
+  })

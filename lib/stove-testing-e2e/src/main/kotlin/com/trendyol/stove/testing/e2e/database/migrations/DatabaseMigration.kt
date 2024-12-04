@@ -20,7 +20,9 @@ interface DatabaseMigration<in TConnection> {
   val order: Int
 }
 
-enum class MigrationPriority(val value: Int) {
+enum class MigrationPriority(
+  val value: Int
+) {
   LOWEST(Int.MAX_VALUE),
   HIGHEST(Int.MIN_VALUE)
 }

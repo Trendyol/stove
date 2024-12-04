@@ -74,7 +74,10 @@ import kotlin.reflect.KClass
  * ```
  */
 @StoveDsl
-class TestSystem(configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}) : ReadyTestSystem, AutoCloseable {
+class TestSystem(
+  configure: @StoveDsl TestSystemOptionsDsl.() -> Unit = {}
+) : ReadyTestSystem,
+  AutoCloseable {
   private val optionsDsl: TestSystemOptionsDsl = TestSystemOptionsDsl()
 
   init {

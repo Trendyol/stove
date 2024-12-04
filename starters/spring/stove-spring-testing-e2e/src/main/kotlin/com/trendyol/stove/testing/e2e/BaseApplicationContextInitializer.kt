@@ -6,8 +6,9 @@ import org.springframework.context.*
 import org.springframework.context.support.*
 
 @StoveDsl
-abstract class BaseApplicationContextInitializer(registration: BeanDefinitionDsl.() -> Unit = {}) :
-  ApplicationContextInitializer<GenericApplicationContext> {
+abstract class BaseApplicationContextInitializer(
+  registration: BeanDefinitionDsl.() -> Unit = {}
+) : ApplicationContextInitializer<GenericApplicationContext> {
   private var registrations = mutableListOf<(BeanDefinitionDsl) -> Unit>()
   private val beans = beans {}
 

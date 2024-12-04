@@ -10,19 +10,24 @@ import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.testcontainers.containers.MSSQLServerContainer
 import org.testcontainers.utility.DockerImageName
 
-sealed class ToolsPath(open val path: String) {
+sealed class ToolsPath(
+  open val path: String
+) {
   data object Before2019 : ToolsPath("mssql-tools")
 
   data object After2019 : ToolsPath("mssql-tools18")
 
-  data class Custom(override val path: String) : ToolsPath(path)
+  data class Custom(
+    override val path: String
+  ) : ToolsPath(path)
 
   override fun toString(): String = path
 }
 
 open class StoveMsSqlContainer(
   override val imageNameAccess: DockerImageName
-) : MSSQLServerContainer<StoveMsSqlContainer>(imageNameAccess), StoveContainer
+) : MSSQLServerContainer<StoveMsSqlContainer>(imageNameAccess),
+  StoveContainer
 
 data class MssqlContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
@@ -47,7 +52,8 @@ data class MsSqlOptions(
   override val configureExposedConfiguration: (
     RelationalDatabaseExposedConfiguration
   ) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
+) : SystemOptions,
+  ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
   val migrationCollection: MigrationCollection<SqlMigrationContext> = MigrationCollection()
 
   /**
@@ -85,7 +91,8 @@ internal fun TestSystem.withMsSql(options: MsSqlOptions): TestSystem =
     options.container.registry,
     options.container.compatibleSubstitute
   ) {
-    options.container.useContainerFn(it)
+    options.container
+      .useContainerFn(it)
       .acceptLicense()
       .withEnv("MSSQL_USER", options.userName)
       .withEnv("MSSQL_SA_PASSWORD", options.password)

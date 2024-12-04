@@ -15,10 +15,14 @@ class CustomSerDe {
   fun createSerdeForValues(): KafkaProtobufSerde<Message> = KafkaRegistry.createSerde(schemaRegistryUrl)
 }
 
-sealed class KafkaRegistry(open val url: String) {
+sealed class KafkaRegistry(
+  open val url: String
+) {
   object Mock : KafkaRegistry("mock://mock-registry")
 
-  data class Defined(override val url: String) : KafkaRegistry(url)
+  data class Defined(
+    override val url: String
+  ) : KafkaRegistry(url)
 
   companion object {
     fun createSerde(fromUrl: String): KafkaProtobufSerde<Message> = createSerde(

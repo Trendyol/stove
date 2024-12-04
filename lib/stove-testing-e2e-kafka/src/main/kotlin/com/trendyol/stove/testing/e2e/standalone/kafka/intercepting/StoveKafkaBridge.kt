@@ -14,7 +14,9 @@ import java.nio.charset.Charset
 import java.util.*
 
 @Suppress("UNUSED")
-class StoveKafkaBridge<K, V> : ConsumerInterceptor<K, V>, ProducerInterceptor<K, V> {
+class StoveKafkaBridge<K, V> :
+  ConsumerInterceptor<K, V>,
+  ProducerInterceptor<K, V> {
   private val logger: Logger = org.slf4j.LoggerFactory.getLogger(StoveKafkaBridge::class.java)
   private val client: StoveKafkaObserverServiceClient by lazy { startGrpcClient() }
   private val serde: StoveSerde<Any, ByteArray> by lazy { stoveSerdeRef }

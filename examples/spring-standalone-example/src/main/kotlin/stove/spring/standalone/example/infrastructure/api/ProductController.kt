@@ -8,13 +8,13 @@ import stove.spring.standalone.example.application.handlers.*
 
 @RestController
 @RequestMapping("/api")
-class ProductController(private val productCreator: ProductCreator) {
+class ProductController(
+  private val productCreator: ProductCreator
+) {
   @GetMapping("/index")
   suspend fun get(
     @RequestParam(required = false) keyword: String
-  ): String {
-    return "Hi from Stove framework with $keyword"
-  }
+  ): String = "Hi from Stove framework with $keyword"
 
   @PostMapping("/product/create")
   suspend fun createProduct(
@@ -26,7 +26,8 @@ class ProductController(private val productCreator: ProductCreator) {
     @RequestPart(name = "name") name: String,
     @RequestPart(name = "file") file: FilePart
   ): String {
-    val content = file.content()
+    val content = file
+      .content()
       .flatMap { mono { it.asInputStream().readAllBytes() } }
       .awaitSingle()
       .let { String(it) }

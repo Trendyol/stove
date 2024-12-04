@@ -9,7 +9,10 @@ sealed class StoveMultiPartContent {
   /**
    * Represents a text content for a multi-part request.
    */
-  data class Text(val param: String, val value: String) : StoveMultiPartContent()
+  data class Text(
+    val param: String,
+    val value: String
+  ) : StoveMultiPartContent()
 
   /**
    * Represents a file content for a multi-part request.
@@ -24,5 +27,8 @@ sealed class StoveMultiPartContent {
   /**
    * Represents a binary content for a multi-part request.
    */
-  data class Binary(val param: String, val content: ByteArray) : StoveMultiPartContent()
+  data class Binary(
+    val param: String,
+    val content: ByteArray
+  ) : StoveMultiPartContent()
 }

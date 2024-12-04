@@ -12,27 +12,29 @@ class CapturedOutput(
   val err: String get() = errBuffer.toString()
 }
 
-abstract class ConsoleSpec(body: ConsoleSpec.(CapturedOutput) -> Unit = {}) : FunSpec({
-  val originalOut = System.out
-  val originalErr = System.err
-  val outBuffer = ByteArrayOutputStream()
-  val errBuffer = ByteArrayOutputStream()
-  val capturedOutput = CapturedOutput(outBuffer, errBuffer)
+abstract class ConsoleSpec(
+  body: ConsoleSpec.(CapturedOutput) -> Unit = {}
+) : FunSpec({
+    val originalOut = System.out
+    val originalErr = System.err
+    val outBuffer = ByteArrayOutputStream()
+    val errBuffer = ByteArrayOutputStream()
+    val capturedOutput = CapturedOutput(outBuffer, errBuffer)
 
-  beforeSpec {
-    System.setOut(PrintStream(outBuffer))
-    System.setErr(PrintStream(outBuffer))
-  }
+    beforeSpec {
+      System.setOut(PrintStream(outBuffer))
+      System.setErr(PrintStream(outBuffer))
+    }
 
-  afterSpec {
-    System.setOut(originalOut)
-    System.setOut(originalErr)
-  }
+    afterSpec {
+      System.setOut(originalOut)
+      System.setOut(originalErr)
+    }
 
-  beforeEach {
-    outBuffer.reset()
-    errBuffer.reset()
-  }
+    beforeEach {
+      outBuffer.reset()
+      errBuffer.reset()
+    }
 
-  body(this as ConsoleSpec, capturedOutput)
-})
+    body(this as ConsoleSpec, capturedOutput)
+  })

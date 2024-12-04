@@ -24,7 +24,9 @@ import kotlin.time.Duration.Companion.seconds
 class KafkaSystem(
   override val testSystem: TestSystem,
   private val context: KafkaContext
-) : PluggedSystem, RunnableSystemWithContext<ApplicationContext>, ExposesConfiguration {
+) : PluggedSystem,
+  RunnableSystemWithContext<ApplicationContext>,
+  ExposesConfiguration {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private lateinit var applicationContext: ApplicationContext
   private lateinit var kafkaTemplate: KafkaTemplate<Any, Any>
@@ -75,7 +77,9 @@ class KafkaSystem(
       headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
     )
 
-    return context.options.ops.send(kafkaTemplate, record).let { this }
+    return context.options.ops
+      .send(kafkaTemplate, record)
+      .let { this }
   }
 
   /**
@@ -202,8 +206,7 @@ class KafkaSystem(
       .onEach {
         it.setProducerListener(getInterceptor())
         it.setCloseTimeout(1.seconds.toJavaDuration())
-      }
-      .firstOrNone { safeContains(it, exposedConfiguration) }
+      }.firstOrNone { safeContains(it, exposedConfiguration) }
       .getOrElse {
         logger.warn("No KafkaTemplate found for the configured bootstrap servers, using a fallback KafkaTemplate")
         createFallbackTemplate(exposedConfiguration)

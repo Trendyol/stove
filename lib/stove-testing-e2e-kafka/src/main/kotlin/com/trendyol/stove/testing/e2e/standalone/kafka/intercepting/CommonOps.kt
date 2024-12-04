@@ -28,8 +28,9 @@ internal interface CommonOps {
   ): Collection<T> = runCatching {
     val collectionFunc = this
     withTimeout(duration) {
-      while (!collectionFunc().any { condition(it) })
+      while (!collectionFunc().any { condition(it) }) {
         delay(DELAY_MS)
+      }
     }
     collectionFunc().filter { condition(it) }
   }.fold(
@@ -43,8 +44,9 @@ internal interface CommonOps {
   ): Collection<T> = runCatching {
     val collectionFunc = this
     withTimeout(duration) {
-      while (collectionFunc().size < count)
+      while (collectionFunc().size < count) {
         delay(DELAY_MS)
+      }
     }
     collectionFunc()
   }.getOrElse {
@@ -57,7 +59,8 @@ internal interface CommonOps {
   fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
     selector: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = store.failedMessages()
+  ): Unit = store
+    .failedMessages()
     .filter {
       selector(SuccessfulParsedMessage(readCatching(it.message.toByteArray(), clazz).getOrNull().toOption(), it.metadata()))
     }.forEach {
@@ -67,7 +70,8 @@ internal interface CommonOps {
   fun <T : Any> throwIfRetried(
     clazz: KClass<T>,
     selector: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = store.retriedMessages()
+  ): Unit = store
+    .retriedMessages()
     .filter {
       selector(
         SuccessfulParsedMessage(

@@ -3,7 +3,9 @@ package com.trendyol.stove.testing.e2e.serialization
 import com.google.gson.Gson
 
 object StoveGson {
-  val default: Gson = com.google.gson.GsonBuilder().create()
+  val default: Gson = com.google.gson
+    .GsonBuilder()
+    .create()
 
   fun byConfiguring(
     configurer: com.google.gson.GsonBuilder.() -> com.google.gson.GsonBuilder

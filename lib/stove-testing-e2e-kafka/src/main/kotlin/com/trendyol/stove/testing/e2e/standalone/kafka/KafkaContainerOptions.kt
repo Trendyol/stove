@@ -6,7 +6,8 @@ import org.testcontainers.utility.DockerImageName
 
 open class StoveKafkaContainer(
   override val imageNameAccess: DockerImageName
-) : ConfluentKafkaContainer(imageNameAccess), StoveContainer
+) : ConfluentKafkaContainer(imageNameAccess),
+  StoveContainer
 
 data class KafkaContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,

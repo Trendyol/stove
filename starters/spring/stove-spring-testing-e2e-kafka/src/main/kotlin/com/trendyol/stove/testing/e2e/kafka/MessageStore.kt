@@ -25,7 +25,11 @@ internal class MessageStore {
 
   fun producedRecords(): List<StoveMessage.Published> = produced.asMap().values.toList()
 
-  fun failedRecords(): List<StoveMessage.Failed> = failures.asMap().values.map { failure -> failure.message.actual }.toList()
+  fun failedRecords(): List<StoveMessage.Failed> = failures
+    .asMap()
+    .values
+    .map { failure -> failure.message.actual }
+    .toList()
 
   override fun toString(): String = """
     |Consumed: ${pprint(consumedRecords().map { it.copy(value = ByteArray(0)) })}

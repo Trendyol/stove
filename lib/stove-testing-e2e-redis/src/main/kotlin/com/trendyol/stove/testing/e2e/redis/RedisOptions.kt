@@ -10,7 +10,8 @@ import org.testcontainers.utility.DockerImageName
 
 open class StoveRedisContainer(
   override val imageNameAccess: DockerImageName
-) : RedisContainer(imageNameAccess), StoveContainer
+) : RedisContainer(imageNameAccess),
+  StoveContainer
 
 data class RedisContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
@@ -27,7 +28,8 @@ data class RedisOptions(
   val password: String = "password",
   val container: RedisContainerOptions = RedisContainerOptions(),
   override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<RedisExposedConfiguration>
+) : SystemOptions,
+  ConfiguresExposedConfiguration<RedisExposedConfiguration>
 
 @StoveDsl
 data class RedisExposedConfiguration(
@@ -59,7 +61,8 @@ internal fun TestSystem.redis(): RedisSystem =
 
 internal fun TestSystem.withRedis(options: RedisOptions): TestSystem =
   withProvidedRegistry(options.container.image, options.container.registry, options.container.compatibleSubstitute) {
-    options.container.useContainerFn(it)
+    options.container
+      .useContainerFn(it)
       .withCommand("redis-server", "--requirepass", options.password)
       .withReuse(this.options.keepDependenciesRunning)
       .let { c -> c as StoveRedisContainer }

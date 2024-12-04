@@ -2,7 +2,9 @@ package com.trendyol.stove.functional
 
 import kotlin.reflect.KProperty
 
-class Reflect<T : Any>(val instance: T) {
+class Reflect<T : Any>(
+  val instance: T
+) {
   inner class OnGoingReflect<R>(
     private val instance: T,
     private val property: String

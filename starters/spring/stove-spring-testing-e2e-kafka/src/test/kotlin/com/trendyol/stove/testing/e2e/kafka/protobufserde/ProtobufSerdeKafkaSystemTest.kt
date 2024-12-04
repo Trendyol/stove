@@ -40,82 +40,83 @@ class StoveProtobufSerde : StoveSerde<Any, ByteArray> {
 
 private fun Message.isAssignableFrom(clazz: Class<*>): Boolean = this.descriptorForType.name == clazz.simpleName
 
-class ProtobufSerdeKafkaSystemTest : ShouldSpec({
-  beforeSpec {
-    TestSystem()
-      .with {
-        kafka {
-          KafkaSystemOptions(
-            configureExposedConfiguration = {
-              listOf(
-                "kafka.bootstrapServers=${it.bootstrapServers}",
-                "kafka.groupId=test-group",
-                "kafka.offset=earliest",
-                "kafka.schemaRegistryUrl=mock://mock-registry"
-              )
+class ProtobufSerdeKafkaSystemTest :
+  ShouldSpec({
+    beforeSpec {
+      TestSystem()
+        .with {
+          kafka {
+            KafkaSystemOptions(
+              configureExposedConfiguration = {
+                listOf(
+                  "kafka.bootstrapServers=${it.bootstrapServers}",
+                  "kafka.groupId=test-group",
+                  "kafka.offset=earliest",
+                  "kafka.schemaRegistryUrl=mock://mock-registry"
+                )
+              },
+              containerOptions = KafkaContainerOptions {
+              }
+            )
+          }
+          springBoot(
+            runner = { params ->
+              KafkaTestSpringBotApplicationForProtobufSerde.run(params) {
+                addInitializers(
+                  beans {
+                    bean<TestSystemKafkaInterceptor<*, *>>()
+                    bean { StoveProtobufSerde() }
+                  }
+                )
+              }
             },
-            containerOptions = KafkaContainerOptions {
-            }
+            withParameters = listOf(
+              "spring.lifecycle.timeout-per-shutdown-phase=0s"
+            )
           )
-        }
-        springBoot(
-          runner = { params ->
-            KafkaTestSpringBotApplicationForProtobufSerde.run(params) {
-              addInitializers(
-                beans {
-                  bean<TestSystemKafkaInterceptor<*, *>>()
-                  bean { StoveProtobufSerde() }
-                }
-              )
-            }
-          },
-          withParameters = listOf(
-            "spring.lifecycle.timeout-per-shutdown-phase=0s"
-          )
-        )
-      }.run()
-  }
+        }.run()
+    }
 
-  afterSpec {
-    TestSystem.stop()
-  }
+    afterSpec {
+      TestSystem.stop()
+    }
 
-  should("publish and consume") {
-    validate {
-      kafka {
-        val userId = Random.nextInt().toString()
-        val productId = Random.nextInt().toString()
-        val product = product {
-          id = productId
-          name = "product-${Random.nextInt()}"
-          price = Random.nextDouble()
-          currency = "eur"
-          description = "description-${Random.nextInt()}"
-        }
-        val headers = mapOf("x-user-id" to userId)
-        publish("topic-protobuf", product, headers = headers)
-        shouldBePublished<Product> {
-          actual == product && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
-        }
-        shouldBeConsumed<Product> {
-          actual == product && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
-        }
+    should("publish and consume") {
+      validate {
+        kafka {
+          val userId = Random.nextInt().toString()
+          val productId = Random.nextInt().toString()
+          val product = product {
+            id = productId
+            name = "product-${Random.nextInt()}"
+            price = Random.nextDouble()
+            currency = "eur"
+            description = "description-${Random.nextInt()}"
+          }
+          val headers = mapOf("x-user-id" to userId)
+          publish("topic-protobuf", product, headers = headers)
+          shouldBePublished<Product> {
+            actual == product && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
+          shouldBeConsumed<Product> {
+            actual == product && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
 
-        val orderId = Random.nextInt().toString()
-        val order = order {
-          id = orderId
-          customerId = userId
-          products += product
-        }
-        publish("topic-protobuf", order, headers = headers)
-        shouldBePublished<Order> {
-          actual == order && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
-        }
+          val orderId = Random.nextInt().toString()
+          val order = order {
+            id = orderId
+            customerId = userId
+            products += product
+          }
+          publish("topic-protobuf", order, headers = headers)
+          shouldBePublished<Order> {
+            actual == order && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
 
-        shouldBeConsumed<Order> {
-          actual == order && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          shouldBeConsumed<Order> {
+            actual == order && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
         }
       }
     }
-  }
-})
+  })

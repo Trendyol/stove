@@ -22,7 +22,8 @@ data class ElasticsearchSystemOptions(
   val container: ElasticContainerOptions = ElasticContainerOptions(),
   val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
+) : SystemOptions,
+  ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
   /**
@@ -52,7 +53,8 @@ data class ElasticsearchContext(
 
 open class StoveElasticSearchContainer(
   override val imageNameAccess: DockerImageName
-) : ElasticsearchContainer(imageNameAccess), StoveContainer
+) : ElasticsearchContainer(imageNameAccess),
+  StoveContainer
 
 data class ElasticContainerOptions(
   override val registry: String = "docker.elastic.co/",
@@ -73,7 +75,8 @@ data class ElasticContainerOptions(
 data class ElasticClientConfigurer(
   val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
     setDefaultRequestConfig(
-      RequestConfig.custom()
+      RequestConfig
+        .custom()
         .setSocketTimeout(5.minutes.inWholeMilliseconds.toInt())
         .setConnectTimeout(5.minutes.inWholeMilliseconds.toInt())
         .setConnectionRequestTimeout(5.minutes.inWholeMilliseconds.toInt())

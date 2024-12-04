@@ -22,45 +22,46 @@ class Stove : AbstractProjectConfig() {
     SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   )
 
-  override suspend fun beforeProject() = TestSystem().with {
-    httpClient {
-      HttpClientSystemOptions(
-        baseUrl = "http://localhost:8080"
-      )
-    }
-    bridge()
-    postgresql {
-      PostgresqlOptions(configureExposedConfiguration = { cfg ->
-        listOf(
-          "database.jdbcUrl=${cfg.jdbcUrl}",
-          "database.host=${cfg.host}",
-          "database.port=${cfg.port}",
-          "database.username=${cfg.username}",
-          "database.password=${cfg.password}"
-        )
-      })
-    }
-    kafka {
-      KafkaSystemOptions(
-        serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef)
-      ) {
-        listOf(
-          "kafka.bootstrapServers=${it.bootstrapServers}",
-          "kafka.interceptorClasses=${it.interceptorClass}"
+  override suspend fun beforeProject() = TestSystem()
+    .with {
+      httpClient {
+        HttpClientSystemOptions(
+          baseUrl = "http://localhost:8080"
         )
       }
-    }
-    ktor(
-      withParameters = listOf(
-        "port=8080"
-      ),
-      runner = { parameters ->
-        stove.ktor.example.run(parameters) {
-          addTestSystemDependencies()
+      bridge()
+      postgresql {
+        PostgresqlOptions(configureExposedConfiguration = { cfg ->
+          listOf(
+            "database.jdbcUrl=${cfg.jdbcUrl}",
+            "database.host=${cfg.host}",
+            "database.port=${cfg.port}",
+            "database.username=${cfg.username}",
+            "database.password=${cfg.password}"
+          )
+        })
+      }
+      kafka {
+        KafkaSystemOptions(
+          serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef)
+        ) {
+          listOf(
+            "kafka.bootstrapServers=${it.bootstrapServers}",
+            "kafka.interceptorClasses=${it.interceptorClass}"
+          )
         }
       }
-    )
-  }.run()
+      ktor(
+        withParameters = listOf(
+          "port=8080"
+        ),
+        runner = { parameters ->
+          stove.ktor.example.run(parameters) {
+            addTestSystemDependencies()
+          }
+        }
+      )
+    }.run()
 
   override suspend fun afterProject() {
     TestSystem.stop()

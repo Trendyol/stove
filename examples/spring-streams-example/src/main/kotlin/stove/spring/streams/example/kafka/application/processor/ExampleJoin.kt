@@ -16,7 +16,9 @@ import stove.spring.streams.example.kafka.CustomSerDe
 @Component
 @EnableKafka
 @EnableKafkaStreams
-class ExampleJoin(customSerDe: CustomSerDe) {
+class ExampleJoin(
+  customSerDe: CustomSerDe
+) {
   private val protobufSerde: KafkaProtobufSerde<Message> = customSerDe.createSerdeForValues()
   private val byteArraySerde: Serde<ByteArray> = Serdes.ByteArray()
   private val stringSerde: Serde<String> = Serdes.String()

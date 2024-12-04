@@ -14,7 +14,9 @@ import java.sql.ResultSet
 abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> protected constructor(
   final override val testSystem: TestSystem,
   protected val context: RelationalDatabaseContext<*>
-) : PluggedSystem, RunAware, ExposesConfiguration {
+) : PluggedSystem,
+  RunAware,
+  ExposesConfiguration {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration

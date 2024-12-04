@@ -78,11 +78,23 @@ interface StoveSerde<TIn : Any, TOut : Any> {
       deserializeEither(value, T::class.java).getOrNone()
   }
 
-  sealed class StoveSerdeProblem(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
-    class BecauseOfSerialization(message: String, cause: Throwable? = null) : StoveSerdeProblem(message, cause)
+  sealed class StoveSerdeProblem(
+    message: String,
+    cause: Throwable? = null
+  ) : RuntimeException(message, cause) {
+    class BecauseOfSerialization(
+      message: String,
+      cause: Throwable? = null
+    ) : StoveSerdeProblem(message, cause)
 
-    class BecauseOfDeserialization(message: String, cause: Throwable? = null) : StoveSerdeProblem(message, cause)
+    class BecauseOfDeserialization(
+      message: String,
+      cause: Throwable? = null
+    ) : StoveSerdeProblem(message, cause)
 
-    class BecauseOfDeserializationButExpected(message: String, cause: Throwable? = null) : StoveSerdeProblem(message, cause)
+    class BecauseOfDeserializationButExpected(
+      message: String,
+      cause: Throwable? = null
+    ) : StoveSerdeProblem(message, cause)
   }
 }

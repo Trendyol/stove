@@ -18,9 +18,7 @@ class KafkaProducerConfiguration {
   private val logger = LoggerFactory.getLogger(javaClass)
 
   @Bean
-  fun producer(producerFactory: ProducerFactory<String, Any>): Producer<String, Any> {
-    return producerFactory.createProducer()
-  }
+  fun producer(producerFactory: ProducerFactory<String, Any>): Producer<String, Any> = producerFactory.createProducer()
 
   @Bean
   fun kafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {

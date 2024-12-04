@@ -18,9 +18,7 @@ class MutexLockProvider : LockProvider {
   override suspend fun acquireLock(
     name: String,
     duration: Duration
-  ): Boolean {
-    return mutex.tryLock(this)
-  }
+  ): Boolean = mutex.tryLock(this)
 
   override suspend fun releaseLock(name: String) {
     mutex.unlock(this)

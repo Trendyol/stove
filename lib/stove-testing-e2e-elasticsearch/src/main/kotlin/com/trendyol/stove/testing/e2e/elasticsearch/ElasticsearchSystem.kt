@@ -24,7 +24,10 @@ import kotlin.jvm.optionals.getOrElse
 class ElasticsearchSystem internal constructor(
   override val testSystem: TestSystem,
   private val context: ElasticsearchContext
-) : PluggedSystem, RunAware, AfterRunAware, ExposesConfiguration {
+) : PluggedSystem,
+  RunAware,
+  AfterRunAware,
+  ExposesConfiguration {
   @PublishedApi
   internal lateinit var esClient: ElasticsearchClient
 
@@ -71,10 +74,12 @@ class ElasticsearchSystem internal constructor(
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(query.isNotBlank()) { "Query cannot be blank" }
-    return esClient.search(
-      SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
-      T::class.java
-    ).hits().hits()
+    return esClient
+      .search(
+        SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
+        T::class.java
+      ).hits()
+      .hits()
       .mapNotNull { it.source() }
       .also(assertion)
       .let { this }
@@ -84,10 +89,12 @@ class ElasticsearchSystem internal constructor(
   inline fun <reified T : Any> shouldQuery(
     query: Query,
     assertion: (List<T>) -> Unit
-  ): ElasticsearchSystem = esClient.search(
-    SearchRequest.of { q -> q.query(query) },
-    T::class.java
-  ).hits().hits()
+  ): ElasticsearchSystem = esClient
+    .search(
+      SearchRequest.of { q -> q.query(query) },
+      T::class.java
+    ).hits()
+    .hits()
     .mapNotNull { it.source() }
     .also(assertion)
     .let { this }
@@ -102,7 +109,8 @@ class ElasticsearchSystem internal constructor(
     require(key.isNotBlank()) { "Key cannot be blank" }
     return esClient
       .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
-      .source().toOption()
+      .source()
+      .toOption()
       .map(assertion)
       .getOrElse { throw AssertionError("Resource with key ($key) is not found") }
       .let { this }
@@ -142,12 +150,14 @@ class ElasticsearchSystem internal constructor(
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(id.isNotBlank()) { "Id cannot be blank" }
-    return esClient.index { req ->
-      req.index(index)
-        .id(id)
-        .document(instance)
-        .refresh(Refresh.WaitFor)
-    }.let { this }
+    return esClient
+      .index { req ->
+        req
+          .index(index)
+          .id(id)
+          .document(instance)
+          .refresh(Refresh.WaitFor)
+      }.let { this }
   }
 
   /**
@@ -182,9 +192,11 @@ class ElasticsearchSystem internal constructor(
   private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
     when (context.options.container.disableSecurity) {
       true ->
-        RestClient.builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port)).apply {
-          setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
-        }.build()
+        RestClient
+          .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port))
+          .apply {
+            setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
+          }.build()
 
       false -> secureRestClient(cfg, context.container.createSslContextFromCa())
     }
@@ -201,12 +213,13 @@ class ElasticsearchSystem internal constructor(
     val builder: RestClientBuilder = RestClient
       .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
 
-    return builder.setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
-      clientBuilder.setSSLContext(sslContext)
-      clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-      context.options.clientConfigurer.httpClientBuilder(clientBuilder)
-      clientBuilder
-    }.build()
+    return builder
+      .setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
+        clientBuilder.setSSLContext(sslContext)
+        clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+        context.options.clientConfigurer.httpClientBuilder(clientBuilder)
+        clientBuilder
+      }.build()
   }
 
   companion object {

@@ -21,7 +21,8 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions): TestSystem {
     options.containerOptions.registry,
     options.containerOptions.compatibleSubstitute
   ) {
-    options.containerOptions.useContainerFn(it)
+    options.containerOptions
+      .useContainerFn(it)
       .withExposedPorts(*options.containerOptions.ports.toTypedArray())
       .withReuse(this.options.keepDependenciesRunning)
       .let { c -> c as StoveKafkaContainer }

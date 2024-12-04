@@ -15,7 +15,9 @@ import kotlin.reflect.KClass
 @StoveDsl
 class KtorBridgeSystem(
   override val testSystem: TestSystem
-) : PluggedSystem, AfterRunAwareWithContext<Application>, BridgeSystem<Application>(testSystem) {
+) : BridgeSystem<Application>(testSystem),
+  PluggedSystem,
+  AfterRunAwareWithContext<Application> {
   override fun <D : Any> get(klass: KClass<D>): D = ctx.getKoin().get(klass)
 }
 

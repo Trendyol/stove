@@ -79,41 +79,42 @@ data class Person(
   val city: String
 )
 
-class MssqlSystemTests : ShouldSpec({
-  should("work") {
-    validate {
-      mssql {
-        ops {
-          val result = select("SELECT 1") {
-            it.getInt(1)
+class MssqlSystemTests :
+  ShouldSpec({
+    should("work") {
+      validate {
+        mssql {
+          ops {
+            val result = select("SELECT 1") {
+              it.getInt(1)
+            }
+            result.first() shouldBe 1
           }
-          result.first() shouldBe 1
-        }
 
-        shouldExecute("insert into Person values (1, 'Doe', 'John', '123 Main St', 'Springfield')")
+          shouldExecute("insert into Person values (1, 'Doe', 'John', '123 Main St', 'Springfield')")
 
-        shouldQuery<Person>(
-          query = "select * from Person",
-          mapper = {
-            Person(
-              it.getInt(1),
-              it.getString(2),
-              it.getString(3),
-              it.getString(4),
-              it.getString(5)
-            )
-          }
-        ) { result ->
-          result.size shouldBe 1
-          result.first().apply {
-            personId shouldBe 1
-            lastName shouldBe "Doe"
-            firstName shouldBe "John"
-            address shouldBe "123 Main St"
-            city shouldBe "Springfield"
+          shouldQuery<Person>(
+            query = "select * from Person",
+            mapper = {
+              Person(
+                it.getInt(1),
+                it.getString(2),
+                it.getString(3),
+                it.getString(4),
+                it.getString(5)
+              )
+            }
+          ) { result ->
+            result.size shouldBe 1
+            result.first().apply {
+              personId shouldBe 1
+              lastName shouldBe "Doe"
+              firstName shouldBe "John"
+              address shouldBe "123 Main St"
+              city shouldBe "Springfield"
+            }
           }
         }
       }
     }
-  }
-})
+  })

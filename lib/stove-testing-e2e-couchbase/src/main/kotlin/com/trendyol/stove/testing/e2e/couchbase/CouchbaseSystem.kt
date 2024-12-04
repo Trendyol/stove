@@ -14,7 +14,9 @@ import org.slf4j.*
 class CouchbaseSystem internal constructor(
   override val testSystem: TestSystem,
   val context: CouchbaseContext
-) : PluggedSystem, RunAware, ExposesConfiguration {
+) : PluggedSystem,
+  RunAware,
+  ExposesConfiguration {
   @PublishedApi
   internal lateinit var cluster: Cluster
 
@@ -57,12 +59,13 @@ class CouchbaseSystem internal constructor(
   ): CouchbaseSystem {
     val typeRef = typeRef<T>()
     return flow {
-      cluster.query(
-        statement = query,
-        metrics = false,
-        consistency = QueryScanConsistency.requestPlus(),
-        serializer = context.options.clusterSerDe
-      ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
+      cluster
+        .query(
+          statement = query,
+          metrics = false,
+          consistency = QueryScanConsistency.requestPlus(),
+          serializer = context.options.clusterSerDe
+        ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
     }.toList().also(assertion).let { this }
   }
 
@@ -71,7 +74,8 @@ class CouchbaseSystem internal constructor(
     key: String,
     assertion: (T) -> Unit
   ): CouchbaseSystem =
-    collection.get(key)
+    collection
+      .get(key)
       .contentAs<T>()
       .let(assertion)
       .let { this }
@@ -82,7 +86,8 @@ class CouchbaseSystem internal constructor(
     key: String,
     assertion: (T) -> Unit
   ): CouchbaseSystem =
-    cluster.bucket(context.bucket.name)
+    cluster
+      .bucket(context.bucket.name)
       .collection(collection)
       .get(key)
       .contentAs<T>()
@@ -116,7 +121,8 @@ class CouchbaseSystem internal constructor(
   suspend fun shouldDelete(
     collection: String,
     key: String
-  ): CouchbaseSystem = cluster.bucket(context.bucket.name)
+  ): CouchbaseSystem = cluster
+    .bucket(context.bucket.name)
     .collection(collection)
     .remove(key)
     .let { this }
@@ -133,7 +139,8 @@ class CouchbaseSystem internal constructor(
   ): CouchbaseSystem = cluster
     .bucket(context.bucket.name)
     .collection(collection)
-    .insert(id, instance).let { this }
+    .insert(id, instance)
+    .let { this }
 
   /**
    * Saves the [instance] with given [id] to the default collection

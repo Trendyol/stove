@@ -24,7 +24,8 @@ import kotlin.time.Duration
  */
 class TestSystemKafkaInterceptor<K, V>(
   private val serde: StoveSerde<Any, ByteArray>
-) : CompositeRecordInterceptor<K, V>(), ProducerListener<K, V> {
+) : CompositeRecordInterceptor<K, V>(),
+  ProducerListener<K, V> {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val store = MessageStore()
 
@@ -126,7 +127,8 @@ class TestSystemKafkaInterceptor<K, V>(
   private fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
     selector: (message: ParsedMessage<T>) -> Boolean
-  ) = store.failedRecords()
+  ) = store
+    .failedRecords()
     .filter {
       selector(
         FailedParsedMessage(
@@ -135,13 +137,13 @@ class TestSystemKafkaInterceptor<K, V>(
           it.reason
         )
       )
-    }
-    .forEach { throw it.reason }
+    }.forEach { throw it.reason }
 
   private fun <T : Any> throwIfSucceeded(
     clazz: KClass<T>,
     selector: (ParsedMessage<T>) -> Boolean
-  ): Unit = store.consumedRecords()
+  ): Unit = store
+    .consumedRecords()
     .filter { record ->
       selector(
         FailedParsedMessage(
@@ -150,13 +152,13 @@ class TestSystemKafkaInterceptor<K, V>(
           getExceptionFor(clazz, selector)
         )
       )
-    }
-    .forEach { throw AssertionError("Expected to fail but succeeded: $it") }
+    }.forEach { throw AssertionError("Expected to fail but succeeded: $it") }
 
   private fun <T : Any> getExceptionFor(
     clazz: KClass<T>,
     selector: (message: FailedParsedMessage<T>) -> Boolean
-  ): Throwable = store.failedRecords()
+  ): Throwable = store
+    .failedRecords()
     .first {
       selector(FailedParsedMessage(deserializeCatching(it.value, clazz).getOrNull().toOption(), it.metadata, it.reason))
     }.reason

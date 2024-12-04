@@ -63,7 +63,8 @@ class Stove : AbstractProjectConfig() {
         }
         springBoot(
           runner = { parameters ->
-            stove.spring.standalone.example.run(parameters)
+            stove.spring.standalone.example
+              .run(parameters)
           },
           withParameters = listOf(
             "server.port=8001",

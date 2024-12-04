@@ -397,7 +397,9 @@ fun <T> Try<T?>.filterNotNull(): Try<T> =
     is Failure -> this
   }
 
-data class Success<out T>(val value: T) : Try<T>() {
+data class Success<out T>(
+  val value: T
+) : Try<T>() {
   override val isSuccess: Boolean
     get() = true
 
@@ -416,7 +418,9 @@ data class Success<out T>(val value: T) : Try<T>() {
   override fun toOption(): Option<T> = Some(value)
 }
 
-data class Failure(val exception: Throwable) : Try<Nothing>() {
+data class Failure(
+  val exception: Throwable
+) : Try<Nothing>() {
   override val isSuccess: Boolean
     get() = false
 

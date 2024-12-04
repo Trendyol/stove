@@ -13,67 +13,68 @@ import stove.ktor.example.domain.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
-class ExampleTest : FunSpec({
-  data class ProductOfTest(
-    val id: Long,
-    val name: String
-  )
+class ExampleTest :
+  FunSpec({
+    data class ProductOfTest(
+      val id: Long,
+      val name: String
+    )
 
-  test("should save the product") {
-    validate {
-      val givenId = Random.nextInt()
-      val givenName = "T-Shirt, Red, M"
-      postgresql {
-        shouldExecute(
-          """
+    test("should save the product") {
+      validate {
+        val givenId = Random.nextInt()
+        val givenName = "T-Shirt, Red, M"
+        postgresql {
+          shouldExecute(
+            """
             DROP TABLE IF EXISTS Products;
             CREATE TABLE IF NOT EXISTS Products (
             	id serial PRIMARY KEY,
             	name VARCHAR (50)  NOT NULL
             );
-          """.trimIndent()
-        )
-        shouldExecute("INSERT INTO Products (id, name) VALUES ('$givenId', 'T-Shirt, Red, S')")
-      }
-      http {
-        postAndExpectBodilessResponse(
-          "/products/$givenId",
-          body = UpdateProductRequest(givenName).some(),
-          token = None
-        ) { actual ->
-          actual.status shouldBe 200
+            """.trimIndent()
+          )
+          shouldExecute("INSERT INTO Products (id, name) VALUES ('$givenId', 'T-Shirt, Red, S')")
         }
-      }
-
-      postgresql {
-        shouldQuery<ProductOfTest>("Select * FROM Products WHERE id=$givenId", mapper = { row ->
-          ProductOfTest(row.getLong("id"), row.getString("name"))
-        }) {
-          it.count() shouldBe 1
-          it.first().name shouldBe givenName
+        http {
+          postAndExpectBodilessResponse(
+            "/products/$givenId",
+            body = UpdateProductRequest(givenName).some(),
+            token = None
+          ) { actual ->
+            actual.status shouldBe 200
+          }
         }
-      }
 
-      using<ProductRepository> {
-        this.findById(givenId) shouldBe Product(givenId, givenName)
-      }
-
-      kafka {
-        shouldBePublished<DomainEvents.ProductUpdated>(20.seconds) {
-          actual.id == givenId && actual.name == givenName
+        postgresql {
+          shouldQuery<ProductOfTest>("Select * FROM Products WHERE id=$givenId", mapper = { row ->
+            ProductOfTest(row.getLong("id"), row.getString("name"))
+          }) {
+            it.count() shouldBe 1
+            it.first().name shouldBe givenName
+          }
         }
-        shouldBeConsumed<DomainEvents.ProductUpdated>(20.seconds) {
-          actual.id == givenId && actual.name == givenName
+
+        using<ProductRepository> {
+          this.findById(givenId) shouldBe Product(givenId, givenName)
+        }
+
+        kafka {
+          shouldBePublished<DomainEvents.ProductUpdated>(20.seconds) {
+            actual.id == givenId && actual.name == givenName
+          }
+          shouldBeConsumed<DomainEvents.ProductUpdated>(20.seconds) {
+            actual.id == givenId && actual.name == givenName
+          }
         }
       }
     }
-  }
 
-  test("stove should be able to override the test deps") {
-    validate {
-      using<LockProvider> {
-        (this is NoOpLockProvider) shouldBe true
+    test("stove should be able to override the test deps") {
+      validate {
+        using<LockProvider> {
+          (this is NoOpLockProvider) shouldBe true
+        }
       }
     }
-  }
-})
+  })

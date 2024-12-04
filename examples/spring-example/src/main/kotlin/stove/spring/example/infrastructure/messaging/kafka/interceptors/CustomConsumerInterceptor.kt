@@ -18,7 +18,8 @@ class CustomConsumerInterceptor : RecordInterceptor<String, String> {
     consumer: Consumer<String, String>
   ): ConsumerRecord<String, String>? {
     val contextMap = HashMap<String, String>()
-    record.headers()
+    record
+      .headers()
       .filter { it.key().lowercase().startsWith("x-") }
       .forEach { h: Header ->
         contextMap[h.key()] = String(h.value(), StandardCharsets.UTF_8)

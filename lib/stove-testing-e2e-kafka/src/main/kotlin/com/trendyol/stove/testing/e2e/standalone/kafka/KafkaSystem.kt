@@ -33,7 +33,11 @@ internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + Supervis
 class KafkaSystem(
   override val testSystem: TestSystem,
   private val context: KafkaContext
-) : PluggedSystem, ExposesConfiguration, RunAware, AfterRunAware, BeforeRunAware {
+) : PluggedSystem,
+  ExposesConfiguration,
+  RunAware,
+  AfterRunAware,
+  BeforeRunAware {
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaProducer<String, Any>
@@ -144,7 +148,8 @@ class KafkaSystem(
     var offset = -1L
     var loop = true
     while (loop) {
-      sink.store.consumedMessages()
+      sink.store
+        .consumedMessages()
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
         .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
@@ -171,7 +176,8 @@ class KafkaSystem(
     var offset = -1L
     var loop = true
     while (loop) {
-      sink.store.committedMessages()
+      sink.store
+        .committedMessages()
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
         .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
@@ -198,7 +204,8 @@ class KafkaSystem(
     val seenIds = mutableMapOf<String, PublishedMessage>()
     var loop = true
     while (loop) {
-      sink.store.publishedMessages()
+      sink.store
+        .publishedMessages()
         .filter { it.topic == topic && !seenIds.containsKey(it.id) }
         .onEach { seenIds[it.id] = it }
         .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
@@ -378,7 +385,8 @@ class KafkaSystem(
   private suspend fun startGrpcServer(): Server {
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
     return Try {
-      ServerBuilder.forPort(context.options.bridgeGrpcServerPort)
+      ServerBuilder
+        .forPort(context.options.bridgeGrpcServerPort)
         .executor(StoveKafkaCoroutineScope.also { it.ensureActive() }.asExecutor)
         .addService(StoveKafkaObserverGrpcServer(sink))
         .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)

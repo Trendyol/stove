@@ -7,7 +7,9 @@ import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
+internal interface MessageSinkOps :
+  MessageSinkPublishOps,
+  CommonOps {
   fun recordConsumed(record: ConsumedMessage): Unit = runBlocking {
     store.record(record)
     logger.info(
@@ -49,12 +51,14 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     val getRecords = { store.consumedMessages() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting consuming of ${clazz.java.simpleName}") {
       val outcome = readCatching(it.message.toByteArray(), clazz)
-      outcome.isSuccess && condition(
-        SuccessfulParsedMessage(
-          outcome.getOrNull().toOption(),
-          it.metadata()
-        )
-      ) && store.isCommitted(it.topic, it.offset, it.partition)
+      outcome.isSuccess &&
+        condition(
+          SuccessfulParsedMessage(
+            outcome.getOrNull().toOption(),
+            it.metadata()
+          )
+        ) &&
+        store.isCommitted(it.topic, it.offset, it.partition)
     }
 
     throwIfFailed(clazz, condition)
@@ -66,11 +70,15 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     clazz: KClass<T>,
     condition: (ParsedMessage<T>) -> Boolean
   ) {
-    class FailedMessage(val message: ByteArray, val metadata: MessageMetadata)
+    class FailedMessage(
+      val message: ByteArray,
+      val metadata: MessageMetadata
+    )
 
     val getRecords = {
       store.failedMessages().map { FailedMessage(it.message.toByteArray(), it.metadata()) } +
-        store.publishedMessages()
+        store
+          .publishedMessages()
           .filter { topicSuffixes.isErrorTopic(it.topic) }
           .map { FailedMessage(it.message.toByteArray(), it.metadata()) }
     }
@@ -90,12 +98,13 @@ internal interface MessageSinkOps : MessageSinkPublishOps, CommonOps {
     val failedFunc = suspend {
       getRecords.waitUntilConditionMet(atLeastIn, "While expecting Retrying of ${clazz.java.simpleName}") {
         val outcome = readCatching(it.message.toByteArray(), clazz)
-        outcome.isSuccess && condition(
-          SuccessfulParsedMessage(
-            outcome.getOrNull().toOption(),
-            MessageMetadata(it.topic, it.key, it.headers)
+        outcome.isSuccess &&
+          condition(
+            SuccessfulParsedMessage(
+              outcome.getOrNull().toOption(),
+              MessageMetadata(it.topic, it.key, it.headers)
+            )
           )
-        )
       }
     }
 

@@ -13,13 +13,14 @@ class PostgresqlSystem internal constructor(
   override suspend fun run() {
     super.run()
     val executeAsRoot = { sql: String ->
-      postgresContext.container.execInContainer(
-        "/bin/bash",
-        "-c",
-        "psql -U ${postgresContext.container.username} -d ${postgresContext.container.databaseName} -c \"$sql\""
-      ).let {
-        check(it.exitCode == 0) { "Failed to execute sql: $sql, reason: ${it.stderr}" }
-      }
+      postgresContext.container
+        .execInContainer(
+          "/bin/bash",
+          "-c",
+          "psql -U ${postgresContext.container.username} -d ${postgresContext.container.databaseName} -c \"$sql\""
+        ).let {
+          check(it.exitCode == 0) { "Failed to execute sql: $sql, reason: ${it.stderr}" }
+        }
     }
     postgresContext.options.migrationCollection.run(
       PostgresSqlMigrationContext(

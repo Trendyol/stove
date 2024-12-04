@@ -13,7 +13,8 @@ import org.testcontainers.utility.DockerImageName
 
 open class StoveKafkaContainer(
   override val imageNameAccess: DockerImageName
-) : ConfluentKafkaContainer(imageNameAccess), StoveContainer
+) : ConfluentKafkaContainer(imageNameAccess),
+  StoveContainer
 
 @StoveDsl
 data class KafkaExposedConfiguration(
@@ -72,7 +73,8 @@ data class KafkaSystemOptions(
    * The configuration of the Kafka settings that is exposed to the Application Under Test(AUT).
    */
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration> {
+) : SystemOptions,
+  ConfiguresExposedConfiguration<KafkaExposedConfiguration> {
   companion object {
     val DEFAULT_KAFKA_PORTS = listOf(9092, 9093)
   }
@@ -90,7 +92,8 @@ internal fun TestSystem.withKafka(options: KafkaSystemOptions): TestSystem =
     registry = options.registry,
     compatibleSubstitute = options.containerOptions.compatibleSubstitute
   ) {
-    options.containerOptions.useContainerFn(it)
+    options.containerOptions
+      .useContainerFn(it)
       .withExposedPorts(*options.ports.toTypedArray())
       .withReuse(this.options.keepDependenciesRunning)
       .let { c -> c as StoveKafkaContainer }

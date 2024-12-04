@@ -19,14 +19,18 @@ class ProductFailingConsumer(
   )
 
   override suspend fun listen(record: ConsumerRecord<String, String>) {
-    record.headers().firstOrNone { it.key() == "doNotFail" }
+    record
+      .headers()
+      .firstOrNone { it.key() == "doNotFail" }
       .onSome { return }
       .onNone { throw Exception("exception occurred on purpose") }
   }
 }
 
 fun <K, V> ConsumerRecord<K, V>.getRetryCount(): Int =
-  this.headers().firstOrNone { it.key() == "retry" }
+  this
+    .headers()
+    .firstOrNone { it.key() == "retry" }
     .map { it.value().toString(Charsets.UTF_8).toInt() }
     .getOrElse { 0 }
 

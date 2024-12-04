@@ -13,7 +13,9 @@ import reactor.core.publisher.Mono
 class RedisSystem(
   override val testSystem: TestSystem,
   private val context: RedisContext
-) : PluggedSystem, RunAware, ExposesConfiguration {
+) : PluggedSystem,
+  RunAware,
+  ExposesConfiguration {
   private lateinit var client: RedisClient
   private lateinit var exposedConfiguration: RedisExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -33,16 +35,17 @@ class RedisSystem(
         )
       }
     client = RedisClient.create(
-      RedisURI.create(
-        exposedConfiguration.host,
-        exposedConfiguration.port
-      ).apply {
-        setCredentialsProvider {
-          Mono.just(
-            RedisCredentials.just(null, exposedConfiguration.password)
-          )
+      RedisURI
+        .create(
+          exposedConfiguration.host,
+          exposedConfiguration.port
+        ).apply {
+          setCredentialsProvider {
+            Mono.just(
+              RedisCredentials.just(null, exposedConfiguration.password)
+            )
+          }
         }
-      }
     )
   }
 

@@ -8,4 +8,6 @@ class Setup : AbstractProjectConfig() {
   override val concurrentSpecs: Int = 1
 }
 
-class StoveBusinessException(message: String) : Exception(message)
+class StoveBusinessException(
+  message: String
+) : Exception(message)

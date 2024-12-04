@@ -18,7 +18,9 @@ import org.slf4j.*
 class MongodbSystem internal constructor(
   override val testSystem: TestSystem,
   val context: MongodbContext
-) : PluggedSystem, RunAware, ExposesConfiguration {
+) : PluggedSystem,
+  RunAware,
+  ExposesConfiguration {
   @PublishedApi
   internal lateinit var mongoClient: MongoClient
   private lateinit var exposedConfiguration: MongodbExposedConfiguration
@@ -83,13 +85,13 @@ class MongodbSystem internal constructor(
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
     .also { coll ->
-      context.options.serde.serialize(instance)
+      context.options.serde
+        .serialize(instance)
         .let { BsonDocument.parse(it) }
         .let { doc -> Document(doc) }
         .append(RESERVED_ID, ObjectId(objectId))
         .let { coll.insertOne(it) }
-    }
-    .let { this }
+    }.let { this }
 
   @MongoDsl
   suspend fun shouldNotExist(
@@ -114,7 +116,8 @@ class MongodbSystem internal constructor(
   ): MongodbSystem = mongoClient
     .getDatabase(context.options.databaseOptions.default.name)
     .getCollection<Document>(collection)
-    .deleteOne(filterById(objectId)).let { this }
+    .deleteOne(filterById(objectId))
+    .let { this }
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
@@ -144,7 +147,8 @@ class MongodbSystem internal constructor(
 
   private fun createClient(
     exposedConfiguration: MongodbExposedConfiguration
-  ): MongoClient = MongoClientSettings.builder()
+  ): MongoClient = MongoClientSettings
+    .builder()
     .applyConnectionString(ConnectionString(exposedConfiguration.connectionString))
     .retryWrites(true)
     .readConcern(ReadConcern.MAJORITY)

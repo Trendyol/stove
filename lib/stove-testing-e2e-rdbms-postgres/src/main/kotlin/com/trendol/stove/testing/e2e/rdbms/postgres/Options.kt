@@ -14,7 +14,8 @@ const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
 
 open class StovePostgresqlContainer(
   override val imageNameAccess: DockerImageName
-) : PostgreSQLContainer<StovePostgresqlContainer>(imageNameAccess), StoveContainer
+) : PostgreSQLContainer<StovePostgresqlContainer>(imageNameAccess),
+  StoveContainer
 
 data class PostgresqlContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
@@ -34,7 +35,8 @@ data class PostgresqlOptions(
   override val configureExposedConfiguration: (
     RelationalDatabaseExposedConfiguration
   ) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
+) : SystemOptions,
+  ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
   val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
 
   @StoveDsl
@@ -60,7 +62,8 @@ data class PostgresSqlMigrationContext(
 
 internal fun TestSystem.withPostgresql(options: PostgresqlOptions): TestSystem =
   withProvidedRegistry(options.container.imageWithTag, options.container.registry, options.container.compatibleSubstitute) {
-    options.container.useContainerFn(it)
+    options.container
+      .useContainerFn(it)
       .withDatabaseName(options.databaseName)
       .withUsername(options.username)
       .withPassword(options.password)

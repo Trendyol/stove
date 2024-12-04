@@ -26,7 +26,8 @@ class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
 
   override suspend fun execute(connection: ElasticsearchClient) {
     val createIndexRequest: CreateIndexRequest =
-      CreateIndexRequest.Builder()
+      CreateIndexRequest
+        .Builder()
         .index(TEST_INDEX)
         .build()
     connection.indices().create(createIndexRequest)
@@ -40,7 +41,8 @@ class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
 
   override suspend fun execute(connection: ElasticsearchClient) {
     val createIndexRequest: CreateIndexRequest =
-      CreateIndexRequest.Builder()
+      CreateIndexRequest
+        .Builder()
         .index(ANOTHER_INDEX)
         .build()
     connection.indices().create(createIndexRequest)
@@ -77,80 +79,86 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class ElasticsearchTestSystemTests : FunSpec({
+class ElasticsearchTestSystemTests :
+  FunSpec({
 
-  @JsonIgnoreProperties
-  data class ExampleInstance(
-    val id: String,
-    val description: String
-  )
-  test("should save and get") {
-    val exampleInstance = ExampleInstance("1", "1312")
-    TestSystem.validate {
-      elasticsearch {
-        save(exampleInstance.id, exampleInstance, TEST_INDEX)
-        shouldGet<ExampleInstance>(key = exampleInstance.id, index = TEST_INDEX) {
-          it.description shouldBe exampleInstance.description
+    @JsonIgnoreProperties
+    data class ExampleInstance(
+      val id: String,
+      val description: String
+    )
+    test("should save and get") {
+      val exampleInstance = ExampleInstance("1", "1312")
+      TestSystem.validate {
+        elasticsearch {
+          save(exampleInstance.id, exampleInstance, TEST_INDEX)
+          shouldGet<ExampleInstance>(key = exampleInstance.id, index = TEST_INDEX) {
+            it.description shouldBe exampleInstance.description
+          }
         }
       }
     }
-  }
 
-  test("should save and get from another index") {
-    val exampleInstance = ExampleInstance("1", "1312")
-    TestSystem.validate {
-      elasticsearch {
-        save(exampleInstance.id, exampleInstance, ANOTHER_INDEX)
-        shouldGet<ExampleInstance>(ANOTHER_INDEX, exampleInstance.id) {
-          it.description shouldBe exampleInstance.description
+    test("should save and get from another index") {
+      val exampleInstance = ExampleInstance("1", "1312")
+      TestSystem.validate {
+        elasticsearch {
+          save(exampleInstance.id, exampleInstance, ANOTHER_INDEX)
+          shouldGet<ExampleInstance>(ANOTHER_INDEX, exampleInstance.id) {
+            it.description shouldBe exampleInstance.description
+          }
         }
       }
     }
-  }
 
-  test("should save 2 documents with the same description, then delete first one and query by description") {
-    val desc = "some description"
-    val exampleInstance1 = ExampleInstance("1", desc)
-    val exampleInstance2 = ExampleInstance("2", desc)
-    val queryByDesc = QueryBuilders.term().field("description.keyword").value(desc).queryName("query_name").build()
-    val queryAsString = queryByDesc.asJsonString()
-    TestSystem.validate {
-      elasticsearch {
-        save(exampleInstance1.id, exampleInstance1, TEST_INDEX)
-        save(exampleInstance2.id, exampleInstance2, TEST_INDEX)
-        shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
-          it.size shouldBe 2
-        }
-        shouldDelete(exampleInstance1.id, TEST_INDEX)
-        shouldGet<ExampleInstance>(key = exampleInstance2.id, index = TEST_INDEX) {}
-        shouldQuery<ExampleInstance>(queryAsString, TEST_INDEX) {
-          it.size shouldBe 1
+    test("should save 2 documents with the same description, then delete first one and query by description") {
+      val desc = "some description"
+      val exampleInstance1 = ExampleInstance("1", desc)
+      val exampleInstance2 = ExampleInstance("2", desc)
+      val queryByDesc = QueryBuilders
+        .term()
+        .field("description.keyword")
+        .value(desc)
+        .queryName("query_name")
+        .build()
+      val queryAsString = queryByDesc.asJsonString()
+      TestSystem.validate {
+        elasticsearch {
+          save(exampleInstance1.id, exampleInstance1, TEST_INDEX)
+          save(exampleInstance2.id, exampleInstance2, TEST_INDEX)
+          shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
+            it.size shouldBe 2
+          }
+          shouldDelete(exampleInstance1.id, TEST_INDEX)
+          shouldGet<ExampleInstance>(key = exampleInstance2.id, index = TEST_INDEX) {}
+          shouldQuery<ExampleInstance>(queryAsString, TEST_INDEX) {
+            it.size shouldBe 1
+          }
         }
       }
     }
-  }
 
-  test("should throw assertion error when document does exist") {
-    val existDocId = UUID.randomUUID().toString()
-    val exampleInstance = ExampleInstance(existDocId, "1312")
-    TestSystem.validate {
-      elasticsearch {
-        save(exampleInstance.id, exampleInstance, TEST_INDEX)
-        shouldGet<ExampleInstance>(key = exampleInstance.id, index = TEST_INDEX) {
-          it.description shouldBe exampleInstance.description
+    test("should throw assertion error when document does exist") {
+      val existDocId = UUID.randomUUID().toString()
+      val exampleInstance = ExampleInstance(existDocId, "1312")
+      TestSystem.validate {
+        elasticsearch {
+          save(exampleInstance.id, exampleInstance, TEST_INDEX)
+          shouldGet<ExampleInstance>(key = exampleInstance.id, index = TEST_INDEX) {
+            it.description shouldBe exampleInstance.description
+          }
+
+          assertThrows<AssertionError> { shouldNotExist(existDocId, index = TEST_INDEX) }
         }
-
-        assertThrows<AssertionError> { shouldNotExist(existDocId, index = TEST_INDEX) }
       }
     }
-  }
 
-  test("should does not throw exception when given does not exist id") {
-    val notExistDocId = UUID.randomUUID().toString()
-    TestSystem.validate {
-      elasticsearch {
-        shouldNotExist(notExistDocId, index = TEST_INDEX)
+    test("should does not throw exception when given does not exist id") {
+      val notExistDocId = UUID.randomUUID().toString()
+      TestSystem.validate {
+        elasticsearch {
+          shouldNotExist(notExistDocId, index = TEST_INDEX)
+        }
       }
     }
-  }
-})
+  })

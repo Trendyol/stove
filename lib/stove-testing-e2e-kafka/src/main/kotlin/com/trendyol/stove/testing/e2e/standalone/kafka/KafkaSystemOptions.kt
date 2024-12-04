@@ -44,7 +44,8 @@ class KafkaSystemOptions(
    * The options for the Kafka system that is exposed to the application
    */
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
+) : SystemOptions,
+  ConfiguresExposedConfiguration<KafkaExposedConfiguration>
 
 /**
  * Suffixes for error and retry topics in the application.

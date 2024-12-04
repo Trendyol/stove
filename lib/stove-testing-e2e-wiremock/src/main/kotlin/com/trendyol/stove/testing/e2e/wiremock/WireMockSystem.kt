@@ -26,7 +26,9 @@ typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
 class WireMockSystem(
   override val testSystem: TestSystem,
   ctx: WireMockContext
-) : PluggedSystem, ValidatedSystem, RunAware {
+) : PluggedSystem,
+  ValidatedSystem,
+  RunAware {
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private var wireMock: WireMockServer
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
@@ -264,13 +266,14 @@ class WireMockSystem(
   ) {
     request.withMetadata(metadata)
     body.map {
-      request.withRequestBody(
-        equalToJson(
-          serde.serialize(it).decodeToString(),
-          true,
-          false
-        )
-      ).withHeader("Content-Type", ContainsPattern("application/json"))
+      request
+        .withRequestBody(
+          equalToJson(
+            serde.serialize(it).decodeToString(),
+            true,
+            false
+          )
+        ).withHeader("Content-Type", ContainsPattern("application/json"))
     }
   }
 

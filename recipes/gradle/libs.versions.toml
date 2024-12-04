@@ -61,7 +61,7 @@ io-grpc-kotlin = "1.4.1"
 
 # Tooling
 kover = "0.8.3"
-spotless = "6.25.0"
+spotless = "7.0.0.BETA4"
 detekt = "1.23.7"
 lombok = "1.18.36"
 

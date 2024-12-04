@@ -39,8 +39,7 @@ abstract class StoveListener(
       .map {
         logger.info("Message COMMITTED on the application side: ${message.value()}")
         consumer.commitAsync()
-      }
-      .recover {
+      }.recover {
         logger.warn("CONSUMER GOT an ERROR on the application side, exception: $it")
         if (message.getRetryCount() < 3) {
           logger.warn("CONSUMER GOT an ERROR, retrying...")

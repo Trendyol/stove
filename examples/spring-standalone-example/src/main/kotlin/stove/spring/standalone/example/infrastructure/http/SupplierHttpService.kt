@@ -7,7 +7,9 @@ import org.springframework.web.reactive.function.client.WebClient
 import stove.spring.standalone.example.application.services.*
 
 @Component
-class SupplierHttpService(private val supplierHttpClient: WebClient) : SupplierService {
+class SupplierHttpService(
+  private val supplierHttpClient: WebClient
+) : SupplierService {
   override suspend fun getSupplierPermission(id: Long): SupplierPermission = supplierHttpClient
     .get()
     .uri("/suppliers/$id/allowed")

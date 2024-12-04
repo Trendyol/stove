@@ -59,17 +59,19 @@ private fun Message.isAssignableFrom(clazz: Class<*>): Boolean = this.descriptor
 
 fun KafkaProtobufSerde<Message>.messageAsBase64(
   message: Any
-): Option<Message> = Either.catch {
-  deserializer()
-    .deserialize(
-      "any",
-      Base64
-        .getDecoder()
-        .decode(message.toString())
-        .toByteString()
-        .toByteArray()
-    )
-}.getOrNull().toOption()
+): Option<Message> = Either
+  .catch {
+    deserializer()
+      .deserialize(
+        "any",
+        Base64
+          .getDecoder()
+          .decode(message.toString())
+          .toByteString()
+          .toByteArray()
+      )
+  }.getOrNull()
+  .toOption()
 
 fun Message.onMatchingAssert(
   descriptor: String,

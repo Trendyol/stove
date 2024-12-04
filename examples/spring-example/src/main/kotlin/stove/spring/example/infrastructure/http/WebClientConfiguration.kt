@@ -19,7 +19,9 @@ import java.util.concurrent.TimeUnit
 
 @Configuration
 @EnableConfigurationProperties(WebClientConfigurationProperties::class)
-class WebClientConfiguration(private val webClientConfigurationProperties: WebClientConfigurationProperties) {
+class WebClientConfiguration(
+  private val webClientConfigurationProperties: WebClientConfigurationProperties
+) {
   companion object {
     private const val MAX_MEMORY_SIZE = 50 * 1024 * 1024
   }
@@ -30,50 +32,48 @@ class WebClientConfiguration(private val webClientConfigurationProperties: WebCl
       webClientConfigurationProperties.supplierHttp.url,
       webClientConfigurationProperties.supplierHttp.connectTimeout,
       webClientConfigurationProperties.supplierHttp.readTimeout
-    )
-      .exchangeStrategies(exchangeStrategies)
+    ).exchangeStrategies(exchangeStrategies)
       .build()
 
   @Bean
-  fun webClientObjectMapper(): ObjectMapper {
-    return ObjectMapperConfig.default()
-      .configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false)
-  }
+  fun webClientObjectMapper(): ObjectMapper = ObjectMapperConfig
+    .default()
+    .configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false)
 
   @Bean
-  fun exchangeStrategies(webClientObjectMapper: ObjectMapper): ExchangeStrategies {
-    return ExchangeStrategies
-      .builder()
-      .codecs { clientDefaultCodecsConfigurer: ClientCodecConfigurer ->
-        clientDefaultCodecsConfigurer.defaultCodecs().maxInMemorySize(MAX_MEMORY_SIZE)
-        clientDefaultCodecsConfigurer.defaultCodecs()
-          .jackson2JsonEncoder(Jackson2JsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
-        clientDefaultCodecsConfigurer.defaultCodecs()
-          .jackson2JsonDecoder(Jackson2JsonDecoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
-      }.build()
-  }
+  fun exchangeStrategies(webClientObjectMapper: ObjectMapper): ExchangeStrategies = ExchangeStrategies
+    .builder()
+    .codecs { clientDefaultCodecsConfigurer: ClientCodecConfigurer ->
+      clientDefaultCodecsConfigurer.defaultCodecs().maxInMemorySize(MAX_MEMORY_SIZE)
+      clientDefaultCodecsConfigurer
+        .defaultCodecs()
+        .jackson2JsonEncoder(Jackson2JsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
+      clientDefaultCodecsConfigurer
+        .defaultCodecs()
+        .jackson2JsonDecoder(Jackson2JsonDecoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
+    }.build()
 
   private fun defaultWebClientBuilder(
     baseUrl: String,
     connectTimeout: Int,
     readTimeout: Long
-  ): WebClient.Builder {
-    return WebClient.builder()
-      .baseUrl(baseUrl)
-      .clientConnector(
-        ReactorClientHttpConnector(
-          HttpClient.create()
-            .followRedirect(true)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
-            .doOnConnected { conn ->
-              conn.addHandlerLast(
-                ReadTimeoutHandler(
-                  readTimeout,
-                  TimeUnit.MILLISECONDS
-                )
+  ): WebClient.Builder = WebClient
+    .builder()
+    .baseUrl(baseUrl)
+    .clientConnector(
+      ReactorClientHttpConnector(
+        HttpClient
+          .create()
+          .followRedirect(true)
+          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
+          .doOnConnected { conn ->
+            conn.addHandlerLast(
+              ReadTimeoutHandler(
+                readTimeout,
+                TimeUnit.MILLISECONDS
               )
-            }
-        )
+            )
+          }
       )
-  }
+    )
 }

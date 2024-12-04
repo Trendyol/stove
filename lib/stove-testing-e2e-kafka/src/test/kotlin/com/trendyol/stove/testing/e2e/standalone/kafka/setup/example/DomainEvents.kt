@@ -3,7 +3,9 @@ package com.trendyol.stove.testing.e2e.standalone.kafka.setup.example
 import kotlin.random.Random
 
 object DomainEvents {
-  data class ProductCreated(val productId: String) {
+  data class ProductCreated(
+    val productId: String
+  ) {
     companion object {
       val randomString = { Random.nextInt(0, Int.MAX_VALUE).toString() }
 
@@ -11,5 +13,7 @@ object DomainEvents {
     }
   }
 
-  data class ProductFailingCreated(val productId: String)
+  data class ProductFailingCreated(
+    val productId: String
+  )
 }

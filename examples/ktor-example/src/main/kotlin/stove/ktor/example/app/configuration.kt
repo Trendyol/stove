@@ -4,7 +4,8 @@ import com.sksamuel.hoplite.*
 import com.sksamuel.hoplite.env.Environment
 
 @OptIn(ExperimentalHoplite::class)
-inline fun <reified T : Any> loadConfiguration(args: Array<String> = arrayOf()): T = ConfigLoaderBuilder.default()
+inline fun <reified T : Any> loadConfiguration(args: Array<String> = arrayOf()): T = ConfigLoaderBuilder
+  .default()
   .addEnvironmentSource()
   .addCommandLineSource(args)
   .withExplicitSealedTypes()
@@ -24,8 +25,7 @@ inline fun <reified T : Any> loadConfiguration(args: Array<String> = arrayOf()):
         addResourceSource("/application.yaml", optional = true)
       }
     }
-  }
-  .build()
+  }.build()
   .loadConfigOrThrow<T>()
 
 data class AppConfiguration(
@@ -57,7 +57,9 @@ data class TopicConfiguration(
   val error: String
 )
 
-enum class AppEnv(val env: String) {
+enum class AppEnv(
+  val env: String
+) {
   Unspecified(""),
   Local(Environment.local.name),
   Prod(Environment.prod.name)
@@ -78,11 +80,7 @@ enum class AppEnv(val env: String) {
     }
   }
 
-  fun isLocal(): Boolean {
-    return this === Local
-  }
+  fun isLocal(): Boolean = this === Local
 
-  fun isProd(): Boolean {
-    return this === Prod
-  }
+  fun isProd(): Boolean = this === Prod
 }

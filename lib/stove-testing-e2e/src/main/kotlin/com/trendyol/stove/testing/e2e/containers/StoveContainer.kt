@@ -13,9 +13,12 @@ interface StoveContainer {
   val imageNameAccess: DockerImageName
 
   val containerIdAccess: String
-    get() = dockerClientAccess.value.listContainersCmd().exec().first {
-      it.image == imageNameAccess.asCanonicalNameString()
-    }.id
+    get() = dockerClientAccess.value
+      .listContainersCmd()
+      .exec()
+      .first {
+        it.image == imageNameAccess.asCanonicalNameString()
+      }.id
 
   val dockerClientAccess: Lazy<DockerClient>
     get() = lazy { DockerClientFactory.lazyClient() }
@@ -28,19 +31,29 @@ interface StoveContainer {
     dockerClientAccess.value.unpauseContainerCmd(containerIdAccess).exec()
   }
 
-  fun inspect(): StoveContainerInspectInformation = dockerClientAccess.value.inspectContainerCmd(containerIdAccess).exec()
+  fun inspect(): StoveContainerInspectInformation = dockerClientAccess.value
+    .inspectContainerCmd(containerIdAccess)
+    .exec()
     .let {
       StoveContainerInspectInformation(
         id = it.id,
         labels = it.config.labels ?: emptyMap(),
         name = it.name,
         state = it.state.toString(),
-        running = it.state.running.toOption().getOrElse { false },
-        paused = it.state.paused.toOption().getOrElse { false },
-        restarting = it.state.restarting.toOption().getOrElse { false },
+        running = it.state.running
+          .toOption()
+          .getOrElse { false },
+        paused = it.state.paused
+          .toOption()
+          .getOrElse { false },
+        restarting = it.state.restarting
+          .toOption()
+          .getOrElse { false },
         startedAt = it.state.startedAt.toString(),
         finishedAt = it.state.finishedAt.toString(),
-        exitCode = it.state.exitCodeLong.toOption().getOrElse { 0 },
+        exitCode = it.state.exitCodeLong
+          .toOption()
+          .getOrElse { 0 },
         error = it.state.error.toString()
       )
     }

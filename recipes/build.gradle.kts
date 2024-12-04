@@ -38,7 +38,7 @@ subprojects {
       targetExcludeIfContentContainsRegex(".*generated.*")
     }
     kotlin {
-      ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExcludeIfContentContains("generated")
     }
   }

@@ -11,7 +11,9 @@ interface ProducerSettings : MapBasedSettings
 
 @Component
 @EnableConfigurationProperties(KafkaProperties::class)
-class DefaultProducerSettings(private val kafkaProperties: KafkaProperties) : ProducerSettings {
+class DefaultProducerSettings(
+  private val kafkaProperties: KafkaProperties
+) : ProducerSettings {
   override fun settings(): Map<String, Any> {
     val props: MutableMap<String, Any> = HashMap()
     props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaProperties.bootstrapServers

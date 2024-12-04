@@ -9,7 +9,9 @@ val CoroutineScope.asExecutor: Executor
 val CoroutineScope.asExecutorService: ExecutorService
   get() = CoroutineExecutorService(this)
 
-internal class CoroutineExecutorService(private val coroutineScope: CoroutineScope) : AbstractExecutorService() {
+internal class CoroutineExecutorService(
+  private val coroutineScope: CoroutineScope
+) : AbstractExecutorService() {
   override fun execute(command: Runnable) {
     coroutineScope.launch { command.run() }
   }
@@ -23,13 +25,9 @@ internal class CoroutineExecutorService(private val coroutineScope: CoroutineSco
     return emptyList()
   }
 
-  override fun isShutdown(): Boolean {
-    return coroutineScope.coroutineContext[Job]?.isCancelled ?: true
-  }
+  override fun isShutdown(): Boolean = coroutineScope.coroutineContext[Job]?.isCancelled ?: true
 
-  override fun isTerminated(): Boolean {
-    return coroutineScope.coroutineContext[Job]?.isCompleted ?: true
-  }
+  override fun isTerminated(): Boolean = coroutineScope.coroutineContext[Job]?.isCompleted ?: true
 
   override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
     // Coroutine jobs don't support await termination out of the box
@@ -38,7 +36,9 @@ internal class CoroutineExecutorService(private val coroutineScope: CoroutineSco
   }
 }
 
-internal class StoveCoroutineExecutor(private val scope: CoroutineScope) : Executor {
+internal class StoveCoroutineExecutor(
+  private val scope: CoroutineScope
+) : Executor {
   override fun execute(command: Runnable) {
     scope.launch { command.run() }
   }

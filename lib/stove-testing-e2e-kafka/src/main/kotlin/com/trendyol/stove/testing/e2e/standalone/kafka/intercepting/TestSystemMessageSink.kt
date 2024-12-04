@@ -9,7 +9,8 @@ class TestSystemMessageSink(
   override val adminClient: Admin,
   override val serde: StoveSerde<Any, ByteArray>,
   override val topicSuffixes: TopicSuffixes
-) : MessageSinkOps, CommonOps {
+) : MessageSinkOps,
+  CommonOps {
   override val logger: Logger = LoggerFactory.getLogger(javaClass)
   override val store: MessageStore = MessageStore()
 

@@ -25,8 +25,7 @@ internal fun TestSystem.withElasticsearch(options: ElasticsearchSystemOptions): 
     }
     withReuse(this@withElasticsearch.options.keepDependenciesRunning)
     options.container.containerFn(this)
-  }
-  .let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(it, options))) }
+  }.let { getOrRegister(ElasticsearchSystem(this, ElasticsearchContext(it, options))) }
   .let { this }
 
 internal fun TestSystem.elasticsearch(): ElasticsearchSystem =

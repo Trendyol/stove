@@ -11,7 +11,10 @@ import kotlin.reflect.KClass
  * @property testSystem the test system to bridge.
  */
 @StoveDsl
-abstract class BridgeSystem<T : Any>(override val testSystem: TestSystem) : PluggedSystem, AfterRunAwareWithContext<T> {
+abstract class BridgeSystem<T : Any>(
+  override val testSystem: TestSystem
+) : PluggedSystem,
+  AfterRunAwareWithContext<T> {
   /**
    * The application context used to resolve dependencies.
    */
@@ -121,7 +124,8 @@ inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any
-> ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = this.testSystem.bridge()
+> ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = this.testSystem
+  .bridge()
   .let {
     val t1: T1 = it.resolve()
     val t2: T2 = it.resolve()
@@ -135,7 +139,8 @@ inline fun <
   reified T2 : Any,
   reified T3 : Any,
   reified T4 : Any
-> ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = this.testSystem.bridge()
+> ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = this.testSystem
+  .bridge()
   .let {
     val t1: T1 = it.resolve()
     val t2: T2 = it.resolve()
@@ -151,7 +156,8 @@ inline fun <
   reified T3 : Any,
   reified T4 : Any,
   reified T5 : Any
-> ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = this.testSystem.bridge()
+> ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = this.testSystem
+  .bridge()
   .let {
     val t1: T1 = it.resolve()
     val t2: T2 = it.resolve()

@@ -9,7 +9,8 @@ import kotlin.time.toJavaDuration
 
 object GrpcUtils {
   private val getClient = { scope: CoroutineScope ->
-    OkHttpClient.Builder()
+    OkHttpClient
+      .Builder()
       .protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE))
       .callTimeout(30.seconds.toJavaDuration())
       .readTimeout(30.seconds.toJavaDuration())
@@ -19,7 +20,8 @@ object GrpcUtils {
       .build()
   }
 
-  fun createClient(onPort: String, scope: CoroutineScope): StoveKafkaObserverServiceClient = GrpcClient.Builder()
+  fun createClient(onPort: String, scope: CoroutineScope): StoveKafkaObserverServiceClient = GrpcClient
+    .Builder()
     .client(getClient(scope))
     .baseUrl("http://0.0.0.0:$onPort".toHttpUrl())
     .build()

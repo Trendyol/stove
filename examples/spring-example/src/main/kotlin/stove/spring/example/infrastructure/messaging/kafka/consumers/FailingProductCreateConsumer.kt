@@ -9,9 +9,13 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaConsumerConfiguration
 
-data class BusinessException(override val message: String) : RuntimeException(message)
+data class BusinessException(
+  override val message: String
+) : RuntimeException(message)
 
-data class FailingEvent(val id: Long)
+data class FailingEvent(
+  val id: Long
+)
 
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")

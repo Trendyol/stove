@@ -23,10 +23,12 @@ data class MongodbSystemOptions(
   ),
   val jsonWriterSettings: JsonWriterSettings = StoveMongoJsonWriterSettings.objectIdAsString,
   override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<MongodbExposedConfiguration>
+) : SystemOptions,
+  ConfiguresExposedConfiguration<MongodbExposedConfiguration>
 
 object StoveMongoJsonWriterSettings {
-  val objectIdAsString: JsonWriterSettings = JsonWriterSettings.builder()
+  val objectIdAsString: JsonWriterSettings = JsonWriterSettings
+    .builder()
     .objectIdConverter { value, writer -> writer.writeString(value.toHexString()) }
     .build()
 }

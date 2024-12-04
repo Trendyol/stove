@@ -10,7 +10,8 @@ fun SpringApplication.addTestSystemDependencies() {
   this.addInitializers(TestSystemInitializer())
 }
 
-class TestSystemInitializer : BaseApplicationContextInitializer({
-  bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
-  bean { StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default()) }
-})
+class TestSystemInitializer :
+  BaseApplicationContextInitializer({
+    bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+    bean { StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default()) }
+  })

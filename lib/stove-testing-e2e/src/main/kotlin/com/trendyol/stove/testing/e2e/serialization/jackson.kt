@@ -58,7 +58,8 @@ object E2eObjectMapperConfig {
       .addSerializer(Instant::class.java, IsoInstantSerializer())
       .addDeserializer(Instant::class.java, IsoInstantDeserializer())
 
-    return JsonMapper.builder()
+    return JsonMapper
+      .builder()
       .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
       .serializationInclusion(JsonInclude.Include.NON_NULL)

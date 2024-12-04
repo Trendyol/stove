@@ -15,8 +15,7 @@ class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit = TestSystem()
     .also {
       stoveKafkaBridgePortDefault = "50054"
-    }
-    .with {
+    }.with {
       kafka {
         KafkaSystemOptions(
           listenPublishedMessagesFromStove = false,
@@ -37,7 +36,8 @@ class Stove : AbstractProjectConfig() {
       bridge()
       springBoot(
         runner = { parameters ->
-          stove.spring.streams.example.run(parameters)
+          stove.spring.streams.example
+            .run(parameters)
         },
         withParameters = listOf(
           "server.port=8001",

@@ -30,13 +30,18 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class RedisSystemTests : ShouldSpec({
+class RedisSystemTests :
+  ShouldSpec({
 
-  should("work") {
-    TestSystem.validate {
-      redis {
-        client().connect().async().ping().await() shouldBe "PONG"
+    should("work") {
+      TestSystem.validate {
+        redis {
+          client()
+            .connect()
+            .async()
+            .ping()
+            .await() shouldBe "PONG"
+        }
       }
     }
-  }
-})
+  })

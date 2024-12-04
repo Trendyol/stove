@@ -6,4 +6,5 @@ import org.testcontainers.utility.DockerImageName
 
 open class StoveCouchbaseContainer(
   override val imageNameAccess: DockerImageName
-) : CouchbaseContainer(imageNameAccess), StoveContainer
+) : CouchbaseContainer(imageNameAccess),
+  StoveContainer

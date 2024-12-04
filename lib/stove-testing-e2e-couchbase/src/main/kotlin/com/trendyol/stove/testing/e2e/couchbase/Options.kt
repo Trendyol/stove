@@ -25,7 +25,8 @@ data class CouchbaseSystemOptions(
   val clusterSerDe: JsonSerializer = JacksonJsonSerializer(E2eObjectMapperConfig.createObjectMapperWithDefaults()),
   val clusterTranscoder: Transcoder = JsonTranscoder(clusterSerDe),
   override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
+) : SystemOptions,
+  ConfiguresExposedConfiguration<CouchbaseExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<Cluster> = MigrationCollection()
 
   /**
@@ -63,7 +64,8 @@ internal fun TestSystem.withCouchbase(options: CouchbaseSystemOptions): TestSyst
     registry = options.containerOptions.registry,
     compatibleSubstitute = options.containerOptions.compatibleSubstitute
   ) {
-    options.containerOptions.useContainerFn(it)
+    options.containerOptions
+      .useContainerFn(it)
       .withBucket(bucketDefinition)
       .withReuse(this.options.keepDependenciesRunning)
       .let { c -> c as StoveCouchbaseContainer }

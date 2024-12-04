@@ -20,10 +20,14 @@ import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.*
 import org.springframework.util.backoff.FixedBackOff
 
-sealed class KafkaRegistry(open val url: String) {
+sealed class KafkaRegistry(
+  open val url: String
+) {
   object Mock : KafkaRegistry("mock://mock-registry")
 
-  data class Defined(override val url: String) : KafkaRegistry(url)
+  data class Defined(
+    override val url: String
+  ) : KafkaRegistry(url)
 
   companion object {
     fun createSerde(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {

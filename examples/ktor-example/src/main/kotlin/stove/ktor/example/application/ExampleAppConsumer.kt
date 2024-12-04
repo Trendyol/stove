@@ -14,7 +14,8 @@ class ExampleAppConsumer<K, V>(
   kafkaConsumer: KafkaConsumer<K, V>
 ) {
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-  private val topics = config.kafka.topics.values.fold(listOf<String>()) { acc, topic -> acc + topic.topic + topic.error + topic.retry }
+  private val topics = config.kafka.topics.values
+    .fold(listOf<String>()) { acc, topic -> acc + topic.topic + topic.error + topic.retry }
 
   private val subscription = kafkaConsumer
     .apply { subscribe(topics) }

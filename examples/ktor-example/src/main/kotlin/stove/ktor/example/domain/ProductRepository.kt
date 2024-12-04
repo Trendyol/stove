@@ -6,20 +6,26 @@ import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 
-class ProductRepository(private val postgresqlConnectionFactory: PostgresqlConnectionFactory) {
+class ProductRepository(
+  private val postgresqlConnectionFactory: PostgresqlConnectionFactory
+) {
   private lateinit var connection: PostgresqlConnection
 
-  suspend fun findById(id: Int): Product {
-    return connection.createStatement("SELECT * FROM Products WHERE id=$id").execute().awaitFirst().map { r, rm ->
+  suspend fun findById(id: Int): Product = connection
+    .createStatement(
+      "SELECT * FROM Products WHERE id=$id"
+    ).execute()
+    .awaitFirst()
+    .map { r, rm ->
       Product(
         (r.get(Product::id.name, rm.getColumnMetadata(Product::id.name).javaType!!) as Int).toInt(),
         r.get(Product::name.name, rm.getColumnMetadata(Product::name.name).javaType!!) as String
       )
     }.awaitSingle()
-  }
 
   suspend fun update(product: Product) {
-    connection.createStatement("UPDATE Products SET ${Product::name.name}=('${product.name}') WHERE ${Product::id.name}=${product.id}")
+    connection
+      .createStatement("UPDATE Products SET ${Product::name.name}=('${product.name}') WHERE ${Product::id.name}=${product.id}")
       .execute()
       .awaitFirstOrNull()
   }

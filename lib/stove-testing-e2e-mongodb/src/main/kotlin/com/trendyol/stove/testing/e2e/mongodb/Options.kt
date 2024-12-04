@@ -24,7 +24,8 @@ data class MongodbContext(
 
 open class StoveMongoContainer(
   override val imageNameAccess: DockerImageName
-) : MongoDBContainer(imageNameAccess), StoveContainer
+) : MongoDBContainer(imageNameAccess),
+  StoveContainer
 
 @StoveDsl
 data class MongoContainerOptions(
@@ -52,7 +53,8 @@ internal fun TestSystem.withMongodb(options: MongodbSystemOptions): TestSystem {
     options.container.registry,
     options.container.compatibleSubstitute
   ) {
-    options.container.useContainerFn(it)
+    options.container
+      .useContainerFn(it)
       .withReuse(this.options.keepDependenciesRunning)
       .let { c -> c as StoveMongoContainer }
       .apply(options.container.containerFn)

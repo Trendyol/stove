@@ -29,13 +29,11 @@ object Headers {
   fun getOrDefault(
     key: String,
     defaultValue: String = Defaults.USER_EMAIL
-  ): String {
-    return try {
-      MDC.get(key) ?: MDC.get(key.lowercase()) ?: MDC.get(key.uppercase()) ?: defaultValue
-    } catch (
-      @Suppress("SwallowedException") exception: IllegalStateException
-    ) {
-      defaultValue
-    }
+  ): String = try {
+    MDC.get(key) ?: MDC.get(key.lowercase()) ?: MDC.get(key.uppercase()) ?: defaultValue
+  } catch (
+    @Suppress("SwallowedException") exception: IllegalStateException
+  ) {
+    defaultValue
   }
 }

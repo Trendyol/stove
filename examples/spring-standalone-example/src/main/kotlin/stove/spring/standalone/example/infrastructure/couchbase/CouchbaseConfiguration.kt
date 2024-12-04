@@ -30,12 +30,12 @@ class CouchbaseConfiguration(
       .builder()
       .meter(MicrometerMeter.wrap(meterRegistry))
       .timeoutConfig {
-        it.kvTimeout(Duration.ofMillis(couchbaseProperties.kvTimeout))
+        it
+          .kvTimeout(Duration.ofMillis(couchbaseProperties.kvTimeout))
           .connectTimeout(Duration.ofMillis(couchbaseProperties.connectTimeout))
           .queryTimeout(Duration.ofMillis(couchbaseProperties.queryTimeout))
           .viewTimeout(Duration.ofMillis(couchbaseProperties.viewTimeout))
-      }
-      .jsonSerializer(cbSerializer)
+      }.jsonSerializer(cbSerializer)
       .build()
   }
 
@@ -52,13 +52,9 @@ class CouchbaseConfiguration(
 
   @Primary
   @Bean
-  fun bucket(cluster: ReactiveCluster): ReactiveBucket {
-    return cluster.bucket(couchbaseProperties.bucketName)
-  }
+  fun bucket(cluster: ReactiveCluster): ReactiveBucket = cluster.bucket(couchbaseProperties.bucketName)
 
   @Primary
   @Bean
-  fun collection(bucket: ReactiveBucket): ReactiveCollection {
-    return bucket.defaultCollection()
-  }
+  fun collection(bucket: ReactiveBucket): ReactiveCollection = bucket.defaultCollection()
 }
