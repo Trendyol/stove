@@ -173,7 +173,7 @@ lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.12" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-ktlint-cli = { module = "com.pinterest:ktlint", version = "0.42.1" }
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
