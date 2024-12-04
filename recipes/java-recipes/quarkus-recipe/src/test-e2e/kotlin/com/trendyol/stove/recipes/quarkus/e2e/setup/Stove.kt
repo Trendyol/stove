@@ -1,11 +1,13 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
 import com.trendyol.stove.recipes.quarkus.QuarkusRecipeApp
+import com.trendyol.stove.testing.e2e.bridge
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.kotest.core.config.AbstractProjectConfig
+import jakarta.enterprise.inject.spi.BeanManager
 import kotlinx.coroutines.*
 
 class Stove : AbstractProjectConfig() {
@@ -17,10 +19,12 @@ class Stove : AbstractProjectConfig() {
             baseUrl = "http://localhost:8080"
           )
         }
+        bridge()
         quarkus(
           runner = { params ->
-            QuarkusRecipeApp.main(params)
-          }
+            QuarkusRecipeApp.run(params, "e2eTest")
+          },
+          withParameters = listOf()
         )
       }.run()
   }
@@ -32,7 +36,7 @@ class Stove : AbstractProjectConfig() {
 
 @StoveDsl
 internal fun TestSystem.systemUnderTest(
-  runner: Runner<Unit>,
+  runner: Runner<BeanManager>,
   withParameters: List<String> = listOf()
 ): ReadyTestSystem {
   this.applicationUnderTest(QuarkusAppUnderTest(this, runner, withParameters))
@@ -41,25 +45,26 @@ internal fun TestSystem.systemUnderTest(
 
 @StoveDsl
 fun WithDsl.quarkus(
-  runner: Runner<Unit>,
+  runner: Runner<BeanManager>,
   withParameters: List<String> = listOf()
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
 @Suppress("UNCHECKED_CAST")
 class QuarkusAppUnderTest(
   private val testSystem: TestSystem,
-  private val runner: Runner<Unit>,
+  private val runner: Runner<BeanManager>,
   private val parameters: List<String>
-) : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>): Unit = coroutineScope {
+) : ApplicationUnderTest<BeanManager> {
+  override suspend fun start(configurations: List<String>): BeanManager = coroutineScope {
     val allConfigurations = (configurations + parameters).map { "--$it" }.toTypedArray()
-    runner(allConfigurations)
+    val di = runner(allConfigurations)
     testSystem.activeSystems
       .map { it.value }
       .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-      .map { it as AfterRunAwareWithContext<Unit> }
-      .map { async(context = Dispatchers.IO) { it.afterRun(Unit) } }
+      .map { it as AfterRunAwareWithContext<BeanManager> }
+      .map { async(context = Dispatchers.IO) { it.afterRun(di) } }
       .awaitAll()
+    di
   }
 
   override suspend fun stop(): Unit = Unit
