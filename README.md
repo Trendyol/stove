@@ -10,7 +10,7 @@
 
 # What is Stove?
 
-Stove is a an end-to-end testing framework that simplifies testing by managing physical dependencies and your
+Stove is an end-to-end testing framework that simplifies testing by managing physical dependencies and your
 application in a unified way.
 Write infrastructure-agnostic but component-aware tests in Kotlin, regardless of your JVM-based tech stack.
 
