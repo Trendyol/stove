@@ -21,10 +21,16 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
 
   inline fun <reified T : DomainEvent> shouldContain(act: T.() -> Unit) {
     shouldContain<T>()
-    root.domainEvents().filter { it::class == T::class }.map { it as T }.forEach { act(it) }
+    root
+      .domainEvents()
+      .filter { it::class == T::class }
+      .map { it as T }
+      .forEach { act(it) }
   }
 
-  inline fun <reified T : DomainEvent> shouldContain() = root.domainEvents().map { it.javaClass }
+  inline fun <reified T : DomainEvent> shouldContain() = root
+    .domainEvents()
+    .map { it.javaClass }
     .firstOrNone { it == T::class.java }
     .onNone {
       throw failure(
@@ -35,7 +41,9 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
     }
 
   inline fun <reified T : DomainEvent> shouldNotContain() =
-    root.domainEvents().map { it.javaClass }
+    root
+      .domainEvents()
+      .map { it.javaClass }
       .firstOrNone { it == T::class.java }
       .onSome {
         throw failure(

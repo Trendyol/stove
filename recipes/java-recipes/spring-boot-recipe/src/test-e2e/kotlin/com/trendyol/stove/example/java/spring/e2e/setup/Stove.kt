@@ -18,66 +18,67 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 
 class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem().with {
-      httpClient {
-        HttpClientSystemOptions(
-          baseUrl = "http://localhost:8080",
-          contentConverter = JacksonConverter(JacksonConfiguration.defaultObjectMapper())
-        )
-      }
-
-      bridge()
-      wiremock {
-        WireMockSystemOptions(
-          port = 9090,
-          serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper())
-        )
-      }
-      couchbase {
-        CouchbaseSystemOptions(
-          defaultBucket = "stove-java-spring-boot",
-          CouchbaseContainerOptions {
-            withStartupAttempts(3)
-            dockerImageName = "couchbase/server:7.2.5"
-          },
-          clusterSerDe = JacksonJsonSerializer(JacksonConfiguration.defaultObjectMapper()),
-          configureExposedConfiguration = { cfg ->
-            listOf(
-              "couchbase.bucket=${CollectionConstants.BUCKET_NAME}",
-              "couchbase.username=${cfg.username}",
-              "couchbase.password=${cfg.password}",
-              "couchbase.hosts=${cfg.hostsWithPort}",
-              "couchbase.timeout=600"
-            )
-          }
-        ).migrations {
-          register<CouchbaseMigration>()
+    TestSystem()
+      .with {
+        httpClient {
+          HttpClientSystemOptions(
+            baseUrl = "http://localhost:8080",
+            contentConverter = JacksonConverter(JacksonConfiguration.defaultObjectMapper())
+          )
         }
-      }
 
-      kafka {
-        KafkaSystemOptions(
-          serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper()),
-          valueSerializer = JsonSerializer(JacksonConfiguration.defaultObjectMapper()),
-          containerOptions = KafkaContainerOptions {
-            withStartupAttempts(3)
+        bridge()
+        wiremock {
+          WireMockSystemOptions(
+            port = 9090,
+            serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper())
+          )
+        }
+        couchbase {
+          CouchbaseSystemOptions(
+            defaultBucket = "stove-java-spring-boot",
+            CouchbaseContainerOptions {
+              withStartupAttempts(3)
+              dockerImageName = "couchbase/server:7.2.5"
+            },
+            clusterSerDe = JacksonJsonSerializer(JacksonConfiguration.defaultObjectMapper()),
+            configureExposedConfiguration = { cfg ->
+              listOf(
+                "couchbase.bucket=${CollectionConstants.BUCKET_NAME}",
+                "couchbase.username=${cfg.username}",
+                "couchbase.password=${cfg.password}",
+                "couchbase.hosts=${cfg.hostsWithPort}",
+                "couchbase.timeout=600"
+              )
+            }
+          ).migrations {
+            register<CouchbaseMigration>()
+          }
+        }
+
+        kafka {
+          KafkaSystemOptions(
+            serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper()),
+            valueSerializer = JsonSerializer(JacksonConfiguration.defaultObjectMapper()),
+            containerOptions = KafkaContainerOptions {
+              withStartupAttempts(3)
+            },
+            configureExposedConfiguration = {
+              listOf(
+                "kafka.bootstrap-servers=${it.bootstrapServers}",
+                "kafka.interceptor-classes=${it.interceptorClass}"
+              )
+            }
+          )
+        }
+        springBoot(
+          runner = { parameters ->
+            ExampleSpringBootApp.run(parameters) {
+            }
           },
-          configureExposedConfiguration = {
-            listOf(
-              "kafka.bootstrap-servers=${it.bootstrapServers}",
-              "kafka.interceptor-classes=${it.interceptorClass}"
-            )
-          }
+          withParameters = listOf()
         )
-      }
-      springBoot(
-        runner = { parameters ->
-          ExampleSpringBootApp.run(parameters) {
-          }
-        },
-        withParameters = listOf()
-      )
-    }.run()
+      }.run()
   }
 
   override suspend fun afterProject() {

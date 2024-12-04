@@ -23,7 +23,8 @@ abstract class ConsumerSupervisor<K, V>(
   @OptIn(ExperimentalCoroutinesApi::class)
   @Suppress("TooGenericExceptionCaught")
   private suspend fun subscribe() {
-    kafkaReceiver.receiveAutoAck(topics)
+    kafkaReceiver
+      .receiveAutoAck(topics)
       .flattenMerge(maxConcurrency)
       .collect {
         try {

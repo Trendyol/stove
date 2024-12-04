@@ -74,7 +74,8 @@ private fun kafkaReceiver(
       putAll(
         mapOf(
           ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG to kafkaConfiguration.autoCreateTopics.toString(),
-          ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to kafkaConfiguration.heartbeatIntervalSeconds.seconds.inWholeMilliseconds.toInt(),
+          ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to kafkaConfiguration.heartbeatIntervalSeconds.seconds.inWholeMilliseconds
+            .toInt(),
           ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG to kafkaConfiguration.flattenInterceptorClasses()
         )
       )

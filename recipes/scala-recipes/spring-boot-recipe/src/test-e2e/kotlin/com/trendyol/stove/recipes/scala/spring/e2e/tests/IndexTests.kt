@@ -8,23 +8,24 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 
-class IndexTests : FunSpec({
-  test("Index page should be accessible") {
-    validate {
-      http {
-        get<String>("/hello") { actual ->
-          actual shouldContain "Hello, World! from reactor"
+class IndexTests :
+  FunSpec({
+    test("Index page should be accessible") {
+      validate {
+        http {
+          get<String>("/hello") { actual ->
+            actual shouldContain "Hello, World! from reactor"
+          }
         }
       }
     }
-  }
 
-  test("bridge should work") {
-    validate {
-      using<CurrentThreadRetriever> {
-        this.currentThreadName shouldNotBe ""
-        println(this.currentThreadName)
+    test("bridge should work") {
+      validate {
+        using<CurrentThreadRetriever> {
+          this.currentThreadName shouldNotBe ""
+          println(this.currentThreadName)
+        }
       }
     }
-  }
-})
+  })

@@ -8,21 +8,22 @@ import io.kotest.core.config.AbstractProjectConfig
 
 class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem().with {
-      httpClient {
-        HttpClientSystemOptions(
-          baseUrl = "http://localhost:8080"
+    TestSystem()
+      .with {
+        httpClient {
+          HttpClientSystemOptions(
+            baseUrl = "http://localhost:8080"
+          )
+        }
+        bridge()
+        springBoot(
+          runner = { parameters ->
+            SpringBootRecipeApp.run(parameters) {
+            }
+          },
+          withParameters = listOf()
         )
-      }
-      bridge()
-      springBoot(
-        runner = { parameters ->
-          SpringBootRecipeApp.run(parameters) {
-          }
-        },
-        withParameters = listOf()
-      )
-    }.run()
+      }.run()
   }
 
   override suspend fun afterProject() {

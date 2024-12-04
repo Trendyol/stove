@@ -11,7 +11,8 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.inject
 
 object JacksonConfiguration {
-  val default: ObjectMapper = JsonMapper.builder()
+  val default: ObjectMapper = JsonMapper
+    .builder()
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
     .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)

@@ -16,16 +16,15 @@ private fun createMongoModule() = module {
   single { createMongoDatabase(get(), get()) }
 }
 
-private fun createMongoClient(recipeAppConfig: RecipeAppConfig): MongoClient {
-  return MongoClient.create(
-    MongoClientSettings.builder()
-      .uuidRepresentation(UuidRepresentation.STANDARD)
-      .applyConnectionString(ConnectionString(recipeAppConfig.mongo.uri))
-      .readConcern(ReadConcern.MAJORITY)
-      .build()
-  )
-}
+private fun createMongoClient(recipeAppConfig: RecipeAppConfig): MongoClient = MongoClient.create(
+  MongoClientSettings
+    .builder()
+    .uuidRepresentation(UuidRepresentation.STANDARD)
+    .applyConnectionString(ConnectionString(recipeAppConfig.mongo.uri))
+    .readConcern(ReadConcern.MAJORITY)
+    .build()
+)
 
-private fun createMongoDatabase(mongoClient: MongoClient, recipeAppConfig: RecipeAppConfig): MongoDatabase {
-  return mongoClient.getDatabase(recipeAppConfig.mongo.database)
-}
+private fun createMongoDatabase(mongoClient: MongoClient, recipeAppConfig: RecipeAppConfig): MongoDatabase = mongoClient.getDatabase(
+  recipeAppConfig.mongo.database
+)

@@ -20,27 +20,29 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-class StreamingTests : FunSpec({
-  test("streaming") {
-    validate {
-      http {
-        streamClient()
-          .prepareGet {
-            url("http://localhost:8024/api/streaming/json")
-            parameter("load", 100)
-            parameter("delay", 1)
-            contentType(ContentType.parse("application/x-ndjson"))
-          }.also { response ->
-            response.readJsonStream { line ->
-              StoveSerde.jackson.anyJsonStringSerde().deserialize<ExampleData>(line)
-            }.collect { data ->
-              println(data)
+class StreamingTests :
+  FunSpec({
+    test("streaming") {
+      validate {
+        http {
+          streamClient()
+            .prepareGet {
+              url("http://localhost:8024/api/streaming/json")
+              parameter("load", 100)
+              parameter("delay", 1)
+              contentType(ContentType.parse("application/x-ndjson"))
+            }.also { response ->
+              response
+                .readJsonStream { line ->
+                  StoveSerde.jackson.anyJsonStringSerde().deserialize<ExampleData>(line)
+                }.collect { data ->
+                  println(data)
+                }
             }
-          }
+        }
       }
     }
-  }
-})
+  })
 
 @OptIn(InternalAPI::class)
 suspend fun <T> HttpStatement.readJsonStream(transform: (String) -> T): Flow<T> = flow {

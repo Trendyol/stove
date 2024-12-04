@@ -17,4 +17,8 @@ fun Routing.productApi() {
   }
 }
 
-data class ProductCreateRequest(var name: String, var price: Double, var categoryId: Int)
+data class ProductCreateRequest(
+  var name: String,
+  var price: Double,
+  var categoryId: Int
+)

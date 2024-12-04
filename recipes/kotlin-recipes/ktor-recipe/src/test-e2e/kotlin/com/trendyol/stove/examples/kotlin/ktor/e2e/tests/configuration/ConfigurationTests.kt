@@ -6,12 +6,13 @@ import com.trendyol.stove.testing.e2e.system.using
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldNotBe
 
-class ConfigurationTests : FunSpec({
-  test("configuration can be changed from app") {
-    validate {
-      using<RecipeAppConfig> {
-        this.server.name shouldNotBe "test"
+class ConfigurationTests :
+  FunSpec({
+    test("configuration can be changed from app") {
+      validate {
+        using<RecipeAppConfig> {
+          this.server.name shouldNotBe "test"
+        }
       }
     }
-  }
-})
+  })

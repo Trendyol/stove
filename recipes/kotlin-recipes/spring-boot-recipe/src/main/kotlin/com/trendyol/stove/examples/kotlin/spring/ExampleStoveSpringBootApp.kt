@@ -20,7 +20,10 @@ fun run(args: Array<String>, init: SpringApplication.() -> Unit = {}): Configura
     init()
   }
 
-data class ExampleData(val id: Int, val name: String)
+data class ExampleData(
+  val id: Int,
+  val name: String
+)
 
 @RestController
 @RequestMapping("/api/streaming")

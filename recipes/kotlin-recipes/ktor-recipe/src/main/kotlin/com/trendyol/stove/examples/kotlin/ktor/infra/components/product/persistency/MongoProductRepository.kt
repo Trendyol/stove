@@ -27,11 +27,11 @@ class MongoProductRepository(
     eventPublisher.publishFor(product)
   }
 
-  override suspend fun findById(id: String): Option<Product> {
-    return collection.find(Filters.eq("id", id))
-      .firstOrNull()?.let { objectMapper.convertValue(it, Product::class.java) }
-      .toOption()
-  }
+  override suspend fun findById(id: String): Option<Product> = collection
+    .find(Filters.eq("id", id))
+    .firstOrNull()
+    ?.let { objectMapper.convertValue(it, Product::class.java) }
+    .toOption()
 
   companion object {
     private const val RESERVED_ID = "_id"
@@ -40,7 +40,8 @@ class MongoProductRepository(
 }
 
 object MongoJsonWriterSettings {
-  val default: JsonWriterSettings = JsonWriterSettings.builder()
+  val default: JsonWriterSettings = JsonWriterSettings
+    .builder()
     .objectIdConverter { value, writer -> writer.writeString(value.toHexString()) }
     .build()
 }

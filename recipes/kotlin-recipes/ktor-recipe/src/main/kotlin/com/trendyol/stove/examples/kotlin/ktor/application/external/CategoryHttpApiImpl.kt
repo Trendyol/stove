@@ -12,16 +12,13 @@ class CategoryHttpApiImpl(
   private val httpClient: HttpClient,
   private val categoryApiConfiguration: CategoryApiConfiguration
 ) : CategoryHttpApi {
-  override suspend fun getCategory(id: Int): CategoryApiResponse {
-    return httpClient
-      .get("${categoryApiConfiguration.url}/categories/$id") {
-        accept(ContentType.Application.Json)
-        timeout {
-          requestTimeoutMillis = categoryApiConfiguration.timeout.seconds.inWholeMilliseconds
-          connectTimeoutMillis = categoryApiConfiguration.timeout.seconds.inWholeMilliseconds
-          socketTimeoutMillis = categoryApiConfiguration.timeout.seconds.inWholeMilliseconds
-        }
+  override suspend fun getCategory(id: Int): CategoryApiResponse = httpClient
+    .get("${categoryApiConfiguration.url}/categories/$id") {
+      accept(ContentType.Application.Json)
+      timeout {
+        requestTimeoutMillis = categoryApiConfiguration.timeout.seconds.inWholeMilliseconds
+        connectTimeoutMillis = categoryApiConfiguration.timeout.seconds.inWholeMilliseconds
+        socketTimeoutMillis = categoryApiConfiguration.timeout.seconds.inWholeMilliseconds
       }
-      .body()
-  }
+    }.body()
 }

@@ -25,18 +25,23 @@ subprojects {
     parallel = true
     config.from(rootProject.file("detekt.yml"))
   }
+
   dependencies {
     detektPlugins(rootProject.libs.detekt.formatting)
   }
 
   spotless {
     java {
-      removeUnusedImports()
-      googleJavaFormat()
+      googleJavaFormat("1.25.0")
       targetExclude("build", "generated", "out")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex(".*generated.*")
     }
+
+    scala {
+      scalafmt()
+    }
+
     kotlin {
       ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExcludeIfContentContains("generated")
@@ -51,7 +56,6 @@ subprojects {
   }
 
   tasks {
-
     test {
       dependsOn(spotlessApply)
       useJUnitPlatform()
@@ -66,7 +70,6 @@ subprojects {
       }
       jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
     }
-
 
     kotlin {
       jvmToolchain(21)

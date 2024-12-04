@@ -4,6 +4,7 @@ kotlinx = "1.9.0"
 scala2x = "2.13.15"
 scala3x = "3.4.1"
 quarkus = "3.17.3"
+ktlint = "1.4.1"
 
 # Spring-Boot
 spring-boot = "3.4.0"
@@ -172,6 +173,7 @@ lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.12" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+ktlint-cli = { module = "com.pinterest:ktlint", version = "0.42.1" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
@@ -184,7 +186,6 @@ kediatr-koin = { module = "com.trendyol:kediatr-koin-starter", version.ref = "ke
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 
 # Testing
-
 junit = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }

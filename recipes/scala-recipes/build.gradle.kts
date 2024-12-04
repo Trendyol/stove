@@ -31,17 +31,9 @@ subprojects {
       isDownloadSources = true
     }
   }
+
   dependencies {
     implementation(rootProject.projects.shared.domain)
-  }
-
-  dependencies {
-  }
-
-  spotless {
-    scala {
-      scalafmt()
-    }
   }
 
   task<Test>("e2eTest") {

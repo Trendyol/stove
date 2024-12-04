@@ -20,94 +20,95 @@ import io.kotest.matchers.shouldBe
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
-class CreateTests : FunSpec({
-  test("product can be created with valid category") {
-    validate {
-      val productName = TestData.Random.positiveInt().toString()
-      val productId = UUID.nameUUIDFromBytes(productName.toByteArray())
+class CreateTests :
+  FunSpec({
+    test("product can be created with valid category") {
+      validate {
+        val productName = TestData.Random.positiveInt().toString()
+        val productId = UUID.nameUUIDFromBytes(productName.toByteArray())
 
-      val categoryApiResponse = CategoryApiResponse(
-        TestData.Random.positiveInt(),
-        "category-name",
-        true
-      )
-
-      wiremock {
-        mockGet(
-          url = "/categories/${categoryApiResponse.id}",
-          statusCode = 200,
-          responseBody = categoryApiResponse.some()
+        val categoryApiResponse = CategoryApiResponse(
+          TestData.Random.positiveInt(),
+          "category-name",
+          true
         )
-      }
 
-      http {
-        val req = ProductCreateRequest(productName, 100.0, categoryApiResponse.id)
-        postAndExpectBody<Any>("/products", body = req.some()) { actual ->
-          actual.status shouldBe 200
-        }
-      }
-
-      mongodb {
-        shouldQuery<Product>(Filters.eq("id", productId.toString()).toBsonDocument().toJson()) { actual ->
-          actual.size shouldBe 1
-          actual[0].name shouldBe productName
-          actual[0].price shouldBe 100.0
-        }
-      }
-
-      using<ProductRepository> {
-        val product = findById(productId.toString()).get()
-        product.name shouldBe productName
-        product.price shouldBe 100.0
-        product.categoryId shouldBe categoryApiResponse.id
-      }
-
-      kafka {
-        shouldBePublished<ProductCreatedEvent>(10.seconds) {
-          actual.price == 100.0 && actual.name == productName
+        wiremock {
+          mockGet(
+            url = "/categories/${categoryApiResponse.id}",
+            statusCode = 200,
+            responseBody = categoryApiResponse.some()
+          )
         }
 
-        shouldBeConsumed<ProductCreatedEvent>(10.seconds) {
-          actual.price == 100.0 && actual.name == productName
+        http {
+          val req = ProductCreateRequest(productName, 100.0, categoryApiResponse.id)
+          postAndExpectBody<Any>("/products", body = req.some()) { actual ->
+            actual.status shouldBe 200
+          }
+        }
+
+        mongodb {
+          shouldQuery<Product>(Filters.eq("id", productId.toString()).toBsonDocument().toJson()) { actual ->
+            actual.size shouldBe 1
+            actual[0].name shouldBe productName
+            actual[0].price shouldBe 100.0
+          }
+        }
+
+        using<ProductRepository> {
+          val product = findById(productId.toString()).get()
+          product.name shouldBe productName
+          product.price shouldBe 100.0
+          product.categoryId shouldBe categoryApiResponse.id
+        }
+
+        kafka {
+          shouldBePublished<ProductCreatedEvent>(10.seconds) {
+            actual.price == 100.0 && actual.name == productName
+          }
+
+          shouldBeConsumed<ProductCreatedEvent>(10.seconds) {
+            actual.price == 100.0 && actual.name == productName
+          }
         }
       }
     }
-  }
 
-  test("when category is not active, product creation should fail") {
-    validate {
-      val productName = TestData.Random.positiveInt().toString()
-      val productId = UUID.nameUUIDFromBytes(productName.toByteArray())
-      val categoryApiResponse = CategoryApiResponse(
-        TestData.Random.positiveInt(),
-        "category-name",
-        false
-      )
-
-      wiremock {
-        mockGet(
-          url = "/categories/${categoryApiResponse.id}",
-          statusCode = 200,
-          responseBody = categoryApiResponse.some()
+    test("when category is not active, product creation should fail") {
+      validate {
+        val productName = TestData.Random.positiveInt().toString()
+        val productId = UUID.nameUUIDFromBytes(productName.toByteArray())
+        val categoryApiResponse = CategoryApiResponse(
+          TestData.Random.positiveInt(),
+          "category-name",
+          false
         )
-      }
 
-      http {
-        val req = ProductCreateRequest(productName, 100.0, categoryApiResponse.id)
-        postAndExpectBody<Any>("/products", body = req.some()) { actual ->
-          actual.status shouldBe 409
+        wiremock {
+          mockGet(
+            url = "/categories/${categoryApiResponse.id}",
+            statusCode = 200,
+            responseBody = categoryApiResponse.some()
+          )
         }
-      }
 
-      mongodb {
-        shouldQuery<Product>(Filters.eq("id", productId.toString()).toBsonDocument().toJson()) { actual ->
-          actual.size shouldBe 0
+        http {
+          val req = ProductCreateRequest(productName, 100.0, categoryApiResponse.id)
+          postAndExpectBody<Any>("/products", body = req.some()) { actual ->
+            actual.status shouldBe 409
+          }
         }
-      }
 
-      using<ProductRepository> {
-        findById(productId.toString()) shouldBe None
+        mongodb {
+          shouldQuery<Product>(Filters.eq("id", productId.toString()).toBsonDocument().toJson()) { actual ->
+            actual.size shouldBe 0
+          }
+        }
+
+        using<ProductRepository> {
+          findById(productId.toString()) shouldBe None
+        }
       }
     }
-  }
-})
+  })

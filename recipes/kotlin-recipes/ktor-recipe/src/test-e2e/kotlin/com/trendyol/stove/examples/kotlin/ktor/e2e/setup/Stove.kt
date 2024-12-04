@@ -18,56 +18,57 @@ private const val DATABASE = "stove-kotlin-ktor"
 
 class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem().with {
-      httpClient {
-        HttpClientSystemOptions(
-          baseUrl = "http://localhost:8081",
-          contentConverter = JacksonConverter(JacksonConfiguration.default)
-        )
-      }
-      bridge()
-      wiremock {
-        WireMockSystemOptions(
-          port = 9090
-        )
-      }
-      kafka {
-        KafkaSystemOptions(
-          serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.default),
-          configureExposedConfiguration = { cfg ->
-            listOf(
-              "kafka.bootstrapServers=${cfg.bootstrapServers}",
-              "kafka.interceptor-classes=${cfg.interceptorClass}"
-            )
-          }
-        )
-      }
-      mongodb {
-        MongodbSystemOptions(
-          databaseOptions = DatabaseOptions(DatabaseOptions.DefaultDatabase(DATABASE, collection = PRODUCT_COLLECTION)),
-          container = MongoContainerOptions(),
-          configureExposedConfiguration = { cfg ->
-            listOf(
-              "mongo.database=$DATABASE",
-              "mongo.uri=${cfg.connectionString}/?retryWrites=true&w=majority"
-            )
-          }
-        )
-      }
-      ktor(
-        runner = { parameters ->
-          ExampleStoveKtorApp.run(
-            parameters,
-            wait = false,
-            module {
+    TestSystem()
+      .with {
+        httpClient {
+          HttpClientSystemOptions(
+            baseUrl = "http://localhost:8081",
+            contentConverter = JacksonConverter(JacksonConfiguration.default)
+          )
+        }
+        bridge()
+        wiremock {
+          WireMockSystemOptions(
+            port = 9090
+          )
+        }
+        kafka {
+          KafkaSystemOptions(
+            serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.default),
+            configureExposedConfiguration = { cfg ->
+              listOf(
+                "kafka.bootstrapServers=${cfg.bootstrapServers}",
+                "kafka.interceptor-classes=${cfg.interceptorClass}"
+              )
             }
           )
-        },
-        withParameters = listOf(
-          "server.name=${Thread.currentThread().name}"
+        }
+        mongodb {
+          MongodbSystemOptions(
+            databaseOptions = DatabaseOptions(DatabaseOptions.DefaultDatabase(DATABASE, collection = PRODUCT_COLLECTION)),
+            container = MongoContainerOptions(),
+            configureExposedConfiguration = { cfg ->
+              listOf(
+                "mongo.database=$DATABASE",
+                "mongo.uri=${cfg.connectionString}/?retryWrites=true&w=majority"
+              )
+            }
+          )
+        }
+        ktor(
+          runner = { parameters ->
+            ExampleStoveKtorApp.run(
+              parameters,
+              wait = false,
+              module {
+              }
+            )
+          },
+          withParameters = listOf(
+            "server.name=${Thread.currentThread().name}"
+          )
         )
-      )
-    }.run()
+      }.run()
   }
 
   override suspend fun afterProject() {

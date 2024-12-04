@@ -19,7 +19,8 @@ class KafkaDomainEventPublisher(
 
   private fun <TId> mapEventsToProducerRecords(
     aggregateRoot: AggregateRoot<TId>
-  ): List<ProducerRecord<String, Any>> = aggregateRoot.domainEvents()
+  ): List<ProducerRecord<String, Any>> = aggregateRoot
+    .domainEvents()
     .map { event ->
       val topic: Topic = topicResolver(aggregateRoot.aggregateName)
       logger.info("Publishing event {} to topic {}", event, topic.name)
