@@ -185,7 +185,6 @@ class WireMockOperationsTest : FunSpec({
                         )
                 }
             }
-
         }
 
         var id = 1
@@ -232,7 +231,6 @@ class WireMockOperationsTest : FunSpec({
         }
     }
 
-
     /**
      * Configures a POST request mock using [WireMockSystem.mockPutConfigure].
      *
@@ -265,7 +263,6 @@ class WireMockOperationsTest : FunSpec({
             response.body() shouldBe "PutResource1"
         }
     }
-
 
     /**
      * Configures a POST request mock using [WireMockSystem.mockPutConfigure].
@@ -300,7 +297,6 @@ class WireMockOperationsTest : FunSpec({
         }
     }
 
-
     /**
      * Configures a POST request mock using [WireMockSystem.mockDeleteConfigure].
      *
@@ -334,7 +330,6 @@ class WireMockOperationsTest : FunSpec({
             }
         }
     }
-
 
     /**
      * Configures a POST request mock using [WireMockSystem.mockDeleteConfigure].
@@ -502,5 +497,4 @@ class WireMockOperationsTest : FunSpec({
             response.headers().firstValue("X-Overridden-Header").orElse("") shouldBe "OverriddenValue"
         }
     }
-
 })
