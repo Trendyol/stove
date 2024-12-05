@@ -1,4 +1,4 @@
-@file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
+@file:Suppress("UnstableApiUsage")
 
 plugins {
   kotlin("jvm") version libs.versions.kotlin
@@ -43,6 +43,10 @@ dependencies {
   testImplementation(projects.stove.lib.stoveTestingE2eRdbmsPostgres)
   testImplementation(projects.stove.lib.stoveTestingE2eKafka)
   testImplementation(projects.stove.starters.ktor.stoveKtorTestingE2e)
+}
+
+tasks.test.configure {
+  systemProperty("kotest.framework.config.fqn", "com.stove.ktor.example.e2e.Stove")
 }
 
 repositories {

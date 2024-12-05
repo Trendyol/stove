@@ -16,3 +16,7 @@ dependencies {
   testImplementation(libs.jackson.jsr310)
   testImplementation(testFixtures(projects.lib.stoveTestingE2e))
 }
+
+tasks.test.configure {
+  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.http.Stove")
+}

@@ -69,7 +69,7 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 }
 
 @ExperimentalKotest
-class ProjectConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   init {
     stoveKafkaBridgePortDefault = "50052"
   }

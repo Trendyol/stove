@@ -36,7 +36,7 @@ class ExtendedCouchbaseContainer(
   }
 }
 
-class Setup : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
     TestSystem {}
       .with {

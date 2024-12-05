@@ -10,31 +10,30 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import org.slf4j.*
 
-class Setup : AbstractProjectConfig() {
-  override suspend fun beforeProject(): Unit =
-    TestSystem()
-      .with {
-        mssql {
-          MsSqlOptions(
-            applicationName = "test",
-            databaseName = "test",
-            userName = "sa",
-            password = "Password12!",
-            container = MssqlContainerOptions(
-              toolsPath = ToolsPath.After2019
-            ) {
-              dockerImageName = "mcr.microsoft.com/mssql/server:2022-latest"
-              withStartupAttempts(3)
-            },
-            configureExposedConfiguration = { _ ->
-              listOf()
-            }
-          ).migrations {
-            register<InitialMigration>()
+class Stove : AbstractProjectConfig() {
+  override suspend fun beforeProject(): Unit = TestSystem()
+    .with {
+      mssql {
+        MsSqlOptions(
+          applicationName = "test",
+          databaseName = "test",
+          userName = "sa",
+          password = "Password12!",
+          container = MssqlContainerOptions(
+            toolsPath = ToolsPath.After2019
+          ) {
+            dockerImageName = "mcr.microsoft.com/mssql/server:2022-latest"
+            withStartupAttempts(3)
+          },
+          configureExposedConfiguration = { _ ->
+            listOf()
           }
+        ).migrations {
+          register<InitialMigration>()
         }
-        applicationUnderTest(NoOpApplication())
-      }.run()
+      }
+      applicationUnderTest(NoOpApplication())
+    }.run()
 
   override suspend fun afterProject(): Unit = TestSystem.stop()
 }
