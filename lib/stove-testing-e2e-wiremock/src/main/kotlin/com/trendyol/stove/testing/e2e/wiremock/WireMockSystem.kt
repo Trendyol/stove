@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
-import com.github.tomakehurst.wiremock.matching.ContainsPattern
+import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
@@ -153,9 +153,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockPutConfigure(
     url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = put(urlEqualTo(url))
+    val req = put(urlPatternFn(url))
     val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -164,9 +165,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockPatchConfigure(
     url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = patch(urlEqualTo(url))
+    val req = patch(urlPatternFn(url))
     val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -175,9 +177,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockGetConfigure(
     url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = get(urlEqualTo(url))
+    val req = get(urlPatternFn(url))
     val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -186,9 +189,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockHeadConfigure(
     url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = head(urlEqualTo(url))
+    val req = head(urlPatternFn(url))
     val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -197,9 +201,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockDeleteConfigure(
     url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = delete(urlEqualTo(url))
+    val req = delete(urlPatternFn(url))
     val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -208,9 +213,10 @@ class WireMockSystem(
   @WiremockDsl
   fun mockPostConfigure(
     url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = post(urlEqualTo(url))
+    val req = post(urlPatternFn(url))
     val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
