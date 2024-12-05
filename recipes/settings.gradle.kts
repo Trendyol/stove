@@ -14,7 +14,6 @@ include(
   "shared",
   "shared:domain",
   "shared:application",
-  "shared:infra",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

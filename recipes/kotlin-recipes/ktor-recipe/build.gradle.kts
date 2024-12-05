@@ -47,4 +47,7 @@ dependencies {
   testImplementation(libs.jackson.kotlin)
 }
 
+tasks.e2eTest.configure {
+  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.examples.kotlin.ktor.e2e.setup.Stove")
+}
 
