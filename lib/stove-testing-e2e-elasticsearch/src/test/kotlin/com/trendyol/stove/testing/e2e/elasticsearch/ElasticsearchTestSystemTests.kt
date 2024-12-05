@@ -50,7 +50,7 @@ class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
   }
 }
 
-class Setup : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit = TestSystem()
     .with {
       elasticsearch {

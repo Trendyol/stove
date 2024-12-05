@@ -10,7 +10,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import org.slf4j.*
 
-class Setup : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
     TestSystem()
       .with {

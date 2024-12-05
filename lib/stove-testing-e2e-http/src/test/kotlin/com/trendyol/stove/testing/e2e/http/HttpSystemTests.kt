@@ -30,7 +30,7 @@ class NoApplication : ApplicationUnderTest<Unit> {
   }
 }
 
-class TestConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
     TestSystem()
       .with {

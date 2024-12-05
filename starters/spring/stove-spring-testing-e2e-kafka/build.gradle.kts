@@ -21,6 +21,10 @@ dependencies {
   testImplementation(libs.kafka.streams.protobuf.serde)
 }
 
+tasks.test.configure {
+  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.kafka.Setup")
+}
+
 protobuf {
   protoc {
     artifact = libs.protoc.get().toString()

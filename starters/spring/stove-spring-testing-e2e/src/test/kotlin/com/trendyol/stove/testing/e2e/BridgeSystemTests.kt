@@ -80,7 +80,7 @@ class ParameterCollectorOfSpringBoot(
     get() = applicationArguments.sourceArgs.toList()
 }
 
-class Setup : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
     TestSystem()
       .with {

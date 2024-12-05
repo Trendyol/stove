@@ -13,7 +13,7 @@ import org.bson.codecs.pojo.annotations.*
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.assertThrows
 
-class Setup : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     TestSystem()
       .with {
