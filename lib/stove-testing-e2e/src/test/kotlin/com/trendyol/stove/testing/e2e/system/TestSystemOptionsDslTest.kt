@@ -32,7 +32,11 @@ class TestSystemOptionsDslTest :
       val testSystemOptionsDsl = TestSystemOptionsDsl()
 
       class AnotherStateStorageFactory : StateStorageFactory {
-        override fun <T : Any> invoke(options: TestSystemOptions, system: KClass<*>, state: KClass<T>): StateStorage<T> = object : StateStorage<T> {
+        override fun <T : Any> invoke(
+          options: TestSystemOptions,
+          system: KClass<*>,
+          state: KClass<T>
+        ): StateStorage<T> = object : StateStorage<T> {
           override suspend fun capture(start: suspend () -> T): T = start()
 
           override fun isSubsequentRun(): Boolean = false
