@@ -10,13 +10,14 @@
 
 ## Configure
 
-After getting the library from the maven source, while configuring TestSystem you will have access to `withCouchbase` function.
+After getting the library from the maven source, while configuring TestSystem you will have access to `couchbase`
+function.
 This function configures the Couchbase Docker container that is going to be started.
 
-Here you can define a `defaultBucket` name. 
+Here you can define a `defaultBucket` name.
 
 !!! warning
-    Make sure that your application has the same bucket names.
+Make sure that your application has the same bucket names.
 
 ```kotlin
 TestSystem()
@@ -41,3 +42,38 @@ Your application will start with the physical dependencies that are spun-up by t
 ## Migrations
 
 Stove provides a way to run migrations before the test starts.
+
+```kotlin
+class CouchbaseMigration : DatabaseMigration<Cluster> {
+  override val order: Int = 1
+
+  override suspend fun execute(connection: Cluster) {
+    val bucket = connection.bucket(CollectionConstants.BUCKET_NAME)
+    listOf(CollectionConstants.PRODUCT_COLLECTION).forEach { collection ->
+      bucket.collections.createCollection(bucket.defaultScope().name, collection)
+    }
+    connection.waitUntilReady(30.seconds)
+  }
+}
+```
+
+You can define your migration class by implementing the `DatabaseMigration` interface. You can define the order of the
+migration by overriding the `order` property. The migrations will be executed in the order of the `order` property.
+
+After defining your migration class, you can pass it to the `migrations` function of the `couchbase` configuration.
+
+```kotlin
+TestSystem()
+  .with {
+    couchbase {
+      CouchbaseSystemOptions(defaultBucket = "test-bucket", configureExposedConfiguration = { cfg ->
+        listOf(
+          "couchbase.hosts=${cfg.hostsWithPort}",
+          "couchbase.username=${cfg.username}",
+          "couchbase.password=${cfg.password}"
+        )
+      }).migrations<CouchbaseMigration>()
+    }
+  }
+  .run()
+```

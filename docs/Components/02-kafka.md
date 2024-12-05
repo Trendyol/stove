@@ -1,5 +1,6 @@
 # Kafka
 
+There are two ways to work with Kafka in Stove.
 
 ## Standalone Kafka
 
