@@ -82,7 +82,7 @@ class WireMockOperationsTest :
 
       TestSystem.validate {
         wiremock {
-          mockPostConfigure("/$url", { urlPathMatching("/categories/.*") }) { req, _ ->
+          mockPostConfigure("/categories/.*", { urlPathMatching(it) }) { req, _ ->
             req
               .withRequestBody(equalTo("request2"))
               .withHeader("Content-Type", ContainsPattern("application/json"))
@@ -93,7 +93,7 @@ class WireMockOperationsTest :
                   .withHeader("Content-Type", "application/json; charset=UTF-8")
               )
           }
-          mockPostConfigure("/$url", { urlPathMatching("/categories/.*") }) { req, _ ->
+          mockPostConfigure("/categories/.*", { urlPathMatching(it) }) { req, _ ->
             req
               .withRequestBody(equalTo("request1"))
               .withHeader("Content-Type", ContainsPattern("application/json"))
@@ -187,7 +187,7 @@ class WireMockOperationsTest :
       val client = HttpClient.newBuilder().build()
       TestSystem.validate {
         wiremock {
-          mockGetConfigure("/suppliers/1", { urlPathMatching("/suppliers/1.*") }) { req, _ ->
+          mockGetConfigure("/suppliers/1.*", { urlPathMatching(it) }) { req, _ ->
             req
               .withHeader("Content-Type", ContainsPattern("application/json"))
               .withQueryParam("active", matching("true|false"))
@@ -198,7 +198,7 @@ class WireMockOperationsTest :
                   .withHeader("Content-Type", "application/json; charset=UTF-8")
               )
           }
-          mockGetConfigure("/suppliers/2", { urlPathMatching("/suppliers/2.*") }) { req, _ ->
+          mockGetConfigure("/suppliers/2.*", { urlPathMatching(it) }) { req, _ ->
             req
               .withHeader("Content-Type", ContainsPattern("application/json"))
               .withQueryParam("active", matching("true|false"))
@@ -236,7 +236,7 @@ class WireMockOperationsTest :
         response2.body() shouldBe "Supplier2Response"
         TestSystem.validate {
           wiremock {
-            mockGetConfigure("/suppliers/2", { urlPathMatching("/suppliers/2.*") }) { req, _ ->
+            mockGetConfigure("/suppliers/2.*", { urlPathMatching(it) }) { req, _ ->
               req
                 .withHeader("Content-Type", ContainsPattern("application/json"))
                 .withQueryParam("active", matching("true|false"))
@@ -308,7 +308,7 @@ class WireMockOperationsTest :
       val client = HttpClient.newBuilder().build()
       TestSystem.validate {
         wiremock {
-          mockPutConfigure("/resources/1", { urlPathMatching("/resources/.*") }) { req, _ ->
+          mockPutConfigure("/resources/.*", { urlPathMatching(it) }) { req, _ ->
             req
               .withHeader("Content-Type", ContainsPattern("application/json"))
               .willReturn(
@@ -325,7 +325,7 @@ class WireMockOperationsTest :
         val reqBuilder = HttpRequest
           .newBuilder(uri)
           .header("Content-Type", "application/json")
-          .PUT(HttpRequest.BodyPublishers.ofString("{\"name\":\"test\"}"))
+          .PUT(BodyPublishers.ofString("{\"name\":\"test\"}"))
 
         val request = reqBuilder.build()
         val response = client.send(request, BodyHandlers.ofString())
@@ -380,7 +380,7 @@ class WireMockOperationsTest :
       TestSystem.validate {
         withContext(Dispatchers.IO) {
           wiremock {
-            mockDeleteConfigure("/resources/1", { urlPathMatching("/resources/.*") }) { req, _ ->
+            mockDeleteConfigure("/resources/.*", { urlPathMatching(it) }) { req, _ ->
               req
                 .withHeader("Authorization", equalTo("Bearer token"))
                 .willReturn(
@@ -449,7 +449,7 @@ class WireMockOperationsTest :
       val client = HttpClient.newBuilder().build()
       TestSystem.validate {
         wiremock {
-          mockPatchConfigure("/resources/1", { (urlPathMatching("/resources/.*")) }) { req, _ ->
+          mockPatchConfigure("/resources/.*", { (urlPathMatching(it)) }) { req, _ ->
             req
               .withHeader("Content-Type", ContainsPattern("application/json"))
               .willReturn(
@@ -521,7 +521,7 @@ class WireMockOperationsTest :
       val client = HttpClient.newBuilder().build()
       TestSystem.validate {
         wiremock {
-          mockHeadConfigure("/resources/1", { urlPathMatching("/resources/.*") }) { req, _ ->
+          mockHeadConfigure("/resources/.*", { urlPathMatching(it) }) { req, _ ->
             req
               .withHeader("Authorization", equalTo("Bearer token"))
               .willReturn(
