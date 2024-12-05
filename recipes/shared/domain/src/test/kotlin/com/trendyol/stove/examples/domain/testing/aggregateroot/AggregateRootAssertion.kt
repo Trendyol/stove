@@ -4,7 +4,7 @@ import arrow.core.firstOrNone
 import com.trendyol.stove.examples.domain.ddd.*
 import io.kotest.assertions.*
 import io.kotest.assertions.print.Printed
-import io.kotest.common.mapError
+import io.kotest.engine.mapError
 import io.kotest.matchers.shouldBe
 
 class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
