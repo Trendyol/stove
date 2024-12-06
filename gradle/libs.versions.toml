@@ -51,6 +51,7 @@ akkurate = "0.10.0"
 exposed = "0.57.0"
 kotlinx-serialization = "1.7.3"
 ktlint = "1.5.0"
+kotlinBinaryCompatibilityValidator = "0.16.3"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -249,5 +250,6 @@ nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "ne
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
 
 
