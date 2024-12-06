@@ -1,6 +1,5 @@
 package com.trendyol.stove.testing.e2e.serialization
 
-import arrow.integrations.jackson.module.registerArrowModule
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.*
 import com.fasterxml.jackson.databind.*
@@ -16,7 +15,6 @@ import java.time.temporal.TemporalAccessor
 object StoveJackson {
   val default: ObjectMapper = jacksonObjectMapper().disable(FAIL_ON_EMPTY_BEANS).apply {
     findAndRegisterModules()
-    registerArrowModule()
   }
 
   fun byConfiguring(
