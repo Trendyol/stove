@@ -43,7 +43,7 @@ class ElasticsearchSystem internal constructor(
         context.container.host,
         context.container.firstMappedPort,
         context.options.container.password,
-        determineCertificate()
+        determineCertificate().getOrNull()
       )
     }
   }

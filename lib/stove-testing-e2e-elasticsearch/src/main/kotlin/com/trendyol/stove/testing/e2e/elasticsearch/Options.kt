@@ -6,7 +6,7 @@ import co.elastic.clients.json.JsonpMapper
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
-import com.trendyol.stove.testing.e2e.serialization.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.apache.http.client.config.RequestConfig
@@ -16,6 +16,10 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer
 import org.testcontainers.utility.DockerImageName
 import kotlin.time.Duration.Companion.minutes
 
+@DslMarker
+@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS, AnnotationTarget.TYPE, AnnotationTarget.FUNCTION)
+annotation class ElasticDsl
+
 @StoveDsl
 data class ElasticsearchSystemOptions(
   val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
@@ -23,7 +27,7 @@ data class ElasticsearchSystemOptions(
   val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions,
-  ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
+    ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
   /**
@@ -43,7 +47,7 @@ data class ElasticSearchExposedConfiguration(
   val host: String,
   val port: Int,
   val password: String,
-  val certificate: Option<ElasticsearchExposedCertificate>
+  val certificate: ElasticsearchExposedCertificate?
 ) : ExposedConfiguration
 
 data class ElasticsearchContext(
@@ -54,7 +58,7 @@ data class ElasticsearchContext(
 open class StoveElasticSearchContainer(
   override val imageNameAccess: DockerImageName
 ) : ElasticsearchContainer(imageNameAccess),
-  StoveContainer
+    StoveContainer
 
 data class ElasticContainerOptions(
   override val registry: String = "docker.elastic.co/",

@@ -30,7 +30,7 @@ class ElasticsearchExposedCertificateTest :
       val serialize = j.writeValueAsString(stateWithProcess)
       val stateWithProcess2 = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(serialize)
 
-      val cert = stateWithProcess2.state.certificate.get()
+      val cert = stateWithProcess2.state.certificate!!
       cert.bytes.size shouldBeGreaterThan 0
       cert.sslContext shouldNotBe null
       cert.sslContext.protocol shouldBe "TLSv1.3"
