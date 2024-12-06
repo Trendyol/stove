@@ -27,7 +27,7 @@ data class ElasticsearchSystemOptions(
   val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions,
-    ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
+  ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
   internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
   /**
@@ -58,7 +58,7 @@ data class ElasticsearchContext(
 open class StoveElasticSearchContainer(
   override val imageNameAccess: DockerImageName
 ) : ElasticsearchContainer(imageNameAccess),
-    StoveContainer
+  StoveContainer
 
 data class ElasticContainerOptions(
   override val registry: String = "docker.elastic.co/",
