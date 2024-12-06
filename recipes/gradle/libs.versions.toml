@@ -13,7 +13,7 @@ spring-dependency-management = "1.1.6"
 spring-kafka = "3.3.0"
 
 # arrow
-arrow = "1.2.4"
+arrow = "2.0.0"
 arrow-jackson = "0.14.1"
 arrowSuspendApp = "0.4.0"
 
