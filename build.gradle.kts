@@ -1,4 +1,3 @@
-import org.gradle.kotlin.dsl.libs
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -10,13 +9,12 @@ plugins {
   alias(libs.plugins.testLogger)
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
-  alias(libs.plugins.binaryCompatibilityValidator)
   id("stove-publishing") apply false
   idea
   java
 }
 group = "com.trendyol"
-version = CI.version(project)
+version = version()
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -42,21 +40,41 @@ kover {
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor")
+val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut-starter")
 dependencies {
   related.forEach {
     kover(it)
   }
 }
 
-subprojects.of("lib", "spring", "examples", "ktor") {
+subprojects.of("lib", "spring", "examples", "ktor", "micronaut-starter") {
   apply {
     plugin("kotlin")
-    plugin(rootProject.libs.plugins.spotless.get().pluginId)
-    plugin(rootProject.libs.plugins.dokka.get().pluginId)
-    plugin(rootProject.libs.plugins.testLogger.get().pluginId)
-    plugin(rootProject.libs.plugins.kover.get().pluginId)
-    plugin(rootProject.libs.plugins.detekt.get().pluginId)
+    plugin(
+      rootProject.libs.plugins.spotless
+        .get()
+        .pluginId
+    )
+    plugin(
+      rootProject.libs.plugins.dokka
+        .get()
+        .pluginId
+    )
+    plugin(
+      rootProject.libs.plugins.testLogger
+        .get()
+        .pluginId
+    )
+    plugin(
+      rootProject.libs.plugins.kover
+        .get()
+        .pluginId
+    )
+    plugin(
+      rootProject.libs.plugins.detekt
+        .get()
+        .pluginId
+    )
     plugin("idea")
   }
 
@@ -76,13 +94,12 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.framework.api)
     testImplementation(libs.kotest.property)
-    testImplementation(libs.kotest.arrow)
     detektPlugins(libs.detekt.formatting)
   }
 
   spotless {
     kotlin {
-      ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExclude("build/", "generated/", "out/")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
@@ -141,10 +158,11 @@ val publishedProjects = listOf(
   "stove-testing-e2e-redis",
   "stove-ktor-testing-e2e",
   "stove-spring-testing-e2e",
-  "stove-spring-testing-e2e-kafka"
+  "stove-spring-testing-e2e-kafka",
+  "stove-micronaut-testing-e2e"
 )
 
-subprojects.of("lib", "spring", "ktor", filter = { p -> publishedProjects.contains(p.name) }) {
+subprojects.of("lib", "spring", "ktor", "micronaut-starter", filter = { p -> publishedProjects.contains(p.name) }) {
   apply {
     plugin("java")
     plugin("stove-publishing")
@@ -160,3 +178,11 @@ tasks.withType<DokkaMultiModuleTask>().configureEach {
   outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
 
+fun version(): String = when {
+  System.getenv("SNAPSHOT") != null -> {
+    println("SNAPSHOT: ${System.getenv("SNAPSHOT")}")
+    project.properties["snapshot"].toString()
+  }
+
+  else -> project.properties["version"].toString()
+}
