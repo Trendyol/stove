@@ -724,7 +724,7 @@ that you can implement to provide your own serialization and deserialization log
 <li>Gson</li>
 <li>Kotlinx</li>
 </ul>
-<p>Also look at ser/de section: <a href="/#serializing-and-deserializing">Serialization and Deserialization</a></p>
+<p>Also look at ser/de section: <a href="../../#serializing-and-deserializing">Serialization and Deserialization</a></p>
 <h4 id="spring-kafka-com-trendyolstove-spring-testing-e2e-kafka">Spring Kafka (com-trendyol:stove-spring-testing-e2e-kafka)<a class="headerlink" href="#spring-kafka-com-trendyolstove-spring-testing-e2e-kafka" title="Permanent link">&para;</a></h4>
 <p>The <code>TestSystemKafkaInterceptor</code> now depends on <code>StoveSerde</code> to provide the serialization and deserialization logic instead of <code>ObjectMapper</code>.</p>
 <p>You can of course use your default Jackson implementation by providing the <code>ObjectMapperConfig.default()</code> to the <code>StoveSerde.jackson.anyByteArraySerde</code> function.</p>
