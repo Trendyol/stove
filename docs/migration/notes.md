@@ -14,7 +14,7 @@ that you can implement to provide your own serialization and deserialization log
 * Gson
 * Kotlinx
 
-Also look at ser/de section: [Serialization and Deserialization](/#serializing-and-deserializing)
+Also look at ser/de section: [Serialization and Deserialization](../index.md#serializing-and-deserializing)
 
 #### Spring Kafka (com-trendyol:stove-spring-testing-e2e-kafka)
 
