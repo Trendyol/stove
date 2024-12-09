@@ -17,7 +17,7 @@ This function configures the Couchbase Docker container that is going to be star
 Here you can define a `defaultBucket` name.
 
 !!! warning
-Make sure that your application has the same bucket names.
+    Make sure that your application has the same bucket names.
 
 ```kotlin
 TestSystem()

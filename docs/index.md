@@ -25,20 +25,18 @@ The medium story about the motivation behind the framework:
 
 _Note: Stove is not a replacement for the unit tests, it is a framework for end-to-end/component tests._
 
-!!! Note
-    Some people tend to call these tests as _integration tests_, some call them as _component tests_, some call them as
-    end-to-end tests. In this documentation, we will use the term end-to-end tests.
-    We think that the **e2e/component tests** term is more serving to the purpose of message we want to convey.
-
 ## What is the problem?
 
-In the JVM world, we have a lot of frameworks for the application code, but when it comes to integration/component/e2e testing
-we don't have a single framework that can be used for all the tech stacks. We have testcontainers but you still need to do lots of plumbing to make it work with your tech stack.
+In the JVM world, we have a lot of frameworks for the application code, but when it comes to integration/component/e2e
+testing
+we don't have a single framework that can be used for all the tech stacks. We have testcontainers but you still need to
+do lots of plumbing to make it work with your tech stack.
 
 The use-cases that led us develop the Stove are to increase the productivity of the developers while keeping the quality
 of the codebase high and coherent.
 
 Those use-cases are:
+
 - Kotlin app with Spring-Boot
 - Kotlin app with Ktor
 - Java app with Spring-Boot
@@ -46,8 +44,10 @@ Those use-cases are:
 - Java app with Quarkus
 - Scala app with Spring-Boot
 
-People have different tech stacks and each time when they want to write e2e tests, they need to write a lot of boilerplate code.
-Alongside the physical components that are needed to be started, we need to write the code to start the application, and the code to access the beans of the application.
+People have different tech stacks and each time when they want to write e2e tests, they need to write a lot of
+boilerplate code.
+Alongside the physical components that are needed to be started, we need to write the code to start the application, and
+the code to access the beans of the application.
 Stove is here to solve this problem. It provides a single API to write e2e tests for all the tech stacks.
 
 **Stove unifies the testing experience whatever you use.**
@@ -84,19 +84,32 @@ so, it is risk-free to apply and use, give it a try!
 
 Versions are available at [Releases](https://github.com/Trendyol/stove/releases)
 
+!!! Tip
+
+    You can use SNAPSHOT versions for the latest features. You can add the following repository to your build file.
+    SNAPSHOT versions released with the `1.0.0.{buildNumber}-SNAPSHOT` strategy.
+  
+      ```kotlin
+      repositories {
+          maven {
+              url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+          }
+      }
+      ```
+
 Every physical component that your testing needs is a separate module in Stove. You can add them according to your
 needs.
 Stove supports the following components:
 
-- [Kafka](Components/02-kafka.md/)
-- [MongoDB](Components/07-mongodb.md/)
-- [MSSQL](Components/08-mssql.md/)
-- [PostgreSQL](Components/06-postgresql.md/)
-- [Redis](Components/09-redis.md/)
-- [Elasticsearch](Components/03-elasticsearch.md/)
-- [Couchbase](Components/01-couchbase.md/)
-- [Wiremock](Components/04-wiremock.md/)
-- [HTTP](Components/05-http.md/)
+- [Kafka](Components/02-kafka.md)
+- [MongoDB](Components/07-mongodb.md)
+- [MSSQL](Components/08-mssql.md)
+- [PostgreSQL](Components/06-postgresql.md)
+- [Redis](Components/09-redis.md)
+- [Elasticsearch](Components/03-elasticsearch.md)
+- [Couchbase](Components/01-couchbase.md)
+- [Wiremock](Components/04-wiremock.md)
+- [HTTP](Components/05-http.md)
 
 === "Gradle"
 
@@ -140,30 +153,32 @@ Everything starts with the `TestSystem` class. You can configure your system wit
 ```kotlin
 TestSystem()
   .with {
-      // your configurations depending on the dependencies you need
+    // your configurations depending on the dependencies you need
   }.run()
 ```
 
-`with` function is a lambda that you can configure your system. You can add your physical components. 
+`with` function is a lambda that you can configure your system. You can add your physical components.
 It is also a place to plug your custom **systems** that you might want to create.
 If you added `com.trendyol:stove-testing-e2e-kafka` package, you can use `kafka` function in the `with` block.
 
 ```kotlin
 TestSystem()
   .with {
-      kafka {
-          // your kafka configurations
-      }
+    kafka {
+      // your kafka configurations
+    }
   }.run()
 ```
 
 !!! Note
-    You can add multiple physical components in the `with` block. Think of it as a DSL for your test system and a `docker-compose` in Kotlin.
 
+    You can add multiple physical components in the `with` block. Think of it as a DSL for your test system and a
+    `docker-compose` in Kotlin.
 
 !!! tip
+
     If you want to jump directly to the examples, you can check the examples in the repository.
-    
+
     - [Examples](https://github.com/Trendyol/stove/tree/main/examples)
         - [Ktor Example](https://github.com/Trendyol/stove/tree/main/examples/ktor-example)
         - [Spring Boot Example](https://github.com/Trendyol/stove/tree/main/examples/spring-example)
@@ -174,18 +189,19 @@ TestSystem()
           - [Kotlin Recipes](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes)
           - [Scala Recipes](https://github.com/Trendyol/stove/tree/main/recipes/scala-recipes)
 
-
-Stove has the concept of _"Application Aware Testing"_. It means that Stove is aware of the application's entrance point 
+Stove has the concept of _"Application Aware Testing"_. It means that Stove is aware of the application's entrance point
 and that is the only information it needs to start the application.
 
 Application that is being tested is a Spring Boot, Ktor, Micronaut, Quarkus, etc. and is called
-"Application Under Test (AUT)". 
+"Application Under Test (AUT)".
 
 The tests are agnostic to the application's framework.
 Right now Stove supports Spring Boot, Ktor. But it is easy to add new frameworks.
 
 !!! Note
-    If you want to add a new framework, you can check the `com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest` interface. 
+
+    If you want to add a new framework, you can check the
+    `com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest` interface.
     You can implement this interface for your framework.
 
 Let's create an example for a Spring-Boot application with Kafka and explain the setup flow.
@@ -194,11 +210,11 @@ The dependencies we will need in the `build.gradle.kts` file are:
 
 ```kotlin
  dependencies {
-      testImplementation("com.trendyol:stove-testing-e2e:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-http:$version")
-      testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
-    }
+  testImplementation("com.trendyol:stove-testing-e2e:$version")
+  testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
+  testImplementation("com.trendyol:stove-testing-e2e-http:$version")
+  testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+}
 ```
 
 ```kotlin
@@ -209,10 +225,9 @@ TestSystem()
         baseUrl = "http://localhost:8001"
       )
     }
-    
+
     kafka {
       KafkaSystemOptions(
-        objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults(),
         containerOptions = KafkaContainerOptions(tag = "latest"),
       ) {
         listOf(
@@ -226,9 +241,9 @@ TestSystem()
         )
       }
     }
-  
+
     bridge()
-    
+
     springBoot( // Application Under Test
       runner = { parameters ->
         stove.spring.standalone.example.run(parameters)
@@ -243,22 +258,27 @@ TestSystem()
   }
   .run()
 ```
-The typical setup for a Spring Boot application with Kafka is like this. You can see that we have a `httpClient` function that is used for the HTTP client against the application's endpoints. 
-Then we have a `kafka` function that is used for the Kafka setup. 
+
+The typical setup for a Spring Boot application with Kafka is like this. You can see that we have a `httpClient`function
+that is used for the HTTP client against the application's endpoints.
+Then we have a `kafka` function that is used for the Kafka setup.
 Then we have a `bridge` function that is used for accessing the DI container of the application.
 Then we have a `springBoot` function that is used for the Spring Boot application setup.
 
 #### `httpClient` function
 
-It is used for the HTTP client against the application's endpoints. You can configure the base URL of the application. When the application is started, the base URL is used for the HTTP client.
+It is used for the HTTP client against the application's endpoints. You can configure the base URL of the application.
+When the application is started, the base URL is used for the HTTP client.
 
 #### `kafka` function
 
-It is used for the Kafka setup. You can configure the Kafka container options and the Kafka properties. When the application is started, the Kafka container is started and the Kafka properties are used for the application.
-We will investigate the Kafka setup in detail in the [Kafka](Components/02-kafka.md/) section. Your application code should be able to read these properties, and event app code needs to be arranged for this.
+It is used for the Kafka setup. You can configure the Kafka container options and the Kafka properties. When the
+application is started, the Kafka container is started and the Kafka properties are used for the application.
+We will investigate the Kafka setup in detail in the [Kafka](Components/02-kafka.md/) section. Your application code
+should be able to read these properties, and event app code needs to be arranged for this.
 
 !!! tip "Is my application code e2e testing friendly?"
-   
+
     In general, to write proper unit tests your code should be testable. 
     This means extracting dependencies to interfaces and using dependency injection. 
     
@@ -270,10 +290,10 @@ We will investigate the Kafka setup in detail in the [Kafka](Components/02-kafka
     
     So, don't think that you're changing too much application code just for sake of the Stove tests, you're making your application code e2e test friendly.
 
-
 #### `bridge` function
 
-This function is used for accessing the DI container of the application. When the application is started, the bridge is created and the DI container is accessed in the tests.
+This function is used for accessing the DI container of the application. When the application is started, the bridge is
+created and the DI container is accessed in the tests.
 
 If you want to access to the beans of the application, you can simply do:
 
@@ -292,15 +312,17 @@ TestSystem.validate {
 
 #### `springBoot` function
 
-This function is used for the Spring Boot application setup. You can configure the runner function and the parameters of the application.
-When the application is started, the runner function is called with the parameters. 
-The parameters you see in `runner` function are the parameters that are passed to the Spring Boot application when it is started.
+This function is used for the Spring Boot application setup. You can configure the runner function and the parameters of
+the application.
+When the application is started, the runner function is called with the parameters.
+The parameters you see in `runner` function are the parameters that are passed to the Spring Boot application when it is
+started.
 Each physical component exposes its own properties and you can use them in the application.
 Here:
+
 ```kotlin
 kafka {
   KafkaSystemOptions(
-    objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults(),
     containerOptions = KafkaContainerOptions(tag = "latest"),
   ) {
     listOf(
@@ -315,20 +337,22 @@ kafka {
   }
 }
 ```
-The list of properties are exposed by the Kafka component and you can use them in the application. 
-The reference `it` in this block is the physical component itself and it's exposed properties. Whenever Kafka and testing suite start, the properties are changed and passed down to the application.
+
+The list of properties are exposed by the Kafka component and you can use them in the application.
+The reference `it` in this block is the physical component itself and it's exposed properties. Whenever Kafka and
+testing suite start, the properties are changed and passed down to the application.
 
 ### `run` function
 
 Runs the entire setup. It starts the physical components and the application.
 
-
 !!! warning "Run the Setup Once"
-    You should run the setup once in your test suite. 
-    You can run it in the `@BeforeAll` function of JUnit or implement `AbstractProjectConfig#beforeProject` in Kotest.
-    Teardown is also important to call. You can run it in the `@AfterAll` function of JUnit or implement `AbstractProjectConfig#afterProject` in Kotest.
-    Simply calling `TestSystem.stop()` is enough to stop the setup.
 
+    You should run the setup once in your test suite.
+    You can run it in the `@BeforeAll` function of JUnit or implement `AbstractProjectConfig#beforeProject` in Kotest.
+    Teardown is also important to call. You can run it in the `@AfterAll` function of JUnit or implement
+    `AbstractProjectConfig#afterProject` in Kotest.
+    Simply calling `TestSystem.stop()` is enough to stop the setup.
 
 ### Writing Tests
 
@@ -337,42 +361,42 @@ After the setup is done, you can write your tests. You can use the `validate` fu
 ```kotlin
 TestSystem.validate {
   http {
-    get<String>("/hello/index") { actual -> 
-      actual shouldContain "Hi from Stove framework" 
+    get<String>("/hello/index") { actual ->
+      actual shouldContain "Hi from Stove framework"
     }
   }
-  
+
   kafka {
-    shouldBeConsumed<ProductCreatedEvent> { actual -> 
+    shouldBeConsumed<ProductCreatedEvent> { actual ->
       actual.productId == 1
     }
   }
-  
+
   using<UserApplicationService> {
     this.getUserById(1) shouldBe User(1, "John", "Doe")
   }
-  
+
   using<ProductDomainService, ProductRepository> { productDomainService, productRepository ->
     productDomainService.getProductById(1) shouldBe Product(1, "Product 1")
     productRepository.findById(1) shouldBe Product(1, "Product 1")
   }
-  
+
   kafka {
-    shouldBePublished<ProductCreatedEvent> { actual -> 
+    shouldBePublished<ProductCreatedEvent> { actual ->
       actual.productId == 1
     }
   }
 }
 ```
 
-That's it! You have up-and-running API, can be tested with Stove. And each test is independent of each other. 
+That's it! You have up-and-running API, can be tested with Stove. And each test is independent of each other.
 But they share the same instance of physical component of course, so you need to provide **random** data for each test.
 This is a good practice for the tests to be independent of each other.
 
-
 ## Application Aware Testing
 
-Stove is aware of your application either it is SpringBoot or Ktor, and it is aware of the entrance point of your application.
+Stove is aware of your application either it is SpringBoot or Ktor, and it is aware of the entrance point of your
+application.
 
 There are entry point for every application, usually a `main` method that is invoked, and starts the application
 lifecycle.
@@ -383,7 +407,8 @@ application highly likely with a `jvm/java` command.
 In this approach, we're using the same `main` function of your application in the test context to run the application as
 full-blown as if it is invoked from outside.
 
-Stove calls your application's `main` function like you would call `java yourApplicationName.jar --param1 --param2` to run the application
+Stove calls your application's `main` function like you would call `java yourApplicationName.jar --param1 --param2` to
+run the application
 from the test context. So the runner is JUnit or Kotest.
 
 For Stove to attach properly to your application, application's main function needs to allow that. This does not change
@@ -448,10 +473,11 @@ dependency
 from the testing side that is being `time` related or `configuration` related. Spring itself opens this configuration
 higher order function to the outside.
 
-Also returning `ConfigurableApplicationContext` is important for the `bridge` functionality that we will use in the tests.
+Also returning `ConfigurableApplicationContext` is important for the `bridge` functionality that we will use in the
+tests.
 
 !!! tip
-    
+
     [Here](https://github.com/Trendyol/stove/tree/main/examples/spring-example) you can jump immediately to the Spring example application.
 
 #### Initial Configuration
@@ -467,7 +493,7 @@ it is time to run your application for the first time from the test-context with
     wide operation and executes **only one time**, as the name implies `beforeProject`.
     
     ```kotlin
-    class TestSystemConfig : AbstractProjectConfig() {    
+    class Stove : AbstractProjectConfig() {    
         override suspend fun beforeProject(): Unit = 
             TestSystem()
                 .with {
@@ -547,9 +573,9 @@ Here we have the similar concept, since we're testing the entire system, it is c
 In here we're configuring the Spring Boot application as _application under test_.
 
 !!! note
-    `server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
-    against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.
 
+    `server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
+     against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.
 
 ##### Writing Tests
 
@@ -589,7 +615,7 @@ Here is an example test that validates `http://localhost:$port/hello/index` retu
 That's it! You have up-and-running API, can be tested with Stove.
 
 !!! tip
-    
+
     DSL scopes can appear more than once while writing the tests. 
     You can access to any DSL assertion scope such as http, kafka, using, etc. as many times as you need.
 
@@ -642,23 +668,25 @@ That's it! You have up-and-running API, can be tested with Stove.
 
 ```kotlin
 TestSystem()
-    .with {
-        // You can add other components if you need
-        // We removed for simplicity
-      
-        ktor(
-            withParameters = listOf(
-                "port=8080"
-            ),
-            runner = { parameters ->
-                stove.ktor.example.run(parameters) {
-                    addTestSystemDependencies()
-                }
-            }
-        )
-    }.run()
+  .with {
+    // You can add other components if you need
+    // We removed for simplicity
+
+    ktor(
+      withParameters = listOf(
+        "port=8080"
+      ),
+      runner = { parameters ->
+        stove.ktor.example.run(parameters) {
+          addTestSystemDependencies()
+        }
+      }
+    )
+  }.run()
 ```
-After you've added `stove-ktor-testing-e2e` dependency, and configured the application's `main` function for Stove to enter, 
+
+After you've added `stove-ktor-testing-e2e` dependency, and configured the application's `main` function for Stove to
+enter,
 it is time to run your application for the first time from the test-context with Stove.
 
 #### Tuning the application's entry point
@@ -700,8 +728,9 @@ Let's say the application has a standard `main` function, here how we will chang
     }
     ```
 
-As you can see from `before-after` sections, we have divided the application main function into two parts. 
-`run(args, wait, configure)` method is the important point for the testing configuration. `configure` allows us to override any dependency from the testing side that is being `time` related or `configuration` related.
+As you can see from `before-after` sections, we have divided the application main function into two parts.
+`run(args, wait, configure)` method is the important point for the testing configuration. `configure` allows us to
+override any dependency from the testing side that is being `time` related or `configuration` related.
 
 !!! note
 
@@ -709,24 +738,61 @@ As you can see from `before-after` sections, we have divided the application mai
     that is used to load the configuration from the environment variables or CLI arguments. And as you can see there is an `Env` data class to cast the configuration. 
     Stove itself does not provide them, but of course we have already used them in our examples, you can find them in the examples.
 
-
 !!! tip
-    
+
     [Here](https://github.com/Trendyol/stove/tree/main/examples/ktor-example) you can jump immediately to the Ktor example application.
 
 ## Advanced
 
-## Replacing Dependencies For Better Testability
+### Serializing and Deserializing
+
+Each component has its own serialization and deserialization mechanism. You can align Stove's serialization and
+deserialization mechanism with your application's serialization and deserialization mechanism.
+
+Stove works with multiple serializers and deserializers. The package `stove-testing-e2e` provides the following
+serializers and deserializers:
+
+* Jackson
+* Gson
+* Kotlinx
+
+Stove also provides a way to add your own serializer and deserializer. You can implement the `StoveSerde<TIn, TOut>`
+interface
+and add your own serializer and deserializer.
+
+`StoveSerde` also keeps the reference to the aforementioned libraries:
+
+```kotlin
+StoveSerde.jackson 
+StoveSerde.gson
+StoveSerde.kotlinx
+```
+
+And also provides default implementations for them:
+
+```kotlin
+StoveSerde.jackson.anyByteArraySerde(yourObjectMapper())
+StoveSerde.gson.anyByteArraySerde(yourGson())
+StoveSerde.kotlinx.anyByteArraySerde(yourJson())
+
+// there is also string serde
+StoveSerde.jackson.anyStringSerde(yourObjectMapper())
+StoveSerde.gson.anyStringSerde(yourGson())
+StoveSerde.kotlinx.anyStringSerde(yourJson())
+```
+
+### Replacing Dependencies For Better Testability
 
 When it comes to handling the time, no one wants to wait for 30 minutes for a scheduler job, or for a delayed task to be
 able to test it.
 In these situations what we need to do is `advancing` the time, or replacing the effect of the time for our needs. This
 may require you
 to change your code, too. Because, we might need to provide a time-free implementation to an interface, or we might need
-to extract it  to an interface if not properly implemented.
+to extract it to an interface if not properly implemented.
 
 For example, in international-service project we have a delayed command executor that accepts a task and a time for it
-to delay it until  it is right time to execute. But, in tests we need to replace this behaviour with the time-effect free implementation.
+to delay it until it is right time to execute. But, in tests we need to replace this behaviour with the time-effect free
+implementation.
 
 ```kotlin
 class BackgroundCommandBusImpl // is the class for delayed operations
@@ -736,28 +802,28 @@ We would like to by-pass the time-bounded logic inside BackgroundCommandBusImpl,
 
 ```kotlin
 class NoDelayBackgroundCommandBusImpl(
-    backgroundMessageEnvelopeDispatcher: BackgroundMessageEnvelopeDispatcher,
-    backgroundMessageEnvelopeStorage: BackgroundMessageEnvelopeStorage,
-    lockProvider: CouchbaseLockProvider,
+  backgroundMessageEnvelopeDispatcher: BackgroundMessageEnvelopeDispatcher,
+  backgroundMessageEnvelopeStorage: BackgroundMessageEnvelopeStorage,
+  lockProvider: CouchbaseLockProvider,
 ) : BackgroundCommandBusImpl(
-    backgroundMessageEnvelopeDispatcher,
-    backgroundMessageEnvelopeStorage,
-    lockProvider
+  backgroundMessageEnvelopeDispatcher,
+  backgroundMessageEnvelopeStorage,
+  lockProvider
 ) {
 
-    override suspend fun <TNotification : BackgroundNotification> publish(
-        notification: TNotification,
-        options: BackgroundOptions,
-    ) {
-        super.publish(notification, options.withDelay(0))
-    }
+  override suspend fun <TNotification : BackgroundNotification> publish(
+    notification: TNotification,
+    options: BackgroundOptions,
+  ) {
+    super.publish(notification, options.withDelay(0))
+  }
 
-    override suspend fun <TCommand : BackgroundCommand> send(
-        command: TCommand,
-        options: BackgroundOptions,
-    ) {
-        super.send(command, options.withDelay(0))
-    }
+  override suspend fun <TCommand : BackgroundCommand> send(
+    command: TCommand,
+    options: BackgroundOptions,
+  ) {
+    super.send(command, options.withDelay(0))
+  }
 }
 ```
 
@@ -765,39 +831,39 @@ Now, it is time to tell to e2eTest system to use NoDelay implementation.
 
 That brings us to initializers.
 
-###  Writing Your Own TestSystem
+### Writing Your Own TestSystem
 
 ```kotlin
 fun TestSystem.withSchedulerSystem(): TestSystem {
-    getOrRegister(SchedulerSystem(this))
-    return this
+  getOrRegister(SchedulerSystem(this))
+  return this
 }
 
 fun TestSystem.scheduler(): SchedulerSystem = getOrNone<SchedulerSystem>().getOrElse {
-    throw SystemNotRegisteredException(SchedulerSystem::class)
+  throw SystemNotRegisteredException(SchedulerSystem::class)
 }
 
 class SchedulerSystem(override val testSystem: TestSystem) : AfterRunAware<ApplicationContext>, PluggedSystem {
 
-    private lateinit var scheduler: WaitingRoomScheduler
-    private lateinit var backgroundCommandBus: BackgroundCommandBusImpl
+  private lateinit var scheduler: WaitingRoomScheduler
+  private lateinit var backgroundCommandBus: BackgroundCommandBusImpl
 
-    fun advance(): SchedulerSystem {
-        scheduler.publishValidProducts()
-        return this
-    }
+  fun advance(): SchedulerSystem {
+    scheduler.publishValidProducts()
+    return this
+  }
 
-    fun advanceBackgroundCommandBus(): SchedulerSystem {
-        backgroundCommandBus.dispatchTimeoutNotifications()
-        return this
-    }
+  fun advanceBackgroundCommandBus(): SchedulerSystem {
+    backgroundCommandBus.dispatchTimeoutNotifications()
+    return this
+  }
 
-    override suspend fun afterRun(context: ApplicationContext) {
-        scheduler = context.getBean()
-        backgroundCommandBus = context.getBean()
-    }
+  override suspend fun afterRun(context: ApplicationContext) {
+    scheduler = context.getBean()
+    backgroundCommandBus = context.getBean()
+  }
 
-    override fun close() {}
+  override fun close() {}
 }
 ```
 
@@ -805,7 +871,7 @@ Later you can use it in testing;
 
 ```kotlin
 validate {
-  scheduler { 
+  scheduler {
     advance()
   }
 }
@@ -819,50 +885,44 @@ dependency container to resolve any bean we need to use.
 
 ```kotlin
 override suspend fun afterRun(context: ApplicationContext) {
-    scheduler = context.getBean()
-    backgroundCommandBus = context.getBean()
+  scheduler = context.getBean()
+  backgroundCommandBus = context.getBean()
 }
 ```
+
 ### Writing a TestInitializer
 
 The tests initializers help you to add test scoped beans, basically you can configure the Spring application from the
 test perspective.
 
-e2e Testing has dependencies:
-
-- `ObjectMapper`, you can either provide the ObjectMapper you have already in here we get existing bean by `ref("objectMapper")`
-- `TestSystemInterceptor` is for being able to check consumed messages
-
 ```kotlin
 class TestInitializer : BaseApplicationContextInitializer({
-    bean<TestSystemInterceptor>(isPrimary = true)
-    bean<ObjectMapper> { ref("objectMapper") } // "objectMapper" bean name should be in your spring context otherwise it will fail, if not you can provide an instance here.
-    // Be sure that, Couchbase, Kafka and other systems share the same serialization strategy.
-    bean<NoDelayBackgroundCommandBusImpl>(isPrimary = true) // Optional dependency to alter delayed implementation with 0-wait.
+  bean<YourInstanceToReplace>(isPrimary = true)
+  bean<NoDelayBackgroundCommandBusImpl>(isPrimary = true) // Optional dependency to alter delayed implementation with 0-wait.
 })
 
 fun SpringApplication.addTestDependencies() {
-    this.addInitializers(TestInitializer())
+  this.addInitializers(TestInitializer())
 }
 ```
 
 `addTestDependencies` is an extension that helps us to register our dependencies in the application.
 
 ```kotlin  hl_lines="4"
-.systemUnderTest(
-    runner = { parameters ->
-        com.trendyol.exampleapp.run(parameters) {
-            addTestDependencies()
-        }
-    },
-    withParameters = listOf(
-        "logging.level.root=error",
-        "logging.level.org.springframework.web=error",
-        "spring.profiles.active=default",
-        "server.http2.enabled=false",
-        "kafka.heartbeatInSeconds=2",
-        "kafka.autoCreateTopics=true",
-        "kafka.offset=earliest"
-    )
+.springBoot(
+  runner = { parameters ->
+    com.trendyol.exampleapp.run(parameters) {
+      addTestDependencies()
+    }
+  },
+  withParameters = listOf(
+    "logging.level.root=error",
+    "logging.level.org.springframework.web=error",
+    "spring.profiles.active=default",
+    "server.http2.enabled=false",
+    "kafka.heartbeatInSeconds=2",
+    "kafka.autoCreateTopics=true",
+    "kafka.offset=earliest"
+  )
 )
 ```
