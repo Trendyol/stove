@@ -9,10 +9,8 @@
       
       
       
-        <link rel="prev" href="../07-mongodb/">
+        <link rel="prev" href="../../Components/09-redis/">
       
-      
-        <link rel="next" href="../09-redis/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +18,7 @@
     
     
       
-        <title>Postgresql - Stove</title>
+        <title>Migration Notes - Stove</title>
       
     
     
@@ -74,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#postgresql" class="md-skip">
+        <a href="#migration-notes" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Postgresql
+              Migration Notes
             
           </span>
         </div>
@@ -277,8 +275,6 @@
       
   
   
-    
-  
   
   
     
@@ -314,16 +310,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../Components/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -340,7 +336,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Components
@@ -356,7 +352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../01-couchbase/" class="md-nav__link">
+      <a href="../../Components/01-couchbase/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -377,7 +373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../02-kafka/" class="md-nav__link">
+      <a href="../../Components/02-kafka/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -398,7 +394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../03-elasticsearch/" class="md-nav__link">
+      <a href="../../Components/03-elasticsearch/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -419,7 +415,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../04-wiremock/" class="md-nav__link">
+      <a href="../../Components/04-wiremock/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -440,7 +436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../05-http/" class="md-nav__link">
+      <a href="../../Components/05-http/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -461,7 +457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../06-postgresql/" class="md-nav__link">
+      <a href="../../Components/06-postgresql/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -482,7 +478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../07-mongodb/" class="md-nav__link">
+      <a href="../../Components/07-mongodb/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -500,30 +496,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Postgresql
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../Components/08-mssql/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -532,44 +508,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#configure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -582,7 +520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../09-redis/" class="md-nav__link">
+      <a href="../../Components/09-redis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -607,10 +545,30 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../migration/notes/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Migration Notes
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -619,6 +577,119 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-014x-to-015x" class="md-nav__link">
+    <span class="md-ellipsis">
+      From 0.14.x to 0.15.x
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="From 0.14.x to 0.15.x">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Breaking Changes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spring-kafka-com-trendyolstove-spring-testing-e2e-kafka" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spring Kafka (com-trendyol:stove-spring-testing-e2e-kafka)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standalone-kafka" class="md-nav__link">
+    <span class="md-ellipsis">
+      Standalone Kafka
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#couchbase" class="md-nav__link">
+    <span class="md-ellipsis">
+      Couchbase
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      Http
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wiremock" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wiremock
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elasticsearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Elasticsearch
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mongodb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mongodb
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -641,67 +712,82 @@
   
 
 
-<h1 id="postgresql">Postgresql<a class="headerlink" href="#postgresql" title="Permanent link">&para;</a></h1>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Gradle</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e-rdbms-mssql:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">}</span>
+<h1 id="migration-notes">Migration Notes<a class="headerlink" href="#migration-notes" title="Permanent link">&para;</a></h1>
+<h2 id="from-014x-to-015x">From 0.14.x to 0.15.x<a class="headerlink" href="#from-014x-to-015x" title="Permanent link">&para;</a></h2>
+<h3 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
+<p>The most notable breaking change is ser/de operations. The framework was only relying on Jackson for serialization and
+deserialization. Now, it provides a way to use other serialization libraries. <code>StoveSerde&lt;TIn, TOut&gt;</code> is the new interface
+that you can implement to provide your own serialization and deserialization logic.</p>
+<p><code>StoveSerde</code> also provides the access to the other serializers that <code>com-trendyol:stove-testing-e2e</code> package has.</p>
+<ul>
+<li>Jackson</li>
+<li>Gson</li>
+<li>Kotlinx</li>
+</ul>
+<p>Also look at ser/de section: <a href="/#serializing-and-deserializing">Serialization and Deserialization</a></p>
+<h4 id="spring-kafka-com-trendyolstove-spring-testing-e2e-kafka">Spring Kafka (com-trendyol:stove-spring-testing-e2e-kafka)<a class="headerlink" href="#spring-kafka-com-trendyolstove-spring-testing-e2e-kafka" title="Permanent link">&para;</a></h4>
+<p>The <code>TestSystemKafkaInterceptor</code> now depends on <code>StoveSerde</code> to provide the serialization and deserialization logic instead of <code>ObjectMapper</code>.</p>
+<p>You can of course use your default Jackson implementation by providing the <code>ObjectMapperConfig.default()</code> to the <code>StoveSerde.jackson.anyByteArraySerde</code> function.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestSystemInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="n">bean</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">())</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// or any other serde that is &lt;Any, ByteArray&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">})</span>
 </code></pre></div>
-</div>
-</div>
-</div>
-<h2 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">TestSystem</span><span class="p">()</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">mssql</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="n">MssqlSystemOptions</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="n">listOf</span><span class="p">(</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">          </span><span class="s">&quot;mssql.host=</span><span class="si">${</span><span class="nb">it</span><span class="p">.</span><span class="na">host</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">          </span><span class="s">&quot;mssql.port=</span><span class="si">${</span><span class="nb">it</span><span class="p">.</span><span class="na">port</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">          </span><span class="s">&quot;mssql.database=</span><span class="si">${</span><span class="nb">it</span><span class="p">.</span><span class="na">database</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">          </span><span class="s">&quot;mssql.username=</span><span class="si">${</span><span class="nb">it</span><span class="p">.</span><span class="na">username</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">          </span><span class="s">&quot;mssql.password=</span><span class="si">${</span><span class="nb">it</span><span class="p">.</span><span class="na">password</span><span class="si">}</span><span class="s">&quot;</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p">)</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+<h3 id="standalone-kafka">Standalone Kafka<a class="headerlink" href="#standalone-kafka" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="n">KafkaSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">)</span><span class="w"> </span><span class="c1">// or any other serde that is &lt;Any, ByteArray&gt;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="c1">//...</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">validate</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">mssql</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">ops</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="kd">val</span><span class="w"> </span><span class="nv">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">select</span><span class="p">(</span><span class="s">&quot;SELECT 1&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="nb">it</span><span class="p">.</span><span class="na">getInt</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="n">result</span><span class="p">.</span><span class="na">first</span><span class="p">()</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="n">shouldExecute</span><span class="p">(</span><span class="s">&quot;insert into Person values (1, &#39;Doe&#39;, &#39;John&#39;, &#39;123 Main St&#39;, &#39;Springfield&#39;)&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span><span class="p">(</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">      </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;select * from Person&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">      </span><span class="n">mapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">        </span><span class="n">Person</span><span class="p">(</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">          </span><span class="nb">it</span><span class="p">.</span><span class="na">getInt</span><span class="p">(</span><span class="m">1</span><span class="p">),</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">          </span><span class="nb">it</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="m">2</span><span class="p">),</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">          </span><span class="nb">it</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="m">3</span><span class="p">),</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">          </span><span class="nb">it</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="m">4</span><span class="p">),</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">          </span><span class="nb">it</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="p">)</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="n">result</span><span class="p">.</span><span class="na">size</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">      </span><span class="n">result</span><span class="p">.</span><span class="na">first</span><span class="p">().</span><span class="na">apply</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">        </span><span class="n">personId</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">        </span><span class="n">lastName</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="s">&quot;Doe&quot;</span>
-<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">        </span><span class="n">firstName</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="s">&quot;John&quot;</span>
-<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">        </span><span class="n">address</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="s">&quot;123 Main St&quot;</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">        </span><span class="n">city</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="s">&quot;Springfield&quot;</span>
-<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="p">}</span>
+<h3 id="couchbase">Couchbase<a class="headerlink" href="#couchbase" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">CouchbaseSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">clusterSerDe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JacksonJsonSerializer</span><span class="p">(</span><span class="n">CouchbaseConfiguration</span><span class="p">.</span><span class="na">objectMapper</span><span class="p">),</span><span class="w"> </span><span class="c1">// here you can provide your own serde</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="c1">//...</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
 </code></pre></div>
+<h3 id="http">Http<a class="headerlink" href="#http" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="w"> </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8001&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">contentConverter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JacksonConverter</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="wiremock">Wiremock<a class="headerlink" href="#wiremock" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">WireMockSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">9090</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfiguration</span><span class="p">.</span><span class="na">default</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="p">)</span>
+</code></pre></div>
+<h3 id="elasticsearch">Elasticsearch<a class="headerlink" href="#elasticsearch" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">jsonpMapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JacksonJsonpMapper</span><span class="p">(</span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">default</span><span class="p">),</span><span class="w"> </span><span class="c1">// or any JsonpMapper</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="mongodb">Mongodb<a class="headerlink" href="#mongodb" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">mongodb</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">MongoDbSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">default</span><span class="w"> </span><span class="c1">// or any other serde that you implement</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
+</code></pre></div>
+<p>The default serde is:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="nv">serde</span><span class="p">:</span><span class="w"> </span><span class="n">StoveSerde</span><span class="o">&lt;</span><span class="kt">Any</span><span class="p">,</span><span class="w"> </span><span class="kt">String</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyJsonStringSerde</span><span class="p">(</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">byConfiguring</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">      </span><span class="n">disable</span><span class="p">(</span><span class="n">DeserializationFeature</span><span class="p">.</span><span class="na">FAIL_ON_UNKNOWN_PROPERTIES</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="n">enable</span><span class="p">(</span><span class="n">MapperFeature</span><span class="p">.</span><span class="na">DEFAULT_VIEW_INCLUSION</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">      </span><span class="n">addModule</span><span class="p">(</span><span class="n">ObjectIdModule</span><span class="p">())</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="n">addModule</span><span class="p">(</span><span class="n">KotlinModule</span><span class="p">.</span><span class="na">Builder</span><span class="p">().</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">  </span><span class="p">),</span>
+</code></pre></div></p>
 
 
 
@@ -739,7 +825,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../07-mongodb/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Mongodb">
+          <a href="../../Components/09-redis/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Redis">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -749,27 +835,11 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Mongodb
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../09-redis/" class="md-footer__link md-footer__link--next" aria-label="Next: Redis">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
                 Redis
               </div>
             </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
           </a>
+        
         
       </nav>
     
