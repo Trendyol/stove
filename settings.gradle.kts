@@ -1,7 +1,5 @@
 @file:Suppress("UnstableApiUsage")
-
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
 rootProject.name = "stove"
 include(
   "lib:stove-testing-e2e",
@@ -16,18 +14,18 @@ include(
   "lib:stove-testing-e2e-redis",
   "lib:stove-testing-e2e-mongodb"
 )
-
 include(
   "starters:ktor:stove-ktor-testing-e2e",
   "starters:spring:stove-spring-testing-e2e",
-  "starters:spring:stove-spring-testing-e2e-kafka"
+  "starters:spring:stove-spring-testing-e2e-kafka",
+  "starters:micronaut-starter:stove-micronaut-testing-e2e"
 )
-
 include(
   "examples:spring-example",
   "examples:spring-standalone-example",
   "examples:ktor-example",
-  "examples:spring-streams-example"
+  "examples:spring-streams-example",
+  "examples:micronaut-example"
 )
 dependencyResolutionManagement {
   repositories {
