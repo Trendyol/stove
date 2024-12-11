@@ -105,3 +105,42 @@ wiremock {
 
 Relative url is mocked. BaseUrl is known by Wiremock server since it hosts it, and your application because you passed
 it as a command line argument.
+
+### Behavioural Mocking
+
+Sometimes, a service call returns a failure response before a success response. You can define this behaviour with
+behavioural mocking.
+
+```kotlin
+test("behavioural tests") {
+  val expectedGetDtoName = UUID.randomUUID().toString()
+  TestSystem.validate {
+    wiremock {
+      behaviourFor("/get-behaviour", WireMock::get) {
+        initially {
+          aResponse()
+            .withStatus(503)
+            .withBody("Service unavailable")
+        }
+        then {
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withStatus(200)
+            .withBody(it.serialize(TestDto(expectedGetDtoName)))
+        }
+      }
+    }
+    http {
+      this.getResponse("/get-behaviour") { actual ->
+        actual.status shouldBe 503
+      }
+      get<TestDto>("/get-behaviour") { actual ->
+        actual.name shouldBe expectedGetDtoName
+      }
+    }
+  }
+}
+```
+
+Here we define a behaviour for the `/get-behaviour` endpoint. Initially, it returns a 503 status code with a message.
+Then, it returns a 200 status code with a `TestDto` object.
