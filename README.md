@@ -1,7 +1,7 @@
 <h1 align="center">Stove</h1>
 
 <p align="center">
-    The easiest way of writing e2e/component tests for your back-end API in Kotlin
+  &#10077;Where the infrastructure burns down to pure configurations<sub>(ashes)</sub>&#10078; 
 </p>
 
 ![Release](https://img.shields.io/maven-central/v/com.trendyol/stove-testing-e2e?versionPrefix=0&label=latest-release&color=blue) [<img src="https://img.shields.io/nexus/s/com.trendyol/stove-testing-e2e?server=https%3A%2F%2Foss.sonatype.org&queryOpt=:v=1.0.0.*&label=latest-snapshot"/>](https://oss.sonatype.org/content/repositories/snapshots/com/trendyol/stove-testing-e2e/) [![codecov](https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove)
