@@ -3,12 +3,12 @@ kotlin = "2.1.0"
 kotlinx = "1.9.0"
 scala2x = "2.13.15"
 scala3x = "3.4.1"
-quarkus = "3.17.3"
+quarkus = "3.17.4"
 ktlint = "1.5.0"
 
 # Spring-Boot
 spring-boot = "3.4.0"
-spring-framework = "6.2.0"
+spring-framework = "6.2.1"
 spring-dependency-management = "1.1.6"
 spring-kafka = "3.3.0"
 
@@ -31,7 +31,7 @@ kafka-kotlin = "0.4.0"
 kafka-streams-registry = "7.8.0"
 
 # Reactor
-io-reactor = "3.7.0"
+io-reactor = "3.7.1"
 io-reactor-extensions = "1.2.3"
 
 # Logging
@@ -51,7 +51,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 r2dbc-mssql = "1.0.2.RELEASE"
 
 # elastic
-elastic = "8.16.1"
+elastic = "8.17.0"
 
 # mongo
 mongodb = "5.2.1"
@@ -61,7 +61,7 @@ io-grpc = "1.63.0"
 io-grpc-kotlin = "1.4.1"
 
 # Tooling
-kover = "0.8.3"
+kover = "0.9.0"
 spotless = "7.0.0.BETA4"
 detekt = "1.23.7"
 lombok = "1.18.36"
