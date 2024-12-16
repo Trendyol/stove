@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.1.0"
 kotlinx = "1.9.0"
-spring-boot = "2.7.18"
+spring-boot = "3.4.0"
 spring-framework = "5.3.39"
 spring-framework-6x = "6.2.0"
 spring-boot-3x = "3.4.0"
