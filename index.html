@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
     
     
       
@@ -539,6 +539,30 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#global-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Global Variables
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default_registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      DEFAULT_REGISTRY
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#serializing-and-deserializing" class="md-nav__link">
     <span class="md-ellipsis">
       Serializing and Deserializing
@@ -613,6 +637,8 @@
       
         
           
+        
+      
         
       
         
@@ -865,6 +891,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/10-bridge/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bridge
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1002,6 +1049,7 @@ Stove supports the following components:</p>
 <li><a href="Components/01-couchbase/">Couchbase</a></li>
 <li><a href="Components/04-wiremock/">Wiremock</a></li>
 <li><a href="Components/05-http/">HTTP</a></li>
+<li><a href="Components/10-bridge/">Bridge</a></li>
 </ul>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Gradle</label></div>
 <div class="tabbed-content">
@@ -1573,6 +1621,20 @@ Stove itself does not provide them, but of course we have already used them in o
 <p><a href="https://github.com/Trendyol/stove/tree/main/examples/ktor-example">Here</a> you can jump immediately to the Ktor example application.</p>
 </div>
 <h2 id="advanced">Advanced<a class="headerlink" href="#advanced" title="Permanent link">&para;</a></h2>
+<h3 id="global-variables">Global Variables<a class="headerlink" href="#global-variables" title="Permanent link">&para;</a></h3>
+<h4 id="default_registry">DEFAULT_REGISTRY<a class="headerlink" href="#default_registry" title="Permanent link">&para;</a></h4>
+<p>The default container registry is <code>docker.io</code>. You can change it by setting the <code>DEFAULT_REGISTRY</code> variable.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">DEFAULT_REGISTRY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;your.registry.com&quot;</span>
+</code></pre></div>
+<p>This will effect all the components Stove wide. Or you can set it for each individual component by setting the<code>registry</code>
+property, example for Kafka:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">KafkaSystemOptions</span><span class="p">(</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span><span class="n">containerOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">KafkaContainerOptions</span><span class="p">(</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">    </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;your.registry.com&quot;</span><span class="p">,</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;latest&quot;</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">  </span><span class="p">),</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="p">)</span>
+</code></pre></div>
 <h3 id="serializing-and-deserializing">Serializing and Deserializing<a class="headerlink" href="#serializing-and-deserializing" title="Permanent link">&para;</a></h3>
 <p>Each component has its own serialization and deserialization mechanism. You can align Stove's serialization and
 deserialization mechanism with your application's serialization and deserialization mechanism.</p>
@@ -1587,138 +1649,137 @@ serializers and deserializers:</p>
 interface
 and add your own serializer and deserializer.</p>
 <p><code>StoveSerde</code> also keeps the reference to the aforementioned libraries:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="w"> </span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">gson</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">kotlinx</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">gson</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">kotlinx</span>
 </code></pre></div>
 <p>And also provides default implementations for them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourObjectMapper</span><span class="p">())</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">gson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourGson</span><span class="p">())</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">kotlinx</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourJson</span><span class="p">())</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="c1">// there is also string serde</span>
-<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyStringSerde</span><span class="p">(</span><span class="n">yourObjectMapper</span><span class="p">())</span>
-<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">gson</span><span class="p">.</span><span class="na">anyStringSerde</span><span class="p">(</span><span class="n">yourGson</span><span class="p">())</span>
-<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">kotlinx</span><span class="p">.</span><span class="na">anyStringSerde</span><span class="p">(</span><span class="n">yourJson</span><span class="p">())</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourObjectMapper</span><span class="p">())</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">gson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourGson</span><span class="p">())</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">kotlinx</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourJson</span><span class="p">())</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="c1">// there is also string serde</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyStringSerde</span><span class="p">(</span><span class="n">yourObjectMapper</span><span class="p">())</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">gson</span><span class="p">.</span><span class="na">anyStringSerde</span><span class="p">(</span><span class="n">yourGson</span><span class="p">())</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="n">StoveSerde</span><span class="p">.</span><span class="na">kotlinx</span><span class="p">.</span><span class="na">anyStringSerde</span><span class="p">(</span><span class="n">yourJson</span><span class="p">())</span>
 </code></pre></div>
 <h3 id="replacing-dependencies-for-better-testability">Replacing Dependencies For Better Testability<a class="headerlink" href="#replacing-dependencies-for-better-testability" title="Permanent link">&para;</a></h3>
 <p>When it comes to handling the time, no one wants to wait for 30 minutes for a scheduler job, or for a delayed task to be
 able to test it.
 In these situations what we need to do is <code>advancing</code> the time, or replacing the effect of the time for our needs. This
-may require you
-to change your code, too. Because, we might need to provide a time-free implementation to an interface, or we might need
-to extract it to an interface if not properly implemented.</p>
-<p>For example, in international-service project we have a delayed command executor that accepts a task and a time for it
+may require you to change your code, too. Because, we might need to provide a time-free implementation to an interface,
+or we might need to extract it to an interface if not properly implemented.</p>
+<p>For example, imagine we have a delayed command executor that accepts a task and a time for it
 to delay it until it is right time to execute. But, in tests we need to replace this behaviour with the time-effect free
 implementation.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">BackgroundCommandBusImpl</span><span class="w"> </span><span class="c1">// is the class for delayed operations</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">BackgroundCommandBusImpl</span><span class="w"> </span><span class="c1">// is the class for delayed operations</span>
 </code></pre></div>
 <p>We would like to by-pass the time-bounded logic inside BackgroundCommandBusImpl, and for e2eTest scope we write:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">NoDelayBackgroundCommandBusImpl</span><span class="p">(</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeDispatcher</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundMessageEnvelopeDispatcher</span><span class="p">,</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeStorage</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundMessageEnvelopeStorage</span><span class="p">,</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">  </span><span class="n">lockProvider</span><span class="p">:</span><span class="w"> </span><span class="n">CouchbaseLockProvider</span><span class="p">,</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommandBusImpl</span><span class="p">(</span>
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeDispatcher</span><span class="p">,</span>
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeStorage</span><span class="p">,</span>
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">  </span><span class="n">lockProvider</span>
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>
-<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">TNotification</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundNotification</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">publish</span><span class="p">(</span>
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="w">    </span><span class="n">notification</span><span class="p">:</span><span class="w"> </span><span class="n">TNotification</span><span class="p">,</span>
-<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="w">    </span><span class="n">options</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundOptions</span><span class="p">,</span>
-<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a><span class="w">    </span><span class="k">super</span><span class="p">.</span><span class="na">publish</span><span class="p">(</span><span class="n">notification</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="na">withDelay</span><span class="p">(</span><span class="m">0</span><span class="p">))</span>
-<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>
-<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">TCommand</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommand</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span>
-<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a><span class="w">    </span><span class="n">command</span><span class="p">:</span><span class="w"> </span><span class="n">TCommand</span><span class="p">,</span>
-<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a><span class="w">    </span><span class="n">options</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundOptions</span><span class="p">,</span>
-<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a><span class="w">    </span><span class="k">super</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">command</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="na">withDelay</span><span class="p">(</span><span class="m">0</span><span class="p">))</span>
-<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">NoDelayBackgroundCommandBusImpl</span><span class="p">(</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeDispatcher</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundMessageEnvelopeDispatcher</span><span class="p">,</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeStorage</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundMessageEnvelopeStorage</span><span class="p">,</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">  </span><span class="n">lockProvider</span><span class="p">:</span><span class="w"> </span><span class="n">CouchbaseLockProvider</span><span class="p">,</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommandBusImpl</span><span class="p">(</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeDispatcher</span><span class="p">,</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">  </span><span class="n">backgroundMessageEnvelopeStorage</span><span class="p">,</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">  </span><span class="n">lockProvider</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">TNotification</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundNotification</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">publish</span><span class="p">(</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">    </span><span class="n">notification</span><span class="p">:</span><span class="w"> </span><span class="n">TNotification</span><span class="p">,</span>
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">    </span><span class="n">options</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundOptions</span><span class="p">,</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">    </span><span class="k">super</span><span class="p">.</span><span class="na">publish</span><span class="p">(</span><span class="n">notification</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="na">withDelay</span><span class="p">(</span><span class="m">0</span><span class="p">))</span>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a>
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">TCommand</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommand</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span>
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="w">    </span><span class="n">command</span><span class="p">:</span><span class="w"> </span><span class="n">TCommand</span><span class="p">,</span>
+<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="w">    </span><span class="n">options</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundOptions</span><span class="p">,</span>
+<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a><span class="w">    </span><span class="k">super</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">command</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="na">withDelay</span><span class="p">(</span><span class="m">0</span><span class="p">))</span>
+<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a><span class="p">}</span>
 </code></pre></div>
 <p>Now, it is time to tell to e2eTest system to use NoDelay implementation.</p>
 <p>That brings us to initializers.</p>
 <h3 id="writing-your-own-testsystem">Writing Your Own TestSystem<a class="headerlink" href="#writing-your-own-testsystem" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">withSchedulerSystem</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">  </span><span class="n">getOrRegister</span><span class="p">(</span><span class="n">SchedulerSystem</span><span class="p">(</span><span class="k">this</span><span class="p">))</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="k">this</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="p">}</span>
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">scheduler</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOrNone</span><span class="o">&lt;</span><span class="n">SchedulerSystem</span><span class="o">&gt;</span><span class="p">().</span><span class="na">getOrElse</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">  </span><span class="k">throw</span><span class="w"> </span><span class="n">SystemNotRegisteredException</span><span class="p">(</span><span class="n">SchedulerSystem</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
-<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="p">}</span>
-<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>
-<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="kd">class</span><span class="w"> </span><span class="nc">SchedulerSystem</span><span class="p">(</span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AfterRunAware</span><span class="o">&lt;</span><span class="n">ApplicationContext</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>
-<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="w">  </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">scheduler</span><span class="p">:</span><span class="w"> </span><span class="n">WaitingRoomScheduler</span>
-<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a><span class="w">  </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">backgroundCommandBus</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommandBusImpl</span>
-<a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a>
-<a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a><span class="w">  </span><span class="kd">fun</span><span class="w"> </span><span class="nf">advance</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a><span class="w">    </span><span class="n">scheduler</span><span class="p">.</span><span class="na">publishValidProducts</span><span class="p">()</span>
-<a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">this</span>
-<a id="__codelineno-26-18" name="__codelineno-26-18" href="#__codelineno-26-18"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-26-19" name="__codelineno-26-19" href="#__codelineno-26-19"></a>
-<a id="__codelineno-26-20" name="__codelineno-26-20" href="#__codelineno-26-20"></a><span class="w">  </span><span class="kd">fun</span><span class="w"> </span><span class="nf">advanceBackgroundCommandBus</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-21" name="__codelineno-26-21" href="#__codelineno-26-21"></a><span class="w">    </span><span class="n">backgroundCommandBus</span><span class="p">.</span><span class="na">dispatchTimeoutNotifications</span><span class="p">()</span>
-<a id="__codelineno-26-22" name="__codelineno-26-22" href="#__codelineno-26-22"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">this</span>
-<a id="__codelineno-26-23" name="__codelineno-26-23" href="#__codelineno-26-23"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-26-24" name="__codelineno-26-24" href="#__codelineno-26-24"></a>
-<a id="__codelineno-26-25" name="__codelineno-26-25" href="#__codelineno-26-25"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterRun</span><span class="p">(</span><span class="n">context</span><span class="p">:</span><span class="w"> </span><span class="n">ApplicationContext</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-26" name="__codelineno-26-26" href="#__codelineno-26-26"></a><span class="w">    </span><span class="n">scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
-<a id="__codelineno-26-27" name="__codelineno-26-27" href="#__codelineno-26-27"></a><span class="w">    </span><span class="n">backgroundCommandBus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
-<a id="__codelineno-26-28" name="__codelineno-26-28" href="#__codelineno-26-28"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-26-29" name="__codelineno-26-29" href="#__codelineno-26-29"></a>
-<a id="__codelineno-26-30" name="__codelineno-26-30" href="#__codelineno-26-30"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
-<a id="__codelineno-26-31" name="__codelineno-26-31" href="#__codelineno-26-31"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">withSchedulerSystem</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="n">getOrRegister</span><span class="p">(</span><span class="n">SchedulerSystem</span><span class="p">(</span><span class="k">this</span><span class="p">))</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="k">this</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="p">}</span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">scheduler</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOrNone</span><span class="o">&lt;</span><span class="n">SchedulerSystem</span><span class="o">&gt;</span><span class="p">().</span><span class="na">getOrElse</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">  </span><span class="k">throw</span><span class="w"> </span><span class="n">SystemNotRegisteredException</span><span class="p">(</span><span class="n">SchedulerSystem</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="p">}</span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="kd">class</span><span class="w"> </span><span class="nc">SchedulerSystem</span><span class="p">(</span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AfterRunAware</span><span class="o">&lt;</span><span class="n">ApplicationContext</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="w">  </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">scheduler</span><span class="p">:</span><span class="w"> </span><span class="n">WaitingRoomScheduler</span>
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a><span class="w">  </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">backgroundCommandBus</span><span class="p">:</span><span class="w"> </span><span class="n">BackgroundCommandBusImpl</span>
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="w">  </span><span class="kd">fun</span><span class="w"> </span><span class="nf">advance</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a><span class="w">    </span><span class="n">scheduler</span><span class="p">.</span><span class="na">publishValidProducts</span><span class="p">()</span>
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">this</span>
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a>
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a><span class="w">  </span><span class="kd">fun</span><span class="w"> </span><span class="nf">advanceBackgroundCommandBus</span><span class="p">():</span><span class="w"> </span><span class="n">SchedulerSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-21" name="__codelineno-28-21" href="#__codelineno-28-21"></a><span class="w">    </span><span class="n">backgroundCommandBus</span><span class="p">.</span><span class="na">dispatchTimeoutNotifications</span><span class="p">()</span>
+<a id="__codelineno-28-22" name="__codelineno-28-22" href="#__codelineno-28-22"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">this</span>
+<a id="__codelineno-28-23" name="__codelineno-28-23" href="#__codelineno-28-23"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-28-24" name="__codelineno-28-24" href="#__codelineno-28-24"></a>
+<a id="__codelineno-28-25" name="__codelineno-28-25" href="#__codelineno-28-25"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterRun</span><span class="p">(</span><span class="n">context</span><span class="p">:</span><span class="w"> </span><span class="n">ApplicationContext</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-26" name="__codelineno-28-26" href="#__codelineno-28-26"></a><span class="w">    </span><span class="n">scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
+<a id="__codelineno-28-27" name="__codelineno-28-27" href="#__codelineno-28-27"></a><span class="w">    </span><span class="n">backgroundCommandBus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
+<a id="__codelineno-28-28" name="__codelineno-28-28" href="#__codelineno-28-28"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-28-29" name="__codelineno-28-29" href="#__codelineno-28-29"></a>
+<a id="__codelineno-28-30" name="__codelineno-28-30" href="#__codelineno-28-30"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-28-31" name="__codelineno-28-31" href="#__codelineno-28-31"></a><span class="p">}</span>
 </code></pre></div>
 <p>Later you can use it in testing;</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">validate</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="n">scheduler</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">    </span><span class="n">advance</span><span class="p">()</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="w">  </span><span class="n">scheduler</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="n">advance</span><span class="p">()</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="accessing-an-application-dependency-with-a-system">Accessing an application dependency with a system<a class="headerlink" href="#accessing-an-application-dependency-with-a-system" title="Permanent link">&para;</a></h2>
 <p>As you can see, in the example above, if a system implements
 <code>AfterRunAware&lt;ApplicationContext&gt;</code> then, <code>afterRun</code> method becomes available, in here we have access to applications
 dependency container to resolve any bean we need to use.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterRun</span><span class="p">(</span><span class="n">context</span><span class="p">:</span><span class="w"> </span><span class="n">ApplicationContext</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="n">scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">  </span><span class="n">backgroundCommandBus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterRun</span><span class="p">(</span><span class="n">context</span><span class="p">:</span><span class="w"> </span><span class="n">ApplicationContext</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="n">scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">  </span><span class="n">backgroundCommandBus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getBean</span><span class="p">()</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="writing-a-testinitializer">Writing a TestInitializer<a class="headerlink" href="#writing-a-testinitializer" title="Permanent link">&para;</a></h3>
 <p>The tests initializers help you to add test scoped beans, basically you can configure the Spring application from the
 test perspective.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="w">  </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">YourInstanceToReplace</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">  </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">NoDelayBackgroundCommandBusImpl</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional dependency to alter delayed implementation with 0-wait.</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="p">})</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="kd">fun</span><span class="w"> </span><span class="n">SpringApplication</span><span class="p">.</span><span class="nf">addTestDependencies</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">  </span><span class="k">this</span><span class="p">.</span><span class="na">addInitializers</span><span class="p">(</span><span class="n">TestInitializer</span><span class="p">())</span>
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">YourInstanceToReplace</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">NoDelayBackgroundCommandBusImpl</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional dependency to alter delayed implementation with 0-wait.</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="p">})</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="kd">fun</span><span class="w"> </span><span class="n">SpringApplication</span><span class="p">.</span><span class="nf">addTestDependencies</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">  </span><span class="k">this</span><span class="p">.</span><span class="na">addInitializers</span><span class="p">(</span><span class="n">TestInitializer</span><span class="p">())</span>
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="p">}</span>
 </code></pre></div>
 <p><code>addTestDependencies</code> is an extension that helps us to register our dependencies in the application.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="p">.</span><span class="na">springBoot</span><span class="p">(</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">    </span><span class="n">com</span><span class="p">.</span><span class="na">trendyol</span><span class="p">.</span><span class="na">exampleapp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="hll"><span class="w">      </span><span class="n">addTestDependencies</span><span class="p">()</span>
-</span><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w">  </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">    </span><span class="s">&quot;logging.level.root=error&quot;</span><span class="p">,</span>
-<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">    </span><span class="s">&quot;logging.level.org.springframework.web=error&quot;</span><span class="p">,</span>
-<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">    </span><span class="s">&quot;spring.profiles.active=default&quot;</span><span class="p">,</span>
-<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">    </span><span class="s">&quot;server.http2.enabled=false&quot;</span><span class="p">,</span>
-<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="w">    </span><span class="s">&quot;kafka.heartbeatInSeconds=2&quot;</span><span class="p">,</span>
-<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="w">    </span><span class="s">&quot;kafka.autoCreateTopics=true&quot;</span><span class="p">,</span>
-<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a><span class="w">    </span><span class="s">&quot;kafka.offset=earliest&quot;</span>
-<a id="__codelineno-30-15" name="__codelineno-30-15" href="#__codelineno-30-15"></a><span class="w">  </span><span class="p">)</span>
-<a id="__codelineno-30-16" name="__codelineno-30-16" href="#__codelineno-30-16"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="p">.</span><span class="na">springBoot</span><span class="p">(</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">    </span><span class="n">com</span><span class="p">.</span><span class="na">trendyol</span><span class="p">.</span><span class="na">exampleapp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="hll"><span class="w">      </span><span class="n">addTestDependencies</span><span class="p">()</span>
+</span><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="w">  </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="w">    </span><span class="s">&quot;logging.level.root=error&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="w">    </span><span class="s">&quot;logging.level.org.springframework.web=error&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="w">    </span><span class="s">&quot;spring.profiles.active=default&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="w">    </span><span class="s">&quot;server.http2.enabled=false&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="w">    </span><span class="s">&quot;kafka.heartbeatInSeconds=2&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="w">    </span><span class="s">&quot;kafka.autoCreateTopics=true&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="w">    </span><span class="s">&quot;kafka.offset=earliest&quot;</span>
+<a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a><span class="w">  </span><span class="p">)</span>
+<a id="__codelineno-32-16" name="__codelineno-32-16" href="#__codelineno-32-16"></a><span class="p">)</span>
 </code></pre></div>
 
 
@@ -1816,7 +1877,7 @@ test perspective.</p>
     <script id="__config" type="application/json">{"base": ".", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.top", "navigation.tracking", "navigation.sections", "navigation.indexes", "navigation.footer", "search.highlight", "search.share", "search.suggest", "toc.integrate"], "search": "assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.83f73b43.min.js"></script>
+      <script src="assets/javascripts/bundle.88dd0f4e.min.js"></script>
       
     
   </body>
