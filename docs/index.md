@@ -110,6 +110,7 @@ Stove supports the following components:
 - [Couchbase](Components/01-couchbase.md)
 - [Wiremock](Components/04-wiremock.md)
 - [HTTP](Components/05-http.md)
+- [Bridge](Components/10-bridge.md)
 
 === "Gradle"
 
@@ -744,6 +745,28 @@ override any dependency from the testing side that is being `time` related or `c
 
 ## Advanced
 
+### Global Variables
+
+#### DEFAULT_REGISTRY
+
+The default container registry is `docker.io`. You can change it by setting the `DEFAULT_REGISTRY` variable.
+
+```kotlin
+DEFAULT_REGISTRY = "your.registry.com"
+```
+
+This will effect all the components Stove wide. Or you can set it for each individual component by setting the`registry`
+property, example for Kafka:
+
+```kotlin
+KafkaSystemOptions(
+  containerOptions = KafkaContainerOptions(
+    registry = "your.registry.com",
+    tag = "latest"
+  ),
+)
+```
+
 ### Serializing and Deserializing
 
 Each component has its own serialization and deserialization mechanism. You can align Stove's serialization and
@@ -763,7 +786,7 @@ and add your own serializer and deserializer.
 `StoveSerde` also keeps the reference to the aforementioned libraries:
 
 ```kotlin
-StoveSerde.jackson 
+StoveSerde.jackson
 StoveSerde.gson
 StoveSerde.kotlinx
 ```
@@ -786,11 +809,10 @@ StoveSerde.kotlinx.anyStringSerde(yourJson())
 When it comes to handling the time, no one wants to wait for 30 minutes for a scheduler job, or for a delayed task to be
 able to test it.
 In these situations what we need to do is `advancing` the time, or replacing the effect of the time for our needs. This
-may require you
-to change your code, too. Because, we might need to provide a time-free implementation to an interface, or we might need
-to extract it to an interface if not properly implemented.
+may require you to change your code, too. Because, we might need to provide a time-free implementation to an interface,
+or we might need to extract it to an interface if not properly implemented.
 
-For example, in international-service project we have a delayed command executor that accepts a task and a time for it
+For example, imagine we have a delayed command executor that accepts a task and a time for it
 to delay it until it is right time to execute. But, in tests we need to replace this behaviour with the time-effect free
 implementation.
 

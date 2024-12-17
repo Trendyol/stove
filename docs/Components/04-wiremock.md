@@ -144,3 +144,8 @@ test("behavioural tests") {
 
 Here we define a behaviour for the `/get-behaviour` endpoint. Initially, it returns a 503 status code with a message.
 Then, it returns a 200 status code with a `TestDto` object.
+
+!!! Note
+
+    You can define multiple behaviours for the same endpoint, but it should start with `initially`. `Then` can be used
+    multiple times.

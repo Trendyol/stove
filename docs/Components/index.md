@@ -11,3 +11,4 @@ All the dependencies are pluggable. Stove supports:
 - [MongoDB](07-mongodb.md)
 - [Mssql](08-mssql.md)
 - [Redis](09-redis.md)
+- [Bridge](10-bridge.md)
