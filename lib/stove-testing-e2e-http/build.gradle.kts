@@ -15,6 +15,7 @@ dependencies {
   testImplementation(projects.lib.stoveTestingE2eWiremock)
   testImplementation(libs.jackson.jsr310)
   testImplementation(testFixtures(projects.lib.stoveTestingE2e))
+  testImplementation(libs.logback.classic)
 }
 
 tasks.test.configure {
