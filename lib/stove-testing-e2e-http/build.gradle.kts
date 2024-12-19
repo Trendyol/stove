@@ -17,7 +17,3 @@ dependencies {
   testImplementation(testFixtures(projects.lib.stoveTestingE2e))
   testImplementation(libs.logback.classic)
 }
-
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.http.Stove")
-}

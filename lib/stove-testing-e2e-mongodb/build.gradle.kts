@@ -8,10 +8,6 @@ dependencies {
   implementation(libs.kotlinx.core)
 }
 
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.mongodb.Stove")
-}
-
 dependencies {
   testImplementation(libs.logback.classic)
 }

@@ -33,10 +33,6 @@ buildscript {
   }
 }
 
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.standalone.kafka.setup.Stove")
-}
-
 wire {
   sourcePath("src/main/proto")
   kotlin {

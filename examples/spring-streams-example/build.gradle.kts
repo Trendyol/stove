@@ -32,10 +32,6 @@ dependencies {
 
 application { mainClass.set("stove.spring.streams.example.ExampleAppkt") }
 
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.stove.spring.streams.example.e2e.Stove")
-}
-
 java.sourceSets["main"].java {
   srcDir("build/generated/source/proto/main/java")
   srcDir("build/generated/source/proto/main/kotlin")

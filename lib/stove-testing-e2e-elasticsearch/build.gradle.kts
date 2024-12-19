@@ -9,7 +9,3 @@ dependencies {
 dependencies {
   testImplementation(libs.slf4j.simple)
 }
-
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.elasticsearch.Stove")
-}

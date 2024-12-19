@@ -45,10 +45,6 @@ dependencies {
   testImplementation(projects.stove.starters.ktor.stoveKtorTestingE2e)
 }
 
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.stove.ktor.example.e2e.Stove")
-}
-
 repositories {
   mavenCentral()
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }

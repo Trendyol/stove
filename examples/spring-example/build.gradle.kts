@@ -32,8 +32,4 @@ dependencies {
   testImplementation(projects.stove.starters.spring.stoveSpringTestingE2eKafka)
 }
 
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.stove.spring.example.e2e.Stove")
-}
-
 application { mainClass.set("stove.spring.example.ExampleAppkt") }
