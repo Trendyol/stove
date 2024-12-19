@@ -28,7 +28,3 @@ dependencies {
   testImplementation(libs.ktor.client.content.negotiation)
   testImplementation(libs.ktor.serialization.jackson.json)
 }
-
-tasks.e2eTest.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.examples.kotlin.spring.e2e.setup.Stove")
-}

@@ -28,7 +28,3 @@ dependencies {
   testImplementation(libs.stove.spring.testing)
   testImplementation(libs.jackson.kotlin)
 }
-
-tasks.e2eTest.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.recipes.scala.spring.e2e.setup.Stove")
-}
