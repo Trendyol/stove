@@ -1,16 +1,16 @@
 [versions]
 kotlin = "2.1.0"
-kotlinx = "1.9.0"
+kotlinx = "1.10.1"
 scala2x = "2.13.15"
 scala3x = "3.4.1"
-quarkus = "3.17.4"
+quarkus = "3.17.5"
 ktlint = "1.5.0"
 
 # Spring-Boot
-spring-boot = "3.4.0"
+spring-boot = "3.4.1"
 spring-framework = "6.2.1"
-spring-dependency-management = "1.1.6"
-spring-kafka = "3.3.0"
+spring-dependency-management = "1.1.7"
+spring-kafka = "3.3.1"
 
 # arrow
 arrow = "2.0.0"
@@ -40,7 +40,7 @@ kotlinLogging = "7.0.3"
 
 # Ktor
 ktor = "2.3.13"
-koin = "4.0.0"
+koin = "4.0.1"
 koin-annotations = "1.4.0"
 
 cohort = "2.6.0"
@@ -72,7 +72,7 @@ kediatr = "3.1.2"
 
 # Testing
 stove = "1.0.0.454-SNAPSHOT"
-junit = "5.11.3"
+junit = "5.11.4"
 kotest = "6.0.0.M1"
 
 #protobuf
@@ -169,8 +169,8 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
 
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.1.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.12" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.2.RELEASE" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.15" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
