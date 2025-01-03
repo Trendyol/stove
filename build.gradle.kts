@@ -14,7 +14,7 @@ plugins {
   java
 }
 group = "com.trendyol"
-version = version()
+version = CI.version(project)
 
 allprojects {
   extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
@@ -40,41 +40,21 @@ kover {
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut-starter")
+val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut")
 dependencies {
   related.forEach {
     kover(it)
   }
 }
 
-subprojects.of("lib", "spring", "examples", "ktor", "micronaut-starter") {
+subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   apply {
     plugin("kotlin")
-    plugin(
-      rootProject.libs.plugins.spotless
-        .get()
-        .pluginId
-    )
-    plugin(
-      rootProject.libs.plugins.dokka
-        .get()
-        .pluginId
-    )
-    plugin(
-      rootProject.libs.plugins.testLogger
-        .get()
-        .pluginId
-    )
-    plugin(
-      rootProject.libs.plugins.kover
-        .get()
-        .pluginId
-    )
-    plugin(
-      rootProject.libs.plugins.detekt
-        .get()
-        .pluginId
-    )
+    plugin(rootProject.libs.plugins.spotless.get().pluginId)
+    plugin(rootProject.libs.plugins.dokka.get().pluginId)
+    plugin(rootProject.libs.plugins.testLogger.get().pluginId)
+    plugin(rootProject.libs.plugins.kover.get().pluginId)
+    plugin(rootProject.libs.plugins.detekt.get().pluginId)
     plugin("idea")
   }
 
@@ -162,7 +142,7 @@ val publishedProjects = listOf(
   "stove-micronaut-testing-e2e"
 )
 
-subprojects.of("lib", "spring", "ktor", "micronaut-starter", filter = { p -> publishedProjects.contains(p.name) }) {
+subprojects.of("lib", "spring", "ktor", "micronaut", filter = { p -> publishedProjects.contains(p.name) }) {
   apply {
     plugin("java")
     plugin("stove-publishing")
@@ -176,13 +156,4 @@ subprojects.of("lib", "spring", "ktor", "micronaut-starter", filter = { p -> pub
 
 tasks.withType<DokkaMultiModuleTask>().configureEach {
   outputDirectory.set(file(rootDir.resolve("docs/source")))
-}
-
-fun version(): String = when {
-  System.getenv("SNAPSHOT") != null -> {
-    println("SNAPSHOT: ${System.getenv("SNAPSHOT")}")
-    project.properties["snapshot"].toString()
-  }
-
-  else -> project.properties["version"].toString()
 }

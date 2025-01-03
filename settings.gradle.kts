@@ -18,7 +18,7 @@ include(
   "starters:ktor:stove-ktor-testing-e2e",
   "starters:spring:stove-spring-testing-e2e",
   "starters:spring:stove-spring-testing-e2e-kafka",
-  "starters:micronaut-starter:stove-micronaut-testing-e2e"
+  "starters:micronaut:stove-micronaut-testing-e2e"
 )
 include(
   "examples:spring-example",

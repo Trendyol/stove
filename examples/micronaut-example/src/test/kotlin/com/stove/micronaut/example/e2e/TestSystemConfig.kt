@@ -14,7 +14,6 @@ class TestSystemConfig : AbstractProjectConfig() {
 
   @Suppress("LongMethod")
   override suspend fun beforeProject() {
-    val objectMapper = ObjectMapperConfig.createObjectMapperWithDefaults()
     TestSystem()
       .with {
         httpClient {
@@ -25,7 +24,6 @@ class TestSystemConfig : AbstractProjectConfig() {
         couchbase {
           CouchbaseSystemOptions(
             "Stove",
-            objectMapper = objectMapper,
             containerOptions = CouchbaseContainerOptions(tag = "latest") {
               withStartupAttempts(3)
             },
