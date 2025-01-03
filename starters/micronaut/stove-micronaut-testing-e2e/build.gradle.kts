@@ -1,6 +1,6 @@
 dependencies {
   api(projects.lib.stoveTestingE2e)
-  implementation("io.micronaut:micronaut-core") // Temel Micronaut bağımlılığı
+  implementation("io.micronaut:micronaut-core")
   implementation("io.micronaut.kotlin:micronaut-kotlin-runtime:4.5.0")
   testImplementation("io.micronaut.test:micronaut-test-kotest5:4.0.0")
   testImplementation("io.micronaut.test:micronaut-test-kotest5:4.0.0")

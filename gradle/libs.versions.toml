@@ -52,6 +52,11 @@ exposed = "0.57.0"
 kotlinx-serialization = "1.8.0"
 ktlint = "1.5.0"
 kotlinBinaryCompatibilityValidator = "0.17.0"
+snakeyaml = "2.1"
+micronaut = "4.4.3"
+dagger = "2.51.1"
+micronaut-micrometer = "1.3.1"
+kafka-clients = "3.4.0"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -66,6 +71,21 @@ kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = 
 kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+
+# Micronaut
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+micronaut-parent = { module = "io.micronaut.platform:micronaut-parent", version = "4.7.1" }
+micronaut-http-validation = { module = "io.micronaut:micronaut-http-validation", version.ref = "micronaut" }
+micronaut-serde-processor = { module = "io.micronaut.serde:micronaut-serde-processor" }
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime" }
+micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson" }
+micronaut-http-client = { module = "io.micronaut:micronaut-http-client", version.ref = "micronaut" }
+micronaut-http-server-netty = { module = "io.micronaut:micronaut-http-server-netty", version.ref = "micronaut" }
+micronaut-inject = { module = "io.micronaut:micronaut-inject", version.ref = "micronaut" }
+micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
+micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-micrometer-core", version.ref = "micronaut-micrometer" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -251,5 +271,6 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-
-
+google-ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
+micronaut-application = { id = "io.micronaut.application", version = "4.4.3" }
+micronaut-aot = { id = "io.micronaut.aot", version = "4.4.3" }

@@ -24,7 +24,6 @@ abstract class BaseApplicationContextInitializer : ApplicationEventListener<Star
     }
 
     protected open fun onStartup(applicationContext: ApplicationContext) {
-        // Custom initialization code can be added here
     }
 
     companion object {

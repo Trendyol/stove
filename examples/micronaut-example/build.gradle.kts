@@ -4,34 +4,33 @@ plugins {
   kotlin("jvm") version libs.versions.kotlin
   id("org.jetbrains.kotlin.plugin.allopen") version libs.versions.kotlin
   kotlin("plugin.serialization") version libs.versions.kotlin
+  alias(libs.plugins.google.ksp)
+  alias(libs.plugins.shadowJar)
+  alias(libs.plugins.micronaut.application)
+  alias(libs.plugins.micronaut.aot)
   application
   idea
-  id("com.google.devtools.ksp") version "1.9.25-1.0.20"
-  id("com.github.johnrengelman.shadow") version "8.1.1"
-  id("io.micronaut.application") version "4.4.3"
-  id("io.micronaut.aot") version "4.4.3"
 }
 
-repositories {
-  mavenCentral()
-  maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
-}
+
 
 dependencies {
-  runtimeOnly("org.yaml:snakeyaml:2.1")
-  implementation(platform("io.micronaut.platform:micronaut-parent:4.7.1"))
-  ksp("io.micronaut:micronaut-http-validation")
-  ksp("io.micronaut.serde:micronaut-serde-processor")
-  implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
-  implementation("io.micronaut.serde:micronaut-serde-jackson")
-  implementation("io.micronaut:micronaut-http-client")
-  implementation("io.micronaut:micronaut-http-server-netty")
-  implementation("io.micronaut:micronaut-inject")
-  implementation("io.micronaut:micronaut-core")
-  runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
-  implementation("com.couchbase.client:metrics-micrometer:0.7.5")
-  implementation("io.micronaut.configuration:micronaut-micrometer-core:1.3.1")
-  implementation("org.apache.kafka:kafka-clients")
+  runtimeOnly(libs.snakeyaml)
+  implementation(platform(libs.micronaut.parent))
+  ksp(libs.micronaut.http.validation)
+  ksp(libs.micronaut.serde.processor)
+  implementation(libs.dagger.compiler)
+  ksp(libs.dagger.compiler)
+  implementation(libs.micronaut.kotlin.runtime)
+  implementation(libs.micronaut.serde.jackson)
+  implementation(libs.micronaut.http.client)
+  implementation(libs.micronaut.http.server.netty)
+  implementation(libs.micronaut.inject)
+  implementation(libs.micronaut.core)
+  runtimeOnly(libs.jackson.kotlin)
+  implementation(libs.couchbase.client.metrics)
+  implementation(libs.micronaut.micrometer.core)
+  implementation(libs.kafka.clients)
   implementation(libs.kotlinx.reactor)
   implementation(libs.kotlinx.core)
   implementation(libs.kotlinx.reactive)
@@ -48,7 +47,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
   testImplementation(projects.stove.lib.stoveTestingE2eCouchbase)
   testImplementation(projects.stove.lib.stoveTestingE2eElasticsearch)
-  testImplementation(projects.stove.starters.micronautStarter.stoveMicronautTestingE2e)
+  testImplementation(projects.stove.starters.micronaut.stoveMicronautTestingE2e)
 }
 
 application {

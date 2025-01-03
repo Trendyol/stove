@@ -95,6 +95,5 @@ class Setup : AbstractProjectConfig() {
   }
 
   override suspend fun afterProject() {
-    // Uygulama durdurma işlemi yapılabilir
   }
 }
