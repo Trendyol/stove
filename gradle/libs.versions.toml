@@ -198,7 +198,7 @@ google-gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
 
 
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
-pprint = { module = "io.exoquery:pprint-kotlin", version = "2.0.2" }
+pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
 junit = { module = "org.junit:junit-bom", version.ref = "junit" }
