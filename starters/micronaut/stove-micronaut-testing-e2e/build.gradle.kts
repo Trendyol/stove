@@ -1,10 +1,9 @@
 dependencies {
   api(projects.lib.stoveTestingE2e)
-  implementation("io.micronaut:micronaut-core")
-  implementation("io.micronaut.kotlin:micronaut-kotlin-runtime:4.5.0")
-  testImplementation("io.micronaut.test:micronaut-test-kotest5:4.0.0")
-  testImplementation("io.micronaut.test:micronaut-test-kotest5:4.0.0")
-  testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
+  implementation(libs.micronaut.core)
+  implementation(libs.micronaut.kotlin.runtime)
+  testImplementation(libs.micronaut.test.kotest)
+  testImplementation(libs.kotest.runner.junit5)
 }
 
 repositories {

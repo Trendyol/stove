@@ -13,6 +13,7 @@ plugins {
   idea
   java
 }
+
 group = "com.trendyol"
 version = CI.version(project)
 

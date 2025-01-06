@@ -78,7 +78,7 @@ micronaut-parent = { module = "io.micronaut.platform:micronaut-parent", version 
 micronaut-http-validation = { module = "io.micronaut:micronaut-http-validation", version.ref = "micronaut" }
 micronaut-serde-processor = { module = "io.micronaut.serde:micronaut-serde-processor" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
-micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime" }
+micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime", version = "4.5.0" }
 micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson" }
 micronaut-http-client = { module = "io.micronaut:micronaut-http-client", version.ref = "micronaut" }
 micronaut-http-server-netty = { module = "io.micronaut:micronaut-http-server-netty", version.ref = "micronaut" }
@@ -86,6 +86,8 @@ micronaut-inject = { module = "io.micronaut:micronaut-inject", version.ref = "mi
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
 micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-micrometer-core", version.ref = "micronaut-micrometer" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
+micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.0.0"}
+
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
