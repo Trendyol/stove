@@ -62,7 +62,7 @@ io-grpc-kotlin = "1.4.1"
 
 # Tooling
 kover = "0.9.0"
-spotless = "7.0.0.BETA4"
+spotless = "7.0.0"
 detekt = "1.23.7"
 lombok = "1.18.36"
 
@@ -170,7 +170,7 @@ kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.re
 
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.2.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.15" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.16" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
