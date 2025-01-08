@@ -86,7 +86,7 @@ micronaut-inject = { module = "io.micronaut:micronaut-inject", version.ref = "mi
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
 micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-micrometer-core", version.ref = "micronaut-micrometer" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
-micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.0.0"}
+micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.0.0" }
 
 
 # Arrow
@@ -274,5 +274,5 @@ protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
 google-ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
-micronaut-application = { id = "io.micronaut.application", version = "4.4.3" }
-micronaut-aot = { id = "io.micronaut.aot", version = "4.4.3" }
+micronaut-application = { id = "io.micronaut.application", version.ref = "micronaut" }
+micronaut-aot = { id = "io.micronaut.aot", version.ref = "micronaut" }

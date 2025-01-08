@@ -7,9 +7,8 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import org.slf4j.*
-import stove.micronaut.example.infrastructure.couchbase.ObjectMapperConfig
 
-class TestSystemConfig : AbstractProjectConfig() {
+class Stove : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
   @Suppress("LongMethod")
@@ -54,7 +53,7 @@ class TestSystemConfig : AbstractProjectConfig() {
           withParameters = listOf(
             "server.port=8080",
             "logging.level.root=info",
-            "logging.level.org.springframework.web=info"
+            "logging.level.org.micronaut.web=info"
           )
         )
       }.run()

@@ -13,7 +13,7 @@ class SupplierHttpService(
 ) : SupplierService {
   override suspend fun getSupplierPermission(supplierId: Long): SupplierPermission? = try {
     val response = supplierHttpClient.getSupplierPermission(supplierId)
-    println("API Response: $response") // Yanıtı konsola yazdır
+    println("API Response: $response")
     response
   } catch (e: WebSocketClientException) {
     println("Error fetching supplier permission: ${e.message}")

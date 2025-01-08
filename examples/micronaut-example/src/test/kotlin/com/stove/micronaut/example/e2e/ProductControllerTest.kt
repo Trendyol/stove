@@ -11,6 +11,7 @@ import io.kotest.matchers.string.shouldContain
 import stove.micronaut.example.application.domain.Product
 import stove.micronaut.example.application.services.SupplierPermission
 import stove.micronaut.example.infrastructure.api.model.request.CreateProductRequest
+import java.util.*
 
 class ProductControllerTest :
   FunSpec({
@@ -26,9 +27,9 @@ class ProductControllerTest :
       }
     }
 
-    test("should create a product in Couchbase when a product is created") {
-      val id = "RANDOM0001"
-      val request = CreateProductRequest(id = id, name = "Deneme", supplierId = 120688)
+    test("should save product to Couchbase when product creation request is sent") {
+      val id = UUID.randomUUID().toString()
+      val request = CreateProductRequest(id = id, name = "product name", supplierId = 120688)
       val supplierMock = SupplierPermission(id = 120688, isBlacklisted = false)
 
       TestSystem.validate {
@@ -43,7 +44,7 @@ class ProductControllerTest :
         http {
           postAndExpectJson<Product>("/products/create", body = request.some()) { actual ->
             actual.supplierId shouldBe 120688
-            actual.name shouldBe "Deneme"
+            actual.name shouldBe "product name"
           }
         }
         couchbase {

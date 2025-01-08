@@ -1,5 +1,3 @@
-@file:Suppress("UnstableApiUsage", "DSL_SCOPE_VIOLATION")
-
 plugins {
   kotlin("jvm") version libs.versions.kotlin
   id("org.jetbrains.kotlin.plugin.allopen") version libs.versions.kotlin
