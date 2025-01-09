@@ -30,7 +30,6 @@ abstract class BaseApplicationContextInitializer : ApplicationEventListener<Star
         @JvmStatic fun main(args: Array<String>) {
             Micronaut.build()
                 .args(*args)
-                .packages("your.base.package.here")
                 .start()
         }
     }
