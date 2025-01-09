@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.testLogger)
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
+  alias(libs.plugins.binaryCompatibilityValidator)
   id("stove-publishing") apply false
   idea
   java
