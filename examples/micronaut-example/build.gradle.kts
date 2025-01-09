@@ -10,8 +10,6 @@ plugins {
   idea
 }
 
-
-
 dependencies {
   runtimeOnly(libs.snakeyaml)
   implementation(platform(libs.micronaut.parent))
