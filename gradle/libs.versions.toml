@@ -3,19 +3,19 @@ kotlin = "2.1.0"
 kotlinx = "1.10.1"
 spring-boot = "2.7.18"
 spring-framework = "5.3.39"
-spring-framework-6x = "6.2.1"
+spring-framework-6x = "6.2.2"
 spring-boot-3x = "3.4.1"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.1"
-couchbase-client = "3.7.6"
-couchbase-client-metrics = "0.7.6"
-couchbase-kotlin = "1.4.6"
+couchbase-client = "3.7.7"
+couchbase-client-metrics = "0.7.7"
+couchbase-kotlin = "1.4.7"
 jackson = "2.18.2"
 arrow = "2.0.0"
 arrowSuspendApp = "0.4.0"
 arrow-jackson = "0.14.1"
-io-reactor = "3.7.1"
+io-reactor = "3.7.2"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.16"
 kafka = "3.9.0"
@@ -28,15 +28,15 @@ ktor = "2.3.13"
 koin = "4.0.1"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.17.0"
+elastic = "8.17.1"
 mongodb = "5.3.0"
 wiremock = "3.10.0"
 testcontainers = "1.20.4"
 r2dbc-mssql = "1.0.2.RELEASE"
-spotless = "7.0.1"
+spotless = "7.0.2"
 detekt = "1.23.7"
 wire = "5.2.1"
-io-grpc = "1.69.0"
+io-grpc = "1.69.1"
 io-grpc-kotlin = "1.4.1"
 google-protobuf = "3.25.5"
 gradle-release = "3.1.0"
@@ -48,7 +48,7 @@ kotest = "6.0.0.M1"
 mockito = "5.4.0"
 quiver = "0.5.12"
 akkurate = "0.11.0"
-exposed = "0.57.0"
+exposed = "0.58.0"
 kotlinx-serialization = "1.8.0"
 ktlint = "1.5.0"
 kotlinBinaryCompatibilityValidator = "0.17.0"
@@ -129,7 +129,7 @@ r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 
 # postgres
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.5" }
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
@@ -197,7 +197,7 @@ hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "ho
 google-gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
 
 
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.0" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }

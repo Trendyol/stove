@@ -3,12 +3,12 @@ kotlin = "2.1.0"
 kotlinx = "1.10.1"
 scala2x = "2.13.16"
 scala3x = "3.4.1"
-quarkus = "3.17.6"
+quarkus = "3.17.7"
 ktlint = "1.5.0"
 
 # Spring-Boot
 spring-boot = "3.4.1"
-spring-framework = "6.2.1"
+spring-framework = "6.2.2"
 spring-dependency-management = "1.1.7"
 spring-kafka = "3.3.1"
 
@@ -21,9 +21,9 @@ arrowSuspendApp = "0.4.0"
 jackson = "2.18.2"
 
 # Couchbase
-couchbase-kotlin = "1.4.6"
-couchbase-client = "3.7.6"
-couchbase-client-metrics = "0.7.6"
+couchbase-kotlin = "1.4.7"
+couchbase-client = "3.7.7"
+couchbase-client-metrics = "0.7.7"
 
 # Kafka
 kafka = "3.9.0"
@@ -31,7 +31,7 @@ kafka-kotlin = "0.4.0"
 kafka-streams-registry = "7.8.0"
 
 # Reactor
-io-reactor = "3.7.1"
+io-reactor = "3.7.2"
 io-reactor-extensions = "1.2.3"
 
 # Logging
@@ -51,7 +51,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 r2dbc-mssql = "1.0.2.RELEASE"
 
 # elastic
-elastic = "8.17.0"
+elastic = "8.17.1"
 
 # mongo
 mongodb = "5.3.0"
@@ -62,7 +62,7 @@ io-grpc-kotlin = "1.4.1"
 
 # Tooling
 kover = "0.9.1"
-spotless = "7.0.1"
+spotless = "7.0.2"
 detekt = "1.23.7"
 lombok = "1.18.36"
 
