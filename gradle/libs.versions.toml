@@ -7,14 +7,14 @@ spring-framework-6x = "6.2.2"
 spring-boot-3x = "3.4.1"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
-spring-kafka-3x = "3.3.1"
+spring-kafka-3x = "3.3.2"
 couchbase-client = "3.7.7"
 couchbase-client-metrics = "0.7.7"
 couchbase-kotlin = "1.4.7"
 jackson = "2.18.2"
 arrow = "2.0.0"
-arrowSuspendApp = "0.4.0"
-arrow-jackson = "0.14.1"
+arrowSuspendApp = "0.5.0"
+arrow-jackson = "0.15.1"
 io-reactor = "3.7.2"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.16"
@@ -25,7 +25,7 @@ dokka = "2.0.0"
 knit = "0.5.0"
 kover = "0.9.1"
 ktor = "2.3.13"
-koin = "4.0.1"
+koin = "4.0.2"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.17.1"
@@ -36,7 +36,7 @@ r2dbc-mssql = "1.0.2.RELEASE"
 spotless = "7.0.2"
 detekt = "1.23.7"
 wire = "5.2.1"
-io-grpc = "1.69.1"
+io-grpc = "1.70.0"
 io-grpc-kotlin = "1.4.1"
 google-protobuf = "3.25.5"
 gradle-release = "3.1.0"
@@ -100,7 +100,7 @@ couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer",
 # Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.14.1" }
+jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.15.1" }
 jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 
 # Slfj4
