@@ -3,7 +3,7 @@ kotlin = "2.1.0"
 kotlinx = "1.10.1"
 scala2x = "2.13.16"
 scala3x = "3.4.1"
-quarkus = "3.17.7"
+quarkus = "3.18.0"
 ktlint = "1.5.0"
 
 # Spring-Boot
@@ -71,7 +71,7 @@ hoplite = "2.9.0"
 kediatr = "3.1.2"
 
 # Testing
-stove = "1.0.0.454-SNAPSHOT"
+stove = "1.0.0.455-SNAPSHOT"
 junit = "5.11.4"
 kotest = "6.0.0.M1"
 
