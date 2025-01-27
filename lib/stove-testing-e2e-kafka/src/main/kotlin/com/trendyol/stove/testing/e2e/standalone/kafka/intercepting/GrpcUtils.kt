@@ -1,9 +1,12 @@
+@file:Suppress("HttpUrlsUsage")
+
 package com.trendyol.stove.testing.e2e.standalone.kafka.intercepting
 
 import com.squareup.wire.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import kotlinx.coroutines.CoroutineScope
 import okhttp3.*
+import java.net.InetAddress
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -23,7 +26,9 @@ object GrpcUtils {
   fun createClient(onPort: String, scope: CoroutineScope): StoveKafkaObserverServiceClient = GrpcClient
     .Builder()
     .client(getClient(scope))
-    .baseUrl("http://0.0.0.0:$onPort".toHttpUrl())
+    .baseUrl(onLoopback(onPort))
     .build()
     .create<StoveKafkaObserverServiceClient>()
+
+  private fun onLoopback(port: String): GrpcHttpUrl = "http://${InetAddress.getLoopbackAddress().hostAddress}:$port".toHttpUrl()
 }

@@ -8,7 +8,8 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import io.grpc.*
+import io.grpc.Server
+import io.grpc.netty.NettyServerBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.*
@@ -17,6 +18,7 @@ import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
+import java.net.*
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.time.*
@@ -385,8 +387,8 @@ class KafkaSystem(
   private suspend fun startGrpcServer(): Server {
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
     return Try {
-      ServerBuilder
-        .forPort(context.options.bridgeGrpcServerPort)
+      NettyServerBuilder
+        .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), context.options.bridgeGrpcServerPort))
         .executor(StoveKafkaCoroutineScope.also { it.ensureActive() }.asExecutor)
         .addService(StoveKafkaObserverGrpcServer(sink))
         .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
