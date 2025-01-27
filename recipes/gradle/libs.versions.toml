@@ -7,13 +7,13 @@ quarkus = "3.18.0"
 ktlint = "1.5.0"
 
 # Spring-Boot
-spring-boot = "3.4.1"
+spring-boot = "3.4.2"
 spring-framework = "6.2.2"
 spring-dependency-management = "1.1.7"
 spring-kafka = "3.3.2"
 
 # arrow
-arrow = "2.0.0"
+arrow = "2.0.1"
 arrow-jackson = "0.15.1"
 arrowSuspendApp = "0.5.0"
 
@@ -54,7 +54,7 @@ r2dbc-mssql = "1.0.2.RELEASE"
 elastic = "8.17.1"
 
 # mongo
-mongodb = "5.3.0"
+mongodb = "5.3.1"
 
 # Grpc
 io-grpc = "1.63.0"
