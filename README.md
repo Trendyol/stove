@@ -1,3 +1,5 @@
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Trendyol/stove/badge)](https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove)
 <h1 align="center">Stove</h1>
 
 <p align="center">
