@@ -1,5 +1,3 @@
-
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Trendyol/stove/badge)](https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove)
 <h1 align="center">Stove</h1>
 
 <p align="center">
@@ -7,6 +5,8 @@
 </p>
 
 ![Release](https://img.shields.io/maven-central/v/com.trendyol/stove-testing-e2e?versionPrefix=0&label=latest-release&color=blue) [<img src="https://img.shields.io/nexus/s/com.trendyol/stove-testing-e2e?server=https%3A%2F%2Foss.sonatype.org&queryOpt=:v=1.0.0.*&label=latest-snapshot"/>](https://oss.sonatype.org/content/repositories/snapshots/com/trendyol/stove-testing-e2e/) [![codecov](https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove)
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Trendyol/stove/badge)](https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove)
 
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
 
