@@ -14,7 +14,6 @@ permissions: read-all
 
 jobs:
   visibility-check:
-    # Bu job, deponun public/private olduğunu belirler
     outputs:
       visibility: ${{ steps.drv.outputs.visibility }}
     runs-on: ubuntu-latest
