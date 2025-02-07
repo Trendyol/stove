@@ -122,7 +122,7 @@ class TestSystemKafkaInterceptor<K, V>(
     value: ByteArray,
     clazz: KClass<T>
   ): Result<T> = runCatching { serde.deserialize(value, clazz.java) }
-    .onFailure { logger.error("[Stove#deserializeCatching] Error while deserializing: '{}'", String(value), it) }
+    .onFailure { logger.debug("[Stove#deserializeCatching] Error while deserializing: '{}'", String(value), it) }
 
   private fun <T : Any> throwIfFailed(
     clazz: KClass<T>,
