@@ -62,7 +62,7 @@ internal interface CommonOps {
   ): Unit = store
     .failedMessages()
     .filter {
-      selector(SuccessfulParsedMessage(readCatching(it.message.toByteArray(), clazz).getOrNull().toOption(), it.metadata()))
+      selector(SuccessfulParsedMessage(deserializeCatching(it.message.toByteArray(), clazz).getOrNull().toOption(), it.metadata()))
     }.forEach {
       throw AssertionError("Message was expected to be consumed successfully, but failed: $it \n ${dumpMessages()}")
     }
@@ -75,7 +75,7 @@ internal interface CommonOps {
     .filter {
       selector(
         SuccessfulParsedMessage(
-          readCatching(it.message.toByteArray(), clazz).getOrNull().toOption(),
+          deserializeCatching(it.message.toByteArray(), clazz).getOrNull().toOption(),
           MessageMetadata(it.topic, it.key, it.headers)
         )
       )
@@ -83,11 +83,11 @@ internal interface CommonOps {
       throw AssertionError("Message was expected to be consumed successfully, but was retried: $it \n ${dumpMessages()}")
     }
 
-  fun <T : Any> readCatching(
+  fun <T : Any> deserializeCatching(
     value: ByteArray,
     clazz: KClass<T>
   ): Result<T> = runCatching { serde.deserialize(value, clazz.java) }
-    .onFailure { exception -> logger.error("Failed to deserialize message: ${String(value)}", exception) }
+    .onFailure { exception -> logger.debug("Failed to deserialize message: ${String(value)}", exception) }
 
   fun dumpMessages(): String
 }

@@ -535,6 +535,7 @@ public final class com/trendyol/stove/testing/e2e/standalone/kafka/intercepting/
 
 public final class com/trendyol/stove/testing/e2e/standalone/kafka/intercepting/TestSystemMessageSink : com/trendyol/stove/testing/e2e/standalone/kafka/intercepting/CommonOps, com/trendyol/stove/testing/e2e/standalone/kafka/intercepting/MessageSinkOps {
 	public fun <init> (Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;Lcom/trendyol/stove/testing/e2e/standalone/kafka/TopicSuffixes;)V
+	public fun deserializeCatching-gIAlu-s ([BLkotlin/reflect/KClass;)Ljava/lang/Object;
 	public fun dumpMessages ()Ljava/lang/String;
 	public fun getAdminClient ()Lorg/apache/kafka/clients/admin/Admin;
 	public fun getLogger ()Lorg/slf4j/Logger;
@@ -545,7 +546,6 @@ public final class com/trendyol/stove/testing/e2e/standalone/kafka/intercepting/
 	public final fun onMessageCommitted (Lcom/trendyol/stove/testing/e2e/standalone/kafka/CommittedMessage;)V
 	public final fun onMessageConsumed (Lcom/trendyol/stove/testing/e2e/standalone/kafka/ConsumedMessage;)V
 	public final fun onMessagePublished (Lcom/trendyol/stove/testing/e2e/standalone/kafka/PublishedMessage;)V
-	public fun readCatching-gIAlu-s ([BLkotlin/reflect/KClass;)Ljava/lang/Object;
 	public fun recordAcknowledgedMessage (Lcom/trendyol/stove/testing/e2e/standalone/kafka/AcknowledgedMessage;)V
 	public fun recordCommittedMessage (Lcom/trendyol/stove/testing/e2e/standalone/kafka/CommittedMessage;)V
 	public fun recordConsumed (Lcom/trendyol/stove/testing/e2e/standalone/kafka/ConsumedMessage;)V

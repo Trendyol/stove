@@ -15,7 +15,7 @@ internal interface MessageSinkPublishOps : CommonOps {
   ) {
     val getRecords = { store.publishedMessages().map { it } }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting Publishing of ${clazz.java.simpleName}") {
-      val outcome = readCatching(it.message.toByteArray(), clazz)
+      val outcome = deserializeCatching(it.message.toByteArray(), clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), MessageMetadata(it.topic, it.key, it.headers)))
     }
   }

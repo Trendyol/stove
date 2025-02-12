@@ -50,7 +50,7 @@ internal interface MessageSinkOps :
   ) {
     val getRecords = { store.consumedMessages() }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting consuming of ${clazz.java.simpleName}") {
-      val outcome = readCatching(it.message.toByteArray(), clazz)
+      val outcome = deserializeCatching(it.message.toByteArray(), clazz)
       outcome.isSuccess &&
         condition(
           SuccessfulParsedMessage(
@@ -83,7 +83,7 @@ internal interface MessageSinkOps :
           .map { FailedMessage(it.message.toByteArray(), it.metadata()) }
     }
     getRecords.waitUntilConditionMet(atLeastIn, "While expecting Failure of ${clazz.java.simpleName}") {
-      val outcome = readCatching(it.message, clazz)
+      val outcome = deserializeCatching(it.message, clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
   }
@@ -97,7 +97,7 @@ internal interface MessageSinkOps :
     val getRecords = { store.retriedMessages() }
     val failedFunc = suspend {
       getRecords.waitUntilConditionMet(atLeastIn, "While expecting Retrying of ${clazz.java.simpleName}") {
-        val outcome = readCatching(it.message.toByteArray(), clazz)
+        val outcome = deserializeCatching(it.message.toByteArray(), clazz)
         outcome.isSuccess &&
           condition(
             SuccessfulParsedMessage(

@@ -1,44 +1,44 @@
 [versions]
-kotlin = "2.1.0"
+kotlin = "2.1.10"
 kotlinx = "1.10.1"
 spring-boot = "2.7.18"
 spring-framework = "5.3.39"
-spring-framework-6x = "6.2.1"
-spring-boot-3x = "3.4.1"
+spring-framework-6x = "6.2.2"
+spring-boot-3x = "3.4.2"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
-spring-kafka-3x = "3.3.1"
-couchbase-client = "3.7.6"
-couchbase-client-metrics = "0.7.6"
-couchbase-kotlin = "1.4.6"
+spring-kafka-3x = "3.3.2"
+couchbase-client = "3.7.7"
+couchbase-client-metrics = "0.7.7"
+couchbase-kotlin = "1.4.7"
 jackson = "2.18.2"
-arrow = "2.0.0"
-arrowSuspendApp = "0.4.0"
-arrow-jackson = "0.14.1"
-io-reactor = "3.7.1"
+arrow = "2.0.1"
+arrowSuspendApp = "0.5.0"
+arrow-jackson = "0.15.1"
+io-reactor = "3.7.2"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.16"
 kafka = "3.9.0"
-kafka-kotlin = "0.4.0"
+kafka-kotlin = "0.4.1"
 kafka-streams-registry = "7.8.0"
 dokka = "2.0.0"
 knit = "0.5.0"
-kover = "0.9.0"
+kover = "0.9.1"
 ktor = "2.3.13"
-koin = "4.0.1"
+koin = "4.0.2"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.17.0"
-mongodb = "5.2.1"
-wiremock = "3.10.0"
+elastic = "8.17.1"
+mongodb = "5.3.1"
+wiremock = "3.11.0"
 testcontainers = "1.20.4"
 r2dbc-mssql = "1.0.2.RELEASE"
-spotless = "7.0.0"
+spotless = "7.0.2"
 detekt = "1.23.7"
-wire = "5.2.0"
-io-grpc = "1.69.0"
+wire = "5.2.1"
+io-grpc = "1.70.0"
 io-grpc-kotlin = "1.4.1"
-google-protobuf = "3.25.5"
+google-protobuf = "3.25.6"
 gradle-release = "3.1.0"
 nexusPublish = "2.0.0"
 shadow = "8.1.1"
@@ -46,9 +46,9 @@ hoplite = "2.9.0"
 junit = "5.11.4"
 kotest = "6.0.0.M1"
 mockito = "5.4.0"
-quiver = "0.5.12"
+quiver = "0.5.13"
 akkurate = "0.11.0"
-exposed = "0.57.0"
+exposed = "0.58.0"
 kotlinx-serialization = "1.8.0"
 ktlint = "1.5.0"
 kotlinBinaryCompatibilityValidator = "0.17.0"
@@ -122,7 +122,7 @@ couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer",
 # Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.14.1" }
+jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.15.1" }
 jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 
 # Slfj4
@@ -151,7 +151,7 @@ r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 
 # postgres
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.5" }
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
@@ -161,7 +161,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.2.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.3.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.16" }
 logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.16" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.3" }
@@ -216,10 +216,10 @@ google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", versi
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
-google-gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
+google-gson = { module = "com.google.code.gson:gson", version = "2.12.1" }
 
 
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.0" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }

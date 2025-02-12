@@ -1,10 +1,8 @@
 import org.gradle.plugins.ide.idea.model.IdeaModel
-import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   kotlin("jvm").version(libs.versions.kotlin)
-  alias(libs.plugins.dokka)
   alias(libs.plugins.spotless)
   alias(libs.plugins.testLogger)
   alias(libs.plugins.kover)
@@ -17,10 +15,6 @@ plugins {
 
 group = "com.trendyol"
 version = CI.version(project)
-
-allprojects {
-  extra.set("dokka.outputDirectory", rootDir.resolve("docs"))
-}
 
 kover {
   reports {
@@ -53,7 +47,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   apply {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
-    plugin(rootProject.libs.plugins.dokka.get().pluginId)
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.kover.get().pluginId)
     plugin(rootProject.libs.plugins.detekt.get().pluginId)
@@ -154,8 +147,4 @@ subprojects.of("lib", "spring", "ktor", "micronaut", filter = { p -> publishedPr
     withSourcesJar()
     withJavadocJar()
   }
-}
-
-tasks.withType<DokkaMultiModuleTask>().configureEach {
-  outputDirectory.set(file(rootDir.resolve("docs/source")))
 }
