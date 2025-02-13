@@ -6,7 +6,7 @@ micronaut:
   http:
     services:
       lookup-api:
-        url: http://localhost:7078
+        url: http://localhost:7079
         connect-timeout: 2s
         read-timeout: 22s
 
