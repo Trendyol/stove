@@ -1,0 +1,311 @@
+public final class stove/micronaut/example/ApplicationKt {
+	public static final fun main ([Ljava/lang/String;)V
+	public static final fun run ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/micronaut/context/ApplicationContext;
+	public static synthetic fun run$default ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/micronaut/context/ApplicationContext;
+}
+
+public final synthetic class stove/micronaut/example/application/domain/$Product$Introspection : io/micronaut/inject/beans/AbstractInitializableBeanIntrospectionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	public final fun hasBuilder ()Z
+	public final fun hasConstructor ()Z
+	public fun instantiateInternal ([Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun isBuildable ()Z
+}
+
+public final class stove/micronaut/example/application/domain/Product {
+	public static final field Companion Lstove/micronaut/example/application/domain/Product$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;JZLjava/util/Date;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/util/Date;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;JZLjava/util/Date;)Lstove/micronaut/example/application/domain/Product;
+	public static synthetic fun copy$default (Lstove/micronaut/example/application/domain/Product;Ljava/lang/String;Ljava/lang/String;JZLjava/util/Date;ILjava/lang/Object;)Lstove/micronaut/example/application/domain/Product;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedDate ()Ljava/util/Date;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSupplierId ()J
+	public fun hashCode ()I
+	public final fun isBlacklist ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class stove/micronaut/example/application/domain/Product$Companion {
+	public final fun new (Ljava/lang/String;Ljava/lang/String;JZ)Lstove/micronaut/example/application/domain/Product;
+}
+
+public abstract interface class stove/micronaut/example/application/repository/ProductRepository {
+	public abstract fun findById (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun save (Lstove/micronaut/example/application/domain/Product;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public synthetic class stove/micronaut/example/application/services/$ProductService$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public final synthetic class stove/micronaut/example/application/services/$SupplierPermission$Introspection : io/micronaut/inject/beans/AbstractInitializableBeanIntrospectionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	public final fun hasBuilder ()Z
+	public final fun hasConstructor ()Z
+	public fun instantiateInternal ([Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun isBuildable ()Z
+}
+
+public final class stove/micronaut/example/application/services/ProductService {
+	public fun <init> (Lstove/micronaut/example/application/repository/ProductRepository;Lstove/micronaut/example/infrastructure/http/SupplierHttpService;)V
+	public final fun createProduct (Ljava/lang/String;Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class stove/micronaut/example/application/services/SupplierPermission {
+	public fun <init> (JZ)V
+	public final fun component1 ()J
+	public final fun component2 ()Z
+	public final fun copy (JZ)Lstove/micronaut/example/application/services/SupplierPermission;
+	public static synthetic fun copy$default (Lstove/micronaut/example/application/services/SupplierPermission;JZILjava/lang/Object;)Lstove/micronaut/example/application/services/SupplierPermission;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()J
+	public fun hashCode ()I
+	public final fun isBlacklisted ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class stove/micronaut/example/application/services/SupplierService {
+	public abstract fun getSupplierPermission (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/api/$ProductController$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public final class stove/micronaut/example/infrastructure/api/ProductController {
+	public fun <init> (Lstove/micronaut/example/application/services/ProductService;)V
+	public final fun createProduct (Lstove/micronaut/example/infrastructure/api/model/request/CreateProductRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun get (Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun get$default (Lstove/micronaut/example/infrastructure/api/ProductController;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final synthetic class stove/micronaut/example/infrastructure/api/model/request/$CreateProductRequest$Introspection : io/micronaut/inject/beans/AbstractInitializableBeanIntrospectionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	public final fun hasBuilder ()Z
+	public final fun hasConstructor ()Z
+	public fun instantiateInternal ([Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun isBuildable ()Z
+}
+
+public final class stove/micronaut/example/infrastructure/api/model/request/CreateProductRequest {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;J)Lstove/micronaut/example/infrastructure/api/model/request/CreateProductRequest;
+	public static synthetic fun copy$default (Lstove/micronaut/example/infrastructure/api/model/request/CreateProductRequest;Ljava/lang/String;Ljava/lang/String;JILjava/lang/Object;)Lstove/micronaut/example/infrastructure/api/model/request/CreateProductRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSupplierId ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$CouchbaseConfiguration$Bucket2$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$CouchbaseConfiguration$Cluster1$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$CouchbaseConfiguration$ClusterEnvironment0$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isContextScope ()Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$CouchbaseConfiguration$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference, io/micronaut/inject/DisposableBeanDefinition {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun dispose (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$CouchbaseConfiguration$ProductCouchbaseCollection3$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$CouchbaseProperties$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$ObjectMapperConfig$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/couchbase/$ObjectMapperConfig$ObjectMapper0$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public final class stove/micronaut/example/infrastructure/couchbase/CouchbaseConfiguration {
+	public static final field Companion Lstove/micronaut/example/infrastructure/couchbase/CouchbaseConfiguration$Companion;
+	public fun <init> (Lstove/micronaut/example/infrastructure/couchbase/CouchbaseProperties;)V
+	public final fun bucket (Lcom/couchbase/client/java/Cluster;)Lcom/couchbase/client/java/Bucket;
+	public final fun cleanup (Lcom/couchbase/client/java/Cluster;Lcom/couchbase/client/java/env/ClusterEnvironment;)V
+	public final fun cluster (Lcom/couchbase/client/java/env/ClusterEnvironment;)Lcom/couchbase/client/java/Cluster;
+	public final fun clusterEnvironment ()Lcom/couchbase/client/java/env/ClusterEnvironment;
+	public final fun productCouchbaseCollection (Lcom/couchbase/client/java/Bucket;)Lcom/couchbase/client/java/Collection;
+}
+
+public final class stove/micronaut/example/infrastructure/couchbase/CouchbaseConfiguration$Companion {
+	public final fun getObjectMapper ()Lcom/fasterxml/jackson/databind/ObjectMapper;
+}
+
+public final class stove/micronaut/example/infrastructure/couchbase/CouchbaseProperties {
+	public fun <init> ()V
+	public final fun getBucketName ()Ljava/lang/String;
+	public final fun getConnectTimeout ()J
+	public final fun getHosts ()Ljava/util/List;
+	public final fun getKvTimeout ()J
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getQueryTimeout ()J
+	public final fun getUsername ()Ljava/lang/String;
+	public final fun getViewTimeout ()J
+	public final fun setBucketName (Ljava/lang/String;)V
+	public final fun setConnectTimeout (J)V
+	public final fun setHosts (Ljava/util/List;)V
+	public final fun setKvTimeout (J)V
+	public final fun setPassword (Ljava/lang/String;)V
+	public final fun setQueryTimeout (J)V
+	public final fun setUsername (Ljava/lang/String;)V
+	public final fun setViewTimeout (J)V
+}
+
+public final class stove/micronaut/example/infrastructure/couchbase/ObjectMapperConfig {
+	public static final field Companion Lstove/micronaut/example/infrastructure/couchbase/ObjectMapperConfig$Companion;
+	public fun <init> ()V
+	public final fun objectMapper ()Lcom/fasterxml/jackson/databind/ObjectMapper;
+}
+
+public final class stove/micronaut/example/infrastructure/couchbase/ObjectMapperConfig$Companion {
+	public final fun createObjectMapperWithDefaults ()Lcom/fasterxml/jackson/databind/ObjectMapper;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/http/$SupplierHttpClient$Intercepted$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference, io/micronaut/inject/AdvisedBeanType {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun getInterceptedType ()Ljava/lang/Class;
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/http/$SupplierHttpService$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public abstract interface class stove/micronaut/example/infrastructure/http/SupplierHttpClient {
+	public abstract fun getSupplierPermission (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class stove/micronaut/example/infrastructure/http/SupplierHttpService : stove/micronaut/example/application/services/SupplierService {
+	public fun <init> (Lstove/micronaut/example/infrastructure/http/SupplierHttpClient;)V
+	public fun getSupplierPermission (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public synthetic class stove/micronaut/example/infrastructure/persistence/$ProductCBRepository$Definition : io/micronaut/context/AbstractInitializableBeanDefinitionAndReference {
+	public static final field $ANNOTATION_METADATA Lio/micronaut/core/annotation/AnnotationMetadata;
+	public fun <init> ()V
+	protected fun <init> (Ljava/lang/Class;Lio/micronaut/context/AbstractInitializableBeanDefinition$MethodOrFieldReference;)V
+	public fun inject (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun instantiate (Lio/micronaut/context/BeanResolutionContext;Lio/micronaut/context/BeanContext;)Ljava/lang/Object;
+	public fun isEnabled (Lio/micronaut/context/BeanContext;)Z
+	public fun isEnabled (Lio/micronaut/context/BeanContext;Lio/micronaut/context/BeanResolutionContext;)Z
+	public fun load ()Lio/micronaut/inject/BeanDefinition;
+}
+
+public final class stove/micronaut/example/infrastructure/persistence/ProductCBRepository : stove/micronaut/example/application/repository/ProductRepository {
+	public fun <init> (Lcom/couchbase/client/java/Collection;)V
+	public fun findById (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun save (Lstove/micronaut/example/application/domain/Product;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

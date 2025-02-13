@@ -1,0 +1,28 @@
+micronaut:
+  application:
+    name: micronaut-example
+  server:
+    port: 8080
+  http:
+    services:
+      lookup-api:
+        url: http://localhost:7079
+        connect-timeout: 2s
+        read-timeout: 22s
+
+micrometer:
+  metrics:
+    enabled: true
+    common-tags:
+      application: "micronaut-example"
+
+couchbase:
+  hosts: localhost
+  username: username
+  password: password
+  bucketName: Stove
+  kvTimeout: 3000
+  connectTimeout: 15000
+  queryTimeout: 5000
+  viewTimeout: 5000
+

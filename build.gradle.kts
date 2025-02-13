@@ -1,4 +1,3 @@
-import org.gradle.kotlin.dsl.libs
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -13,6 +12,7 @@ plugins {
   idea
   java
 }
+
 group = "com.trendyol"
 version = CI.version(project)
 
@@ -36,14 +36,14 @@ kover {
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor")
+val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut")
 dependencies {
   related.forEach {
     kover(it)
   }
 }
 
-subprojects.of("lib", "spring", "examples", "ktor") {
+subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   apply {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
@@ -69,13 +69,12 @@ subprojects.of("lib", "spring", "examples", "ktor") {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.framework.api)
     testImplementation(libs.kotest.property)
-    testImplementation(libs.kotest.arrow)
     detektPlugins(libs.detekt.formatting)
   }
 
   spotless {
     kotlin {
-      ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExclude("build/", "generated/", "out/")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
@@ -134,10 +133,11 @@ val publishedProjects = listOf(
   "stove-testing-e2e-redis",
   "stove-ktor-testing-e2e",
   "stove-spring-testing-e2e",
-  "stove-spring-testing-e2e-kafka"
+  "stove-spring-testing-e2e-kafka",
+  "stove-micronaut-testing-e2e"
 )
 
-subprojects.of("lib", "spring", "ktor", filter = { p -> publishedProjects.contains(p.name) }) {
+subprojects.of("lib", "spring", "ktor", "micronaut", filter = { p -> publishedProjects.contains(p.name) }) {
   apply {
     plugin("java")
     plugin("stove-publishing")
@@ -148,4 +148,3 @@ subprojects.of("lib", "spring", "ktor", filter = { p -> publishedProjects.contai
     withJavadocJar()
   }
 }
-
