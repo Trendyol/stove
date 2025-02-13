@@ -8,7 +8,7 @@
   "packageRules": [
     {
       "matchPackagePatterns": ["io.kotest:kotest.*"],
-      "allowedVersions": "^(?!.*(?:SNAPSHOT|M\d+)).*$"
+      "allowedVersions": "^(?!.*(?:SNAPSHOT|M\\d+)).*$"
     },    
   ]
 }
