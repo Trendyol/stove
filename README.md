@@ -44,8 +44,8 @@ Frameworks:
 
 * ✅ Spring
 * ✅ Ktor
+* ✅ Micronaut
 * 🚧 Quarkus (up for grabs)
-* 🚧 Micronaut (up for grabs)
 
 ## Quick Start
 
