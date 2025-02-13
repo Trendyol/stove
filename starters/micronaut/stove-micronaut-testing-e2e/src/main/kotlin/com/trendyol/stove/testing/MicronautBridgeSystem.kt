@@ -9,8 +9,11 @@ import kotlin.reflect.KClass
 @StoveDsl
 class MicronautBridgeSystem(
   override val testSystem: TestSystem
-) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext>, BridgeSystem<ApplicationContext>(testSystem) {
+) : BridgeSystem<ApplicationContext>(testSystem),
+  PluggedSystem,
+  AfterRunAwareWithContext<ApplicationContext> {
   override fun <D : Any> get(klass: KClass<D>): D = ctx.getBean(klass.java)
 }
+
 @StoveDsl
 fun WithDsl.bridge(): TestSystem = this.testSystem.withBridgeSystem(MicronautBridgeSystem(this.testSystem))

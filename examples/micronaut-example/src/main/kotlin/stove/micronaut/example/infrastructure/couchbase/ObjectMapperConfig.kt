@@ -10,7 +10,6 @@ import io.micronaut.context.annotation.Factory
 
 @Factory
 class ObjectMapperConfig {
-
   companion object {
     fun createObjectMapperWithDefaults(): ObjectMapper {
       val isoInstantModule = SimpleModule()
@@ -23,7 +22,5 @@ class ObjectMapperConfig {
   }
 
   @Bean
-  fun objectMapper(): ObjectMapper {
-    return createObjectMapperWithDefaults()
-  }
+  fun objectMapper(): ObjectMapper = createObjectMapperWithDefaults()
 }

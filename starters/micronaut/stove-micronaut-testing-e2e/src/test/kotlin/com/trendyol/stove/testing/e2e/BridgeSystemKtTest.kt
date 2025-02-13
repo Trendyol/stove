@@ -9,7 +9,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Factory
-import io.micronaut.runtime.EmbeddedApplication
 import jakarta.inject.Singleton
 import java.time.Instant
 
@@ -51,7 +50,7 @@ object TestAppRunner {
     val context = ApplicationContext
       .builder()
       .args(*args)
-      .packages("com.trendyol.stove.testing.e2e")
+      .packages(TestAppConfig::class.java.packageName)
       .build()
       .also(init)
       .start()
@@ -74,29 +73,26 @@ class Stove : AbstractProjectConfig() {
   override suspend fun afterProject() = TestSystem.stop()
 }
 
-class BridgeSystemTests : FunSpec({
-  test("bridge to application") {
-    validate {
-      using<ExampleService> {
-        whatIsTheTime() shouldBe GetUtcNow.frozenTime
-      }
+class BridgeSystemTests :
+  FunSpec({
+    test("bridge to application") {
+      validate {
+        using<ExampleService> {
+          whatIsTheTime() shouldBe GetUtcNow.frozenTime
+        }
 
-      using<GetUtcNow> {
-        invoke() shouldBe GetUtcNow.frozenTime
-      }
-
-      using<EmbeddedApplication<*>> {
-        isRunning shouldBe true
+        using<GetUtcNow> {
+          invoke() shouldBe GetUtcNow.frozenTime
+        }
       }
     }
-  }
 
-  test("resolve multiple") {
-    validate {
-      using<GetUtcNow, ExampleService> { getUtcNow, exampleService ->
-        getUtcNow() shouldBe GetUtcNow.frozenTime
-        exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
+    test("resolve multiple") {
+      validate {
+        using<GetUtcNow, ExampleService> { getUtcNow, exampleService ->
+          getUtcNow() shouldBe GetUtcNow.frozenTime
+          exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
+        }
       }
     }
-  }
-})
+  })

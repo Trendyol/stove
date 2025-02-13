@@ -12,15 +12,12 @@ data class Product(
   val createdDate: Date
 ) {
   companion object {
-
-    fun new(id: String, name: String, supplierId: Long, isBlacklist: Boolean): Product {
-      return Product(
-        id = id,
-        name = name,
-        supplierId = supplierId,
-        createdDate = Date(),
-        isBlacklist = isBlacklist
-      )
-    }
+    fun new(id: String, name: String, supplierId: Long, isBlacklist: Boolean): Product = Product(
+      id = id,
+      name = name,
+      supplierId = supplierId,
+      createdDate = Date(),
+      isBlacklist = isBlacklist
+    )
   }
 }
