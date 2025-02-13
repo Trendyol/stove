@@ -1,0 +1,25 @@
+public final class com/trendyol/stove/testing/MicronautApplicationUnderTest : com/trendyol/stove/testing/e2e/system/abstractions/ApplicationUnderTest {
+	public static final field Companion Lcom/trendyol/stove/testing/MicronautApplicationUnderTest$Companion;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;)V
+	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/testing/MicronautApplicationUnderTest$Companion {
+}
+
+public final class com/trendyol/stove/testing/MicronautApplicationUnderTestKt {
+	public static final fun micronaut-FMzRXaI (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;)Lcom/trendyol/stove/testing/e2e/system/abstractions/ReadyTestSystem;
+	public static synthetic fun micronaut-FMzRXaI$default (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/abstractions/ReadyTestSystem;
+}
+
+public final class com/trendyol/stove/testing/MicronautBridgeSystem : com/trendyol/stove/testing/e2e/system/BridgeSystem, com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)V
+	public fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
+public final class com/trendyol/stove/testing/MicronautBridgeSystemKt {
+	public static final fun bridge-hQma78k (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+

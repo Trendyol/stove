@@ -15,7 +15,7 @@ dependencies {
 }
 
 micronaut {
-  version("4.7.6")
+  version(libs.versions.micronaut.starter.get())
   processing {
     incremental(true)
     annotations("com.trendyol.stove.testing.*")

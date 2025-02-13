@@ -53,6 +53,7 @@ java {
 }
 
 micronaut {
+  version(libs.versions.micronaut.starter.get())
   runtime("netty")
   testRuntime("kotest5")
   processing {
