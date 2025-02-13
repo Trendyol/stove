@@ -17,6 +17,7 @@ dependencies {
     }
   }
 
+  testImplementation(libs.kotest.arrow)
   testFixturesImplementation(libs.kotest.framework.api)
 }
 
