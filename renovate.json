@@ -4,5 +4,11 @@
     "group:allNonMajor",
     "schedule:earlyMondays"
   ],
-  "branchPrefix": "renovate/"
+  "branchPrefix": "renovate/",
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["io.kotest:kotest.*"],
+      "allowedVersions": "^(?!.*(?:SNAPSHOT|M\d+)).*$"
+    },    
+  ]
 }
