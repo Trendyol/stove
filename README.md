@@ -21,7 +21,7 @@ Write infrastructure-agnostic but component-aware tests in Kotlin, regardless of
 * 🚀 Zero Boilerplate: Write clean, focused tests without infrastructure setup code
 * 🔌 Pluggable Architecture: Easily extend with custom infrastructure components
 * 🐳 Docker-Based: Leverages Testcontainers for reliable, isolated test environments
-* 🌐 Framework Agnostic: Works with Spring, Ktor, and other JVM frameworks _(up for grabs)_
+* 🌐 Framework Agnostic: Works with Spring, Ktor, Micronaut and other JVM frameworks _(up for grabs)_
 * 🔄 Physical Dependencies: Built-in support for Kafka, Couchbase, PostgreSQL, and more
 * ⚡ Fast Development: On top of the boilerplate free testing, optional Reuse test containers for blazing-fast local
   development
