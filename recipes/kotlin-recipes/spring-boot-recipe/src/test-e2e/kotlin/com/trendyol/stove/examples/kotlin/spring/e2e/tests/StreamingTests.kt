@@ -13,7 +13,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
-import io.ktor.util.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.*
 import java.time.Duration
@@ -45,10 +44,10 @@ class StreamingTests :
   })
 
 @OptIn(InternalAPI::class)
-suspend fun <T> HttpStatement.readJsonStream(transform: (String) -> T): Flow<T> = flow {
+fun <T> HttpStatement.readJsonStream(transform: (String) -> T): Flow<T> = flow {
   execute {
-    while (!it.content.isClosedForRead) {
-      val line = it.content.readUTF8Line()
+    while (!it.rawContent.isClosedForRead) {
+      val line = it.rawContent.readUTF8Line()
       if (line != null) {
         emit(transform(line))
       }
