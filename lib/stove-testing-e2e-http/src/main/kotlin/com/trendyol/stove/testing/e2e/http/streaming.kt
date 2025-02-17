@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.*
 fun <T> HttpStatement.readJsonTextStream(transform: suspend (line: String) -> T): Flow<T> = flow {
   execute {
     check(it.status.isSuccess()) { "Request failed with status: ${it.status}" }
-    while (!it.content.isClosedForRead) {
-      it.content.readUTF8LineNonEmpty { line -> emit(transform(line)) }
+    while (!it.rawContent.isClosedForRead) {
+      it.rawContent.readUTF8LineNonEmpty { line -> emit(transform(line)) }
     }
   }
 }
@@ -24,8 +24,8 @@ fun <T> HttpStatement.readJsonTextStream(transform: suspend (line: String) -> T)
 fun <T> HttpStatement.readJsonContentStream(transform: suspend (line: ByteReadChannel) -> T): Flow<T> = flow {
   execute {
     check(it.status.isSuccess()) { "Request failed with status: ${it.status}" }
-    while (!it.content.isClosedForRead) {
-      it.content.readUTF8LineNonEmpty { line -> emit(transform(ByteReadChannel(line.toByteArray()))) }
+    while (!it.rawContent.isClosedForRead) {
+      it.rawContent.readUTF8LineNonEmpty { line -> emit(transform(ByteReadChannel(line.toByteArray()))) }
     }
   }
 }

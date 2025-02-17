@@ -32,11 +32,11 @@ fun run(
     mainModule(config, applicationOverrides)
   }
 
-  applicationEngine.environment.monitor.subscribe(ApplicationStarted) {
+  applicationEngine.monitor.subscribe(ApplicationStarted) {
     it.get<ExampleAppConsumer<String, Any>>().start()
   }
 
-  applicationEngine.environment.monitor.subscribe(ApplicationStopping) {
+  applicationEngine.monitor.subscribe(ApplicationStopping) {
     it.get<ExampleAppConsumer<String, Any>>().stop()
   }
 
