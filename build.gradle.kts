@@ -16,6 +16,15 @@ plugins {
 group = "com.trendyol"
 version = CI.version(project)
 
+apiValidation {
+  ignoredProjects += listOf(
+    "ktor-example",
+    "micronaut-example",
+    "spring-example",
+    "spring-standalone-example",
+    "spring-streams-example"
+  )
+}
 kover {
   reports {
     filters {
