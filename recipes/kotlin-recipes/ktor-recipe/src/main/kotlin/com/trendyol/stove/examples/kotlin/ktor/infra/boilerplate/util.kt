@@ -74,15 +74,17 @@ fun startKtorApplication(config: RecipeAppConfig, wait: Boolean = true, configur
 
   val server = embeddedServer(
     Netty,
-    environment = applicationEngineEnvironment {
-      log = LoggerFactory.getLogger(loggerName)
-
-      module(configure)
-
+    module = {
+      this.configure()
+    },
+    configure = {
       connector {
         port = config.server.port
         host = config.server.host
       }
+    },
+    environment = applicationEnvironment {
+      log = LoggerFactory.getLogger(loggerName)
     }
   )
 

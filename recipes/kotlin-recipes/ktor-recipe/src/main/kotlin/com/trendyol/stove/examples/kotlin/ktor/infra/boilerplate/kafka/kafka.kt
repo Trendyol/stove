@@ -29,12 +29,12 @@ fun KoinApplication.registerKafka(kafkaConfiguration: KafkaConfiguration) {
 }
 
 fun Application.configureConsumerEngine() {
-  this.environment.monitor.subscribe(ApplicationStarted) {
+  this.monitor.subscribe(ApplicationStarted) {
     val consumerEngine = get<ConsumerEngine>()
     consumerEngine.start()
   }
 
-  this.environment.monitor.subscribe(ApplicationStopPreparing) {
+  this.monitor.subscribe(ApplicationStopPreparing) {
     val consumerEngine = get<ConsumerEngine>()
     consumerEngine.stop()
 
