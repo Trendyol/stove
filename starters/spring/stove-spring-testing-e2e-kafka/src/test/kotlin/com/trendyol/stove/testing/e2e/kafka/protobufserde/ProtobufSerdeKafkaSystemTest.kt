@@ -10,12 +10,10 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import io.kotest.core.spec.style.ShouldSpec
-import kotlinx.serialization.ExperimentalSerializationApi
 import org.springframework.context.support.beans
 import kotlin.random.Random
 
 @Suppress("UNCHECKED_CAST")
-@OptIn(ExperimentalSerializationApi::class)
 class StoveProtobufSerde : StoveSerde<Any, ByteArray> {
   private val parseFromMethod = "parseFrom"
   private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()
@@ -55,8 +53,7 @@ class ProtobufSerdeKafkaSystemTest :
                   "kafka.schemaRegistryUrl=mock://mock-registry"
                 )
               },
-              containerOptions = KafkaContainerOptions {
-              }
+              containerOptions = KafkaContainerOptions(tag = "7.8.1")
             )
           }
           springBoot(

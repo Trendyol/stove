@@ -83,6 +83,7 @@ class Stove : AbstractProjectConfig() {
       kafka {
         KafkaSystemOptions(
           listenPublishedMessagesFromStove = true,
+          containerOptions = KafkaContainerOptions(tag = "7.8.1"),
           configureExposedConfiguration = { cfg ->
             listOf("kafka.servers=${cfg.bootstrapServers}")
           }
