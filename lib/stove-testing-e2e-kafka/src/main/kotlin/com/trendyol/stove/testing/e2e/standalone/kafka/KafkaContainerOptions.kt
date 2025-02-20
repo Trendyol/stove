@@ -14,6 +14,7 @@ data class KafkaContainerOptions(
   override val image: String = "confluentinc/cp-kafka",
   override val tag: String = "latest",
   val ports: List<Int> = DEFAULT_KAFKA_PORTS,
+  val envVariables: Map<String, String> = emptyMap(),
   override val compatibleSubstitute: String? = null,
   override val useContainerFn: UseContainerFn<StoveKafkaContainer> = { StoveKafkaContainer(it) },
   override val containerFn: ContainerFn<StoveKafkaContainer> = { }
