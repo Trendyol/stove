@@ -43,7 +43,8 @@ class Stove : AbstractProjectConfig() {
       }
       kafka {
         KafkaSystemOptions(
-          serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef)
+          serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef),
+          containerOptions = KafkaContainerOptions(tag = "7.8.1")
         ) {
           listOf(
             "kafka.bootstrapServers=${it.bootstrapServers}",
