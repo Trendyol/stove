@@ -45,7 +45,7 @@ Frameworks:
 * ✅ Spring
 * ✅ Ktor
 * ✅ Micronaut
-* 🚧 Quarkus (up for grabs)
+* ✅ [Quarkus](https://github.com/Trendyol/stove/tree/main/recipes/java-recipes/quarkus-recipe) (incubating)
 
 ## Quick Start
 
