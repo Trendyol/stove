@@ -7,8 +7,10 @@
   "branchPrefix": "renovate/",
   "packageRules": [
     {
-      "matchPackagePatterns": ["io.kotest:kotest.*"],
-      "allowedVersions": "!/M/"
-    },    
+      "allowedVersions": "!/M/",
+      "matchPackageNames": [
+        "/io.kotest:kotest.*/"
+      ]
+    }
   ]
 }
