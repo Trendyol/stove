@@ -41,7 +41,7 @@ kotlinLogging = "7.0.4"
 # Ktor
 ktor = "3.1.0"
 koin = "4.1.0-Beta5"
-koin-annotations = "1.4.0"
+koin-annotations = "2.0.0"
 
 cohort = "2.6.1"
 
