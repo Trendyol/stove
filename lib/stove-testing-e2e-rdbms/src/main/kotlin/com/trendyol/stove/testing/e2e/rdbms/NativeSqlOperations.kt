@@ -1,36 +1,23 @@
 package com.trendyol.stove.testing.e2e.rdbms
 
-import kotlinx.coroutines.flow.*
-import org.jetbrains.exposed.sql.*
-import java.sql.ResultSet
+import kotliquery.*
 
 class NativeSqlOperations(
-  database: Database
+  private val session: Session
 ) : AutoCloseable {
-  private val connection = database.connector()
-
-  fun execute(sql: String, parameters: Map<IColumnType<*>, Any> = mapOf()): Int = connection
-    .prepareStatement(sql, false)
-    .apply {
-      timeout = Int.MAX_VALUE
-      fillParameters(parameters.map { it.key to it.value })
-    }.executeUpdate()
-
-  suspend fun <T> select(
+  fun execute(
     sql: String,
-    rowMapper: (ResultSet) -> T
-  ): List<T> = connection
-    .prepareStatement(sql, true)
-    .executeQuery()
-    .use { rs ->
-      flow {
-        while (rs.next()) {
-          emit(rowMapper(rs))
-        }
-      }.toList()
-    }
+    vararg parameters: Parameter<*> = emptyArray()
+  ): Int = session
+    .run(queryOf(sql, *parameters).asUpdate)
+
+  fun <T> select(
+    sql: String,
+    rowMapper: (Row) -> T
+  ): List<T> = session
+    .run(queryOf(sql).map(rowMapper).asList)
 
   override fun close() {
-    connection.close()
+    session.close()
   }
 }

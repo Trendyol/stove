@@ -5,7 +5,7 @@ import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.exposed.sql.Database
+import kotliquery.*
 import org.slf4j.*
 
 @StoveDsl
@@ -76,13 +76,11 @@ class MsSqlSystem internal constructor(
       }
   }
 
-  override fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Database =
-    Database.connect(
-      url = exposedConfiguration.jdbcUrl,
-      driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-      user = exposedConfiguration.username,
-      password = exposedConfiguration.password
-    )
+  override fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Session = sessionOf(
+    exposedConfiguration.jdbcUrl,
+    exposedConfiguration.username,
+    exposedConfiguration.password
+  )
 
   override fun close(): Unit = runBlocking {
     Try {

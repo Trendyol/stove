@@ -5,9 +5,8 @@ import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.exposed.sql.Database
+import kotliquery.*
 import org.slf4j.*
-import java.sql.ResultSet
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 @StoveDsl
@@ -25,7 +24,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
     testSystem.options.createStateStorage<RelationalDatabaseExposedConfiguration, RelationalDatabaseSystem<SELF>>()
 
-  protected abstract fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Database
+  protected abstract fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Session
 
   override suspend fun run() {
     exposedConfiguration = state.capture {
@@ -44,9 +43,9 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
   @StoveDsl
-  suspend inline fun <reified T : Any> shouldQuery(
+  inline fun <reified T : Any> shouldQuery(
     query: String,
-    crossinline mapper: (ResultSet) -> T,
+    crossinline mapper: (Row) -> T,
     assertion: (List<T>) -> Unit
   ): SELF {
     val results = internalSqlOperations.select(query) { mapper(it) }
@@ -84,5 +83,3 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     fun RelationalDatabaseSystem<*>.operations(): NativeSqlOperations = this.sqlOperations
   }
 }
-
-typealias AssertionCollectionFunction<T> = (List<T>) -> Unit

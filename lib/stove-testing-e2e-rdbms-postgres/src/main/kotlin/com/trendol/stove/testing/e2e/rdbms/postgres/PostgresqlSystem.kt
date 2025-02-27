@@ -3,7 +3,7 @@ package com.trendol.stove.testing.e2e.rdbms.postgres
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.jetbrains.exposed.sql.Database
+import kotliquery.*
 
 @StoveDsl
 class PostgresqlSystem internal constructor(
@@ -46,9 +46,8 @@ class PostgresqlSystem internal constructor(
 
   override fun database(
     exposedConfiguration: RelationalDatabaseExposedConfiguration
-  ): Database = Database.connect(
+  ): Session = sessionOf(
     url = exposedConfiguration.jdbcUrl,
-    driver = "org.postgresql.Driver",
     user = exposedConfiguration.username,
     password = exposedConfiguration.password
   )

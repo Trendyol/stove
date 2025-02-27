@@ -145,6 +145,9 @@ koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref =
 # r2dbc
 r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
+kotliquery = { module = "com.github.seratch:kotliquery", version = "1.9.1" }
+h2Database = { module = "com.h2database:h2", version = "2.3.232" }
+
 
 # postgres
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.5" }

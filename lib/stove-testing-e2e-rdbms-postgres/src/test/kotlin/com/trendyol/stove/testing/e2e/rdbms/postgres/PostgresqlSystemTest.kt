@@ -72,7 +72,7 @@ class PostgresqlSystemTests :
           shouldQuery<IdAndDescription>(
             "SELECT * FROM MigrationHistory",
             mapper = { row ->
-              IdAndDescription(row.getLong("id"), row.getString("description"))
+              IdAndDescription(row.long("id"), row.string("description"))
             }
           ) { actual ->
             actual.size shouldBeGreaterThan 0
@@ -96,7 +96,7 @@ class PostgresqlSystemTests :
           )
           shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
           shouldQuery<IdAndDescription>("SELECT * FROM Dummies", mapper = {
-            IdAndDescription(it.getLong("id"), it.getString("description"))
+            IdAndDescription(it.long("id"), it.string("description"))
           }) { actual ->
             actual.size shouldBeGreaterThan 0
             actual.first().description shouldBe testCase.name.testName
@@ -127,8 +127,8 @@ class PostgresqlSystemTests :
             "SELECT * FROM Dummies",
             mapper = { row ->
               val result = NullableIdAndDescription()
-              result.id = row.getLong("id")
-              result.description = row.getString("description")
+              result.id = row.long("id")
+              result.description = row.string("description")
               result
             }
           ) { actual ->
