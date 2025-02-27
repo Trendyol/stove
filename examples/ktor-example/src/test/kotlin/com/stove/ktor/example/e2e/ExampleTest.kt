@@ -48,7 +48,7 @@ class ExampleTest :
 
         postgresql {
           shouldQuery<ProductOfTest>("Select * FROM Products WHERE id=$givenId", mapper = { row ->
-            ProductOfTest(row.getLong("id"), row.getString("name"))
+            ProductOfTest(row.long("id"), row.string("name"))
           }) {
             it.count() shouldBe 1
             it.first().name shouldBe givenName
