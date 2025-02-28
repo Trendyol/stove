@@ -113,6 +113,7 @@ spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version
 quarkus = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }
 quarkus-rest = { module = "io.quarkus:quarkus-rest", version.ref = "quarkus" }
 quarkus-arc = { module = "io.quarkus.arc:arc", version.ref = "quarkus" }
+quarkus-kotlin = { module = "io.quarkus:quarkus-kotlin", version.ref = "quarkus" }
 
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }

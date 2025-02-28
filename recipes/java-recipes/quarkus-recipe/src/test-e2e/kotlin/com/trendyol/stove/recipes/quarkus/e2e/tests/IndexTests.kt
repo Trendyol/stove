@@ -26,7 +26,7 @@ class IndexTests :
     }
 
     /**
-     * For now not supported
+     * For now not supported, to test it remove `x` from `xtest`
      */
     xtest("bridge should work") {
       validate {

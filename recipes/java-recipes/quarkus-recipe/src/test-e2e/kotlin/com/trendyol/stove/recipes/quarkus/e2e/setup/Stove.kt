@@ -1,14 +1,20 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
-import com.trendyol.stove.recipes.quarkus.QuarkusMainApp
+import com.trendyol.stove.recipes.quarkus.*
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.kotest.core.config.AbstractProjectConfig
-import jakarta.enterprise.inject.spi.BeanManager
 import kotlinx.coroutines.*
+import java.util.concurrent.*
 import kotlin.reflect.KClass
+
+val singleThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor { r ->
+  Thread(r).apply { name = "CustomCoroutineThread" }
+}
+
+val dispatcher = singleThreadExecutor.asCoroutineDispatcher()
 
 class Stove : AbstractProjectConfig() {
   override suspend fun beforeProject() {
@@ -19,11 +25,14 @@ class Stove : AbstractProjectConfig() {
             baseUrl = "http://localhost:8080"
           )
         }
+        bridge()
         quarkus(
           runner = { params ->
             QuarkusMainApp.main(params)
           },
-          withParameters = listOf()
+          withParameters = listOf(
+            "quarkus.live-reload.enabled=false"
+          )
         )
       }.run()
   }
@@ -52,13 +61,10 @@ fun WithDsl.quarkus(
 @Suppress("UNCHECKED_CAST")
 class QuarkusBridgeSystem(
   override val testSystem: TestSystem
-) : BridgeSystem<BeanManager>(testSystem),
-  PluggedSystem,
-  AfterRunAwareWithContext<BeanManager> {
+) : BridgeSystem<Thread>(testSystem) {
   override fun <D : Any> get(klass: KClass<D>): D {
-    val bean = ctx.getBeans(klass.java).singleOrNull() ?: error("No bean found for $klass")
-    val contextOfBean = ctx.createCreationalContext(bean)
-    return ctx.getReference(bean, klass.java, contextOfBean) as D
+    val found = StoveQuarkusBridge.resolveWithReflection(klass)
+    return found
   }
 }
 
@@ -78,14 +84,14 @@ class QuarkusAppUnderTest(
   private val runner: Runner<Unit>,
   private val parameters: List<String>
 ) : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>): Unit = coroutineScope {
+  override suspend fun start(configurations: List<String>): Unit = withContext(dispatcher) {
     val allConfigurations = (configurations + parameters).map { "--$it" }.toTypedArray()
     runner(allConfigurations)
     testSystem.activeSystems
       .map { it.value }
       .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
       .map { it as AfterRunAwareWithContext<Unit> }
-      .map { async(context = Dispatchers.IO) { it.afterRun(Unit) } }
+      .map { async(context = dispatcher) { it.afterRun(Unit) } }
       .awaitAll()
   }
 
