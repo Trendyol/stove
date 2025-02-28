@@ -29,19 +29,23 @@ object StoveQuarkusBridge {
     val container = this.loadClass("io.quarkus.arc.Arc").getMethod("container").invoke(null)
     val beanManager = container.javaClass.getMethod("beanManager").invoke(container)
     val targetClass = Class.forName(kClass.qualifiedName, true, this)
-    val getBeansMethod = beanManager.javaClass.getMethod("getBeans", Type::class.java, Array<java.lang.annotation.Annotation>::class.java)
-    val beans = getBeansMethod.invoke(beanManager, targetClass, emptyArray<java.lang.annotation.Annotation>()) as Set<*>
+    val getBeansMethod = beanManager.javaClass.getMethod(
+      "getBeans",
+      Type::class.java,
+      Array<java.lang.annotation.Annotation>::class.java
+    )
+    val beans =
+      getBeansMethod.invoke(beanManager, targetClass, emptyArray<java.lang.annotation.Annotation>()) as Set<*>
 
     if (beans.isEmpty()) {
-      throw IllegalStateException("No bean found for ${kClass.qualifiedName}")
+      error("No bean found for ${kClass.qualifiedName}")
     }
 
     val bean = beans.singleOrNull() ?: error("Multiple beans found for ${kClass.qualifiedName}")
-    val createContextMethod = beanManager.javaClass
-      .getMethod(
-        "createCreationalContext",
-        Class.forName("jakarta.enterprise.context.spi.Contextual", true, this)
-      )
+    val createContextMethod = beanManager.javaClass.getMethod(
+      "createCreationalContext",
+      Class.forName("jakarta.enterprise.context.spi.Contextual", true, this)
+    )
     val context = createContextMethod.invoke(beanManager, bean)
 
     val getReferenceMethod = beanManager.javaClass.methods.single {
