@@ -10,6 +10,8 @@ import kotlinx.coroutines.*
 import java.util.concurrent.*
 import kotlin.reflect.KClass
 
+val runningOnCI get() = System.getenv("CI") == "true"
+
 val singleThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor { r ->
   Thread(r).apply { name = "CustomCoroutineThread" }
 }
