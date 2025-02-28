@@ -17,7 +17,7 @@ arrowSuspendApp = "0.5.0"
 arrow-jackson = "0.15.1"
 io-reactor = "3.7.3"
 io-reactor-extensions = "1.2.3"
-slf4j = "2.0.16"
+slf4j = "2.0.17"
 kafka = "3.9.0"
 kafka-kotlin = "0.4.1"
 kafka-streams-registry = "7.9.0"
@@ -52,7 +52,7 @@ kotlinx-serialization = "1.8.0"
 ktlint = "1.5.0"
 kotlinBinaryCompatibilityValidator = "0.17.0"
 snakeyaml = "2.4"
-micronaut = "4.8.4"
+micronaut = "4.8.5"
 micronaut-starter = "4.7.6"
 micronaut-micrometer = "1.3.1"
 dagger = "2.51.1"
@@ -160,8 +160,8 @@ mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.4.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.16" }
-logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.16" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.17" }
+logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.17" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.3" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.1.jre11" }
@@ -269,7 +269,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.1.10-1.0.30" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.1.10-1.0.31" }
 micronaut-application = { id = "io.micronaut.application", version = "4.4.5" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.4.5" }
 micronaut-library = { id = "io.micronaut.library", version = "4.4.5" }
