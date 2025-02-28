@@ -44,7 +44,7 @@ subprojects {
     testAnnotationProcessor(libs.lombok)
   }
 
-  task<Test>("e2eTest") {
+  tasks.register<Test>("e2eTest") {
     description = "Runs e2e tests."
     group = "verification"
     testClassesDirs = sourceSets[TestFolders.e2e].output.classesDirs
