@@ -28,7 +28,7 @@ class IndexTests :
     /**
      * For now not supported, to test it remove `x` from `xtest`
      */
-    xtest("bridge should work") {
+    test("bridge should work") {
       validate {
         using<HelloService> {
           println(this)

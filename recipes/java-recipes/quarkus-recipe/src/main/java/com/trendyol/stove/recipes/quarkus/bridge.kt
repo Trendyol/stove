@@ -18,7 +18,6 @@ object StoveQuarkusBridge {
 
   @JvmStatic
   fun <T : Any> resolve(kClass: KClass<T>): T = withQuarkusClassLoader {
-    beanManager.javaClass
     val bean = beanManager.getBeans(kClass.java).singleOrNull() ?: error("No bean found for ${kClass.java}")
     val contextOfBean = beanManager.createCreationalContext(bean)
     beanManager.getReference(bean, kClass.java, contextOfBean) as T
@@ -32,10 +31,10 @@ object StoveQuarkusBridge {
     val getBeansMethod = beanManager.javaClass.getMethod(
       "getBeans",
       Type::class.java,
-      Array<java.lang.annotation.Annotation>::class.java
+      Array<Annotation>::class.java
     )
     val beans =
-      getBeansMethod.invoke(beanManager, targetClass, emptyArray<java.lang.annotation.Annotation>()) as Set<*>
+      getBeansMethod.invoke(beanManager, targetClass, emptyArray<Annotation>()) as Set<*>
 
     if (beans.isEmpty()) {
       error("No bean found for ${kClass.qualifiedName}")

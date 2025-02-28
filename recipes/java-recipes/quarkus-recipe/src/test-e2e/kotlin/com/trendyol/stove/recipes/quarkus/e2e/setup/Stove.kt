@@ -58,7 +58,6 @@ fun WithDsl.quarkus(
 ): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
 
 @StoveDsl
-@Suppress("UNCHECKED_CAST")
 class QuarkusBridgeSystem(
   override val testSystem: TestSystem
 ) : BridgeSystem<Thread>(testSystem) {
