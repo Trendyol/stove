@@ -14,7 +14,7 @@ spring-kafka = "3.3.3"
 arrow = "2.0.1"
 
 # Jackson
-jackson = "2.18.2"
+jackson = "2.18.3"
 
 # Couchbase
 couchbase-client = "3.7.8"
