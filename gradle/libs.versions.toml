@@ -3,19 +3,19 @@ kotlin = "2.1.10"
 kotlinx = "1.10.1"
 spring-boot = "2.7.18"
 spring-framework = "5.3.39"
-spring-framework-6x = "6.2.3"
+spring-framework-6x = "6.2.4"
 spring-boot-3x = "3.4.3"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.3"
-couchbase-client = "3.7.8"
-couchbase-client-metrics = "0.7.8"
-couchbase-kotlin = "1.4.8"
+couchbase-client = "3.7.9"
+couchbase-client-metrics = "0.7.9"
+couchbase-kotlin = "1.4.9"
 jackson = "2.18.3"
 arrow = "2.0.1"
 arrowSuspendApp = "0.5.0"
 arrow-jackson = "0.15.1"
-io-reactor = "3.7.3"
+io-reactor = "3.7.4"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.17"
 kafka = "3.9.0"
@@ -52,7 +52,7 @@ kotlinx-serialization = "1.8.0"
 ktlint = "1.5.0"
 kotlinBinaryCompatibilityValidator = "0.17.0"
 snakeyaml = "2.4"
-micronaut = "4.8.6"
+micronaut = "4.8.7"
 micronaut-starter = "4.7.6"
 micronaut-micrometer = "1.3.1"
 dagger = "2.51.1"
@@ -74,7 +74,7 @@ kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-seria
 # Micronaut
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 micronaut-parent = { module = "io.micronaut.platform:micronaut-parent", version.ref = "micronaut-starter" }
-micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime", version = "4.5.0" }
+micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime", version = "4.6.0" }
 micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson", version = "2.14.0" }
 micronaut-http-client = { module = "io.micronaut:micronaut-http-client", version.ref = "micronaut" }
 micronaut-http-server-netty = { module = "io.micronaut:micronaut-http-server-netty", version.ref = "micronaut" }
@@ -159,7 +159,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.4.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.5.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.17" }
 logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.17" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.3" }
