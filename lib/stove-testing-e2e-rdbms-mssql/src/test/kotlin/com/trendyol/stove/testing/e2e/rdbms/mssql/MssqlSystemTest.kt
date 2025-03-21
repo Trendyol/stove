@@ -22,7 +22,7 @@ class Stove : AbstractProjectConfig() {
           container = MssqlContainerOptions(
             toolsPath = ToolsPath.After2019
           ) {
-            dockerImageName = "mcr.microsoft.com/mssql/server:2022-latest"
+            dockerImageName = "mcr.microsoft.com/mssql/server:2022-CU16-ubuntu-22.04"
             withStartupAttempts(3)
           },
           configureExposedConfiguration = { _ ->
