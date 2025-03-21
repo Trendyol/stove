@@ -1,14 +1,14 @@
 [versions]
-kotlin = "2.1.10"
+kotlin = "2.1.20"
 kotlinx = "1.10.1"
 scala2x = "2.13.16"
-quarkus = "3.19.3"
+quarkus = "3.21.0"
 ktlint = "1.5.0"
 
 # Spring-Boot
-spring-boot = "3.4.3"
+spring-boot = "3.4.4"
 spring-dependency-management = "1.1.7"
-spring-kafka = "3.3.3"
+spring-kafka = "3.3.4"
 
 # arrow
 arrow = "2.0.1"
@@ -32,7 +32,7 @@ ktor = "3.1.1"
 koin = "4.1.0-Beta5"
 
 # mongo
-mongodb = "5.3.1"
+mongodb = "5.4.0"
 
 # Tooling
 spotless = "7.0.2"
@@ -105,7 +105,7 @@ kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "2.0.0" }
 mongodb-bson-kotlin = { module = "org.mongodb:bson-kotlin", version.ref = "mongodb" }
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.17" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }

@@ -1,13 +1,13 @@
 [versions]
-kotlin = "2.1.10"
+kotlin = "2.1.20"
 kotlinx = "1.10.1"
 spring-boot = "2.7.18"
 spring-framework = "5.3.39"
-spring-framework-6x = "6.2.4"
-spring-boot-3x = "3.4.3"
+spring-framework-6x = "6.2.5"
+spring-boot-3x = "3.4.4"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
-spring-kafka-3x = "3.3.3"
+spring-kafka-3x = "3.3.4"
 couchbase-client = "3.7.9"
 couchbase-client-metrics = "0.7.9"
 couchbase-kotlin = "1.4.9"
@@ -29,7 +29,7 @@ koin = "4.1.0-Beta5"
 r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.17.3"
-mongodb = "5.3.1"
+mongodb = "5.4.0"
 wiremock = "3.12.1"
 testcontainers = "1.20.6"
 r2dbc-mssql = "1.0.2.RELEASE"
@@ -160,11 +160,11 @@ mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.5.RELEASE" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.17" }
-logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.17" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
+logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.18" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.3" }
 r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.8.1.jre11" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.0.jre11" }
 
 ### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
@@ -269,7 +269,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.1.10-1.0.31" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.1.20-1.0.31" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.0" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.0" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.0" }
