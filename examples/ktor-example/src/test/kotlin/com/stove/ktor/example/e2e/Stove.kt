@@ -7,20 +7,15 @@ import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.extensions.Extension
-import io.kotest.extensions.system.SystemEnvironmentProjectListener
 import stove.ktor.example.app.objectMapperRef
 
 class Stove : AbstractProjectConfig() {
   companion object {
     init {
       stoveKafkaBridgePortDefault = "50053"
+      System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
     }
   }
-
-  override fun extensions(): List<Extension> = listOf(
-    SystemEnvironmentProjectListener(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
-  )
 
   override suspend fun beforeProject() = TestSystem()
     .with {
