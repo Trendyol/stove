@@ -1,8 +1,8 @@
 [versions]
 kotlin = "2.1.20"
-kotlinx = "1.10.1"
+kotlinx = "1.10.2"
 scala2x = "2.13.16"
-quarkus = "3.21.0"
+quarkus = "3.21.3"
 ktlint = "1.5.0"
 
 # Spring-Boot
@@ -11,13 +11,13 @@ spring-dependency-management = "1.1.7"
 spring-kafka = "3.3.4"
 
 # arrow
-arrow = "2.0.1"
+arrow = "2.1.0"
 
 # Jackson
 jackson = "2.18.3"
 
 # Couchbase
-couchbase-client = "3.7.9"
+couchbase-client = "3.8.0"
 
 # Kafka
 kafka = "3.9.0"
@@ -25,19 +25,19 @@ kafka-kotlin = "0.4.1"
 
 # Logging
 slf4j = "2.0.17"
-kotlinLogging = "7.0.5"
+kotlinLogging = "7.0.7"
 
 # Ktor
-ktor = "3.1.1"
-koin = "4.1.0-Beta5"
+ktor = "3.1.2"
+koin = "4.1.0-Beta7"
 
 # mongo
 mongodb = "5.4.0"
 
 # Tooling
-spotless = "7.0.2"
+spotless = "7.0.3"
 detekt = "1.23.8"
-lombok = "1.18.36"
+lombok = "1.18.38"
 
 # Misc
 hoplite = "2.9.0"
@@ -92,7 +92,7 @@ ktor-server-callId = { module = "io.ktor:ktor-server-call-id-jvm", version.ref =
 ktor-server-conditionalHeaders = { module = "io.ktor:ktor-server-conditional-headers", version.ref = "ktor" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
 ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.0.1" }
+ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.0.2" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
@@ -101,7 +101,7 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-ktor = { module = "io.insert-koin:koin-ktor3", version.ref = "koin" }
-kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "2.0.0" }
+kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "2.1.0" }
 mongodb-bson-kotlin = { module = "org.mongodb:bson-kotlin", version.ref = "mongodb" }
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
