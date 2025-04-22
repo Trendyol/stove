@@ -19,7 +19,7 @@ version = CI.version(project)
 apiValidation {
   ignoredProjects += listOf(
     "ktor-example",
-//    "micronaut-example",
+    "micronaut-example",
     "spring-example",
     "spring-standalone-example",
     "spring-streams-example"
