@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.20"
+kotlin = "2.1.10"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
 spring-framework = "5.3.39"
@@ -43,7 +43,7 @@ gradle-release = "3.1.0"
 nexusPublish = "2.0.0"
 hoplite = "2.9.0"
 junit = "5.12.2"
-kotest = "6.0.0.M1"
+kotest = "6.0.0.M3"
 mockito = "5.4.0"
 quiver = "1.0.0"
 akkurate = "0.11.0"
@@ -222,7 +222,6 @@ junit = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
-kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
 ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
 kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "2.0.0" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
@@ -267,7 +266,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.1.20-2.0.0" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.1.10-1.0.31" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.3" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.3" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.3" }

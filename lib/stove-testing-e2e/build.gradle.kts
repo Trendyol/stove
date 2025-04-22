@@ -18,7 +18,7 @@ dependencies {
   }
 
   testImplementation(libs.kotest.arrow)
-  testFixturesImplementation(libs.kotest.framework.api)
+  testFixturesImplementation(libs.kotest.runner.junit5)
 }
 
 val javaComponent = components["java"] as AdhocComponentWithVariants

@@ -76,7 +76,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.kotest.runner.junit5)
-    testImplementation(libs.kotest.framework.api)
     testImplementation(libs.kotest.property)
     detektPlugins(libs.detekt.formatting)
   }
