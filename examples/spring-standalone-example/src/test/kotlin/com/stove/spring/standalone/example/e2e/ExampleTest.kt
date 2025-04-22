@@ -29,8 +29,8 @@ class ExampleTest :
     test("index should be reachable") {
       TestSystem.validate {
         http {
-          get<String>("/api/index", queryParams = mapOf("keyword" to testCase.name.testName)) { actual ->
-            actual shouldContain "Hi from Stove framework with ${testCase.name.testName}"
+          get<String>("/api/index", queryParams = mapOf("keyword" to testCase.name.name)) { actual ->
+            actual shouldContain "Hi from Stove framework with ${testCase.name.name}"
             println(actual)
           }
           get<String>("/api/index") { actual ->
