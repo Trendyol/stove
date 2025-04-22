@@ -41,7 +41,6 @@ io-grpc-kotlin = "1.4.1"
 google-protobuf = "3.25.6"
 gradle-release = "3.1.0"
 nexusPublish = "2.0.0"
-shadow = "8.1.1"
 hoplite = "2.9.0"
 junit = "5.12.2"
 kotest = "6.0.0.M1"
@@ -262,7 +261,6 @@ gitVersioning = { id = "com.palantir.git-version", version = "3.2.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
-shadowJar = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }

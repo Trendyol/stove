@@ -3,7 +3,6 @@ plugins {
   id("org.jetbrains.kotlin.plugin.allopen") version libs.versions.kotlin
   kotlin("plugin.serialization") version libs.versions.kotlin
   alias(libs.plugins.google.ksp)
-  alias(libs.plugins.shadowJar)
   alias(libs.plugins.micronaut.application)
   alias(libs.plugins.micronaut.aot)
   application

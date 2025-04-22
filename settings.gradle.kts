@@ -25,7 +25,7 @@ include(
   "examples:spring-standalone-example",
   "examples:ktor-example",
   "examples:spring-streams-example",
-  "examples:micronaut-example"
+//  "examples:micronaut-example"
 )
 dependencyResolutionManagement {
   repositories {
