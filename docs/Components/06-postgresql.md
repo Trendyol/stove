@@ -41,12 +41,12 @@ TestSystem.validate {
               );
       """.trimIndent()
     )
-    shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.testName}')")
+    shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.name}')")
     shouldQuery<IdAndDescription>("SELECT * FROM Dummies", mapper = {
       IdAndDescription(it.getLong("id"), it.getString("description"))
     }) { actual ->
       actual.size shouldBeGreaterThan 0
-      actual.first().description shouldBe testCase.name.testName
+      actual.first().description shouldBe testCase.name.name
     }
   }
 }

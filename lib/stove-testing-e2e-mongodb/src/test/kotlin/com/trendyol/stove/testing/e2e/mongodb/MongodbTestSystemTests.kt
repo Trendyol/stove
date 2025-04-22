@@ -77,13 +77,13 @@ class MongodbTestSystemTests :
             ExampleInstanceWithObjectId(
               id = id,
               aggregateId = id.toHexString(),
-              description = testCase.name.testName
+              description = testCase.name.name
             ),
             id.toHexString()
           )
           shouldGet<ExampleInstanceWithObjectId>(id.toHexString()) { actual ->
             actual.aggregateId shouldBe id.toHexString()
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
         }
       }
@@ -97,13 +97,13 @@ class MongodbTestSystemTests :
             ExampleInstanceWithStringObjectId(
               id = id.toHexString(),
               aggregateId = id.toHexString(),
-              description = testCase.name.testName
+              description = testCase.name.name
             ),
             id.toHexString()
           )
           shouldGet<ExampleInstanceWithStringObjectId>(id.toHexString()) { actual ->
             actual.aggregateId shouldBe id.toHexString()
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
         }
       }
@@ -166,7 +166,7 @@ class MongodbTestSystemTests :
             ExampleInstanceWithObjectId(
               id = id1,
               aggregateId = id1.toHexString(),
-              description = testCase.name.testName + "1"
+              description = testCase.name.name + "1"
             ),
             id1.toHexString()
           )
@@ -195,7 +195,7 @@ class MongodbTestSystemTests :
             ExampleInstanceWithObjectId(
               id = id,
               aggregateId = id.toHexString(),
-              description = testCase.name.testName
+              description = testCase.name.name
             ),
             id.toHexString()
           )

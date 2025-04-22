@@ -39,13 +39,13 @@ test("should save and get with string objectId") {
         ExampleInstanceWithStringObjectId(
           id = id.toHexString(),
           aggregateId = id.toHexString(),
-          description = testCase.name.testName
+          description = testCase.name.name
         ),
         id.toHexString()
       )
       shouldGet<ExampleInstanceWithStringObjectId>(id.toHexString()) { actual ->
         actual.aggregateId shouldBe id.toHexString()
-        actual.description shouldBe testCase.name.testName
+        actual.description shouldBe testCase.name.name
       }
     }
   }

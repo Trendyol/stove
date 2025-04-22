@@ -100,15 +100,15 @@ class CouchbaseTestSystemUsesDslTests :
       val anotherCollectionName = "another"
       validate {
         couchbase {
-          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
-          save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.testName))
+          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.name))
+          save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.name))
           shouldGet<ExampleInstance>(id) { actual ->
             actual.id shouldBe id
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
           shouldGet<ExampleInstance>(anotherCollectionName, id) { actual ->
             actual.id shouldBe id
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
         }
       }
@@ -119,10 +119,10 @@ class CouchbaseTestSystemUsesDslTests :
       val notExistDocId = UUID.randomUUID().toString()
       validate {
         couchbase {
-          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
+          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.name))
           shouldGet<ExampleInstance>(id) { actual ->
             actual.id shouldBe id
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
           shouldNotExist(notExistDocId)
         }
@@ -133,10 +133,10 @@ class CouchbaseTestSystemUsesDslTests :
       val id = UUID.randomUUID().toString()
       validate {
         couchbase {
-          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
+          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.name))
           shouldGet<ExampleInstance>(id) { actual ->
             actual.id shouldBe id
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
           assertThrows<AssertionError> { shouldNotExist(id) }
         }
@@ -147,10 +147,10 @@ class CouchbaseTestSystemUsesDslTests :
       val id = UUID.randomUUID().toString()
       validate {
         couchbase {
-          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
+          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.name))
           shouldGet<ExampleInstance>(id) { actual ->
             actual.id shouldBe id
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
           shouldDelete(id)
           shouldNotExist(id)
@@ -163,10 +163,10 @@ class CouchbaseTestSystemUsesDslTests :
       val anotherCollectionName = "another"
       validate {
         couchbase {
-          save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.testName))
+          save(anotherCollectionName, id = id, ExampleInstance(id = id, description = testCase.name.name))
           shouldGet<ExampleInstance>(anotherCollectionName, id) { actual ->
             actual.id shouldBe id
-            actual.description shouldBe testCase.name.testName
+            actual.description shouldBe testCase.name.name
           }
           shouldDelete(anotherCollectionName, id)
           shouldNotExist(anotherCollectionName, id)
@@ -200,14 +200,14 @@ class CouchbaseTestSystemUsesDslTests :
       val id2 = UUID.randomUUID().toString()
       validate {
         couchbase {
-          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.testName))
-          saveToDefaultCollection(id2, ExampleInstance(id = id2, description = testCase.name.testName))
+          saveToDefaultCollection(id, ExampleInstance(id = id, description = testCase.name.name))
+          saveToDefaultCollection(id2, ExampleInstance(id = id2, description = testCase.name.name))
           shouldQuery<ExampleInstance>(
             "SELECT c.id, c.* FROM `${this.bucket().name}`.`${this.collection.scope.name}`.`${this.collection.name}` c"
           ) { result ->
             result.size shouldBeGreaterThanOrEqual 2
-            result.contains(ExampleInstance(id = id, description = testCase.name.testName)) shouldBe true
-            result.contains(ExampleInstance(id = id2, description = testCase.name.testName)) shouldBe true
+            result.contains(ExampleInstance(id = id, description = testCase.name.name)) shouldBe true
+            result.contains(ExampleInstance(id = id2, description = testCase.name.name)) shouldBe true
           }
         }
       }
