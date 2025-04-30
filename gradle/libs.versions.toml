@@ -12,8 +12,7 @@ couchbase-client = "3.8.0"
 couchbase-client-metrics = "0.8.0"
 couchbase-kotlin = "1.5.0"
 jackson = "2.18.3"
-arrow = "2.1.0"
-arrowSuspendApp = "2.1.0"
+arrow = "2.1.1"
 arrow-jackson = "0.15.1"
 io-reactor = "3.7.5"
 io-reactor-extensions = "1.2.3"
@@ -86,8 +85,8 @@ micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-mic
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 arrow-jackson = { module = "io.arrow-kt:arrow-integrations-jackson-module", version.ref = "arrow-jackson" }
-arrow-suspendApp = { module = "io.arrow-kt:suspendapp", version.ref = "arrowSuspendApp" }
-arrow-suspendApp-ktor = { module = "io.arrow-kt:suspendapp-ktor", version.ref = "arrowSuspendApp" }
+arrow-suspendApp = { module = "io.arrow-kt:suspendapp", version.ref = "arrow" }
+arrow-suspendApp-ktor = { module = "io.arrow-kt:suspendapp-ktor", version.ref = "arrow" }
 arrow-continuations = { module = "io.arrow-kt:arrow-continuations", version.ref = "arrow" }
 arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
 arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
