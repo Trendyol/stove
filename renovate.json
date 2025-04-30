@@ -8,9 +8,11 @@
   "packageRules": [
     {
       "allowedVersions": "!/M/",
-      "matchPackageNames": [
-        "/io.kotest:kotest.*/"
-      ]
+      "matchPackageNames": ["/io.kotest:kotest.*/"]
+    },
+    {
+      "matchPackagePrefixes": ["org.jetbrains.kotlin"],
+      "groupName": "kotlin dependencies"
     }
   ]
 }
