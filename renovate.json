@@ -11,7 +11,7 @@
       "matchPackageNames": ["/io.kotest:kotest.*/"]
     },
     {
-      "matchPackageNames": ["org.jetbrains.kotlin", "/com.google.devtools.*/"],
+      "matchPackageNames": ["org.jetbrains.kotlin", "com.google.devtools**"],
       "groupName": "kotlin dependencies"
     }
   ]
