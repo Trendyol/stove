@@ -11,7 +11,10 @@
       "matchPackageNames": ["/io.kotest:kotest.*/"]
     },
     {
-      "matchPackagePrefixes": ["org.jetbrains.kotlin"],
+      "matchPackagePrefixes": [
+        "org.jetbrains.kotlin",
+        "com.google.devtools.ksp"
+      ],
       "groupName": "kotlin dependencies"
     }
   ]
