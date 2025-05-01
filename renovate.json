@@ -10,12 +10,6 @@
     {
       "allowedVersions": "!/M/",
       "matchPackageNames": ["/io.kotest:kotest.*/"]
-    },
-    {
-      "matchPackageNames": [
-        "/org.jetbrains**"
-      ],
-      "groupName": "JetBrains"
     }
   ]
 }
