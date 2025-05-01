@@ -6,12 +6,12 @@ plugins {
 }
 
 dependencies {
-  implementation(libs.spring.boot.get3x())
-  implementation(libs.spring.boot.get3x().autoconfigure)
-  implementation(libs.spring.boot.get3x().webflux)
-  implementation(libs.spring.boot.get3x().actuator)
-  annotationProcessor(libs.spring.boot.get3x().annotationProcessor)
-  implementation(libs.spring.boot.get3x().kafka)
+  implementation(libs.spring.boot.three)
+  implementation(libs.spring.boot.three.autoconfigure)
+  implementation(libs.spring.boot.three.webflux)
+  implementation(libs.spring.boot.three.actuator)
+  annotationProcessor(libs.spring.boot.three.annotationProcessor)
+  implementation(libs.spring.boot.three.kafka)
   implementation(libs.kotlinx.reactor)
   implementation(libs.kotlinx.core)
   implementation(libs.kotlinx.reactive)

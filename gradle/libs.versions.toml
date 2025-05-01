@@ -2,8 +2,6 @@
 kotlin = "2.1.10"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
-spring-framework = "5.3.39"
-spring-framework-6x = "6.2.6"
 spring-boot-3x = "3.4.4"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
@@ -13,61 +11,46 @@ couchbase-client-metrics = "0.8.0"
 couchbase-kotlin = "1.5.0"
 jackson = "2.18.3"
 arrow = "2.1.1"
-arrow-jackson = "0.15.1"
 io-reactor = "3.7.5"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.17"
 kafka = "3.9.0"
 kafka-kotlin = "0.4.1"
 kafka-streams-registry = "7.9.0"
-dokka = "2.0.0"
-knit = "0.5.0"
 kover = "0.9.1"
 ktor = "3.1.2"
 koin = "4.1.0-Beta7"
-r2dbc-spi = "1.0.0.RELEASE"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.18.0"
 mongodb = "5.4.0"
 wiremock = "3.12.1"
 testcontainers = "1.21.0"
-r2dbc-mssql = "1.0.2.RELEASE"
 spotless = "7.0.3"
 detekt = "1.23.8"
 wire = "5.3.1"
 io-grpc = "1.72.0"
 io-grpc-kotlin = "1.4.1"
 google-protobuf = "3.25.6"
-gradle-release = "3.1.0"
-nexusPublish = "2.0.0"
 hoplite = "2.9.0"
-junit = "5.12.2"
 kotest = "6.0.0.M3"
 mockito = "5.4.0"
-quiver = "1.0.0"
-akkurate = "0.11.0"
 kotlinx-serialization = "1.8.1"
-ktlint = "1.5.0"
 kotlinBinaryCompatibilityValidator = "0.17.0"
 snakeyaml = "2.4"
 micronaut = "4.8.11"
 micronaut-starter = "4.8.2"
 micronaut-micrometer = "1.3.1"
-dagger = "2.51.1"
 
 [libraries]
-kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlinx-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx" }
 kotlinx-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx" }
 kotlinx-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx" }
 kotlinx-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlinx" }
 kotlinx-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinx" }
-kotlinx-knit = { module = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kotlinx-io-reactor = { module = "io.projectreactor:reactor-core", version.ref = "io-reactor" }
 kotlinx-io-reactor-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "io-reactor-extensions" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm", version.ref = "kotlinx-serialization" }
-kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 
 # Micronaut
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
@@ -84,22 +67,6 @@ micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-mic
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
-arrow-jackson = { module = "io.arrow-kt:arrow-integrations-jackson-module", version.ref = "arrow-jackson" }
-arrow-suspendApp = { module = "io.arrow-kt:suspendapp", version.ref = "arrow" }
-arrow-suspendApp-ktor = { module = "io.arrow-kt:suspendapp-ktor", version.ref = "arrow" }
-arrow-continuations = { module = "io.arrow-kt:arrow-continuations", version.ref = "arrow" }
-arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
-arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
-arrow-eval = { module = "io.arrow-kt:arrow-eval", version.ref = "arrow" }
-arrow-atomic = { module = "io.arrow-kt:arrow-atomic", version.ref = "arrow" }
-arrow-collectors = { module = "io.arrow-kt:arrow-collectors", version.ref = "arrow" }
-arrow-fx-stm = { module = "io.arrow-kt:arrow-fx-stm", version.ref = "arrow" }
-arrow-core-serialization = { module = "io.arrow-kt:arrow-core-serialization", version.ref = "arrow" }
-arrow-cache4k = { module = "io.arrow-kt:arrow-cache4k", version.ref = "arrow" }
-quiver = { module = "app.cash.quiver:lib", version.ref = "quiver" }
-akkurate-arrow = { module = "dev.nesk.akkurate:akkurate-arrow", version.ref = "akkurate" }
-akkurate-core = { module = "dev.nesk.akkurate:akkurate-core", version.ref = "akkurate" }
-akkurate-ksp-plugin = { module = "dev.nesk.akkurate:akkurate-ksp-plugin", version.ref = "akkurate" }
 
 # Kafka
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
@@ -129,7 +96,6 @@ ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", versio
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-plugins-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
@@ -140,11 +106,9 @@ koin-ktor = { module = "io.insert-koin:koin-ktor3", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 # r2dbc
-r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc-spi" }
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 kotliquery = { module = "com.github.seratch:kotliquery", version = "1.9.1" }
 h2Database = { module = "com.h2database:h2", version = "2.3.232" }
-
 
 # postgres
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.5" }
@@ -154,14 +118,10 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
-mongojack = { module = "org.mongojack:mongojack", version = "5.0.2" }
 
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.5.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
-logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.18" }
-log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.24.3" }
-r2dbc-mssql = { module = "io.r2dbc:r2dbc-mssql", version.ref = "r2dbc-mssql" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.0.jre11" }
 
 ### Testing
@@ -178,23 +138,17 @@ testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis
 
 # spring-boot 2x
 spring-boot = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot" }
-spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
-spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
 spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
-spring-framework-context = { module = "org.springframework:spring-context", version.ref = "spring-framework" }
-spring-framework-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework" }
 spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
 
 # spring-boot 3x
-spring-boot-3x = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot-3x" }
-spring-boot-3x-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-3x" }
-spring-boot-3x-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot-3x" }
-spring-boot-3x-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot-3x" }
-spring-boot-3x-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot-3x" }
-spring-boot-3x-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka-3x" }
-spring-framework-6x-context = { module = "org.springframework:spring-context", version.ref = "spring-framework-6x" }
-spring-framework-6x-beans = { module = "org.springframework:spring-beans", version.ref = "spring-framework-6x" }
+spring-boot-three = { module = "org.springframework.boot:spring-boot", version.ref = "spring-boot-3x" }
+spring-boot-three-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot-3x" }
+spring-boot-three-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot-3x" }
+spring-boot-three-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot-3x" }
+spring-boot-three-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot-3x" }
+spring-boot-three-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka-3x" }
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 wire-grpc-server = { module = "com.squareup.wiregrpcserver:server", version = "1.0.0-alpha04" }
@@ -208,59 +162,26 @@ io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
 io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
 google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf" }
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
-hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 google-gson = { module = "com.google.code.gson:gson", version = "2.13.0" }
-
-
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.0" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
+# testing
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
-junit = { module = "org.junit:junit-bom", version.ref = "junit" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
-ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
 kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "2.0.0" }
-ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
-
-[bundles]
-arrow-stack = ["arrow-core",
-    "arrow-jackson",
-    "arrow-suspendApp",
-    "arrow-suspendApp-ktor",
-    "arrow-continuations",
-    "arrow-fx-coroutines",
-    "arrow-resilience",
-    "arrow-eval",
-    "arrow-atomic",
-    "arrow-collectors",
-    "arrow-fx-stm",
-    "arrow-core-serialization",
-    "arrow-cache4k",
-    "quiver",
-    "akkurate-arrow",
-    "akkurate-core",
-    "akkurate-ksp-plugin"
-]
 
 [plugins]
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
-spring-boot-3x = { id = "org.springframework.boot", version.ref = "spring-boot-3x" }
+spring-boot-three = { id = "org.springframework.boot", version.ref = "spring-boot-3x" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
-ktfmt = { id = "com.ncorti.ktfmt.gradle", version = "0.22.0" }
-kotlinter = { id = "org.jmailen.kotlinter", version = "5.0.1" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-knit = { id = "org.jetbrains.kotlinx:kotlinx-knit", version.ref = "knit" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-gitVersioning = { id = "com.palantir.git-version", version = "3.2.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
-gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
-nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
