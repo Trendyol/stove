@@ -11,11 +11,12 @@ dependencies {
 dependencies {
   testImplementation(libs.micronaut.test.kotest)
   testImplementation(libs.kotest.runner.junit5)
-  testAnnotationProcessor(libs.micronaut.inject.java)
+  kspTest(platform(libs.micronaut.platform))
+  kspTest(libs.micronaut.inject.kotlin)
 }
 
 micronaut {
-  version(libs.versions.micronaut.starter.get())
+  version(libs.versions.micronaut.platform.get())
   processing {
     incremental(true)
     annotations("com.trendyol.stove.testing.*")

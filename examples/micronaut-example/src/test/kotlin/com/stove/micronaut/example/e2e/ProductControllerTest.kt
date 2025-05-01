@@ -1,9 +1,10 @@
 package com.stove.micronaut.example.e2e
 
 import arrow.core.some
+import com.couchbase.client.java.Bucket
 import com.trendyol.stove.testing.e2e.couchbase.couchbase
 import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -54,6 +55,14 @@ class ProductControllerTest :
             it.supplierId shouldBe request.supplierId
             it.isBlacklist shouldBe false
           }
+        }
+      }
+    }
+
+    test("a bean from application should be reachable") {
+      TestSystem.validate {
+        using<Bucket> {
+          this.name() shouldBe "Stove"
         }
       }
     }

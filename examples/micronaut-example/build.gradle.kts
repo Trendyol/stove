@@ -1,6 +1,5 @@
 plugins {
   kotlin("jvm") version libs.versions.kotlin
-  id("org.jetbrains.kotlin.plugin.allopen") version libs.versions.kotlin
   kotlin("plugin.serialization") version libs.versions.kotlin
   alias(libs.plugins.google.ksp)
   alias(libs.plugins.micronaut.application)
@@ -11,7 +10,8 @@ plugins {
 
 dependencies {
   runtimeOnly(libs.snakeyaml)
-  implementation(platform(libs.micronaut.parent))
+  ksp(platform(libs.micronaut.platform))
+  ksp(libs.micronaut.inject.kotlin)
   implementation(libs.micronaut.kotlin.runtime)
   implementation(libs.micronaut.serde.jackson)
   implementation(libs.micronaut.http.client)
@@ -52,7 +52,7 @@ java {
 }
 
 micronaut {
-  version(libs.versions.micronaut.starter.get())
+  version(libs.versions.micronaut.platform.get())
   runtime("netty")
   testRuntime("kotest5")
   processing {
