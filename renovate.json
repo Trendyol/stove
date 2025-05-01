@@ -2,6 +2,7 @@
   "extends": [
     "config:recommended",
     "group:allNonMajor",
+    "group:kotlinMonorepo",
     "schedule:earlyMondays"
   ],
   "branchPrefix": "renovate/",
