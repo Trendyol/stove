@@ -23,7 +23,7 @@
       "groupName": "micronaut"
     },
     {
-      "matchDepNames": ["/.*spring.*/"],
+      "matchDepNames": ["/.*springframework.*/"],
       "groupName": "spring"
     },
     {
