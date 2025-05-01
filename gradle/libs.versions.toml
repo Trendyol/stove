@@ -2,14 +2,14 @@
 kotlin = "2.1.10"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
-spring-boot-3x = "3.4.4"
+spring-boot-3x = "3.4.5"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.4"
 couchbase-client = "3.8.0"
 couchbase-client-metrics = "0.8.0"
 couchbase-kotlin = "1.5.0"
-jackson = "2.18.3"
+jackson = "2.19.0"
 arrow = "2.1.1"
 io-reactor = "3.7.5"
 io-reactor-extensions = "1.2.3"
@@ -37,7 +37,7 @@ mockito = "5.4.0"
 kotlinx-serialization = "1.8.1"
 kotlinBinaryCompatibilityValidator = "0.17.0"
 snakeyaml = "2.4"
-micronaut = "4.8.11"
+micronaut = "4.8.13"
 micronaut-starter = "4.8.2"
 micronaut-micrometer = "1.3.1"
 
@@ -119,7 +119,7 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.5.5.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.6.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.0.jre11" }
 
