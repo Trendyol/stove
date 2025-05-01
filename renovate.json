@@ -10,6 +10,25 @@
     {
       "allowedVersions": "!/M/",
       "matchPackageNames": ["/io.kotest:kotest.*/"]
+    },
+    {
+      "matchDepNames": [
+        "/org.jetbrains.kotlin.*/",
+        "/com.google.devtools.ksp.*/"
+      ],
+      "groupName": "kotlin"
+    },
+    {
+      "matchDepNames": ["/.*micronaut.*/"],
+      "groupName": "micronaut"
+    },
+    {
+      "matchDepNames": ["/.*spring.*/"],
+      "groupName": "spring"
+    },
+    {
+      "matchDepNames": ["/.*quarkus.*/"],
+      "groupName": "quarkus"
     }
   ]
 }
