@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.10"
+kotlin = "2.1.20"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.4.5"
@@ -23,14 +23,14 @@ koin = "4.1.0-Beta7"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.18.0"
 mongodb = "5.4.0"
-wiremock = "3.12.1"
+wiremock = "3.13.0"
 testcontainers = "1.21.0"
 spotless = "7.0.3"
 detekt = "1.23.8"
 wire = "5.3.1"
 io-grpc = "1.72.0"
-io-grpc-kotlin = "1.4.1"
-google-protobuf = "3.25.6"
+io-grpc-kotlin = "1.4.3"
+google-protobuf = "3.25.7"
 hoplite = "2.9.0"
 kotest = "6.0.0.M3"
 mockito = "5.4.0"
@@ -162,7 +162,7 @@ io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-k
 google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf" }
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
-google-gson = { module = "com.google.code.gson:gson", version = "2.13.0" }
+google-gson = { module = "com.google.code.gson:gson", version = "2.13.1" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.0" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
@@ -185,7 +185,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.1.10-1.0.31" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.1.20-2.0.1" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.3" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.3" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.3" }

@@ -2,19 +2,19 @@
 kotlin = "2.1.20"
 kotlinx = "1.10.2"
 scala2x = "2.13.16"
-quarkus = "3.21.3"
+quarkus = "3.22.1"
 ktlint = "1.5.0"
 
 # Spring-Boot
-spring-boot = "3.4.4"
+spring-boot = "3.4.5"
 spring-dependency-management = "1.1.7"
-spring-kafka = "3.3.4"
+spring-kafka = "3.3.5"
 
 # arrow
 arrow = "2.1.1"
 
 # Jackson
-jackson = "2.18.3"
+jackson = "2.19.0"
 
 # Couchbase
 couchbase-client = "3.8.0"
