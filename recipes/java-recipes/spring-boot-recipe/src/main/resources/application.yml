@@ -22,5 +22,5 @@ kafka:
       dead-letter: ${kafka.topic.product}.error
 external-apis:
   category:
-    url: http://localhost:9090
+    url: http://localhost:9091
     timeout: 30

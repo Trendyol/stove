@@ -30,7 +30,7 @@ class Stove : AbstractProjectConfig() {
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 9090,
+            port = 9091,
             serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper())
           )
         }
