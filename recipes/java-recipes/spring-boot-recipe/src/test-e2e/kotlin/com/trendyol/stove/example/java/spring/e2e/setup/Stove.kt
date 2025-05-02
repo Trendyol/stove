@@ -17,6 +17,11 @@ import io.ktor.serialization.jackson.*
 import org.springframework.kafka.support.serializer.JsonSerializer
 
 class Stove : AbstractProjectConfig() {
+  init {
+    stoveKafkaBridgePortDefault = "50052"
+    System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
+  }
+
   override suspend fun beforeProject() {
     TestSystem()
       .with {
