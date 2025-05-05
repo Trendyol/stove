@@ -29,7 +29,7 @@ kotlinLogging = "7.0.7"
 
 # Ktor
 ktor = "3.1.2"
-koin = "4.1.0-Beta7"
+koin = "4.1.0-Beta8"
 
 # mongo
 mongodb = "5.4.0"
