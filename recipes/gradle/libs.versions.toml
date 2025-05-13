@@ -17,7 +17,7 @@ arrow = "2.1.1"
 jackson = "2.19.0"
 
 # Couchbase
-couchbase-client = "3.8.0"
+couchbase-client = "3.8.1"
 
 # Kafka
 kafka = "3.9.0"
