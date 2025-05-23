@@ -29,6 +29,10 @@
     {
       "matchDepNames": ["/.*quarkus.*/"],
       "groupName": "quarkus"
+    },
+    {
+      "matchPackagePrefixes": ["io.insert-koin"],
+      "allowedVersions": "4.1.0-Beta8"
     }
   ]
 }
