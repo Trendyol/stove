@@ -9,7 +9,9 @@
   "packageRules": [
     {
       "allowedVersions": "!/M/",
-      "matchPackageNames": ["/io.kotest:kotest.*/"]
+      "matchPackageNames": [
+        "/io.kotest:kotest.*/"
+      ]
     },
     {
       "matchDepNames": [
@@ -19,20 +21,28 @@
       "groupName": "kotlin"
     },
     {
-      "matchDepNames": ["/.*micronaut.*/"],
+      "matchDepNames": [
+        "/.*micronaut.*/"
+      ],
       "groupName": "micronaut"
     },
     {
-      "matchDepNames": ["/.*springframework.*/"],
+      "matchDepNames": [
+        "/.*springframework.*/"
+      ],
       "groupName": "spring"
     },
     {
-      "matchDepNames": ["/.*quarkus.*/"],
+      "matchDepNames": [
+        "/.*quarkus.*/"
+      ],
       "groupName": "quarkus"
     },
     {
-      "matchPackagePrefixes": ["io.insert-koin"],
-      "allowedVersions": "4.1.0-Beta8"
+      "allowedVersions": "4.1.0-Beta8",
+      "matchPackageNames": [
+        "io.insert-koin{/,}**"
+      ]
     }
   ]
 }
