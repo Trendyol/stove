@@ -54,11 +54,12 @@ class WireMockSystem(
     url: String,
     statusCode: Int,
     responseBody: Option<Any> = None,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, String> = mapOf(),
+    responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
     val mockRequest = get(urlEqualTo(url))
     mockRequest.withMetadata(metadata)
-    val mockResponse = configureBody(statusCode, responseBody)
+    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -70,11 +71,12 @@ class WireMockSystem(
     statusCode: Int,
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
     val mockRequest = post(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, requestBody)
-    val mockResponse = configureBody(statusCode, responseBody)
+    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -86,16 +88,13 @@ class WireMockSystem(
     statusCode: Int,
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    val res =
-      aResponse()
-        .withStatus(statusCode)
-        .withHeader("Content-Type", "application/json; charset=UTF-8")
-    responseBody.map { res.withBody(serde.serialize(it)) }
     val req = put(urlEqualTo(url))
     configureBodyAndMetadata(req, metadata, requestBody)
-    val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
+    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+    val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -106,16 +105,13 @@ class WireMockSystem(
     statusCode: Int,
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    val res =
-      aResponse()
-        .withStatus(statusCode)
-        .withHeader("Content-Type", "application/json; charset=UTF-8")
-    responseBody.map { res.withBody(serde.serialize(it)) }
     val req = patch(urlEqualTo(url))
     configureBodyAndMetadata(req, metadata, requestBody)
-    val stub = wireMock.stubFor(req.willReturn(res).withId(UUID.randomUUID()))
+    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+    val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
   }
@@ -129,7 +125,7 @@ class WireMockSystem(
     val mockRequest = delete(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, None)
 
-    val mockResponse = configureBody(statusCode, None)
+    val mockResponse = configureResponse(statusCode, None, mapOf())
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -144,7 +140,7 @@ class WireMockSystem(
     val mockRequest = head(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, None)
 
-    val mockResponse = configureBody(statusCode, None)
+    val mockResponse = configureResponse(statusCode, None, mapOf())
     val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
     stubLog.put(stub.id, stub)
     return this
@@ -283,13 +279,17 @@ class WireMockSystem(
     }
   }
 
-  private fun configureBody(
+  private fun configureResponse(
     statusCode: Int,
-    responseBody: Option<Any>
+    responseBody: Option<Any>,
+    responseHeaders: Map<String, String>
   ): ResponseDefinitionBuilder? {
     val mockResponse = aResponse()
       .withStatus(statusCode)
       .withHeader("Content-Type", "application/json; charset=UTF-8")
+    responseHeaders.forEach {
+      mockResponse.withHeader(it.key, it.value)
+    }
     responseBody.map { mockResponse.withBody(serde.serialize(it)) }
     return mockResponse
   }

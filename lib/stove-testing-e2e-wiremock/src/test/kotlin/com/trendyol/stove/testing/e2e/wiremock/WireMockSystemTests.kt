@@ -1,18 +1,14 @@
 package com.trendyol.stove.testing.e2e.wiremock
 
+import arrow.core.some
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
+import java.net.http.*
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 
@@ -87,4 +83,80 @@ class WireMockSystemTests :
           }
         }.awaitAll()
     }
+
+    context("Response Headers") {
+      val reqBuilder = HttpRequest
+        .newBuilder(URI("http://localhost:9098/headers"))
+        .header("Content-Type", "application/json")
+
+      val headers = mapOf("CustomHeaderKey" to "CustomHeaderValue")
+
+      test("Stub get response with header") {
+        val response = TestDto("get")
+        TestSystem.validate {
+          wiremock {
+            mockGet("/headers", statusCode = 200, responseBody = response.some(), responseHeaders = headers)
+          }
+        }
+
+        withContext(Dispatchers.IO) {
+          val request = reqBuilder.GET().build()
+          val response = client.send(request, BodyHandlers.ofString())
+          response.body() shouldBe "{\"name\":\"get\"}"
+          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
+        }
+      }
+
+      test("Stub post response with header") {
+        val response = TestDto("post")
+        TestSystem.validate {
+          wiremock {
+            mockPost("/headers", statusCode = 200, responseBody = response.some(), responseHeaders = headers)
+          }
+        }
+
+        withContext(Dispatchers.IO) {
+          val request = reqBuilder.POST(BodyPublishers.ofString("post-response-with-header")).build()
+          val response = client.send(request, BodyHandlers.ofString())
+          response.body() shouldBe "{\"name\":\"post\"}"
+          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
+        }
+      }
+
+      test("Stub put response with header") {
+        val response = TestDto("put")
+        TestSystem.validate {
+          wiremock {
+            mockPut("/headers", statusCode = 200, responseBody = response.some(), responseHeaders = headers)
+          }
+        }
+
+        withContext(Dispatchers.IO) {
+          val request = reqBuilder.PUT(BodyPublishers.ofString("put-response-with-header")).build()
+          val response = client.send(request, BodyHandlers.ofString())
+          response.body() shouldBe "{\"name\":\"put\"}"
+          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
+        }
+      }
+
+      test("Stub patch response with header") {
+        val response = TestDto("patch")
+        TestSystem.validate {
+          wiremock {
+            mockPatch("/headers", statusCode = 200, responseBody = response.some(), responseHeaders = headers)
+          }
+        }
+
+        withContext(Dispatchers.IO) {
+          val request = reqBuilder.method("PATCH", BodyPublishers.ofString("patch-response-with-header")).build()
+          val response = client.send(request, BodyHandlers.ofString())
+          response.body() shouldBe "{\"name\":\"patch\"}"
+          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
+        }
+      }
+    }
   })
+
+data class TestDto(
+  val name: String
+)

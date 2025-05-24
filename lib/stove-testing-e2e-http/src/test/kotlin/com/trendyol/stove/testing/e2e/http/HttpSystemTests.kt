@@ -421,6 +421,23 @@ class HttpSystemTests :
         }
       }
     }
+
+    test("get with headers") {
+      val expectedGetDtoName = UUID.randomUUID().toString()
+      val headers = mapOf("Custom-Header" to "CustomValue")
+      TestSystem.validate {
+        wiremock {
+          mockGet("/get?param=1", 200, responseBody = TestDto(expectedGetDtoName).some(), responseHeaders = headers)
+        }
+
+        http {
+          getResponse<TestDto>("/get", queryParams = mapOf("param" to "1")) { actual ->
+            actual.body().name shouldBe expectedGetDtoName
+            actual.headers["custom-header"] shouldBe listOf("CustomValue")
+          }
+        }
+      }
+    }
   })
 
 class HttpConsoleTesting :
