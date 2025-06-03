@@ -40,6 +40,7 @@ snakeyaml = "2.4"
 micronaut = "4.8.14"
 micronaut-platform = "4.8.2"
 micronaut-micrometer = "1.3.1"
+micrometer = "1.15.0"
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
@@ -122,6 +123,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.7.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.0.jre11" }
+micrometer-commons = { module = "io.micrometer:micrometer-commons", version.ref = "micrometer" }
 
 ### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
