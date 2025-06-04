@@ -27,7 +27,7 @@ wiremock = "3.13.0"
 testcontainers = "1.21.1"
 spotless = "7.0.4"
 detekt = "1.23.8"
-wire = "5.3.1"
+wire = "5.3.2"
 io-grpc = "1.73.0"
 io-grpc-kotlin = "1.4.3"
 google-protobuf = "3.25.8"
@@ -120,7 +120,7 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.7.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.7.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.0.jre11" }
 micrometer-commons = { module = "io.micrometer:micrometer-commons", version.ref = "micrometer" }
