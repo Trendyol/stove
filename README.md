@@ -4,8 +4,7 @@
   &#10077;Where the infrastructure burns down to pure configurations<sub>(ashes)</sub>&#10078; 
 </p>
 
-![Release](https://img.shields.io/maven-central/v/com.trendyol/stove-testing-e2e?versionPrefix=0&label=latest-release&color=blue) [<img src="https://img.shields.io/nexus/s/com.trendyol/stove-testing-e2e?server=https%3A%2F%2Foss.sonatype.org&queryOpt=:v=1.0.0.*&label=latest-snapshot"/>](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/) [![codecov](https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove) [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/Trendyol/stove?label=openssf%20scorecard&style=flat)](https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove)
-
+![Release](https://img.shields.io/maven-central/v/com.trendyol/stove-testing-e2e?versionPrefix=0&label=latest-release&color=blue) [<img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fcom%2Ftrendyol%2Fstove-testing-e2e%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=latest-snapshot&color=orange"/>](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/) [![codecov](https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7)](https://codecov.io/gh/Trendyol/stove) [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/Trendyol/stove?label=openssf%20scorecard&style=flat)](https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove)
 
 
 <p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
@@ -48,6 +47,16 @@ Frameworks:
 * ✅ [Quarkus](https://github.com/Trendyol/stove/tree/main/recipes/java-recipes/quarkus-recipe) (incubating)
 
 ## Quick Start
+
+As of 5th June 2025, Stove's snapshot packages are hosted on [Central Sonatyle](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/)
+
+```kotlin
+repositories {
+  maven("https://central.sonatype.com/repository/maven-snapshots")
+}
+```
+
+For more info about how to use snapshots on the [central sonatype's docs.](https://central.sonatype.org/publish/publish-portal-snapshots/#consuming-snapshot-releases-for-your-project)
 
 ### Add the dependency
 
