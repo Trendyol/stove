@@ -17,7 +17,7 @@ arrow = "2.1.2"
 jackson = "2.19.0"
 
 # Couchbase
-couchbase-client = "3.8.1"
+couchbase-client = "3.8.2"
 
 # Kafka
 kafka = "4.0.0"
@@ -41,7 +41,7 @@ lombok = "1.18.38"
 
 # Misc
 hoplite = "2.9.0"
-kediatr = "3.2.0"
+kediatr = "3.2.1"
 
 # Testing
 stove = "1.0.0.469-SNAPSHOT"
