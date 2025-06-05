@@ -190,3 +190,4 @@ google-ksp = { id = "com.google.devtools.ksp", version = "2.1.10-1.0.31" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.3" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.3" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.3" }
+maven-publish = { id = "com.vanniktech.maven.publish", version = "0.32.0" }

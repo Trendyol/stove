@@ -1,3 +1,4 @@
+import com.vanniktech.maven.publish.SonatypeHost
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -8,7 +9,7 @@ plugins {
   alias(libs.plugins.kover)
   alias(libs.plugins.detekt)
   alias(libs.plugins.binaryCompatibilityValidator)
-  id("stove-publishing") apply false
+  alias(libs.plugins.maven.publish)
   idea
   java
 }
@@ -128,31 +129,59 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
 }
 
 val publishedProjects = listOf(
-  "stove-testing-e2e",
-  "stove-testing-e2e-couchbase",
-  "stove-testing-e2e-elasticsearch",
-  "stove-testing-e2e-http",
-  "stove-testing-e2e-kafka",
-  "stove-testing-e2e-mongodb",
-  "stove-testing-e2e-rdbms",
-  "stove-testing-e2e-rdbms-postgres",
-  "stove-testing-e2e-rdbms-mssql",
-  "stove-testing-e2e-wiremock",
-  "stove-testing-e2e-redis",
-  "stove-ktor-testing-e2e",
-  "stove-spring-testing-e2e",
-  "stove-spring-testing-e2e-kafka",
-  "stove-micronaut-testing-e2e"
+  projects.lib.stoveTestingE2e.name,
+  projects.lib.stoveTestingE2eCouchbase.name,
+  projects.lib.stoveTestingE2eElasticsearch.name,
+  projects.lib.stoveTestingE2eHttp.name,
+  projects.lib.stoveTestingE2eKafka.name,
+  projects.lib.stoveTestingE2eMongodb.name,
+  projects.lib.stoveTestingE2eRdbms.name,
+  projects.lib.stoveTestingE2eRdbmsMssql.name,
+  projects.lib.stoveTestingE2eRdbmsPostgres.name,
+  projects.lib.stoveTestingE2eWiremock.name,
+  projects.lib.stoveTestingE2eRedis.name,
+  projects.starters.ktor.stoveKtorTestingE2e.name,
+  projects.starters.spring.stoveSpringTestingE2e.name,
+  projects.starters.spring.stoveSpringTestingE2eKafka.name,
+  projects.starters.micronaut.stoveMicronautTestingE2e.name,
 )
 
 subprojects.of("lib", "spring", "ktor", "micronaut", filter = { p -> publishedProjects.contains(p.name) }) {
   apply {
     plugin("java")
-    plugin("stove-publishing")
+    plugin(rootProject.libs.plugins.maven.publish.pluginId)
+  }
+
+  mavenPublishing {
+    coordinates(groupId = rootProject.group.toString(), artifactId = project.name, version = rootProject.version.toString())
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    pom {
+      name.set(project.name)
+      description.set(project.properties["projectDescription"].toString())
+      url.set(project.properties["projectUrl"].toString())
+      licenses {
+        license {
+          name.set(project.properties["licence"].toString())
+          url.set(project.properties["licenceUrl"].toString())
+        }
+      }
+      developers {
+        developer {
+          id.set("osoykan")
+          name.set("Oguzhan Soykan")
+          email.set("oguzhan.soykan@trendyol.com")
+        }
+      }
+      scm {
+        connection.set("scm:git@github.com:Trendyol/stove.git")
+        developerConnection.set("scm:git:ssh://github.com:Trendyol/stove.git")
+        url.set(project.properties["projectUrl"].toString())
+      }
+    }
+    signAllPublications()
   }
 
   java {
     withSourcesJar()
-    withJavadocJar()
   }
 }

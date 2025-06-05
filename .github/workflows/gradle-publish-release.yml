@@ -28,10 +28,10 @@ jobs:
           gradle-version: current
 
       - name: Gradle Build and Test
-        run: gradle publish
+        run: gradle --no-configuration-cache publish
         env:
-          gpg_private_key: ${{ secrets.gpg_private_key }}
-          gpg_passphrase: ${{ secrets.gpg_passphrase }}
-          nexus_username: ${{ secrets.nexus_username }}
-          nexus_password: ${{ secrets.nexus_password }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.gpg_private_key }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.gpg_passphrase }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.ossrh_username }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ossrh_pass }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
