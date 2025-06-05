@@ -25,7 +25,7 @@ jobs:
           gradle-version: current
 
       - name: Publish to Maven Repository
-        run: gradle --no-configuration-cache publish
+        run: gradle --no-configuration-cache publish --parallel
         env:
           SNAPSHOT: true
           BUILD_NUMBER: ${{ github.run_number }}
