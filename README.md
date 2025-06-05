@@ -48,7 +48,7 @@ Frameworks:
 
 ## Quick Start
 
-As of 5th June 2025, Stove's snapshot packages are hosted on [Central Sonatyle](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/)
+As of 5th June 2025, Stove's snapshot packages are hosted on [Central Sonatype](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/)
 
 ```kotlin
 repositories {
