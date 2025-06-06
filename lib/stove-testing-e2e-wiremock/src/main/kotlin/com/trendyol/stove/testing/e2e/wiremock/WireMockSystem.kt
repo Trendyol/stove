@@ -219,6 +219,111 @@ class WireMockSystem(
   }
 
   @WiremockDsl
+  fun mockPostRequestContaining(
+    url: String,
+    requestContaining: Map<String, Any>,
+    statusCode: Int = 200,
+    responseBody: Option<Any> = None,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+  ): WireMockSystem =
+    mockPostConfigure(url, urlPatternFn) { builder, serde ->
+      val pattern = requestContaining
+        .map {
+          containing(
+            String(serde.serialize(it))
+              .trimStart('{')
+              .trimEnd('}')
+          )
+        }.toTypedArray()
+        .let { conditions ->
+          if (conditions.size > 1) {
+            and(*conditions)
+          } else {
+            conditions.first()
+          }
+        }
+
+      val response = aResponse()
+        .withStatus(statusCode)
+        .withHeader("Content-Type", "application/json; charset=UTF-8")
+        .also { rb -> responseBody.map { rb.withBody(serde.serialize(it)) } }
+
+      builder
+        .withRequestBody(pattern)
+        .willReturn(response)
+    }
+
+  @WiremockDsl
+  fun mockPutRequestContaining(
+    url: String,
+    requestContaining: Map<String, Any>,
+    statusCode: Int = 200,
+    responseBody: Option<Any> = None,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+  ): WireMockSystem =
+    mockPutConfigure(url, urlPatternFn) { builder, serde ->
+      val pattern = requestContaining
+        .map {
+          containing(
+            String(serde.serialize(it))
+              .trimStart('{')
+              .trimEnd('}')
+          )
+        }.toTypedArray()
+        .let { conditions ->
+          if (conditions.size > 1) {
+            and(*conditions)
+          } else {
+            conditions.first()
+          }
+        }
+
+      val response = aResponse()
+        .withStatus(statusCode)
+        .withHeader("Content-Type", "application/json; charset=UTF-8")
+        .also { rb -> responseBody.map { rb.withBody(serde.serialize(it)) } }
+
+      builder
+        .withRequestBody(pattern)
+        .willReturn(response)
+    }
+
+  @WiremockDsl
+  fun mockPatchRequestContaining(
+    url: String,
+    requestContaining: Map<String, Any>,
+    statusCode: Int = 200,
+    responseBody: Option<Any> = None,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+  ): WireMockSystem =
+    mockPatchConfigure(url, urlPatternFn) { builder, serde ->
+      val pattern = requestContaining
+        .map {
+          containing(
+            String(serde.serialize(it))
+              .trimStart('{')
+              .trimEnd('}')
+          )
+        }.toTypedArray()
+        .let { conditions ->
+          if (conditions.size > 1) {
+            and(*conditions)
+          } else {
+            conditions.first()
+          }
+        }
+
+      val response = aResponse()
+        .withStatus(statusCode)
+        .withHeader("Content-Type", "application/json; charset=UTF-8")
+        .also { rb -> responseBody.map { rb.withBody(serde.serialize(it)) } }
+
+      builder
+        .withRequestBody(pattern)
+        .willReturn(response)
+    }
+
+  @WiremockDsl
   fun behaviourFor(
     url: String,
     method: (String) -> MappingBuilder,

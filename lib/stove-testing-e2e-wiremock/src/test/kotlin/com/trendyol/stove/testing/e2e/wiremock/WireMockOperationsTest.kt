@@ -545,4 +545,79 @@ class WireMockOperationsTest :
         response.headers().firstValue("X-Overridden-Header").orElse("") shouldBe "OverriddenValue"
       }
     }
+
+    test("Wiremock mockPostRequestContaining should match partial body") {
+      val client = HttpClient.newBuilder().build()
+      val body = "{\"id\":1,\"name\":\"abc\"}"
+      val responseDto = TestDto("post-partial")
+      TestSystem.validate {
+        wiremock {
+          mockPostRequestContaining(
+            "/partial-post",
+            mapOf("id" to 1),
+            responseBody = responseDto.some()
+          )
+        }
+      }
+      withContext(Dispatchers.IO) {
+        val uri = URI.create("http://localhost:9098/partial-post")
+        val reqBuilder = HttpRequest
+          .newBuilder(uri)
+          .header("Content-Type", "application/json")
+          .POST(BodyPublishers.ofString(body))
+
+        val response = client.send(reqBuilder.build(), BodyHandlers.ofString())
+        response.body() shouldBe "{\"name\":\"post-partial\"}"
+      }
+    }
+
+    test("Wiremock mockPutRequestContaining should match partial body") {
+      val client = HttpClient.newBuilder().build()
+      val body = "{\"id\":1,\"name\":\"abc\"}"
+      val responseDto = TestDto("put-partial")
+      TestSystem.validate {
+        wiremock {
+          mockPutRequestContaining(
+            "/partial-put",
+            mapOf("id" to 1),
+            responseBody = responseDto.some()
+          )
+        }
+      }
+      withContext(Dispatchers.IO) {
+        val uri = URI.create("http://localhost:9098/partial-put")
+        val reqBuilder = HttpRequest
+          .newBuilder(uri)
+          .header("Content-Type", "application/json")
+          .PUT(BodyPublishers.ofString(body))
+
+        val response = client.send(reqBuilder.build(), BodyHandlers.ofString())
+        response.body() shouldBe "{\"name\":\"put-partial\"}"
+      }
+    }
+
+    test("Wiremock mockPatchRequestContaining should match partial body") {
+      val client = HttpClient.newBuilder().build()
+      val body = "{\"id\":1,\"name\":\"abc\"}"
+      val responseDto = TestDto("patch-partial")
+      TestSystem.validate {
+        wiremock {
+          mockPatchRequestContaining(
+            "/partial-patch",
+            mapOf("id" to 1),
+            responseBody = responseDto.some()
+          )
+        }
+      }
+      withContext(Dispatchers.IO) {
+        val uri = URI.create("http://localhost:9098/partial-patch")
+        val reqBuilder = HttpRequest
+          .newBuilder(uri)
+          .header("Content-Type", "application/json")
+          .method("PATCH", BodyPublishers.ofString(body))
+
+        val response = client.send(reqBuilder.build(), BodyHandlers.ofString())
+        response.body() shouldBe "{\"name\":\"patch-partial\"}"
+      }
+    }
   })
