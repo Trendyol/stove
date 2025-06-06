@@ -227,21 +227,7 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
   ): WireMockSystem =
     mockPostConfigure(url, urlPatternFn) { builder, serde ->
-      val pattern = requestContaining
-        .map {
-          containing(
-            String(serde.serialize(it))
-              .trimStart('{')
-              .trimEnd('}')
-          )
-        }.toTypedArray()
-        .let { conditions ->
-          if (conditions.size > 1) {
-            and(*conditions)
-          } else {
-            conditions.first()
-          }
-        }
+      val pattern = createRequestPattern(requestContaining, serde)
 
       val response = aResponse()
         .withStatus(statusCode)
