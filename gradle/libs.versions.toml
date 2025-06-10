@@ -11,7 +11,7 @@ couchbase-client-metrics = "0.8.2"
 couchbase-kotlin = "1.5.2"
 jackson = "2.19.0"
 arrow = "2.1.2"
-io-reactor = "3.7.6"
+io-reactor = "3.7.7"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.17"
 kafka = "4.0.0"
@@ -22,12 +22,12 @@ ktor = "3.1.3"
 koin = "4.1.0-Beta8"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.18.2"
-mongodb = "5.5.0"
+mongodb = "5.5.1"
 wiremock = "3.13.0"
 testcontainers = "1.21.1"
 spotless = "7.0.4"
 detekt = "1.23.8"
-wire = "5.3.2"
+wire = "5.3.3"
 io-grpc = "1.73.0"
 io-grpc-kotlin = "1.4.3"
 google-protobuf = "3.25.8"
@@ -163,7 +163,7 @@ google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", versi
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 google-gson = { module = "com.google.code.gson:gson", version = "2.13.1" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.0" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.1" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
 # testing
