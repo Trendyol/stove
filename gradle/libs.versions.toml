@@ -23,7 +23,7 @@ koin = "4.1.0-Beta8"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.18.2"
 mongodb = "5.5.1"
-wiremock = "3.13.0"
+wiremock = "3.13.1"
 testcontainers = "1.21.1"
 spotless = "7.0.4"
 detekt = "1.23.8"
@@ -110,7 +110,7 @@ kotliquery = { module = "com.github.seratch:kotliquery", version = "1.9.1" }
 h2Database = { module = "com.h2database:h2", version = "2.3.232" }
 
 # postgres
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.6" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
