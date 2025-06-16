@@ -6,6 +6,7 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.ktor.server.application.*
+import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.*
 
 /**
@@ -47,7 +48,8 @@ class KtorApplicationUnderTest(
     application
   }
 
-  override suspend fun stop(): Unit = application.dispose()
+  @OptIn(InternalAPI::class)
+  override suspend fun stop(): Unit = application.disposeAndJoin()
 
   private fun defaultConfigurations(): Array<String> = arrayOf("test-system=true")
 }
