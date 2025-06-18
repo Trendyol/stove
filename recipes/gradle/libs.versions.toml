@@ -8,7 +8,7 @@ ktlint = "1.5.0"
 # Spring-Boot
 spring-boot = "3.5.0"
 spring-dependency-management = "1.1.7"
-spring-kafka = "3.3.6"
+spring-kafka = "3.3.7"
 
 # arrow
 arrow = "2.1.2"
