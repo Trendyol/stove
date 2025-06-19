@@ -121,7 +121,7 @@ lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
-testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.21.1" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.21.2" }
 
 # Stove
 stove-testing = { module = "com.trendyol:stove-testing-e2e", version.ref = "stove" }
