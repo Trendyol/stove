@@ -2,7 +2,7 @@
 kotlin = "2.1.21"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
-spring-boot-3x = "3.5.0"
+spring-boot-3x = "3.5.3"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.7"
