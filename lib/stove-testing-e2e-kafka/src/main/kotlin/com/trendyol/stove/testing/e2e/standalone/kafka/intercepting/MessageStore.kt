@@ -39,7 +39,7 @@ class MessageStore {
     partition: Int
   ): Boolean = committedMessages()
     .filter { it.topic == topic && it.partition == partition }
-    .any { committed -> committed.offset == offset || committed.offset >= offset }
+    .any { committed -> committed.offset == offset || committed.offset >= offset + 1 }
 
   override fun toString(): String = """
     |Consumed: ${pprint(consumedMessages())}
