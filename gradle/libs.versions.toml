@@ -21,7 +21,7 @@ kover = "0.9.1"
 ktor = "3.2.0"
 koin = "4.1.0-Beta8"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.18.2"
+elastic = "8.18.3"
 mongodb = "5.5.1"
 wiremock = "3.13.1"
 testcontainers = "1.21.2"
@@ -121,7 +121,7 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.7.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.0.jre11" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "12.10.1.jre11" }
 
 ### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
@@ -190,4 +190,4 @@ google-ksp = { id = "com.google.devtools.ksp", version = "2.1.21-2.0.2" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.4" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.4" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.4" }
-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.32.0" }
+maven-publish = { id = "com.vanniktech.maven.publish", version = "0.33.0" }
