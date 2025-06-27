@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.21"
+kotlin = "2.2.0"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.5.3"
@@ -35,7 +35,7 @@ hoplite = "2.9.0"
 kotest = "6.0.0.M3"
 mockito = "5.4.0"
 kotlinx-serialization = "1.8.1"
-kotlinBinaryCompatibilityValidator = "0.17.0"
+kotlinBinaryCompatibilityValidator = "0.18.0"
 snakeyaml = "2.4"
 micronaut = "4.9.5"
 micronaut-platform = "4.9.0"
@@ -186,7 +186,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.1.21-2.0.2" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.2.0-2.0.2" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.4" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.4" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.4" }

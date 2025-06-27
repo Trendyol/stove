@@ -85,7 +85,7 @@ subprojects {
         allWarningsAsErrors = true
         freeCompilerArgs.addAll(
           "-Xjsr305=strict",
-          "-Xcontext-receivers",
+          "-Xcontext-parameters",
           "-Xsuppress-version-warnings"
         )
       }
