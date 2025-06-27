@@ -120,7 +120,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
         allWarningsAsErrors = true
         freeCompilerArgs.addAll(
           "-Xjsr305=strict",
-          "-Xcontext-receivers",
+          "-Xcontext-parameters",
           "-Xsuppress-version-warnings"
         )
       }
