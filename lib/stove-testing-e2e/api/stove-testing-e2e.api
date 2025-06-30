@@ -98,7 +98,7 @@ public abstract interface class com/trendyol/stove/testing/e2e/containers/Contai
 	public abstract fun getCompatibleSubstitute ()Ljava/lang/String;
 	public abstract fun getContainerFn ()Lkotlin/jvm/functions/Function1;
 	public abstract fun getImage ()Ljava/lang/String;
-	public abstract fun getImageWithTag ()Ljava/lang/String;
+	public fun getImageWithTag ()Ljava/lang/String;
 	public abstract fun getRegistry ()Ljava/lang/String;
 	public abstract fun getTag ()Ljava/lang/String;
 	public abstract fun getUseContainerFn ()Lkotlin/jvm/functions/Function1;
@@ -116,12 +116,12 @@ public final class com/trendyol/stove/testing/e2e/containers/ProvidedRegistryKt 
 }
 
 public abstract interface class com/trendyol/stove/testing/e2e/containers/StoveContainer {
-	public abstract fun getContainerIdAccess ()Ljava/lang/String;
-	public abstract fun getDockerClientAccess ()Lkotlin/Lazy;
+	public fun getContainerIdAccess ()Ljava/lang/String;
+	public fun getDockerClientAccess ()Lkotlin/Lazy;
 	public abstract fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
-	public abstract fun inspect ()Lcom/trendyol/stove/testing/e2e/containers/StoveContainerInspectInformation;
-	public abstract fun pause ()V
-	public abstract fun unpause ()V
+	public fun inspect ()Lcom/trendyol/stove/testing/e2e/containers/StoveContainerInspectInformation;
+	public fun pause ()V
+	public fun unpause ()V
 }
 
 public final class com/trendyol/stove/testing/e2e/containers/StoveContainer$DefaultImpls {
@@ -396,7 +396,7 @@ public final class com/trendyol/stove/testing/e2e/serialization/StoveKotlinxStri
 public abstract interface class com/trendyol/stove/testing/e2e/serialization/StoveSerde {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde$Companion;
 	public abstract fun deserialize (Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
-	public abstract fun deserializeEither (Ljava/lang/Object;Ljava/lang/Class;)Larrow/core/Either;
+	public fun deserializeEither (Ljava/lang/Object;Ljava/lang/Class;)Larrow/core/Either;
 	public abstract fun serialize (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
@@ -581,7 +581,7 @@ public abstract interface class com/trendyol/stove/testing/e2e/system/abstractio
 }
 
 public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/RunnableSystemWithContext : com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/BeforeRunAware, com/trendyol/stove/testing/e2e/system/abstractions/RunAware, java/lang/AutoCloseable {
-	public abstract fun close ()V
+	public fun close ()V
 }
 
 public final class com/trendyol/stove/testing/e2e/system/abstractions/RunnableSystemWithContext$DefaultImpls {
@@ -595,7 +595,7 @@ public abstract interface class com/trendyol/stove/testing/e2e/system/abstractio
 
 public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory$Companion;
-	public abstract fun DefaultStateStorage (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;)Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorage;
+	public fun DefaultStateStorage (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;)Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorage;
 	public abstract fun invoke (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;)Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorage;
 }
 
@@ -636,9 +636,9 @@ public abstract interface class com/trendyol/stove/testing/e2e/system/abstractio
 }
 
 public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/ThenSystemContinuation {
-	public abstract fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
-	public abstract fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
 public final class com/trendyol/stove/testing/e2e/system/abstractions/ThenSystemContinuation$DefaultImpls {
