@@ -55,18 +55,18 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
 class MongodbTestSystemTests :
   FunSpec({
     data class ExampleInstanceWithObjectId(
-      @BsonId
-      @JsonAlias("_id")
+      @param:BsonId
+      @param:JsonAlias("_id")
       val id: ObjectId,
-      @BsonProperty("aggregateId") val aggregateId: String,
-      @BsonProperty("description") val description: String
+      @param:BsonProperty("aggregateId") val aggregateId: String,
+      @param:BsonProperty("description") val description: String
     )
 
     data class ExampleInstanceWithStringObjectId(
-      @JsonAlias("_id")
+      @param:JsonAlias("_id")
       val id: String,
-      @BsonProperty("aggregateId") val aggregateId: String,
-      @BsonProperty("description") val description: String
+      @param:BsonProperty("aggregateId") val aggregateId: String,
+      @param:BsonProperty("description") val description: String
     )
 
     test("should save and get with objectId") {

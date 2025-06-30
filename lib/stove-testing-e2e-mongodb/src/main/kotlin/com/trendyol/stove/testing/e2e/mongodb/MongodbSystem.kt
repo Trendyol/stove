@@ -167,6 +167,7 @@ class MongodbSystem internal constructor(
      * Exposes the [MongoClient] to the [MongodbSystem]
      */
     @MongoDsl
+    @Suppress("unused")
     fun MongodbSystem.client(): MongoClient = mongoClient
   }
 }
