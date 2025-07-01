@@ -6,6 +6,7 @@ dependencies {
   api(projects.lib.stoveTestingE2e)
   api(libs.testcontainers.kafka)
   api(libs.kafka)
+  api(libs.kafka.embedded)
   implementation(libs.kotlinx.io.reactor.extensions)
   implementation(libs.kotlinx.jdk8)
   implementation(libs.kotlinx.core)
