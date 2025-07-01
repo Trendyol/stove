@@ -6,6 +6,14 @@ import org.apache.kafka.common.serialization.Serializer
 
 class KafkaSystemOptions(
   /**
+   * When set to `true`, an embedded Kafka broker is automatically started and used for the test run.
+   * This is ideal for self-contained integration tests without external dependencies.
+   * When `false`, the system will attempt to connect to an TestContainer Kafka instance.
+   *
+   * The default is `false`.
+   */
+  val useEmbeddedKafka: Boolean = false,
+  /**
    * Suffixes for error and retry topics in the application.
    */
   val topicSuffixes: TopicSuffixes = TopicSuffixes(),
