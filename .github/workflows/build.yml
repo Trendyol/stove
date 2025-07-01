@@ -50,18 +50,18 @@ jobs:
       - name: Gradle Build and Test
         run: gradle --build-cache --configuration-cache build test koverXmlReport
 
-      - name: Add coverage report to PR
-        id: kover
-        uses: mi-kas/kover-report@v1
-        if: github.repository == 'Trendyol/stove'
-        with:
-          path: |
-            ${{ github.workspace }}/build/reports/kover/report.xml
-          title: Code Coverage
-          update-comment: true
-          min-coverage-overall: 80
-          min-coverage-changed-files: 80
-          coverage-counter-type: LINE
+      # - name: Add coverage report to PR
+      #   id: kover
+      #   uses: mi-kas/kover-report@v1
+      #   if: github.repository == 'Trendyol/stove'
+      #   with:
+      #     path: |
+      #       ${{ github.workspace }}/build/reports/kover/report.xml
+      #     title: Code Coverage
+      #     update-comment: true
+      #     min-coverage-overall: 80
+      #     min-coverage-changed-files: 80
+      #     coverage-counter-type: LINE
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
