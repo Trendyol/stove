@@ -40,6 +40,7 @@ class Stove : AbstractProjectConfig() {
         }
         kafka {
           KafkaSystemOptions(
+            useEmbeddedKafka = true,
             topicSuffixes = TopicSuffixes().copy(error = listOf(".error", ".DLT", "dlt")),
             serde = StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default),
             containerOptions = KafkaContainerOptions(tag = "7.8.1")
