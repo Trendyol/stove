@@ -77,6 +77,7 @@ class Stove : AbstractProjectConfig() {
     .with {
       kafka {
         KafkaSystemOptions(
+          useEmbeddedKafka = true,
           listenPublishedMessagesFromStove = true,
           containerOptions = KafkaContainerOptions(tag = "7.8.1"),
           configureExposedConfiguration = { cfg ->

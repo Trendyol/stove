@@ -16,6 +16,7 @@ io-reactor-extensions = "1.2.3"
 slf4j = "2.0.17"
 kafka = "4.0.0"
 kafka-kotlin = "0.4.1"
+kafka-embedded = "4.0.1"
 kafka-streams-registry = "8.0.0"
 kover = "0.9.1"
 ktor = "3.2.0"
@@ -73,6 +74,7 @@ kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
 kafka-streams = { module = "org.apache.kafka:kafka-streams", version.ref = "kafka" }
 kafka-streams-protobuf-serde = { module = "io.confluent:kafka-streams-protobuf-serde", version.ref = "kafka-streams-registry" }
+kafka-embedded = { module = "io.github.embeddedkafka:embedded-kafka_2.13", version.ref = "kafka-embedded" }
 
 # Couchbase
 couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }
