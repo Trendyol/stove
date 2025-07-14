@@ -6,9 +6,9 @@ spring-boot-3x = "3.5.3"
 spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.7"
-couchbase-client = "3.8.2"
-couchbase-client-metrics = "0.8.2"
-couchbase-kotlin = "1.5.2"
+couchbase-client = "3.8.3"
+couchbase-client-metrics = "0.8.3"
+couchbase-kotlin = "1.5.3"
 jackson = "2.19.1"
 arrow = "2.1.2"
 io-reactor = "3.7.7"
@@ -25,9 +25,9 @@ elastic = "8.18.3"
 mongodb = "5.5.1"
 wiremock = "3.13.1"
 testcontainers = "1.21.3"
-spotless = "7.0.4"
+spotless = "7.1.0"
 detekt = "1.23.8"
-wire = "5.3.3"
+wire = "5.3.5"
 io-grpc = "1.73.0"
 io-grpc-kotlin = "1.4.3"
 google-protobuf = "3.25.8"
@@ -163,7 +163,7 @@ google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", versi
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 google-gson = { module = "com.google.code.gson:gson", version = "2.13.1" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.1" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.2" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 
 # testing
