@@ -20,7 +20,7 @@ jackson = "2.19.2"
 couchbase-client = "3.8.3"
 
 # Kafka
-kafka = "4.0.0"
+kafka = "8.0.0-ce"
 kafka-kotlin = "0.4.1"
 
 # Logging
