@@ -37,8 +37,8 @@ mockito = "6.0.0"
 kotlinx-serialization = "1.9.0"
 kotlinBinaryCompatibilityValidator = "0.18.1"
 snakeyaml = "2.4"
-micronaut = "4.9.5"
-micronaut-platform = "4.9.0"
+micronaut = "4.9.8"
+micronaut-platform = "4.9.1"
 micronaut-micrometer = "1.3.1"
 
 [libraries]
