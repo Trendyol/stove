@@ -11,7 +11,7 @@ couchbase-client-metrics = "0.8.3"
 couchbase-kotlin = "1.5.3"
 jackson = "2.19.2"
 arrow = "2.1.2"
-io-reactor = "3.7.7"
+io-reactor = "3.7.8"
 io-reactor-extensions = "1.2.3"
 slf4j = "2.0.17"
 kafka = "4.0.0"
@@ -21,11 +21,11 @@ kover = "0.9.1"
 ktor = "3.2.2"
 koin = "4.1.0-Beta8"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.18.3"
+elastic = "8.18.4"
 mongodb = "5.5.1"
 wiremock = "3.13.1"
 testcontainers = "1.21.3"
-spotless = "7.1.0"
+spotless = "7.2.1"
 detekt = "1.23.8"
 wire = "5.3.5"
 io-grpc = "1.73.0"
@@ -190,4 +190,4 @@ google-ksp = { id = "com.google.devtools.ksp", version = "2.2.0-2.0.2" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.4" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.4" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.4" }
-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.33.0" }
+maven-publish = { id = "com.vanniktech.maven.publish", version = "0.34.0" }
