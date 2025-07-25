@@ -35,7 +35,7 @@ koin = "4.1.0-Beta8"
 mongodb = "5.5.1"
 
 # Tooling
-spotless = "7.1.0"
+spotless = "7.2.1"
 detekt = "1.23.8"
 lombok = "1.18.38"
 
