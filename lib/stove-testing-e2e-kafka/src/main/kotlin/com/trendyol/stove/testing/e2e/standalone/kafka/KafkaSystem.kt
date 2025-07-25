@@ -8,6 +8,7 @@ import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import io.github.embeddedkafka.*
 import io.grpc.Server
 import io.grpc.netty.NettyServerBuilder
 import kotlinx.coroutines.*
@@ -18,6 +19,7 @@ import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
+import scala.collection.immutable.`Map$`
 import java.net.*
 import java.util.*
 import kotlin.reflect.KClass
@@ -57,11 +59,33 @@ class KafkaSystem(
 
   override suspend fun run() {
     exposedConfiguration = state.capture {
-      context.container.start()
-      KafkaExposedConfiguration(
-        context.container.bootstrapServers,
-        StoveKafkaBridge::class.java.name
-      )
+      if (context.options.useEmbeddedKafka) {
+        val config: EmbeddedKafkaConfig = EmbeddedKafkaConfig.apply(
+          0,
+          0,
+          `Map$`.`MODULE$`.empty(),
+          `Map$`.`MODULE$`.empty(),
+          `Map$`.`MODULE$`.empty()
+        )
+
+        val server = EmbeddedKafka.start(
+          config
+        )
+
+        while (!EmbeddedKafka.isRunning()) {
+          delay(100)
+        }
+        KafkaExposedConfiguration(
+          "0.0.0.0:${server.config().kafkaPort()}",
+          StoveKafkaBridge::class.java.name
+        )
+      } else {
+        context.container.start()
+        KafkaExposedConfiguration(
+          context.container.bootstrapServers,
+          StoveKafkaBridge::class.java.name
+        )
+      }
     }
     adminClient = createAdminClient(exposedConfiguration)
     kafkaPublisher = createPublisher(
@@ -310,14 +334,24 @@ class KafkaSystem(
    * @return KafkaSystem
    */
   @StoveDsl
-  fun pause(): KafkaSystem = context.container.pause().let { this }
+  fun pause(): KafkaSystem {
+    if (context.options.useEmbeddedKafka) {
+      return this
+    }
+    return context.container.pause().let { this }
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
    * @return KafkaSystem
    */
   @StoveDsl
-  fun unpause(): KafkaSystem = context.container.unpause().let { this }
+  fun unpause(): KafkaSystem {
+    if (context.options.useEmbeddedKafka) {
+      return this
+    }
+    return context.container.unpause().let { this }
+  }
 
   /**
    * Provides access to the message store of the KafkaSystem.
@@ -437,7 +471,16 @@ class KafkaSystem(
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop() {
+    if (context.options.useEmbeddedKafka) {
+      EmbeddedKafka.stop()
+      while (EmbeddedKafka.isRunning()) {
+        delay(100)
+      }
+      return
+    }
+    context.container.stop()
+  }
 
   override fun close(): Unit = runBlocking {
     Try {
