@@ -35,9 +35,6 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(libs.kotest.runner.junit5)
-  testImplementation(libs.kotest.framework.api)
-  testImplementation(libs.kotest.property)
   testImplementation(libs.stove.testing)
   testImplementation(libs.stove.testing.mongodb)
   testImplementation(libs.stove.testing.http)

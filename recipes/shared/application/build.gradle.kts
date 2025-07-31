@@ -13,7 +13,5 @@ dependencies {
 dependencies {
   testCompileOnly(libs.lombok)
   testAnnotationProcessor(libs.lombok)
-  testImplementation(libs.kotest.framework.api)
-  testImplementation(libs.kotest.runner.junit5)
   testImplementation(libs.arrow.core)
 }

@@ -11,21 +11,21 @@ data class CreateProductCommand(
   val name: String,
   val price: Double,
   val categoryId: Int
-) : Command
+) : Request.Unit
 
 class ProductCommandHandler(
   private val productRepository: ProductRepository,
   private val categoryHttpApi: CategoryHttpApi
-) : CommandHandler<CreateProductCommand> {
+) : RequestHandler.Unit<CreateProductCommand> {
   private val logger = KotlinLogging.logger { }
 
-  override suspend fun handle(command: CreateProductCommand) {
-    val category = categoryHttpApi.getCategory(command.categoryId)
+  override suspend fun handle(request: CreateProductCommand) {
+    val category = categoryHttpApi.getCategory(request.categoryId)
     if (!category.isActive) {
       throw BusinessException("Category is not active")
     }
 
-    productRepository.save(Product.create(command.name, command.price, command.categoryId))
-    logger.info { "Product saved: $command" }
+    productRepository.save(Product.create(request.name, request.price, request.categoryId))
+    logger.info { "Product saved: $request" }
   }
 }

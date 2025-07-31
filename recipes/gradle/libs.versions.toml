@@ -2,8 +2,8 @@
 kotlin = "2.2.0"
 kotlinx = "1.10.2"
 scala2x = "2.13.16"
-quarkus = "3.23.2"
-ktlint = "1.5.0"
+quarkus = "3.25.0"
+ktlint = "1.7.1"
 
 # Spring-Boot
 spring-boot = "3.5.4"
@@ -45,7 +45,7 @@ kediatr = "4.2.0"
 
 # Testing
 stove = "1.0.0.469-SNAPSHOT"
-kotest = "6.0.0.M1"
+kotest = "6.0.0.M6"
 
 [libraries]
 # Kotlin
@@ -110,6 +110,7 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.18
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 
 # kediatR
 kediatr-koin = { module = "com.trendyol:kediatr-koin-starter", version.ref = "kediatr" }
@@ -118,9 +119,9 @@ kediatr-koin = { module = "com.trendyol:kediatr-koin-starter", version.ref = "ke
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 
 # Testing
-kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
-kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
-kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
 testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.21.3" }
 
 # Stove
@@ -144,3 +145,4 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+kotest = { id = "io.kotest", version.ref = "kotest" }

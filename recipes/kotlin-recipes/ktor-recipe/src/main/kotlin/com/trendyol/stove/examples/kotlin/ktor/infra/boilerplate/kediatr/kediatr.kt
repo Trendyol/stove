@@ -1,6 +1,6 @@
 package com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.kediatr
 
-import com.trendyol.kediatr.PipelineBehavior
+import com.trendyol.kediatr.*
 import com.trendyol.kediatr.koin.KediatRKoin
 import org.koin.core.KoinApplication
 import org.koin.dsl.module
@@ -15,7 +15,7 @@ fun KoinApplication.registerKediatR() {
 }
 
 class LoggingPipelineBehaviour : PipelineBehavior {
-  override suspend fun <TRequest, TResponse> handle(
+  override suspend fun <TRequest : Message, TResponse> handle(
     request: TRequest,
     next: suspend (TRequest) -> TResponse
   ): TResponse {

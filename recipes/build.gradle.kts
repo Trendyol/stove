@@ -27,6 +27,9 @@ subprojects {
   }
 
   dependencies {
+    testImplementation(rootProject.libs.kotest.framework.engine)
+    testImplementation(rootProject.libs.kotest.assertions.core)
+    testImplementation(rootProject.libs.kotest.runner.junit5)
     detektPlugins(rootProject.libs.detekt.formatting)
   }
 
