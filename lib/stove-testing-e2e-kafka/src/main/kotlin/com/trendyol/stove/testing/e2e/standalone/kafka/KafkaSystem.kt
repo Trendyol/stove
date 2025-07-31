@@ -32,7 +32,7 @@ var stoveKafkaBridgePortDefault = "50051"
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
 internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-@Suppress("TooManyFunctions", "unused")
+@Suppress("TooManyFunctions", "unused", "MagicNumber")
 @StoveDsl
 class KafkaSystem(
   override val testSystem: TestSystem,
