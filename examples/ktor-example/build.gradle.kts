@@ -33,10 +33,7 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(libs.kotest.property)
-  testImplementation(libs.kotest.runner.junit5)
   testImplementation(libs.logback.classic)
-
   testImplementation(projects.stove.lib.stoveTestingE2eHttp)
   testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
   testImplementation(projects.stove.lib.stoveTestingE2eRdbmsPostgres)

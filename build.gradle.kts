@@ -1,4 +1,3 @@
-import com.vanniktech.maven.publish.SonatypeHost
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -47,11 +46,7 @@ kover {
   }
 }
 val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut")
-dependencies {
-  related.forEach {
-    kover(it)
-  }
-}
+dependencies { related.forEach { kover(it) } }
 
 subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   apply {
@@ -77,7 +72,8 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.kotest.runner.junit5)
-    testImplementation(libs.kotest.property)
+    testImplementation(libs.kotest.framework.engine)
+    testImplementation(libs.kotest.assertions.core)
     detektPlugins(libs.detekt.formatting)
   }
 
@@ -97,9 +93,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   }
 
   tasks {
-    compileKotlin {
-      incremental = true
-    }
     test {
       useJUnitPlatform()
       testlogger {
@@ -121,7 +114,12 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
         freeCompilerArgs.addAll(
           "-Xjsr305=strict",
           "-Xcontext-parameters",
-          "-Xsuppress-version-warnings"
+          "-Xnested-type-aliases",
+          "-Xwhen-guards",
+          "-Xsuppress-version-warnings",
+          "-Xwarning-level=IDENTITY_SENSITIVE_OPERATIONS_WITH_VALUE_TYPE:disabled",
+          "-opt-in=kotlin.RequiresOptIn",
+          "-opt-in=kotlin.contracts.ExperimentalContracts"
         )
       }
     }
@@ -154,7 +152,7 @@ subprojects.of("lib", "spring", "ktor", "micronaut", filter = { p -> publishedPr
 
   mavenPublishing {
     coordinates(groupId = rootProject.group.toString(), artifactId = project.name, version = rootProject.version.toString())
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
     pom {
       name.set(project.name)
       description.set(project.properties["projectDescription"].toString())
