@@ -5,6 +5,8 @@ import com.trendyol.stove.examples.domain.ddd.*
 import io.kotest.assertions.*
 import io.kotest.assertions.print.Printed
 import io.kotest.engine.mapError
+import io.kotest.matchers.collections.shouldHaveAtLeastSize
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 
 class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
@@ -12,10 +14,11 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
 ) {
   fun shouldHaveCount(expectedCount: Int) = runCatching { root.domainEvents().count().shouldBe(expectedCount) }
     .mapError {
-      throw failure(
+      throw createAssertionError(
         expected = Expected(Printed(expectedCount.toString())),
         actual = Actual(Printed(root.domainEvents().count().toString())),
-        prependMessage = "Expected Count but found:"
+        message = "Expected Count but found:",
+        cause = it
       )
     }
 
@@ -25,6 +28,7 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
       .domainEvents()
       .filter { it::class == T::class }
       .map { it as T }
+      .shouldHaveAtLeastSize(1)
       .forEach { act(it) }
   }
 
@@ -33,10 +37,11 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
     .map { it.javaClass }
     .firstOrNone { it == T::class.java }
     .onNone {
-      throw failure(
+      throw createAssertionError(
         expected = Expected(Printed(T::class.java.simpleName)),
         actual = Actual(Printed(domainEventsPrinted())),
-        "Expected Domain Event Contain, but not found:"
+        message = "Expected Domain Event Contain, but not found:",
+        cause = null
       )
     }
 
@@ -46,10 +51,11 @@ class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
       .map { it.javaClass }
       .firstOrNone { it == T::class.java }
       .onSome {
-        throw failure(
+        throw createAssertionError(
           expected = Expected(Printed("[]")),
           actual = Actual(Printed(domainEventsPrinted())),
-          "Expected Domain Event Not Contain, but found:"
+          message = "Expected Domain Event Not Contain, but found:",
+          cause = null
         )
       }
 
