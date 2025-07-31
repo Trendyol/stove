@@ -6,7 +6,6 @@ import io.kotest.assertions.*
 import io.kotest.assertions.print.Printed
 import io.kotest.engine.mapError
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 
 class AggregateRootAssertion<TId, TAggregateRoot : AggregateRoot<TId>>(
