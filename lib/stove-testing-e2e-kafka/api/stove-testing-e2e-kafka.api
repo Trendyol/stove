@@ -277,14 +277,15 @@ public final class com/trendyol/stove/testing/e2e/standalone/kafka/KafkaSystemKt
 }
 
 public final class com/trendyol/stove/testing/e2e/standalone/kafka/KafkaSystemOptions : com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
-	public fun <init> (Lcom/trendyol/stove/testing/e2e/standalone/kafka/TopicSuffixes;ZILcom/trendyol/stove/testing/e2e/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/testing/e2e/standalone/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/standalone/kafka/TopicSuffixes;ZILcom/trendyol/stove/testing/e2e/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/testing/e2e/standalone/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLcom/trendyol/stove/testing/e2e/standalone/kafka/TopicSuffixes;ZILcom/trendyol/stove/testing/e2e/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/testing/e2e/standalone/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (ZLcom/trendyol/stove/testing/e2e/standalone/kafka/TopicSuffixes;ZILcom/trendyol/stove/testing/e2e/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/testing/e2e/standalone/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getBridgeGrpcServerPort ()I
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
 	public final fun getContainerOptions ()Lcom/trendyol/stove/testing/e2e/standalone/kafka/KafkaContainerOptions;
 	public final fun getListenPublishedMessagesFromStove ()Z
 	public final fun getSerde ()Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
 	public final fun getTopicSuffixes ()Lcom/trendyol/stove/testing/e2e/standalone/kafka/TopicSuffixes;
+	public final fun getUseEmbeddedKafka ()Z
 	public final fun getValueSerializer ()Lorg/apache/kafka/common/serialization/Serializer;
 }
 

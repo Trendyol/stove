@@ -6,6 +6,7 @@ dependencies {
   api(projects.lib.stoveTestingE2e)
   api(libs.testcontainers.kafka)
   api(libs.kafka)
+  api(libs.kafka.embedded)
   implementation(libs.kotlinx.io.reactor.extensions)
   implementation(libs.kotlinx.jdk8)
   implementation(libs.kotlinx.core)
@@ -56,4 +57,19 @@ wire {
     javaInterop = true
     includes = listOf("com.trendyol.stove.testing.e2e.standalone.kafka.StoveKafkaObserverService")
   }
+}
+
+val testWithEmbedded = tasks.register<Test>("testWithEmbedded") {
+  group = "verification"
+  testClassesDirs = sourceSets.test.get().output.classesDirs
+  classpath = sourceSets.test.get().runtimeClasspath
+  useJUnitPlatform()
+  systemProperty("useEmbeddedKafka", "true")
+  doFirst {
+    println("Starting embedded Kafka tests...")
+  }
+}
+
+tasks.test.configure {
+  dependsOn(testWithEmbedded)
 }
