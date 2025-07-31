@@ -1,7 +1,9 @@
 package com.trendyol.stove.testing.e2e.kafka
 
 import io.kotest.assertions.*
-import io.kotest.mpp.bestName
+import io.kotest.assertions.print.Printed
+import io.kotest.common.reflection.bestName
+import io.kotest.matchers.errorCollector
 
 inline fun <reified T : Throwable> shouldThrowMaybe(block: () -> Any) {
   val expectedExceptionClass = T::class
@@ -17,9 +19,11 @@ inline fun <reified T : Throwable> shouldThrowMaybe(block: () -> Any) {
     is T -> Unit
     is AssertionError -> errorCollector.collectOrThrow(thrownThrowable)
     else -> errorCollector.collectOrThrow(
-      failure(
+      createAssertionError(
         "Expected exception ${expectedExceptionClass.bestName()} but a ${thrownThrowable::class.simpleName} was thrown instead.",
-        thrownThrowable
+        cause = thrownThrowable,
+        expected = Expected(Printed(expectedExceptionClass.bestName())),
+        actual = Actual(Printed(thrownThrowable::class.simpleName ?: "null"))
       )
     )
   }
