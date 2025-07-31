@@ -40,6 +40,7 @@ snakeyaml = "2.4"
 micronaut = "4.9.8"
 micronaut-platform = "4.9.1"
 micronaut-micrometer = "1.3.1"
+ktlint = "1.7.1"
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
@@ -165,6 +166,7 @@ hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "ho
 google-gson = { module = "com.google.code.gson:gson", version = "2.13.1" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.2" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 
 # testing
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }

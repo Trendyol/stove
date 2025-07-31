@@ -83,7 +83,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
 
   spotless {
     kotlin {
-      ktlint().setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      ktlint(libs.ktlint.cli.get().version).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExclude("build/", "generated/", "out/")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
