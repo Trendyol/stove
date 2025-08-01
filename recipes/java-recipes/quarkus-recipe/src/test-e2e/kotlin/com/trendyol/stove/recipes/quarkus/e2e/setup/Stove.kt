@@ -24,7 +24,7 @@ class Stove : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8080"
+            baseUrl = "http://localhost:8040"
           )
         }
         bridge()
@@ -33,7 +33,8 @@ class Stove : AbstractProjectConfig() {
             QuarkusMainApp.main(params)
           },
           withParameters = listOf(
-            "quarkus.live-reload.enabled=false"
+            "quarkus.live-reload.enabled=false",
+            "quarkus.http.port=8040"
           )
         )
       }.run()

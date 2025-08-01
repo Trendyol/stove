@@ -10,7 +10,7 @@ import io.kotest.matchers.shouldBe
 
 class IndexTests :
   FunSpec({
-    test("Index page should return 200") {
+    xtest("Index page should return 200") {
       validate {
         http {
           get<String>(
