@@ -111,16 +111,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
       compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
         allWarningsAsErrors = true
-        freeCompilerArgs.addAll(
-          "-Xjsr305=strict",
-          "-Xcontext-parameters",
-          "-Xnested-type-aliases",
-          "-Xwhen-guards",
-          "-Xsuppress-version-warnings",
-          "-Xwarning-level=IDENTITY_SENSITIVE_OPERATIONS_WITH_VALUE_TYPE:disabled",
-          "-opt-in=kotlin.RequiresOptIn",
-          "-opt-in=kotlin.contracts.ExperimentalContracts"
-        )
+        freeCompilerArgs.addAll("-Xjsr305=strict")
       }
     }
   }
