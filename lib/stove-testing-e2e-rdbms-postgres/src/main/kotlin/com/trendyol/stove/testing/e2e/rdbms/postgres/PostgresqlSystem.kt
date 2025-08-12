@@ -1,4 +1,4 @@
-package com.trendol.stove.testing.e2e.rdbms.postgres
+package com.trendyol.stove.testing.e2e.rdbms.postgres
 
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.TestSystem

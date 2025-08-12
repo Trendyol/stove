@@ -1,6 +1,5 @@
 package com.trendyol.stove.testing.e2e.rdbms.postgres
 
-import com.trendol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
