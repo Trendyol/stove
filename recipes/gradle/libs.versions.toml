@@ -45,7 +45,7 @@ kediatr = "4.2.0"
 
 # Testing
 stove = "1.0.0.469-SNAPSHOT"
-kotest = "6.0.0.M12"
+kotest = "6.0.0.M16"
 
 [libraries]
 # Kotlin
