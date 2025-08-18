@@ -1,8 +1,8 @@
 package com.stove.ktor.example.e2e
 
 import arrow.core.*
-import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.http.http
+import com.trendyol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.using
