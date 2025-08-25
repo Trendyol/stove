@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.0"
+kotlin = "2.2.10"
 kotlinx = "1.10.2"
 scala2x = "2.13.16"
 quarkus = "3.25.2"
