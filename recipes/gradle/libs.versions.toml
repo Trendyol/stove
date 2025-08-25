@@ -25,7 +25,7 @@ kafka-kotlin = "0.4.1"
 
 # Logging
 slf4j = "2.0.17"
-kotlinLogging = "7.0.12"
+kotlinLogging = "7.0.13"
 
 # Ktor
 ktor = "3.2.3"
@@ -45,7 +45,7 @@ kediatr = "4.2.0"
 
 # Testing
 stove = "1.0.0.469-SNAPSHOT"
-kotest = "6.0.0"
+kotest = "6.0.1"
 
 [libraries]
 # Kotlin
