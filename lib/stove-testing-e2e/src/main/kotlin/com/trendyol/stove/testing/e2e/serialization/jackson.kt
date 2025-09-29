@@ -60,7 +60,7 @@ object E2eObjectMapperConfig {
       .builder()
       .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .serializationInclusion(JsonInclude.Include.NON_NULL)
+      .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
       .build()
       .registerKotlinModule()
       .registerModule(isoInstantModule)

@@ -16,7 +16,7 @@ class ObjectMapperConfig {
       return ObjectMapper()
         .registerModule(KotlinModule.Builder().build())
         .registerModule(isoInstantModule)
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
   }
