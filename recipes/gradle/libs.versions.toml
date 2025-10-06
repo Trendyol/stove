@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.2.20"
 kotlinx = "1.10.2"
-scala2x = "2.13.16"
+scala2x = "2.13.17"
 quarkus = "3.28.1"
 ktlint = "1.7.1"
 
