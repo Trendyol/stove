@@ -191,7 +191,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.2.20-2.0.3" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.2.20-2.0.4" }
 micronaut-application = { id = "io.micronaut.application", version = "4.5.4" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.5.4" }
 micronaut-library = { id = "io.micronaut.library", version = "4.5.4" }
