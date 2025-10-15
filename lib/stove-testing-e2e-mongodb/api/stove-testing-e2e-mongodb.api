@@ -154,7 +154,7 @@ public final class com/trendyol/stove/testing/e2e/mongodb/OptionsKt {
 	public static final fun mongodb-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
-public class com/trendyol/stove/testing/e2e/mongodb/StoveMongoContainer : org/testcontainers/containers/MongoDBContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
+public class com/trendyol/stove/testing/e2e/mongodb/StoveMongoContainer : org/testcontainers/mongodb/MongoDBContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
 	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
 	public fun getContainerIdAccess ()Ljava/lang/String;
 	public fun getDockerClientAccess ()Lkotlin/Lazy;

@@ -83,7 +83,7 @@ public final class com/trendyol/stove/testing/e2e/rdbms/mssql/SqlMigrationContex
 	public fun toString ()Ljava/lang/String;
 }
 
-public class com/trendyol/stove/testing/e2e/rdbms/mssql/StoveMsSqlContainer : org/testcontainers/containers/MSSQLServerContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
+public class com/trendyol/stove/testing/e2e/rdbms/mssql/StoveMsSqlContainer : org/testcontainers/mssqlserver/MSSQLServerContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
 	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
 	public fun getContainerIdAccess ()Ljava/lang/String;
 	public fun getDockerClientAccess ()Lkotlin/Lazy;
