@@ -7,14 +7,14 @@ import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
 const val DEFAULT_POSTGRES_IMAGE_NAME = "postgres"
 
 open class StovePostgresqlContainer(
   override val imageNameAccess: DockerImageName
-) : PostgreSQLContainer<StovePostgresqlContainer>(imageNameAccess),
+) : PostgreSQLContainer(imageNameAccess),
   StoveContainer
 
 data class PostgresqlContainerOptions(
@@ -68,6 +68,7 @@ internal fun TestSystem.withPostgresql(options: PostgresqlOptions): TestSystem =
       .withUsername(options.username)
       .withPassword(options.password)
       .withReuse(this.options.keepDependenciesRunning)
+      .let { c -> c as StovePostgresqlContainer }
       .apply(options.container.containerFn)
   }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options))) }
     .let { this }

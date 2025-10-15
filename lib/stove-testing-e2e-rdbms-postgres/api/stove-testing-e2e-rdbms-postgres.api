@@ -71,7 +71,7 @@ public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSyste
 	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem;
 }
 
-public class com/trendyol/stove/testing/e2e/rdbms/postgres/StovePostgresqlContainer : org/testcontainers/containers/PostgreSQLContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
+public class com/trendyol/stove/testing/e2e/rdbms/postgres/StovePostgresqlContainer : org/testcontainers/postgresql/PostgreSQLContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
 	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
 	public fun getContainerIdAccess ()Ljava/lang/String;
 	public fun getDockerClientAccess ()Lkotlin/Lazy;

@@ -25,7 +25,7 @@ r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "8.19.5"
 mongodb = "5.6.1"
 wiremock = "3.13.1"
-testcontainers = "1.21.3"
+testcontainers = "2.0.0"
 spotless = "8.0.0"
 detekt = "1.23.8"
 wire = "5.4.0"
@@ -129,13 +129,13 @@ microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", vers
 ### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
-testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
-testcontainers-couchbase = { module = "org.testcontainers:couchbase", version.ref = "testcontainers" }
-testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
-testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
-testcontainers-mssql = { module = "org.testcontainers:mssqlserver", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:testcontainers-kafka", version.ref = "testcontainers" }
+testcontainers-couchbase = { module = "org.testcontainers:testcontainers-couchbase", version.ref = "testcontainers" }
+testcontainers-postgres = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-elasticsearch = { module = "org.testcontainers:testcontainers-elasticsearch", version.ref = "testcontainers" }
+testcontainers-mongodb = { module = "org.testcontainers:testcontainers-mongodb", version.ref = "testcontainers" }
+testcontainers-mssql = { module = "org.testcontainers:testcontainers-mssqlserver", version.ref = "testcontainers" }
 testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis", version = "1.6.4" }
 
 # spring-boot 2x

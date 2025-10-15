@@ -7,7 +7,6 @@ import com.trendyol.stove.testing.e2e.rdbms.RelationalDatabaseExposedConfigurati
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.testcontainers.containers.MSSQLServerContainer
 import org.testcontainers.utility.DockerImageName
 
 sealed class ToolsPath(
@@ -26,12 +25,12 @@ sealed class ToolsPath(
 
 open class StoveMsSqlContainer(
   override val imageNameAccess: DockerImageName
-) : MSSQLServerContainer<StoveMsSqlContainer>(imageNameAccess),
+) : org.testcontainers.mssqlserver.MSSQLServerContainer(imageNameAccess),
   StoveContainer
 
 data class MssqlContainerOptions(
   override val registry: String = DEFAULT_REGISTRY,
-  override val image: String = MSSQLServerContainer.IMAGE,
+  override val image: String = org.testcontainers.mssqlserver.MSSQLServerContainer.IMAGE,
   override val tag: String = "2022-latest",
   override val compatibleSubstitute: String? = null,
   /**
@@ -99,6 +98,7 @@ internal fun TestSystem.withMsSql(options: MsSqlOptions): TestSystem =
       .withEnv("MSSQL_DB", options.databaseName)
       .withPassword(options.password)
       .withReuse(this.options.keepDependenciesRunning)
+      .let { c -> c as StoveMsSqlContainer }
       .apply(options.container.containerFn)
   }.let { getOrRegister(MsSqlSystem(this, MsSqlContext(it, options))) }
     .let { this }
