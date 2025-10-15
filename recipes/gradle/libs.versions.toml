@@ -17,7 +17,7 @@ arrow = "2.1.2"
 jackson = "2.20.0"
 
 # Couchbase
-couchbase-client = "3.9.1"
+couchbase-client = "3.9.2"
 
 # Kafka
 kafka = "4.1.0"
@@ -45,7 +45,7 @@ kediatr = "4.2.0"
 
 # Testing
 stove = "0.17.1"
-kotest = "6.0.3"
+kotest = "6.0.4"
 
 [libraries]
 # Kotlin
