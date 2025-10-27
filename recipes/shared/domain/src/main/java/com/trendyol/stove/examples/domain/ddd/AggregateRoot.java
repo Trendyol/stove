@@ -10,7 +10,7 @@ import lombok.Getter;
 public abstract class AggregateRoot<TId> {
   private final EventRouter router;
   private final EventRecorder recorder;
-  @Getter private long version;
+  @Getter protected long version;
   @Getter private final TId id;
 
   protected AggregateRoot(TId id) {

@@ -46,6 +46,9 @@ kediatr = "4.2.0"
 # Testing
 stove = "0.17.1"
 kotest = "6.0.4"
+exposed = "1.0.0-rc-2"
+postgresql = "42.7.8"
+flyway = "11.15.0"
 
 [libraries]
 # Kotlin
@@ -124,6 +127,16 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
 testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.21.3" }
 
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-javaTime = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.0.RELEASE" }
+r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
+
 # Stove
 stove-testing = { module = "com.trendyol:stove-testing-e2e", version.ref = "stove" }
 stove-spring-testing = { module = "com.trendyol:stove-spring-testing-e2e", version.ref = "stove" }
@@ -133,6 +146,7 @@ stove-testing-http = { module = "com.trendyol:stove-testing-e2e-http", version.r
 stove-testing-couchbase = { module = "com.trendyol:stove-testing-e2e-couchbase", version.ref = "stove" }
 stove-testing-wiremock = { module = "com.trendyol:stove-testing-e2e-wiremock", version.ref = "stove" }
 stove-testing-mongodb = { module = "com.trendyol:stove-testing-e2e-mongodb", version.ref = "stove" }
+stove-testing-postgresql = { module = "com.trendyol:stove-testing-e2e-rdbms-postgres", version.ref = "stove" }
 
 # Scala
 scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }

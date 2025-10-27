@@ -61,4 +61,11 @@ public class Product extends AggregateRoot<String> {
     aggregate.applyEvent(new ProductCreatedEvent(name, price, categoryId));
     return aggregate;
   }
+
+  public static Product fromPersistency(
+      String id, String name, double price, int categoryId, long version) {
+    var aggregate = new Product(id, name, price, categoryId);
+    aggregate.version = version;
+    return aggregate;
+  }
 }

@@ -5,6 +5,8 @@ rootProject.name = "recipes"
 include(
   "kotlin-recipes",
   "kotlin-recipes:ktor-recipe",
+  "kotlin-recipes:ktor-recipe",
+  "kotlin-recipes:ktor-postgres-recipe",
   "kotlin-recipes:spring-boot-recipe",
   "java-recipes",
   "java-recipes:spring-boot-recipe",

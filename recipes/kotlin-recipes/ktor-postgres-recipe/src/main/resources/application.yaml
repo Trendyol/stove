@@ -1,0 +1,35 @@
+server:
+  port: 8082
+  host: "localhost"
+  name: "test"
+
+db:
+  url: r2dbc:postgresql://localhost:5432/stove-kotlin-ktor
+  password: password
+  user: admin
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    table: flyway_schema_history
+
+kafka:
+  bootstrap-servers: localhost:9092
+  group-id: stove-kotlin-ktor
+  heartbeat-interval-seconds: 2
+  request-timeout-seconds: 30
+  session-timeout-seconds: 10
+  auto-create-topics: true
+  auto-offset-reset: earliest
+  interceptor-classes: [ ]
+  topics:
+    product:
+      name: stove-kotlin-ktor.product
+      retry: stove-kotlin-ktor.retry
+      dead-letter: stove-kotlin-ktor.error
+      concurrency: 2
+      maxRetry: 1
+
+external-apis:
+  category:
+    url: http://localhost:9091
+    timeout: 30
