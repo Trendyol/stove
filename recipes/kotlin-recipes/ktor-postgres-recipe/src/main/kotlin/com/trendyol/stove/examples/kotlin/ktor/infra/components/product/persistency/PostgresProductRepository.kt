@@ -38,7 +38,7 @@ class PostgresProductRepository(
       it[version] = product.version
     }
     if (updatedRows == 0) {
-      throw RuntimeException("Product with id ${product.id} was updated concurrently.")
+      error("Product with id ${product.id} was updated concurrently.")
     }
   }
 
