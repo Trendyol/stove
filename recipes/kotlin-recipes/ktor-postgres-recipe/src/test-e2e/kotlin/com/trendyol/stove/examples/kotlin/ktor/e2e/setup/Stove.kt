@@ -28,7 +28,7 @@ class Stove : AbstractProjectConfig() {
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 9091
+            port = 9095
           )
         }
         kafka {

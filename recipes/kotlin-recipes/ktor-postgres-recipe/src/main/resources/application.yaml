@@ -31,5 +31,5 @@ kafka:
 
 external-apis:
   category:
-    url: http://localhost:9091
+    url: http://localhost:9095
     timeout: 30
