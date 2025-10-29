@@ -22,7 +22,7 @@ kover = "0.9.3"
 ktor = "3.3.1"
 koin = "4.1.0-Beta8"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.19.5"
+elastic = "8.19.6"
 mongodb = "5.6.1"
 wiremock = "3.13.1"
 testcontainers = "2.0.1"
@@ -166,7 +166,7 @@ google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", versi
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 google-gson = { module = "com.google.code.gson:gson", version = "2.13.2" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.2" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 
