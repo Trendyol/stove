@@ -38,8 +38,8 @@ mockito = "6.1.0"
 kotlinx-serialization = "1.9.0"
 kotlinBinaryCompatibilityValidator = "0.18.1"
 snakeyaml = "2.5"
-micronaut = "4.10.4"
-micronaut-platform = "4.9.4"
+micronaut = "4.10.8"
+micronaut-platform = "4.10.1"
 micronaut-micrometer = "1.3.1"
 ktlint = "1.7.1"
 
@@ -58,13 +58,13 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 micronaut-platform = { module = "io.micronaut.platform:micronaut-platform", version.ref = "micronaut-platform" }
 micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime", version = "4.7.0" }
-micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson", version = "2.15.5" }
+micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson", version = "2.16.1" }
 micronaut-http-client = { module = "io.micronaut:micronaut-http-client", version.ref = "micronaut" }
 micronaut-http-server-netty = { module = "io.micronaut:micronaut-http-server-netty", version.ref = "micronaut" }
 micronaut-inject = { module = "io.micronaut:micronaut-inject", version.ref = "micronaut" }
 micronaut-inject-kotlin = { module = "io.micronaut:micronaut-inject-kotlin", version.ref = "micronaut" }
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
-micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.9.0" }
+micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.10.2" }
 micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-micrometer-core", version.ref = "micronaut-micrometer" }
 
 # Arrow
@@ -192,7 +192,7 @@ protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
 google-ksp = { id = "com.google.devtools.ksp", version = "2.2.20-2.0.4" }
-micronaut-application = { id = "io.micronaut.application", version = "4.5.5" }
-micronaut-aot = { id = "io.micronaut.aot", version = "4.5.5" }
-micronaut-library = { id = "io.micronaut.library", version = "4.5.5" }
+micronaut-application = { id = "io.micronaut.application", version = "4.6.1" }
+micronaut-aot = { id = "io.micronaut.aot", version = "4.6.1" }
+micronaut-library = { id = "io.micronaut.library", version = "4.6.1" }
 maven-publish = { id = "com.vanniktech.maven.publish", version = "0.34.0" }
