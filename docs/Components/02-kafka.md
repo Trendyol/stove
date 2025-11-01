@@ -259,11 +259,251 @@ springBoot(
 
 Now you're full set and have control over Kafka messages from the testing context.
 
+## Testing
+
+### Publishing Messages
+
+You can publish messages to Kafka topics for testing:
+
 ```kotlin
 TestSystem.validate {
   kafka {
-    shouldBeConsumed<AnyEvent> { actual -> }
-    shouldBePublished<AnyEvent> { actual -> }
+    publish(
+      topic = "product-events",
+      message = ProductCreated(id = "123", name = "T-Shirt"),
+      key = "product-123".some(), // Optional
+      headers = mapOf("X-UserEmail" to "user@example.com"), // Optional
+      partition = 0 // Optional
+    )
+  }
+}
+```
+
+### Asserting Published Messages
+
+Test that your application publishes messages correctly:
+
+```kotlin
+TestSystem.validate {
+  // Trigger an action in your application
+  http {
+    postAndExpectBodilessResponse("/products", body = CreateProductRequest(name = "Laptop").some()) { response ->
+      response.status shouldBe 200
+    }
+  }
+
+  // Verify the message was published
+  kafka {
+    shouldBePublished<ProductCreatedEvent>(atLeastIn = 10.seconds) {
+      actual.name == "Laptop" &&
+      actual.id != null &&
+      metadata.topic == "product-events" &&
+      metadata.headers["event-type"] == "PRODUCT_CREATED"
+    }
+  }
+}
+```
+
+### Asserting Consumed Messages
+
+Test that your application consumes messages correctly:
+
+```kotlin
+TestSystem.validate {
+  // Publish a message
+  kafka {
+    publish(
+      topic = "order-events",
+      message = OrderCreated(orderId = "456", amount = 100.0)
+    )
+  }
+
+  // Verify your application consumed and processed it
+  kafka {
+    shouldBeConsumed<OrderCreated>(atLeastIn = 20.seconds) {
+      actual.orderId == "456" &&
+      actual.amount == 100.0
+    }
+  }
+
+  // Verify side effects (e.g., database write)
+  couchbase {
+    shouldGet<Order>("order:456") { order ->
+      order.orderId shouldBe "456"
+      order.status shouldBe "CREATED"
+    }
+  }
+}
+```
+
+### Testing Failed Messages
+
+Test that your application handles failures correctly:
+
+```kotlin
+TestSystem.validate {
+  kafka {
+    // Publish an invalid message
+    publish("user-events", FailingEvent(id = 5L))
+
+    // Verify it failed with the expected reason
+    shouldBeFailed<FailingEvent>(atLeastIn = 10.seconds) {
+      actual.id == 5L &&
+      reason is BusinessException
+    }
+  }
+}
+```
+
+### Testing Retry Logic
+
+Test that your application retries failed messages:
+
+```kotlin
+TestSystem.validate {
+  kafka {
+    publish("product-failing", ProductFailingCreated(productId = "789"))
+    
+    // Verify it was retried 3 times
+    shouldBeRetried<ProductFailingCreated>(atLeastIn = 1.minutes, times = 3) {
+      actual.productId == "789"
+    }
+
+    // Verify it ended up in error topic
+    shouldBePublished<ProductFailingCreated>(atLeastIn = 1.minutes) {
+      metadata.topic == "product-failing.error"
+    }
+  }
+}
+```
+
+### Working with Message Metadata
+
+Access message metadata including headers, topic, partition, offset:
+
+```kotlin
+TestSystem.validate {
+  kafka {
+    shouldBeConsumed<OrderCreated> {
+      actual.orderId == "123" &&
+      metadata.topic == "order-events" &&
+      metadata.headers["correlation-id"] != null &&
+      metadata.partition == 0
+    }
+  }
+}
+```
+
+### Peeking Messages
+
+Inspect messages without consuming them:
+
+```kotlin
+TestSystem.validate {
+  kafka {
+    // Peek at published messages
+    peekPublishedMessages(atLeastIn = 5.seconds, topic = "product-events") { record ->
+      record.key == "product-123"
+    }
+
+    // Peek at consumed messages
+    peekConsumedMessages(atLeastIn = 5.seconds, topic = "order-events") { record ->
+      record.offset >= 10L
+    }
+
+    // Peek at committed messages
+    peekCommittedMessages(topic = "order-events") { record ->
+      record.offset == 101L // next offset after 100 messages
+    }
+  }
+}
+```
+
+### Admin Operations
+
+Manage Kafka topics and configurations:
+
+```kotlin
+TestSystem.validate {
+  kafka {
+    adminOperations {
+      createTopic(NewTopic("test-topic", 1, 1))
+      // Other admin operations available here
+    }
+  }
+}
+```
+
+### In-Flight Consumer
+
+Create a consumer for advanced testing scenarios:
+
+```kotlin
+TestSystem.validate {
+  kafka {
+    consumer<String, ProductCreated>(
+      topic = "product-events",
+      readOnly = false, // commit messages
+      autoOffsetReset = "earliest",
+      autoCreateTopics = true,
+      keepConsumingAtLeastFor = 10.seconds
+    ) { record ->
+      println("Consumed: ${record.value()}")
+      // Process the message
+    }
+  }
+}
+```
+
+## Complete Example
+
+Here's a complete end-to-end test combining HTTP, Kafka, and database assertions:
+
+```kotlin
+test("should create product and publish event") {
+  TestSystem.validate {
+    val productId = UUID.randomUUID()
+    val productName = "Laptop"
+
+    // Mock external service
+    wiremock {
+      mockGet("/categories/electronics", statusCode = 200, responseBody = Category(id = 1, active = true).some())
+    }
+
+    // Make HTTP request
+    http {
+      postAndExpectBodilessResponse(
+        uri = "/products",
+        body = ProductCreateRequest(id = productId, name = productName, categoryId = 1).some()
+      ) { response ->
+        response.status shouldBe 200
+      }
+    }
+
+    // Verify Kafka message was published
+    kafka {
+      shouldBePublished<ProductCreatedEvent>(atLeastIn = 10.seconds) {
+        actual.id == productId &&
+        actual.name == productName &&
+        metadata.headers["X-UserEmail"] != null
+      }
+    }
+
+    // Verify database state
+    couchbase {
+      shouldGet<Product>("product:$productId") { product ->
+        product.id shouldBe productId
+        product.name shouldBe productName
+      }
+    }
+
+    // Verify the event was consumed by another service
+    kafka {
+      shouldBeConsumed<ProductCreatedEvent>(atLeastIn = 20.seconds) {
+        actual.id == productId &&
+        actual.name == productName
+      }
+    }
   }
 }
 ```

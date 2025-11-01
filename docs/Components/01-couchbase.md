@@ -72,8 +72,317 @@ TestSystem()
           "couchbase.username=${cfg.username}",
           "couchbase.password=${cfg.password}"
         )
-      }).migrations<CouchbaseMigration>()
+      }).migrations {
+        register<CouchbaseMigration>()
+      }
     }
   }
   .run()
+```
+
+## Usage
+
+### Saving Documents
+
+Save documents to Couchbase collections:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Save to default collection (_default)
+    saveToDefaultCollection(
+      id = "user:123",
+      instance = User(id = "123", name = "John Doe", email = "john@example.com")
+    )
+
+    // Save to a specific collection
+    save(
+      collection = "products",
+      id = "product:456",
+      instance = Product(id = "456", name = "Laptop", price = 999.99)
+    )
+  }
+}
+```
+
+### Getting Documents
+
+Retrieve and validate documents:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Get from default collection
+    shouldGet<User>("user:123") { user ->
+      user.id shouldBe "123"
+      user.name shouldBe "John Doe"
+      user.email shouldBe "john@example.com"
+    }
+
+    // Get from specific collection
+    shouldGet<Product>("products", "product:456") { product ->
+      product.id shouldBe "456"
+      product.name shouldBe "Laptop"
+      product.price shouldBe 999.99
+    }
+  }
+}
+```
+
+### Checking Non-Existence
+
+Verify that documents don't exist:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Check default collection
+    shouldNotExist("user:999")
+
+    // Check specific collection
+    shouldNotExist("products", "product:999")
+  }
+}
+```
+
+### Deleting Documents
+
+Delete documents and verify deletion:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Delete from default collection
+    shouldDelete("user:123")
+    shouldNotExist("user:123")
+
+    // Delete from specific collection
+    shouldDelete("products", "product:456")
+    shouldNotExist("products", "product:456")
+  }
+}
+```
+
+### N1QL Queries
+
+Execute N1QL queries and validate results:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Simple query
+    shouldQuery<User>("SELECT u.* FROM `users` u WHERE u.age > 18") { users ->
+      users.size shouldBeGreaterThan 0
+      users.all { it.age > 18 } shouldBe true
+    }
+
+    // Query with multiple conditions
+    shouldQuery<Product>(
+      """
+      SELECT p.* 
+      FROM `products` p 
+      WHERE p.price > 100 AND p.category = 'Electronics'
+      """.trimIndent()
+    ) { products ->
+      products.size shouldBeGreaterThan 0
+      products.all { it.price > 100 && it.category == "Electronics" } shouldBe true
+    }
+  }
+}
+```
+
+### Working with Collections and Scopes
+
+Access bucket, collection, and cluster directly:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Access the cluster
+    val cluster = cluster()
+    
+    // Access the bucket
+    val bucket = bucket()
+    
+    // Perform custom operations
+    val customResult = bucket.collections.getAllScopes()
+    customResult shouldNotBe null
+  }
+}
+```
+
+### Pause and Unpause Container
+
+Control the Couchbase container for testing failure scenarios:
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Pause the container
+    pause()
+    
+    // Your application should handle the failure
+    // ...
+    
+    // Unpause the container
+    unpause()
+    
+    // Verify recovery
+    shouldGet<User>("user:123") { user ->
+      user.id shouldBe "123"
+    }
+  }
+}
+```
+
+## Complete Example
+
+Here's a complete end-to-end test combining HTTP, Couchbase, and Kafka:
+
+```kotlin
+test("should create product and store in couchbase") {
+  TestSystem.validate {
+    val productId = UUID.randomUUID().toString()
+    val productName = "Gaming Laptop"
+    val categoryId = 1
+
+    // Mock external service
+    wiremock {
+      mockGet(
+        url = "/categories/$categoryId",
+        statusCode = 200,
+        responseBody = Category(id = categoryId, name = "Electronics", active = true).some()
+      )
+    }
+
+    // Create product via API
+    http {
+      postAndExpectBody<Any>(
+        uri = "/products",
+        body = ProductCreateRequest(
+          name = productName,
+          price = 1299.99,
+          categoryId = categoryId
+        ).some()
+      ) { response ->
+        response.status shouldBe 200
+      }
+    }
+
+    // Verify stored in Couchbase
+    couchbase {
+      shouldGet<Product>("products", "product:$productId") { product ->
+        product.id shouldBe productId
+        product.name shouldBe productName
+        product.price shouldBe 1299.99
+        product.categoryId shouldBe categoryId
+      }
+    }
+
+    // Verify event was published
+    kafka {
+      shouldBePublished<ProductCreatedEvent>(atLeastIn = 10.seconds) {
+        actual.id == productId &&
+        actual.name == productName &&
+        actual.price == 1299.99
+      }
+    }
+
+    // Query products by category
+    couchbase {
+      shouldQuery<Product>(
+        """
+        SELECT p.* 
+        FROM `products` p 
+        WHERE p.categoryId = $categoryId
+        """.trimIndent()
+      ) { products ->
+        products.size shouldBeGreaterThan 0
+        products.any { it.id == productId } shouldBe true
+      }
+    }
+  }
+}
+```
+
+## Integration with Application
+
+Verify application behavior using the bridge:
+
+```kotlin
+test("should use repository to save product") {
+  TestSystem.validate {
+    val productId = UUID.randomUUID().toString()
+    val product = Product(id = productId, name = "Test Product", price = 99.99)
+
+    // Use application's repository
+    using<ProductRepository> {
+      save(product)
+    }
+
+    // Verify in Couchbase
+    couchbase {
+      shouldGet<Product>("products", "product:$productId") { savedProduct ->
+        savedProduct.id shouldBe productId
+        savedProduct.name shouldBe "Test Product"
+        savedProduct.price shouldBe 99.99
+      }
+    }
+  }
+}
+```
+
+## Advanced Operations
+
+### Batch Operations
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Save multiple documents
+    val users = listOf(
+      User(id = "1", name = "Alice"),
+      User(id = "2", name = "Bob"),
+      User(id = "3", name = "Charlie")
+    )
+    
+    users.forEach { user ->
+      saveToDefaultCollection("user:${user.id}", user)
+    }
+    
+    // Query all
+    shouldQuery<User>("SELECT u.* FROM `${bucket().name}` u") { result ->
+      result.size shouldBeGreaterThanOrEqual users.size
+    }
+    
+    // Verify each
+    users.forEach { user ->
+      shouldGet<User>("user:${user.id}") { actual ->
+        actual.name shouldBe user.name
+      }
+    }
+  }
+}
+```
+
+### Error Handling
+
+```kotlin
+TestSystem.validate {
+  couchbase {
+    // Document not found
+    shouldNotExist("non-existent:key")
+    
+    // Attempting to delete non-existent document throws exception
+    assertThrows<DocumentNotFoundException> {
+      shouldDelete("non-existent:key")
+    }
+    
+    // Attempting to assert non-existence on existing document throws assertion error
+    saveToDefaultCollection("user:123", User(id = "123", name = "John"))
+    assertThrows<AssertionError> {
+      shouldNotExist("user:123")
+    }
+  }
+}
 ```
