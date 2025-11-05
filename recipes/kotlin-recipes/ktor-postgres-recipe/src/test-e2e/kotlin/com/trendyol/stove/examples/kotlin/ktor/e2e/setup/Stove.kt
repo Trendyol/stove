@@ -16,6 +16,10 @@ import org.koin.dsl.module
 private const val DATABASE = "stove-kotlin-ktor"
 
 class Stove : AbstractProjectConfig() {
+  init {
+    stoveKafkaBridgePortDefault = "50054"
+  }
+
   override suspend fun beforeProject() {
     TestSystem()
       .with {
