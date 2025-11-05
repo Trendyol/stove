@@ -36,7 +36,7 @@ dependencyResolutionManagement {
   }
 }
 plugins {
-  id("org.danilopianini.gradle-pre-commit-git-hooks").version("2.1.3")
+  id("org.danilopianini.gradle-pre-commit-git-hooks").version("2.1.4")
 }
 gitHooks {
   preCommit {

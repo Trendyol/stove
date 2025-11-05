@@ -134,7 +134,7 @@ exposed-javaTime = { module = "org.jetbrains.exposed:exposed-java-time", version
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
-postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.0.RELEASE" }
+postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.1.RELEASE" }
 r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
 
 # Stove
