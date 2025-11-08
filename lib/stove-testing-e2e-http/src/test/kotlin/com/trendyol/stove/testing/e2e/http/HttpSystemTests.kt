@@ -285,6 +285,93 @@ class HttpSystemTests :
       }
     }
 
+    test("should match POST request with partial body containing specific fields") {
+      val aUniqueIdentifierForTest = 123
+      val aProductCategoryForTest = "food"
+      val expectedPostDtoName = UUID.randomUUID().toString()
+
+      TestSystem.validate {
+        wiremock {
+          mockPostRequestContaining(
+            url = "/post-with-request-containing",
+            requestContaining = mapOf("productId" to aUniqueIdentifierForTest),
+            statusCode = 200,
+            responseBody = TestDto(expectedPostDtoName).some()
+          )
+        }
+
+        http {
+          postAndExpectBody<TestDto>(
+            uri = "/post-with-request-containing",
+            body = mapOf(
+              "productId" to aUniqueIdentifierForTest,
+              "productCategory" to aProductCategoryForTest
+            ).some()
+          ) { actual ->
+            actual.body().name shouldBe expectedPostDtoName
+          }
+        }
+      }
+    }
+
+    test("should match PUT request with partial body containing specific fields") {
+      val aUniqueIdentifierForTest = 123
+      val aProductCategoryForTest = "food"
+      val expectedPutDtoName = UUID.randomUUID().toString()
+
+      TestSystem.validate {
+        wiremock {
+          mockPutRequestContaining(
+            url = "/put-with-request-containing",
+            requestContaining = mapOf("productId" to aUniqueIdentifierForTest),
+            statusCode = 200,
+            responseBody = TestDto(expectedPutDtoName).some()
+          )
+        }
+
+        http {
+          putAndExpectBody<TestDto>(
+            uri = "/put-with-request-containing",
+            body = mapOf(
+              "productId" to aUniqueIdentifierForTest,
+              "productCategory" to aProductCategoryForTest
+            ).some()
+          ) { actual ->
+            actual.body().name shouldBe expectedPutDtoName
+          }
+        }
+      }
+    }
+
+    test("should match PATCH request with partial body containing specific fields") {
+      val aUniqueIdentifierForTest = 123
+      val aProductCategoryForTest = "food"
+      val expectedPatchDtoName = UUID.randomUUID().toString()
+
+      TestSystem.validate {
+        wiremock {
+          mockPatchRequestContaining(
+            url = "/patch-with-request-containing",
+            requestContaining = mapOf("productId" to aUniqueIdentifierForTest),
+            statusCode = 200,
+            responseBody = TestDto(expectedPatchDtoName).some()
+          )
+        }
+
+        http {
+          patchAndExpectBody<TestDto>(
+            uri = "/patch-with-request-containing",
+            body = mapOf(
+              "productId" to aUniqueIdentifierForTest,
+              "productCategory" to aProductCategoryForTest
+            ).some()
+          ) { actual ->
+            actual.body().name shouldBe expectedPatchDtoName
+          }
+        }
+      }
+    }
+
     test("java time instant should work") {
       val expectedGetDtoName = UUID.randomUUID().toString()
       TestSystem.validate {
