@@ -26,7 +26,7 @@ class IndexTests :
       }
     }
 
-    /**
+    /*
      * For now not supported, and disabled on CI, run it when you want to test the bridge
      */
     xtest("bridge should work").config(enabled = !runningOnCI) {
