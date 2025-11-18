@@ -14,7 +14,7 @@ import java.net.http.HttpResponse.BodyHandlers
 class WireMockOperationsTest :
   FunSpec({
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockPostConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -66,7 +66,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockPostConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -118,7 +118,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockGetConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -176,7 +176,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockGetConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -261,7 +261,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockPutConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -297,7 +297,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockPutConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -333,7 +333,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockDeleteConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -368,7 +368,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockDeleteConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -403,7 +403,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockPatchConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -438,7 +438,7 @@ class WireMockOperationsTest :
         response.body() shouldBe "PatchResource1"
       }
     }
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockPatchConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -474,7 +474,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockHeadConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].
@@ -510,7 +510,7 @@ class WireMockOperationsTest :
       }
     }
 
-    /**
+    /*
      * Configures a POST request mock using [WireMockSystem.mockHeadConfigure].
      *
      * @param urlMatcher A [UrlPattern] used to match the request URL. Defaults to [urlEqualTo] with the provided [url].

@@ -16,8 +16,11 @@ inline fun <reified T : Throwable> shouldThrowMaybe(block: () -> Any) {
 
   when (thrownThrowable) {
     null -> Unit
+
     is T -> Unit
+
     is AssertionError -> errorCollector.collectOrThrow(thrownThrowable)
+
     else -> errorCollector.collectOrThrow(
       createAssertionError(
         "Expected exception ${expectedExceptionClass.bestName()} but a ${thrownThrowable::class.simpleName} was thrown instead.",

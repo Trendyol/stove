@@ -13,7 +13,7 @@ import java.net.http.HttpResponse.BodyHandlers
 
 class WireMockDeletionTest :
   FunSpec({
-    /**
+    /*
      * Check [WireMockContext.removeStubAfterRequestMatched]
      */
     test("Remove stub from wiremock when request is matched") {
@@ -51,7 +51,7 @@ class WireMockDeletionTest :
       }
     }
 
-    /**
+    /*
      * Check [WireMockContext.removeStubAfterRequestMatched]
      */
     test("Removes the stub after request completes, and can be added again") {

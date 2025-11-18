@@ -50,11 +50,15 @@ class ElasticsearchSystem internal constructor(
 
   private fun determineCertificate(): Option<ElasticsearchExposedCertificate> =
     when (context.options.container.disableSecurity) {
-      true -> None
-      false ->
+      true -> {
+        None
+      }
+
+      false -> {
         ElasticsearchExposedCertificate(
           context.container.caCertAsBytes().getOrElse { ByteArray(0) }
         ).apply { sslContext = context.container.createSslContextFromCa() }.some()
+      }
     }
 
   override suspend fun afterRun() {
@@ -191,14 +195,17 @@ class ElasticsearchSystem internal constructor(
 
   private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
     when (context.options.container.disableSecurity) {
-      true ->
+      true -> {
         RestClient
           .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port))
           .apply {
             setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
           }.build()
+      }
 
-      false -> secureRestClient(cfg, context.container.createSslContextFromCa())
+      false -> {
+        secureRestClient(cfg, context.container.createSslContextFromCa())
+      }
     }
 
   private fun secureRestClient(

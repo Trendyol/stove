@@ -367,6 +367,7 @@ class HttpSystem(
     body.forEach {
       when (it) {
         is StoveMultiPartContent.Text -> append(it.param, it.value)
+
         is StoveMultiPartContent.Binary -> append(
           it.param,
           it.content,

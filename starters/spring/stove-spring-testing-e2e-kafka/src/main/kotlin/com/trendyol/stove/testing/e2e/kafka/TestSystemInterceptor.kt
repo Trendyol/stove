@@ -111,11 +111,14 @@ class TestSystemKafkaInterceptor<K, V>(
   private fun extractCause(
     listenerException: Exception
   ): Exception = when (listenerException) {
-    is ListenerExecutionFailedException ->
+    is ListenerExecutionFailedException -> {
       listenerException.cause
         ?: AssertionError("No cause found: Listener was not able to capture the cause")
+    }
 
-    else -> listenerException
+    else -> {
+      listenerException
+    }
   } as Exception
 
   private fun <T : Any> deserializeCatching(
