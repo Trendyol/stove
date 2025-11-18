@@ -92,13 +92,17 @@ sealed class Try<out T> {
    */
   inline fun <R> flatMap(transform: (T) -> Try<R>): Try<R> =
     when (this) {
-      is Success ->
+      is Success -> {
         try {
           transform(value)
         } catch (exception: Throwable) {
           if (NonFatal(exception)) Failure(exception) else throw exception
         }
-      is Failure -> this
+      }
+
+      is Failure -> {
+        this
+      }
     }
 
   /**
@@ -112,7 +116,7 @@ sealed class Try<out T> {
    */
   inline fun filter(predicate: (T) -> Boolean): Try<T> =
     when (this) {
-      is Success ->
+      is Success -> {
         try {
           if (predicate(value)) {
             this
@@ -122,7 +126,11 @@ sealed class Try<out T> {
         } catch (exception: Throwable) {
           if (NonFatal(exception)) Failure(exception) else throw exception
         }
-      is Failure -> this
+      }
+
+      is Failure -> {
+        this
+      }
     }
 
   /**
@@ -136,7 +144,7 @@ sealed class Try<out T> {
    */
   inline fun filterNot(predicate: (T) -> Boolean): Try<T> =
     when (this) {
-      is Success ->
+      is Success -> {
         try {
           if (!predicate(value)) {
             this
@@ -146,7 +154,11 @@ sealed class Try<out T> {
         } catch (exception: Throwable) {
           if (NonFatal(exception)) Failure(exception) else throw exception
         }
-      is Failure -> this
+      }
+
+      is Failure -> {
+        this
+      }
     }
 
   /**
@@ -158,7 +170,7 @@ sealed class Try<out T> {
    */
   inline fun <reified R> filterIsInstance(): Try<R> =
     when (this) {
-      is Success ->
+      is Success -> {
         try {
           if (value is R) {
             Success<R>(value)
@@ -168,7 +180,11 @@ sealed class Try<out T> {
         } catch (exception: Throwable) {
           if (NonFatal(exception)) Failure(exception) else throw exception
         }
-      is Failure -> this
+      }
+
+      is Failure -> {
+        this
+      }
     }
 
   /**
@@ -189,13 +205,17 @@ sealed class Try<out T> {
     throwable: (T) -> Throwable
   ): Try<T> =
     when (this) {
-      is Success ->
+      is Success -> {
         try {
           if (predicate(value)) this else throw throwable(value)
         } catch (exception: Throwable) {
           if (NonFatal(exception)) Failure(exception) else throw exception
         }
-      is Failure -> this
+      }
+
+      is Failure -> {
+        this
+      }
     }
 
   /**
@@ -211,13 +231,17 @@ sealed class Try<out T> {
     failureTransform: (Throwable) -> R
   ): R =
     when (this) {
-      is Success ->
+      is Success -> {
         try {
           successTransform(value)
         } catch (exception: Throwable) {
           if (NonFatal(exception)) failureTransform(exception) else throw exception
         }
-      is Failure -> failureTransform(exception)
+      }
+
+      is Failure -> {
+        failureTransform(exception)
+      }
     }
 
   /**
@@ -352,13 +376,17 @@ fun <T> Try<Try<T>>.flatten(): Try<T> =
  */
 inline fun <T> Try<T>.recover(rescue: (Throwable) -> T): Try<T> =
   when (this) {
-    is Success -> this
-    is Failure ->
+    is Success -> {
+      this
+    }
+
+    is Failure -> {
       try {
         Success(rescue(exception))
       } catch (exception: Throwable) {
         if (NonFatal(exception)) Failure(exception) else throw exception
       }
+    }
   }
 
 /**
@@ -372,13 +400,17 @@ inline fun <T> Try<T>.recover(rescue: (Throwable) -> T): Try<T> =
  */
 inline fun <T> Try<T>.recoverWith(rescue: (Throwable) -> Try<T>): Try<T> =
   when (this) {
-    is Success -> this
-    is Failure ->
+    is Success -> {
+      this
+    }
+
+    is Failure -> {
       try {
         rescue(exception)
       } catch (exception: Throwable) {
         if (NonFatal(exception)) Failure(exception) else throw exception
       }
+    }
   }
 
 /**
@@ -388,13 +420,17 @@ inline fun <T> Try<T>.recoverWith(rescue: (Throwable) -> Try<T>): Try<T> =
  */
 fun <T> Try<T?>.filterNotNull(): Try<T> =
   when (this) {
-    is Success ->
+    is Success -> {
       try {
         if (value != null) Success(value) else throw NoSuchElementException("Value is null")
       } catch (exception: Throwable) {
         if (NonFatal(exception)) Failure(exception) else throw exception
       }
-    is Failure -> this
+    }
+
+    is Failure -> {
+      this
+    }
   }
 
 data class Success<out T>(

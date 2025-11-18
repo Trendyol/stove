@@ -20,15 +20,18 @@ class PropertiesFile {
       when {
         propertiesFilePath
           .readText()
-          .contains(REUSE_ENABLED) -> l.info("'.testcontainers.properties' looks good and contains reuse feature!")
+          .contains(REUSE_ENABLED) -> {
+          l.info("'.testcontainers.properties' looks good and contains reuse feature!")
+        }
 
-        else ->
+        else -> {
           l.info(
             """
                         '.testcontainers.properties' does not contain 'testcontainers.reuse.enable=true'
-                         | You need to create either by yourself or using '${TestSystemOptionsDsl::enableReuseForTestContainers.name}' method
+ You need to create either by yourself or using '${TestSystemOptionsDsl::enableReuseForTestContainers.name}' method
             """.trimIndent()
           )
+        }
       }
     } else {
       l.info(
@@ -48,18 +51,25 @@ class PropertiesFile {
       """.trimIndent()
     )
     when {
-      !propertiesFilePath.exists() -> propertiesFilePath.writeText(REUSE_ENABLED)
-      else ->
+      !propertiesFilePath.exists() -> {
+        propertiesFilePath.writeText(REUSE_ENABLED)
+      }
+
+      else -> {
         when {
           propertiesFilePath
             .readText()
-            .contains(REUSE_ENABLED) ->
+            .contains(REUSE_ENABLED) -> {
             l.info(
               "'.testcontainers.properties' looks good and contains reuse feature!"
             )
+          }
 
-          else -> propertiesFilePath.appendText(REUSE_ENABLED)
+          else -> {
+            propertiesFilePath.appendText(REUSE_ENABLED)
+          }
         }
+      }
     }
   }
 }

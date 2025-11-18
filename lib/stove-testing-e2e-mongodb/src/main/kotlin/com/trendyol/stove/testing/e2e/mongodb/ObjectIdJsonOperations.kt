@@ -26,7 +26,9 @@ class ObjectIdDeserializer : StdDeserializer<ObjectId>(ObjectId::class.java) {
   ): ObjectId =
     when (val node = context.parser.codec.readValue(parser, JsonNode::class.java)) {
       is TextNode -> node.textValue().removeSurrounding("\"")
+
       is JsonNode -> node["\$oid"].textValue().removeSurrounding("\"")
+
       else -> throw IllegalArgumentException(
         "ObjectId (\$oid) could not be deserialized, this is because JsonNode is not properly recognized."
       )

@@ -79,8 +79,14 @@ internal class FileSystemStorage<TState : Any>(
       start()
     }
 
-    pathForSystem.exists() && options.keepDependenciesRunning -> recover(otherwise = start)
-    !pathForSystem.exists() && options.keepDependenciesRunning -> saveStateForNextRun(start())
+    pathForSystem.exists() && options.keepDependenciesRunning -> {
+      recover(otherwise = start)
+    }
+
+    !pathForSystem.exists() && options.keepDependenciesRunning -> {
+      saveStateForNextRun(start())
+    }
+
     else -> {
       pathForSystem.deleteIfExists()
       start()
@@ -103,7 +109,9 @@ internal class FileSystemStorage<TState : Any>(
         j.convertValue(swp.state, state.java)
       }
 
-      else -> saveStateForNextRun(otherwise())
+      else -> {
+        saveStateForNextRun(otherwise())
+      }
     }
 
   private fun saveStateForNextRun(state: TState): TState =
