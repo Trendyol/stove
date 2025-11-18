@@ -1,9 +1,9 @@
 [versions]
 kotlin = "2.2.21"
 kotlinx = "1.10.2"
-scala2x = "2.13.17"
+scala2x = "2.13.18"
 quarkus = "3.29.2"
-ktlint = "1.7.1"
+ktlint = "1.8.0"
 
 # Spring-Boot
 spring-boot = "3.5.7"
@@ -17,10 +17,10 @@ arrow = "2.2.0"
 jackson = "2.20.1"
 
 # Couchbase
-couchbase-client = "3.9.2"
+couchbase-client = "3.10.0"
 
 # Kafka
-kafka = "4.1.0"
+kafka = "4.1.1"
 kafka-kotlin = "0.4.1"
 
 # Logging
@@ -45,10 +45,10 @@ kediatr = "4.2.0"
 
 # Testing
 stove = "0.17.1"
-kotest = "6.0.4"
-exposed = "1.0.0-rc-2"
+kotest = "6.0.5"
+exposed = "1.0.0-rc-3"
 postgresql = "42.7.8"
-flyway = "11.15.0"
+flyway = "11.17.0"
 
 [libraries]
 # Kotlin
@@ -95,7 +95,7 @@ ktor-server-callId = { module = "io.ktor:ktor-server-call-id-jvm", version.ref =
 ktor-server-conditionalHeaders = { module = "io.ktor:ktor-server-conditional-headers", version.ref = "ktor" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
 ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.3.0" }
+ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.4.0" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
