@@ -29,21 +29,24 @@ class MongodbSystem internal constructor(
     testSystem.options.createStateStorage<MongodbExposedConfiguration, MongodbSystem>()
 
   override suspend fun run() {
-    exposedConfiguration = state.capture {
-      context.container.start()
-      MongodbExposedConfiguration(
-        context.container.connectionString,
-        context.container.host,
-        context.container.firstMappedPort,
-        context.container.replicaSetUrl
-      )
-    }
+    exposedConfiguration = obtainExposedConfiguration()
     mongoClient = createClient(exposedConfiguration)
+    runMigrationsIfNeeded()
   }
 
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+
+  override fun close(): Unit = runBlocking {
+    Try {
+      context.options.cleanup(mongoClient)
+      mongoClient.close()
+      executeWithReuseCheck { stop() }
+    }.recover {
+      logger.warn("Closing mongodb got an error: $it")
+    }
+  }
 
   @MongoDsl
   suspend inline fun <reified T : Any> shouldQuery(
@@ -121,41 +124,104 @@ class MongodbSystem internal constructor(
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance.
+   * @return MongodbSystem
    */
   @MongoDsl
-  fun pause(): MongodbSystem = context.container.pause().let { this }
+  fun pause(): MongodbSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance.
+   * @return MongodbSystem
    */
   @MongoDsl
-  fun unpause(): MongodbSystem = context.container.unpause().let { this }
+  fun unpause(): MongodbSystem = withContainerOrWarn("unpause") { it.unpause() }
 
+  /**
+   * Inspects the container. This operation is not supported when using a provided instance.
+   */
   @MongoDsl
-  fun inspect(): StoveContainerInspectInformation = context.container.inspect()
+  fun inspect(): StoveContainerInspectInformation? = when (val runtime = context.runtime) {
+    is StoveMongoContainer -> {
+      runtime.inspect()
+    }
 
-  override fun close(): Unit = runBlocking {
-    Try {
-      mongoClient.close()
-      executeWithReuseCheck { stop() }
-    }.recover {
-      logger.warn("Closing mongodb got an error: $it")
+    is ProvidedRuntime -> {
+      logger.warn("inspect() is not supported when using a provided instance")
+      null
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
     }
   }
 
-  private fun createClient(
-    exposedConfiguration: MongodbExposedConfiguration
-  ): MongoClient = MongoClientSettings
-    .builder()
-    .applyConnectionString(ConnectionString(exposedConfiguration.connectionString))
-    .retryWrites(true)
-    .readConcern(ReadConcern.MAJORITY)
-    .writeConcern(WriteConcern.MAJORITY)
-    .apply(context.options.configureClient)
-    .build()
-    .let { MongoClient.create(it) }
+  private suspend fun obtainExposedConfiguration(): MongodbExposedConfiguration =
+    when {
+      context.options is ProvidedMongodbSystemOptions -> context.options.config
+      context.runtime is StoveMongoContainer -> startMongoContainer(context.runtime)
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+    }
+
+  private suspend fun startMongoContainer(container: StoveMongoContainer): MongodbExposedConfiguration =
+    state.capture {
+      container.start()
+      MongodbExposedConfiguration(
+        connectionString = container.connectionString,
+        host = container.host,
+        port = container.firstMappedPort,
+        replicaSetUrl = container.replicaSetUrl
+      )
+    }
+
+  private fun createClient(config: MongodbExposedConfiguration): MongoClient =
+    MongoClientSettings
+      .builder()
+      .applyConnectionString(ConnectionString(config.connectionString))
+      .retryWrites(true)
+      .readConcern(ReadConcern.MAJORITY)
+      .writeConcern(WriteConcern.MAJORITY)
+      .apply(context.options.configureClient)
+      .build()
+      .let { MongoClient.create(it) }
+
+  private inline fun withContainerOrWarn(
+    operation: String,
+    action: (StoveMongoContainer) -> Unit
+  ): MongodbSystem = when (val runtime = context.runtime) {
+    is StoveMongoContainer -> {
+      action(runtime)
+      this
+    }
+
+    is ProvidedRuntime -> {
+      logger.warn("$operation() is not supported when using a provided instance")
+      this
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
+  private inline fun whenContainer(action: (StoveMongoContainer) -> Unit) {
+    if (context.runtime is StoveMongoContainer) {
+      action(context.runtime)
+    }
+  }
+
+  private suspend fun runMigrationsIfNeeded() {
+    if (shouldRunMigrations()) {
+      context.options.migrationCollection.run(MongodbMigrationContext(mongoClient, context.options))
+    }
+  }
+
+  private fun shouldRunMigrations(): Boolean = when {
+    context.options is ProvidedMongodbSystemOptions -> context.options.runMigrations
+    context.runtime is StoveMongoContainer -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  }
 
   companion object {
     const val RESERVED_ID = "_id"

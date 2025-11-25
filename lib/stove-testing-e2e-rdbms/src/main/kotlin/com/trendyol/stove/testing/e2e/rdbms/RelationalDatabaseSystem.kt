@@ -1,18 +1,22 @@
+@file:Suppress("unused")
+
 package com.trendyol.stove.testing.e2e.rdbms
 
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.containers.StoveContainer
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
+import org.testcontainers.containers.JdbcDatabaseContainer
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 @StoveDsl
 abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> protected constructor(
   final override val testSystem: TestSystem,
-  protected val context: RelationalDatabaseContext<*>
+  protected val context: RelationalDatabaseContext
 ) : PluggedSystem,
   RunAware,
   ExposesConfiguration {
@@ -27,18 +31,37 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   protected abstract fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Session
 
   override suspend fun run() {
-    exposedConfiguration = state.capture {
-      context.container.start()
-      RelationalDatabaseExposedConfiguration(
-        jdbcUrl = context.container.jdbcUrl,
-        host = context.container.host,
-        port = context.container.firstMappedPort,
-        password = context.container.password,
-        username = context.container.username
-      )
+    exposedConfiguration = when (val runtime = context.runtime) {
+      is StoveContainer -> {
+        val jdbcContainer = runtime as JdbcDatabaseContainer<*>
+        state.capture {
+          jdbcContainer.start()
+          RelationalDatabaseExposedConfiguration(
+            jdbcUrl = jdbcContainer.jdbcUrl,
+            host = jdbcContainer.host,
+            port = jdbcContainer.firstMappedPort,
+            password = jdbcContainer.password,
+            username = jdbcContainer.username
+          )
+        }
+      }
+
+      is ProvidedRuntime -> {
+        getProvidedConfig()
+      }
+
+      else -> {
+        throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+      }
     }
     sqlOperations = NativeSqlOperations(database(exposedConfiguration))
   }
+
+  /**
+   * Gets the provided configuration from subclass options.
+   * Subclasses should override this to provide their specific provided config.
+   */
+  protected abstract fun getProvidedConfig(): RelationalDatabaseExposedConfiguration
 
   override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
@@ -59,15 +82,25 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     return this as SELF
   }
 
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop() {
+    if (context.runtime is StoveContainer) {
+      (context.runtime as JdbcDatabaseContainer<*>).stop()
+    }
+  }
 
   override fun close(): Unit =
     runBlocking {
       Try {
+        // Note: cleanup is handled in subclass via options
         sqlOperations.close()
         executeWithReuseCheck { stop() }
       }.recover {
-        logger.warn("got an error while stopping the container ${context.container.containerName} ")
+        val containerInfo = when (val runtime = context.runtime) {
+          is JdbcDatabaseContainer<*> -> runtime.containerName
+          is ProvidedRuntime -> "provided instance"
+          else -> "unknown runtime"
+        }
+        logger.warn("got an error while stopping the container $containerInfo ")
       }.let { }
     }
 

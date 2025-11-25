@@ -5,7 +5,7 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.messaging.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.github.embeddedkafka.*
@@ -28,7 +28,13 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 var stoveSerdeRef: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde()
-var stoveKafkaBridgePortDefault = "50051"
+
+/**
+ * Default port for the Stove Kafka Bridge gRPC server.
+ * This can be overridden by setting the [STOVE_KAFKA_BRIDGE_PORT] environment variable
+ * or by using [PortFinder.findAvailablePortAsString] to get a dynamically available port.
+ */
+var stoveKafkaBridgePortDefault: String = PortFinder.findAvailablePortAsString()
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
 internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -58,50 +64,49 @@ class KafkaSystem(
   }
 
   override suspend fun run() {
-    exposedConfiguration = state.capture {
-      if (context.options.useEmbeddedKafka) {
-        val config: EmbeddedKafkaConfig = EmbeddedKafkaConfig.apply(
-          0,
-          0,
-          `Map$`.`MODULE$`.empty(),
-          `Map$`.`MODULE$`.empty(),
-          `Map$`.`MODULE$`.empty()
-        )
-
-        val server = EmbeddedKafka.start(
-          config
-        )
-
-        while (!EmbeddedKafka.isRunning()) {
-          delay(100)
-        }
-        KafkaExposedConfiguration(
-          "0.0.0.0:${server.config().kafkaPort()}",
-          StoveKafkaBridge::class.java.name
-        )
-      } else {
-        context.container.start()
-        KafkaExposedConfiguration(
-          context.container.bootstrapServers,
-          StoveKafkaBridge::class.java.name
-        )
-      }
-    }
+    exposedConfiguration = obtainExposedConfiguration()
     adminClient = createAdminClient(exposedConfiguration)
-    kafkaPublisher = createPublisher(
-      exposedConfiguration,
-      context.options.listenPublishedMessagesFromStove,
-      context.options.valueSerializer
-    )
-    sink = TestSystemMessageSink(
-      adminClient,
-      context.options.serde,
-      context.options.topicSuffixes
-    )
+    kafkaPublisher = createPublisher(exposedConfiguration)
+    sink = TestSystemMessageSink(adminClient, context.options.serde, context.options.topicSuffixes)
     grpcServer = startGrpcServer()
+    runMigrationsIfNeeded()
   }
 
   override suspend fun afterRun() = Unit
+
+  private suspend fun runMigrationsIfNeeded() {
+    if (shouldRunMigrations()) {
+      context.options.migrationCollection.run(KafkaMigrationContext(adminClient, context.options))
+    }
+  }
+
+  private fun shouldRunMigrations(): Boolean = when {
+    context.options is ProvidedKafkaSystemOptions -> context.options.runMigrations
+    context.runtime is StoveKafkaContainer -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    context.runtime is EmbeddedKafkaRuntime -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  }
+
+  override suspend fun stop() {
+    when (val runtime = context.runtime) {
+      is ProvidedRuntime -> Unit
+      is EmbeddedKafkaRuntime -> stopEmbeddedKafka()
+      is StoveKafkaContainer -> runtime.stop()
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
+  override fun close(): Unit = runBlocking {
+    Try {
+      context.options.cleanup(adminClient)
+      grpcServer.shutdownNow()
+      StoveKafkaCoroutineScope.cancel()
+      kafkaPublisher.close()
+      executeWithReuseCheck { stop() }
+    }
+  }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
+
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @StoveDsl
   suspend fun publish(
@@ -160,9 +165,6 @@ class KafkaSystem(
 
   /**
    * Waits until the consumed message is seen. This does not mean committed.
-   * @param atLeastIn Duration
-   * @param topic String
-   * @param condition Function1<ConsumedMessage, Boolean>
    */
   @StoveDsl
   @Suppress("MagicNumber")
@@ -179,18 +181,13 @@ class KafkaSystem(
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
         .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
-        .forEach {
-          loop = !condition(it)
-        }
+        .forEach { loop = !condition(it) }
       delay(100)
     }
   }
 
   /**
    * Waits until the committed message is seen with the given condition.
-   * @param atLeastIn Duration
-   * @param topic String
-   * @param condition Function1<ConsumedMessage, Boolean>
    */
   @StoveDsl
   @Suppress("MagicNumber")
@@ -207,18 +204,13 @@ class KafkaSystem(
         .filter { it.topic == topic && it.offset > offset }
         .onEach { offset = it.offset }
         .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
-        .forEach {
-          loop = !condition(it)
-        }
+        .forEach { loop = !condition(it) }
       delay(100)
     }
   }
 
   /**
-   * Waits until the committed message is seen with the given condition.
-   * @param atLeastIn Duration
-   * @param topic String
-   * @param condition Function1<ConsumedMessage, Boolean>
+   * Waits until the published message is seen with the given condition.
    */
   @StoveDsl
   @Suppress("MagicNumber")
@@ -235,25 +227,13 @@ class KafkaSystem(
         .filter { it.topic == topic && !seenIds.containsKey(it.id) }
         .onEach { seenIds[it.id] = it }
         .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
-        .forEach {
-          loop = !condition(it)
-        }
+        .forEach { loop = !condition(it) }
       delay(100)
     }
   }
 
   /**
    * Creates an inflight consumer that consumes messages from the given topic.
-   * @param topic String
-   * @param readOnly Boolean If true, the consumer will not commit the messages.
-   * @param autoOffsetReset String The offset reset strategy. Default is "earliest".
-   * @param autoCreateTopics Boolean If true, the consumer will create the topic if it does not exist.
-   * @param config Function1<Properties, Unit> Additional configuration for the consumer.
-   * @param keyDeserializer Deserializer<K> The key deserializer. Default is StoveKafkaValueDeserializer.
-   * @param valueDeserializer Deserializer<V> The value deserializer. Default is StoveKafkaValueDeserializer.
-   * @param keepConsumingAtLeastFor Duration The duration to keep consuming messages.
-   * @param pollTimeout Duration The poll timeout for the consumer.
-   * @param onConsume Function1<ConsumerRecord<K, V>, Unit> The function to be executed when a message is consumed.
    */
   @StoveDsl
   suspend fun <K : Any, V : Any> consumer(
@@ -282,76 +262,19 @@ class KafkaSystem(
     onConsume
   )
 
-  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-  @Suppress("MagicNumber")
-  private suspend fun <K : Any, V : Any> consume(
-    autoOffsetReset: String,
-    readOnly: Boolean,
-    autoCreateTopics: Boolean,
-    config: (Properties) -> Unit,
-    keyDeserializer: Deserializer<K>,
-    valueDeserializer: Deserializer<V>,
-    topic: String,
-    pollTimeout: Duration,
-    keepConsumingAtLeastFor: Duration,
-    groupId: String,
-    onConsume: suspend (ConsumerRecord<K, V>) -> Unit
-  ) = coroutineScope {
-    val props = Properties()
-      .apply {
-        this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = exposedConfiguration.bootstrapServers
-        this[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-        this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = autoOffsetReset
-        this[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
-        this[ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG] = autoCreateTopics
-        this[ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG] = exposedConfiguration.interceptorClass
-      }.apply(config)
-    val c = KafkaConsumer(props, keyDeserializer, valueDeserializer)
-    c.subscribe(listOf(topic))
-    val channel = Channel<ConsumerRecord<K, V>>()
-    val job = launch {
-      while (isActive) {
-        c.poll(pollTimeout.toJavaDuration()).forEach { channel.send(it) }
-        delay(100)
-      }
-    }
-    whileSelect {
-      onTimeout(keepConsumingAtLeastFor) {
-        c.close()
-        job.cancelAndJoin()
-        false
-      }
-      channel.onReceive {
-        onConsume(it)
-        if (!readOnly) c.commitSync()
-        !channel.isClosedForReceive
-      }
-    }
-  }
-
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance or embedded Kafka.
    */
   @StoveDsl
-  fun pause(): KafkaSystem {
-    if (context.options.useEmbeddedKafka) {
-      return this
-    }
-    return context.container.pause().let { this }
-  }
+  fun pause(): KafkaSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance or embedded Kafka.
    */
   @StoveDsl
-  fun unpause(): KafkaSystem {
-    if (context.options.useEmbeddedKafka) {
-      return this
-    }
-    return context.container.unpause().let { this }
-  }
+  fun unpause(): KafkaSystem = withContainerOrWarn("unpause") { it.unpause() }
 
   /**
    * Provides access to the message store of the KafkaSystem.
@@ -391,32 +314,106 @@ class KafkaSystem(
     condition: (message: ParsedMessage<T>) -> Boolean
   ): Unit = coroutineScope { sink.waitUntilRetried(atLeastIn, times, clazz, condition) }
 
-  private fun createPublisher(
-    exposedConfiguration: KafkaExposedConfiguration,
-    listenKafkaSystemPublishedMessages: Boolean,
-    kafkaValueSerializerClass: Serializer<Any>
-  ): KafkaProducer<String, Any> = KafkaProducer(
-    mapOf(
-      ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
-      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java.name,
-      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to kafkaValueSerializerClass::class.java.name,
-      ProducerConfig.CLIENT_ID_CONFIG to "stove-kafka-producer",
-      ProducerConfig.ACKS_CONFIG to "1"
-    ) + (
-      if (listenKafkaSystemPublishedMessages) {
-        mapOf(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to exposedConfiguration.interceptorClass)
-      } else {
-        emptyMap()
+  private suspend fun obtainExposedConfiguration(): KafkaExposedConfiguration =
+    when {
+      context.options is ProvidedKafkaSystemOptions -> context.options.config
+      context.runtime is EmbeddedKafkaRuntime -> startEmbeddedKafka()
+      context.runtime is StoveKafkaContainer -> startKafkaContainer(context.runtime)
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+    }
+
+  private suspend fun startEmbeddedKafka(): KafkaExposedConfiguration = state.capture {
+    val config = EmbeddedKafkaConfig.apply(0, 0, `Map$`.`MODULE$`.empty(), `Map$`.`MODULE$`.empty(), `Map$`.`MODULE$`.empty())
+    val server = EmbeddedKafka.start(config)
+    while (!EmbeddedKafka.isRunning()) {
+      delay(100)
+    }
+    KafkaExposedConfiguration("0.0.0.0:${server.config().kafkaPort()}", StoveKafkaBridge::class.java.name)
+  }
+
+  private suspend fun startKafkaContainer(container: StoveKafkaContainer): KafkaExposedConfiguration = state.capture {
+    container.start()
+    KafkaExposedConfiguration(container.bootstrapServers, StoveKafkaBridge::class.java.name)
+  }
+
+  private suspend fun stopEmbeddedKafka() {
+    EmbeddedKafka.stop()
+    while (EmbeddedKafka.isRunning()) {
+      delay(100)
+    }
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+  @Suppress("MagicNumber")
+  private suspend fun <K : Any, V : Any> consume(
+    autoOffsetReset: String,
+    readOnly: Boolean,
+    autoCreateTopics: Boolean,
+    config: (Properties) -> Unit,
+    keyDeserializer: Deserializer<K>,
+    valueDeserializer: Deserializer<V>,
+    topic: String,
+    pollTimeout: Duration,
+    keepConsumingAtLeastFor: Duration,
+    groupId: String,
+    onConsume: suspend (ConsumerRecord<K, V>) -> Unit
+  ) = coroutineScope {
+    val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId).apply(config)
+    val c = KafkaConsumer(props, keyDeserializer, valueDeserializer)
+    c.subscribe(listOf(topic))
+    val channel = Channel<ConsumerRecord<K, V>>()
+    val job = launch {
+      while (isActive) {
+        c.poll(pollTimeout.toJavaDuration()).forEach { channel.send(it) }
+        delay(100)
       }
-    )
+    }
+    whileSelect {
+      onTimeout(keepConsumingAtLeastFor) {
+        c.close()
+        job.cancelAndJoin()
+        false
+      }
+      channel.onReceive {
+        onConsume(it)
+        if (!readOnly) c.commitSync()
+        !channel.isClosedForReceive
+      }
+    }
+  }
+
+  private fun createConsumerProperties(
+    autoOffsetReset: String,
+    autoCreateTopics: Boolean,
+    groupId: String
+  ): Properties = Properties().apply {
+    this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = exposedConfiguration.bootstrapServers
+    this[ConsumerConfig.GROUP_ID_CONFIG] = groupId
+    this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = autoOffsetReset
+    this[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
+    this[ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG] = autoCreateTopics
+    this[ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG] = exposedConfiguration.interceptorClass
+  }
+
+  private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> = KafkaProducer(
+    buildMap {
+      put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers)
+      put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
+      put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, context.options.valueSerializer::class.java.name)
+      put(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-producer")
+      put(ProducerConfig.ACKS_CONFIG, "1")
+      if (context.options.listenPublishedMessagesFromStove) {
+        put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, config.interceptorClass)
+      }
+    }
   )
 
-  private fun createAdminClient(
-    exposedConfiguration: KafkaExposedConfiguration
-  ): Admin = mapOf<String, Any>(
-    AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
-    AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
-  ).let { Admin.create(it.toProperties()) }
+  private fun createAdminClient(config: KafkaExposedConfiguration): Admin = Admin.create(
+    mapOf<String, Any>(
+      AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
+      AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
+    ).toProperties()
+  )
 
   private suspend fun startGrpcServer(): Server {
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
@@ -463,31 +460,28 @@ class KafkaSystem(
     }
   }
 
+  private inline fun withContainerOrWarn(
+    operation: String,
+    action: (StoveKafkaContainer) -> Unit
+  ): KafkaSystem = when (val runtime = context.runtime) {
+    is ProvidedRuntime, is EmbeddedKafkaRuntime -> {
+      logger.warn("$operation() is not supported when using embedded Kafka or a provided instance")
+      this
+    }
+
+    is StoveKafkaContainer -> {
+      action(runtime)
+      this
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
   companion object {
     private const val GRPC_SERVER_DELAY = 500L
     private const val GRPC_TIMEOUT_IN_SECONDS = 300L
     private const val MAX_MESSAGE_SIZE = 1024 * 1024 * 1024
   }
-
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
-
-  override suspend fun stop() {
-    if (context.options.useEmbeddedKafka) {
-      EmbeddedKafka.stop()
-      while (EmbeddedKafka.isRunning()) {
-        delay(100)
-      }
-      return
-    }
-    context.container.stop()
-  }
-
-  override fun close(): Unit = runBlocking {
-    Try {
-      grpcServer.shutdownNow()
-      StoveKafkaCoroutineScope.cancel()
-      kafkaPublisher.close()
-      executeWithReuseCheck { stop() }
-    }
-  }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
 }

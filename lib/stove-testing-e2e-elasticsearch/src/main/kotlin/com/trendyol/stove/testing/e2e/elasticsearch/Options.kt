@@ -20,27 +20,91 @@ import kotlin.time.Duration.Companion.minutes
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS, AnnotationTarget.TYPE, AnnotationTarget.FUNCTION)
 annotation class ElasticDsl
 
+/**
+ * Options for configuring the Elasticsearch system in container mode.
+ */
 @StoveDsl
-data class ElasticsearchSystemOptions(
-  val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-  val container: ElasticContainerOptions = ElasticContainerOptions(),
-  val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+open class ElasticsearchSystemOptions(
+  open val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
+  open val container: ElasticContainerOptions = ElasticContainerOptions(),
+  open val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+  open val cleanup: suspend (ElasticsearchClient) -> Unit = {},
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions,
-  ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration> {
-  internal val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
+  ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration>,
+  SupportsMigrations<ElasticsearchClient, ElasticsearchSystemOptions> {
+  override val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
+  companion object {
+    /**
+     * Creates options configured to use an externally provided Elasticsearch instance
+     * instead of a testcontainer.
+     *
+     * @param host The Elasticsearch host
+     * @param port The Elasticsearch port
+     * @param password The Elasticsearch password (for authentication)
+     * @param certificate Optional SSL certificate for secure connections
+     * @param clientConfigurer Client configuration
+     * @param jsonpMapper JSON mapper for serialization
+     * @param runMigrations Whether to run migrations on the external instance (default: true)
+     * @param cleanup A suspend function to clean up data after tests complete
+     * @param configureExposedConfiguration Function to map exposed config to application properties
+     */
+    @StoveDsl
+    fun provided(
+      host: String,
+      port: Int,
+      password: String = "",
+      certificate: ElasticsearchExposedCertificate? = null,
+      clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
+      jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+      runMigrations: Boolean = true,
+      cleanup: suspend (ElasticsearchClient) -> Unit = {},
+      configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
+    ): ProvidedElasticsearchSystemOptions = ProvidedElasticsearchSystemOptions(
+      config = ElasticSearchExposedConfiguration(
+        host = host,
+        port = port,
+        password = password,
+        certificate = certificate
+      ),
+      clientConfigurer = clientConfigurer,
+      jsonpMapper = jsonpMapper,
+      runMigrations = runMigrations,
+      cleanup = cleanup,
+      configureExposedConfiguration = configureExposedConfiguration
+    )
+  }
+}
+
+/**
+ * Options for using an externally provided Elasticsearch instance.
+ * This class holds the configuration for the external instance directly (non-nullable).
+ */
+@StoveDsl
+class ProvidedElasticsearchSystemOptions(
   /**
-   * Helps for registering migrations before the tests run.
-   * @see MigrationCollection
-   * @see DatabaseMigration
+   * The configuration for the provided Elasticsearch instance.
    */
-  fun migrations(migration: MigrationCollection<ElasticsearchClient>.() -> Unit): ElasticsearchSystemOptions =
-    migration(
-      migrationCollection
-    ).let {
-      this
-    }
+  val config: ElasticSearchExposedConfiguration,
+  clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
+  jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+  cleanup: suspend (ElasticsearchClient) -> Unit = {},
+  /**
+   * Whether to run migrations on the external instance.
+   */
+  val runMigrations: Boolean = true,
+  configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
+) : ElasticsearchSystemOptions(
+    clientConfigurer = clientConfigurer,
+    container = ElasticContainerOptions(),
+    jsonpMapper = jsonpMapper,
+    cleanup = cleanup,
+    configureExposedConfiguration = configureExposedConfiguration
+  ),
+  ProvidedSystemOptions<ElasticSearchExposedConfiguration> {
+  override val providedConfig: ElasticSearchExposedConfiguration = config
+  override val runMigrationsForProvided: Boolean = runMigrations
 }
 
 data class ElasticSearchExposedConfiguration(
@@ -50,8 +114,9 @@ data class ElasticSearchExposedConfiguration(
   val certificate: ElasticsearchExposedCertificate?
 ) : ExposedConfiguration
 
+@StoveDsl
 data class ElasticsearchContext(
-  val container: StoveElasticSearchContainer,
+  val runtime: SystemRuntime,
   val options: ElasticsearchSystemOptions
 )
 

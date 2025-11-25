@@ -12,45 +12,147 @@ import kotlinx.coroutines.delay
 import org.bson.codecs.pojo.annotations.*
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.assertThrows
+import org.slf4j.*
+import org.testcontainers.mongodb.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 
-class Stove : AbstractProjectConfig() {
-  override suspend fun beforeProject() {
-    TestSystem()
-      .with {
-        mongodb {
-          MongodbSystemOptions {
-            listOf()
-          }
-        }
-        applicationUnderTest(NoOpApplication())
-      }.run()
-
-    validate {
-      mongodb {
-        println("pausing...")
-        pause()
-
-        delay(1000)
-
-        println("unpausing...")
-        unpause()
-
-        delay(1000)
-
-        println("operating normally...")
-        println(inspect())
-      }
-    }
-  }
-
-  override suspend fun afterProject(): Unit = TestSystem.stop()
-}
+// ============================================================================
+// Shared components
+// ============================================================================
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
 
   override suspend fun stop() = Unit
 }
+
+// ============================================================================
+// Strategy interface
+// ============================================================================
+
+sealed interface MongodbTestStrategy {
+  val logger: Logger
+
+  suspend fun start()
+
+  suspend fun stop()
+
+  companion object {
+    fun select(): MongodbTestStrategy {
+      val useProvided = System.getenv("USE_PROVIDED")?.toBoolean()
+        ?: System.getProperty("useProvided")?.toBoolean()
+        ?: false
+
+      return if (useProvided) ProvidedMongodbStrategy() else ContainerMongodbStrategy()
+    }
+  }
+}
+
+// ============================================================================
+// Container-based strategy (default)
+// ============================================================================
+
+class ContainerMongodbStrategy : MongodbTestStrategy {
+  override val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  override suspend fun start() {
+    logger.info("Starting MongoDB tests with container mode")
+
+    val options = MongodbSystemOptions {
+      listOf()
+    }
+
+    TestSystem()
+      .with {
+        mongodb { options }
+        applicationUnderTest(NoOpApplication())
+      }.run()
+
+    // Test pause/unpause functionality
+    validate {
+      mongodb {
+        logger.info("pausing...")
+        pause()
+
+        delay(1000)
+
+        logger.info("unpausing...")
+        unpause()
+
+        delay(1000)
+
+        logger.info("operating normally...")
+        logger.info(inspect().toString())
+      }
+    }
+  }
+
+  override suspend fun stop() {
+    TestSystem.stop()
+    logger.info("MongoDB container tests completed")
+  }
+}
+
+// ============================================================================
+// Provided instance strategy
+// ============================================================================
+
+class ProvidedMongodbStrategy : MongodbTestStrategy {
+  override val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  private lateinit var externalContainer: MongoDBContainer
+
+  override suspend fun start() {
+    logger.info("Starting MongoDB tests with provided mode")
+
+    // Start an external container to simulate a provided instance
+    externalContainer = MongoDBContainer(DockerImageName.parse("mongo:7.0"))
+      .apply { start() }
+
+    logger.info("External MongoDB container started at ${externalContainer.connectionString}")
+
+    val options = MongodbSystemOptions
+      .provided(
+        connectionString = externalContainer.connectionString,
+        host = externalContainer.host,
+        port = externalContainer.firstMappedPort,
+        runMigrations = true,
+        cleanup = { _ ->
+          logger.info("Running cleanup on provided instance")
+          // Clean up test data if needed
+        },
+        configureExposedConfiguration = { _ -> listOf() }
+      )
+
+    TestSystem()
+      .with {
+        mongodb { options }
+        applicationUnderTest(NoOpApplication())
+      }.run()
+  }
+
+  override suspend fun stop() {
+    TestSystem.stop()
+    externalContainer.stop()
+    logger.info("MongoDB provided tests completed")
+  }
+}
+
+// ============================================================================
+// Kotest project config - selects strategy based on environment
+// ============================================================================
+
+class Stove : AbstractProjectConfig() {
+  private val strategy = MongodbTestStrategy.select()
+
+  override suspend fun beforeProject() = strategy.start()
+
+  override suspend fun afterProject() = strategy.stop()
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
 
 class MongodbTestSystemTests :
   FunSpec({

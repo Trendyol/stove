@@ -15,10 +15,22 @@ import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.*
+import org.testcontainers.elasticsearch.ElasticsearchContainer
+import org.testcontainers.utility.DockerImageName
 import java.util.*
+
+// ============================================================================
+// Shared components
+// ============================================================================
 
 const val TEST_INDEX = "stove-test-index"
 const val ANOTHER_INDEX = "stove-another-index"
+
+class NoOpApplication : ApplicationUnderTest<Unit> {
+  override suspend fun start(configurations: List<String>) = Unit
+
+  override suspend fun stop() = Unit
+}
 
 class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
   override val order: Int = MigrationPriority.HIGHEST.value
@@ -50,34 +62,130 @@ class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
   }
 }
 
-class Stove : AbstractProjectConfig() {
-  override suspend fun beforeProject(): Unit = TestSystem()
-    .with {
-      elasticsearch {
-        ElasticsearchSystemOptions(
-          clientConfigurer = ElasticClientConfigurer(
-            restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
-          ),
-          ElasticContainerOptions(tag = "8.9.0"),
-          configureExposedConfiguration = { _ ->
-            listOf()
-          }
-        ).migrations {
-          register<TestIndexMigrator>()
-          register<AnotherIndexMigrator>()
-        }
+// ============================================================================
+// Strategy interface
+// ============================================================================
+
+sealed interface ElasticsearchTestStrategy {
+  val logger: Logger
+
+  suspend fun start()
+
+  suspend fun stop()
+
+  companion object {
+    fun select(): ElasticsearchTestStrategy {
+      val useProvided = System.getenv("USE_PROVIDED")?.toBoolean()
+        ?: System.getProperty("useProvided")?.toBoolean()
+        ?: false
+
+      return if (useProvided) ProvidedElasticsearchStrategy() else ContainerElasticsearchStrategy()
+    }
+  }
+}
+
+// ============================================================================
+// Container-based strategy (default)
+// ============================================================================
+
+class ContainerElasticsearchStrategy : ElasticsearchTestStrategy {
+  override val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  override suspend fun start() {
+    logger.info("Starting Elasticsearch tests with container mode")
+
+    val options = ElasticsearchSystemOptions(
+      clientConfigurer = ElasticClientConfigurer(
+        restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
+      ),
+      ElasticContainerOptions(tag = "8.9.0"),
+      configureExposedConfiguration = { _ -> listOf() }
+    ).migrations {
+      register<TestIndexMigrator>()
+      register<AnotherIndexMigrator>()
+    }
+
+    TestSystem()
+      .with {
+        elasticsearch { options }
+        applicationUnderTest(NoOpApplication())
+      }.run()
+  }
+
+  override suspend fun stop() {
+    TestSystem.stop()
+    logger.info("Elasticsearch container tests completed")
+  }
+}
+
+// ============================================================================
+// Provided instance strategy
+// ============================================================================
+
+class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
+  override val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  private lateinit var externalContainer: ElasticsearchContainer
+
+  override suspend fun start() {
+    logger.info("Starting Elasticsearch tests with provided mode")
+
+    // Start an external container to simulate a provided instance
+    externalContainer = ElasticsearchContainer(DockerImageName.parse("elasticsearch:8.9.0"))
+      .withEnv("xpack.security.enabled", "false")
+      .withEnv("discovery.type", "single-node")
+      .apply { start() }
+
+    logger.info("External Elasticsearch container started at ${externalContainer.httpHostAddress}")
+
+    val hostPort = externalContainer.httpHostAddress.split(":")
+    val options = ElasticsearchSystemOptions
+      .provided(
+        host = hostPort[0],
+        port = hostPort[1].toInt(),
+        runMigrations = true,
+        clientConfigurer = ElasticClientConfigurer(
+          restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
+        ),
+        cleanup = { client ->
+          logger.info("Running cleanup on provided instance")
+          // Clean up test data if needed
+        },
+        configureExposedConfiguration = { _ -> listOf() }
+      ).migrations {
+        register<TestIndexMigrator>()
+        register<AnotherIndexMigrator>()
       }
-      applicationUnderTest(NoOpApplication())
-    }.run()
 
-  override suspend fun afterProject(): Unit = TestSystem.stop()
+    TestSystem()
+      .with {
+        elasticsearch { options }
+        applicationUnderTest(NoOpApplication())
+      }.run()
+  }
+
+  override suspend fun stop() {
+    TestSystem.stop()
+    externalContainer.stop()
+    logger.info("Elasticsearch provided tests completed")
+  }
 }
 
-class NoOpApplication : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>) = Unit
+// ============================================================================
+// Kotest project config - selects strategy based on environment
+// ============================================================================
 
-  override suspend fun stop() = Unit
+class Stove : AbstractProjectConfig() {
+  private val strategy = ElasticsearchTestStrategy.select()
+
+  override suspend fun beforeProject() = strategy.start()
+
+  override suspend fun afterProject() = strategy.stop()
 }
+
+// ============================================================================
+// Tests
+// ============================================================================
 
 class ElasticsearchTestSystemTests :
   FunSpec({

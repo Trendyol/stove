@@ -11,8 +11,7 @@ echo "JVM files changed: $JVM_CHANGED"
 if [ -n "$JVM_CHANGED" ]; then
     cd $JVM_PROJECT || exit
     echo "Running JVM formatting checks..."
-    rm -rf .gradle/configuration-cache
-    ./gradlew --no-daemon spotlessCheck
+    ./gradlew --no-daemon detekt spotlessCheck
     GRADLE_EXIT_CODE=$?
     if [ $GRADLE_EXIT_CODE -ne 0 ]; then
         EXIT_CODE=$GRADLE_EXIT_CODE

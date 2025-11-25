@@ -1,8 +1,8 @@
 package com.trendyol.stove.testing.e2e.rdbms
 
-import org.testcontainers.containers.JdbcDatabaseContainer
+import com.trendyol.stove.testing.e2e.system.abstractions.SystemRuntime
 
-abstract class RelationalDatabaseContext<TContainer : JdbcDatabaseContainer<*>>(
-  val container: TContainer,
+abstract class RelationalDatabaseContext(
+  val runtime: SystemRuntime,
   val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 )

@@ -61,6 +61,7 @@ wire {
 
 val testWithEmbedded = tasks.register<Test>("testWithEmbedded") {
   group = "verification"
+  description = "Runs tests with embedded Kafka"
   testClassesDirs = sourceSets.test.get().output.classesDirs
   classpath = sourceSets.test.get().runtimeClasspath
   useJUnitPlatform()
@@ -70,6 +71,18 @@ val testWithEmbedded = tasks.register<Test>("testWithEmbedded") {
   }
 }
 
+val testWithProvided = tasks.register<Test>("testWithProvided") {
+  group = "verification"
+  description = "Runs tests with an externally provided Kafka instance"
+  testClassesDirs = sourceSets.test.get().output.classesDirs
+  classpath = sourceSets.test.get().runtimeClasspath
+  useJUnitPlatform()
+  systemProperty("useProvided", "true")
+  doFirst {
+    println("Starting Kafka tests with provided instance...")
+  }
+}
+
 tasks.test.configure {
-  dependsOn(testWithEmbedded)
+  dependsOn(testWithEmbedded, testWithProvided)
 }

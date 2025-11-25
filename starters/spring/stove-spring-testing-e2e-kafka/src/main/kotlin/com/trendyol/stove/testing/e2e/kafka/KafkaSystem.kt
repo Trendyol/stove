@@ -153,22 +153,25 @@ class KafkaSystem(
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * This operation is not supported when using a provided instance.
    * @return KafkaSystem
    */
   @KafkaDsl
-  fun pause(): KafkaSystem = context.container.pause().let { this }
+  fun pause(): KafkaSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
    * Unpauses the container. Use with care, as it will pause the container which might affect other tests.
+   * This operation is not supported when using a provided instance.
    * @return KafkaSystem
    */
   @KafkaDsl
-  fun unpause(): KafkaSystem = context.container.unpause().let { this }
+  fun unpause(): KafkaSystem = withContainerOrWarn("unpause") { it.unpause() }
 
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
     Try {
+      context.options.cleanup(admin)
       kafkaTemplate.destroy()
       executeWithReuseCheck { stop() }
     }.recover {
@@ -179,10 +182,7 @@ class KafkaSystem(
   override suspend fun beforeRun() = Unit
 
   override suspend fun run() {
-    exposedConfiguration = state.capture {
-      context.container.start()
-      KafkaExposedConfiguration(context.container.bootstrapServers)
-    }
+    exposedConfiguration = obtainExposedConfiguration()
   }
 
   override suspend fun afterRun(context: ApplicationContext) {
@@ -190,6 +190,32 @@ class KafkaSystem(
     checkIfInterceptorConfiguredProperly(context)
     kafkaTemplate = createKafkaTemplate(context, exposedConfiguration)
     admin = createAdminClient(exposedConfiguration)
+    runMigrationsIfNeeded()
+  }
+
+  private suspend fun obtainExposedConfiguration(): KafkaExposedConfiguration =
+    when {
+      context.options is ProvidedKafkaSystemOptions -> context.options.config
+      context.runtime is StoveKafkaContainer -> startKafkaContainer(context.runtime)
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+    }
+
+  private suspend fun startKafkaContainer(container: StoveKafkaContainer): KafkaExposedConfiguration =
+    state.capture {
+      container.start()
+      KafkaExposedConfiguration(container.bootstrapServers)
+    }
+
+  private suspend fun runMigrationsIfNeeded() {
+    if (shouldRunMigrations()) {
+      context.options.migrationCollection.run(KafkaMigrationContext(admin, context.options))
+    }
+  }
+
+  private fun shouldRunMigrations(): Boolean = when {
+    context.options is ProvidedKafkaSystemOptions -> context.options.runMigrations
+    context.runtime is StoveKafkaContainer -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 
   private fun createAdminClient(
@@ -199,7 +225,10 @@ class KafkaSystem(
     AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
   ).let { Admin.create(it) }
 
-  private fun createKafkaTemplate(context: ApplicationContext, exposedConfiguration: KafkaExposedConfiguration): KafkaTemplate<Any, Any> {
+  private fun createKafkaTemplate(
+    context: ApplicationContext,
+    exposedConfiguration: KafkaExposedConfiguration
+  ): KafkaTemplate<Any, Any> {
     val kafkaTemplates: Map<String, KafkaTemplate<Any, Any>> = context.getBeansOfType()
     return kafkaTemplates
       .values
@@ -261,6 +290,31 @@ class KafkaSystem(
               })            
           """.trimIndent()
       )
+    }
+  }
+
+  private inline fun withContainerOrWarn(
+    operation: String,
+    action: (StoveKafkaContainer) -> Unit
+  ): KafkaSystem = when (val runtime = context.runtime) {
+    is StoveKafkaContainer -> {
+      action(runtime)
+      this
+    }
+
+    is ProvidedRuntime -> {
+      logger.warn("$operation() is not supported when using a provided instance")
+      this
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
+  private inline fun whenContainer(action: (StoveKafkaContainer) -> Unit) {
+    if (context.runtime is StoveKafkaContainer) {
+      action(context.runtime)
     }
   }
 

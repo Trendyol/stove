@@ -5,7 +5,7 @@ import com.trendyol.stove.testing.e2e.couchbase.*
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import org.slf4j.*
@@ -13,6 +13,10 @@ import stove.spring.standalone.example.infrastructure.ObjectMapperConfig
 
 class Stove : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
+
+  init {
+    stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
+  }
 
   @Suppress("LongMethod")
   override suspend fun beforeProject(): Unit =

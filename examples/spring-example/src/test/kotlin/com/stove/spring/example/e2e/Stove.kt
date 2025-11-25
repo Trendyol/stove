@@ -24,7 +24,7 @@ class Stove : AbstractProjectConfig() {
         couchbase {
           CouchbaseSystemOptions(
             "Stove",
-            containerOptions = CouchbaseContainerOptions(tag = "latest") {
+            containerOptions = CouchbaseContainerOptions(tag = "7.6.1") {
               withStartupAttempts(3)
             },
             configureExposedConfiguration = { cfg ->

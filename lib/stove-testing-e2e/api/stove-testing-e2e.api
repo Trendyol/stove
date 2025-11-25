@@ -115,7 +115,7 @@ public final class com/trendyol/stove/testing/e2e/containers/ProvidedRegistryKt 
 	public static synthetic fun withProvidedRegistry$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
-public abstract interface class com/trendyol/stove/testing/e2e/containers/StoveContainer {
+public abstract interface class com/trendyol/stove/testing/e2e/containers/StoveContainer : com/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime {
 	public fun getContainerIdAccess ()Ljava/lang/String;
 	public fun getDockerClientAccess ()Lkotlin/Lazy;
 	public abstract fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
@@ -183,6 +183,15 @@ public final class com/trendyol/stove/testing/e2e/database/migrations/MigrationP
 	public final fun getValue ()I
 	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationPriority;
 	public static fun values ()[Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationPriority;
+}
+
+public abstract interface class com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations {
+	public abstract fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+}
+
+public final class com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations$DefaultImpls {
+	public static fun migrations (Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
 }
 
 public abstract class com/trendyol/stove/testing/e2e/http/StoveHttpResponse {
@@ -449,6 +458,15 @@ public final class com/trendyol/stove/testing/e2e/system/BridgeSystemKt {
 	public static final fun withBridgeSystem (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/system/BridgeSystem;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
+public final class com/trendyol/stove/testing/e2e/system/PortFinder {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/system/PortFinder;
+	public static final fun findAvailablePort ()I
+	public static final fun findAvailablePortAsString ()Ljava/lang/String;
+	public static final fun findAvailablePortFrom (I)I
+	public static final fun findAvailablePortFromAsString (I)Ljava/lang/String;
+	public static final fun isPortAvailable (I)Z
+}
+
 public final class com/trendyol/stove/testing/e2e/system/PropertiesFile {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/system/PropertiesFile$Companion;
 	public static final field REUSE_ENABLED Ljava/lang/String;
@@ -571,6 +589,18 @@ public final class com/trendyol/stove/testing/e2e/system/abstractions/PluggedSys
 	public static fun then (Lcom/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
+public final class com/trendyol/stove/testing/e2e/system/abstractions/ProvidedRuntime : com/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/system/abstractions/ProvidedRuntime;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public abstract fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public abstract fun getRunMigrationsForProvided ()Z
+}
+
 public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/ReadyTestSystem {
 	public abstract fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
@@ -633,6 +663,9 @@ public final class com/trendyol/stove/testing/e2e/system/abstractions/SystemNotR
 }
 
 public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+}
+
+public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime {
 }
 
 public abstract interface class com/trendyol/stove/testing/e2e/system/abstractions/ThenSystemContinuation {

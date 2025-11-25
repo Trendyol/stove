@@ -1,6 +1,9 @@
+@file:Suppress("unused")
+
 package com.trendyol.stove.testing.e2e.couchbase
 
 import com.couchbase.client.kotlin.*
+import com.couchbase.client.kotlin.Collection
 import com.couchbase.client.kotlin.codec.typeRef
 import com.couchbase.client.kotlin.query.*
 import com.trendyol.stove.functional.*
@@ -21,7 +24,7 @@ class CouchbaseSystem internal constructor(
   internal lateinit var cluster: Cluster
 
   @PublishedApi
-  internal lateinit var collection: com.couchbase.client.kotlin.Collection
+  internal lateinit var collection: Collection
 
   private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -29,28 +32,25 @@ class CouchbaseSystem internal constructor(
     testSystem.options.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>()
 
   override suspend fun run() {
-    exposedConfiguration =
-      state.capture {
-        context.container.start()
-        val couchbaseHostWithPort = context.container.connectionString.replace("couchbase://", "")
-        CouchbaseExposedConfiguration(
-          context.container.connectionString,
-          couchbaseHostWithPort,
-          context.container.username,
-          context.container.password
-        )
-      }
-
+    exposedConfiguration = obtainExposedConfiguration()
     cluster = createCluster(exposedConfiguration)
     collection = cluster.bucket(context.bucket.name).defaultCollection()
-    if (!state.isSubsequentRun() || testSystem.options.runMigrationsAlways) {
-      context.options.migrationCollection.run(cluster)
-    }
+    runMigrationsIfNeeded()
   }
 
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+
+  override fun close(): Unit = runBlocking {
+    Try {
+      context.options.cleanup(cluster)
+      cluster.disconnect()
+      executeWithReuseCheck { stop() }
+    }.recover {
+      logger.warn("Disconnecting the couchbase cluster got an error: $it")
+    }
+  }
 
   @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldQuery(
@@ -154,25 +154,48 @@ class CouchbaseSystem internal constructor(
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance.
+   * @return CouchbaseSystem
    */
   @CouchbaseDsl
-  fun pause(): CouchbaseSystem = context.container.pause().let { this }
+  fun pause(): CouchbaseSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance.
+   * @return CouchbaseSystem
    */
   @CouchbaseDsl
-  fun unpause(): CouchbaseSystem = context.container.unpause().let { this }
+  fun unpause(): CouchbaseSystem = withContainerOrWarn("unpause") { it.unpause() }
 
-  override fun close(): Unit = runBlocking {
-    Try {
-      cluster.disconnect()
-      executeWithReuseCheck { stop() }
-    }.recover {
-      logger.warn("Disconnecting the couchbase cluster got an error: $it")
+  private suspend fun obtainExposedConfiguration(): CouchbaseExposedConfiguration =
+    when {
+      context.options is ProvidedCouchbaseSystemOptions -> context.options.config
+      context.runtime is StoveCouchbaseContainer -> startCouchbaseContainer(context.runtime)
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
     }
+
+  private suspend fun startCouchbaseContainer(container: StoveCouchbaseContainer): CouchbaseExposedConfiguration =
+    state.capture {
+      container.start()
+      CouchbaseExposedConfiguration(
+        connectionString = container.connectionString,
+        hostsWithPort = container.connectionString.replace("couchbase://", ""),
+        username = container.username,
+        password = container.password
+      )
+    }
+
+  private suspend fun runMigrationsIfNeeded() {
+    if (shouldRunMigrations()) {
+      context.options.migrationCollection.run(cluster)
+    }
+  }
+
+  private fun shouldRunMigrations(): Boolean = when {
+    context.options is ProvidedCouchbaseSystemOptions -> context.options.runMigrations
+    context.runtime is StoveCouchbaseContainer -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 
   private fun createCluster(exposedConfiguration: CouchbaseExposedConfiguration): Cluster = Cluster.connect(
@@ -182,6 +205,31 @@ class CouchbaseSystem internal constructor(
   ) {
     jsonSerializer = context.options.clusterSerDe
     transcoder = context.options.clusterTranscoder
+  }
+
+  private inline fun withContainerOrWarn(
+    operation: String,
+    action: (StoveCouchbaseContainer) -> Unit
+  ): CouchbaseSystem = when (val runtime = context.runtime) {
+    is StoveCouchbaseContainer -> {
+      action(runtime)
+      this
+    }
+
+    is ProvidedRuntime -> {
+      logger.warn("$operation() is not supported when using a provided instance")
+      this
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
+  private inline fun whenContainer(action: (StoveCouchbaseContainer) -> Unit) {
+    if (context.runtime is StoveCouchbaseContainer) {
+      action(context.runtime)
+    }
   }
 
   companion object {

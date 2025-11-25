@@ -5,7 +5,7 @@ import com.stove.spring.streams.example.e2e.ExampleTest.Companion.INPUT_TOPIC2
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.OUTPUT_TOPIC
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.config.AbstractProjectConfig
 import org.apache.kafka.clients.admin.NewTopic
@@ -14,7 +14,7 @@ class Stove : AbstractProjectConfig() {
   @Suppress("LongMethod")
   override suspend fun beforeProject(): Unit = TestSystem()
     .also {
-      stoveKafkaBridgePortDefault = "50054"
+      stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
     }.with {
       kafka {
         KafkaSystemOptions(

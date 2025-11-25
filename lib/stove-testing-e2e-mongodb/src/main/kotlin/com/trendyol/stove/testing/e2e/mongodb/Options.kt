@@ -18,7 +18,7 @@ data class MongodbExposedConfiguration(
 
 @StoveDsl
 data class MongodbContext(
-  val container: StoveMongoContainer,
+  val runtime: SystemRuntime,
   val options: MongodbSystemOptions
 )
 
@@ -47,21 +47,11 @@ data class DatabaseOptions(
   )
 }
 
-internal fun TestSystem.withMongodb(options: MongodbSystemOptions): TestSystem {
-  val mongodbContainer = withProvidedRegistry(
-    options.container.imageWithTag,
-    options.container.registry,
-    options.container.compatibleSubstitute
-  ) {
-    options.container
-      .useContainerFn(it)
-      .withReuse(this.options.keepDependenciesRunning)
-      .let { c -> c as StoveMongoContainer }
-      .apply(options.container.containerFn)
-  }
-  this.getOrRegister(
-    MongodbSystem(this, MongodbContext(mongodbContainer, options))
-  )
+internal fun TestSystem.withMongodb(
+  options: MongodbSystemOptions,
+  runtime: SystemRuntime
+): TestSystem {
+  getOrRegister(MongodbSystem(this, MongodbContext(runtime, options)))
   return this
 }
 
@@ -70,8 +60,55 @@ internal fun TestSystem.mongodb(): MongodbSystem =
     throw SystemNotRegisteredException(MongodbSystem::class)
   }
 
+/**
+ * Configures MongoDB system.
+ *
+ * For container-based setup:
+ * ```kotlin
+ * mongodb {
+ *   MongodbSystemOptions(
+ *     cleanup = { client -> client.getDatabase("mydb").drop() },
+ *     configureExposedConfiguration = { cfg -> listOf(...) }
+ *   )
+ * }
+ * ```
+ *
+ * For provided (external) instance:
+ * ```kotlin
+ * mongodb {
+ *   MongodbSystemOptions.provided(
+ *     connectionString = "mongodb://localhost:27017",
+ *     host = "localhost",
+ *     port = 27017,
+ *     cleanup = { client -> client.getDatabase("mydb").drop() },
+ *     configureExposedConfiguration = { cfg -> listOf(...) }
+ *   )
+ * }
+ * ```
+ */
 @StoveDsl
-fun WithDsl.mongodb(configure: () -> MongodbSystemOptions): TestSystem = this.testSystem.withMongodb(configure())
+fun WithDsl.mongodb(
+  configure: () -> MongodbSystemOptions
+): TestSystem {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedMongodbSystemOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withReuse(testSystem.options.keepDependenciesRunning)
+        .let { c -> c as StoveMongoContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return testSystem.withMongodb(options, runtime)
+}
 
 @StoveDsl
 suspend fun ValidationDsl.mongodb(

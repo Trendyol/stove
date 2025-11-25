@@ -20,6 +20,23 @@ class KafkaSystemTests :
   FunSpec({
     val randomString = { Random.nextInt(0, Int.MAX_VALUE).toString() }
 
+    test("migration should create test topics") {
+      validate {
+        kafka {
+          adminOperations {
+            val topics = listTopics().names().get()
+            // Verify migration-created topics exist
+            topics.contains("migration-test-topic") shouldBe true
+            topics.contains("migration-test-topic-2") shouldBe true
+
+            // Verify partition count
+            val topicDescription = describeTopics(listOf("migration-test-topic-2")).allTopicNames().get()
+            topicDescription["migration-test-topic-2"]?.partitions()?.size shouldBe 2
+          }
+        }
+      }
+    }
+
     test("When publish then it should work") {
       validate {
         kafka {

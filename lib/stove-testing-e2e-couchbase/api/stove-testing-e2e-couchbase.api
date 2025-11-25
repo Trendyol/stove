@@ -23,16 +23,16 @@ public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOp
 }
 
 public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseContext {
-	public fun <init> (Lorg/testcontainers/couchbase/BucketDefinition;Lcom/trendyol/stove/testing/e2e/couchbase/StoveCouchbaseContainer;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;)V
+	public fun <init> (Lorg/testcontainers/couchbase/BucketDefinition;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;)V
 	public final fun component1 ()Lorg/testcontainers/couchbase/BucketDefinition;
-	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/couchbase/StoveCouchbaseContainer;
+	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public final fun component3 ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;
-	public final fun copy (Lorg/testcontainers/couchbase/BucketDefinition;Lcom/trendyol/stove/testing/e2e/couchbase/StoveCouchbaseContainer;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;Lorg/testcontainers/couchbase/BucketDefinition;Lcom/trendyol/stove/testing/e2e/couchbase/StoveCouchbaseContainer;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;
+	public final fun copy (Lorg/testcontainers/couchbase/BucketDefinition;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;Lorg/testcontainers/couchbase/BucketDefinition;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBucket ()Lorg/testcontainers/couchbase/BucketDefinition;
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/couchbase/StoveCouchbaseContainer;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -86,30 +86,39 @@ public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem$Comp
 	public final fun cluster (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem;)Lcom/couchbase/client/kotlin/Cluster;
 }
 
-public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions : com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
-	public fun <init> (Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;
-	public final fun component3 ()Lcom/couchbase/client/kotlin/codec/JsonSerializer;
-	public final fun component4 ()Lcom/couchbase/client/kotlin/codec/Transcoder;
-	public final fun component5 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getClusterSerDe ()Lcom/couchbase/client/kotlin/codec/JsonSerializer;
-	public final fun getClusterTranscoder ()Lcom/couchbase/client/kotlin/codec/Transcoder;
+public class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions : com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations, com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions$Companion;
+	public fun <init> (Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getClusterSerDe ()Lcom/couchbase/client/kotlin/codec/JsonSerializer;
+	public fun getClusterTranscoder ()Lcom/couchbase/client/kotlin/codec/Transcoder;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
-	public final fun getContainerOptions ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;
-	public final fun getDefaultBucket ()Ljava/lang/String;
-	public fun hashCode ()I
-	public final fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;
-	public fun toString ()Ljava/lang/String;
+	public fun getContainerOptions ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContainerOptions;
+	public fun getDefaultBucket ()Ljava/lang/String;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+}
+
+public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions$Companion {
+	public final fun provided (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/couchbase/ProvidedCouchbaseSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/couchbase/ProvidedCouchbaseSystemOptions;
 }
 
 public final class com/trendyol/stove/testing/e2e/couchbase/OptionsKt {
 	public static final fun couchbase-E6EcY7A (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun couchbase-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/couchbase/ProvidedCouchbaseSystemOptions : com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions, com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseExposedConfiguration;Ljava/lang/String;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseExposedConfiguration;Ljava/lang/String;Lcom/couchbase/client/kotlin/codec/JsonSerializer;Lcom/couchbase/client/kotlin/codec/Transcoder;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
 }
 
 public class com/trendyol/stove/testing/e2e/couchbase/StoveCouchbaseContainer : org/testcontainers/couchbase/CouchbaseContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {

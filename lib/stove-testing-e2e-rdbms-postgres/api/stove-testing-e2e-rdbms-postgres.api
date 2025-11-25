@@ -43,32 +43,55 @@ public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlConta
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions : com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;
-	public final fun component5 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions;
-	public fun equals (Ljava/lang/Object;)Z
+public class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions : com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations, com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;
-	public final fun getDatabaseName ()Ljava/lang/String;
-	public final fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
-	public final fun getPassword ()Ljava/lang/String;
-	public final fun getUsername ()Ljava/lang/String;
-	public fun hashCode ()I
-	public final fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions;
-	public fun toString ()Ljava/lang/String;
+	public fun getContainer ()Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlContainerOptions;
+	public fun getDatabaseName ()Ljava/lang/String;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public fun getPassword ()Ljava/lang/String;
+	public fun getUsername ()Ljava/lang/String;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions;
 }
 
-public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem : com/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseSystem {
+public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions$Companion {
+	public final fun provided (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/ProvidedPostgresqlOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions$Companion;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/ProvidedPostgresqlOptions;
+}
+
+public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem$Companion;
+	public field sqlOperations Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
+	public fun close ()V
+	public fun configuration ()Ljava/util/List;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getSqlOperations ()Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
+	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun pause ()Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setSqlOperations (Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;)V
+	public final fun shouldExecute (Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem$Companion {
+	public final fun operations (Lcom/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlSystem;)Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
+}
+
+public final class com/trendyol/stove/testing/e2e/rdbms/postgres/ProvidedPostgresqlOptions : com/trendyol/stove/testing/e2e/rdbms/postgres/PostgresqlOptions, com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
 }
 
 public class com/trendyol/stove/testing/e2e/rdbms/postgres/StovePostgresqlContainer : org/testcontainers/postgresql/PostgreSQLContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {

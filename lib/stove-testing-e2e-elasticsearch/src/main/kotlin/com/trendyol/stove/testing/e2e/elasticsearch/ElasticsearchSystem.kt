@@ -37,38 +37,25 @@ class ElasticsearchSystem internal constructor(
     testSystem.options.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>()
 
   override suspend fun run() {
-    exposedConfiguration = state.capture {
-      context.container.start()
-      ElasticSearchExposedConfiguration(
-        context.container.host,
-        context.container.firstMappedPort,
-        context.options.container.password,
-        determineCertificate().getOrNull()
-      )
-    }
+    exposedConfiguration = obtainExposedConfiguration()
   }
-
-  private fun determineCertificate(): Option<ElasticsearchExposedCertificate> =
-    when (context.options.container.disableSecurity) {
-      true -> {
-        None
-      }
-
-      false -> {
-        ElasticsearchExposedCertificate(
-          context.container.caCertAsBytes().getOrElse { ByteArray(0) }
-        ).apply { sslContext = context.container.createSslContextFromCa() }.some()
-      }
-    }
 
   override suspend fun afterRun() {
     esClient = createEsClient(exposedConfiguration)
-    if (!state.isSubsequentRun() || testSystem.options.runMigrationsAlways) {
-      context.options.migrationCollection.run(esClient)
-    }
+    runMigrationsIfNeeded()
   }
 
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop(): Unit = whenContainer { it.stop() }
+
+  override fun close(): Unit = runBlocking {
+    Try {
+      context.options.cleanup(esClient)
+      esClient._transport().close()
+      executeWithReuseCheck { stop() }
+    }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
+  }
+
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @ElasticDsl
   inline fun <reified T : Any> shouldQuery(
@@ -166,26 +153,60 @@ class ElasticsearchSystem internal constructor(
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance.
+   * @return ElasticsearchSystem
    */
+  @Suppress("unused")
   @ElasticDsl
-  fun pause(): ElasticsearchSystem = context.container.pause().let { this }
+  fun pause(): ElasticsearchSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
-   * @return KafkaSystem
+   * This operation is not supported when using a provided instance.
+   * @return ElasticsearchSystem
    */
+  @Suppress("unused")
   @ElasticDsl
-  fun unpause(): ElasticsearchSystem = context.container.unpause().let { this }
+  fun unpause(): ElasticsearchSystem = withContainerOrWarn("unpause") { it.unpause() }
 
-  override fun close(): Unit = runBlocking {
-    Try {
-      esClient._transport().close()
-      executeWithReuseCheck { stop() }
-    }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
+  private suspend fun obtainExposedConfiguration(): ElasticSearchExposedConfiguration =
+    when {
+      context.options is ProvidedElasticsearchSystemOptions -> context.options.config
+      context.runtime is StoveElasticSearchContainer -> startElasticsearchContainer(context.runtime)
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+    }
+
+  private suspend fun startElasticsearchContainer(container: StoveElasticSearchContainer): ElasticSearchExposedConfiguration =
+    state.capture {
+      container.start()
+      ElasticSearchExposedConfiguration(
+        host = container.host,
+        port = container.firstMappedPort,
+        password = context.options.container.password,
+        certificate = determineCertificate(container).getOrNull()
+      )
+    }
+
+  private fun determineCertificate(container: StoveElasticSearchContainer): Option<ElasticsearchExposedCertificate> =
+    when (context.options.container.disableSecurity) {
+      true -> None
+
+      false -> ElasticsearchExposedCertificate(
+        container.caCertAsBytes().getOrElse { ByteArray(0) }
+      ).apply { sslContext = container.createSslContextFromCa() }.some()
+    }
+
+  private suspend fun runMigrationsIfNeeded() {
+    if (shouldRunMigrations()) {
+      context.options.migrationCollection.run(esClient)
+    }
   }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+  private fun shouldRunMigrations(): Boolean = when {
+    context.options is ProvidedElasticsearchSystemOptions -> context.options.runMigrations
+    context.runtime is StoveElasticSearchContainer -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  }
 
   private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
     context.options.clientConfigurer.restClientOverrideFn
@@ -194,39 +215,74 @@ class ElasticsearchSystem internal constructor(
       .let { ElasticsearchClient(it) }
 
   private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
-    when (context.options.container.disableSecurity) {
-      true -> {
-        RestClient
-          .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port))
-          .apply {
-            setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) }
-          }.build()
-      }
-
-      false -> {
-        secureRestClient(cfg, context.container.createSslContextFromCa())
-      }
+    when (isSecurityDisabled(cfg)) {
+      true -> createInsecureRestClient(cfg)
+      false -> createSecureRestClient(cfg, obtainSslContext(cfg))
     }
 
-  private fun secureRestClient(
-    exposedConfiguration: ElasticSearchExposedConfiguration,
+  private fun isSecurityDisabled(cfg: ElasticSearchExposedConfiguration): Boolean = when {
+    context.options is ProvidedElasticsearchSystemOptions -> cfg.certificate == null
+    context.runtime is StoveElasticSearchContainer -> context.options.container.disableSecurity
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  }
+
+  private fun obtainSslContext(cfg: ElasticSearchExposedConfiguration): SSLContext = when {
+    context.options is ProvidedElasticsearchSystemOptions -> cfg.certificate?.sslContext ?: throw IllegalStateException(
+      "SSL context is required for secure connections with provided instances. " +
+        "Set the certificate.sslContext in ElasticSearchExposedConfiguration."
+    )
+
+    context.runtime is StoveElasticSearchContainer -> context.runtime.createSslContextFromCa()
+
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  }
+
+  private fun createInsecureRestClient(cfg: ElasticSearchExposedConfiguration): RestClient =
+    RestClient
+      .builder(HttpHost(cfg.host, cfg.port))
+      .apply { setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) } }
+      .build()
+
+  private fun createSecureRestClient(
+    cfg: ElasticSearchExposedConfiguration,
     sslContext: SSLContext
   ): RestClient {
-    val credentialsProvider: CredentialsProvider = BasicCredentialsProvider()
-    credentialsProvider.setCredentials(
-      AuthScope.ANY,
-      UsernamePasswordCredentials("elastic", exposedConfiguration.password)
-    )
-    val builder: RestClientBuilder = RestClient
-      .builder(HttpHost(exposedConfiguration.host, exposedConfiguration.port, "https"))
-
-    return builder
+    val credentialsProvider: CredentialsProvider = BasicCredentialsProvider().apply {
+      setCredentials(AuthScope.ANY, UsernamePasswordCredentials("elastic", cfg.password))
+    }
+    return RestClient
+      .builder(HttpHost(cfg.host, cfg.port, "https"))
       .setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
         clientBuilder.setSSLContext(sslContext)
         clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
         context.options.clientConfigurer.httpClientBuilder(clientBuilder)
         clientBuilder
       }.build()
+  }
+
+  private inline fun withContainerOrWarn(
+    operation: String,
+    action: (StoveElasticSearchContainer) -> Unit
+  ): ElasticsearchSystem = when (val runtime = context.runtime) {
+    is StoveElasticSearchContainer -> {
+      action(runtime)
+      this
+    }
+
+    is ProvidedRuntime -> {
+      logger.warn("$operation() is not supported when using a provided instance")
+      this
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
+  private inline fun whenContainer(action: (StoveElasticSearchContainer) -> Unit) {
+    if (context.runtime is StoveElasticSearchContainer) {
+      action(context.runtime)
+    }
   }
 
   companion object {

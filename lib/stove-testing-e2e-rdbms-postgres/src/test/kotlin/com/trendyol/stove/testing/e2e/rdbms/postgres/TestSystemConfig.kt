@@ -1,15 +1,11 @@
-package com.trendyol.stove.testing.e2e.redis
+package com.trendyol.stove.testing.e2e.rdbms.postgres
 
-import com.trendyol.stove.testing.e2e.redis.RedisSystem.Companion.client
+import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.future.await
 import org.slf4j.*
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.utility.DockerImageName
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 // ============================================================================
 // Shared components
@@ -21,11 +17,32 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
+class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
+  private val logger: Logger = LoggerFactory.getLogger(InitialMigration::class.java)
+
+  override val order: Int = 1
+
+  override suspend fun execute(connection: PostgresSqlMigrationContext) {
+    logger.info("Executing InitialMigration")
+    connection.operations.execute(
+      """
+      DROP TABLE IF EXISTS MigrationHistory;
+      CREATE TABLE IF NOT EXISTS MigrationHistory (
+        id serial PRIMARY KEY,
+        description VARCHAR (50) NOT NULL
+      );
+      INSERT INTO MigrationHistory (description) VALUES ('InitialMigration');
+      """.trimIndent()
+    )
+    logger.info("InitialMigration executed")
+  }
+}
+
 // ============================================================================
 // Strategy interface
 // ============================================================================
 
-sealed interface RedisTestStrategy {
+sealed interface PostgresTestStrategy {
   val logger: Logger
 
   suspend fun start()
@@ -33,12 +50,12 @@ sealed interface RedisTestStrategy {
   suspend fun stop()
 
   companion object {
-    fun select(): RedisTestStrategy {
+    fun select(): PostgresTestStrategy {
       val useProvided = System.getenv("USE_PROVIDED")?.toBoolean()
         ?: System.getProperty("useProvided")?.toBoolean()
         ?: false
 
-      return if (useProvided) ProvidedRedisStrategy() else ContainerRedisStrategy()
+      return if (useProvided) ProvidedPostgresStrategy() else ContainerPostgresStrategy()
     }
   }
 }
@@ -47,27 +64,29 @@ sealed interface RedisTestStrategy {
 // Container-based strategy (default)
 // ============================================================================
 
-class ContainerRedisStrategy : RedisTestStrategy {
+class ContainerPostgresStrategy : PostgresTestStrategy {
   override val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   override suspend fun start() {
-    logger.info("Starting Redis tests with container mode")
+    logger.info("Starting PostgreSQL tests with container mode")
 
-    val options = RedisOptions(
-      container = RedisContainerOptions(),
+    val options = PostgresqlOptions(
+      databaseName = "testing",
       configureExposedConfiguration = { _ -> listOf() }
-    )
+    ).migrations {
+      register<InitialMigration>()
+    }
 
     TestSystem()
       .with {
-        redis { options }
+        postgresql { options }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
 
   override suspend fun stop() {
     TestSystem.stop()
-    logger.info("Redis container tests completed")
+    logger.info("PostgreSQL container tests completed")
   }
 }
 
@@ -75,38 +94,45 @@ class ContainerRedisStrategy : RedisTestStrategy {
 // Provided instance strategy
 // ============================================================================
 
-class ProvidedRedisStrategy : RedisTestStrategy {
+class ProvidedPostgresStrategy : PostgresTestStrategy {
   override val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-  private lateinit var externalContainer: GenericContainer<*>
+  private lateinit var externalContainer: PostgreSQLContainer
 
   override suspend fun start() {
-    logger.info("Starting Redis tests with provided mode")
+    logger.info("Starting PostgreSQL tests with provided mode")
 
     // Start an external container to simulate a provided instance
-    externalContainer = GenericContainer(DockerImageName.parse("redis:7-alpine"))
-      .withExposedPorts(6379)
-      .withCommand("redis-server", "--requirepass", "password")
-      .apply { start() }
+    externalContainer = PostgreSQLContainer("postgres:15-alpine").apply {
+      withDatabaseName("testing")
+      withUsername("postgres")
+      withPassword("postgres")
+      start()
+    }
 
-    logger.info("External Redis container started at ${externalContainer.host}:${externalContainer.firstMappedPort}")
+    logger.info("External PostgreSQL container started at ${externalContainer.jdbcUrl}")
 
-    val options = RedisOptions
+    val options = PostgresqlOptions
       .provided(
+        jdbcUrl = externalContainer.jdbcUrl,
         host = externalContainer.host,
         port = externalContainer.firstMappedPort,
-        password = "password",
+        databaseName = "testing",
+        username = externalContainer.username,
+        password = externalContainer.password,
         runMigrations = true,
-        cleanup = { client ->
+        cleanup = { sqlOps ->
           logger.info("Running cleanup on provided instance")
-          // Clean up test data if needed
+          sqlOps.execute("DROP TABLE IF EXISTS MigrationHistory CASCADE")
         },
         configureExposedConfiguration = { _ -> listOf() }
-      )
+      ).migrations {
+        register<InitialMigration>()
+      }
 
     TestSystem()
       .with {
-        redis { options }
+        postgresql { options }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -114,7 +140,7 @@ class ProvidedRedisStrategy : RedisTestStrategy {
   override suspend fun stop() {
     TestSystem.stop()
     externalContainer.stop()
-    logger.info("Redis provided tests completed")
+    logger.info("PostgreSQL provided tests completed")
   }
 }
 
@@ -123,29 +149,9 @@ class ProvidedRedisStrategy : RedisTestStrategy {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
-  private val strategy = RedisTestStrategy.select()
+  private val strategy = PostgresTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()
 
   override suspend fun afterProject() = strategy.stop()
 }
-
-// ============================================================================
-// Tests
-// ============================================================================
-
-class RedisSystemTests :
-  ShouldSpec({
-
-    should("work") {
-      TestSystem.validate {
-        redis {
-          client()
-            .connect()
-            .async()
-            .ping()
-            .await() shouldBe "PONG"
-        }
-      }
-    }
-  })

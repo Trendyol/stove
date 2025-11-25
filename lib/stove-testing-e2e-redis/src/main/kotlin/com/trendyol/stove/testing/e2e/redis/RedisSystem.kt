@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.trendyol.stove.testing.e2e.redis
 
 import com.trendyol.stove.functional.*
@@ -23,54 +25,103 @@ class RedisSystem(
     testSystem.options.createStateStorage<RedisExposedConfiguration, RedisSystem>()
 
   override suspend fun run() {
-    exposedConfiguration =
-      state.capture {
-        context.container.start()
-        RedisExposedConfiguration(
-          context.container.host,
-          context.container.firstMappedPort,
-          context.container.redisURI,
-          context.options.database.toString(),
-          context.options.password
-        )
-      }
-    client = RedisClient.create(
-      RedisURI
-        .create(
-          exposedConfiguration.host,
-          exposedConfiguration.port
-        ).apply {
-          setCredentialsProvider {
-            Mono.just(
-              RedisCredentials.just(null, exposedConfiguration.password)
-            )
-          }
-        }
-    )
+    exposedConfiguration = obtainExposedConfiguration()
+    client = createClient(exposedConfiguration)
+    runMigrationsIfNeeded()
   }
 
-  /**
-   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
-   * @return KafkaSystem
-   */
-  fun pause(): RedisSystem = context.container.pause().let { this }
-
-  /**
-   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
-   * @return KafkaSystem
-   */
-  fun unpause(): RedisSystem = context.container.unpause().let { this }
-
-  override suspend fun stop(): Unit = context.container.stop()
+  override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
     Try {
-      if (::client.isInitialized) client.shutdown()
+      if (::client.isInitialized) {
+        context.options.cleanup(client)
+        client.shutdown()
+      }
       executeWithReuseCheck { stop() }
     }.recover { logger.warn("Redis client shutdown failed", it) }
   }
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+
+  /**
+   * Pauses the container. Use with care, as it will pause the container which might affect other tests.
+   * This operation is not supported when using a provided instance.
+   * @return RedisSystem
+   */
+  fun pause(): RedisSystem = withContainerOrWarn("pause") { it.pause() }
+
+  /**
+   * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
+   * This operation is not supported when using a provided instance.
+   * @return RedisSystem
+   */
+  fun unpause(): RedisSystem = withContainerOrWarn("unpause") { it.unpause() }
+
+  private suspend fun obtainExposedConfiguration(): RedisExposedConfiguration =
+    when {
+      context.options is ProvidedRedisOptions -> context.options.config
+      context.runtime is StoveRedisContainer -> startRedisContainer(context.runtime)
+      else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+    }
+
+  private suspend fun startRedisContainer(container: StoveRedisContainer): RedisExposedConfiguration =
+    state.capture {
+      container.start()
+      RedisExposedConfiguration(
+        host = container.host,
+        port = container.firstMappedPort,
+        redisUri = container.redisURI,
+        database = context.options.database.toString(),
+        password = context.options.password
+      )
+    }
+
+  private fun createClient(config: RedisExposedConfiguration): RedisClient =
+    RedisClient.create(
+      RedisURI.create(config.host, config.port).apply {
+        setCredentialsProvider { Mono.just(RedisCredentials.just(null, config.password)) }
+      }
+    )
+
+  private inline fun withContainerOrWarn(
+    operation: String,
+    action: (StoveRedisContainer) -> Unit
+  ): RedisSystem = when (val runtime = context.runtime) {
+    is StoveRedisContainer -> {
+      action(runtime)
+      this
+    }
+
+    is ProvidedRuntime -> {
+      logger.warn("$operation() is not supported when using a provided instance")
+      this
+    }
+
+    else -> {
+      throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+    }
+  }
+
+  private inline fun whenContainer(action: (StoveRedisContainer) -> Unit) {
+    if (context.runtime is StoveRedisContainer) {
+      action(context.runtime)
+    }
+  }
+
+  private suspend fun runMigrationsIfNeeded() {
+    if (shouldRunMigrations()) {
+      client.connect().use { connection ->
+        context.options.migrationCollection.run(RedisMigrationContext(connection, context.options))
+      }
+    }
+  }
+
+  private fun shouldRunMigrations(): Boolean = when {
+    context.options is ProvidedRedisOptions -> context.options.runMigrations
+    context.runtime is StoveRedisContainer -> !state.isSubsequentRun() || testSystem.options.runMigrationsAlways
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  }
 
   private fun isInitialized(): Boolean = ::client.isInitialized
 

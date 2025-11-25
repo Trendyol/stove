@@ -69,14 +69,14 @@ public final class com/trendyol/stove/testing/e2e/elasticsearch/ElasticSearchExp
 }
 
 public final class com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext {
-	public fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/StoveElasticSearchContainer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;)V
-	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/elasticsearch/StoveElasticSearchContainer;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;
-	public final fun copy (Lcom/trendyol/stove/testing/e2e/elasticsearch/StoveElasticSearchContainer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext;Lcom/trendyol/stove/testing/e2e/elasticsearch/StoveElasticSearchContainer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext;
+	public final fun copy (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchContext;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/elasticsearch/StoveElasticSearchContainer;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -123,28 +123,38 @@ public final class com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSys
 	public final fun client (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystem;)Lco/elastic/clients/elasticsearch/ElasticsearchClient;
 }
 
-public final class com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions : com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
-	public fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;
-	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;
-	public final fun component3 ()Lco/elastic/clients/json/JsonpMapper;
-	public final fun component4 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getClientConfigurer ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;
+public class com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions : com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations, com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions$Companion;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getClientConfigurer ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;
-	public final fun getJsonpMapper ()Lco/elastic/clients/json/JsonpMapper;
-	public fun hashCode ()I
-	public final fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;
-	public fun toString ()Ljava/lang/String;
+	public fun getContainer ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticContainerOptions;
+	public fun getJsonpMapper ()Lco/elastic/clients/json/JsonpMapper;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions;
+}
+
+public final class com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions$Companion {
+	public final fun provided (Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchExposedCertificate;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ProvidedElasticsearchSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions$Companion;Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchExposedCertificate;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/elasticsearch/ProvidedElasticsearchSystemOptions;
 }
 
 public final class com/trendyol/stove/testing/e2e/elasticsearch/ExtensionsKt {
 	public static final fun elasticsearch-E6EcY7A (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun elasticsearch-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/elasticsearch/ProvidedElasticsearchSystemOptions : com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSystemOptions, com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticSearchExposedConfiguration;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticSearchExposedConfiguration;Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticSearchExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/elasticsearch/ElasticSearchExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
 }
 
 public class com/trendyol/stove/testing/e2e/elasticsearch/StoveElasticSearchContainer : org/testcontainers/elasticsearch/ElasticsearchContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {

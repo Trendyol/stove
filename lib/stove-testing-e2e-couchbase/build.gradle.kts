@@ -1,9 +1,26 @@
 dependencies {
-    api(projects.lib.stoveTestingE2e)
-    api(libs.couchbase.kotlin)
-    api(libs.testcontainers.couchbase)
+  api(projects.lib.stoveTestingE2e)
+  api(libs.couchbase.kotlin)
+  api(libs.testcontainers.couchbase)
 }
 
 dependencies {
-    testImplementation(libs.slf4j.simple)
+  testImplementation(libs.slf4j.simple)
 }
+
+val testWithProvided = tasks.register<Test>("testWithProvided") {
+  group = "verification"
+  description = "Runs tests with an externally provided Couchbase instance"
+  testClassesDirs = sourceSets.test.get().output.classesDirs
+  classpath = sourceSets.test.get().runtimeClasspath
+  useJUnitPlatform()
+  systemProperty("useProvided", "true")
+  doFirst {
+    println("Starting Couchbase tests with provided instance...")
+  }
+}
+
+tasks.test.configure {
+  dependsOn(testWithProvided)
+}
+

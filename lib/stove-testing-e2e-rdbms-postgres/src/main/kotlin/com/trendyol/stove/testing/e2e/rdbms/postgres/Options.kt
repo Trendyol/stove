@@ -1,8 +1,10 @@
+@file:Suppress("unused")
+
 package com.trendyol.stove.testing.e2e.rdbms.postgres
 
 import arrow.core.getOrElse
 import com.trendyol.stove.testing.e2e.containers.*
-import com.trendyol.stove.testing.e2e.database.migrations.MigrationCollection
+import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.rdbms.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -26,32 +28,97 @@ data class PostgresqlContainerOptions(
   override val containerFn: ContainerFn<StovePostgresqlContainer> = { }
 ) : ContainerOptions<StovePostgresqlContainer>
 
+/**
+ * Options for configuring the PostgreSQL system in container mode.
+ */
 @StoveDsl
-data class PostgresqlOptions(
-  val databaseName: String = "stove",
-  val username: String = "sa",
-  val password: String = "sa",
-  val container: PostgresqlContainerOptions = PostgresqlContainerOptions(),
-  override val configureExposedConfiguration: (
-    RelationalDatabaseExposedConfiguration
-  ) -> List<String>
+open class PostgresqlOptions(
+  open val databaseName: String = "stove",
+  open val username: String = "sa",
+  open val password: String = "sa",
+  open val container: PostgresqlContainerOptions = PostgresqlContainerOptions(),
+  open val cleanup: suspend (NativeSqlOperations) -> Unit = {},
+  override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : SystemOptions,
-  ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration> {
-  val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
+  ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>,
+  SupportsMigrations<PostgresSqlMigrationContext, PostgresqlOptions> {
+  override val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
 
-  @StoveDsl
-  fun migrations(migration: MigrationCollection<PostgresSqlMigrationContext>.() -> Unit): PostgresqlOptions =
-    migration(
-      migrationCollection
-    ).let {
-      this
-    }
+  companion object {
+    /**
+     * Creates options configured to use an externally provided PostgreSQL instance
+     * instead of a testcontainer.
+     *
+     * @param jdbcUrl The JDBC URL for the PostgreSQL instance
+     * @param host The host of the PostgreSQL instance
+     * @param port The port of the PostgreSQL instance
+     * @param databaseName The database name
+     * @param username The username for authentication
+     * @param password The password for authentication
+     * @param runMigrations Whether to run migrations on the external instance (default: true)
+     * @param cleanup A suspend function to clean up data after tests complete
+     * @param configureExposedConfiguration Function to map exposed config to application properties
+     */
+    @StoveDsl
+    fun provided(
+      jdbcUrl: String,
+      host: String,
+      port: Int,
+      databaseName: String = "stove",
+      username: String = "sa",
+      password: String = "sa",
+      runMigrations: Boolean = true,
+      cleanup: suspend (NativeSqlOperations) -> Unit = {},
+      configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
+    ): ProvidedPostgresqlOptions = ProvidedPostgresqlOptions(
+      config = RelationalDatabaseExposedConfiguration(
+        jdbcUrl = jdbcUrl,
+        host = host,
+        port = port,
+        username = username,
+        password = password
+      ),
+      databaseName = databaseName,
+      username = username,
+      password = password,
+      runMigrations = runMigrations,
+      cleanup = cleanup,
+      configureExposedConfiguration = configureExposedConfiguration
+    )
+  }
 }
 
-internal class PostgresqlContext(
-  container: StovePostgresqlContainer,
-  val options: PostgresqlOptions
-) : RelationalDatabaseContext<StovePostgresqlContainer>(container, options.configureExposedConfiguration)
+/**
+ * Options for using an externally provided PostgreSQL instance.
+ * This class holds the configuration for the external instance directly (non-nullable).
+ */
+@StoveDsl
+class ProvidedPostgresqlOptions(
+  /**
+   * The configuration for the provided PostgreSQL instance.
+   */
+  val config: RelationalDatabaseExposedConfiguration,
+  databaseName: String = "stove",
+  username: String = "sa",
+  password: String = "sa",
+  cleanup: suspend (NativeSqlOperations) -> Unit = {},
+  /**
+   * Whether to run migrations on the external instance.
+   */
+  val runMigrations: Boolean = true,
+  configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
+) : PostgresqlOptions(
+    databaseName = databaseName,
+    username = username,
+    password = password,
+    container = PostgresqlContainerOptions(),
+    cleanup = cleanup,
+    configureExposedConfiguration = configureExposedConfiguration
+  ),
+  ProvidedSystemOptions<RelationalDatabaseExposedConfiguration> {
+  override val providedConfig: RelationalDatabaseExposedConfiguration = config
+  override val runMigrationsForProvided: Boolean = runMigrations
+}
 
 @StoveDsl
 data class PostgresSqlMigrationContext(
@@ -60,27 +127,80 @@ data class PostgresSqlMigrationContext(
   val executeAsRoot: suspend (String) -> Unit
 )
 
-internal fun TestSystem.withPostgresql(options: PostgresqlOptions): TestSystem =
-  withProvidedRegistry(options.container.imageWithTag, options.container.registry, options.container.compatibleSubstitute) {
-    options.container
-      .useContainerFn(it)
-      .withDatabaseName(options.databaseName)
-      .withUsername(options.username)
-      .withPassword(options.password)
-      .withReuse(this.options.keepDependenciesRunning)
-      .let { c -> c as StovePostgresqlContainer }
-      .apply(options.container.containerFn)
-  }.let { getOrRegister(PostgresqlSystem(this, PostgresqlContext(it, options))) }
-    .let { this }
+internal class PostgresqlContext(
+  val runtime: SystemRuntime,
+  val options: PostgresqlOptions
+)
+
+internal fun TestSystem.withPostgresql(
+  options: PostgresqlOptions,
+  runtime: SystemRuntime
+): TestSystem {
+  getOrRegister(PostgresqlSystem(this, PostgresqlContext(runtime, options)))
+  return this
+}
 
 internal fun TestSystem.postgresql(): PostgresqlSystem =
   getOrNone<PostgresqlSystem>().getOrElse {
     throw SystemNotRegisteredException(PostgresqlSystem::class)
   }
 
+/**
+ * Configures PostgreSQL system.
+ *
+ * For container-based setup:
+ * ```kotlin
+ * postgresql {
+ *   PostgresqlOptions(
+ *     databaseName = "mydb",
+ *     cleanup = { ops -> ops.execute("TRUNCATE TABLE ...") },
+ *     configureExposedConfiguration = { cfg -> listOf(...) }
+ *   )
+ * }
+ * ```
+ *
+ * For provided (external) instance:
+ * ```kotlin
+ * postgresql {
+ *   PostgresqlOptions.provided(
+ *     jdbcUrl = "jdbc:postgresql://localhost:5432/mydb",
+ *     host = "localhost",
+ *     port = 5432,
+ *     username = "user",
+ *     password = "pass",
+ *     runMigrations = true,
+ *     cleanup = { ops -> ops.execute("TRUNCATE TABLE ...") },
+ *     configureExposedConfiguration = { cfg -> listOf(...) }
+ *   )
+ * }
+ * ```
+ */
 @StoveDsl
-fun WithDsl.postgresql(configure: () -> PostgresqlOptions): TestSystem =
-  this.testSystem.withPostgresql(configure())
+fun WithDsl.postgresql(
+  configure: () -> PostgresqlOptions
+): TestSystem {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedPostgresqlOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withDatabaseName(options.databaseName)
+        .withUsername(options.username)
+        .withPassword(options.password)
+        .withReuse(testSystem.options.keepDependenciesRunning)
+        .let { c -> c as StovePostgresqlContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return testSystem.withPostgresql(options, runtime)
+}
 
 @StoveDsl
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =

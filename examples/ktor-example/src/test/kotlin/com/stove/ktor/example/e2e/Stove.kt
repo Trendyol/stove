@@ -5,14 +5,14 @@ import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.testing.e2e.system.*
 import io.kotest.core.config.AbstractProjectConfig
 import stove.ktor.example.app.objectMapperRef
 
 class Stove : AbstractProjectConfig() {
   companion object {
     init {
-      stoveKafkaBridgePortDefault = "50053"
+      stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
       System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
     }
   }

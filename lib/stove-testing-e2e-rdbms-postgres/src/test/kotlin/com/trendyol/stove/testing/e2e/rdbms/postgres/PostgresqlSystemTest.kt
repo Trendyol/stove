@@ -1,62 +1,23 @@
 package com.trendyol.stove.testing.e2e.rdbms.postgres
 
-import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
-import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
-import org.slf4j.*
 
-class Stove : AbstractProjectConfig() {
-  override suspend fun beforeProject(): Unit =
-    TestSystem()
-      .with {
-        postgresql {
-          PostgresqlOptions(
-            databaseName = "testing",
-            configureExposedConfiguration = { _ ->
-              listOf()
-            }
-          ).migrations {
-            register<InitialMigration>()
-          }
-        }
-        applicationUnderTest(NoOpApplication())
-      }.run()
-
-  override suspend fun afterProject(): Unit = TestSystem.stop()
-}
-
-class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
-  private val logger: Logger = LoggerFactory.getLogger(InitialMigration::class.java)
-
-  override suspend fun execute(connection: PostgresSqlMigrationContext) {
-    logger.info("Executing InitialMigration")
-    connection.operations.execute(
-      """
-                    DROP TABLE IF EXISTS MigrationHistory;
-                    CREATE TABLE IF NOT EXISTS MigrationHistory (
-                    	id serial PRIMARY KEY,
-                    	description VARCHAR (50)  NOT NULL
-                    );
-                    insert into MigrationHistory (description) values ('InitialMigration');
-      """.trimIndent()
-    )
-
-    logger.info("InitialMigration executed")
-  }
-
-  override val order: Int = 1
-}
-
-class NoOpApplication : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>) = Unit
-
-  override suspend fun stop() = Unit
-}
-
+/**
+ * PostgreSQL system tests that run against both container-based and provided instances.
+ *
+ * These tests verify:
+ * - Basic CRUD operations work correctly
+ * - Migrations are executed properly
+ * - The same test code works for both container and provided modes
+ *
+ * To run with provided instance mode:
+ * ```
+ * ./gradlew :lib:stove-testing-e2e-rdbms-postgres:test -DuseProvided=true
+ * ```
+ */
 class PostgresqlSystemTests :
   FunSpec({
 
@@ -65,7 +26,7 @@ class PostgresqlSystemTests :
       val description: String
     )
 
-    test("initial migration should work") {
+    test("migration should create MigrationHistory table") {
       TestSystem.validate {
         postgresql {
           shouldQuery<IdAndDescription>(
@@ -81,24 +42,69 @@ class PostgresqlSystemTests :
       }
     }
 
-    test("should save and get with immutable data class") {
+    test("should execute DDL and DML statements") {
       TestSystem.validate {
         postgresql {
           shouldExecute(
             """
-                    DROP TABLE IF EXISTS Dummies;                    
-                    CREATE TABLE IF NOT EXISTS Dummies (
-                    	id serial PRIMARY KEY,
-                    	description VARCHAR (50)  NOT NULL
-                    );
+            DROP TABLE IF EXISTS Dummies;
+            CREATE TABLE IF NOT EXISTS Dummies (
+              id serial PRIMARY KEY,
+              description VARCHAR (50) NOT NULL
+            );
             """.trimIndent()
           )
           shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.name}')")
-          shouldQuery<IdAndDescription>("SELECT * FROM Dummies", mapper = {
-            IdAndDescription(it.long("id"), it.string("description"))
-          }) { actual ->
+          shouldQuery<IdAndDescription>(
+            "SELECT * FROM Dummies",
+            mapper = {
+              IdAndDescription(it.long("id"), it.string("description"))
+            }
+          ) { actual ->
             actual.size shouldBeGreaterThan 0
             actual.first().description shouldBe testCase.name.name
+          }
+        }
+      }
+    }
+
+    test("should handle multiple inserts and queries") {
+      TestSystem.validate {
+        postgresql {
+          shouldExecute(
+            """
+            DROP TABLE IF EXISTS TestItems;
+            CREATE TABLE IF NOT EXISTS TestItems (
+              id serial PRIMARY KEY,
+              name VARCHAR (100) NOT NULL,
+              value INT NOT NULL
+            );
+            """.trimIndent()
+          )
+
+          // Insert multiple records
+          repeat(5) { i ->
+            shouldExecute("INSERT INTO TestItems (name, value) VALUES ('item_$i', $i)")
+          }
+
+          // Query and verify
+          data class TestItem(
+            val id: Long,
+            val name: String,
+            val value: Int
+          )
+
+          shouldQuery<TestItem>(
+            "SELECT * FROM TestItems ORDER BY value",
+            mapper = { row ->
+              TestItem(row.long("id"), row.string("name"), row.int("value"))
+            }
+          ) { actual ->
+            actual.size shouldBe 5
+            actual.forEachIndexed { index, item ->
+              item.name shouldBe "item_$index"
+              item.value shouldBe index
+            }
           }
         }
       }
@@ -109,16 +115,16 @@ class PostgresqlSystemTests :
       var description: String? = null
     }
 
-    test("should save and get with mutable class") {
+    test("should work with mutable classes") {
       TestSystem.validate {
         postgresql {
           shouldExecute(
             """
-                    DROP TABLE IF EXISTS Dummies;
-                    CREATE TABLE IF NOT EXISTS Dummies (
-                    	id serial PRIMARY KEY,
-                    	description VARCHAR (50)  NOT NULL
-                    );
+            DROP TABLE IF EXISTS Dummies;
+            CREATE TABLE IF NOT EXISTS Dummies (
+              id serial PRIMARY KEY,
+              description VARCHAR (50) NOT NULL
+            );
             """.trimIndent()
           )
           shouldExecute("INSERT INTO Dummies (description) VALUES ('${testCase.name.name}')")

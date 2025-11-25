@@ -43,14 +43,14 @@ public final class com/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions : 
 }
 
 public final class com/trendyol/stove/testing/e2e/kafka/KafkaContext {
-	public fun <init> (Lcom/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)V
-	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
-	public final fun copy (Lcom/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;Lcom/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;
+	public final fun copy (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -65,6 +65,19 @@ public final class com/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguratio
 	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBootstrapServers ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext {
+	public fun <init> (Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)V
+	public final fun component1 ()Lorg/apache/kafka/clients/admin/Admin;
+	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+	public final fun copy (Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext;Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdmin ()Lorg/apache/kafka/clients/admin/Admin;
+	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -110,31 +123,26 @@ public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystem$Companion {
 	public final fun kafkaTemplate (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;)Lorg/springframework/kafka/core/KafkaTemplate;
 }
 
-public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions : com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+public class com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions : com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations, com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/util/List;
-	public final fun component3 ()Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;
-	public final fun component4 ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;
-	public final fun component5 ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
-	public final fun component6 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
-	public fun equals (Ljava/lang/Object;)Z
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
-	public final fun getContainerOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;
-	public final fun getFallbackSerde ()Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;
-	public final fun getOps ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
-	public final fun getPorts ()Ljava/util/List;
-	public final fun getRegistry ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
+	public fun getContainerOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;
+	public fun getFallbackSerde ()Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public fun getOps ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
+	public fun getPorts ()Ljava/util/List;
+	public fun getRegistry ()Ljava/lang/String;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
 }
 
 public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Companion {
 	public final fun getDEFAULT_KAFKA_PORTS ()Ljava/util/List;
+	public final fun provided (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/kafka/ProvidedKafkaSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/ProvidedKafkaSystemOptions;
 }
 
 public final class com/trendyol/stove/testing/e2e/kafka/KafkaTemplateCompatibilityKt {
@@ -154,6 +162,16 @@ public abstract interface class com/trendyol/stove/testing/e2e/kafka/MessageProp
 public final class com/trendyol/stove/testing/e2e/kafka/OptionsKt {
 	public static final fun kafka-E6EcY7A (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun kafka-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/ProvidedKafkaSystemOptions : com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions, com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
 }
 
 public class com/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer : org/testcontainers/kafka/ConfluentKafkaContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {

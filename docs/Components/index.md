@@ -12,3 +12,4 @@ All the dependencies are pluggable. Stove supports:
 - [Mssql](08-mssql.md)
 - [Redis](09-redis.md)
 - [Bridge](10-bridge.md)
+- [Provided Instances](11-provided-instances.md)

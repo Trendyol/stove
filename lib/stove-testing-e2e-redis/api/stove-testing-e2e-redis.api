@@ -1,3 +1,13 @@
+public final class com/trendyol/stove/testing/e2e/redis/ProvidedRedisOptions : com/trendyol/stove/testing/e2e/redis/RedisOptions, com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/redis/RedisExposedConfiguration;ILjava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/redis/RedisExposedConfiguration;ILjava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/testing/e2e/redis/RedisExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/redis/RedisExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
+}
+
 public final class com/trendyol/stove/testing/e2e/redis/RedisContainerOptions : com/trendyol/stove/testing/e2e/containers/ContainerOptions {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
@@ -23,14 +33,14 @@ public final class com/trendyol/stove/testing/e2e/redis/RedisContainerOptions : 
 }
 
 public final class com/trendyol/stove/testing/e2e/redis/RedisContext {
-	public fun <init> (Lcom/trendyol/stove/testing/e2e/redis/StoveRedisContainer;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;)V
-	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/redis/StoveRedisContainer;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
-	public final fun copy (Lcom/trendyol/stove/testing/e2e/redis/StoveRedisContainer;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;)Lcom/trendyol/stove/testing/e2e/redis/RedisContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/redis/RedisContext;Lcom/trendyol/stove/testing/e2e/redis/StoveRedisContainer;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/redis/RedisContext;
+	public final fun copy (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;)Lcom/trendyol/stove/testing/e2e/redis/RedisContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/redis/RedisContext;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/redis/RedisContext;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/redis/StoveRedisContainer;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -54,22 +64,36 @@ public final class com/trendyol/stove/testing/e2e/redis/RedisExposedConfiguratio
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/e2e/redis/RedisOptions : com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
-	public fun <init> (ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()I
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;
-	public final fun component4 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
+public final class com/trendyol/stove/testing/e2e/redis/RedisMigrationContext {
+	public fun <init> (Lio/lettuce/core/api/StatefulRedisConnection;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;)V
+	public final fun component1 ()Lio/lettuce/core/api/StatefulRedisConnection;
+	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
+	public final fun copy (Lio/lettuce/core/api/StatefulRedisConnection;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;)Lcom/trendyol/stove/testing/e2e/redis/RedisMigrationContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/redis/RedisMigrationContext;Lio/lettuce/core/api/StatefulRedisConnection;Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/redis/RedisMigrationContext;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
-	public final fun getContainer ()Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;
-	public final fun getDatabase ()I
-	public final fun getPassword ()Ljava/lang/String;
+	public final fun getConnection ()Lio/lettuce/core/api/StatefulRedisConnection;
+	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public class com/trendyol/stove/testing/e2e/redis/RedisOptions : com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations, com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/redis/RedisOptions$Companion;
+	public fun <init> (ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (ILjava/lang/String;Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
+	public fun getContainer ()Lcom/trendyol/stove/testing/e2e/redis/RedisContainerOptions;
+	public fun getDatabase ()I
+	public fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public fun getPassword ()Ljava/lang/String;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/redis/RedisOptions;
+}
+
+public final class com/trendyol/stove/testing/e2e/redis/RedisOptions$Companion {
+	public final fun provided (Ljava/lang/String;ILjava/lang/String;IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/redis/ProvidedRedisOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/redis/RedisOptions$Companion;Ljava/lang/String;ILjava/lang/String;IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/redis/ProvidedRedisOptions;
 }
 
 public final class com/trendyol/stove/testing/e2e/redis/RedisOptionsKt {
