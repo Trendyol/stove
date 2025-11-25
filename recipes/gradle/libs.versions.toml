@@ -44,11 +44,11 @@ hoplite = "2.9.0"
 kediatr = "4.3.0"
 
 # Testing
-stove = "0.17.1"
+stove = "0.18.0"
 kotest = "6.0.5"
 exposed = "1.0.0-rc-3"
 postgresql = "42.7.8"
-flyway = "11.17.1"
+flyway = "11.17.2"
 
 [libraries]
 # Kotlin
