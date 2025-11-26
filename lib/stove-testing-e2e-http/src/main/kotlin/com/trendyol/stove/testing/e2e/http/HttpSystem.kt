@@ -7,71 +7,29 @@ import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.*
 import io.ktor.serialization.jackson.*
 import io.ktor.util.*
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.flow.Flow
-import org.slf4j.LoggerFactory
-import java.net.http.HttpClient
 import java.nio.charset.Charset
-import kotlin.time.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-
-private val httpSystemLogger = LoggerFactory.getLogger(HttpSystem::class.java)
 
 @HttpDsl
 data class HttpClientSystemOptions(
   val baseUrl: String,
   val contentConverter: ContentConverter = JacksonConverter(StoveSerde.jackson.default),
   val timeout: Duration = 30.seconds,
-  val createClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, contentConverter) }
-) : SystemOptions {
-  companion object {
-    internal fun jsonHttpClient(
-      timeout: Duration,
-      converter: ContentConverter
-    ): io.ktor.client.HttpClient = HttpClient(OkHttp) {
-      engine {
-        config {
-          followRedirects(true)
-          followSslRedirects(true)
-          connectTimeout(timeout.toJavaDuration())
-          readTimeout(timeout.toJavaDuration())
-          callTimeout(timeout.toJavaDuration())
-          writeTimeout(timeout.toJavaDuration())
-        }
-      }
-      install(Logging) {
-        logger = object : Logger {
-          override fun log(message: String) {
-            httpSystemLogger.info(message)
-          }
-        }
-      }
-
-      install(ContentNegotiation) {
-        register(ContentType.Application.Json, converter)
-        register(ContentType.Application.ProblemJson, converter)
-        register(ContentType.parse("application/x-ndjson"), converter)
-      }
-
-      defaultRequest {
-        header(HttpHeaders.ContentType, ContentType.Application.Json)
-        header(HttpHeaders.Accept, ContentType.Application.Json)
-      }
-    }
-  }
-}
+  val createClient: (
+    baseUrl: String
+  ) -> io.ktor.client.HttpClient = { url -> jsonHttpClient(url, timeout, contentConverter) }
+) : SystemOptions
 
 internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions): TestSystem {
   this.getOrRegister(HttpSystem(this, options))
@@ -98,7 +56,7 @@ class HttpSystem(
   @PublishedApi internal val options: HttpClientSystemOptions
 ) : PluggedSystem {
   @PublishedApi
-  internal val ktorHttpClient: io.ktor.client.HttpClient = options.createClient()
+  internal val ktorHttpClient: io.ktor.client.HttpClient = options.createClient(options.baseUrl)
 
   @HttpDsl
   suspend fun getResponse(
@@ -108,9 +66,8 @@ class HttpSystem(
     token: Option<String> = None,
     expect: suspend (StoveHttpResponse) -> Unit
   ): HttpSystem = get(uri, headers, queryParams, token)
-    .also {
-      expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap()))
-    }.let { this }
+    .also { expect(it.toBodilessResponse()) }
+    .let { this }
 
   @HttpDsl
   suspend inline fun <reified T : Any> getResponse(
@@ -120,9 +77,8 @@ class HttpSystem(
     token: Option<String> = None,
     expect: (StoveHttpResponse.WithBody<T>) -> Unit
   ): HttpSystem = get(uri, headers, queryParams, token)
-    .also {
-      expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() })
-    }.let { this }
+    .also { expect(it.toResponseWithBody()) }
+    .let { this }
 
   @HttpDsl
   suspend inline fun <reified TExpected : Any> get(
@@ -132,10 +88,8 @@ class HttpSystem(
     token: Option<String> = None,
     expect: (TExpected) -> Unit
   ): HttpSystem = get(uri, headers, queryParams, token)
-    .also {
-      check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
-      expect(it.body())
-    }.let { this }
+    .also { it.expectSuccessBody(expect) }
+    .let { this }
 
   @HttpDsl
   suspend inline fun <reified TExpected : Any> getMany(
@@ -145,10 +99,8 @@ class HttpSystem(
     token: Option<String> = None,
     expect: (List<TExpected>) -> Unit
   ): HttpSystem = get(uri, headers, queryParams, token)
-    .also {
-      check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
-      expect(it.body())
-    }.let { this }
+    .also { it.expectSuccessBody(expect) }
+    .let { this }
 
   suspend inline fun <reified TExpected : Any> readJsonStream(
     uri: String,
@@ -157,7 +109,8 @@ class HttpSystem(
     token: Option<String> = None,
     expect: (Flow<TExpected>) -> Unit
   ): HttpSystem = ktorHttpClient
-    .prepareGet(relative(uri)) {
+    .prepareGet {
+      url { appendEncodedPathSegments(uri) }
       headers.forEach { (key, value) -> header(key, value) }
       header(HttpHeaders.Accept, "application/x-ndjson")
       queryParams.forEach { (key, value) -> parameter(key, value) }
@@ -174,12 +127,8 @@ class HttpSystem(
     token: Option<String> = None,
     headers: Map<String, String> = mapOf(),
     expect: suspend (StoveHttpResponse) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .post(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+  ): HttpSystem = executeWithBody(HttpMethod.Post, uri, body, headers, token)
+    .also { expect(it.toBodilessResponse()) }
     .let { this }
 
   @HttpDsl
@@ -189,15 +138,9 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (actual: TExpected) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .post(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also {
-      check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
-      expect(it.body())
-    }.let { this }
+  ): HttpSystem = executeWithBody(HttpMethod.Post, uri, body, headers, token)
+    .also { it.expectSuccessBody(expect) }
+    .let { this }
 
   /**
    * Posts the given [body] to the given [uri] and expects the response to have a body.
@@ -209,12 +152,8 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .post(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }
+  ): HttpSystem = executeWithBody(HttpMethod.Post, uri, body, headers, token)
+    .also { expect(it.toResponseWithBody()) }
     .let { this }
 
   @HttpDsl
@@ -224,12 +163,8 @@ class HttpSystem(
     token: Option<String> = None,
     headers: Map<String, String> = mapOf(),
     expect: suspend (StoveHttpResponse) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .put(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+  ): HttpSystem = executeWithBody(HttpMethod.Put, uri, body, headers, token)
+    .also { expect(it.toBodilessResponse()) }
     .let { this }
 
   @HttpDsl
@@ -239,15 +174,9 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (actual: TExpected) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .put(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also {
-      check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
-      expect(it.body())
-    }.let { this }
+  ): HttpSystem = executeWithBody(HttpMethod.Put, uri, body, headers, token)
+    .also { it.expectSuccessBody(expect) }
+    .let { this }
 
   @HttpDsl
   suspend inline fun <reified TExpected : Any> putAndExpectBody(
@@ -256,12 +185,8 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .put(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }
+  ): HttpSystem = executeWithBody(HttpMethod.Put, uri, body, headers, token)
+    .also { expect(it.toResponseWithBody()) }
     .let { this }
 
   @HttpDsl
@@ -271,12 +196,8 @@ class HttpSystem(
     token: Option<String> = None,
     headers: Map<String, String> = mapOf(),
     expect: suspend (StoveHttpResponse) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .patch(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+  ): HttpSystem = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
+    .also { expect(it.toBodilessResponse()) }
     .let { this }
 
   @HttpDsl
@@ -286,15 +207,9 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (actual: TExpected) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .patch(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also {
-      check(it.status.isSuccess()) { "Expected a successful response, but got ${it.status}" }
-      expect(it.body())
-    }.let { this }
+  ): HttpSystem = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
+    .also { it.expectSuccessBody(expect) }
+    .let { this }
 
   @HttpDsl
   suspend inline fun <reified TExpected : Any> patchAndExpectBody(
@@ -303,12 +218,8 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     expect: (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
-  ): HttpSystem = ktorHttpClient
-    .patch(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-      body.map { setBody(it) }
-    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }
+  ): HttpSystem = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
+    .also { expect(it.toResponseWithBody()) }
     .let { this }
 
   @HttpDsl
@@ -318,10 +229,9 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     expect: suspend (StoveHttpResponse) -> Unit
   ): HttpSystem = ktorHttpClient
-    .delete(relative(uri)) {
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
-    }.also { expect(StoveHttpResponse.Bodiless(it.status.value, it.headers.toMap())) }
+    .delete {
+      configureRequest(uri, headers, token)
+    }.also { expect(it.toBodilessResponse()) }
     .let { this }
 
   @HttpDsl
@@ -333,11 +243,9 @@ class HttpSystem(
     expect: (StoveHttpResponse.WithBody<TExpected>) -> Unit
   ): HttpSystem = ktorHttpClient
     .submitForm {
-      url(relative(uri))
-      headers.forEach { (key, value) -> header(key, value) }
-      token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+      configureRequest(uri, headers, token)
       setBody(MultiPartFormDataContent(toFormData(body)))
-    }.also { expect(StoveHttpResponse.WithBody(it.status.value, it.headers.toMap()) { it.body() }) }
+    }.also { expect(it.toResponseWithBody()) }
     .let { this }
 
   @HttpDsl
@@ -349,16 +257,48 @@ class HttpSystem(
     headers: Map<String, String>,
     queryParams: Map<String, String>,
     token: Option<String>
-  ) = ktorHttpClient.get(relative(uri)) {
-    headers.forEach { (key, value) -> header(key, value) }
+  ) = ktorHttpClient.get {
+    configureRequest(uri, headers, token)
     queryParams.forEach { (key, value) -> parameter(key, value) }
+  }
+
+  @PublishedApi
+  internal suspend fun executeWithBody(
+    method: HttpMethod,
+    uri: String,
+    body: Option<Any>,
+    headers: Map<String, String>,
+    token: Option<String>
+  ): HttpResponse = ktorHttpClient.request {
+    this.method = method
+    configureRequest(uri, headers, token)
+    body.map { setBody(it) }
+  }
+
+  @PublishedApi
+  internal fun HttpRequestBuilder.configureRequest(
+    uri: String,
+    headers: Map<String, String>,
+    token: Option<String>
+  ) {
+    url { appendEncodedPathSegments(uri) }
+    headers.forEach { (key, value) -> header(key, value) }
     token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
   }
 
   @PublishedApi
-  internal fun relative(uri: String): Url = URLBuilder(options.baseUrl)
-    .apply { appendEncodedPathSegments(uri) }
-    .build()
+  internal fun HttpResponse.toBodilessResponse(): StoveHttpResponse.Bodiless =
+    StoveHttpResponse.Bodiless(status.value, headers.toMap())
+
+  @PublishedApi
+  internal inline fun <reified T : Any> HttpResponse.toResponseWithBody(): StoveHttpResponse.WithBody<T> =
+    StoveHttpResponse.WithBody(status.value, headers.toMap()) { body() }
+
+  @PublishedApi
+  internal suspend inline fun <reified T : Any> HttpResponse.expectSuccessBody(expect: (T) -> Unit) {
+    check(status.isSuccess()) { "Expected a successful response, but got $status" }
+    expect(body())
+  }
 
   @PublishedApi
   internal fun toFormData(
@@ -400,14 +340,14 @@ class HttpSystem(
     }
 
     /**
-     * Exposes the [HttpClient] used by the [HttpSystem].
+     * Exposes the [io.ktor.client.HttpClient] used by the [HttpSystem].
      */
     @Suppress("unused")
     @HttpDsl
     fun HttpSystem.client(): io.ktor.client.HttpClient = this.ktorHttpClient
 
     /**
-     * Exposes the [HttpClient] used by the [HttpSystem].
+     * Exposes the [io.ktor.client.HttpClient] used by the [HttpSystem].
      */
     @Suppress("unused")
     @HttpDsl
