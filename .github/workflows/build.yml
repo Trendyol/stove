@@ -82,8 +82,21 @@ jobs:
           - name: "starters"
             projects: ":starters:spring:stove-spring-testing-e2e:test :starters:ktor:stove-ktor-testing-e2e:test :starters:micronaut:stove-micronaut-testing-e2e:test"
             images: ""
-          - name: "examples"
-            projects: ":examples:spring-example:test :examples:ktor-example:test :examples:micronaut-example:test :examples:spring-standalone-example:test :examples:spring-streams-example:test"
+          # Examples split into separate jobs to avoid WireMock port conflicts
+          - name: "example-spring"
+            projects: ":examples:spring-example:test"
+            images: ""
+          - name: "example-spring-standalone"
+            projects: ":examples:spring-standalone-example:test"
+            images: ""
+          - name: "example-spring-streams"
+            projects: ":examples:spring-streams-example:test"
+            images: ""
+          - name: "example-ktor"
+            projects: ":examples:ktor-example:test"
+            images: ""
+          - name: "example-micronaut"
+            projects: ":examples:micronaut-example:test"
             images: ""
     services:
       docker:

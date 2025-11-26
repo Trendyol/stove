@@ -30,12 +30,22 @@ interface StoveContainer : SystemRuntime {
   val dockerClientAccess: Lazy<DockerClient>
     get() = lazy { DockerClientFactory.lazyClient() }
 
+  /**
+   * Pauses the container. This method is idempotent - if the container is already paused, it does nothing.
+   */
   fun pause() {
-    dockerClientAccess.value.pauseContainerCmd(containerIdAccess).exec()
+    if (!inspect().paused) {
+      dockerClientAccess.value.pauseContainerCmd(containerIdAccess).exec()
+    }
   }
 
+  /**
+   * Unpauses the container. This method is idempotent - if the container is not paused, it does nothing.
+   */
   fun unpause() {
-    dockerClientAccess.value.unpauseContainerCmd(containerIdAccess).exec()
+    if (inspect().paused) {
+      dockerClientAccess.value.unpauseContainerCmd(containerIdAccess).exec()
+    }
   }
 
   /**

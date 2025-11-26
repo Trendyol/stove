@@ -95,8 +95,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
   tasks {
     test {
       useJUnitPlatform()
-      // Run tests in parallel using multiple forks
-      maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
       // Fail fast on CI to save time
       failFast = runningOnCI
       testlogger {
