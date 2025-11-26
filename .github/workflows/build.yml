@@ -52,7 +52,7 @@ jobs:
           gradle-version: current
 
       - name: Run quick checks (compile, spotless, detekt)
-        run: gradle --build-cache --configuration-cache classes testClasses spotlessCheck detekt
+        run: gradle --build-cache --configuration-cache classes testClasses spotlessCheck detekt apiCheck
 
   # Matrix-based parallel test execution
   test:
