@@ -1,10 +1,10 @@
 package com.trendyol.stove.examples.kotlin.ktor.e2e.setup
 
-import com.trendol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.examples.kotlin.ktor.ExampleStoveKtorApp
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.serialization.JacksonConfiguration
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.*
+import com.trendyol.stove.testing.e2e.rdbms.postgres.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.TestSystem

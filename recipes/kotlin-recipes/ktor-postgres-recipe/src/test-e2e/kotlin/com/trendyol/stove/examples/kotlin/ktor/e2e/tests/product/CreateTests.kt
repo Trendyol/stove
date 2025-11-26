@@ -1,7 +1,6 @@
 package com.trendyol.stove.examples.kotlin.ktor.e2e.tests.product
 
 import arrow.core.*
-import com.trendol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.examples.domain.product.Product
 import com.trendyol.stove.examples.domain.product.events.ProductCreatedEvent
 import com.trendyol.stove.examples.kotlin.ktor.domain.product.ProductRepository
@@ -11,6 +10,7 @@ import com.trendyol.stove.examples.kotlin.ktor.infra.components.product.persiste
 import com.trendyol.stove.functional.get
 import com.trendyol.stove.recipes.shared.application.category.CategoryApiResponse
 import com.trendyol.stove.testing.e2e.http.http
+import com.trendyol.stove.testing.e2e.rdbms.postgres.postgresql
 import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.using
