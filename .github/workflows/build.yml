@@ -72,29 +72,29 @@ jobs:
             images: ""
           - name: "kafka"
             projects: ":lib:stove-testing-e2e-kafka:test :starters:spring:stove-spring-testing-e2e-kafka:test"
-            images: "confluentinc/cp-kafka"
+            images: "confluentinc/cp-kafka:7.8.1"
           - name: "databases"
             projects: ":lib:stove-testing-e2e-rdbms-postgres:test :lib:stove-testing-e2e-rdbms-mssql:test :lib:stove-testing-e2e-mongodb:test"
-            images: "postgres mongo mcr.microsoft.com/mssql/server"
+            images: "postgres:latest mongo:7.0 mcr.microsoft.com/mssql/server:2022-CU16-ubuntu-22.04"
           - name: "nosql"
             projects: ":lib:stove-testing-e2e-couchbase:test :lib:stove-testing-e2e-elasticsearch:test :lib:stove-testing-e2e-redis:test"
-            images: "couchbase/server elasticsearch redis"
+            images: "couchbase/server:7.6.1 elasticsearch:8.9.0 redis:7-alpine"
           - name: "starters"
             projects: ":starters:spring:stove-spring-testing-e2e:test :starters:ktor:stove-ktor-testing-e2e:test :starters:micronaut:stove-micronaut-testing-e2e:test"
             images: ""
           # Examples split into separate jobs to avoid WireMock port conflicts
           - name: "example-spring"
             projects: ":examples:spring-example:test"
-            images: ""
+            images: "confluentinc/cp-kafka:7.8.1"
           - name: "example-spring-standalone"
             projects: ":examples:spring-standalone-example:test"
-            images: ""
+            images: "confluentinc/cp-kafka:7.8.1"
           - name: "example-spring-streams"
             projects: ":examples:spring-streams-example:test"
-            images: ""
+            images: "confluentinc/cp-kafka:7.8.1"
           - name: "example-ktor"
             projects: ":examples:ktor-example:test"
-            images: ""
+            images: "confluentinc/cp-kafka:7.8.1"
           - name: "example-micronaut"
             projects: ":examples:micronaut-example:test"
             images: ""
@@ -134,7 +134,8 @@ jobs:
           gradle --build-cache --configuration-cache \
             -Dorg.gradle.parallel=true \
             -Dorg.gradle.workers.max=4 \
-            ${{ matrix.test-group.projects }}
+            ${{ matrix.test-group.projects }} \
+            koverXmlReport
 
       - name: Upload test results
         if: always()
@@ -146,40 +147,12 @@ jobs:
             **/build/reports/tests/
           retention-days: 7
 
-  # Aggregate coverage after all tests pass
-  coverage:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.repository == 'Trendyol/stove'
-    permissions:
-      checks: write
-      id-token: write
-      issues: write
-      pull-requests: write
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v6
-
-      - name: Configure JDK
-        uses: actions/setup-java@v5
-        with:
-          java-version: 17
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          gradle-version: current
-
-      - name: Generate coverage report
-        run: gradle --build-cache --configuration-cache koverXmlReport
-
-      - name: Upload coverage reports to Codecov
+      # Upload coverage directly to Codecov from each job (Codecov merges partial reports)
+      - name: Upload coverage to Codecov
+        if: success() && github.repository == 'Trendyol/stove'
         uses: codecov/codecov-action@v5
+        with:
+          flags: ${{ matrix.test-group.name }}
+          fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
