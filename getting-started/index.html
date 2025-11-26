@@ -1211,11 +1211,11 @@
 </div>
 </div>
 <h2 id="step-3-create-test-configuration">Step 3: Create Test Configuration<a class="headerlink" href="#step-3-create-test-configuration" title="Permanent link">&para;</a></h2>
-<p>Set up Stove once for your entire test suite:</p>
+<p>Set up Stove once for your entire test suite. We recommend using a dedicated <code>src/test-e2e</code> source set for e2e tests (see <a href="../best-practices/#use-dedicated-source-set-for-e2e-tests">Best Practices</a> for Gradle configuration).</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Kotest</label><label for="__tabbed_2_2">JUnit</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// src/test/kotlin/e2e/TestConfig.kt</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// src/test-e2e/kotlin/e2e/TestConfig.kt</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
@@ -1247,7 +1247,7 @@
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// src/test/kotlin/e2e/TestConfig.kt</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// src/test-e2e/kotlin/e2e/TestConfig.kt</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nd">@TestInstance</span><span class="p">(</span><span class="n">TestInstance</span><span class="p">.</span><span class="na">Lifecycle</span><span class="p">.</span><span class="na">PER_CLASS</span><span class="p">)</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kd">abstract</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nc">BaseE2ETest</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
