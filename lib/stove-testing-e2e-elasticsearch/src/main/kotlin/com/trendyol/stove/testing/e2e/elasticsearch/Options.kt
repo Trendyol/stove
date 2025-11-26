@@ -1,20 +1,15 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
 import arrow.core.*
-import co.elastic.clients.elasticsearch.ElasticsearchClient
-import co.elastic.clients.json.JsonpMapper
-import co.elastic.clients.json.jackson.JacksonJsonpMapper
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
-import org.elasticsearch.client.RestClient
+import io.ktor.client.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 import org.testcontainers.utility.DockerImageName
-import kotlin.time.Duration.Companion.minutes
 
 @DslMarker
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS, AnnotationTarget.TYPE, AnnotationTarget.FUNCTION)
@@ -25,15 +20,25 @@ annotation class ElasticDsl
  */
 @StoveDsl
 open class ElasticsearchSystemOptions(
-  open val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
+  /**
+   * Optional custom HTTP client configurer.
+   * If not provided, a default Ktor HTTP client will be created.
+   */
+  open val httpClientConfigurer: Option<(cfg: ElasticSearchExposedConfiguration) -> HttpClient> = none(),
   open val container: ElasticContainerOptions = ElasticContainerOptions(),
-  open val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
-  open val cleanup: suspend (ElasticsearchClient) -> Unit = {},
+  /**
+   * Jackson ObjectMapper for JSON serialization/deserialization.
+   */
+  open val objectMapper: ObjectMapper = StoveSerde.jackson.default,
+  /**
+   * Cleanup function called when the system is closed.
+   */
+  open val cleanup: suspend (ElasticsearchSystem) -> Unit = {},
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions,
   ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration>,
-  SupportsMigrations<ElasticsearchClient, ElasticsearchSystemOptions> {
-  override val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
+  SupportsMigrations<ElasticsearchSystem, ElasticsearchSystemOptions> {
+  override val migrationCollection: MigrationCollection<ElasticsearchSystem> = MigrationCollection()
 
   companion object {
     /**
@@ -43,9 +48,9 @@ open class ElasticsearchSystemOptions(
      * @param host The Elasticsearch host
      * @param port The Elasticsearch port
      * @param password The Elasticsearch password (for authentication)
-     * @param certificate Optional SSL certificate for secure connections
-     * @param clientConfigurer Client configuration
-     * @param jsonpMapper JSON mapper for serialization
+     * @param isSecure Whether to use HTTPS (default: false for provided instances)
+     * @param httpClientConfigurer Optional custom HTTP client configurer
+     * @param objectMapper Jackson ObjectMapper for serialization
      * @param runMigrations Whether to run migrations on the external instance (default: true)
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
@@ -55,21 +60,21 @@ open class ElasticsearchSystemOptions(
       host: String,
       port: Int,
       password: String = "",
-      certificate: ElasticsearchExposedCertificate? = null,
-      clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-      jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+      isSecure: Boolean = false,
+      httpClientConfigurer: Option<(cfg: ElasticSearchExposedConfiguration) -> HttpClient> = none(),
+      objectMapper: ObjectMapper = StoveSerde.jackson.default,
       runMigrations: Boolean = true,
-      cleanup: suspend (ElasticsearchClient) -> Unit = {},
+      cleanup: suspend (ElasticsearchSystem) -> Unit = {},
       configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
     ): ProvidedElasticsearchSystemOptions = ProvidedElasticsearchSystemOptions(
       config = ElasticSearchExposedConfiguration(
         host = host,
         port = port,
         password = password,
-        certificate = certificate
+        isSecure = isSecure
       ),
-      clientConfigurer = clientConfigurer,
-      jsonpMapper = jsonpMapper,
+      httpClientConfigurer = httpClientConfigurer,
+      objectMapper = objectMapper,
       runMigrations = runMigrations,
       cleanup = cleanup,
       configureExposedConfiguration = configureExposedConfiguration
@@ -87,18 +92,18 @@ class ProvidedElasticsearchSystemOptions(
    * The configuration for the provided Elasticsearch instance.
    */
   val config: ElasticSearchExposedConfiguration,
-  clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-  jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
-  cleanup: suspend (ElasticsearchClient) -> Unit = {},
+  httpClientConfigurer: Option<(cfg: ElasticSearchExposedConfiguration) -> HttpClient> = none(),
+  objectMapper: ObjectMapper = StoveSerde.jackson.default,
+  cleanup: suspend (ElasticsearchSystem) -> Unit = {},
   /**
    * Whether to run migrations on the external instance.
    */
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : ElasticsearchSystemOptions(
-    clientConfigurer = clientConfigurer,
+    httpClientConfigurer = httpClientConfigurer,
     container = ElasticContainerOptions(),
-    jsonpMapper = jsonpMapper,
+    objectMapper = objectMapper,
     cleanup = cleanup,
     configureExposedConfiguration = configureExposedConfiguration
   ),
@@ -111,7 +116,10 @@ data class ElasticSearchExposedConfiguration(
   val host: String,
   val port: Int,
   val password: String,
-  val certificate: ElasticsearchExposedCertificate?
+  /**
+   * Whether to use HTTPS for the connection.
+   */
+  val isSecure: Boolean = false
 ) : ExposedConfiguration
 
 @StoveDsl
@@ -140,17 +148,3 @@ data class ElasticContainerOptions(
     const val DEFAULT_ELASTIC_PORT = 9200
   }
 }
-
-data class ElasticClientConfigurer(
-  val httpClientBuilder: HttpAsyncClientBuilder.() -> Unit = {
-    setDefaultRequestConfig(
-      RequestConfig
-        .custom()
-        .setSocketTimeout(5.minutes.inWholeMilliseconds.toInt())
-        .setConnectTimeout(5.minutes.inWholeMilliseconds.toInt())
-        .setConnectionRequestTimeout(5.minutes.inWholeMilliseconds.toInt())
-        .build()
-    )
-  },
-  val restClientOverrideFn: Option<(cfg: ElasticSearchExposedConfiguration) -> RestClient> = none()
-)
