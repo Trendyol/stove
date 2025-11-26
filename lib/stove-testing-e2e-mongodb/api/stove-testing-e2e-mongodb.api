@@ -178,6 +178,7 @@ public final class com/trendyol/stove/testing/e2e/mongodb/ProvidedMongodbSystemO
 
 public class com/trendyol/stove/testing/e2e/mongodb/StoveMongoContainer : org/testcontainers/mongodb/MongoDBContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
 	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
+	public fun execCommand ([Ljava/lang/String;J)Lcom/trendyol/stove/testing/e2e/containers/ExecResult;
 	public fun getContainerIdAccess ()Ljava/lang/String;
 	public fun getDockerClientAccess ()Lkotlin/Lazy;
 	public fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
