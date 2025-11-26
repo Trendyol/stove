@@ -8,6 +8,17 @@ on:
     branches: [ main ]
     paths:
       - 'recipes/**'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+  TESTCONTAINERS_RYUK_DISABLED: false
+  DOCKER_BUILDKIT: 1
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -31,4 +42,8 @@ jobs:
           gradle-version: current
 
       - name: Gradle Build and Test
-        run: gradle -p recipes --build-cache build test e2eTest
+        run: |
+          gradle -p recipes --build-cache \
+            -Dorg.gradle.parallel=true \
+            -Dorg.gradle.workers.max=4 \
+            build test e2eTest

@@ -20,59 +20,153 @@ on:
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'buildSrc/**'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+  # Testcontainers optimization settings
+  TESTCONTAINERS_RYUK_DISABLED: false
+  DOCKER_BUILDKIT: 1
+
 jobs:
-  build-and-test:
-    permissions:
-      checks: write
-      id-token: write
-      issues: write
-      pull-requests: write
+  # Fast checks that don't need containers - runs in parallel with setup
+  quick-checks:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged
     steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
       - name: Configure JDK
         uses: actions/setup-java@v5
         with:
           java-version: 17
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: current
+
+      - name: Run quick checks (compile, spotless, detekt)
+        run: gradle --build-cache --configuration-cache classes testClasses spotlessCheck detekt
+
+  # Matrix-based parallel test execution
+  test:
+    needs: quick-checks
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      id-token: write
+      issues: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group:
+          - name: "core-and-http"
+            projects: ":lib:stove-testing-e2e:test :lib:stove-testing-e2e-http:test :lib:stove-testing-e2e-wiremock:test"
+            images: ""
+          - name: "kafka"
+            projects: ":lib:stove-testing-e2e-kafka:test :starters:spring:stove-spring-testing-e2e-kafka:test"
+            images: "confluentinc/cp-kafka"
+          - name: "databases"
+            projects: ":lib:stove-testing-e2e-rdbms-postgres:test :lib:stove-testing-e2e-rdbms-mssql:test :lib:stove-testing-e2e-mongodb:test"
+            images: "postgres mongo mcr.microsoft.com/mssql/server"
+          - name: "nosql"
+            projects: ":lib:stove-testing-e2e-couchbase:test :lib:stove-testing-e2e-elasticsearch:test :lib:stove-testing-e2e-redis:test"
+            images: "couchbase/server elasticsearch redis"
+          - name: "starters"
+            projects: ":starters:spring:stove-spring-testing-e2e:test :starters:ktor:stove-ktor-testing-e2e:test :starters:micronaut:stove-micronaut-testing-e2e:test"
+            images: ""
+          - name: "examples"
+            projects: ":examples:spring-example:test :examples:ktor-example:test :examples:micronaut-example:test :examples:spring-standalone-example:test :examples:spring-streams-example:test"
+            images: ""
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
+    steps:
       - name: Check out Git repository
         uses: actions/checkout@v6
+
+      - name: Configure JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: 'temurin'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: current
 
-      - name: Gradle Build and Test
-        run: gradle --build-cache --configuration-cache build test koverXmlReport
+      # Pre-pull Docker images in parallel to speed up tests
+      - name: Pre-pull Docker images
+        if: matrix.test-group.images != ''
+        run: |
+          echo "Pre-pulling images: ${{ matrix.test-group.images }}"
+          for image in ${{ matrix.test-group.images }}; do
+            docker pull $image &
+          done
+          wait
+        continue-on-error: true
 
-      # - name: Add coverage report to PR
-      #   id: kover
-      #   uses: mi-kas/kover-report@v1
-      #   if: github.repository == 'Trendyol/stove'
-      #   with:
-      #     path: |
-      #       ${{ github.workspace }}/build/reports/kover/report.xml
-      #     title: Code Coverage
-      #     update-comment: true
-      #     min-coverage-overall: 80
-      #     min-coverage-changed-files: 80
-      #     coverage-counter-type: LINE
+      - name: Run tests - ${{ matrix.test-group.name }}
+        run: |
+          gradle --build-cache --configuration-cache \
+            -Dorg.gradle.parallel=true \
+            -Dorg.gradle.workers.max=4 \
+            ${{ matrix.test-group.projects }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-group.name }}
+          path: |
+            **/build/test-results/test/
+            **/build/reports/tests/
+          retention-days: 7
+
+  # Aggregate coverage after all tests pass
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.repository == 'Trendyol/stove'
+    permissions:
+      checks: write
+      id-token: write
+      issues: write
+      pull-requests: write
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Configure JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: current
+
+      - name: Generate coverage report
+        run: gradle --build-cache --configuration-cache koverXmlReport
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
-        if: github.repository == 'Trendyol/stove'
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-
-  # security-gates:
-  #   uses: Trendyol/security-actions/.github/workflows/security-gates.yml@master
-  #   permissions:
-  #     actions: read
-  #     contents: read
-  #     security-events: write
