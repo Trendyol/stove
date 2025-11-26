@@ -19,9 +19,163 @@ import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
 
+/**
+ * Callback invoked after a stub is removed (when `removeStubAfterRequestMatched` is enabled).
+ */
 typealias AfterStubRemoved = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
+
+/**
+ * Callback invoked after a request is handled by WireMock.
+ */
 typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
 
+/**
+ * WireMock HTTP mocking system for testing external service integrations.
+ *
+ * WireMock allows you to mock external HTTP services that your application depends on,
+ * enabling isolated testing without actual network calls.
+ *
+ * ## Mocking GET Requests
+ *
+ * ```kotlin
+ * wiremock {
+ *     // Simple GET mock
+ *     mockGet(
+ *         url = "/api/users/123",
+ *         statusCode = 200,
+ *         responseBody = User(id = "123", name = "John").some()
+ *     )
+ *
+ *     // GET with custom headers
+ *     mockGet(
+ *         url = "/api/users/123",
+ *         statusCode = 200,
+ *         responseBody = user.some(),
+ *         responseHeaders = mapOf(
+ *             "Content-Type" to "application/json",
+ *             "X-Custom-Header" to "value"
+ *         )
+ *     )
+ * }
+ * ```
+ *
+ * ## Mocking POST Requests
+ *
+ * ```kotlin
+ * wiremock {
+ *     // POST with request and response bodies
+ *     mockPost(
+ *         url = "/api/payments",
+ *         statusCode = 200,
+ *         requestBody = PaymentRequest(amount = 99.99).some(),
+ *         responseBody = PaymentResponse(transactionId = "txn-123").some()
+ *     )
+ *
+ *     // POST returning error
+ *     mockPost(
+ *         url = "/api/payments",
+ *         statusCode = 400,
+ *         responseBody = ErrorResponse(code = "INVALID_AMOUNT").some()
+ *     )
+ * }
+ * ```
+ *
+ * ## Mocking PUT, DELETE, PATCH
+ *
+ * ```kotlin
+ * wiremock {
+ *     mockPut(
+ *         url = "/api/users/123",
+ *         statusCode = 200,
+ *         requestBody = UpdateUserRequest(name = "Jane").some(),
+ *         responseBody = User(id = "123", name = "Jane").some()
+ *     )
+ *
+ *     mockDelete(
+ *         url = "/api/users/123",
+ *         statusCode = 204
+ *     )
+ *
+ *     mockPatch(
+ *         url = "/api/users/123",
+ *         statusCode = 200,
+ *         requestBody = mapOf("status" to "active").some(),
+ *         responseBody = User(id = "123", status = "active").some()
+ *     )
+ * }
+ * ```
+ *
+ * ## Verifying Requests
+ *
+ * ```kotlin
+ * wiremock {
+ *     // Verify a request was made
+ *     verify { getRequestedFor(urlEqualTo("/api/users/123")) }
+ *
+ *     // Verify request count
+ *     verify(2) { postRequestedFor(urlEqualTo("/api/payments")) }
+ *
+ *     // Verify with request body
+ *     verify {
+ *         postRequestedFor(urlEqualTo("/api/users"))
+ *             .withRequestBody(matchingJsonPath("$.name", equalTo("John")))
+ *     }
+ * }
+ * ```
+ *
+ * ## Test Workflow Example
+ *
+ * ```kotlin
+ * test("should process payment via external gateway") {
+ *     TestSystem.validate {
+ *         // Mock external payment gateway
+ *         wiremock {
+ *             mockPost(
+ *                 url = "/gateway/charge",
+ *                 statusCode = 200,
+ *                 responseBody = GatewayResponse(success = true, txnId = "123").some()
+ *             )
+ *         }
+ *
+ *         // Make request to our application (which calls the gateway)
+ *         http {
+ *             postAndExpectJson<OrderResponse>(
+ *                 uri = "/orders",
+ *                 body = CreateOrderRequest(amount = 99.99).some()
+ *             ) { order ->
+ *                 order.status shouldBe "PAID"
+ *                 order.transactionId shouldBe "123"
+ *             }
+ *         }
+ *
+ *         // Verify the gateway was called
+ *         wiremock {
+ *             verify { postRequestedFor(urlEqualTo("/gateway/charge")) }
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         wiremock {
+ *             WireMockSystemOptions(
+ *                 port = 9090,
+ *                 removeStubAfterRequestMatched = true,  // Clean stubs after use
+ *                 afterRequest = { event, _ ->
+ *                     println("Request: ${event.request}")
+ *                 }
+ *             )
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @see WireMockSystemOptions
+ */
 @WiremockDsl
 class WireMockSystem(
   override val testSystem: TestSystem,

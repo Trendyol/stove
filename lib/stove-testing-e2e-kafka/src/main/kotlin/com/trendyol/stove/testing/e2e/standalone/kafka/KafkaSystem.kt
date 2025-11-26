@@ -38,6 +38,131 @@ var stoveKafkaBridgePortDefault: String = PortFinder.findAvailablePortAsString()
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
 internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+/**
+ * Kafka messaging system for testing message publishing and consumption.
+ *
+ * Provides a comprehensive DSL for testing Kafka-based messaging patterns:
+ * - Publishing messages to topics
+ * - Asserting messages are consumed by the application
+ * - Asserting messages are published by the application
+ * - Asserting message processing failures
+ *
+ * ## Publishing Messages
+ *
+ * ```kotlin
+ * kafka {
+ *     // Publish a message to a topic
+ *     publish("orders.created", OrderCreatedEvent(orderId = "123", amount = 99.99))
+ *
+ *     // Publish with custom headers
+ *     publish(
+ *         topic = "orders.created",
+ *         message = event,
+ *         headers = mapOf("correlationId" to "abc-123")
+ *     )
+ *
+ *     // Publish with specific key
+ *     publish(
+ *         topic = "orders.created",
+ *         key = "customer-456",
+ *         message = event
+ *     )
+ * }
+ * ```
+ *
+ * ## Asserting Consumed Messages
+ *
+ * Verify your application consumed messages correctly:
+ *
+ * ```kotlin
+ * kafka {
+ *     publish("orders.created", OrderCreatedEvent(orderId = "123"))
+ *
+ *     // Assert the message was consumed
+ *     shouldBeConsumed<OrderCreatedEvent> {
+ *         actual.orderId == "123"
+ *     }
+ *
+ *     // With custom timeout
+ *     shouldBeConsumed<OrderCreatedEvent>(atLeastIn = 30.seconds) {
+ *         actual.orderId == "123"
+ *     }
+ * }
+ * ```
+ *
+ * ## Asserting Published Messages
+ *
+ * Verify your application published messages:
+ *
+ * ```kotlin
+ * // Trigger action that publishes a message
+ * http {
+ *     postAndExpectBodilessResponse("/orders", body = request.some()) {
+ *         it.status shouldBe 201
+ *     }
+ * }
+ *
+ * kafka {
+ *     // Assert message was published
+ *     shouldBePublished<OrderConfirmedEvent> {
+ *         actual.orderId == request.id
+ *     }
+ *
+ *     // Assert with header validation
+ *     shouldBePublished<OrderConfirmedEvent> {
+ *         actual.orderId == request.id &&
+ *         metadata.headers["X-Correlation-Id"] == correlationId
+ *     }
+ * }
+ * ```
+ *
+ * ## Asserting Failed Messages
+ *
+ * Verify messages failed processing (for error handling tests):
+ *
+ * ```kotlin
+ * kafka {
+ *     publish("orders.created", InvalidOrderEvent(orderId = "invalid"))
+ *
+ *     shouldBeFailed<InvalidOrderEvent> {
+ *         actual.orderId == "invalid"
+ *     }
+ * }
+ * ```
+ *
+ * ## Topic Management
+ *
+ * ```kotlin
+ * kafka {
+ *     // Create topics
+ *     createTopics("orders.created", "orders.confirmed")
+ *
+ *     // Delete topics
+ *     deleteTopics("orders.created")
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         kafka {
+ *             stoveKafkaObjectMapperRef = myObjectMapper
+ *             KafkaSystemOptions {
+ *                 listOf(
+ *                     "spring.kafka.bootstrap-servers=${it.bootstrapServers}",
+ *                     "spring.kafka.consumer.group-id=test-group"
+ *                 )
+ *             }
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @see KafkaSystemOptions
+ * @see KafkaExposedConfiguration
+ */
 @Suppress("TooManyFunctions", "unused", "MagicNumber")
 @StoveDsl
 class KafkaSystem(

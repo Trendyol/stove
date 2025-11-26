@@ -13,6 +13,143 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
 
+/**
+ * Couchbase document database system for testing document storage operations.
+ *
+ * Provides a DSL for testing Couchbase operations:
+ * - Document CRUD operations (save, get, delete)
+ * - N1QL queries
+ * - Collection management
+ * - Existence checks
+ *
+ * ## Saving Documents
+ *
+ * ```kotlin
+ * couchbase {
+ *     // Save to default collection
+ *     save("user::123", User(id = "123", name = "John"))
+ *
+ *     // Save to specific collection
+ *     save("users", "user::123", User(id = "123", name = "John"))
+ *
+ *     // Save with custom options
+ *     saveWithOptions("user::123", user) { options ->
+ *         options.expiry(Duration.ofHours(24))
+ *     }
+ * }
+ * ```
+ *
+ * ## Retrieving Documents
+ *
+ * ```kotlin
+ * couchbase {
+ *     // Get from default collection and assert
+ *     shouldGet<User>("user::123") { user ->
+ *         user.name shouldBe "John"
+ *         user.email shouldBe "john@example.com"
+ *     }
+ *
+ *     // Get from specific collection
+ *     shouldGet<User>("users", "user::123") { user ->
+ *         user.name shouldBe "John"
+ *     }
+ * }
+ * ```
+ *
+ * ## N1QL Queries
+ *
+ * ```kotlin
+ * couchbase {
+ *     // Execute N1QL query and assert results
+ *     shouldQuery<User>(
+ *         "SELECT * FROM `my-bucket` WHERE type = 'user' AND status = 'active'"
+ *     ) { users ->
+ *         users.size shouldBeGreaterThan 0
+ *         users.all { it.status == "active" } shouldBe true
+ *     }
+ * }
+ * ```
+ *
+ * ## Deleting Documents
+ *
+ * ```kotlin
+ * couchbase {
+ *     // Delete from default collection
+ *     shouldDelete("user::123")
+ *
+ *     // Delete from specific collection
+ *     shouldDelete("users", "user::123")
+ * }
+ * ```
+ *
+ * ## Existence Checks
+ *
+ * ```kotlin
+ * couchbase {
+ *     // Assert document doesn't exist
+ *     shouldNotExist("user::deleted")
+ *
+ *     // In specific collection
+ *     shouldNotExist("users", "user::deleted")
+ * }
+ * ```
+ *
+ * ## Test Workflow Example
+ *
+ * ```kotlin
+ * test("should create user via API and store in Couchbase") {
+ *     TestSystem.validate {
+ *         // Setup: ensure clean state
+ *         couchbase {
+ *             shouldNotExist("user::new-user")
+ *         }
+ *
+ *         // Action: create user via API
+ *         http {
+ *             postAndExpectBodilessResponse(
+ *                 uri = "/users",
+ *                 body = CreateUserRequest(name = "New User").some()
+ *             ) { response ->
+ *                 response.status shouldBe 201
+ *             }
+ *         }
+ *
+ *         // Assert: verify in Couchbase
+ *         couchbase {
+ *             shouldGet<User>("users", "user::new-user") { user ->
+ *                 user.name shouldBe "New User"
+ *                 user.createdAt shouldNotBe null
+ *             }
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         couchbase {
+ *             CouchbaseSystemOptions(
+ *                 defaultBucket = "my-bucket",
+ *                 configureExposedConfiguration = { cfg ->
+ *                     listOf(
+ *                         "couchbase.connection-string=${cfg.connectionString}",
+ *                         "couchbase.username=${cfg.username}",
+ *                         "couchbase.password=${cfg.password}"
+ *                     )
+ *                 }
+ *             )
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @property context Couchbase context containing bucket and options.
+ * @see CouchbaseSystemOptions
+ * @see CouchbaseExposedConfiguration
+ */
 @CouchbaseDsl
 class CouchbaseSystem internal constructor(
   override val testSystem: TestSystem,

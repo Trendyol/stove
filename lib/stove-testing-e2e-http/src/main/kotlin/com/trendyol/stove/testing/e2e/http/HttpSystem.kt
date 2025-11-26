@@ -21,6 +21,60 @@ import java.nio.charset.Charset
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Configuration options for the HTTP client system.
+ *
+ * ## Basic Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         httpClient {
+ *             HttpClientSystemOptions(
+ *                 baseUrl = "http://localhost:8080"
+ *             )
+ *         }
+ *     }
+ * ```
+ *
+ * ## Custom Serialization
+ *
+ * Match your application's JSON serialization:
+ *
+ * ```kotlin
+ * httpClient {
+ *     HttpClientSystemOptions(
+ *         baseUrl = "http://localhost:8080",
+ *         contentConverter = JacksonConverter(myObjectMapper),
+ *         timeout = 60.seconds
+ *     )
+ * }
+ * ```
+ *
+ * ## Custom HTTP Client
+ *
+ * For advanced scenarios (custom SSL, interceptors, etc.):
+ *
+ * ```kotlin
+ * httpClient {
+ *     HttpClientSystemOptions(
+ *         baseUrl = "http://localhost:8080",
+ *         createClient = { baseUrl ->
+ *             HttpClient(CIO) {
+ *                 install(ContentNegotiation) { jackson() }
+ *                 install(Logging) { level = LogLevel.ALL }
+ *                 defaultRequest { url(baseUrl) }
+ *             }
+ *         }
+ *     )
+ * }
+ * ```
+ *
+ * @property baseUrl The base URL for all HTTP requests (e.g., "http://localhost:8080").
+ * @property contentConverter The content converter for JSON serialization (default: Jackson).
+ * @property timeout Request timeout duration (default: 30 seconds).
+ * @property createClient Factory function for creating the underlying Ktor HTTP client.
+ */
 @HttpDsl
 data class HttpClientSystemOptions(
   val baseUrl: String,
@@ -40,15 +94,183 @@ internal fun TestSystem.http(): HttpSystem = getOrNone<HttpSystem>().getOrElse {
   throw SystemNotRegisteredException(HttpSystem::class)
 }
 
+/**
+ * Registers the HTTP client system with the test system.
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         httpClient {
+ *             HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+ *         }
+ *     }
+ * ```
+ *
+ * @param configure Configuration block returning [HttpClientSystemOptions].
+ * @return The test system for fluent chaining.
+ */
 @StoveDsl
 fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): TestSystem =
   this.testSystem.withHttpClient(configure())
 
+/**
+ * Executes HTTP assertions within the validation DSL.
+ *
+ * ```kotlin
+ * TestSystem.validate {
+ *     http {
+ *         get<UserResponse>("/users/123") { user ->
+ *             user.name shouldBe "John"
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @param validation The HTTP assertion block.
+ */
 @StoveDsl
 suspend fun ValidationDsl.http(
   validation: @HttpDsl suspend HttpSystem.() -> Unit
 ): Unit = validation(this.testSystem.http())
 
+/**
+ * HTTP client system for testing REST APIs.
+ *
+ * Provides a fluent DSL for making HTTP requests and asserting responses.
+ * All methods return the system instance for chaining.
+ *
+ * ## GET Requests
+ *
+ * ```kotlin
+ * http {
+ *     // Get with typed response body
+ *     get<UserResponse>("/users/123") { user ->
+ *         user.name shouldBe "John"
+ *         user.email shouldBe "john@example.com"
+ *     }
+ *
+ *     // Get with query parameters
+ *     get<List<UserResponse>>("/users", queryParams = mapOf("role" to "admin")) { users ->
+ *         users.size shouldBeGreaterThan 0
+ *     }
+ *
+ *     // Get with full response access
+ *     getResponse<UserResponse>("/users/123") { response ->
+ *         response.status shouldBe 200
+ *         response.headers["Content-Type"] shouldContain "application/json"
+ *         response.body().name shouldBe "John"
+ *     }
+ *
+ *     // Get with headers and auth token
+ *     get<SecretData>(
+ *         uri = "/secrets",
+ *         headers = mapOf("X-Request-Id" to "123"),
+ *         token = "jwt-token".some()
+ *     ) { data ->
+ *         data shouldNotBe null
+ *     }
+ * }
+ * ```
+ *
+ * ## POST Requests
+ *
+ * ```kotlin
+ * http {
+ *     // Post with JSON body and typed response
+ *     postAndExpectJson<UserResponse>(
+ *         uri = "/users",
+ *         body = CreateUserRequest(name = "John", email = "john@example.com").some()
+ *     ) { user ->
+ *         user.id shouldNotBe null
+ *     }
+ *
+ *     // Post expecting only status code
+ *     postAndExpectBodilessResponse(
+ *         uri = "/users",
+ *         body = CreateUserRequest(name = "John").some()
+ *     ) { response ->
+ *         response.status shouldBe 201
+ *     }
+ *
+ *     // Post with full response access
+ *     postAndExpectBody<UserResponse>(
+ *         uri = "/users",
+ *         body = request.some()
+ *     ) { response ->
+ *         response.status shouldBe 201
+ *         response.body().id shouldNotBe null
+ *     }
+ * }
+ * ```
+ *
+ * ## PUT, PATCH, DELETE Requests
+ *
+ * ```kotlin
+ * http {
+ *     // PUT
+ *     putAndExpectJson<UserResponse>(
+ *         uri = "/users/123",
+ *         body = UpdateUserRequest(name = "Jane").some()
+ *     ) { user ->
+ *         user.name shouldBe "Jane"
+ *     }
+ *
+ *     // PATCH
+ *     patchAndExpectBodilessResponse(
+ *         uri = "/users/123",
+ *         body = mapOf("status" to "active").some()
+ *     ) { response ->
+ *         response.status shouldBe 200
+ *     }
+ *
+ *     // DELETE
+ *     deleteAndExpectBodilessResponse("/users/123") { response ->
+ *         response.status shouldBe 204
+ *     }
+ * }
+ * ```
+ *
+ * ## Multipart/Form Requests
+ *
+ * ```kotlin
+ * http {
+ *     postMultipartAndExpectResponse<UploadResponse>(
+ *         uri = "/upload",
+ *         body = listOf(
+ *             StoveMultiPartContent.Text("name", "document.pdf"),
+ *             StoveMultiPartContent.File(
+ *                 param = "file",
+ *                 fileName = "document.pdf",
+ *                 content = fileBytes,
+ *                 contentType = "application/pdf"
+ *             )
+ *         )
+ *     ) { response ->
+ *         response.body().fileId shouldNotBe null
+ *     }
+ * }
+ * ```
+ *
+ * ## Streaming Responses
+ *
+ * ```kotlin
+ * http {
+ *     readJsonStream<LogEntry>(
+ *         uri = "/logs/stream",
+ *         headers = mapOf("Accept" to "application/x-ndjson")
+ *     ) { flow ->
+ *         flow.collect { entry ->
+ *             println(entry.message)
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @property options HTTP client configuration options.
+ * @see HttpClientSystemOptions
+ * @see StoveHttpResponse
+ */
 @Suppress("TooManyFunctions")
 @HttpDsl
 class HttpSystem(

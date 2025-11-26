@@ -46,13 +46,14 @@ abstract class BridgeSystem<T : Any>(
   internal inline fun <reified D : Any> resolve(): D = get(D::class)
 
   /**
-   * Executes the specified validation function using the resolved bean.
+   * Executes the specified block using the resolved bean.
+   * If you need to capture values, declare variables outside the block and assign inside.
    *
-   * @param T the type of object being validated.
-   * @param validation the validation function to apply to the object.
+   * @param D the type of bean to resolve.
+   * @param block the block to execute with the resolved bean as receiver.
    */
   @StoveDsl
-  inline fun <reified D : Any> using(validation: D.() -> Unit): Unit = validation(resolve())
+  inline fun <reified D : Any> using(block: D.() -> Unit): Unit = block(resolve())
 }
 
 /**
@@ -87,28 +88,45 @@ internal fun TestSystem.bridge(): BridgeSystem<*> = getOrNone<BridgeSystem<*>>()
 fun <T : Any> WithDsl.bridge(of: BridgeSystem<T>): TestSystem = this.testSystem.withBridgeSystem(of)
 
 /**
- * Executes the specified validation function using the resolved bean from the bridge system.
+ * Executes the specified block using the resolved bean from the bridge system.
  * Resolved beans are using physical components of the application.
  *
  * Suggested usage: validating or preparing the application state without accessing the physical components directly.
+ * If you need to capture values from inside the block, declare variables outside and assign inside:
+ *
  * ```kotlin
  *  TestSystem.validate {
+ *      // Simple assertion
  *      using<PersonService> {
- *          this.serviceName shouldBe "personService"
- *          this.find(userId = 123) shouldBe Person(id = 123, name = "John Doe")
+ *          serviceName shouldBe "personService"
+ *          find(userId = 123) shouldBe Person(id = 123, name = "John Doe")
  *      }
+ *
+ *      // Capturing a value for later use
+ *      var userId: Long = 0
+ *      using<UserRepository> {
+ *          userId = save(User(name = "John")).id
+ *      }
+ *      // Use userId in subsequent operations
  *  }
  * ```
  *
  * @receiver the validation DSL.
- * @param T the type of object being validated.
- * @param validation the validation function to apply to the object.
+ * @param T the type of bean to resolve.
+ * @param block the block to execute with the resolved bean as receiver.
  */
 @StoveDsl
 inline fun <reified T : Any> ValidationDsl.using(
-  validation: @StoveDsl T.() -> Unit
-): Unit = this.testSystem.bridge().using(validation)
+  block: @StoveDsl T.() -> Unit
+): Unit = this.testSystem.bridge().using(block)
 
+/**
+ * Executes the specified block using two resolved beans.
+ *
+ * @param T1 the type of the first bean to resolve.
+ * @param T2 the type of the second bean to resolve.
+ * @param validation the block to execute with the resolved beans.
+ */
 @StoveDsl
 inline fun <
   reified T1 : Any,
@@ -119,6 +137,14 @@ inline fun <
   validation(t1, t2)
 }
 
+/**
+ * Executes the specified block using three resolved beans.
+ *
+ * @param T1 the type of the first bean to resolve.
+ * @param T2 the type of the second bean to resolve.
+ * @param T3 the type of the third bean to resolve.
+ * @param validation the block to execute with the resolved beans.
+ */
 @StoveDsl
 inline fun <
   reified T1 : Any,
@@ -133,6 +159,15 @@ inline fun <
     validation(t1, t2, t3)
   }
 
+/**
+ * Executes the specified block using four resolved beans.
+ *
+ * @param T1 the type of the first bean to resolve.
+ * @param T2 the type of the second bean to resolve.
+ * @param T3 the type of the third bean to resolve.
+ * @param T4 the type of the fourth bean to resolve.
+ * @param validation the block to execute with the resolved beans.
+ */
 @StoveDsl
 inline fun <
   reified T1 : Any,
@@ -149,6 +184,16 @@ inline fun <
     validation(t1, t2, t3, t4)
   }
 
+/**
+ * Executes the specified block using five resolved beans.
+ *
+ * @param T1 the type of the first bean to resolve.
+ * @param T2 the type of the second bean to resolve.
+ * @param T3 the type of the third bean to resolve.
+ * @param T4 the type of the fourth bean to resolve.
+ * @param T5 the type of the fifth bean to resolve.
+ * @param validation the block to execute with the resolved beans.
+ */
 @StoveDsl
 inline fun <
   reified T1 : Any,

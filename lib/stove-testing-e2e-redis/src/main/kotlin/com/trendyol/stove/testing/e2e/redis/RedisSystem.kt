@@ -11,6 +11,140 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.*
 import reactor.core.publisher.Mono
 
+/**
+ * Redis cache/data store system for testing caching operations.
+ *
+ * Provides a DSL for testing Redis operations:
+ * - Key-value storage and retrieval
+ * - Key existence checks
+ * - Key deletion
+ * - Fault injection via container pause/unpause
+ *
+ * ## Setting Values
+ *
+ * ```kotlin
+ * redis {
+ *     // Set a simple string value
+ *     set("user:123", "John Doe")
+ *
+ *     // Set with expiration
+ *     set("session:abc", sessionData, expireInSeconds = 3600)
+ *
+ *     // Set JSON-serialized objects
+ *     set("user:123:profile", UserProfile(name = "John", age = 30))
+ * }
+ * ```
+ *
+ * ## Getting Values
+ *
+ * ```kotlin
+ * redis {
+ *     // Get and assert value
+ *     shouldGet("user:123") { value ->
+ *         value shouldBe "John Doe"
+ *     }
+ *
+ *     // Get deserialized object
+ *     shouldGet<UserProfile>("user:123:profile") { profile ->
+ *         profile.name shouldBe "John"
+ *     }
+ * }
+ * ```
+ *
+ * ## Key Existence
+ *
+ * ```kotlin
+ * redis {
+ *     // Assert key exists
+ *     shouldExist("user:123")
+ *
+ *     // Assert key doesn't exist
+ *     shouldNotExist("user:deleted")
+ * }
+ * ```
+ *
+ * ## Deleting Keys
+ *
+ * ```kotlin
+ * redis {
+ *     shouldDelete("user:123")
+ *     shouldDelete("session:*")  // Pattern delete (if supported)
+ * }
+ * ```
+ *
+ * ## Fault Injection Testing
+ *
+ * Test application behavior during cache outages:
+ *
+ * ```kotlin
+ * redis {
+ *     pause()  // Simulate Redis outage
+ * }
+ *
+ * // Test application graceful degradation
+ * http {
+ *     get<UserResponse>("/users/123") { user ->
+ *         // Should still work (from database fallback)
+ *         user.name shouldBe "John"
+ *     }
+ * }
+ *
+ * redis {
+ *     unpause()  // Restore Redis
+ * }
+ * ```
+ *
+ * ## Test Workflow Example
+ *
+ * ```kotlin
+ * test("should cache user after first request") {
+ *     TestSystem.validate {
+ *         // Ensure cache is empty
+ *         redis {
+ *             shouldNotExist("user:cache:123")
+ *         }
+ *
+ *         // First request - cache miss, loads from DB
+ *         http {
+ *             get<UserResponse>("/users/123") { user ->
+ *                 user.name shouldBe "John"
+ *             }
+ *         }
+ *
+ *         // Verify user is now cached
+ *         redis {
+ *             shouldExist("user:cache:123")
+ *             shouldGet<CachedUser>("user:cache:123") { cached ->
+ *                 cached.name shouldBe "John"
+ *             }
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         redis {
+ *             RedisSystemOptions(
+ *                 database = 0,
+ *                 configureExposedConfiguration = { cfg ->
+ *                     listOf(
+ *                         "spring.redis.host=${cfg.host}",
+ *                         "spring.redis.port=${cfg.port}"
+ *                     )
+ *                 }
+ *             )
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @see RedisSystemOptions
+ * @see RedisExposedConfiguration
+ */
 @StoveDsl
 class RedisSystem(
   override val testSystem: TestSystem,

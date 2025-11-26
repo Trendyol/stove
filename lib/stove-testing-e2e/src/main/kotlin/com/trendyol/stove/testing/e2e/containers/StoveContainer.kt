@@ -11,10 +11,78 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.*
 
 /**
- * Represents a container and provides access to its properties, such as image name and container ID.
- * Also provides methods that are helpful for Stove operations.
+ * Interface for Stove-managed Docker containers with extended functionality.
  *
- * Implements [SystemRuntime] to allow containers to be used directly as runtime environments.
+ * This interface wraps Testcontainers and provides additional capabilities like:
+ * - Pausing/unpausing containers for fault injection tests
+ * - Executing commands inside running containers
+ * - Inspecting container state
+ *
+ * ## Implemented By
+ *
+ * All Stove database and infrastructure containers implement this interface:
+ * - PostgreSQL, MongoDB, Couchbase, Elasticsearch, MSSQL, Redis containers
+ * - Kafka containers
+ *
+ * ## Pause/Unpause for Fault Injection
+ *
+ * Simulate network partitions or service unavailability:
+ *
+ * ```kotlin
+ * TestSystem.validate {
+ *     // Pause the database to simulate outage
+ *     postgresql {
+ *         pause()
+ *     }
+ *
+ *     // Test application behavior during outage
+ *     http {
+ *         getResponse("/health") { response ->
+ *             response.status shouldBe 503
+ *         }
+ *     }
+ *
+ *     // Restore the database
+ *     postgresql {
+ *         unpause()
+ *     }
+ *
+ *     // Verify recovery
+ *     http {
+ *         getResponse("/health") { response ->
+ *             response.status shouldBe 200
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Execute Commands Inside Container
+ *
+ * Run commands inside the container for debugging or setup:
+ *
+ * ```kotlin
+ * postgresql {
+ *     val result = execCommand("psql", "-U", "test", "-c", "SELECT 1")
+ *     result.exitCode shouldBe 0
+ *     result.stdout shouldContain "1"
+ * }
+ * ```
+ *
+ * ## Inspect Container State
+ *
+ * Check container health and status:
+ *
+ * ```kotlin
+ * couchbase {
+ *     val info = inspect()
+ *     info.running shouldBe true
+ *     info.paused shouldBe false
+ * }
+ * ```
+ *
+ * @see SystemRuntime
+ * @see ExecResult
+ * @see StoveContainerInspectInformation
  */
 interface StoveContainer : SystemRuntime {
   val imageNameAccess: DockerImageName

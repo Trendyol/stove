@@ -855,6 +855,15 @@ That brings us to initializers.
 
 ### Writing Your Own TestSystem
 
+Stove's pluggable architecture allows you to create custom systems for any component or behavior specific to your application. This is useful for:
+
+- Capturing domain events in memory
+- Integrating with schedulers (db-scheduler, Quartz, etc.)
+- Controlling time in tests
+- Testing domain-specific behavior
+
+Here's a simple example of a custom scheduler system:
+
 ```kotlin
 fun TestSystem.withSchedulerSystem(): TestSystem {
   getOrRegister(SchedulerSystem(this))
@@ -889,7 +898,7 @@ class SchedulerSystem(override val testSystem: TestSystem) : AfterRunAware<Appli
 }
 ```
 
-Later you can use it in testing;
+Later you can use it in testing:
 
 ```kotlin
 validate {
@@ -898,6 +907,10 @@ validate {
   }
 }
 ```
+
+!!! tip "Comprehensive Guide"
+    For a complete guide on writing custom systems including examples for db-scheduler integration, 
+    in-memory event capture, and time control systems, see [Writing Custom Systems](writing-custom-systems.md).
 
 ## Accessing an application dependency with a system
 

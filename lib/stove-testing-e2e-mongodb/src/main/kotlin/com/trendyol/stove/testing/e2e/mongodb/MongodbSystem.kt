@@ -14,6 +14,138 @@ import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.slf4j.*
 
+/**
+ * MongoDB document database system for testing document storage operations.
+ *
+ * Provides a DSL for testing MongoDB operations:
+ * - Document CRUD operations (save, get, delete)
+ * - MongoDB queries with JSON syntax
+ * - Collection management
+ * - Aggregation pipelines
+ *
+ * ## Saving Documents
+ *
+ * ```kotlin
+ * mongodb {
+ *     // Save to default collection
+ *     save("user-123", User(id = "123", name = "John"))
+ *
+ *     // Save to specific collection
+ *     save("user-123", User(id = "123", name = "John"), collection = "users")
+ * }
+ * ```
+ *
+ * ## Retrieving Documents
+ *
+ * ```kotlin
+ * mongodb {
+ *     // Get by ObjectId and assert
+ *     shouldGet<User>("507f1f77bcf86cd799439011") { user ->
+ *         user.name shouldBe "John"
+ *         user.email shouldBe "john@example.com"
+ *     }
+ *
+ *     // Get from specific collection
+ *     shouldGet<User>("507f1f77bcf86cd799439011", collection = "users") { user ->
+ *         user.name shouldBe "John"
+ *     }
+ * }
+ * ```
+ *
+ * ## Querying Documents
+ *
+ * ```kotlin
+ * mongodb {
+ *     // Query with MongoDB JSON syntax
+ *     shouldQuery<User>(
+ *         query = """{ "status": "active", "age": { "${"$"}gte": 18 } }""",
+ *         collection = "users"
+ *     ) { users ->
+ *         users.size shouldBeGreaterThan 0
+ *         users.all { it.status == "active" } shouldBe true
+ *     }
+ *
+ *     // Complex queries
+ *     shouldQuery<Order>(
+ *         query = """{
+ *             "userId": "user-123",
+ *             "total": { "${"$"}gt": 100 },
+ *             "status": { "${"$"}in": ["pending", "confirmed"] }
+ *         }""",
+ *         collection = "orders"
+ *     ) { orders ->
+ *         orders shouldHaveSize 2
+ *     }
+ * }
+ * ```
+ *
+ * ## Deleting Documents
+ *
+ * ```kotlin
+ * mongodb {
+ *     shouldDelete("507f1f77bcf86cd799439011")
+ *     shouldDelete("507f1f77bcf86cd799439011", collection = "users")
+ * }
+ * ```
+ *
+ * ## Test Workflow Example
+ *
+ * ```kotlin
+ * test("should create user via API and store in MongoDB") {
+ *     TestSystem.validate {
+ *         // Create user via API
+ *         val userId: String
+ *         http {
+ *             postAndExpectBody<UserResponse>(
+ *                 uri = "/users",
+ *                 body = CreateUserRequest(name = "John").some()
+ *             ) { response ->
+ *                 response.status shouldBe 201
+ *                 userId = response.body().id
+ *             }
+ *         }
+ *
+ *         // Verify in MongoDB
+ *         mongodb {
+ *             shouldGet<User>(userId, collection = "users") { user ->
+ *                 user.name shouldBe "John"
+ *                 user.createdAt shouldNotBe null
+ *             }
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         mongodb {
+ *             MongodbSystemOptions(
+ *                 databaseOptions = DatabaseOptions(
+ *                     default = DefaultDatabase(
+ *                         name = "my_database",
+ *                         collection = "default_collection"
+ *                     )
+ *                 ),
+ *                 configureExposedConfiguration = { cfg ->
+ *                     listOf(
+ *                         "spring.data.mongodb.uri=${cfg.connectionString}"
+ *                     )
+ *                 }
+ *             ).migrations {
+ *                 register<CreateIndexesMigration>()
+ *             }
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @property context MongoDB context containing database options.
+ * @see MongodbSystemOptions
+ * @see MongodbExposedConfiguration
+ */
 @MongoDsl
 class MongodbSystem internal constructor(
   override val testSystem: TestSystem,

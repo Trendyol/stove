@@ -7,6 +7,27 @@ plugins:
   - search
   - awesome-pages:
      collapse_single_pages: true
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Components:
+    - Overview: Components/index.md
+    - Couchbase: Components/01-couchbase.md
+    - Kafka: Components/02-kafka.md
+    - Elasticsearch: Components/03-elasticsearch.md
+    - WireMock: Components/04-wiremock.md
+    - HTTP Client: Components/05-http.md
+    - PostgreSQL: Components/06-postgresql.md
+    - MongoDB: Components/07-mongodb.md
+    - MSSQL: Components/08-mssql.md
+    - Redis: Components/09-redis.md
+    - Bridge: Components/10-bridge.md
+    - Provided Instances: Components/11-provided-instances.md
+  - Writing Custom Systems: writing-custom-systems.md
+  - Best Practices: best-practices.md
+  - Troubleshooting: troubleshooting.md
+  - Migration:
+    - Notes: migration/notes.md
 theme:
   name: material
   logo: assets/logo.png
@@ -66,4 +87,3 @@ extra:
   social:
     - icon: fontawesome/regular/building
       link: https://trendyol.github.io/
-

@@ -20,6 +20,140 @@ import org.slf4j.*
 import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
 
+/**
+ * Elasticsearch search engine system for testing search operations.
+ *
+ * Provides a DSL for testing Elasticsearch operations:
+ * - Document indexing and retrieval
+ * - Search queries (JSON and Query builder)
+ * - Index management
+ * - Document deletion
+ *
+ * ## Indexing Documents
+ *
+ * ```kotlin
+ * elasticsearch {
+ *     // Save document with specific ID
+ *     save("products", "product-123", Product(id = "123", name = "Widget"))
+ *
+ *     // Save with refresh (immediately searchable)
+ *     save("products", "product-123", product, refresh = Refresh.True)
+ * }
+ * ```
+ *
+ * ## Retrieving Documents
+ *
+ * ```kotlin
+ * elasticsearch {
+ *     // Get by ID and assert
+ *     shouldGet<Product>("products", "product-123") { product ->
+ *         product.name shouldBe "Widget"
+ *         product.price shouldBeGreaterThan 0.0
+ *     }
+ * }
+ * ```
+ *
+ * ## Search Queries
+ *
+ * ```kotlin
+ * elasticsearch {
+ *     // Query with JSON syntax
+ *     shouldQuery<Product>(
+ *         query = """{ "match": { "name": "widget" } }""",
+ *         index = "products"
+ *     ) { products ->
+ *         products.size shouldBeGreaterThan 0
+ *     }
+ *
+ *     // Query with Elasticsearch Query builder
+ *     shouldQuery<Product>(
+ *         query = Query.of { q ->
+ *             q.bool { b ->
+ *                 b.must { m -> m.match { t -> t.field("category").query("electronics") } }
+ *                 b.filter { f -> f.range { r -> r.field("price").gte(JsonData.of(100)) } }
+ *             }
+ *         },
+ *         index = "products"
+ *     ) { products ->
+ *         products.all { it.category == "electronics" } shouldBe true
+ *     }
+ *
+ *     // Complex search with aggregations (using client directly)
+ *     client { es ->
+ *         val response = es.search(SearchRequest.of { s ->
+ *             s.index("products")
+ *              .query(Query.of { q -> q.matchAll { } })
+ *              .aggregations("by_category", Aggregation.of { a ->
+ *                  a.terms { t -> t.field("category.keyword") }
+ *              })
+ *         }, Product::class.java)
+ *
+ *         response.aggregations()["by_category"]?.sterms()?.buckets()?.array()?.size shouldBeGreaterThan 0
+ *     }
+ * }
+ * ```
+ *
+ * ## Deleting Documents
+ *
+ * ```kotlin
+ * elasticsearch {
+ *     shouldDelete("products", "product-123")
+ * }
+ * ```
+ *
+ * ## Test Workflow Example
+ *
+ * ```kotlin
+ * test("should index product and make it searchable") {
+ *     TestSystem.validate {
+ *         val productId = UUID.randomUUID().toString()
+ *
+ *         // Create product via API
+ *         http {
+ *             postAndExpectBodilessResponse(
+ *                 uri = "/products",
+ *                 body = CreateProductRequest(id = productId, name = "Test Widget").some()
+ *             ) { response ->
+ *                 response.status shouldBe 201
+ *             }
+ *         }
+ *
+ *         // Verify in Elasticsearch (with eventual consistency wait)
+ *         elasticsearch {
+ *             eventually(10.seconds) {
+ *                 shouldGet<Product>("products", productId) { product ->
+ *                     product.name shouldBe "Test Widget"
+ *                 }
+ *             }
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         elasticsearch {
+ *             ElasticsearchSystemOptions(
+ *                 configureExposedConfiguration = { cfg ->
+ *                     listOf(
+ *                         "elasticsearch.host=${cfg.host}",
+ *                         "elasticsearch.port=${cfg.port}"
+ *                     )
+ *                 }
+ *             ).migrations {
+ *                 register<CreateProductIndexMigration>()
+ *             }
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @see ElasticsearchSystemOptions
+ * @see ElasticSearchExposedConfiguration
+ */
 @ElasticDsl
 class ElasticsearchSystem internal constructor(
   override val testSystem: TestSystem,

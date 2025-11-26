@@ -11,6 +11,142 @@ import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
 
+/**
+ * PostgreSQL database system for testing relational data operations.
+ *
+ * Provides a DSL for testing PostgreSQL operations:
+ * - SQL query execution with typed results
+ * - DDL/DML statement execution
+ * - Schema migrations
+ * - Container pause/unpause for fault injection
+ *
+ * ## Querying Data
+ *
+ * ```kotlin
+ * postgresql {
+ *     // Query with row mapping
+ *     shouldQuery(
+ *         query = "SELECT id, name, email FROM users WHERE status = 'active'",
+ *         mapper = { row ->
+ *             User(
+ *                 id = row.long("id"),
+ *                 name = row.string("name"),
+ *                 email = row.string("email")
+ *             )
+ *         }
+ *     ) { users ->
+ *         users.size shouldBeGreaterThan 0
+ *         users.all { it.email.contains("@") } shouldBe true
+ *     }
+ * }
+ * ```
+ *
+ * ## Executing SQL
+ *
+ * ```kotlin
+ * postgresql {
+ *     // Execute DML/DDL statements
+ *     shouldExecute("INSERT INTO users (name, email) VALUES ('John', 'john@example.com')")
+ *     shouldExecute("UPDATE users SET status = 'active' WHERE id = 123")
+ *     shouldExecute("DELETE FROM users WHERE id = 123")
+ *
+ *     // Create tables
+ *     shouldExecute("""
+ *         CREATE TABLE IF NOT EXISTS orders (
+ *             id SERIAL PRIMARY KEY,
+ *             user_id BIGINT REFERENCES users(id),
+ *             total DECIMAL(10,2),
+ *             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ *         )
+ *     """)
+ * }
+ * ```
+ *
+ * ## Fault Injection Testing
+ *
+ * Test application behavior during database outages:
+ *
+ * ```kotlin
+ * postgresql {
+ *     // Pause the database container
+ *     pause()
+ * }
+ *
+ * // Test application behavior during outage
+ * http {
+ *     getResponse("/api/health") { response ->
+ *         response.status shouldBe 503
+ *     }
+ * }
+ *
+ * postgresql {
+ *     // Resume the database
+ *     unpause()
+ * }
+ *
+ * // Verify recovery
+ * http {
+ *     getResponse("/api/health") { response ->
+ *         response.status shouldBe 200
+ *     }
+ * }
+ * ```
+ *
+ * ## Test Workflow Example
+ *
+ * ```kotlin
+ * test("should create order and store in database") {
+ *     TestSystem.validate {
+ *         // Create order via API
+ *         http {
+ *             postAndExpectBody<OrderResponse>(
+ *                 uri = "/orders",
+ *                 body = CreateOrderRequest(userId = 123, amount = 99.99).some()
+ *             ) { response ->
+ *                 response.status shouldBe 201
+ *             }
+ *         }
+ *
+ *         // Verify in database
+ *         postgresql {
+ *             shouldQuery(
+ *                 query = "SELECT * FROM orders WHERE user_id = 123",
+ *                 mapper = { row -> Order(row.long("id"), row.decimal("total")) }
+ *             ) { orders ->
+ *                 orders shouldHaveSize 1
+ *                 orders.first().total shouldBe BigDecimal("99.99")
+ *             }
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * ## Configuration
+ *
+ * ```kotlin
+ * TestSystem()
+ *     .with {
+ *         postgresql {
+ *             PostgresqlOptions(
+ *                 configureExposedConfiguration = { cfg ->
+ *                     listOf(
+ *                         "spring.datasource.url=${cfg.jdbcUrl}",
+ *                         "spring.datasource.username=${cfg.username}",
+ *                         "spring.datasource.password=${cfg.password}"
+ *                     )
+ *                 }
+ *             ).migrations {
+ *                 register<CreateTablesSchema>()
+ *                 register<SeedTestData>()
+ *             }
+ *         }
+ *     }
+ * ```
+ *
+ * @property testSystem The parent test system.
+ * @see PostgresqlOptions
+ * @see RelationalDatabaseExposedConfiguration
+ */
 @StoveDsl
 class PostgresqlSystem internal constructor(
   override val testSystem: TestSystem,
