@@ -102,12 +102,12 @@ Stove needs to start your application from the test context. This requires a sma
 
 ## Step 3: Create Test Configuration
 
-Set up Stove once for your entire test suite:
+Set up Stove once for your entire test suite. We recommend using a dedicated `src/test-e2e` source set for e2e tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for Gradle configuration).
 
 === "Kotest"
 
     ```kotlin
-    // src/test/kotlin/e2e/TestConfig.kt
+    // src/test-e2e/kotlin/e2e/TestConfig.kt
     class TestConfig : AbstractProjectConfig() {
         
         override suspend fun beforeProject() {
@@ -141,7 +141,7 @@ Set up Stove once for your entire test suite:
 === "JUnit"
 
     ```kotlin
-    // src/test/kotlin/e2e/TestConfig.kt
+    // src/test-e2e/kotlin/e2e/TestConfig.kt
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     abstract class BaseE2ETest {
         

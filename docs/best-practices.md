@@ -4,15 +4,15 @@ This guide covers best practices for writing effective end-to-end tests with Sto
 
 ## Test Organization
 
-### Structure Your Test Suite
+### Use Dedicated Source Set for E2E Tests
 
-Organize your e2e tests in a dedicated package:
+Instead of placing e2e tests in the regular `src/test` folder, create a dedicated `src/test-e2e` source set. This provides better separation between unit/integration tests and e2e tests:
 
 ```
-src/test/kotlin/
-├── unit/           # Unit tests
-├── integration/    # Integration tests  
-└── e2e/            # End-to-end tests with Stove
+src/
+├── main/kotlin/           # Application code
+├── test/kotlin/           # Unit tests
+└── test-e2e/kotlin/       # E2E tests with Stove
     ├── config/
     │   └── TestConfig.kt
     ├── setup/
@@ -25,6 +25,72 @@ src/test/kotlin/
         ├── TestData.kt
         └── Assertions.kt
 ```
+
+### Gradle Configuration for test-e2e
+
+Configure the `test-e2e` source set in your `build.gradle.kts`:
+
+```kotlin
+sourceSets {
+    @Suppress("LocalVariableName")
+    val `test-e2e` by creating {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+    }
+    
+    val testE2eImplementation by configurations.getting {
+        extendsFrom(configurations.testImplementation.get())
+    }
+    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+}
+
+// Register e2e test task
+tasks.register<Test>("e2eTest") {
+    description = "Runs e2e tests."
+    group = "verification"
+    testClassesDirs = sourceSets["test-e2e"].output.classesDirs
+    classpath = sourceSets["test-e2e"].runtimeClasspath
+
+    useJUnitPlatform()
+    reports {
+        junitXml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+// Configure IDEA to recognize test-e2e as test sources
+idea {
+    module {
+        testSources.from(sourceSets["test-e2e"].allSource.sourceDirectories)
+        testResources.from(sourceSets["test-e2e"].resources.sourceDirectories)
+    }
+}
+```
+
+### Running E2E Tests
+
+```bash
+# Run only e2e tests
+./gradlew e2eTest
+
+# Run unit tests (doesn't include e2e)
+./gradlew test
+
+# Run all tests
+./gradlew test e2eTest
+```
+
+### Benefits of Separate Source Set
+
+| Benefit | Description |
+|---------|-------------|
+| **Isolation** | E2E tests run independently from unit tests |
+| **CI Flexibility** | Run unit tests quickly, e2e tests separately or in parallel |
+| **Resource Management** | Different JVM settings for e2e tests (more memory, longer timeouts) |
+| **Clear Boundaries** | Developers know exactly where e2e tests live |
+
+!!! tip "See Examples"
+    Check the [recipes](https://github.com/Trendyol/stove/tree/main/recipes) folder for complete working examples with this structure.
 
 ### Single Setup, Multiple Tests
 
