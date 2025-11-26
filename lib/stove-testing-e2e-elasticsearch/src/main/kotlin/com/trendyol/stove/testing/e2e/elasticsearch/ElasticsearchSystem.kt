@@ -1,25 +1,27 @@
+@file:Suppress("unused")
+
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.core.*
-import co.elastic.clients.elasticsearch.ElasticsearchClient
-import co.elastic.clients.elasticsearch._types.Refresh
-import co.elastic.clients.elasticsearch._types.query_dsl.Query
-import co.elastic.clients.elasticsearch.core.*
-import co.elastic.clients.transport.rest_client.RestClientTransport
+import arrow.core.getOrElse
+import com.fasterxml.jackson.databind.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.runBlocking
-import org.apache.http.HttpHost
-import org.apache.http.auth.*
-import org.apache.http.client.CredentialsProvider
-import org.apache.http.impl.client.BasicCredentialsProvider
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
-import org.elasticsearch.client.*
 import org.slf4j.*
-import javax.net.ssl.SSLContext
-import kotlin.jvm.optionals.getOrElse
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
 
+@Suppress("TooManyFunctions")
 @ElasticDsl
 class ElasticsearchSystem internal constructor(
   override val testSystem: TestSystem,
@@ -29,7 +31,13 @@ class ElasticsearchSystem internal constructor(
   AfterRunAware,
   ExposesConfiguration {
   @PublishedApi
-  internal lateinit var esClient: ElasticsearchClient
+  internal lateinit var httpClient: HttpClient
+
+  @PublishedApi
+  internal lateinit var baseUrl: String
+
+  @PublishedApi
+  internal val objectMapper: ObjectMapper = context.options.objectMapper
 
   private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -41,7 +49,8 @@ class ElasticsearchSystem internal constructor(
   }
 
   override suspend fun afterRun() {
-    esClient = createEsClient(exposedConfiguration)
+    baseUrl = buildBaseUrl(exposedConfiguration)
+    httpClient = createHttpClient(exposedConfiguration)
     runMigrationsIfNeeded()
   }
 
@@ -49,8 +58,8 @@ class ElasticsearchSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      context.options.cleanup(esClient)
-      esClient._transport().close()
+      context.options.cleanup(this@ElasticsearchSystem)
+      httpClient.close()
       executeWithReuseCheck { stop() }
     }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
   }
@@ -58,97 +67,169 @@ class ElasticsearchSystem internal constructor(
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @ElasticDsl
-  inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     index: String,
     assertion: (List<T>) -> Unit
   ): ElasticsearchSystem {
-    require(index.isNotBlank()) { "Index cannot be blank" }
+    requireValidIndex(index)
     require(query.isNotBlank()) { "Query cannot be blank" }
-    return esClient
-      .search(
-        SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
-        T::class.java
-      ).hits()
-      .hits()
-      .mapNotNull { it.source() }
-      .also(assertion)
-      .let { this }
-  }
 
-  @ElasticDsl
-  inline fun <reified T : Any> shouldQuery(
-    query: Query,
-    assertion: (List<T>) -> Unit
-  ): ElasticsearchSystem = esClient
-    .search(
-      SearchRequest.of { q -> q.query(query) },
-      T::class.java
-    ).hits()
-    .hits()
-    .mapNotNull { it.source() }
-    .also(assertion)
-    .let { this }
-
-  @ElasticDsl
-  inline fun <reified T : Any> shouldGet(
-    index: String,
-    key: String,
-    assertion: (T) -> Unit
-  ): ElasticsearchSystem {
-    require(index.isNotBlank()) { "Index cannot be blank" }
-    require(key.isNotBlank()) { "Key cannot be blank" }
-    return esClient
-      .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
-      .source()
-      .toOption()
-      .map(assertion)
-      .getOrElse { throw AssertionError("Resource with key ($key) is not found") }
-      .let { this }
-  }
-
-  @ElasticDsl
-  fun shouldNotExist(
-    key: String,
-    index: String
-  ): ElasticsearchSystem {
-    require(index.isNotBlank()) { "Index cannot be blank" }
-    require(key.isNotBlank()) { "Key cannot be blank" }
-    val exists = esClient.exists { req -> req.index(index).id(key) }
-    if (exists.value()) {
-      throw AssertionError("The document with the given id($key) was not expected, but found!")
+    val response = httpClient.post(Endpoint.search(index)) {
+      contentType(ContentType.Application.Json)
+      setBody(query)
     }
+
+    response.ensureSuccess("Search query")
+
+    val responseBody = response.body<JsonNode>()
+    val results = responseBody.extractSearchHits(T::class.java)
+    assertion(results)
     return this
   }
 
   @ElasticDsl
-  fun shouldDelete(
+  suspend inline fun <reified T : Any> shouldGet(
+    index: String,
     key: String,
-    index: String
+    assertion: (T) -> Unit
   ): ElasticsearchSystem {
-    require(index.isNotBlank()) { "Index cannot be blank" }
-    require(key.isNotBlank()) { "Key cannot be blank" }
-    return esClient
-      .delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
-      .let { this }
+    requireValidIndex(index)
+    requireValidKey(key)
+
+    val response = httpClient.get(Endpoint.document(index, key)) {
+      parameter(QueryParam.REFRESH, true)
+    }
+
+    if (response.status == HttpStatusCode.NotFound) {
+      throw AssertionError("Resource with key ($key) is not found")
+    }
+
+    response.ensureSuccess("Get request")
+
+    val responseBody = response.body<JsonNode>()
+    val result = responseBody.extractSource(T::class.java)
+      ?: throw AssertionError("Resource with key ($key) is not found")
+
+    assertion(result)
+    return this
   }
 
   @ElasticDsl
-  fun <T : Any> save(
+  suspend fun shouldNotExist(
+    key: String,
+    index: String
+  ): ElasticsearchSystem {
+    requireValidIndex(index)
+    requireValidKey(key)
+
+    val response = httpClient.head(Endpoint.document(index, key))
+
+    if (response.status.isSuccess()) {
+      throw AssertionError("The document with the given id($key) was not expected, but found!")
+    }
+
+    return this
+  }
+
+  @ElasticDsl
+  suspend fun shouldDelete(
+    key: String,
+    index: String
+  ): ElasticsearchSystem {
+    requireValidIndex(index)
+    requireValidKey(key)
+
+    val response = httpClient.delete(Endpoint.document(index, key)) {
+      parameter(QueryParam.REFRESH, QueryParam.WAIT_FOR)
+    }
+
+    response.ensureSuccessOrNotFound("Delete request")
+    return this
+  }
+
+  @ElasticDsl
+  suspend inline fun <reified T : Any> save(
     id: String,
     instance: T,
     index: String
   ): ElasticsearchSystem {
-    require(index.isNotBlank()) { "Index cannot be blank" }
+    requireValidIndex(index)
     require(id.isNotBlank()) { "Id cannot be blank" }
-    return esClient
-      .index { req ->
-        req
-          .index(index)
-          .id(id)
-          .document(instance)
-          .refresh(Refresh.WaitFor)
-      }.let { this }
+
+    val response = httpClient.put(Endpoint.document(index, id)) {
+      contentType(ContentType.Application.Json)
+      parameter(QueryParam.REFRESH, QueryParam.WAIT_FOR)
+      setBody(instance)
+    }
+
+    response.ensureSuccess("Save request")
+    return this
+  }
+
+  /**
+   * Creates an index with the given name.
+   * @param index The name of the index to create
+   * @param settings Optional JSON settings for the index
+   * @return ElasticsearchSystem
+   */
+  @ElasticDsl
+  suspend fun createIndex(
+    index: String,
+    settings: String? = null
+  ): ElasticsearchSystem {
+    requireValidIndex(index)
+
+    val response = httpClient.put(Endpoint.index(index)) {
+      contentType(ContentType.Application.Json)
+      settings?.let { setBody(it) }
+    }
+
+    check(response.status.isSuccess() || response.status.value == HttpStatusCode.BadRequest.value) {
+      "Create index request failed with status ${response.status}: ${response.bodyAsText()}"
+    }
+
+    return this
+  }
+
+  /**
+   * Deletes an index with the given name.
+   * @param index The name of the index to delete
+   * @return ElasticsearchSystem
+   */
+  @ElasticDsl
+  suspend fun deleteIndex(index: String): ElasticsearchSystem {
+    requireValidIndex(index)
+
+    val response = httpClient.delete(Endpoint.index(index))
+    response.ensureSuccessOrNotFound("Delete index request")
+    return this
+  }
+
+  /**
+   * Checks if an index exists.
+   * @param index The name of the index to check
+   * @return true if the index exists, false otherwise
+   */
+  @ElasticDsl
+  suspend fun indexExists(index: String): Boolean {
+    requireValidIndex(index)
+    val response = httpClient.head(Endpoint.index(index))
+    return response.status.isSuccess()
+  }
+
+  /**
+   * Refreshes an index to make all operations performed since the last refresh available for search.
+   * @param index The name of the index to refresh
+   * @return ElasticsearchSystem
+   */
+  @ElasticDsl
+  suspend fun refreshIndex(index: String): ElasticsearchSystem {
+    requireValidIndex(index)
+
+    val response = httpClient.post(Endpoint.refresh(index))
+    response.ensureSuccess("Refresh index request")
+    return this
   }
 
   /**
@@ -169,6 +250,41 @@ class ElasticsearchSystem internal constructor(
   @ElasticDsl
   fun unpause(): ElasticsearchSystem = withContainerOrWarn("unpause") { it.unpause() }
 
+  // region Private helpers
+
+  @PublishedApi
+  internal fun requireValidIndex(index: String) {
+    require(index.isNotBlank()) { "Index cannot be blank" }
+  }
+
+  @PublishedApi
+  internal fun requireValidKey(key: String) {
+    require(key.isNotBlank()) { "Key cannot be blank" }
+  }
+
+  @PublishedApi
+  internal suspend fun HttpResponse.ensureSuccess(operation: String) {
+    check(status.isSuccess()) {
+      "$operation failed with status $status: ${bodyAsText()}"
+    }
+  }
+
+  @PublishedApi
+  internal suspend fun HttpResponse.ensureSuccessOrNotFound(operation: String) {
+    check(status.isSuccess() || status == HttpStatusCode.NotFound) {
+      "$operation failed with status $status: ${bodyAsText()}"
+    }
+  }
+
+  @PublishedApi
+  internal fun <T : Any> JsonNode.extractSearchHits(clazz: Class<T>): List<T> =
+    this[ResponseField.HITS][ResponseField.HITS]
+      .mapNotNull { hit -> hit[ResponseField.SOURCE]?.let { objectMapper.treeToValue(it, clazz) } }
+
+  @PublishedApi
+  internal fun <T : Any> JsonNode.extractSource(clazz: Class<T>): T? =
+    this[ResponseField.SOURCE]?.let { objectMapper.treeToValue(it, clazz) }
+
   private suspend fun obtainExposedConfiguration(): ElasticSearchExposedConfiguration =
     when {
       context.options is ProvidedElasticsearchSystemOptions -> context.options.config
@@ -183,22 +299,13 @@ class ElasticsearchSystem internal constructor(
         host = container.host,
         port = container.firstMappedPort,
         password = context.options.container.password,
-        certificate = determineCertificate(container).getOrNull()
+        isSecure = !context.options.container.disableSecurity
       )
-    }
-
-  private fun determineCertificate(container: StoveElasticSearchContainer): Option<ElasticsearchExposedCertificate> =
-    when (context.options.container.disableSecurity) {
-      true -> None
-
-      false -> ElasticsearchExposedCertificate(
-        container.caCertAsBytes().getOrElse { ByteArray(0) }
-      ).apply { sslContext = container.createSslContextFromCa() }.some()
     }
 
   private suspend fun runMigrationsIfNeeded() {
     if (shouldRunMigrations()) {
-      context.options.migrationCollection.run(esClient)
+      context.options.migrationCollection.run(this)
     }
   }
 
@@ -208,56 +315,67 @@ class ElasticsearchSystem internal constructor(
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 
-  private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
-    context.options.clientConfigurer.restClientOverrideFn
-      .getOrElse { { cfg -> restClient(cfg) } }
-      .let { RestClientTransport(it(exposedConfiguration), context.options.jsonpMapper) }
-      .let { ElasticsearchClient(it) }
-
-  private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
-    when (isSecurityDisabled(cfg)) {
-      true -> createInsecureRestClient(cfg)
-      false -> createSecureRestClient(cfg, obtainSslContext(cfg))
-    }
-
-  private fun isSecurityDisabled(cfg: ElasticSearchExposedConfiguration): Boolean = when {
-    context.options is ProvidedElasticsearchSystemOptions -> cfg.certificate == null
-    context.runtime is StoveElasticSearchContainer -> context.options.container.disableSecurity
-    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+  private fun buildBaseUrl(cfg: ElasticSearchExposedConfiguration): String {
+    val scheme = if (cfg.isSecure) Scheme.HTTPS else Scheme.HTTP
+    return "$scheme://${cfg.host}:${cfg.port}"
   }
 
-  private fun obtainSslContext(cfg: ElasticSearchExposedConfiguration): SSLContext = when {
-    context.options is ProvidedElasticsearchSystemOptions -> cfg.certificate?.sslContext ?: throw IllegalStateException(
-      "SSL context is required for secure connections with provided instances. " +
-        "Set the certificate.sslContext in ElasticSearchExposedConfiguration."
+  private fun createHttpClient(cfg: ElasticSearchExposedConfiguration): HttpClient =
+    context.options.httpClientConfigurer
+      .getOrElse { { defaultHttpClient(cfg) } }
+      .invoke(cfg)
+
+  private fun defaultHttpClient(cfg: ElasticSearchExposedConfiguration): HttpClient =
+    HttpClient(OkHttp) {
+      engine {
+        config {
+          followRedirects(true)
+          followSslRedirects(true)
+          connectTimeout(DEFAULT_TIMEOUT.toJavaDuration())
+          readTimeout(DEFAULT_TIMEOUT.toJavaDuration())
+          callTimeout(DEFAULT_TIMEOUT.toJavaDuration())
+          writeTimeout(DEFAULT_TIMEOUT.toJavaDuration())
+
+          if (cfg.isSecure) {
+            configureTrustAllCertificates()
+          }
+        }
+      }
+
+      install(ContentNegotiation) {
+        register(ContentType.Application.Json, JacksonConverter(objectMapper))
+      }
+
+      defaultRequest {
+        url(buildBaseUrl(cfg))
+        if (cfg.isSecure && cfg.password.isNotBlank()) {
+          header(HttpHeaders.Authorization, cfg.basicAuthHeader())
+        }
+      }
+    }
+
+  private fun okhttp3.OkHttpClient.Builder.configureTrustAllCertificates() {
+    val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(
+      object : javax.net.ssl.X509TrustManager {
+        override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) = Unit
+
+        override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) = Unit
+
+        override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+      }
     )
-
-    context.runtime is StoveElasticSearchContainer -> context.runtime.createSslContextFromCa()
-
-    else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
+    val sslContext = javax.net.ssl.SSLContext
+      .getInstance(TLS_PROTOCOL)
+    sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+    sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
+    hostnameVerifier { _, _ -> true }
   }
 
-  private fun createInsecureRestClient(cfg: ElasticSearchExposedConfiguration): RestClient =
-    RestClient
-      .builder(HttpHost(cfg.host, cfg.port))
-      .apply { setHttpClientConfigCallback { http -> http.also(context.options.clientConfigurer.httpClientBuilder) } }
-      .build()
-
-  private fun createSecureRestClient(
-    cfg: ElasticSearchExposedConfiguration,
-    sslContext: SSLContext
-  ): RestClient {
-    val credentialsProvider: CredentialsProvider = BasicCredentialsProvider().apply {
-      setCredentials(AuthScope.ANY, UsernamePasswordCredentials("elastic", cfg.password))
-    }
-    return RestClient
-      .builder(HttpHost(cfg.host, cfg.port, "https"))
-      .setHttpClientConfigCallback { clientBuilder: HttpAsyncClientBuilder ->
-        clientBuilder.setSSLContext(sslContext)
-        clientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-        context.options.clientConfigurer.httpClientBuilder(clientBuilder)
-        clientBuilder
-      }.build()
+  private fun ElasticSearchExposedConfiguration.basicAuthHeader(): String {
+    val credentials = java.util.Base64
+      .getEncoder()
+      .encodeToString("$DEFAULT_USERNAME:$password".toByteArray())
+    return "Basic $credentials"
   }
 
   private inline fun withContainerOrWarn(
@@ -285,13 +403,70 @@ class ElasticsearchSystem internal constructor(
     }
   }
 
+  // endregion
+
   companion object {
+    private val DEFAULT_TIMEOUT = 5.minutes
+    private const val DEFAULT_USERNAME = "elastic"
+    private const val TLS_PROTOCOL = "TLS"
+
     /**
-     * Exposes the [ElasticsearchClient] for the given [ElasticsearchSystem]
-     * This is useful for custom queries
+     * Exposes the [HttpClient] for the given [ElasticsearchSystem].
+     * This is useful for custom operations.
      */
     @Suppress("unused")
     @ElasticDsl
-    fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
+    fun ElasticsearchSystem.client(): HttpClient = this.httpClient
+
+    /**
+     * Returns the base URL for the Elasticsearch instance.
+     */
+    @Suppress("unused")
+    @ElasticDsl
+    fun ElasticsearchSystem.baseUrl(): String = this.baseUrl
+  }
+
+  /**
+   * Elasticsearch API endpoint builders (relative paths).
+   */
+  @PublishedApi
+  internal object Endpoint {
+    private const val DOC = "_doc"
+    private const val SEARCH = "_search"
+    private const val REFRESH = "_refresh"
+
+    fun index(index: String): String = "/$index"
+
+    fun document(index: String, id: String): String = "/$index/$DOC/$id"
+
+    fun search(index: String): String = "/$index/$SEARCH"
+
+    fun refresh(index: String): String = "/$index/$REFRESH"
+  }
+
+  /**
+   * Elasticsearch response field names.
+   */
+  @PublishedApi
+  internal object ResponseField {
+    const val HITS = "hits"
+    const val SOURCE = "_source"
+  }
+
+  /**
+   * Query parameter names and values.
+   */
+  @PublishedApi
+  internal object QueryParam {
+    const val REFRESH = "refresh"
+    const val WAIT_FOR = "wait_for"
+  }
+
+  /**
+   * URL scheme constants.
+   */
+  private object Scheme {
+    const val HTTP = "http"
+    const val HTTPS = "https"
   }
 }

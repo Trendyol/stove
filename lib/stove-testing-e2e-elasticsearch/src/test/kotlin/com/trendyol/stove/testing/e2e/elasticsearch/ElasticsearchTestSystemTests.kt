@@ -1,9 +1,5 @@
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import arrow.core.Some
-import co.elastic.clients.elasticsearch.ElasticsearchClient
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
-import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.migrations.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
@@ -11,8 +7,6 @@ import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import org.apache.http.HttpHost
-import org.elasticsearch.client.RestClient
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.*
 import org.testcontainers.elasticsearch.ElasticsearchContainer
@@ -32,32 +26,22 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+class TestIndexMigrator : DatabaseMigration<ElasticsearchSystem> {
   override val order: Int = MigrationPriority.HIGHEST.value
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-  override suspend fun execute(connection: ElasticsearchClient) {
-    val createIndexRequest: CreateIndexRequest =
-      CreateIndexRequest
-        .Builder()
-        .index(TEST_INDEX)
-        .build()
-    connection.indices().create(createIndexRequest)
+  override suspend fun execute(connection: ElasticsearchSystem) {
+    connection.createIndex(TEST_INDEX)
     logger.info("$TEST_INDEX is created")
   }
 }
 
-class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+class AnotherIndexMigrator : DatabaseMigration<ElasticsearchSystem> {
   override val order: Int = MigrationPriority.HIGHEST.value + 1
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-  override suspend fun execute(connection: ElasticsearchClient) {
-    val createIndexRequest: CreateIndexRequest =
-      CreateIndexRequest
-        .Builder()
-        .index(ANOTHER_INDEX)
-        .build()
-    connection.indices().create(createIndexRequest)
+  override suspend fun execute(connection: ElasticsearchSystem) {
+    connection.createIndex(ANOTHER_INDEX)
     logger.info("$ANOTHER_INDEX is created")
   }
 }
@@ -95,10 +79,7 @@ class ContainerElasticsearchStrategy : ElasticsearchTestStrategy {
     logger.info("Starting Elasticsearch tests with container mode")
 
     val options = ElasticsearchSystemOptions(
-      clientConfigurer = ElasticClientConfigurer(
-        restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
-      ),
-      ElasticContainerOptions(tag = "8.9.0"),
+      container = ElasticContainerOptions(tag = "8.9.0"),
       configureExposedConfiguration = { _ -> listOf() }
     ).migrations {
       register<TestIndexMigrator>()
@@ -144,10 +125,7 @@ class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
         host = hostPort[0],
         port = hostPort[1].toInt(),
         runMigrations = true,
-        clientConfigurer = ElasticClientConfigurer(
-          restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
-        ),
-        cleanup = { client ->
+        cleanup = { _ ->
           logger.info("Running cleanup on provided instance")
           // Clean up test data if needed
         },
@@ -223,23 +201,26 @@ class ElasticsearchTestSystemTests :
       val desc = "some description"
       val exampleInstance1 = ExampleInstance("1", desc)
       val exampleInstance2 = ExampleInstance("2", desc)
-      val queryByDesc = QueryBuilders
-        .term()
-        .field("description.keyword")
-        .value(desc)
-        .queryName("query_name")
-        .build()
-      val queryAsString = queryByDesc.asJsonString()
+      val queryByDesc = """
+        {
+          "query": {
+            "term": {
+              "description.keyword": "$desc"
+            }
+          }
+        }
+      """.trimIndent()
+
       TestSystem.validate {
         elasticsearch {
           save(exampleInstance1.id, exampleInstance1, TEST_INDEX)
           save(exampleInstance2.id, exampleInstance2, TEST_INDEX)
-          shouldQuery<ExampleInstance>(queryByDesc._toQuery()) {
+          shouldQuery<ExampleInstance>(queryByDesc, TEST_INDEX) {
             it.size shouldBe 2
           }
           shouldDelete(exampleInstance1.id, TEST_INDEX)
           shouldGet<ExampleInstance>(key = exampleInstance2.id, index = TEST_INDEX) {}
-          shouldQuery<ExampleInstance>(queryAsString, TEST_INDEX) {
+          shouldQuery<ExampleInstance>(queryByDesc, TEST_INDEX) {
             it.size shouldBe 1
           }
         }

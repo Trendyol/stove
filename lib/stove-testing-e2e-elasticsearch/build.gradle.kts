@@ -2,8 +2,11 @@ plugins {}
 
 dependencies {
   api(projects.lib.stoveTestingE2e)
-  api(libs.elastic)
   api(libs.testcontainers.elasticsearch)
+  api(libs.ktor.client.core)
+  api(libs.ktor.client.okhttp)
+  api(libs.ktor.client.content.negotiation)
+  api(libs.ktor.serialization.jackson.json)
   implementation(libs.jackson.databind)
 }
 

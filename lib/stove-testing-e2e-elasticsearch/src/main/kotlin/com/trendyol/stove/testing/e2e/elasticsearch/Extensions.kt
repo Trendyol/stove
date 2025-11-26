@@ -26,7 +26,7 @@ internal fun TestSystem.elasticsearch(): ElasticsearchSystem =
  * ```kotlin
  * elasticsearch {
  *   ElasticsearchSystemOptions(
- *     cleanup = { client -> client.indices().delete { it.index("*") } },
+ *     cleanup = { es -> es.deleteIndex("my-index") },
  *     configureExposedConfiguration = { cfg -> listOf(...) }
  *   )
  * }
@@ -40,7 +40,7 @@ internal fun TestSystem.elasticsearch(): ElasticsearchSystem =
  *     port = 9200,
  *     password = "password",
  *     runMigrations = true,
- *     cleanup = { client -> client.indices().delete { it.index("*") } },
+ *     cleanup = { es -> es.deleteIndex("my-index") },
  *     configureExposedConfiguration = { cfg -> listOf(...) }
  *   )
  * }
