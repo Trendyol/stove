@@ -540,26 +540,25 @@ Tests fail when multiple builds run in parallel
 
 #### Q: Can I use Stove with Java?
 
-**A:** Yes! While Stove is written in Kotlin, you can use it from Java tests. The DSL is designed to be Java-friendly:
+**A:** Yes, you can use Stove in Java projects! However, the e2e tests themselves need to be written in Kotlin. Stove's DSL is designed specifically for Kotlin, providing a clean and expressive syntax:
 
-```java
-public class MyE2ETest {
-    @Test
-    void shouldCreateOrder() {
-        TestSystem.validate(validation -> {
-            validation.http(http -> {
-                http.postAndExpectBodilessResponse(
-                    "/orders",
-                    Some(new CreateOrderRequest()), 
-                    response -> {
-                        assertEquals(201, response.getStatus());
-                    }
-                );
-            });
-        });
+```kotlin
+class MyE2ETest : FunSpec({
+    test("should create order") {
+        TestSystem.validate {
+            http {
+                postAndExpectBodilessResponse(
+                    uri = "/orders",
+                    body = Some(CreateOrderRequest()),
+                    expect = { status shouldBe 201 }
+                )
+            }
+        }
     }
-}
+})
 ```
+
+You can still test your Java application with Stove - just write your e2e test files in Kotlin.
 
 #### Q: Can I use JUnit instead of Kotest?
 
