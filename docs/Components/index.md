@@ -150,13 +150,12 @@ kafka {
 Connect to existing infrastructure (useful for CI/CD):
 
 ```kotlin
-kafka(
-  providedRuntime = KafkaProvided.runtime(
-    bootstrapServers = "localhost:9092"
-  )
-) {
-  KafkaSystemOptions(
-    configureExposedConfiguration = { cfg -> listOf(...) }
+kafka {
+  KafkaSystemOptions.provided(
+    bootstrapServers = "localhost:9092",
+    configureExposedConfiguration = { cfg -> 
+      listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
+    }
   )
 }
 ```

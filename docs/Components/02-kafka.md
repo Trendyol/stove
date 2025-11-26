@@ -162,8 +162,17 @@ As an example:
 ```kotlin
 TestSystem()
   .with {
-    httpClient()
-    kafka()
+    httpClient {
+      HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+    }
+    kafka {
+      KafkaSystemOptions {
+        listOf(
+          "kafka.bootstrapServers=${it.bootstrapServers}",
+          "kafka.interceptorClasses=${it.interceptorClass}"
+        )
+      }
+    }
     springBoot(
       runner = { parameters ->
         com.trendyol.exampleapp.run(parameters)

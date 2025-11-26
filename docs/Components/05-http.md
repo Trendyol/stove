@@ -343,16 +343,20 @@ test("should perform CRUD operations on products") {
 
 ```kotlin
 TestSystem.validate {
-  // Create via API
-  val userId = http {
+  // Create via API and capture user ID
+  var userId: Long = 0
+  http {
     postAndExpectBody<UserResponse>("/users", body = CreateUserRequest(name = "John").some()) { response ->
-      response.body().id
+      userId = response.body().id
     }
   }
 
   // Verify in database
   postgresql {
-    shouldQuery<User>("SELECT * FROM users WHERE id = $userId") { users ->
+    shouldQuery(
+      query = "SELECT * FROM users WHERE id = $userId",
+      mapper = { row -> User(row.long("id"), row.string("name")) }
+    ) { users ->
       users.size shouldBe 1
       users.first().name shouldBe "John"
     }

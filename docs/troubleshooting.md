@@ -340,6 +340,64 @@ Message was not consumed within timeout
    )
    ```
 
+#### WireMock Stubs Not Being Hit
+
+**Symptoms:**
+```
+Connection refused to external service
+Test timeout when calling mocked endpoint
+Mock not found / unexpected request
+```
+
+**Cause:** This is almost always because your application's external service URLs don't match the WireMock URL.
+
+**Solutions:**
+
+1. **Ensure ALL external service URLs point to WireMock:**
+   ```kotlin
+   TestSystem()
+       .with {
+           wiremock {
+               WireMockSystemOptions(port = 9090)
+           }
+           springBoot(
+               runner = { params -> myApp.run(params) },
+               withParameters = listOf(
+                   // ALL external services must use WireMock URL
+                   "payment.service.url=http://localhost:9090",
+                   "inventory.service.url=http://localhost:9090",
+                   "notification.service.url=http://localhost:9090"
+               )
+           )
+       }
+   ```
+
+2. **Verify your application is reading the URLs from configuration:**
+   ```kotlin
+   // Your application should read URLs from config, not hardcode them
+   @Value("\${payment.service.url}")
+   private lateinit var paymentServiceUrl: String
+   ```
+
+3. **Check the port matches:**
+   ```kotlin
+   // WireMock port
+   WireMockSystemOptions(port = 9090)
+   
+   // Application parameter must match
+   "payment.service.url=http://localhost:9090"  // Same port!
+   ```
+
+4. **Debug by checking WireMock requests:**
+   ```kotlin
+   wiremock {
+       // After test, check what requests WireMock received
+       WireMock.getAllServeEvents().forEach { event ->
+           println("Request: ${event.request.url}")
+       }
+   }
+   ```
+
 ### Memory Issues
 
 #### OutOfMemoryError
@@ -393,11 +451,14 @@ java.lang.OutOfMemoryError: Java heap space
    ```kotlin
    TestSystem()
        .with {
-           kafka(
-               providedRuntime = KafkaProvided.runtime(
-                   bootstrapServers = System.getenv("KAFKA_SERVERS")
+           kafka {
+               KafkaSystemOptions.provided(
+                   bootstrapServers = System.getenv("KAFKA_SERVERS"),
+                   configureExposedConfiguration = { cfg ->
+                       listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
+                   }
                )
-           ) { /* config */ }
+           }
        }
    ```
 
@@ -414,6 +475,64 @@ java.lang.OutOfMemoryError: Java heap space
    ```
 3. **Run tests in parallel** (ensure proper isolation)
 4. **Use smaller container images** when available
+
+#### Intermittent Failures with Shared Infrastructure
+
+**Symptoms:**
+```
+Tests pass locally but fail randomly in CI
+Data from another test run appears in assertions
+"Topic already exists" or "Index already exists" errors
+Tests fail when multiple builds run in parallel
+```
+
+**Cause:** Multiple test runs are using the same resource names (databases, topics, indices) in shared infrastructure.
+
+**Solutions:**
+
+1. **Use unique resource prefixes per test run:**
+   ```kotlin
+   object TestRunContext {
+       val runId: String = System.getenv("CI_JOB_ID") 
+           ?: UUID.randomUUID().toString().take(8)
+       
+       val databaseName = "testdb_$runId"
+       val topicPrefix = "test_${runId}_"
+       val indexPrefix = "test_${runId}_"
+   }
+   ```
+
+2. **Apply prefixes to all resources:**
+   ```kotlin
+   springBoot(
+       withParameters = listOf(
+           "spring.datasource.url=jdbc:postgresql://db:5432/${TestRunContext.databaseName}",
+           "kafka.topic.orders=${TestRunContext.topicPrefix}orders",
+           "elasticsearch.index.products=${TestRunContext.indexPrefix}products"
+       )
+   )
+   ```
+
+3. **Clean up only your resources:**
+   ```kotlin
+   cleanup = { admin ->
+       val ourTopics = admin.listTopics().names().get()
+           .filter { it.startsWith(TestRunContext.topicPrefix) }
+       if (ourTopics.isNotEmpty()) {
+           admin.deleteTopics(ourTopics).all().get()
+       }
+   }
+   ```
+
+4. **Log the run ID for debugging:**
+   ```kotlin
+   init {
+       println("Test Run ID: ${TestRunContext.runId}")
+   }
+   ```
+
+!!! tip "Detailed Guide"
+    See [Provided Instances - Test Isolation](Components/11-provided-instances.md#test-isolation-with-shared-infrastructure) for comprehensive examples.
 
 ## FAQ
 
@@ -585,7 +704,7 @@ elasticsearch {
 
 2. **Use provided instances in CI:**
    ```kotlin
-   kafka(providedRuntime = KafkaProvided.runtime(...))
+   kafka { KafkaSystemOptions.provided(bootstrapServers = "...", configureExposedConfiguration = { ... }) }
    ```
 
 3. **Reduce container resource allocation:**

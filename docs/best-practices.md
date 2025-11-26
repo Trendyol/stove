@@ -81,33 +81,82 @@ test("should create order") {
 }
 ```
 
+### Isolate Shared Infrastructure Resources
+
+When using provided instances (shared infrastructure in CI/CD), use **unique prefixes for all resources** to prevent parallel test runs from interfering with each other:
+
+```kotlin
+object TestRunContext {
+    val runId: String = System.getenv("CI_JOB_ID") 
+        ?: UUID.randomUUID().toString().take(8)
+    
+    val databaseName = "testdb_$runId"
+    val topicPrefix = "test_${runId}_"
+    val indexPrefix = "test_${runId}_"
+}
+
+// Use unique names in configuration
+TestSystem()
+    .with {
+        postgresql {
+            PostgresqlOptions.provided(
+                databaseName = TestRunContext.databaseName,
+                // ...
+            )
+        }
+        springBoot(
+            withParameters = listOf(
+                "kafka.topic.orders=${TestRunContext.topicPrefix}orders",
+                "elasticsearch.index.products=${TestRunContext.indexPrefix}products"
+            )
+        )
+    }
+```
+
+!!! tip "Detailed Guide"
+    See [Provided Instances - Test Isolation](Components/11-provided-instances.md#test-isolation-with-shared-infrastructure) for comprehensive examples for each system.
+
 ### Use Cleanup Functions
 
-Clean up test data to maintain isolation:
+Clean up test data to maintain isolation. The `cleanup` parameter is passed inside the options:
 
 ```kotlin
 TestSystem()
     .with {
-        couchbase(
-            cleanup = { cluster ->
-                // Clean test data before each run
-                cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
-            }
-        ) {
-            CouchbaseSystemOptions(...)
+        couchbase {
+            CouchbaseSystemOptions(
+                defaultBucket = "bucket",
+                cleanup = { cluster ->
+                    // Clean test data after tests complete
+                    cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
+                },
+                configureExposedConfiguration = { cfg ->
+                    listOf(
+                        "couchbase.hosts=${cfg.hostsWithPort}",
+                        "couchbase.username=${cfg.username}",
+                        "couchbase.password=${cfg.password}"
+                    )
+                }
+            )
         }
         
-        kafka(
-            cleanup = { admin ->
-                // Delete test topics
-                val testTopics = admin.listTopics().names().get()
-                    .filter { it.startsWith("test-") }
-                if (testTopics.isNotEmpty()) {
-                    admin.deleteTopics(testTopics).all().get()
+        kafka {
+            KafkaSystemOptions(
+                cleanup = { admin ->
+                    // Delete test topics after tests complete
+                    val testTopics = admin.listTopics().names().get()
+                        .filter { it.startsWith("test-") }
+                    if (testTopics.isNotEmpty()) {
+                        admin.deleteTopics(testTopics).all().get()
+                    }
+                },
+                configureExposedConfiguration = { cfg ->
+                    listOf(
+                        "kafka.bootstrapServers=${cfg.bootstrapServers}",
+                        "kafka.interceptorClasses=${cfg.interceptorClass}"
+                    )
                 }
-            }
-        ) {
-            KafkaSystemOptions(...)
+            )
         }
     }
     .run()
@@ -422,7 +471,43 @@ class KafkaConfig(
 ) {
     // Stove can override these via command line args
 }
+```
 
+### External Service URLs Must Be Configurable
+
+When using WireMock, **all external service URLs must point to WireMock's URL**:
+
+```kotlin
+// ✅ Good: External service URLs are configurable
+@Configuration
+class ExternalServicesConfig(
+    @Value("\${payment.service.url}") val paymentUrl: String,
+    @Value("\${inventory.service.url}") val inventoryUrl: String
+)
+
+// In tests, pass WireMock URL for all external services
+TestSystem()
+    .with {
+        wiremock {
+            WireMockSystemOptions(port = 9090)
+        }
+        springBoot(
+            withParameters = listOf(
+                "payment.service.url=http://localhost:9090",
+                "inventory.service.url=http://localhost:9090"
+            )
+        )
+    }
+```
+
+```kotlin
+// ❌ Bad: Hardcoded URLs won't be intercepted by WireMock
+class PaymentClient {
+    private val url = "http://payment-service.com"  // WireMock can't intercept this!
+}
+```
+
+```kotlin
 // ❌ Bad: Hardcoded values
 @Configuration
 class KafkaConfig {
@@ -504,14 +589,19 @@ val isCI = System.getenv("CI") == "true"
 
 TestSystem()
     .with {
-        if (isCI) {
-            kafka(
-                providedRuntime = KafkaProvided.runtime(
-                    bootstrapServers = System.getenv("KAFKA_SERVERS")
+        kafka {
+            if (isCI) {
+                KafkaSystemOptions.provided(
+                    bootstrapServers = System.getenv("KAFKA_SERVERS"),
+                    configureExposedConfiguration = { cfg ->
+                        listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
+                    }
                 )
-            ) { KafkaSystemOptions(...) }
-        } else {
-            kafka { KafkaSystemOptions(...) }
+            } else {
+                KafkaSystemOptions {
+                    listOf("kafka.bootstrapServers=${it.bootstrapServers}")
+                }
+            }
         }
     }
     .run()

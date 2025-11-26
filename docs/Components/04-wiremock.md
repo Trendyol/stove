@@ -61,16 +61,26 @@ data class WireMockSystemOptions(
 
 ## Mocking
 
-Wiremock starts a mock server on the `localhost` with the given port. The important thing is that you use the same port
-in your application for your services.
+Wiremock starts a mock server on `localhost` with the configured port. 
 
-Say, your application calls an external service in your production configuration as:
-`http://externalservice.com/api/product/get-all`
-you need to replace the **base url** of this an all the external services with the Wiremock host and port:
-`http://localhost:9090`
+!!! warning "Critical: External Service URLs Must Match WireMock"
 
-You can either do this in your application configuration, or let Stove send this as a command line argument to your
-application.
+    **All external service URLs in your application must be configured to point to the WireMock server.**
+    
+    This is one of the most common configuration mistakes. If your application's external service URLs 
+    don't match WireMock's URL, your mocks won't be hit and tests will fail or timeout.
+
+### URL Configuration
+
+Say your application calls external services in production:
+
+- `http://payment-service.com/api/payments`
+- `http://inventory-service.com/api/stock`
+- `http://notification-service.com/api/notify`
+
+For testing, **all** these base URLs must be replaced with the WireMock URL (e.g., `http://localhost:9090`).
+
+You can pass these as application parameters:
 
 ```kotlin
 TestSystem()
@@ -81,20 +91,44 @@ TestSystem()
       )
     }
     springBoot( // or ktor
-      runner = {
-        // ...
+      runner = { params ->
+        com.myapp.run(params)
       },
       withParameters = listOf(
-        "externalServiceBaseUrl=http://localhost:9090",
-        "otherService1BaseUrl=http://localhost:9090",
-        "otherService2BaseUrl=http://localhost:9090"
+        // All external services point to WireMock
+        "payment.service.url=http://localhost:9090",
+        "inventory.service.url=http://localhost:9090",
+        "notification.service.url=http://localhost:9090"
       )
     )
   }
   .run()
 ```
 
-All service endpoints will be pointing to the Wiremock server. You can now define the stubs for the services that your
+### Application Configuration Tips
+
+Make your external service URLs configurable in your application:
+
+=== "Spring Boot (application.yml)"
+
+    ```yaml
+    external:
+      payment-service:
+        url: ${PAYMENT_SERVICE_URL:http://payment-service.com}
+      inventory-service:
+        url: ${INVENTORY_SERVICE_URL:http://inventory-service.com}
+    ```
+
+=== "Ktor"
+
+    ```kotlin
+    val paymentUrl = environment.config.propertyOrNull("payment.service.url")
+        ?.getString() ?: "http://payment-service.com"
+    ```
+
+Then in your tests, Stove passes the WireMock URL through parameters, overriding the defaults.
+
+All service endpoints will be pointing to the WireMock server. You can now define the stubs for the services that your
 application calls.
 
 ## Usage

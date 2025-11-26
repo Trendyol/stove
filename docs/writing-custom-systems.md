@@ -516,10 +516,11 @@ suspend fun ValidationDsl.time(
 // Usage in tests
 test("should expire session after 30 minutes") {
     TestSystem.validate {
-        // Create session
-        val sessionId = http {
-            postAndExpectBody<SessionResponse>("/login", body = credentials.some()) { 
-                it.body().sessionId 
+        // Create session and capture session ID
+        var sessionId: String = ""
+        http {
+            postAndExpectBody<SessionResponse>("/login", body = credentials.some()) { response ->
+                sessionId = response.body().sessionId 
             }
         }
         
@@ -530,8 +531,8 @@ test("should expire session after 30 minutes") {
         
         // Session should be expired
         http {
-            getResponse<ErrorResponse>("/protected", headers = mapOf("Session-ID" to sessionId)) { 
-                it.status shouldBe 401
+            getResponse<ErrorResponse>("/protected", headers = mapOf("Session-ID" to sessionId)) { response ->
+                response.status shouldBe 401
             }
         }
     }

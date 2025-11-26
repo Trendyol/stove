@@ -598,25 +598,19 @@ For CI/CD pipelines or shared infrastructure:
 ```kotlin
 TestSystem()
   .with {
-    mssql(
-      providedRuntime = MsSqlProvided.runtime(
+    mssql {
+      MsSqlOptions.provided(
         jdbcUrl = System.getenv("MSSQL_JDBC_URL") ?: "jdbc:sqlserver://localhost:1433;databaseName=testdb",
         host = System.getenv("MSSQL_HOST") ?: "localhost",
         port = System.getenv("MSSQL_PORT")?.toInt() ?: 1433,
+        databaseName = "testdb",
         username = System.getenv("MSSQL_USERNAME") ?: "sa",
         password = System.getenv("MSSQL_PASSWORD") ?: "YourStrong@Passw0rd",
         runMigrations = true,
         cleanup = { operations ->
           operations.execute("DELETE FROM Orders")
           operations.execute("DELETE FROM Person")
-        }
-      )
-    ) {
-      MsSqlOptions(
-        applicationName = "stove-tests",
-        databaseName = "testdb",
-        userName = "sa",
-        password = "YourStrong@Passw0rd",
+        },
         configureExposedConfiguration = { cfg ->
           listOf(
             "spring.datasource.url=${cfg.jdbcUrl}",

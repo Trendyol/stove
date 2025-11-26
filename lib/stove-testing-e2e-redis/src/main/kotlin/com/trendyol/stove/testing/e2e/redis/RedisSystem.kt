@@ -14,61 +14,37 @@ import reactor.core.publisher.Mono
 /**
  * Redis cache/data store system for testing caching operations.
  *
- * Provides a DSL for testing Redis operations:
- * - Key-value storage and retrieval
- * - Key existence checks
- * - Key deletion
- * - Fault injection via container pause/unpause
+ * Provides access to a Lettuce Redis client for testing Redis operations.
+ * Use [client] to access the underlying [RedisClient] for all Redis operations.
  *
- * ## Setting Values
+ * ## Accessing Redis Client
+ *
+ * All Redis operations are performed through the Lettuce client:
  *
  * ```kotlin
  * redis {
+ *     val conn = client().connect().sync()
+ *
  *     // Set a simple string value
- *     set("user:123", "John Doe")
+ *     conn.set("user:123", "John Doe")
  *
- *     // Set with expiration
- *     set("session:abc", sessionData, expireInSeconds = 3600)
+ *     // Set with expiration (TTL in seconds)
+ *     conn.setex("session:abc", 3600, sessionData)
  *
- *     // Set JSON-serialized objects
- *     set("user:123:profile", UserProfile(name = "John", age = 30))
- * }
- * ```
+ *     // Get a value
+ *     val value = conn.get("user:123")
+ *     value shouldBe "John Doe"
  *
- * ## Getting Values
+ *     // Check key existence
+ *     val exists = conn.exists("user:123")
+ *     exists shouldBe 1L
  *
- * ```kotlin
- * redis {
- *     // Get and assert value
- *     shouldGet("user:123") { value ->
- *         value shouldBe "John Doe"
- *     }
+ *     // Delete a key
+ *     conn.del("user:123")
  *
- *     // Get deserialized object
- *     shouldGet<UserProfile>("user:123:profile") { profile ->
- *         profile.name shouldBe "John"
- *     }
- * }
- * ```
- *
- * ## Key Existence
- *
- * ```kotlin
- * redis {
- *     // Assert key exists
- *     shouldExist("user:123")
- *
- *     // Assert key doesn't exist
- *     shouldNotExist("user:deleted")
- * }
- * ```
- *
- * ## Deleting Keys
- *
- * ```kotlin
- * redis {
- *     shouldDelete("user:123")
- *     shouldDelete("session:*")  // Pattern delete (if supported)
+ *     // Get TTL
+ *     val ttl = conn.ttl("session:abc")
+ *     ttl shouldBeGreaterThan 0
  * }
  * ```
  *
@@ -101,7 +77,8 @@ import reactor.core.publisher.Mono
  *     TestSystem.validate {
  *         // Ensure cache is empty
  *         redis {
- *             shouldNotExist("user:cache:123")
+ *             val conn = client().connect().sync()
+ *             conn.get("user:cache:123") shouldBe null
  *         }
  *
  *         // First request - cache miss, loads from DB
@@ -113,10 +90,9 @@ import reactor.core.publisher.Mono
  *
  *         // Verify user is now cached
  *         redis {
- *             shouldExist("user:cache:123")
- *             shouldGet<CachedUser>("user:cache:123") { cached ->
- *                 cached.name shouldBe "John"
- *             }
+ *             val conn = client().connect().sync()
+ *             val cached = conn.get("user:cache:123")
+ *             cached shouldNotBe null
  *         }
  *     }
  * }

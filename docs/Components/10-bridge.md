@@ -326,10 +326,11 @@ class TestInitializer : BaseApplicationContextInitializer({
 // Use in tests
 test("should expire session after timeout") {
     TestSystem.validate {
-        // Create session
-        val sessionId = http {
-            postAndExpectBody<SessionResponse>("/login", body = credentials.some()) { 
-                it.body().sessionId 
+        // Create session and capture the session ID
+        var sessionId: String = ""
+        http {
+            postAndExpectBody<SessionResponse>("/login", body = credentials.some()) { response ->
+                sessionId = response.body().sessionId 
             }
         }
         

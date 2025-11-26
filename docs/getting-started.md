@@ -269,14 +269,15 @@ TestSystem()
         // Add Couchbase for database tests
         couchbase {
             CouchbaseSystemOptions(
-                defaultBucket = "myBucket"
-            ) { cfg ->
-                listOf(
-                    "couchbase.hosts=${cfg.hostsWithPort}",
-                    "couchbase.username=${cfg.username}",
-                    "couchbase.password=${cfg.password}"
-                )
-            }
+                defaultBucket = "myBucket",
+                configureExposedConfiguration = { cfg ->
+                    listOf(
+                        "couchbase.hosts=${cfg.hostsWithPort}",
+                        "couchbase.username=${cfg.username}",
+                        "couchbase.password=${cfg.password}"
+                    )
+                }
+            )
         }
         
         // Add WireMock for external service mocking

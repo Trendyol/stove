@@ -407,31 +407,23 @@ Here's a complete caching test example:
 test("should cache product data in redis") {
   TestSystem.validate {
     val productId = "product-123"
-    val connection = redis { client().connect().sync() }
     
-    // Product not in cache
-    val cached = connection.get("cache:product:$productId")
-    cached shouldBe null
+    // Product not in cache - verify using client()
+    redis {
+      val conn = client().connect().sync()
+      val cached = conn.get("cache:product:$productId")
+      cached shouldBe null
+    }
     
-    // Fetch from database and cache
+    // Fetch from database via API (application should cache the result)
     http {
       get<ProductResponse>("/products/$productId") { product ->
         product.id shouldBe productId
         product.name shouldNotBe null
-        
-        // Store in Redis cache
-        redis {
-          val conn = client().connect().sync()
-          conn.setex(
-            "cache:product:$productId",
-            3600, // 1 hour TTL
-            objectMapper.writeValueAsString(product)
-          )
-        }
       }
     }
     
-    // Verify cached
+    // Application should have cached the product - verify
     redis {
       val conn = client().connect().sync()
       val cachedData = conn.get("cache:product:$productId")
