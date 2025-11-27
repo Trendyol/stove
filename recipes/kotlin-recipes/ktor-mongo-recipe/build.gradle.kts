@@ -41,5 +41,4 @@ dependencies {
   testImplementation(libs.stove.testing.wiremock)
   testImplementation(libs.stove.testing.kafka)
   testImplementation(libs.stove.ktor.testing)
-  testImplementation(libs.jackson.kotlin)
 }
