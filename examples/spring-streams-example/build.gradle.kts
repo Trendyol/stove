@@ -2,7 +2,7 @@ import com.google.protobuf.gradle.id
 
 plugins {
   alias(libs.plugins.spring.plugin)
-  alias(libs.plugins.spring.boot.three)
+  alias(libs.plugins.spring.boot.four)
   alias(libs.plugins.spring.dependencyManagement)
   alias(libs.plugins.protobuf)
   idea
@@ -10,11 +10,10 @@ plugins {
 }
 
 dependencies {
-  implementation(libs.spring.boot.three)
-  implementation(libs.spring.boot.three.autoconfigure)
-  annotationProcessor(libs.spring.boot.three.annotationProcessor)
-  implementation(libs.spring.boot.three.kafka)
-  implementation(libs.jackson.kotlin)
+  implementation(libs.spring.boot.four)
+  implementation(libs.spring.boot.four.autoconfigure)
+  annotationProcessor(libs.spring.boot.four.annotationProcessor)
+  implementation(libs.spring.boot.four.kafka)
   implementation(libs.kafka)
   implementation(libs.kafka.streams)
   implementation(libs.kotlin.reflect)

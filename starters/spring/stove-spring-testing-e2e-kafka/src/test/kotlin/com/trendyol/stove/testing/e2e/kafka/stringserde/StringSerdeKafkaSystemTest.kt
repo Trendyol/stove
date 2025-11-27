@@ -1,15 +1,14 @@
 package com.trendyol.stove.testing.e2e.kafka.stringserde
 
 import arrow.core.some
+import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.kafka.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
-import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import org.apache.kafka.clients.admin.NewTopic
-import org.springframework.context.support.beans
 import kotlin.random.Random
 
 class StringSerdeKafkaSystemTests :
@@ -33,7 +32,7 @@ class StringSerdeKafkaSystemTests :
             runner = { params ->
               KafkaTestSpringBotApplicationForStringSerde.run(params) {
                 addInitializers(
-                  beans {
+                  stoveSpringRegistrar {
                     bean<TestSystemKafkaInterceptor<*, *>>()
                     bean { StoveSerde.jackson.anyByteArraySerde() }
                   }

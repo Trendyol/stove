@@ -40,11 +40,11 @@ class DefaultConsumerSettings(
     props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaProperties.bootstrapServers
     props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = ErrorHandlingDeserializer::class.java
     props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ErrorHandlingDeserializer::class.java
-    props[ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS] = JsonDeserializer::class.java
+    props[ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS] = JacksonJsonDeserializer::class.java
     props[ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS] = StringDeserializer::class.java
-    props[JsonDeserializer.TRUSTED_PACKAGES] = "*"
-    props[JsonDeserializer.REMOVE_TYPE_INFO_HEADERS] = false
-    props[JsonDeserializer.VALUE_DEFAULT_TYPE] = Any::class.java
+    props[JacksonJsonDeserializer.TRUSTED_PACKAGES] = "*"
+    props[JacksonJsonDeserializer.REMOVE_TYPE_INFO_HEADERS] = false
+    props[JacksonJsonDeserializer.VALUE_DEFAULT_TYPE] = Any::class.java
     props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = kafkaProperties.offset
     props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = true
     props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(AUTO_COMMIT_INTERVAL)

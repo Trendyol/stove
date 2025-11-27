@@ -22,7 +22,7 @@ import kotlin.time.Duration
  * For example, if the application uses Avro, then you should use Avro serde here.
  * Target of the serialization is ByteArray, so the serde should be able to serialize the message to ByteArray.
  */
-class TestSystemKafkaInterceptor<K, V>(
+class TestSystemKafkaInterceptor<K : Any, V : Any>(
   private val serde: StoveSerde<Any, ByteArray>
 ) : CompositeRecordInterceptor<K, V>(),
   ProducerListener<K, V> {

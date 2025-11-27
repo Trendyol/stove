@@ -5,10 +5,7 @@ plugins {
 
 dependencies {
   api(libs.kotlinx.core)
-  api(libs.jackson.kotlin)
-  api(libs.jackson.arrow) {
-    exclude(group = "io.arrow", module = "arrow-core")
-  }
+  api(libs.bundles.jackson)
   api(libs.google.gson)
   api(libs.kotlinx.serialization.json)
   api(libs.testcontainers) {

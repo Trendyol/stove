@@ -1,12 +1,5 @@
-public abstract class com/trendyol/stove/testing/e2e/BaseApplicationContextInitializer : org/springframework/context/ApplicationContextInitializer {
-	public fun <init> ()V
-	public fun <init> (Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	protected fun applicationReady (Lorg/springframework/context/support/GenericApplicationContext;)V
-	public synthetic fun initialize (Lorg/springframework/context/ConfigurableApplicationContext;)V
-	public fun initialize (Lorg/springframework/context/support/GenericApplicationContext;)V
-	protected fun onEvent (Lorg/springframework/context/ApplicationEvent;)V
-	protected final fun register (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/BaseApplicationContextInitializer;
+public final class com/trendyol/stove/testing/e2e/BaseApplicationContextInitializerKt {
+	public static final fun stoveSpringRegistrar (Lkotlin/jvm/functions/Function1;)Lorg/springframework/context/ApplicationContextInitializer;
 }
 
 public final class com/trendyol/stove/testing/e2e/BridgeSystemKt {

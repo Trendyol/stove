@@ -76,7 +76,6 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
     ): ConfigurableApplicationContext {
       System.setProperty("org.springframework.boot.logging.LoggingSystem", "none")
       return runApplication<KafkaTestSpringBotApplicationForProtobufSerde>(args = args) {
-        webApplicationType = WebApplicationType.NONE
         init()
       }
     }
@@ -85,7 +84,6 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   @ConfigurationProperties(prefix = "kafka")
-  @ConstructorBinding
   data class ProtobufSerdeKafkaConf(
     val bootstrapServers: String,
     val groupId: String,
@@ -109,7 +107,7 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
     recoverer: DeadLetterPublishingRecoverer
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-    factory.consumerFactory = consumerFactory
+    factory.setConsumerFactory(consumerFactory)
     factory.setCommonErrorHandler(
       DefaultErrorHandler(
         recoverer,

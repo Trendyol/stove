@@ -3,14 +3,13 @@ package com.trendyol.stove.testing.e2e.kafka.protobufserde
 import com.google.protobuf.Message
 import com.trendyol.stove.spring.testing.e2e.kafka.v1.*
 import com.trendyol.stove.spring.testing.e2e.kafka.v1.Example.*
+import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.kafka.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
-import com.trendyol.stove.testing.e2e.springBoot
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import io.kotest.core.spec.style.ShouldSpec
-import org.springframework.context.support.beans
 import kotlin.random.Random
 
 @Suppress("UNCHECKED_CAST")
@@ -60,7 +59,7 @@ class ProtobufSerdeKafkaSystemTest :
             runner = { params ->
               KafkaTestSpringBotApplicationForProtobufSerde.run(params) {
                 addInitializers(
-                  beans {
+                  stoveSpringRegistrar {
                     bean<TestSystemKafkaInterceptor<*, *>>()
                     bean { StoveProtobufSerde() }
                   }

@@ -316,19 +316,7 @@ public final class com/trendyol/stove/testing/e2e/messaging/SuccessfulParsedMess
 
 public final class com/trendyol/stove/testing/e2e/serialization/E2eObjectMapperConfig {
 	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/serialization/E2eObjectMapperConfig;
-	public final fun createObjectMapperWithDefaults ()Lcom/fasterxml/jackson/databind/ObjectMapper;
-}
-
-public final class com/trendyol/stove/testing/e2e/serialization/IsoInstantDeserializer : com/fasterxml/jackson/databind/JsonDeserializer {
-	public fun <init> ()V
-	public synthetic fun deserialize (Lcom/fasterxml/jackson/core/JsonParser;Lcom/fasterxml/jackson/databind/DeserializationContext;)Ljava/lang/Object;
-	public fun deserialize (Lcom/fasterxml/jackson/core/JsonParser;Lcom/fasterxml/jackson/databind/DeserializationContext;)Ljava/time/Instant;
-}
-
-public final class com/trendyol/stove/testing/e2e/serialization/IsoInstantSerializer : com/fasterxml/jackson/databind/JsonSerializer {
-	public fun <init> ()V
-	public synthetic fun serialize (Ljava/lang/Object;Lcom/fasterxml/jackson/core/JsonGenerator;Lcom/fasterxml/jackson/databind/SerializerProvider;)V
-	public fun serialize (Ljava/time/Instant;Lcom/fasterxml/jackson/core/JsonGenerator;Lcom/fasterxml/jackson/databind/SerializerProvider;)V
+	public final fun createObjectMapperWithDefaults ()Ltools/jackson/databind/json/JsonMapper;
 }
 
 public final class com/trendyol/stove/testing/e2e/serialization/StoveGson {
@@ -363,16 +351,16 @@ public final class com/trendyol/stove/testing/e2e/serialization/StoveGsonStringS
 
 public final class com/trendyol/stove/testing/e2e/serialization/StoveJackson {
 	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/serialization/StoveJackson;
-	public final fun anyByteArraySerde (Lcom/fasterxml/jackson/databind/ObjectMapper;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
-	public static synthetic fun anyByteArraySerde$default (Lcom/trendyol/stove/testing/e2e/serialization/StoveJackson;Lcom/fasterxml/jackson/databind/ObjectMapper;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
-	public final fun anyJsonStringSerde (Lcom/fasterxml/jackson/databind/ObjectMapper;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
-	public static synthetic fun anyJsonStringSerde$default (Lcom/trendyol/stove/testing/e2e/serialization/StoveJackson;Lcom/fasterxml/jackson/databind/ObjectMapper;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
-	public final fun byConfiguring (Lkotlin/jvm/functions/Function1;)Lcom/fasterxml/jackson/databind/ObjectMapper;
-	public final fun getDefault ()Lcom/fasterxml/jackson/databind/ObjectMapper;
+	public final fun anyByteArraySerde (Ltools/jackson/databind/json/JsonMapper;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
+	public static synthetic fun anyByteArraySerde$default (Lcom/trendyol/stove/testing/e2e/serialization/StoveJackson;Ltools/jackson/databind/json/JsonMapper;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
+	public final fun anyJsonStringSerde (Ltools/jackson/databind/json/JsonMapper;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
+	public static synthetic fun anyJsonStringSerde$default (Lcom/trendyol/stove/testing/e2e/serialization/StoveJackson;Ltools/jackson/databind/json/JsonMapper;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;
+	public final fun byConfiguring (Lkotlin/jvm/functions/Function1;)Ltools/jackson/databind/json/JsonMapper;
+	public final fun getDefault ()Ltools/jackson/databind/json/JsonMapper;
 }
 
 public final class com/trendyol/stove/testing/e2e/serialization/StoveJacksonByteArraySerializer : com/trendyol/stove/testing/e2e/serialization/StoveSerde {
-	public fun <init> (Lcom/fasterxml/jackson/databind/ObjectMapper;)V
+	public fun <init> (Ltools/jackson/databind/json/JsonMapper;)V
 	public synthetic fun deserialize (Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun deserialize ([BLjava/lang/Class;)Ljava/lang/Object;
 	public synthetic fun deserializeEither (Ljava/lang/Object;Ljava/lang/Class;)Larrow/core/Either;
@@ -382,7 +370,7 @@ public final class com/trendyol/stove/testing/e2e/serialization/StoveJacksonByte
 }
 
 public final class com/trendyol/stove/testing/e2e/serialization/StoveJacksonStringSerializer : com/trendyol/stove/testing/e2e/serialization/StoveSerde {
-	public fun <init> (Lcom/fasterxml/jackson/databind/ObjectMapper;)V
+	public fun <init> (Ltools/jackson/databind/json/JsonMapper;)V
 	public synthetic fun deserialize (Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun deserialize (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public synthetic fun deserializeEither (Ljava/lang/Object;Ljava/lang/Class;)Larrow/core/Either;

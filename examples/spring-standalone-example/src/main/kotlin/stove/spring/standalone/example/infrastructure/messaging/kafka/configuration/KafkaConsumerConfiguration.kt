@@ -1,18 +1,18 @@
 package stove.spring.standalone.example.infrastructure.messaging.kafka.configuration
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.context.annotation.*
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.*
-import org.springframework.kafka.support.converter.StringJsonMessageConverter
+import org.springframework.kafka.support.converter.StringJacksonJsonMessageConverter
 import org.springframework.util.backoff.FixedBackOff
+import tools.jackson.databind.json.JsonMapper
 
 @EnableKafka
 @Configuration
 class KafkaConsumerConfiguration(
-  private val objectMapper: ObjectMapper,
+  private val jsonMapper: JsonMapper,
   private val interceptor: RecordInterceptor<String, String>
 ) {
   @Bean
@@ -22,7 +22,7 @@ class KafkaConsumerConfiguration(
   ): ConcurrentKafkaListenerContainerFactory<String, String> {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.setConcurrency(1)
-    factory.consumerFactory = consumerFactory
+    factory.setConsumerFactory(consumerFactory)
     factory.containerProperties.isDeliveryAttemptHeader = true
     val errorHandler = DefaultErrorHandler(
       DeadLetterPublishingRecoverer(kafkaTemplate),
@@ -41,7 +41,7 @@ class KafkaConsumerConfiguration(
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.setConcurrency(1)
     factory.containerProperties.isDeliveryAttemptHeader = true
-    factory.consumerFactory = consumerRetryFactory
+    factory.setConsumerFactory(consumerRetryFactory)
     val errorHandler = DefaultErrorHandler(
       DeadLetterPublishingRecoverer(kafkaTemplate),
       FixedBackOff(INTERVAL, 1)
@@ -60,7 +60,7 @@ class KafkaConsumerConfiguration(
     DefaultKafkaConsumerFactory(consumerSettings.settings())
 
   @Bean
-  fun stringJsonMessageConverter(): StringJsonMessageConverter = StringJsonMessageConverter(objectMapper)
+  fun stringJsonMessageConverter(): StringJacksonJsonMessageConverter = StringJacksonJsonMessageConverter(jsonMapper)
 
   companion object {
     const val RETRY_LISTENER_BEAN_NAME = "kafkaRetryListenerContainerFactory"

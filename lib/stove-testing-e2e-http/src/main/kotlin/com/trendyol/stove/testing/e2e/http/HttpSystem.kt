@@ -3,7 +3,6 @@
 package com.trendyol.stove.testing.e2e.http
 
 import arrow.core.*
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -78,7 +77,7 @@ import kotlin.time.Duration.Companion.seconds
 @HttpDsl
 data class HttpClientSystemOptions(
   val baseUrl: String,
-  val contentConverter: ContentConverter = JacksonConverter(StoveSerde.jackson.default),
+  val contentConverter: ContentConverter = JacksonConverter(),
   val timeout: Duration = 30.seconds,
   val createClient: (
     baseUrl: String

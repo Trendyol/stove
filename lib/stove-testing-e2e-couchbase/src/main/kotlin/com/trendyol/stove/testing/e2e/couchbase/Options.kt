@@ -25,7 +25,9 @@ data class CouchbaseExposedConfiguration(
 open class CouchbaseSystemOptions(
   open val defaultBucket: String,
   open val containerOptions: CouchbaseContainerOptions = CouchbaseContainerOptions(),
-  open val clusterSerDe: JsonSerializer = JacksonJsonSerializer(E2eObjectMapperConfig.createObjectMapperWithDefaults()),
+  open val clusterSerDe: JsonSerializer = Jackson3JsonSerializer(
+    E2eObjectMapperConfig.createObjectMapperWithDefaults()
+  ),
   open val clusterTranscoder: Transcoder = JsonTranscoder(clusterSerDe),
   open val cleanup: suspend (Cluster) -> Unit = {},
   override val configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String>
@@ -85,7 +87,7 @@ class ProvidedCouchbaseSystemOptions(
    */
   val config: CouchbaseExposedConfiguration,
   defaultBucket: String,
-  clusterSerDe: JsonSerializer = JacksonJsonSerializer(E2eObjectMapperConfig.createObjectMapperWithDefaults()),
+  clusterSerDe: JsonSerializer = Jackson3JsonSerializer(E2eObjectMapperConfig.createObjectMapperWithDefaults()),
   clusterTranscoder: Transcoder = JsonTranscoder(clusterSerDe),
   cleanup: suspend (Cluster) -> Unit = {},
   /**

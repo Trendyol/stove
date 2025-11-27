@@ -2,7 +2,6 @@ package stove.spring.standalone.example.application.handlers
 
 import com.couchbase.client.java.ReactiveCollection
 import com.couchbase.client.java.json.JsonObject
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -10,13 +9,14 @@ import stove.spring.standalone.example.infrastructure.Headers
 import stove.spring.standalone.example.infrastructure.http.SupplierHttpService
 import stove.spring.standalone.example.infrastructure.messaging.kafka.*
 import stove.spring.standalone.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
+import tools.jackson.databind.json.JsonMapper
 import java.util.*
 
 @Component
 class ProductCreator(
   private val supplierHttpService: SupplierHttpService,
   private val collection: ReactiveCollection,
-  private val objectMapper: ObjectMapper,
+  private val jsonMapper: JsonMapper,
   private val kafkaProducer: KafkaProducer
 ) {
   @Value("\${kafka.producer.product-created.topic-name}")
@@ -25,7 +25,7 @@ class ProductCreator(
   suspend fun create(req: ProductCreateRequest): String {
     val supplierPermission = supplierHttpService.getSupplierPermission(req.supplierId)
     if (!supplierPermission.isAllowed) return "Supplier with the given id(${req.supplierId}) is not allowed for product creation"
-    val fromJson = JsonObject.fromJson(objectMapper.writeValueAsString(req))
+    val fromJson = JsonObject.fromJson(jsonMapper.writeValueAsString(req))
 
     collection.insert("product:${req.id}", fromJson).awaitFirst()
 

@@ -1,7 +1,5 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
-import com.fasterxml.jackson.databind.*
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.mongodb.MongoClientSettings
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.trendyol.stove.testing.e2e.database.migrations.*
@@ -9,6 +7,9 @@ import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.bson.json.JsonWriterSettings
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.MapperFeature
+import tools.jackson.module.kotlin.KotlinModule
 
 /**
  * Context provided to MongoDB migrations.

@@ -6,7 +6,6 @@ import co.elastic.clients.json.JsonpMapper
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import com.trendyol.stove.testing.e2e.containers.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import org.apache.http.client.config.RequestConfig
@@ -27,7 +26,7 @@ annotation class ElasticDsl
 open class ElasticsearchSystemOptions(
   open val clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
   open val container: ElasticContainerOptions = ElasticContainerOptions(),
-  open val jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+  open val jsonpMapper: JsonpMapper = JacksonJsonpMapper(),
   open val cleanup: suspend (ElasticsearchClient) -> Unit = {},
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions,
@@ -57,7 +56,7 @@ open class ElasticsearchSystemOptions(
       password: String = "",
       certificate: ElasticsearchExposedCertificate? = null,
       clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-      jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+      jsonpMapper: JsonpMapper = JacksonJsonpMapper(),
       runMigrations: Boolean = true,
       cleanup: suspend (ElasticsearchClient) -> Unit = {},
       configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
@@ -88,7 +87,7 @@ class ProvidedElasticsearchSystemOptions(
    */
   val config: ElasticSearchExposedConfiguration,
   clientConfigurer: ElasticClientConfigurer = ElasticClientConfigurer(),
-  jsonpMapper: JsonpMapper = JacksonJsonpMapper(StoveSerde.jackson.default),
+  jsonpMapper: JsonpMapper = JacksonJsonpMapper(),
   cleanup: suspend (ElasticsearchClient) -> Unit = {},
   /**
    * Whether to run migrations on the external instance.

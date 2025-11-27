@@ -4,8 +4,8 @@ dependencies {
 }
 
 dependencies {
-    testAnnotationProcessor(libs.spring.boot.three.annotationProcessor)
-    testImplementation(libs.spring.boot.three.autoconfigure)
+    testAnnotationProcessor(libs.spring.boot.four.annotationProcessor)
+    testImplementation(libs.spring.boot.four.autoconfigure)
     testImplementation(libs.slf4j.simple)
 }
 

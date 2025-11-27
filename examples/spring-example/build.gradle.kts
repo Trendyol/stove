@@ -1,23 +1,22 @@
 plugins {
   alias(libs.plugins.spring.plugin)
-  alias(libs.plugins.spring.boot.three)
+  alias(libs.plugins.spring.boot.four)
   idea
   application
 }
 
 dependencies {
-  implementation(libs.spring.boot.three)
-  implementation(libs.spring.boot.three.autoconfigure)
-  implementation(libs.spring.boot.three.webflux)
-  implementation(libs.spring.boot.three.actuator)
-  annotationProcessor(libs.spring.boot.three.annotationProcessor)
-  implementation(libs.spring.boot.three.kafka)
+  implementation(libs.spring.boot.four)
+  implementation(libs.spring.boot.four.autoconfigure)
+  implementation(libs.spring.boot.four.webflux)
+  implementation(libs.spring.boot.four.actuator)
+  annotationProcessor(libs.spring.boot.four.annotationProcessor)
+  implementation(libs.spring.boot.four.kafka)
   implementation(libs.kotlinx.reactor)
   implementation(libs.kotlinx.core)
   implementation(libs.kotlinx.reactive)
   implementation(libs.couchbase.client)
   implementation(libs.couchbase.client.metrics)
-  implementation(libs.jackson.kotlin)
   implementation(libs.kotlinx.slf4j)
 }
 

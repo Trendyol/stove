@@ -4,8 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-import org.springframework.kafka.support.serializer.JsonDeserializer
+import org.springframework.kafka.support.serializer.*
 import org.springframework.stereotype.Component
 import java.time.Duration
 
@@ -41,9 +40,9 @@ class DefaultConsumerSettings(
     props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaProperties.bootstrapServers
     props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = ErrorHandlingDeserializer::class.java
     props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ErrorHandlingDeserializer::class.java
-    props[ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS] = JsonDeserializer::class.java
+    props[ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS] = JacksonJsonDeserializer::class.java
     props[ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS] = StringDeserializer::class.java
-    props[JsonDeserializer.TRUSTED_PACKAGES] = "*"
+    props[JacksonJsonDeserializer.TRUSTED_PACKAGES] = "*"
     props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = kafkaProperties.offset
     props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = true
     props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(AUTO_COMMIT_INTERVAL)

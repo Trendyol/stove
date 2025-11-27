@@ -106,6 +106,12 @@ public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptio
 	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/couchbase/ProvidedCouchbaseSystemOptions;
 }
 
+public final class com/trendyol/stove/testing/e2e/couchbase/Jackson3JsonSerializer : com/couchbase/client/kotlin/codec/JsonSerializer {
+	public fun <init> (Ltools/jackson/databind/json/JsonMapper;)V
+	public fun deserialize ([BLcom/couchbase/client/kotlin/codec/TypeRef;)Ljava/lang/Object;
+	public fun serialize (Ljava/lang/Object;Lcom/couchbase/client/kotlin/codec/TypeRef;)[B
+}
+
 public final class com/trendyol/stove/testing/e2e/couchbase/OptionsKt {
 	public static final fun couchbase-E6EcY7A (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun couchbase-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;

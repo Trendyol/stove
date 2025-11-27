@@ -1,20 +1,17 @@
 package stove.spring.example.infrastructure.http
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.netty.channel.ChannelOption
 import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.*
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
-import org.springframework.http.codec.json.Jackson2JsonDecoder
-import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.http.codec.json.JacksonJsonEncoder
 import org.springframework.web.reactive.function.client.*
 import reactor.netty.http.client.HttpClient
 import stove.spring.example.infrastructure.ObjectMapperConfig
+import tools.jackson.databind.json.JsonMapper
 import java.util.concurrent.TimeUnit
 
 @Configuration
@@ -36,21 +33,19 @@ class WebClientConfiguration(
       .build()
 
   @Bean
-  fun webClientObjectMapper(): ObjectMapper = ObjectMapperConfig
-    .default()
-    .configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false)
+  fun webClientObjectMapper(): JsonMapper = ObjectMapperConfig.default()
 
   @Bean
-  fun exchangeStrategies(webClientObjectMapper: ObjectMapper): ExchangeStrategies = ExchangeStrategies
+  fun exchangeStrategies(webClientObjectMapper: JsonMapper): ExchangeStrategies = ExchangeStrategies
     .builder()
     .codecs { clientDefaultCodecsConfigurer: ClientCodecConfigurer ->
       clientDefaultCodecsConfigurer.defaultCodecs().maxInMemorySize(MAX_MEMORY_SIZE)
       clientDefaultCodecsConfigurer
         .defaultCodecs()
-        .jackson2JsonEncoder(Jackson2JsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
+        .jacksonJsonEncoder(JacksonJsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
       clientDefaultCodecsConfigurer
         .defaultCodecs()
-        .jackson2JsonDecoder(Jackson2JsonDecoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
+        .jacksonJsonEncoder(JacksonJsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
     }.build()
 
   private fun defaultWebClientBuilder(
