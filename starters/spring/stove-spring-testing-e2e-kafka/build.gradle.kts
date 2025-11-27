@@ -7,14 +7,14 @@ plugins {
 dependencies {
   api(projects.lib.stoveTestingE2e)
   api(libs.testcontainers.kafka)
-  implementation(libs.spring.boot.kafka)
+  implementation(libs.spring.boot.four.kafka)
   implementation(libs.caffeine)
   implementation(libs.pprint)
 }
 
 dependencies {
-  testAnnotationProcessor(libs.spring.boot.annotationProcessor)
-  testImplementation(libs.spring.boot.autoconfigure)
+  testAnnotationProcessor(libs.spring.boot.four.annotationProcessor)
+  testImplementation(libs.spring.boot.four.autoconfigure)
   testImplementation(projects.starters.spring.stoveSpringTestingE2e)
   testImplementation(libs.logback.classic)
   testImplementation(libs.google.protobuf.kotlin)

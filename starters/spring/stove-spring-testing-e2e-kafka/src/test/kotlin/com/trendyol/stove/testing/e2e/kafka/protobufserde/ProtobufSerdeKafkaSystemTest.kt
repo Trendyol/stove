@@ -60,8 +60,8 @@ class ProtobufSerdeKafkaSystemTest :
               KafkaTestSpringBotApplicationForProtobufSerde.run(params) {
                 addInitializers(
                   stoveSpringRegistrar {
-                    bean<TestSystemKafkaInterceptor<*, *>>()
-                    bean { StoveProtobufSerde() }
+                    registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+                    registerBean { StoveProtobufSerde() }
                   }
                 )
               }

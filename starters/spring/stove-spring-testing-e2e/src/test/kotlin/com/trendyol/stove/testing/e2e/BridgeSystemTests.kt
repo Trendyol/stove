@@ -76,10 +76,10 @@ class Stove : AbstractProjectConfig() {
             TestAppRunner.run(params) {
               addInitializers(
                 stoveSpringRegistrar {
-                  bean<ParameterCollectorOfSpringBoot>()
-                  bean<TestAppInitializers>()
-                  bean<JsonMapper> { StoveSerde.jackson.default }
-                  bean { SystemTimeGetUtcNow() }
+                  registerBean<ParameterCollectorOfSpringBoot>()
+                  registerBean<TestAppInitializers>()
+                  registerBean<JsonMapper> { StoveSerde.jackson.default }
+                  registerBean { SystemTimeGetUtcNow() }
                 }
               )
             }

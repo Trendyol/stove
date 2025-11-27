@@ -33,8 +33,8 @@ class StringSerdeKafkaSystemTests :
               KafkaTestSpringBotApplicationForStringSerde.run(params) {
                 addInitializers(
                   stoveSpringRegistrar {
-                    bean<TestSystemKafkaInterceptor<*, *>>()
-                    bean { StoveSerde.jackson.anyByteArraySerde() }
+                    registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+                    registerBean { StoveSerde.jackson.anyByteArraySerde() }
                   }
                 )
               }
