@@ -331,6 +331,176 @@ TestSystem.validate {
 }
 ```
 
+### Partial Body Matching
+
+When you only need to match specific fields in a request body without specifying the entire payload, 
+use the `*Containing` methods. This is useful when:
+
+- The request body has fields you don't control (timestamps, generated IDs)
+- You only care about matching certain business-critical fields
+- The request body structure is complex but you need to match a single unique identifier
+
+#### Basic Partial Matching
+
+Match requests containing specific fields:
+
+```kotlin
+TestSystem.validate {
+  wiremock {
+    // Only matches requests where productId = 123, ignores other fields
+    mockPostContaining(
+      url = "/api/orders",
+      requestContaining = mapOf("productId" to 123),
+      statusCode = 201,
+      responseBody = OrderResponse(orderId = "order-123").some()
+    )
+  }
+}
+
+// This request WILL match (extra fields are ignored):
+// POST /api/orders
+// {"productId": 123, "quantity": 5, "userId": "user-456", "timestamp": "2024-01-01T00:00:00Z"}
+```
+
+#### Multiple Field Matching
+
+Match multiple fields at once:
+
+```kotlin
+TestSystem.validate {
+  wiremock {
+    mockPostContaining(
+      url = "/api/payments",
+      requestContaining = mapOf(
+        "orderId" to "order-123",
+        "amount" to 99.99,
+        "currency" to "USD"
+      ),
+      statusCode = 200,
+      responseBody = PaymentResponse(transactionId = "txn-789").some()
+    )
+  }
+}
+```
+
+#### Deep Nested Matching with Dot Notation
+
+Match specific fields deep within nested JSON structures using dot notation:
+
+```kotlin
+TestSystem.validate {
+  wiremock {
+    // Match a single field deep in the JSON structure
+    mockPostContaining(
+      url = "/api/orders",
+      requestContaining = mapOf("order.customer.id" to "cust-123"),
+      statusCode = 200,
+      responseBody = OrderConfirmation(status = "confirmed").some()
+    )
+  }
+}
+
+// This request WILL match:
+// POST /api/orders
+// {
+//   "order": {
+//     "id": "order-999",
+//     "customer": {
+//       "id": "cust-123",           <-- Only this field is matched
+//       "name": "John Doe",
+//       "email": "john@example.com"
+//     },
+//     "items": [...]
+//   },
+//   "metadata": {...}
+// }
+```
+
+#### Multiple Deep Nested Fields
+
+Match multiple fields at different levels of nesting:
+
+```kotlin
+TestSystem.validate {
+  wiremock {
+    mockPostContaining(
+      url = "/api/checkout",
+      requestContaining = mapOf(
+        "order.customer.id" to "cust-123",
+        "order.payment.method" to "credit_card",
+        "metadata.source" to "mobile_app"
+      ),
+      statusCode = 200,
+      responseBody = CheckoutResponse(success = true).some()
+    )
+  }
+}
+```
+
+#### Nested Object Matching
+
+Match nested objects with partial comparison (extra fields in nested objects are ignored):
+
+```kotlin
+TestSystem.validate {
+  wiremock {
+    // Match if the "settings" object contains at least {enabled: true}
+    mockPutContaining(
+      url = "/api/config",
+      requestContaining = mapOf(
+        "settings" to mapOf("enabled" to true)
+      ),
+      statusCode = 200
+    )
+  }
+}
+
+// This request WILL match (extra fields in settings are ignored):
+// PUT /api/config
+// {
+//   "settings": {
+//     "enabled": true,      <-- Matched
+//     "level": 5,           <-- Ignored
+//     "features": [...]     <-- Ignored
+//   }
+// }
+```
+
+#### Available Partial Matching Methods
+
+| Method | HTTP Method | Description |
+|--------|-------------|-------------|
+| `mockPostContaining` | POST | Partial body matching for POST requests |
+| `mockPutContaining` | PUT | Partial body matching for PUT requests |
+| `mockPatchContaining` | PATCH | Partial body matching for PATCH requests |
+
+All methods support:
+
+- **Simple values**: strings, numbers, booleans
+- **Dot notation**: `"order.customer.id"` for deep nested access
+- **Nested objects**: `mapOf("user" to mapOf("id" to 123))`
+- **Arrays**: `mapOf("tags" to listOf("important", "urgent"))`
+- **URL patterns**: Use `urlPatternFn` parameter for regex URL matching
+
+#### URL Pattern with Partial Matching
+
+Combine URL patterns with partial body matching:
+
+```kotlin
+TestSystem.validate {
+  wiremock {
+    mockPostContaining(
+      url = "/api/v[0-9]+/orders",
+      requestContaining = mapOf("orderId" to "order-123"),
+      statusCode = 200,
+      urlPatternFn = { urlPathMatching(it) }  // Enable regex URL matching
+    )
+  }
+}
+
+// Matches: POST /api/v1/orders, POST /api/v2/orders, etc.
+```
+
 ### Behavioral Mocking
 
 Simulate service behavior changes over multiple calls:

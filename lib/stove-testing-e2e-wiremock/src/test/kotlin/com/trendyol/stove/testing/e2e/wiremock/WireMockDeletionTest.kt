@@ -5,7 +5,6 @@ import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.*
 import java.net.URI
 import java.net.http.*
 import java.net.http.HttpRequest.BodyPublishers
@@ -40,15 +39,13 @@ class WireMockDeletionTest :
         .newBuilder(URI("http://localhost:9098/post-url"))
         .header("Content-Type", "application/json")
 
-      withContext(Dispatchers.IO) {
-        val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe responseBody
+      val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.body() shouldBe responseBody
 
-        val request2 = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
-        val response2 = client.send(request2, BodyHandlers.ofString())
-        response2.statusCode() shouldBe 404
-      }
+      val request2 = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.statusCode() shouldBe 404
     }
 
     /*
@@ -79,11 +76,9 @@ class WireMockDeletionTest :
         .newBuilder(URI("http://localhost:9098$url"))
         .header("Content-Type", "application/json")
 
-      withContext(Dispatchers.IO) {
-        val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe responseBody
-      }
+      val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.body() shouldBe responseBody
 
       TestSystem.validate {
         wiremock {
@@ -101,10 +96,8 @@ class WireMockDeletionTest :
         }
       }
 
-      withContext(Dispatchers.IO) {
-        val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe responseBody
-      }
+      val request2 = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.body() shouldBe responseBody
     }
   })
