@@ -5,19 +5,24 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.*
 import org.slf4j.LoggerFactory
-import kotlin.time.Duration
-import kotlin.time.toJavaDuration
+import kotlin.time.*
 
 private val httpClientLogger = LoggerFactory.getLogger("com.trendyol.stove.testing.e2e.http.HttpClient")
 
+@Suppress("MagicNumber")
 internal fun jsonHttpClient(
   baseUrl: String,
   timeout: Duration,
-  converter: ContentConverter
+  converter: ContentConverter,
+  webSocketContentConverter: WebsocketContentConverter,
+  pingInterval: Duration,
+  configureWebSocket: WebSockets.Config.() -> Unit = {},
+  configureClient: HttpClientConfig<*>.() -> Unit = {}
 ): HttpClient = HttpClient(OkHttp) {
   engine {
     config {
@@ -44,9 +49,17 @@ internal fun jsonHttpClient(
     register(ContentType.parse("application/x-ndjson"), converter)
   }
 
+  install(WebSockets) {
+    contentConverter = webSocketContentConverter
+    this.pingInterval = pingInterval
+    configureWebSocket(this)
+  }
+
   defaultRequest {
     url(baseUrl)
     header(HttpHeaders.ContentType, ContentType.Application.Json)
     header(HttpHeaders.Accept, ContentType.Application.Json)
   }
+
+  configureClient(this)
 }
