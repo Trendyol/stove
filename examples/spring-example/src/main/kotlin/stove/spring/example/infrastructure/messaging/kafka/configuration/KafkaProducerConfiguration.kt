@@ -1,15 +1,10 @@
 package stove.spring.example.infrastructure.messaging.kafka.configuration
 
-import org.apache.kafka.clients.producer.Producer
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.clients.producer.*
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.*
 import org.springframework.kafka.annotation.EnableKafka
-import org.springframework.kafka.core.DefaultKafkaProducerFactory
-import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.kafka.core.ProducerFactory
+import org.springframework.kafka.core.*
 import org.springframework.kafka.support.ProducerListener
 
 @EnableKafka
@@ -28,7 +23,7 @@ class KafkaProducerConfiguration {
         override fun onError(
           producerRecord: ProducerRecord<String, Any>,
           recordMetadata: RecordMetadata?,
-          exception: java.lang.Exception?
+          exception: Exception
         ) {
           logger.error(
             "ProducerListener Topic: ${producerRecord.topic()}, Key: ${producerRecord.value()}",

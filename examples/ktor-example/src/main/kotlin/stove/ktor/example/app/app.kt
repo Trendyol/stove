@@ -1,13 +1,14 @@
 package stove.ktor.example.app
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.json.JsonMapper
 import org.koin.dsl.*
 import stove.ktor.example.application.*
 import stove.ktor.example.domain.ProductRepository
 
-val objectMapperRef: ObjectMapper = ObjectMapper().apply {
-  findAndRegisterModules()
-}
+val objectMapperRef: JsonMapper = JsonMapper
+  .builder()
+  .apply { this.findAndAddModules() }
+  .build()
 
 fun app() = module {
   single { ProductRepository(get()) }

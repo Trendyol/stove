@@ -1,6 +1,5 @@
 package stove.spring.standalone.example.infrastructure.http
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.netty.channel.ChannelOption
 import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -8,9 +7,11 @@ import org.springframework.context.annotation.*
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
-import org.springframework.http.codec.json.*
+import org.springframework.http.codec.json.JacksonJsonDecoder
+import org.springframework.http.codec.json.JacksonJsonEncoder
 import org.springframework.web.reactive.function.client.*
 import reactor.netty.http.client.HttpClient
+import tools.jackson.databind.json.JsonMapper
 import java.util.concurrent.TimeUnit
 
 @Configuration
@@ -32,16 +33,16 @@ class WebClientConfiguration(
       .build()
 
   @Bean
-  fun exchangeStrategies(webClientObjectMapper: ObjectMapper): ExchangeStrategies = ExchangeStrategies
+  fun exchangeStrategies(webClientObjectMapper: JsonMapper): ExchangeStrategies = ExchangeStrategies
     .builder()
     .codecs { clientDefaultCodecsConfigurer: ClientCodecConfigurer ->
       clientDefaultCodecsConfigurer.defaultCodecs().maxInMemorySize(MAX_MEMORY_SIZE)
       clientDefaultCodecsConfigurer
         .defaultCodecs()
-        .jackson2JsonEncoder(Jackson2JsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
+        .jacksonJsonEncoder(JacksonJsonEncoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
       clientDefaultCodecsConfigurer
         .defaultCodecs()
-        .jackson2JsonDecoder(Jackson2JsonDecoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
+        .jacksonJsonDecoder(JacksonJsonDecoder(webClientObjectMapper, MediaType.APPLICATION_JSON))
     }.build()
 
   private fun defaultWebClientBuilder(

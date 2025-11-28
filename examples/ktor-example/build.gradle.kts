@@ -20,6 +20,7 @@ dependencies {
   implementation(libs.ktor.server)
   implementation(libs.ktor.server.netty)
   implementation(libs.ktor.serialization.kotlinx.json)
+  implementation(libs.ktor.serialization.jackson.json)
   implementation(libs.ktor.server.call.logging)
   implementation(libs.koin.ktor)
   implementation(libs.koin.logger.slf4j)
@@ -28,8 +29,6 @@ dependencies {
   implementation(libs.r2dbc.postgresql)
   implementation(libs.kafka)
   implementation(libs.hoplite.yaml)
-  implementation(libs.jackson.kotlin)
-  implementation(libs.jackson.databind)
 }
 
 dependencies {

@@ -2,10 +2,10 @@
 
 package com.trendyol.stove.testing.e2e.system.abstractions
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.trendyol.stove.testing.e2e.serialization.*
 import com.trendyol.stove.testing.e2e.system.*
 import org.slf4j.*
+import tools.jackson.module.kotlin.readValue
 import java.nio.file.*
 import java.util.*
 import kotlin.io.path.*

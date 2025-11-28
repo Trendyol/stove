@@ -1,15 +1,13 @@
 package stove.spring.example.infrastructure.couchbase
 
 import com.couchbase.client.java.*
-import com.couchbase.client.java.codec.JacksonJsonSerializer
 import com.couchbase.client.java.env.ClusterEnvironment
-import com.couchbase.client.java.json.JsonValueModule
 import com.couchbase.client.metrics.micrometer.MicrometerMeter
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.*
 import stove.spring.example.infrastructure.ObjectMapperConfig
+import tools.jackson.databind.json.JsonMapper
 import java.time.Duration
 
 @Configuration
@@ -19,16 +17,13 @@ class CouchbaseConfiguration(
   private val meterRegistry: MeterRegistry
 ) {
   companion object {
-    val objectMapper: ObjectMapper =
-      ObjectMapperConfig
-        .default()
-        .registerModule(JsonValueModule())
+    val objectMapper: JsonMapper = ObjectMapperConfig.default()
   }
 
   @Primary
   @Bean(destroyMethod = "shutdown")
   fun clusterEnvironment(): ClusterEnvironment {
-    val cbSerializer = JacksonJsonSerializer.create(objectMapper)
+    val cbSerializer = Jackson3JsonSerializer(objectMapper)
     return ClusterEnvironment
       .builder()
       .meter(MicrometerMeter.wrap(meterRegistry))

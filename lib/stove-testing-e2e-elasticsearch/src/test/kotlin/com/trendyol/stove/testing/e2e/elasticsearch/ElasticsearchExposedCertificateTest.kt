@@ -1,8 +1,8 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.trendyol.stove.testing.e2e.elasticsearch
 
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.trendyol.stove.functional.get
-import com.trendyol.stove.testing.e2e.serialization.*
+import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.abstractions.StateWithProcess
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.*
@@ -26,9 +26,9 @@ class ElasticsearchExposedCertificateTest :
             }
         """.trimIndent()
       val j = StoveSerde.jackson.default
-      val stateWithProcess = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(state)
+      val stateWithProcess = j.readValue(state, StateWithProcess::class.java) as StateWithProcess<*>
       val serialize = j.writeValueAsString(stateWithProcess)
-      val stateWithProcess2 = j.readValue<StateWithProcess<ElasticSearchExposedConfiguration>>(serialize)
+      val stateWithProcess2 = j.readValue(serialize, StateWithProcess::class.java) as StateWithProcess<ElasticSearchExposedConfiguration>
 
       val cert = stateWithProcess2.state.certificate!!
       cert.bytes.size shouldBeGreaterThan 0

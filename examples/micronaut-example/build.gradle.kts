@@ -19,7 +19,6 @@ dependencies {
   implementation(libs.micronaut.inject)
   implementation(libs.micronaut.core)
   implementation(libs.micronaut.micrometer.core)
-  implementation(libs.jackson.kotlin)
   implementation(libs.couchbase.client.metrics)
   implementation(libs.kafka)
   implementation(libs.kotlinx.reactor)
@@ -27,7 +26,6 @@ dependencies {
   implementation(libs.kotlinx.reactive)
   implementation(libs.couchbase.client)
   implementation(libs.couchbase.client.metrics)
-  implementation(libs.jackson.kotlin)
   implementation(libs.kotlinx.slf4j)
 }
 

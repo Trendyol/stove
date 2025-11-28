@@ -1,7 +1,5 @@
 package stove.spring.example.infrastructure.messaging.kafka.consumers
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.convertValue
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -11,12 +9,13 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import stove.spring.example.application.handlers.*
 import stove.spring.example.infrastructure.messaging.kafka.configuration.KafkaConsumerConfiguration
+import tools.jackson.databind.json.JsonMapper
 
 @Component
 @ConditionalOnProperty(prefix = "kafka.consumers", value = ["enabled"], havingValue = "true")
 class ProductTransferConsumers(
   private val productCreator: ProductCreator,
-  private val objectMapper: ObjectMapper
+  private val jsonMapper: JsonMapper
 ) {
   private val logger = LoggerFactory.getLogger(ProductTransferConsumers::class.java)
 
@@ -32,7 +31,7 @@ class ProductTransferConsumers(
   )
   fun listen(record: ConsumerRecord<*, Any>) = runBlocking(MDCContext()) {
     logger.info("Received product transfer command $record")
-    val command = objectMapper.convertValue<CreateProductCommand>(record.value())
+    val command = jsonMapper.convertValue(record.value(), CreateProductCommand::class.java)
     productCreator.create(command.mapToCreateRequest())
   }
 }

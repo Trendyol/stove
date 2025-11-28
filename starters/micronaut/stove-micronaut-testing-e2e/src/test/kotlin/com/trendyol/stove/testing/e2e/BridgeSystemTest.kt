@@ -1,6 +1,5 @@
 package com.trendyol.stove.testing.e2e
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.*
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
@@ -10,12 +9,13 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Factory
 import jakarta.inject.Singleton
+import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
 
 @Factory
 class TestAppConfig {
   @Singleton
-  fun objectMapper(): ObjectMapper = ObjectMapper()
+  fun objectMapper(): JsonMapper = JsonMapper()
 
   @Singleton
   fun getUtcNow(): GetUtcNow = SystemTimeGetUtcNow()

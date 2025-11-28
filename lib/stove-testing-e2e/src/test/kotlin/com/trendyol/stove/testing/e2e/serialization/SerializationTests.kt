@@ -1,8 +1,6 @@
 package com.trendyol.stove.testing.e2e.serialization
 
 import arrow.core.None
-import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.MapperFeature
 import com.google.gson.JsonSyntaxException
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde.Companion.deserialize
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde.Companion.deserializeOption
@@ -14,6 +12,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.*
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.*
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.MapperFeature
+import tools.jackson.databind.SerializationFeature
 
 class SerializerTest :
   FunSpec({
@@ -56,7 +57,7 @@ class SerializerTest :
       }
 
       test("should throw exception for invalid JSON") {
-        shouldThrow<JsonParseException> {
+        shouldThrow<Exception> {
           serializer.deserialize("invalid json", TestData::class.java)
         }
       }
@@ -186,8 +187,8 @@ class SerializerTest :
       test("should configure StoveJackson") {
         val objectMapper = StoveSerde.jackson.byConfiguring {
           enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-          enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-          enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT)
+          enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+          enable(SerializationFeature.INDENT_OUTPUT)
         }
         val serializer = StoveJacksonStringSerializer<TestData>(objectMapper)
         val serialized = serializer.serialize(testData)

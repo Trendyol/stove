@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.kafka
 import kotlinx.coroutines.future.await
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.util.concurrent.ListenableFuture
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -15,7 +14,9 @@ suspend fun KafkaTemplate<*, *>.sendCompatible(record: ProducerRecord<*, *>) {
   val method = this::class.java.getDeclaredMethod("send", ProducerRecord::class.java).apply { isAccessible = true }
   when (method.returnType.kotlin) {
     CompletableFuture::class -> (method.invoke(this, record) as CompletableFuture<*>).await()
-    ListenableFuture::class -> (method.invoke(this, record) as ListenableFuture<*>).completable().await()
+
+    // TODO: we deleted this now, spring boot does not have it anymore, looks like they use Completable anymore.
+    // ListenableFuture::class -> (method.invoke(this, record) as ListenableFuture<*>).completable().await()
     else -> error("Unsupported return type for KafkaTemplate.send method: ${method.returnType}")
   }
 }

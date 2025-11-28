@@ -7,7 +7,6 @@ import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.*
 import io.kotest.core.config.AbstractProjectConfig
-import stove.ktor.example.app.objectMapperRef
 
 class Stove : AbstractProjectConfig() {
   companion object {
@@ -38,7 +37,7 @@ class Stove : AbstractProjectConfig() {
       }
       kafka {
         KafkaSystemOptions(
-          serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef),
+          serde = StoveSerde.jackson.anyByteArraySerde(),
           containerOptions = KafkaContainerOptions(tag = "7.8.1")
         ) {
           listOf(

@@ -1,11 +1,11 @@
 dependencies {
     api(projects.lib.stoveTestingE2e)
-    implementation(libs.spring.boot)
+    implementation(libs.spring.boot.four)
 }
 
 dependencies {
-    testAnnotationProcessor(libs.spring.boot.three.annotationProcessor)
-    testImplementation(libs.spring.boot.three.autoconfigure)
+    testAnnotationProcessor(libs.spring.boot.four.annotationProcessor)
+    testImplementation(libs.spring.boot.four.autoconfigure)
     testImplementation(libs.slf4j.simple)
 }
 
