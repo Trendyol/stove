@@ -435,3 +435,320 @@ TestSystem.validate {
   }
 }
 ```
+
+## WebSocket Support
+
+Stove provides built-in support for testing WebSocket endpoints. The WebSocket functionality is integrated into the HTTP system and uses Ktor's WebSocket client under the hood.
+
+### Basic WebSocket Usage
+
+Send and receive messages through a WebSocket connection:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/chat") {
+      // Send a text message
+      send("Hello, WebSocket!")
+      
+      // Receive a text message
+      val response = receiveText()
+      response shouldBe "Echo: Hello, WebSocket!"
+    }
+  }
+}
+```
+
+### Sending Messages
+
+Multiple ways to send messages:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/endpoint") {
+      // Send text message
+      send("Hello")
+      
+      // Send binary data
+      send(byteArrayOf(1, 2, 3, 4, 5))
+      
+      // Send using sealed class
+      send(StoveWebSocketMessage.Text("Hello via sealed class"))
+      send(StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3)))
+    }
+  }
+}
+```
+
+### Receiving Messages
+
+Various methods to receive messages:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/endpoint") {
+      // Receive text
+      val text = receiveText()
+      text shouldBe "expected message"
+      
+      // Receive binary
+      val bytes = receiveBinary()
+      bytes shouldBe byteArrayOf(1, 2, 3)
+      
+      // Receive as sealed class (auto-detect type)
+      val message = receive()
+      when (message) {
+        is StoveWebSocketMessage.Text -> println(message.content)
+        is StoveWebSocketMessage.Binary -> println(message.content.size)
+        null -> println("Connection closed")
+      }
+      
+      // Receive with timeout
+      val response = receiveTextWithTimeout(5.seconds)
+      response.isSome() shouldBe true
+      response.getOrNull() shouldBe "expected"
+    }
+  }
+}
+```
+
+### Collecting Multiple Messages
+
+Collect a batch of messages:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/broadcast") {
+      // Collect 5 text messages with a 10 second timeout
+      val messages = collectTexts(count = 5, timeout = 10.seconds)
+      messages.size shouldBe 5
+      messages[0] shouldBe "Message 1"
+      messages[4] shouldBe "Message 5"
+      
+      // Collect binary messages
+      val binaryMessages = collectBinaries(count = 3, timeout = 5.seconds)
+      binaryMessages.size shouldBe 3
+    }
+  }
+}
+```
+
+### Streaming with Flow
+
+Use Kotlin Flow for streaming scenarios:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/events") {
+      // Stream text messages
+      val messages = incomingTexts()
+        .take(10)
+        .toList()
+      
+      messages.size shouldBe 10
+      
+      // Stream binary messages
+      incomingBinaries()
+        .take(5)
+        .collect { bytes ->
+          println("Received ${bytes.size} bytes")
+        }
+      
+      // Stream all message types
+      incoming()
+        .take(5)
+        .collect { message ->
+          when (message) {
+            is StoveWebSocketMessage.Text -> println(message.content)
+            is StoveWebSocketMessage.Binary -> println(message.content.size)
+          }
+        }
+    }
+  }
+}
+```
+
+### Authentication and Headers
+
+Connect with authentication or custom headers:
+
+```kotlin
+TestSystem.validate {
+  http {
+    // With bearer token
+    webSocket(
+      uri = "/secure-chat",
+      token = "jwt-token".some()
+    ) {
+      val response = receiveText()
+      response shouldBe "Authenticated successfully"
+    }
+    
+    // With custom headers
+    webSocket(
+      uri = "/chat",
+      headers = mapOf(
+        "X-Custom-Header" to "value",
+        "Authorization" to "Bearer custom-token"
+      )
+    ) {
+      send("Hello with custom headers")
+      receiveText() shouldNotBe null
+    }
+  }
+}
+```
+
+### WebSocket Expect (Assertion Alias)
+
+Use `webSocketExpect` for assertion-focused tests:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocketExpect("/notifications") {
+      val messages = collectTexts(count = 3)
+      messages.size shouldBe 3
+      messages.all { it.startsWith("notification:") } shouldBe true
+    }
+  }
+}
+```
+
+### Raw WebSocket Access
+
+For advanced scenarios, access the underlying Ktor WebSocket session:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocketRaw("/advanced") {
+      // Direct access to Ktor's DefaultClientWebSocketSession
+      send(Frame.Text("raw frame"))
+      
+      for (frame in incoming) {
+        when (frame) {
+          is Frame.Text -> println(frame.readText())
+          is Frame.Binary -> println(frame.readBytes().size)
+          is Frame.Close -> break
+          else -> {}
+        }
+      }
+    }
+  }
+}
+```
+
+### Underlying Session Access
+
+Access the underlying session from within `StoveWebSocketSession`:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/endpoint") {
+      // Use simplified API first
+      send("Hello")
+      
+      // Then access underlying session for advanced operations
+      underlyingSession {
+        send(Frame.Text("Advanced operation"))
+        val frame = incoming.receive()
+        (frame as Frame.Text).readText() shouldBe "Response"
+      }
+    }
+  }
+}
+```
+
+### Closing Connections
+
+Gracefully close WebSocket connections:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/chat") {
+      send("Hello")
+      receiveText()
+      
+      // Close with custom reason
+      close("Test completed")
+    }
+  }
+}
+```
+
+### Complete WebSocket Test Example
+
+A comprehensive example testing a chat application:
+
+```kotlin
+test("should handle chat room operations") {
+  TestSystem.validate {
+    http {
+      // Test echo functionality
+      webSocket("/chat/echo") {
+        send("Hello, World!")
+        receiveText() shouldBe "Echo: Hello, World!"
+        
+        send("Another message")
+        receiveText() shouldBe "Echo: Another message"
+      }
+      
+      // Test broadcast with authentication
+      webSocket(
+        uri = "/chat/room/123",
+        token = "user-jwt-token".some()
+      ) {
+        // Verify join notification
+        val joinMessage = receiveText()
+        joinMessage shouldContain "joined"
+        
+        // Send a message
+        send("Hi everyone!")
+        
+        // Collect broadcast responses
+        val messages = collectTexts(count = 2, timeout = 5.seconds)
+        messages.any { it.contains("Hi everyone!") } shouldBe true
+      }
+      
+      // Test binary data (e.g., file sharing)
+      webSocket("/chat/files") {
+        val fileData = "Hello".toByteArray()
+        send(fileData)
+        
+        val response = receiveBinary()
+        response shouldNotBe null
+      }
+    }
+  }
+}
+```
+
+### WebSocket + Kafka Integration
+
+Test WebSocket events that trigger Kafka messages:
+
+```kotlin
+TestSystem.validate {
+  http {
+    webSocket("/events") {
+      send("""{"type": "order", "action": "create", "amount": 100.0}""")
+      
+      val confirmation = receiveText()
+      confirmation shouldContain "received"
+    }
+  }
+  
+  kafka {
+    shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
+      actual.amount == 100.0
+    }
+  }
+}
+```

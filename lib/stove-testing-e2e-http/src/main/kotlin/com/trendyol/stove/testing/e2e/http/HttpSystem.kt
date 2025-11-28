@@ -8,6 +8,7 @@ import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.ktor.client.call.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
@@ -79,10 +80,26 @@ import kotlin.time.Duration.Companion.seconds
 data class HttpClientSystemOptions(
   val baseUrl: String,
   val contentConverter: ContentConverter = JacksonConverter(StoveSerde.jackson.default),
+  val webSocketContentConverter: WebsocketContentConverter = JacksonWebsocketContentConverter(
+    StoveSerde.jackson.default
+  ),
   val timeout: Duration = 30.seconds,
+  val wsPingInterval: Duration = 20.seconds,
+  val configureClient: io.ktor.client.HttpClientConfig<*>.() -> Unit = {},
+  val configureWebSocket: WebSockets.Config.() -> Unit = {},
   val createClient: (
     baseUrl: String
-  ) -> io.ktor.client.HttpClient = { url -> jsonHttpClient(url, timeout, contentConverter) }
+  ) -> io.ktor.client.HttpClient = { url ->
+    jsonHttpClient(
+      url,
+      timeout,
+      contentConverter,
+      webSocketContentConverter,
+      wsPingInterval,
+      configureWebSocket,
+      configureClient
+    )
+  }
 ) : SystemOptions
 
 internal fun TestSystem.withHttpClient(options: HttpClientSystemOptions): TestSystem {
