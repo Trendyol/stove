@@ -44,15 +44,13 @@ class WireMockSystemTests :
           )
       )
 
-      withContext(Dispatchers.IO) {
-        val request2 = reqBuilder.POST(BodyPublishers.ofString("request2")).build()
-        val response2 = client.send(request2, BodyHandlers.ofString())
-        response2.body() shouldBe "response2"
+      val request2 = reqBuilder.POST(BodyPublishers.ofString("request2")).build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.body() shouldBe "response2"
 
-        val request1 = reqBuilder.POST(BodyPublishers.ofString("request1")).build()
-        val response1 = client.send(request1, BodyHandlers.ofString())
-        response1.body() shouldBe "response1"
-      }
+      val request1 = reqBuilder.POST(BodyPublishers.ofString("request1")).build()
+      val response1 = client.send(request1, BodyHandlers.ofString())
+      response1.body() shouldBe "response1"
     }
 
     test("Multi thread stubbing") {
@@ -75,10 +73,7 @@ class WireMockSystemTests :
         .map { i ->
           async {
             val request = reqBuilder.POST(BodyPublishers.ofString("request$i")).build()
-            val response =
-              withContext(Dispatchers.IO) {
-                client.send(request, BodyHandlers.ofString())
-              }
+            val response = client.send(request, BodyHandlers.ofString())
             response.body() shouldBe "response$i"
           }
         }.awaitAll()
@@ -99,12 +94,10 @@ class WireMockSystemTests :
           }
         }
 
-        withContext(Dispatchers.IO) {
-          val request = reqBuilder.GET().build()
-          val response = client.send(request, BodyHandlers.ofString())
-          response.body() shouldBe "{\"name\":\"get\"}"
-          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
-        }
+        val request = reqBuilder.GET().build()
+        val httpResponse = client.send(request, BodyHandlers.ofString())
+        httpResponse.body() shouldBe "{\"name\":\"get\"}"
+        httpResponse.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
       }
 
       test("Stub post response with header") {
@@ -115,12 +108,10 @@ class WireMockSystemTests :
           }
         }
 
-        withContext(Dispatchers.IO) {
-          val request = reqBuilder.POST(BodyPublishers.ofString("post-response-with-header")).build()
-          val response = client.send(request, BodyHandlers.ofString())
-          response.body() shouldBe "{\"name\":\"post\"}"
-          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
-        }
+        val request = reqBuilder.POST(BodyPublishers.ofString("post-response-with-header")).build()
+        val httpResponse = client.send(request, BodyHandlers.ofString())
+        httpResponse.body() shouldBe "{\"name\":\"post\"}"
+        httpResponse.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
       }
 
       test("Stub put response with header") {
@@ -131,12 +122,10 @@ class WireMockSystemTests :
           }
         }
 
-        withContext(Dispatchers.IO) {
-          val request = reqBuilder.PUT(BodyPublishers.ofString("put-response-with-header")).build()
-          val response = client.send(request, BodyHandlers.ofString())
-          response.body() shouldBe "{\"name\":\"put\"}"
-          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
-        }
+        val request = reqBuilder.PUT(BodyPublishers.ofString("put-response-with-header")).build()
+        val httpResponse = client.send(request, BodyHandlers.ofString())
+        httpResponse.body() shouldBe "{\"name\":\"put\"}"
+        httpResponse.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
       }
 
       test("Stub patch response with header") {
@@ -147,12 +136,10 @@ class WireMockSystemTests :
           }
         }
 
-        withContext(Dispatchers.IO) {
-          val request = reqBuilder.method("PATCH", BodyPublishers.ofString("patch-response-with-header")).build()
-          val response = client.send(request, BodyHandlers.ofString())
-          response.body() shouldBe "{\"name\":\"patch\"}"
-          response.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
-        }
+        val request = reqBuilder.method("PATCH", BodyPublishers.ofString("patch-response-with-header")).build()
+        val httpResponse = client.send(request, BodyHandlers.ofString())
+        httpResponse.body() shouldBe "{\"name\":\"patch\"}"
+        httpResponse.headers().firstValue("CustomHeaderKey").get() shouldBe "CustomHeaderValue"
       }
     }
   })

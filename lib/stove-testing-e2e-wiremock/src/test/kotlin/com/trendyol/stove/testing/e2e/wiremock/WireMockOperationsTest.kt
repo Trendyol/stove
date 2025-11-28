@@ -5,7 +5,6 @@ import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.*
 import java.net.URI
 import java.net.http.*
 import java.net.http.HttpRequest.BodyPublishers
@@ -55,15 +54,13 @@ class WireMockOperationsTest :
         }
       }
 
-      withContext(Dispatchers.IO) {
-        val request2 = reqBuilder.POST(BodyPublishers.ofString("request2")).build()
-        val response2 = client.send(request2, BodyHandlers.ofString())
-        response2.body() shouldBe "response2"
+      val request2 = reqBuilder.POST(BodyPublishers.ofString("request2")).build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.body() shouldBe "response2"
 
-        val request1 = reqBuilder.POST(BodyPublishers.ofString("request1")).build()
-        val response1 = client.send(request1, BodyHandlers.ofString())
-        response1.body() shouldBe "response1"
-      }
+      val request1 = reqBuilder.POST(BodyPublishers.ofString("request1")).build()
+      val response1 = client.send(request1, BodyHandlers.ofString())
+      response1.body() shouldBe "response1"
     }
 
     /*
@@ -107,15 +104,13 @@ class WireMockOperationsTest :
         }
       }
 
-      withContext(Dispatchers.IO) {
-        val request2 = reqBuilder.POST(BodyPublishers.ofString("request2")).build()
-        val response2 = client.send(request2, BodyHandlers.ofString())
-        response2.body() shouldBe "response2"
+      val request2 = reqBuilder.POST(BodyPublishers.ofString("request2")).build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.body() shouldBe "response2"
 
-        val request1 = reqBuilder.POST(BodyPublishers.ofString("request1")).build()
-        val response1 = client.send(request1, BodyHandlers.ofString())
-        response1.body() shouldBe "response1"
-      }
+      val request1 = reqBuilder.POST(BodyPublishers.ofString("request1")).build()
+      val response1 = client.send(request1, BodyHandlers.ofString())
+      response1.body() shouldBe "response1"
     }
 
     /*
@@ -154,26 +149,24 @@ class WireMockOperationsTest :
         }
       }
 
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/suppliers/$id?active=$active")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Content-Type", "application/json")
+      val uri = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Content-Type", "application/json")
 
-        val request2 = reqBuilder.GET().build()
-        val response2 = client.send(request2, BodyHandlers.ofString())
-        response2.body() shouldBe "Supplier1Response"
+      val request2 = reqBuilder.GET().build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.body() shouldBe "Supplier1Response"
 
-        id = 2
-        active = false
-        val uri2 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
-        val reqBuilder2 = HttpRequest
-          .newBuilder(uri2)
-          .header("Content-Type", "application/json")
-        val request1 = reqBuilder2.GET().build()
-        val response1 = client.send(request1, BodyHandlers.ofString())
-        response1.body() shouldBe "Supplier2Response"
-      }
+      id = 2
+      active = false
+      val uri2 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val reqBuilder2 = HttpRequest
+        .newBuilder(uri2)
+        .header("Content-Type", "application/json")
+      val request1 = reqBuilder2.GET().build()
+      val response1 = client.send(request1, BodyHandlers.ofString())
+      response1.body() shouldBe "Supplier2Response"
     }
 
     /*
@@ -214,51 +207,49 @@ class WireMockOperationsTest :
 
       var id = 1
       var active = true
-      withContext(Dispatchers.IO) {
-        val uri1 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
-        val request1 = HttpRequest
-          .newBuilder(uri1)
-          .header("Content-Type", "application/json")
-          .GET()
-          .build()
-        val response1 = client.send(request1, BodyHandlers.ofString())
-        response1.body() shouldBe "Supplier1Response"
+      val uri1 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val request1 = HttpRequest
+        .newBuilder(uri1)
+        .header("Content-Type", "application/json")
+        .GET()
+        .build()
+      val response1 = client.send(request1, BodyHandlers.ofString())
+      response1.body() shouldBe "Supplier1Response"
 
-        id = 2
-        active = false
-        val uri2 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
-        val request2 = HttpRequest
-          .newBuilder(uri2)
-          .header("Content-Type", "application/json")
-          .GET()
-          .build()
-        val response2 = client.send(request2, BodyHandlers.ofString())
-        response2.body() shouldBe "Supplier2Response"
-        TestSystem.validate {
-          wiremock {
-            mockGetConfigure("/suppliers/2.*", { urlPathMatching(it) }) { req, _ ->
-              req
-                .withHeader("Content-Type", ContainsPattern("application/json"))
-                .withQueryParam("active", matching("true|false"))
-                .willReturn(
-                  aResponse()
-                    .withBody("Supplier2Response")
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json; charset=UTF-8")
-                )
-            }
+      id = 2
+      active = false
+      val uri2 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val request2 = HttpRequest
+        .newBuilder(uri2)
+        .header("Content-Type", "application/json")
+        .GET()
+        .build()
+      val response2 = client.send(request2, BodyHandlers.ofString())
+      response2.body() shouldBe "Supplier2Response"
+      TestSystem.validate {
+        wiremock {
+          mockGetConfigure("/suppliers/2.*", { urlPathMatching(it) }) { req, _ ->
+            req
+              .withHeader("Content-Type", ContainsPattern("application/json"))
+              .withQueryParam("active", matching("true|false"))
+              .willReturn(
+                aResponse()
+                  .withBody("Supplier2Response")
+                  .withStatus(200)
+                  .withHeader("Content-Type", "application/json; charset=UTF-8")
+              )
           }
         }
-        active = true
-        val uri3 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
-        val request3 = HttpRequest
-          .newBuilder(uri3)
-          .header("Content-Type", "application/json")
-          .GET()
-          .build()
-        val response3 = client.send(request3, BodyHandlers.ofString())
-        response3.body() shouldBe "Supplier2Response"
       }
+      active = true
+      val uri3 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val request3 = HttpRequest
+        .newBuilder(uri3)
+        .header("Content-Type", "application/json")
+        .GET()
+        .build()
+      val response3 = client.send(request3, BodyHandlers.ofString())
+      response3.body() shouldBe "Supplier2Response"
     }
 
     /*
@@ -284,17 +275,16 @@ class WireMockOperationsTest :
           }
         }
       }
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/resources/1")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Content-Type", "application/json")
-          .PUT(BodyPublishers.ofString("{\"name\":\"test\"}"))
 
-        val request = reqBuilder.build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe "PutResource1"
-      }
+      val uri = URI.create("http://localhost:9098/resources/1")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Content-Type", "application/json")
+        .PUT(BodyPublishers.ofString("{\"name\":\"test\"}"))
+
+      val request = reqBuilder.build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.body() shouldBe "PutResource1"
     }
 
     /*
@@ -320,17 +310,16 @@ class WireMockOperationsTest :
           }
         }
       }
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/resources/123")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Content-Type", "application/json")
-          .PUT(BodyPublishers.ofString("{\"name\":\"test\"}"))
 
-        val request = reqBuilder.build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe "PutResourceMatched"
-      }
+      val uri = URI.create("http://localhost:9098/resources/123")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Content-Type", "application/json")
+        .PUT(BodyPublishers.ofString("{\"name\":\"test\"}"))
+
+      val request = reqBuilder.build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.body() shouldBe "PutResourceMatched"
     }
 
     /*
@@ -343,28 +332,26 @@ class WireMockOperationsTest :
     test("Wiremock mockDeleteConfigure should accept default urlMatcher") {
       val client = HttpClient.newBuilder().build()
       TestSystem.validate {
-        withContext(Dispatchers.IO) {
-          wiremock {
-            mockDeleteConfigure("/resources/1") { req, _ ->
-              req
-                .withHeader("Authorization", equalTo("Bearer token"))
-                .willReturn(
-                  aResponse().withStatus(204)
-                )
-            }
+        wiremock {
+          mockDeleteConfigure("/resources/1") { req, _ ->
+            req
+              .withHeader("Authorization", equalTo("Bearer token"))
+              .willReturn(
+                aResponse().withStatus(204)
+              )
           }
-
-          val uri = URI.create("http://localhost:9098/resources/1")
-          val reqBuilder = HttpRequest
-            .newBuilder(uri)
-            .header("Authorization", "Bearer token")
-            .DELETE()
-
-          val request = reqBuilder.build()
-          val response = client.send(request, BodyHandlers.ofString())
-
-          response.statusCode() shouldBe 204
         }
+
+        val uri = URI.create("http://localhost:9098/resources/1")
+        val reqBuilder = HttpRequest
+          .newBuilder(uri)
+          .header("Authorization", "Bearer token")
+          .DELETE()
+
+        val request = reqBuilder.build()
+        val response = client.send(request, BodyHandlers.ofString())
+
+        response.statusCode() shouldBe 204
       }
     }
 
@@ -378,28 +365,26 @@ class WireMockOperationsTest :
     test("Wiremock mockDeleteConfigure should accept overridden urlMatcher") {
       val client = HttpClient.newBuilder().build()
       TestSystem.validate {
-        withContext(Dispatchers.IO) {
-          wiremock {
-            mockDeleteConfigure("/resources/.*", { urlPathMatching(it) }) { req, _ ->
-              req
-                .withHeader("Authorization", equalTo("Bearer token"))
-                .willReturn(
-                  aResponse().withStatus(204)
-                )
-            }
+        wiremock {
+          mockDeleteConfigure("/resources/.*", { urlPathMatching(it) }) { req, _ ->
+            req
+              .withHeader("Authorization", equalTo("Bearer token"))
+              .willReturn(
+                aResponse().withStatus(204)
+              )
           }
-
-          val uri = URI.create("http://localhost:9098/resources/123")
-          val reqBuilder = HttpRequest
-            .newBuilder(uri)
-            .header("Authorization", "Bearer token")
-            .DELETE()
-
-          val request = reqBuilder.build()
-          val response = client.send(request, BodyHandlers.ofString())
-
-          response.statusCode() shouldBe 204
         }
+
+        val uri = URI.create("http://localhost:9098/resources/123")
+        val reqBuilder = HttpRequest
+          .newBuilder(uri)
+          .header("Authorization", "Bearer token")
+          .DELETE()
+
+        val request = reqBuilder.build()
+        val response = client.send(request, BodyHandlers.ofString())
+
+        response.statusCode() shouldBe 204
       }
     }
 
@@ -426,18 +411,18 @@ class WireMockOperationsTest :
           }
         }
       }
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/resources/1")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Content-Type", "application/json")
-          .method("PATCH", BodyPublishers.ofString("{\"name\":\"updated\"}"))
 
-        val request = reqBuilder.build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe "PatchResource1"
-      }
+      val uri = URI.create("http://localhost:9098/resources/1")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Content-Type", "application/json")
+        .method("PATCH", BodyPublishers.ofString("{\"name\":\"updated\"}"))
+
+      val request = reqBuilder.build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.body() shouldBe "PatchResource1"
     }
+
     /*
      * Configures a POST request mock using [WireMockSystem.mockPatchConfigure].
      *
@@ -461,17 +446,16 @@ class WireMockOperationsTest :
           }
         }
       }
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/resources/123")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Content-Type", "application/json")
-          .method("PATCH", BodyPublishers.ofString("{\"name\":\"updated\"}"))
 
-        val request = reqBuilder.build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.body() shouldBe "PatchResourceMatched"
-      }
+      val uri = URI.create("http://localhost:9098/resources/123")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Content-Type", "application/json")
+        .method("PATCH", BodyPublishers.ofString("{\"name\":\"updated\"}"))
+
+      val request = reqBuilder.build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.body() shouldBe "PatchResourceMatched"
     }
 
     /*
@@ -496,18 +480,17 @@ class WireMockOperationsTest :
           }
         }
       }
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/resources/1")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Authorization", "Bearer token")
-          .method("HEAD", BodyPublishers.noBody())
 
-        val request = reqBuilder.build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.statusCode() shouldBe 200
-        response.headers().firstValue("X-Custom-Header").orElse("") shouldBe "CustomValue"
-      }
+      val uri = URI.create("http://localhost:9098/resources/1")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Authorization", "Bearer token")
+        .method("HEAD", BodyPublishers.noBody())
+
+      val request = reqBuilder.build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.statusCode() shouldBe 200
+      response.headers().firstValue("X-Custom-Header").orElse("") shouldBe "CustomValue"
     }
 
     /*
@@ -532,17 +515,16 @@ class WireMockOperationsTest :
           }
         }
       }
-      withContext(Dispatchers.IO) {
-        val uri = URI.create("http://localhost:9098/resources/123")
-        val reqBuilder = HttpRequest
-          .newBuilder(uri)
-          .header("Authorization", "Bearer token")
-          .method("HEAD", BodyPublishers.noBody())
 
-        val request = reqBuilder.build()
-        val response = client.send(request, BodyHandlers.ofString())
-        response.statusCode() shouldBe 200
-        response.headers().firstValue("X-Overridden-Header").orElse("") shouldBe "OverriddenValue"
-      }
+      val uri = URI.create("http://localhost:9098/resources/123")
+      val reqBuilder = HttpRequest
+        .newBuilder(uri)
+        .header("Authorization", "Bearer token")
+        .method("HEAD", BodyPublishers.noBody())
+
+      val request = reqBuilder.build()
+      val response = client.send(request, BodyHandlers.ofString())
+      response.statusCode() shouldBe 200
+      response.headers().firstValue("X-Overridden-Header").orElse("") shouldBe "OverriddenValue"
     }
   })
