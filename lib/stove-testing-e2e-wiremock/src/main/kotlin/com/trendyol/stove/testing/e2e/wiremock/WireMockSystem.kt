@@ -564,6 +564,7 @@ class WireMockSystem(
    * fields in the request for test matching purposes.
    *
    * ## Features
+   * - **AND logic**: When multiple fields are specified, ALL must match
    * - **Dot notation**: Use `"order.customer.id"` to match deep nested keys
    * - **Partial object matching**: Nested objects match if they contain at least the specified fields
    * - **Multiple fields**: Specify multiple keys to match several fields in one mock
@@ -640,6 +641,7 @@ class WireMockSystem(
    * fields in the request for test matching purposes.
    *
    * ## Features
+   * - **AND logic**: When multiple fields are specified, ALL must match
    * - **Dot notation**: Use `"user.profile.settings.theme"` to match deep nested keys
    * - **Partial object matching**: Nested objects match if they contain at least the specified fields
    * - **Multiple fields**: Specify multiple keys to match several fields in one mock
@@ -704,6 +706,7 @@ class WireMockSystem(
    * fields in the request for test matching purposes.
    *
    * ## Features
+   * - **AND logic**: When multiple fields are specified, ALL must match
    * - **Dot notation**: Use `"document.section.text"` to match deep nested keys
    * - **Partial object matching**: Nested objects match if they contain at least the specified fields
    * - **Multiple fields**: Specify multiple keys to match several fields in one mock

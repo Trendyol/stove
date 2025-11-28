@@ -362,18 +362,20 @@ TestSystem.validate {
 // {"productId": 123, "quantity": 5, "userId": "user-456", "timestamp": "2024-01-01T00:00:00Z"}
 ```
 
-#### Multiple Field Matching
+#### Multiple Field Matching (AND Logic)
 
-Match multiple fields at once:
+When you specify multiple fields, they are matched using **AND** logic - **all** specified fields 
+must be present and match for the stub to be triggered:
 
 ```kotlin
 TestSystem.validate {
   wiremock {
+    // ALL three fields must match for this stub to respond
     mockPostContaining(
       url = "/api/payments",
       requestContaining = mapOf(
-        "orderId" to "order-123",
-        "amount" to 99.99,
+        "orderId" to "order-123",      // AND
+        "amount" to 99.99,              // AND
         "currency" to "USD"
       ),
       statusCode = 200,
@@ -381,6 +383,15 @@ TestSystem.validate {
     )
   }
 }
+
+// ✅ MATCHES - all three fields present and correct:
+// {"orderId": "order-123", "amount": 99.99, "currency": "USD", "extra": "ignored"}
+
+// ❌ DOES NOT MATCH - missing "currency":
+// {"orderId": "order-123", "amount": 99.99}
+
+// ❌ DOES NOT MATCH - wrong value for "amount":
+// {"orderId": "order-123", "amount": 50.00, "currency": "USD"}
 ```
 
 #### Deep Nested Matching with Dot Notation

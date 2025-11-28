@@ -43,7 +43,7 @@ class WireMockPartialMockingTest :
       response.body() shouldBe """{"orderId":"order-123","status":"created"}"""
     }
 
-    test("mockPostContaining should match requests with multiple containing fields") {
+    test("mockPostContaining should match requests with multiple containing fields (AND logic)") {
       val productId = 999
       val customerId = "cust-abc"
       val url = "/orders/multi"
@@ -72,6 +72,65 @@ class WireMockPartialMockingTest :
       val response = client.send(request, BodyHandlers.ofString())
       response.statusCode() shouldBe 200
       response.body() shouldBe """{"matched":true}"""
+    }
+
+    test("mockPostContaining should NOT match when one of multiple required fields is missing (AND logic)") {
+      val url = "/orders/and-logic-test"
+
+      TestSystem.validate {
+        wiremock {
+          // Stub expects BOTH productId AND customerId to match
+          mockPostContaining(
+            url = url,
+            requestContaining = mapOf(
+              "productId" to 123,
+              "customerId" to "cust-required"
+            ),
+            statusCode = 200,
+            responseBody = mapOf("matched" to true).some()
+          )
+        }
+      }
+
+      // Request only has productId, missing customerId - should NOT match
+      val requestBody = """{"productId": 123, "extra": "data"}"""
+      val request = HttpRequest
+        .newBuilder(URI("http://localhost:9098$url"))
+        .header("Content-Type", "application/json")
+        .POST(BodyPublishers.ofString(requestBody))
+        .build()
+
+      val response = client.send(request, BodyHandlers.ofString())
+      response.statusCode() shouldBe 404 // Not matched because customerId is missing
+    }
+
+    test("mockPostContaining should NOT match when field value is different (AND logic)") {
+      val url = "/orders/and-logic-value-test"
+
+      TestSystem.validate {
+        wiremock {
+          mockPostContaining(
+            url = url,
+            requestContaining = mapOf(
+              "productId" to 123,
+              "status" to "active"
+            ),
+            statusCode = 200,
+            responseBody = mapOf("matched" to true).some()
+          )
+        }
+      }
+
+      // Request has both fields but status has wrong value - should NOT match
+      val requestBody = """{"productId": 123, "status": "inactive"}"""
+      val request = HttpRequest
+        .newBuilder(URI("http://localhost:9098$url"))
+        .header("Content-Type", "application/json")
+        .POST(BodyPublishers.ofString(requestBody))
+        .build()
+
+      val response = client.send(request, BodyHandlers.ofString())
+      response.statusCode() shouldBe 404 // Not matched because status value is different
     }
 
     test("mockPutContaining should match PUT requests containing specified fields") {
