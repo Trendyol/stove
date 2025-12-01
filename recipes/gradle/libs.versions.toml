@@ -45,10 +45,10 @@ kediatr = "4.3.0"
 
 # Testing
 stove = "0.18.0"
-kotest = "6.0.5"
-exposed = "1.0.0-rc-3"
+kotest = "6.0.7"
+exposed = "1.0.0-rc-4"
 postgresql = "42.7.8"
-flyway = "11.17.2"
+flyway = "11.18.0"
 
 [libraries]
 # Kotlin
