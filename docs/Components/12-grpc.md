@@ -67,10 +67,10 @@ data class GrpcSystemOptions(
   },
 
   /**
-   * Factory function for creating Wire's GrpcClient.
+   * Factory function for creating Wire's GrpcClient with resources.
    */
-  val createWireGrpcClient: (host: String, port: Int) -> GrpcClient = { h, p ->
-    defaultWireGrpcClient(h, p, timeout)
+  val createWireClient: (host: String, port: Int) -> WireClientResources = { h, p ->
+    defaultWireGrpcClient(h, p, timeout, metadata)
   }
 )
 ```

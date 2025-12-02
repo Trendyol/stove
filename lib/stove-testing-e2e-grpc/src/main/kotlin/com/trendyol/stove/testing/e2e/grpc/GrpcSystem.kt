@@ -15,6 +15,7 @@ import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
+import java.util.concurrent.TimeUnit
 
 /**
  * gRPC client system for testing gRPC APIs.
@@ -273,10 +274,15 @@ class GrpcSystem(
   override fun close() {
     if (lazyGrpcChannel.isInitialized()) {
       grpcChannel.shutdown()
+      grpcChannel.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
     if (lazyWireClientResources.isInitialized()) {
       wireClientResources.close()
     }
+  }
+
+  companion object {
+    private const val SHUTDOWN_TIMEOUT_SECONDS = 5L
   }
 
   /**

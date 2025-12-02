@@ -2,6 +2,7 @@ public abstract interface annotation class com/trendyol/stove/testing/e2e/grpc/G
 }
 
 public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem$Companion;
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;)V
 	public final fun channelWithMetadata (Ljava/util/Map;)Lio/grpc/Channel;
 	public fun close ()V
@@ -16,6 +17,9 @@ public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol
 	public final fun rawWireClient (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun withEndpoint (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem$Companion {
 }
 
 public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystemKt {
