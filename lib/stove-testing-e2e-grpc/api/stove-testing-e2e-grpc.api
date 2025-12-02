@@ -9,7 +9,7 @@ public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol
 	public final fun getGrpcChannel ()Lio/grpc/ManagedChannel;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
-	public final fun getWireGrpcClient ()Lcom/squareup/wire/GrpcClient;
+	public final fun getWireClientResources ()Lcom/trendyol/stove/testing/e2e/grpc/WireClientResources;
 	public final fun grpcClient ()Lcom/squareup/wire/GrpcClient;
 	public final fun managedChannel ()Lio/grpc/ManagedChannel;
 	public final fun rawChannel (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem;
@@ -38,7 +38,7 @@ public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions : com/t
 	public static synthetic fun copy-mGOUYlo$default (Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;Ljava/lang/String;IZJLjava/util/List;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCreateChannel ()Lkotlin/jvm/functions/Function2;
-	public final fun getCreateWireGrpcClient ()Lkotlin/jvm/functions/Function2;
+	public final fun getCreateWireClient ()Lkotlin/jvm/functions/Function2;
 	public final fun getHost ()Ljava/lang/String;
 	public final fun getInterceptors ()Ljava/util/List;
 	public final fun getMetadata ()Ljava/util/Map;
@@ -52,6 +52,20 @@ public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions : com/t
 public final class com/trendyol/stove/testing/e2e/grpc/MetadataInterceptor : io/grpc/ClientInterceptor {
 	public fun <init> (Ljava/util/Map;)V
 	public fun interceptCall (Lio/grpc/MethodDescriptor;Lio/grpc/CallOptions;Lio/grpc/Channel;)Lio/grpc/ClientCall;
+}
+
+public final class com/trendyol/stove/testing/e2e/grpc/WireClientResources {
+	public fun <init> (Lcom/squareup/wire/GrpcClient;Lokhttp3/OkHttpClient;)V
+	public final fun close ()V
+	public final fun component1 ()Lcom/squareup/wire/GrpcClient;
+	public final fun component2 ()Lokhttp3/OkHttpClient;
+	public final fun copy (Lcom/squareup/wire/GrpcClient;Lokhttp3/OkHttpClient;)Lcom/trendyol/stove/testing/e2e/grpc/WireClientResources;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/grpc/WireClientResources;Lcom/squareup/wire/GrpcClient;Lokhttp3/OkHttpClient;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/grpc/WireClientResources;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGrpcClient ()Lcom/squareup/wire/GrpcClient;
+	public final fun getOkHttpClient ()Lokhttp3/OkHttpClient;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/trendyol/stove/testing/e2e/grpc/test/GrpcTestServiceClient : com/trendyol/stove/testing/e2e/grpc/test/TestServiceClient {

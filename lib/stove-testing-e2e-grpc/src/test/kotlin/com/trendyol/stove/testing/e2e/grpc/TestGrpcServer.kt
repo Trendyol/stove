@@ -36,9 +36,11 @@ class TestGrpcServer(
   }
 
   override fun close() {
-    logger.info("Shutting down test gRPC server")
-    server.shutdown()
-    server.awaitTermination(5, TimeUnit.SECONDS)
+    if (::server.isInitialized) {
+      logger.info("Shutting down test gRPC server")
+      server.shutdown()
+      server.awaitTermination(5, TimeUnit.SECONDS)
+    }
   }
 }
 

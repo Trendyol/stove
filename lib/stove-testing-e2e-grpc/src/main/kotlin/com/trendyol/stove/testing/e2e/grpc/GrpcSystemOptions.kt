@@ -3,11 +3,26 @@ package com.trendyol.stove.testing.e2e.grpc
 import com.squareup.wire.GrpcClient
 import com.trendyol.stove.testing.e2e.system.abstractions.SystemOptions
 import io.grpc.*
-import okhttp3.*
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+
+/**
+ * Holds both the Wire GrpcClient and its underlying OkHttpClient for proper resource management.
+ */
+data class WireClientResources(
+  val grpcClient: GrpcClient,
+  val okHttpClient: OkHttpClient
+) {
+  fun close() {
+    okHttpClient.dispatcher.executorService.shutdown()
+    okHttpClient.connectionPool.evictAll()
+  }
+}
 
 /**
  * Configuration options for the gRPC client system.
@@ -65,7 +80,7 @@ import kotlin.time.toJavaDuration
  * @property interceptors List of client interceptors for logging, auth, tracing, etc.
  * @property metadata Default metadata (headers) to send with every request.
  * @property createChannel Factory function for creating the underlying ManagedChannel.
- * @property createWireGrpcClient Factory function for creating Wire's GrpcClient.
+ * @property createWireClient Factory function for creating Wire's GrpcClient with resources.
  */
 @GrpcDsl
 data class GrpcSystemOptions(
@@ -78,8 +93,8 @@ data class GrpcSystemOptions(
   val createChannel: (host: String, port: Int) -> ManagedChannel = { h, p ->
     defaultChannelBuilder(h, p, usePlaintext, timeout, interceptors, metadata)
   },
-  val createWireGrpcClient: (host: String, port: Int) -> GrpcClient = { h, p ->
-    defaultWireGrpcClient(h, p, timeout)
+  val createWireClient: (host: String, port: Int) -> WireClientResources = { h, p ->
+    defaultWireGrpcClient(h, p, timeout, metadata)
   }
 ) : SystemOptions
 
@@ -117,27 +132,44 @@ internal fun defaultChannelBuilder(
 }
 
 /**
- * Creates a default Wire GrpcClient with standard configuration.
+ * Creates a default Wire GrpcClient with standard configuration and metadata support.
  */
 internal fun defaultWireGrpcClient(
   host: String,
   port: Int,
-  timeout: Duration
-): GrpcClient {
-  val okHttpClient = OkHttpClient
+  timeout: Duration,
+  metadata: Map<String, String>
+): WireClientResources {
+  val okHttpClientBuilder = OkHttpClient
     .Builder()
     .protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE))
     .callTimeout(timeout.toJavaDuration())
     .readTimeout(timeout.toJavaDuration())
     .writeTimeout(timeout.toJavaDuration())
     .connectTimeout(timeout.toJavaDuration())
-    .build()
 
-  return GrpcClient
+  // Add metadata headers via OkHttp interceptor
+  if (metadata.isNotEmpty()) {
+    okHttpClientBuilder.addInterceptor(
+      Interceptor { chain ->
+        val requestBuilder = chain.request().newBuilder()
+        metadata.forEach { (key, value) ->
+          requestBuilder.addHeader(key, value)
+        }
+        chain.proceed(requestBuilder.build())
+      }
+    )
+  }
+
+  val okHttpClient = okHttpClientBuilder.build()
+
+  val grpcClient = GrpcClient
     .Builder()
     .client(okHttpClient)
     .baseUrl("http://$host:$port")
     .build()
+
+  return WireClientResources(grpcClient, okHttpClient)
 }
 
 /**

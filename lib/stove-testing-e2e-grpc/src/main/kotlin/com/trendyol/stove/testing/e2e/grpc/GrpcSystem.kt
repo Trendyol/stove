@@ -15,7 +15,6 @@ import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * gRPC client system for testing gRPC APIs.
@@ -107,18 +106,21 @@ class GrpcSystem(
   override val testSystem: TestSystem,
   @PublishedApi internal val options: GrpcSystemOptions
 ) : PluggedSystem {
-  private val channelInitialized = AtomicBoolean(false)
-
-  @PublishedApi
-  internal val grpcChannel: ManagedChannel by lazy {
-    channelInitialized.set(true)
+  private val lazyGrpcChannel = lazy {
     options.createChannel(options.host, options.port)
   }
 
-  @PublishedApi
-  internal val wireGrpcClient: GrpcClient by lazy {
-    options.createWireGrpcClient(options.host, options.port)
+  private val lazyWireClientResources = lazy {
+    options.createWireClient(options.host, options.port)
   }
+
+  @PublishedApi
+  internal val grpcChannel: ManagedChannel
+    get() = lazyGrpcChannel.value
+
+  @PublishedApi
+  internal val wireClientResources: WireClientResources
+    get() = lazyWireClientResources.value
 
   /**
    * Execute gRPC calls using a Wire-generated client.
@@ -142,7 +144,7 @@ class GrpcSystem(
   inline fun <reified T : Service> wireClient(
     block: @GrpcDsl T.() -> Unit
   ): GrpcSystem {
-    val client = wireGrpcClient.create(T::class)
+    val client = wireClientResources.grpcClient.create(T::class)
     block(client)
     return this
   }
@@ -251,7 +253,7 @@ class GrpcSystem(
   inline fun rawWireClient(
     block: @GrpcDsl (GrpcClient) -> Unit
   ): GrpcSystem {
-    block(wireGrpcClient)
+    block(wireClientResources.grpcClient)
     return this
   }
 
@@ -263,14 +265,17 @@ class GrpcSystem(
   /**
    * Exposes the Wire [GrpcClient] used by this system.
    */
-  fun grpcClient(): GrpcClient = wireGrpcClient
+  fun grpcClient(): GrpcClient = wireClientResources.grpcClient
 
   @GrpcDsl
   override fun then(): TestSystem = testSystem
 
   override fun close() {
-    if (channelInitialized.get()) {
+    if (lazyGrpcChannel.isInitialized()) {
       grpcChannel.shutdown()
+    }
+    if (lazyWireClientResources.isInitialized()) {
+      wireClientResources.close()
     }
   }
 
