@@ -123,6 +123,7 @@ val publishedProjects = listOf(
   projects.lib.stoveTestingE2e.name,
   projects.lib.stoveTestingE2eCouchbase.name,
   projects.lib.stoveTestingE2eElasticsearch.name,
+  projects.lib.stoveTestingE2eGrpc.name,
   projects.lib.stoveTestingE2eHttp.name,
   projects.lib.stoveTestingE2eKafka.name,
   projects.lib.stoveTestingE2eMongodb.name,
