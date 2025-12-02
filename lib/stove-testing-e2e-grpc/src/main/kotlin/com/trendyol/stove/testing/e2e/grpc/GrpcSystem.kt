@@ -1,20 +1,11 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
-
 package com.trendyol.stove.testing.e2e.grpc
 
 import arrow.core.getOrElse
-import com.squareup.wire.GrpcClient
-import com.squareup.wire.Service
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.ValidationDsl
-import com.trendyol.stove.testing.e2e.system.WithDsl
-import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.SystemNotRegisteredException
+import com.squareup.wire.*
+import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
-import io.grpc.CallOptions
-import io.grpc.Channel
-import io.grpc.ClientInterceptors
-import io.grpc.ManagedChannel
+import io.grpc.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -261,11 +252,13 @@ class GrpcSystem(
   /**
    * Exposes the [ManagedChannel] used by this system.
    */
+  @Suppress("unused")
   fun managedChannel(): ManagedChannel = grpcChannel
 
   /**
    * Exposes the Wire [GrpcClient] used by this system.
    */
+  @Suppress("unused")
   fun grpcClient(): GrpcClient = wireClientResources.grpcClient
 
   @GrpcDsl
@@ -324,8 +317,6 @@ class GrpcSystem(
       )
 
     constructor.isAccessible = true
-
-    @Suppress("UNCHECKED_CAST")
     return when (constructor.parameterCount) {
       1 -> constructor.newInstance(channelToUse) as T
       2 -> constructor.newInstance(channelToUse, CallOptions.DEFAULT) as T
