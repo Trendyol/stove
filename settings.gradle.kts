@@ -5,6 +5,7 @@ include(
   "lib:stove-testing-e2e",
   "lib:stove-testing-e2e-wiremock",
   "lib:stove-testing-e2e-http",
+  "lib:stove-testing-e2e-grpc",
   "lib:stove-testing-e2e-kafka",
   "lib:stove-testing-e2e-couchbase",
   "lib:stove-testing-e2e-rdbms",

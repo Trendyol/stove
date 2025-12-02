@@ -15,6 +15,7 @@ Stove provides a pluggable architecture where each physical dependency is a sepa
 | [Redis](09-redis.md) | `stove-testing-e2e-redis` | In-memory data store |
 | [WireMock](04-wiremock.md) | `stove-testing-e2e-wiremock` | HTTP mock server for external services |
 | [HTTP Client](05-http.md) | `stove-testing-e2e-http` | HTTP client for testing your API |
+| [gRPC](12-grpc.md) | `stove-testing-e2e-grpc` | gRPC client for testing gRPC services |
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
 
 ## Quick Start
@@ -95,6 +96,7 @@ TestSystem.validate {
 | Component | Use Case |
 |-----------|----------|
 | [HTTP Client](05-http.md) | Testing your application's REST API |
+| [gRPC](12-grpc.md) | Testing your application's gRPC services |
 | [WireMock](04-wiremock.md) | Mocking external HTTP services |
 
 ### Application Integration
@@ -255,6 +257,7 @@ test("should process order end-to-end") {
 - [Elasticsearch](03-elasticsearch.md) - Search engine with query DSL support
 - [WireMock](04-wiremock.md) - Mock external HTTP dependencies
 - [HTTP Client](05-http.md) - Test your REST API endpoints
+- [gRPC](12-grpc.md) - Test your gRPC services with Wire and grpc-kotlin
 - [PostgreSQL](06-postgresql.md) - Relational database with SQL support
 - [MongoDB](07-mongodb.md) - Document database with aggregation support
 - [MSSQL](08-mssql.md) - Microsoft SQL Server support

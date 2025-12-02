@@ -23,6 +23,7 @@ nav:
     - Redis: Components/09-redis.md
     - Bridge: Components/10-bridge.md
     - Provided Instances: Components/11-provided-instances.md
+    - gRPC: Components/12-grpc.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
