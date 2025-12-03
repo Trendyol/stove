@@ -29,7 +29,7 @@ kotlinLogging = "7.0.13"
 
 # Ktor
 ktor = "3.3.3"
-koin = "4.1.0-Beta8"
+koin = "4.1.1"
 
 # mongo
 mongodb = "5.6.1"
@@ -101,7 +101,7 @@ ktor-client-plugins-logging = { module = "io.ktor:ktor-client-logging", version.
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-ktor = { module = "io.insert-koin:koin-ktor3", version.ref = "koin" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "2.1.0" }
 mongodb-bson-kotlin = { module = "org.mongodb:bson-kotlin", version.ref = "mongodb" }
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
