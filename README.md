@@ -430,7 +430,7 @@ See [provided instances docs](https://trendyol.github.io/stove/Components/11-pro
 
 **Used by:**
 
-1. [Trendyol](https://www.trendyol.com): E-commerce platform, Turkey
+1. [Trendyol](https://www.trendyol.com): Leading e-commerce platform, Turkey
 
 *Using Stove? Open a PR to add your company.*
 
