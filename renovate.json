@@ -40,10 +40,10 @@
     },
     {
       "groupName": "com.trendyol",
-      "matchPackagePatterns": [
-        "com.trendyol:stove.*"
-      ],
-      "allowedVersions": "!/1f1ca59/"
+      "allowedVersions": "!/1f1ca59/",
+      "matchPackageNames": [
+        "/com.trendyol:stove.*/"
+      ]
     }
   ]
 }
