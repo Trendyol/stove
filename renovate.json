@@ -39,10 +39,11 @@
       "groupName": "quarkus"
     },
     {
-      "allowedVersions": "4.1.0-Beta8",
-      "matchPackageNames": [
-        "io.insert-koin{/,}**"
-      ]
+      "groupName": "com.trendyol",
+      "matchPackagePatterns": [
+        "com.trendyol:stove.*"
+      ],
+      "allowedVersions": "!/1f1ca59/"
     }
   ]
 }
