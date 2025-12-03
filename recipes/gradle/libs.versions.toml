@@ -44,7 +44,7 @@ hoplite = "2.9.0"
 kediatr = "4.3.0"
 
 # Testing
-stove = "1.0.0.481-SNAPSHOT"
+stove = "1.0.0.482-SNAPSHOT"
 kotest = "6.0.7"
 exposed = "1.0.0-rc-4"
 postgresql = "42.7.8"
