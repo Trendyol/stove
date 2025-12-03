@@ -86,14 +86,13 @@ Versions are available at [Releases](https://github.com/Trendyol/stove/releases)
 
 !!! Tip
 
-    You can use SNAPSHOT versions for the latest features. You can add the following repository to your build file.
-    SNAPSHOT versions released with the `1.0.0.{buildNumber}-SNAPSHOT` strategy.
+    You can use SNAPSHOT versions for the latest features. As of 5th June 2025, Stove's snapshot packages are hosted on 
+    [Central Sonatype](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/).
+    SNAPSHOT versions are released with the `1.0.0.{buildNumber}-SNAPSHOT` strategy.
   
       ```kotlin
       repositories {
-          maven {
-              url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-          }
+          maven("https://central.sonatype.com/repository/maven-snapshots")
       }
       ```
 

@@ -84,6 +84,13 @@ dependencies {
 }
 ```
 
+> **Snapshots:** As of 5th June 2025, Stove's snapshot packages are hosted on [Central Sonatype](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/).
+> ```kotlin
+> repositories {
+>   maven("https://central.sonatype.com/repository/maven-snapshots")
+> }
+> ```
+
 **2. Configure test system** (runs once before all tests)
 
 ```kotlin
