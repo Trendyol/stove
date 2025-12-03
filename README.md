@@ -69,11 +69,7 @@ assertions even for code that is traditionally hard to test (async flows, messag
 - Extensible architecture for adding new components and
   frameworks ([Writing Custom Systems](https://trendyol.github.io/stove/writing-custom-systems/))
 
-<p align="center">
-  <a href="https://trendyol.github.io/stove/">
-    <img src="./docs/assets/stove_architecture.svg" width="550" alt="Stove Architecture"/>
-  </a>
-</p>
+<p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
 
 ## Getting Started
 
