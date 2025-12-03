@@ -39,7 +39,7 @@ kotlinx-serialization = "1.9.0"
 kotlinBinaryCompatibilityValidator = "0.18.1"
 snakeyaml = "2.5"
 micronaut = "4.10.9"
-micronaut-platform = "4.10.2"
+micronaut-platform = "4.10.3"
 micronaut-micrometer = "1.3.1"
 ktlint = "1.8.0"
 
