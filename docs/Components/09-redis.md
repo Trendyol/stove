@@ -25,6 +25,36 @@ TestSystem()
   }.run()
 ```
 
+## Migrations
+
+Redis supports migrations for setting up initial data or configuration:
+
+```kotlin
+class SeedCacheData : DatabaseMigration<RedisMigrationContext> {
+  override val order: Int = 1
+
+  override suspend fun execute(connection: RedisMigrationContext) {
+    connection.connection.sync().apply {
+      // Seed initial cache data
+      set("config:feature-flag", "enabled")
+      hset("defaults:settings", mapOf(
+        "timeout" to "30",
+        "retries" to "3"
+      ))
+    }
+  }
+}
+
+// Register migrations
+redis {
+  RedisOptions(
+    configureExposedConfiguration = { cfg -> listOf(...) }
+  ).migrations {
+    register<SeedCacheData>()
+  }
+}
+```
+
 ## Usage
 
 The Redis component provides access to the underlying Lettuce Redis client, allowing you to test all Redis operations.
