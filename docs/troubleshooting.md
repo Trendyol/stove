@@ -730,7 +730,7 @@ Solutions:
 
 #### Q: How do I migrate from 0.14.x to 0.15.x?
 
-**A:** See [Migration Notes](migration/notes.md) for detailed instructions. Key changes:
+**A:** See [Migration Notes](release-notes/0.15.0.md) for detailed instructions. Key changes:
 
 - `StoveSerde` replaces direct `ObjectMapper` usage
 - Configure serde for each component that needs it
