@@ -21,6 +21,7 @@ apiValidation {
     "ktor-example",
     "micronaut-example",
     "spring-example",
+    "spring-4x-example",
     "spring-standalone-example",
     "spring-streams-example"
   )
