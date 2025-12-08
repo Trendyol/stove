@@ -33,7 +33,7 @@ class Stove : AbstractProjectConfig() {
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 7079,
+            port = 7080,
             removeStubAfterRequestMatched = true,
             afterRequest = { e, _ ->
               logger.info(e.request.toString())
