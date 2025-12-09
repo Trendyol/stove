@@ -39,6 +39,12 @@
       "groupName": "quarkus"
     },
     {
+      "matchDepNames": [
+        "/io.confluent.*/"
+      ],
+      "groupName": "confluent"
+    },
+    {
       "groupName": "com.trendyol",
       "allowedVersions": "!/1f1ca59/",
       "matchPackageNames": [
