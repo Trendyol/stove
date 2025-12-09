@@ -65,7 +65,7 @@ abstract class StringSerdeKafkaSystemTests(
       validate {
         kafka {
           adminOperations {
-            val topic = "topic"
+            val topic = "admin-test-topic-${Random.nextInt()}"
             createTopics(listOf(NewTopic(topic, 1, 1)))
             listTopics().names().get().contains(topic) shouldBe true
             deleteTopics(listOf(topic))
