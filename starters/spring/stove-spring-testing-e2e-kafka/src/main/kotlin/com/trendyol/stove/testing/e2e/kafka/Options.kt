@@ -229,6 +229,7 @@ internal fun TestSystem.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrEls
 fun WithDsl.kafka(
   configure: () -> KafkaSystemOptions
 ): TestSystem {
+  SpringKafkaVersionCheck.ensureSpringKafkaAvailable()
   val options = configure()
 
   val runtime: SystemRuntime = if (options is ProvidedKafkaSystemOptions) {
