@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.kafka.stringserde
 
-import com.trendyol.stove.testing.e2e.kafka.StoveBusinessException
+import com.trendyol.stove.testing.e2e.kafka.StoveBusinessException // From fixtures
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.Serdes

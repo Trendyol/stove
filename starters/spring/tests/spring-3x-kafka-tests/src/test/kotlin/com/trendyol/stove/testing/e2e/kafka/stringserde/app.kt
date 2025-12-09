@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.kafka.stringserde
 
-import com.trendyol.stove.testing.e2e.kafka.StoveBusinessException
+import com.trendyol.stove.testing.e2e.kafka.StoveBusinessException // From fixtures
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.Serdes
@@ -106,7 +106,7 @@ open class KafkaTestSpringBotApplicationForStringSerde {
     throw StoveBusinessException("This exception is thrown intentionally for testing purposes.")
   }
 
-  @KafkaListener(topics = ["topic-failed.DLT"], groupId = "group_id")
+  @KafkaListener(topics = ["topic-failed-dlt"], groupId = "group_id")
   fun listenDeadLetter(message: String) {
     logger.info("Received Message in the lead letter, and allowing the fail by just logging: \n$message")
   }

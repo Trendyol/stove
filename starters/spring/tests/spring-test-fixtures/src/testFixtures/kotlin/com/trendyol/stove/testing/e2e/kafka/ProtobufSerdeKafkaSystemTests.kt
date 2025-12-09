@@ -1,0 +1,55 @@
+package com.trendyol.stove.testing.e2e.kafka
+
+import com.trendyol.stove.spring.testing.e2e.kafka.v1.Example.*
+import com.trendyol.stove.spring.testing.e2e.kafka.v1.order
+import com.trendyol.stove.spring.testing.e2e.kafka.v1.product
+import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
+import io.kotest.core.spec.style.ShouldSpec
+import kotlin.random.Random
+
+/**
+ * Shared Kafka protobuf serde tests that work across all Spring Boot versions.
+ * Each version module should create their own test class that extends this
+ * and provides the TestSystem setup.
+ */
+abstract class ProtobufSerdeKafkaSystemTests :
+  ShouldSpec({
+    should("publish and consume") {
+      validate {
+        kafka {
+          val userId = Random.nextInt().toString()
+          val productId = Random.nextInt().toString()
+          val testProduct = product {
+            id = productId
+            name = "product-${Random.nextInt()}"
+            price = Random.nextDouble()
+            currency = "eur"
+            description = "description-${Random.nextInt()}"
+          }
+          val headers = mapOf("x-user-id" to userId)
+          publish("topic-protobuf", testProduct, headers = headers)
+          shouldBePublished<Product> {
+            actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
+          shouldBeConsumed<Product> {
+            actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
+
+          val orderId = Random.nextInt().toString()
+          val testOrder = order {
+            id = orderId
+            customerId = userId
+            products += testProduct
+          }
+          publish("topic-protobuf", testOrder, headers = headers)
+          shouldBePublished<Order> {
+            actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
+
+          shouldBeConsumed<Order> {
+            actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+          }
+        }
+      }
+    }
+  })

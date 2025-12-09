@@ -24,7 +24,14 @@ apiValidation {
     "spring-4x-example",
     "spring-standalone-example",
     "spring-streams-example",
-    "tests"
+    "tests",
+    "spring-test-fixtures",
+    "spring-2x-kafka-tests",
+    "spring-3x-kafka-tests",
+    "spring-4x-kafka-tests",
+    "spring-4x-tests",
+    "spring-3x-tests",
+    "spring-2x-tests"
   )
 }
 kover {

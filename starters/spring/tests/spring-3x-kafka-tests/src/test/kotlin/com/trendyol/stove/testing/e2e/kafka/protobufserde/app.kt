@@ -1,9 +1,8 @@
 package com.trendyol.stove.testing.e2e.kafka.protobufserde
 
 import com.google.protobuf.Message
-import com.trendyol.stove.testing.e2e.kafka.StoveBusinessException
-import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
+import com.trendyol.stove.testing.e2e.kafka.KafkaRegistry // From fixtures
+import com.trendyol.stove.testing.e2e.kafka.StoveBusinessException // From fixtures
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -19,30 +18,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.*
 import org.springframework.util.backoff.FixedBackOff
-
-sealed class KafkaRegistry(
-  open val url: String
-) {
-  object Mock : KafkaRegistry("mock://mock-registry")
-
-  data class Defined(
-    override val url: String
-  ) : KafkaRegistry(url)
-
-  companion object {
-    fun createSerde(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {
-      val schemaRegistryClient = when (registry) {
-        is Mock -> MockSchemaRegistry.getClientForScope("mock-registry")
-        is Defined -> MockSchemaRegistry.getClientForScope(registry.url)
-      }
-      val serde: KafkaProtobufSerde<Message> = KafkaProtobufSerde<Message>(schemaRegistryClient)
-      val serdeConfig: MutableMap<String, Any?> = HashMap()
-      serdeConfig[SCHEMA_REGISTRY_URL_CONFIG] = registry.url
-      serde.configure(serdeConfig, false)
-      return serde
-    }
-  }
-}
 
 class ProtobufValueSerializer<T : Any> : Serializer<T> {
   private val protobufSerde: KafkaProtobufSerde<Message> = KafkaRegistry.createSerde()

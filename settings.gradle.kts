@@ -19,6 +19,7 @@ include(
   "starters:ktor:stove-ktor-testing-e2e",
   "starters:spring:stove-spring-testing-e2e",
   "starters:spring:stove-spring-testing-e2e-kafka",
+  "starters:spring:tests:spring-test-fixtures",
   "starters:spring:tests:spring-2x-tests",
   "starters:spring:tests:spring-2x-kafka-tests",
   "starters:spring:tests:spring-3x-tests",
