@@ -1,3 +1,10 @@
+public final class com/trendyol/stove/testing/e2e/DependencyResolvers {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/DependencyResolvers;
+	public final fun autoDetect ()Lkotlin/jvm/functions/Function2;
+	public final fun getKoin ()Lkotlin/jvm/functions/Function2;
+	public final fun getKtorDi ()Lkotlin/jvm/functions/Function2;
+}
+
 public final class com/trendyol/stove/testing/e2e/KtorApplicationUnderTest : com/trendyol/stove/testing/e2e/system/abstractions/ApplicationUnderTest {
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;)V
 	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -10,12 +17,19 @@ public final class com/trendyol/stove/testing/e2e/KtorApplicationUnderTestKt {
 }
 
 public final class com/trendyol/stove/testing/e2e/KtorBridgeSystem : com/trendyol/stove/testing/e2e/system/BridgeSystem, com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
-	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)V
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;)V
 	public fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
 public final class com/trendyol/stove/testing/e2e/KtorBridgeSystemKt {
-	public static final fun bridge-hQma78k (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public static final fun bridge-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public static synthetic fun bridge-PmNtuJU$default (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/KtorDiCheck {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/KtorDiCheck;
+	public final fun isKoinAvailable ()Z
+	public final fun isKtorDiAvailable ()Z
 }
 

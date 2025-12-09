@@ -31,7 +31,10 @@ apiValidation {
     "spring-4x-kafka-tests",
     "spring-4x-tests",
     "spring-3x-tests",
-    "spring-2x-tests"
+    "spring-2x-tests",
+    "ktor-di-tests",
+    "ktor-koin-tests",
+    "ktor-test-fixtures",
   )
 }
 kover {

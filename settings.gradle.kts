@@ -17,6 +17,9 @@ include(
 )
 include(
   "starters:ktor:stove-ktor-testing-e2e",
+  "starters:ktor:tests:ktor-test-fixtures",
+  "starters:ktor:tests:ktor-koin-tests",
+  "starters:ktor:tests:ktor-di-tests",
   "starters:spring:stove-spring-testing-e2e",
   "starters:spring:stove-spring-testing-e2e-kafka",
   "starters:spring:tests:spring-test-fixtures",
