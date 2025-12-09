@@ -23,7 +23,10 @@ internal fun TestSystem.systemUnderTest(
 fun WithDsl.springBoot(
   runner: Runner<ConfigurableApplicationContext>,
   withParameters: List<String> = listOf()
-): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
+): ReadyTestSystem {
+  SpringBootVersionCheck.ensureSpringBootAvailable()
+  return this.testSystem.systemUnderTest(runner, withParameters)
+}
 
 @StoveDsl
 class SpringApplicationUnderTest(

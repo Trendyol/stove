@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: "stove-spring-4x-example"
+
+server:
+  port: 8001
+
+kafka:
+  bootstrapServers: localhost:9092
+  topicPrefix: trendyol.stove.service
+  acks: "1"
+  offset: "latest"
+  heartbeatInSeconds: 30
+  groupId: spring-4x-example

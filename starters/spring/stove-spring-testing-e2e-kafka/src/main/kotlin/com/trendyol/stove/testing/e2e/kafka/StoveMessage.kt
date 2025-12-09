@@ -18,7 +18,7 @@ internal sealed class StoveMessage : MessageProperties {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
 
-    other as Consumed
+    other as StoveMessage
 
     if (topic != other.topic) return false
     if (!value.contentEquals(other.value)) return false

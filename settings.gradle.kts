@@ -19,11 +19,18 @@ include(
   "starters:ktor:stove-ktor-testing-e2e",
   "starters:spring:stove-spring-testing-e2e",
   "starters:spring:stove-spring-testing-e2e-kafka",
+  "starters:spring:tests:spring-2x-tests",
+  "starters:spring:tests:spring-2x-kafka-tests",
+  "starters:spring:tests:spring-3x-tests",
+  "starters:spring:tests:spring-3x-kafka-tests",
+  "starters:spring:tests:spring-4x-tests",
+  "starters:spring:tests:spring-4x-kafka-tests",
   "starters:micronaut:stove-micronaut-testing-e2e"
 )
 include(
   "examples:spring-example",
   "examples:spring-standalone-example",
+  "examples:spring-4x-example",
   "examples:ktor-example",
   "examples:spring-streams-example",
   "examples:micronaut-example"

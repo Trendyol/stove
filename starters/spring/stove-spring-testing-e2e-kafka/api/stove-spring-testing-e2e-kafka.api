@@ -83,9 +83,7 @@ public final class com/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext {
 }
 
 public final class com/trendyol/stove/testing/e2e/kafka/KafkaOps {
-	public fun <init> ()V
 	public fun <init> (Lkotlin/jvm/functions/Function3;)V
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function3;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lkotlin/jvm/functions/Function3;
 	public final fun copy (Lkotlin/jvm/functions/Function3;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
 	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
@@ -146,6 +144,7 @@ public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Compa
 }
 
 public final class com/trendyol/stove/testing/e2e/kafka/KafkaTemplateCompatibilityKt {
+	public static final fun defaultKafkaOps ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
 	public static final fun sendCompatible (Lorg/springframework/kafka/core/KafkaTemplate;Lorg/apache/kafka/clients/producer/ProducerRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

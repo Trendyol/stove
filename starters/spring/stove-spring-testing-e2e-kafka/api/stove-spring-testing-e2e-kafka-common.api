@@ -1,0 +1,189 @@
+public final class com/trendyol/stove/testing/e2e/kafka/Caching {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/kafka/Caching;
+	public final fun of ()Lcom/github/benmanes/caffeine/cache/Cache;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde {
+	public fun <init> ()V
+	public fun <init> (Lorg/apache/kafka/common/serialization/Serializer;Lorg/apache/kafka/common/serialization/Serializer;)V
+	public synthetic fun <init> (Lorg/apache/kafka/common/serialization/Serializer;Lorg/apache/kafka/common/serialization/Serializer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/apache/kafka/common/serialization/Serializer;
+	public final fun component2 ()Lorg/apache/kafka/common/serialization/Serializer;
+	public final fun copy (Lorg/apache/kafka/common/serialization/Serializer;Lorg/apache/kafka/common/serialization/Serializer;)Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lorg/apache/kafka/common/serialization/Serializer;Lorg/apache/kafka/common/serialization/Serializer;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeySerializer ()Lorg/apache/kafka/common/serialization/Serializer;
+	public final fun getValueSerializer ()Lorg/apache/kafka/common/serialization/Serializer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions : com/trendyol/stove/testing/e2e/containers/ContainerOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun component6 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompatibleSubstitute ()Ljava/lang/String;
+	public fun getContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun getImage ()Ljava/lang/String;
+	public fun getImageWithTag ()Ljava/lang/String;
+	public fun getRegistry ()Ljava/lang/String;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUseContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaContext {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
+	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+	public final fun copy (Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/testing/e2e/system/abstractions/SystemRuntime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class com/trendyol/stove/testing/e2e/kafka/KafkaDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration : com/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBootstrapServers ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext {
+	public fun <init> (Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)V
+	public final fun component1 ()Lorg/apache/kafka/clients/admin/Admin;
+	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+	public final fun copy (Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext;Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaMigrationContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdmin ()Lorg/apache/kafka/clients/admin/Admin;
+	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaOps {
+	public fun <init> (Lkotlin/jvm/functions/Function3;)V
+	public final fun component1 ()Lkotlin/jvm/functions/Function3;
+	public final fun copy (Lkotlin/jvm/functions/Function3;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSend ()Lkotlin/jvm/functions/Function3;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunnableSystemWithContext {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem$Companion;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;)V
+	public final fun adminOperations (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun afterRun (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun afterRun (Lorg/springframework/context/ApplicationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun beforeRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public fun configuration ()Ljava/util/List;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getGetInterceptor ()Lkotlin/jvm/functions/Function0;
+	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public final fun pause ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;
+	public final fun publish (Ljava/lang/String;Ljava/lang/Object;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun publish$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;Ljava/lang/String;Ljava/lang/Object;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shouldBeConsumedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shouldBeFailedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shouldBePublishedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystem$Companion {
+	public final fun kafkaTemplate (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;)Lorg/springframework/kafka/core/KafkaTemplate;
+}
+
+public class com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions : com/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations, com/trendyol/stove/testing/e2e/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
+	public fun getContainerOptions ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaContainerOptions;
+	public fun getFallbackSerde ()Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/testing/e2e/database/migrations/MigrationCollection;
+	public fun getOps ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
+	public fun getPorts ()Ljava/util/List;
+	public fun getRegistry ()Ljava/lang/String;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Companion {
+	public final fun getDEFAULT_KAFKA_PORTS ()Ljava/util/List;
+	public final fun provided (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/kafka/ProvidedKafkaSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/kafka/ProvidedKafkaSystemOptions;
+}
+
+public abstract interface class com/trendyol/stove/testing/e2e/kafka/MessageProperties {
+	public abstract fun getKey ()Ljava/lang/String;
+	public abstract fun getMetadata ()Lcom/trendyol/stove/testing/e2e/messaging/MessageMetadata;
+	public abstract fun getPartition ()Ljava/lang/Integer;
+	public abstract fun getTimestamp ()Ljava/lang/Long;
+	public abstract fun getTopic ()Ljava/lang/String;
+	public abstract fun getValue ()[B
+	public abstract fun getValueAsString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/OptionsKt {
+	public static final fun kafka-E6EcY7A (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun kafka-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/ProvidedKafkaSystemOptions : com/trendyol/stove/testing/e2e/kafka/KafkaSystemOptions, com/trendyol/stove/testing/e2e/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/testing/e2e/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
+}
+
+public class com/trendyol/stove/testing/e2e/kafka/StoveKafkaContainer : org/testcontainers/kafka/ConfluentKafkaContainer, com/trendyol/stove/testing/e2e/containers/StoveContainer {
+	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
+	public fun execCommand ([Ljava/lang/String;J)Lcom/trendyol/stove/testing/e2e/containers/ExecResult;
+	public fun getContainerIdAccess ()Ljava/lang/String;
+	public fun getDockerClientAccess ()Lkotlin/Lazy;
+	public fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
+	public fun inspect ()Lcom/trendyol/stove/testing/e2e/containers/StoveContainerInspectInformation;
+	public fun pause ()V
+	public fun unpause ()V
+}
+
+public final class com/trendyol/stove/testing/e2e/kafka/TestSystemKafkaInterceptor : org/springframework/kafka/listener/CompositeRecordInterceptor, org/springframework/kafka/support/ProducerListener {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/serialization/StoveSerde;)V
+	public fun failure (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/lang/Exception;Lorg/apache/kafka/clients/consumer/Consumer;)V
+	public fun onError (Lorg/apache/kafka/clients/producer/ProducerRecord;Lorg/apache/kafka/clients/producer/RecordMetadata;Ljava/lang/Exception;)V
+	public fun onSuccess (Lorg/apache/kafka/clients/producer/ProducerRecord;Lorg/apache/kafka/clients/producer/RecordMetadata;)V
+	public fun success (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Lorg/apache/kafka/clients/consumer/Consumer;)V
+}
+

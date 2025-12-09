@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+package com.trendyol.stove.spring.testing.e2e.kafka.v1;
+
+message Product {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  string currency = 5;
+}
+
+message Order {
+  string id = 1;
+  string customerId = 2;
+  repeated Product products = 3;
+}
