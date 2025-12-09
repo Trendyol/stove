@@ -17,6 +17,8 @@ include(
 )
 include(
   "starters:ktor:stove-ktor-testing-e2e",
+  "starters:spring:stove-spring-testing-e2e-common",
+  "starters:spring:stove-spring-testing-e2e-kafka-common",
   "starters:spring:stove-spring-testing-e2e",
   "starters:spring:stove-spring-testing-e2e-kafka",
   "starters:spring:stove-spring-4x-testing-e2e",

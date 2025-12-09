@@ -19,3 +19,10 @@ suspend fun KafkaTemplate<*, *>.sendCompatible(record: ProducerRecord<*, *>) {
     else -> error("Unsupported return type for KafkaTemplate.send method: ${method.returnType}")
   }
 }
+
+/**
+ * Default KafkaOps for Spring Kafka 2.x/3.x that uses the compatible send method.
+ */
+fun defaultKafkaOps(): KafkaOps = KafkaOps(
+  send = { kafkaTemplate, record -> kafkaTemplate.sendCompatible(record) }
+)

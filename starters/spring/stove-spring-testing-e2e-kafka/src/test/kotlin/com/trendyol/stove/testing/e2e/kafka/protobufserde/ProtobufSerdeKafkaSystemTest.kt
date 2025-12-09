@@ -45,6 +45,7 @@ class ProtobufSerdeKafkaSystemTest :
         .with {
           kafka {
             KafkaSystemOptions(
+              ops = defaultKafkaOps(),
               configureExposedConfiguration = {
                 listOf(
                   "kafka.bootstrapServers=${it.bootstrapServers}",

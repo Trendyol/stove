@@ -22,13 +22,15 @@ class Stove : AbstractProjectConfig() {
         }
         kafka {
           KafkaSystemOptions(
-            containerOptions = KafkaContainerOptions(tag = "7.8.1")
-          ) {
-            listOf(
-              "kafka.bootstrapServers=${it.bootstrapServers}",
-              "kafka.groupId=spring-4x-example"
-            )
-          }
+            ops = defaultKafkaOps(),
+            containerOptions = KafkaContainerOptions(tag = "7.8.1"),
+            configureExposedConfiguration = {
+              listOf(
+                "kafka.bootstrapServers=${it.bootstrapServers}",
+                "kafka.groupId=spring-4x-example"
+              )
+            }
+          )
         }
         bridge()
         wiremock {
@@ -43,15 +45,13 @@ class Stove : AbstractProjectConfig() {
         springBoot(
           runner = { parameters ->
             stove.spring.example4x.run(parameters) {
-              addInitializers(
-                stoveSpringRegistrar {
-                  registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
-                  registerBean {
-                    val jsonMapper = this.bean<JsonMapper>()
-                    StoveJackson3ThroughIfStringSerde(jsonMapper)
-                  }
+              addTestDependencies {
+                registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+                registerBean {
+                  val jsonMapper = this.bean<JsonMapper>()
+                  StoveJackson3ThroughIfStringSerde(jsonMapper)
                 }
-              )
+              }
             }
           },
           withParameters = listOf(

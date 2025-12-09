@@ -1,5 +1,5 @@
 dependencies {
-    api(projects.lib.stoveTestingE2e)
+    api(projects.starters.spring.stoveSpringTestingE2eCommon)
     implementation(libs.spring.boot)
 }
 

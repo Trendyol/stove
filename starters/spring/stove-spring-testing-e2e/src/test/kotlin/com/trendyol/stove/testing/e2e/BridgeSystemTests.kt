@@ -10,8 +10,9 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import org.springframework.boot.*
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.context.*
-import org.springframework.context.support.GenericApplicationContext
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
@@ -40,28 +41,13 @@ class SystemTimeGetUtcNow : GetUtcNow {
   override fun invoke(): Instant = GetUtcNow.frozenTime
 }
 
-class TestAppInitializers :
-  BaseApplicationContextInitializer({
-    bean<ObjectMapper> { StoveSerde.jackson.default }
-    bean { SystemTimeGetUtcNow() }
-  }) {
+class TestAppInitializers {
   var onEvent: Boolean = false
   var appReady: Boolean = false
 
-  init {
-    register {
-      bean<ParameterCollectorOfSpringBoot>()
-      bean<TestAppInitializers> { this@TestAppInitializers }
-    }
-  }
-
-  override fun onEvent(event: ApplicationEvent) {
-    super.onEvent(event)
+  @EventListener(ApplicationReadyEvent::class)
+  fun applicationReady() {
     onEvent = true
-  }
-
-  override fun applicationReady(applicationContext: GenericApplicationContext) {
-    super.applicationReady(applicationContext)
     appReady = true
   }
 }
@@ -89,7 +75,12 @@ class Stove : AbstractProjectConfig() {
           runner = { params ->
             TestAppRunner.run(params) {
               addInitializers(
-                TestAppInitializers()
+                stoveSpringRegistrar {
+                  bean<ParameterCollectorOfSpringBoot>()
+                  bean<TestAppInitializers>()
+                  bean<ObjectMapper> { StoveSerde.jackson.default }
+                  bean { SystemTimeGetUtcNow() }
+                }
               )
             }
           },

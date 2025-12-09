@@ -279,15 +279,15 @@ class KafkaSystem(
       throw AssertionError(
         "Kafka interceptor is not an instance of TestSystemKafkaInterceptor, " +
           "please make sure that you have configured the Stove Kafka interceptor in your Spring Application properly." +
-          "You can use a TestSystemInitializer to add the interceptor to your Spring Application: " +
+          "You can use stoveSpringRegistrar to add the interceptor to your Spring Application: " +
           """
-              fun SpringApplication.addTestSystemDependencies() {
-                this.addInitializers(TestSystemInitializer())
-              }
-  
-              class TestSystemInitializer : BaseApplicationContextInitializer({
-                bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
-              })            
+              TestAppRunner.run(params) {
+                addInitializers(
+                  stoveSpringRegistrar {
+                    bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+                  }
+                )
+              }          
           """.trimIndent()
       )
     }

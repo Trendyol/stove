@@ -38,13 +38,15 @@ class Stove : AbstractProjectConfig() {
         }
         kafka {
           KafkaSystemOptions(
-            containerOptions = KafkaContainerOptions(tag = "7.8.1")
-          ) {
-            listOf(
-              "kafka.bootstrapServers=${it.bootstrapServers}",
-              "kafka.isSecure=false"
-            )
-          }
+            ops = defaultKafkaOps(),
+            containerOptions = KafkaContainerOptions(tag = "7.8.1"),
+            configureExposedConfiguration = {
+              listOf(
+                "kafka.bootstrapServers=${it.bootstrapServers}",
+                "kafka.isSecure=false"
+              )
+            }
+          )
         }
         bridge()
         wiremock {

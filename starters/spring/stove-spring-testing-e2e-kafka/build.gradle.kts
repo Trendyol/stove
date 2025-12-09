@@ -5,11 +5,8 @@ plugins {
 }
 
 dependencies {
-  api(projects.lib.stoveTestingE2e)
-  api(libs.testcontainers.kafka)
+  api(projects.starters.spring.stoveSpringTestingE2eKafkaCommon)
   implementation(libs.spring.boot.kafka)
-  implementation(libs.caffeine)
-  implementation(libs.pprint)
 }
 
 dependencies {
@@ -38,5 +35,3 @@ protobuf {
     }
   }
 }
-
-

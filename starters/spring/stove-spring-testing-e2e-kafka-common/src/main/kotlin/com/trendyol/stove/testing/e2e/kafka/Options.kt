@@ -33,11 +33,15 @@ data class KafkaContainerOptions(
   override val containerFn: ContainerFn<StoveKafkaContainer> = { }
 ) : ContainerOptions<StoveKafkaContainer>
 
+/**
+ * Operations for Kafka. It is used to customize the operations of Kafka.
+ * The reason why this exists is to provide a way to interact with lower versions of Spring-Kafka dependencies.
+ */
 data class KafkaOps(
   val send: suspend (
     KafkaTemplate<*, *>,
     ProducerRecord<*, *>
-  ) -> Unit = { kafkaTemplate, record -> kafkaTemplate.sendCompatible(record) }
+  ) -> Unit
 )
 
 data class FallbackTemplateSerde(
@@ -83,10 +87,9 @@ open class KafkaSystemOptions(
   open val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
   /**
    * Operations for Kafka. It is used to customize the operations of Kafka.
-   * The reason why this exists is to provide a way to interact with lower versions of Spring-Kafka dependencies.
    * @see KafkaOps
    */
-  open val ops: KafkaOps = KafkaOps(),
+  open val ops: KafkaOps,
   /**
    * A suspend function to clean up data after tests complete.
    */
@@ -122,7 +125,7 @@ open class KafkaSystemOptions(
       registry: String = DEFAULT_REGISTRY,
       ports: List<Int> = DEFAULT_KAFKA_PORTS,
       fallbackSerde: FallbackTemplateSerde = FallbackTemplateSerde(),
-      ops: KafkaOps = KafkaOps(),
+      ops: KafkaOps,
       runMigrations: Boolean = true,
       cleanup: suspend (Admin) -> Unit = {},
       configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
@@ -152,7 +155,7 @@ class ProvidedKafkaSystemOptions(
   registry: String = DEFAULT_REGISTRY,
   ports: List<Int> = DEFAULT_KAFKA_PORTS,
   fallbackSerde: FallbackTemplateSerde = FallbackTemplateSerde(),
-  ops: KafkaOps = KafkaOps(),
+  ops: KafkaOps,
   cleanup: suspend (Admin) -> Unit = {},
   /**
    * Whether to run migrations on the external instance.
