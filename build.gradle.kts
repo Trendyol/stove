@@ -23,7 +23,8 @@ apiValidation {
     "spring-example",
     "spring-4x-example",
     "spring-standalone-example",
-    "spring-streams-example"
+    "spring-streams-example",
+    "tests"
   )
 }
 kover {
@@ -46,10 +47,10 @@ kover {
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut")
+val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests")
 dependencies { related.forEach { kover(it) } }
 
-subprojects.of("lib", "spring", "examples", "ktor", "micronaut") {
+subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests") {
   apply {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)

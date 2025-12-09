@@ -1,5 +1,32 @@
+public final class com/trendyol/stove/testing/e2e/BridgeSystemKt {
+	public static final fun bridge-hQma78k (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+}
+
 public final class com/trendyol/stove/testing/e2e/RegistrarKt {
 	public static final fun addTestDependencies (Lorg/springframework/boot/SpringApplication;Lkotlin/jvm/functions/Function1;)V
+	public static final fun addTestDependencies4x (Lorg/springframework/boot/SpringApplication;Lkotlin/jvm/functions/Function1;)V
+	public static final fun stoveSpring4xRegistrar (Lkotlin/jvm/functions/Function1;)Lorg/springframework/context/ApplicationContextInitializer;
 	public static final fun stoveSpringRegistrar (Lkotlin/jvm/functions/Function1;)Lorg/springframework/context/ApplicationContextInitializer;
+}
+
+public final class com/trendyol/stove/testing/e2e/SpringApplicationUnderTest : com/trendyol/stove/testing/e2e/system/abstractions/ApplicationUnderTest {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/SpringApplicationUnderTest$Companion;
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;)V
+	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/testing/e2e/SpringApplicationUnderTest$Companion {
+}
+
+public final class com/trendyol/stove/testing/e2e/SpringApplicationUnderTestKt {
+	public static final fun springBoot-FMzRXaI (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;)Lcom/trendyol/stove/testing/e2e/system/abstractions/ReadyTestSystem;
+	public static synthetic fun springBoot-FMzRXaI$default (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function1;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/abstractions/ReadyTestSystem;
+}
+
+public final class com/trendyol/stove/testing/e2e/SpringBridgeSystem : com/trendyol/stove/testing/e2e/system/BridgeSystem, com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)V
+	public fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 

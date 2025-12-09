@@ -1,14 +1,12 @@
 dependencies {
-    api(projects.starters.spring.stoveSpringTestingE2eCommon)
-    implementation(libs.spring.boot)
+    api(projects.lib.stoveTestingE2e)
+    // Both Spring versions as compileOnly - users bring the actual version at runtime
+    compileOnly(libs.spring.boot)
+    compileOnly(libs.spring.boot.four)
 }
 
 dependencies {
-    testAnnotationProcessor(libs.spring.boot.three.annotationProcessor)
-    testImplementation(libs.spring.boot.three.autoconfigure)
-    testImplementation(libs.slf4j.simple)
-}
-
-tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.Stove")
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.spring.boot)
 }

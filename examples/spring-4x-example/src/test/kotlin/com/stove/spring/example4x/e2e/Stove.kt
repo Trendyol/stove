@@ -22,7 +22,6 @@ class Stove : AbstractProjectConfig() {
         }
         kafka {
           KafkaSystemOptions(
-            ops = defaultKafkaOps(),
             containerOptions = KafkaContainerOptions(tag = "7.8.1"),
             configureExposedConfiguration = {
               listOf(
@@ -45,7 +44,7 @@ class Stove : AbstractProjectConfig() {
         springBoot(
           runner = { parameters ->
             stove.spring.example4x.run(parameters) {
-              addTestDependencies {
+              addTestDependencies4x {
                 registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
                 registerBean {
                   val jsonMapper = this.bean<JsonMapper>()

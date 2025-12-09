@@ -17,12 +17,14 @@ include(
 )
 include(
   "starters:ktor:stove-ktor-testing-e2e",
-  "starters:spring:stove-spring-testing-e2e-common",
-  "starters:spring:stove-spring-testing-e2e-kafka-common",
   "starters:spring:stove-spring-testing-e2e",
   "starters:spring:stove-spring-testing-e2e-kafka",
-  "starters:spring:stove-spring-4x-testing-e2e",
-  "starters:spring:stove-spring-4x-testing-e2e-kafka",
+  "starters:spring:tests:spring-2x-tests",
+  "starters:spring:tests:spring-2x-kafka-tests",
+  "starters:spring:tests:spring-3x-tests",
+  "starters:spring:tests:spring-3x-kafka-tests",
+  "starters:spring:tests:spring-4x-tests",
+  "starters:spring:tests:spring-4x-kafka-tests",
   "starters:micronaut:stove-micronaut-testing-e2e"
 )
 include(

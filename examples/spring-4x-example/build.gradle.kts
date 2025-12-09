@@ -22,8 +22,8 @@ dependencies {
   testImplementation(libs.jackson3.kotlin)
   testImplementation(projects.stove.lib.stoveTestingE2eHttp)
   testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
-  testImplementation(projects.stove.starters.spring.stoveSpring4xTestingE2e)
-  testImplementation(projects.stove.starters.spring.stoveSpring4xTestingE2eKafka)
+  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2e)
+  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2eKafka)
 }
 
 application { mainClass.set("stove.spring.example4x.ExampleAppkt") }

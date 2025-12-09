@@ -1,5 +1,0 @@
-public final class com/trendyol/stove/testing/e2e/kafka/KafkaTemplateCompatibilityKt {
-	public static final fun defaultKafkaOps ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaOps;
-	public static final fun sendCompatible (Lorg/springframework/kafka/core/KafkaTemplate;Lorg/apache/kafka/clients/producer/ProducerRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
