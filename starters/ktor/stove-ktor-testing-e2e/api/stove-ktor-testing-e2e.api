@@ -19,6 +19,7 @@ public final class com/trendyol/stove/testing/e2e/KtorApplicationUnderTestKt {
 public final class com/trendyol/stove/testing/e2e/KtorBridgeSystem : com/trendyol/stove/testing/e2e/system/BridgeSystem, com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function2;)V
 	public fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public fun getByType (Lkotlin/reflect/KType;)Ljava/lang/Object;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 

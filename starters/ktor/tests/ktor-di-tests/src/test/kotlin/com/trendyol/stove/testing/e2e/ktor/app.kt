@@ -21,6 +21,15 @@ object KtorDiTestApp {
         provide<GetUtcNow> { SystemTimeGetUtcNow() }
         provide<ExampleService> { ExampleService(resolve()) }
         provide<TestConfig> { TestConfig() }
+
+        // Multiple payment service implementations as List<PaymentService>
+        provide<List<PaymentService>> {
+          listOf(
+            StripePaymentService(),
+            PayPalPaymentService(),
+            SquarePaymentService()
+          )
+        }
       }
     }
     applicationEngine.start(wait = false)

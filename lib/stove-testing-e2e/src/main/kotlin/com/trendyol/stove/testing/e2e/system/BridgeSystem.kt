@@ -4,6 +4,8 @@ import arrow.core.getOrElse
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * A system that provides a bridge between the test system and the application context.
@@ -34,16 +36,36 @@ abstract class BridgeSystem<T : Any>(
     ctx = context
   }
 
+  /**
+   * Resolves a dependency by KClass.
+   * Override this for basic type resolution without generic support.
+   */
   abstract fun <D : Any> get(klass: KClass<D>): D
 
   /**
+   * Resolves a dependency by KType, preserving generic type information.
+   * Override this to support generic types like List<T>, Map<K,V>, etc.
+   * Default implementation falls back to KClass-based resolution.
+   *
+   * @param type the full KType including generic parameters
+   * @return the resolved dependency
+   */
+  @Suppress("UNCHECKED_CAST")
+  open fun <D : Any> getByType(type: KType): D {
+    val klass = type.classifier as? KClass<D>
+      ?: throw IllegalArgumentException("Cannot resolve type: $type")
+    return get(klass)
+  }
+
+  /**
    * Resolves a bean of the specified type from the application context.
+   * Uses KType to preserve generic type information (e.g., List<PaymentService>).
    *
    * @param T the type of bean to resolve.
    * @return the resolved bean.
    */
   @PublishedApi
-  internal inline fun <reified D : Any> resolve(): D = get(D::class)
+  internal inline fun <reified D : Any> resolve(): D = getByType(typeOf<D>())
 
   /**
    * Executes the specified block using the resolved bean.

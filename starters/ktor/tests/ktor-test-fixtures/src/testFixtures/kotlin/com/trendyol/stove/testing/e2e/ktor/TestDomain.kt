@@ -1,5 +1,6 @@
 package com.trendyol.stove.testing.e2e.ktor
 
+import java.math.BigDecimal
 import java.time.Instant
 
 /**
@@ -27,3 +28,40 @@ class ExampleService(
 data class TestConfig(
   val message: String = "Hello from Stove!"
 )
+
+/**
+ * Domain classes for testing multi-instance resolution.
+ */
+data class Order(
+  val id: String,
+  val amount: BigDecimal
+)
+
+data class PaymentResult(
+  val provider: String,
+  val success: Boolean
+)
+
+interface PaymentService {
+  val providerName: String
+
+  fun pay(order: Order): PaymentResult
+}
+
+class StripePaymentService : PaymentService {
+  override val providerName = "Stripe"
+
+  override fun pay(order: Order) = PaymentResult(providerName, true)
+}
+
+class PayPalPaymentService : PaymentService {
+  override val providerName = "PayPal"
+
+  override fun pay(order: Order) = PaymentResult(providerName, true)
+}
+
+class SquarePaymentService : PaymentService {
+  override val providerName = "Square"
+
+  override fun pay(order: Order) = PaymentResult(providerName, true)
+}

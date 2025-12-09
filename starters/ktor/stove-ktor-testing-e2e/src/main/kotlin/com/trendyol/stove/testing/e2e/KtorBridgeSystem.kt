@@ -1,10 +1,13 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.trendyol.stove.testing.e2e
 
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import io.ktor.server.application.*
-import kotlin.reflect.KClass
+import kotlin.reflect.*
+import kotlin.reflect.full.starProjectedType
 
 /**
  * A system that provides a bridge between the test system and the application context.
@@ -20,8 +23,16 @@ class KtorBridgeSystem(
 ) : BridgeSystem<Application>(testSystem),
   PluggedSystem,
   AfterRunAwareWithContext<Application> {
-  @Suppress("UNCHECKED_CAST")
-  override operator fun <D : Any> get(klass: KClass<D>): D = resolver(ctx, klass) as D
+  /**
+   * Resolves a dependency by KClass (fallback, loses generic info).
+   */
+  override fun <D : Any> get(klass: KClass<D>): D = resolver(ctx, klass.starProjectedType) as D
+
+  /**
+   * Resolves a dependency by KType, preserving generic type information.
+   * This allows resolving types like List<PaymentService> correctly.
+   */
+  override fun <D : Any> getByType(type: KType): D = resolver(ctx, type) as D
 }
 
 /**

@@ -4,7 +4,9 @@ import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.using
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import java.math.BigDecimal
 
 /**
  * Shared bridge system tests that work with both Koin and Ktor-DI.
@@ -42,6 +44,18 @@ abstract class BridgeSystemTests(
       validate {
         using<TestConfig> {
           message shouldBe "Hello from Stove!"
+        }
+      }
+    }
+
+    should("resolve multiple instances of same interface") {
+      validate {
+        using<List<PaymentService>> {
+          val order = Order("order-123", BigDecimal("99.99"))
+          val results = map { it.pay(order) }
+
+          results.map { it.provider } shouldContainExactlyInAnyOrder listOf("Stripe", "PayPal", "Square")
+          results.all { it.success } shouldBe true
         }
       }
     }

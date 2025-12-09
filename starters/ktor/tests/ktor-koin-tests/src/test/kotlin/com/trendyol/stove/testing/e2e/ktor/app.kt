@@ -24,6 +24,15 @@ object KoinTestApp {
             single<GetUtcNow> { SystemTimeGetUtcNow() }
             single { ExampleService(get()) }
             single { TestConfig() }
+
+            // Multiple payment service implementations as List<PaymentService>
+            single<List<PaymentService>> {
+              listOf(
+                StripePaymentService(),
+                PayPalPaymentService(),
+                SquarePaymentService()
+              )
+            }
           }
         )
       }
