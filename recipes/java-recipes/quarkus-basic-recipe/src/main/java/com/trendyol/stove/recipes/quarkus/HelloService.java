@@ -1,10 +1,9 @@
 package com.trendyol.stove.recipes.quarkus;
 
-import jakarta.inject.Singleton;
-
-@Singleton
-public class HelloService {
-  public String hello() {
-    return "Hello from Quarkus Service";
-  }
+/**
+ * Interface for HelloService - using interfaces is a CDI best practice
+ * and enables type-safe testing through dynamic proxies.
+ */
+public interface HelloService {
+  String hello();
 }

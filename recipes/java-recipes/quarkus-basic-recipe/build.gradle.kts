@@ -1,6 +1,7 @@
 plugins {
   alias(libs.plugins.quarkus)
   id("org.jetbrains.kotlin.plugin.allopen") version libs.versions.kotlin
+  java
 }
 
 allOpen {
@@ -22,12 +23,12 @@ dependencies {
   implementation(libs.quarkus.rest)
   implementation(libs.quarkus.arc)
   implementation(libs.quarkus.kotlin)
-  implementation(libs.couchbase.client)
   implementation(libs.logback.classic)
   implementation(libs.slf4j.api)
   implementation(libs.kotlinx.reactor)
   implementation(libs.kotlinx.core)
-  implementation(projects.shared.application)
+  // Removed shared.application to avoid IDE launcher classpath issues
+  // implementation(projects.shared.application)
 }
 
 dependencies {

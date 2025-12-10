@@ -10,6 +10,7 @@ dependencies {
   implementation(libs.spring.boot.kafka)
   implementation(libs.couchbase.client)
   implementation(projects.shared.application)
+  implementation(rootProject.projects.shared.domain)
   annotationProcessor(libs.spring.boot.annotationProcessor)
 }
 
