@@ -14,9 +14,7 @@ src/
 ├── test/kotlin/           # Unit tests
 └── test-e2e/kotlin/       # E2E tests with Stove
     ├── config/
-    │   └── TestConfig.kt
-    ├── setup/
-    │   └── TestInitializer.kt
+    │   └── TestConfig.kt  # Contains TestSystem setup with addTestDependencies
     ├── features/
     │   ├── OrderE2ETest.kt
     │   ├── UserE2ETest.kt

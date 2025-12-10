@@ -230,28 +230,52 @@ messages.
 When all the configuration is done, it is time to tell to application to use our `TestSystemInterceptor` and
 configuration values.
 
-#### TestSystemInterceptor and TestInitializer
+#### TestSystemInterceptor and Bean Registration
+
+Register the interceptor and serde using `addTestDependencies`:
+
+**Spring Boot 2.x / 3.x:**
 
 ```kotlin
-class TestInitializer : BaseApplicationContextInitializer({
-  bean<TestSystemInterceptor>(isPrimary = true)
-  bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) } // or any serde that implements StoveSerde<Any, ByteArray>
-})
+import com.trendyol.stove.testing.e2e.addTestDependencies
 
-fun SpringApplication.addTestDependencies() {
-  this.addInitializers(TestInitializer())
-}
+springBoot(
+  runner = { parameters ->
+    runApplication<MyApp>(*parameters) {
+      addTestDependencies {
+        bean<TestSystemInterceptor>(isPrimary = true)
+        bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
+      }
+    }
+  },
+```
+
+**Spring Boot 4.x:**
+
+```kotlin
+import com.trendyol.stove.testing.e2e.addTestDependencies4x
+
+springBoot(
+  runner = { parameters ->
+    runApplication<MyApp>(*parameters) {
+      addTestDependencies4x {
+        registerBean<TestSystemInterceptor>(primary = true)
+        registerBean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
+      }
+    }
+  },
 ```
 
 #### Configuring the SystemUnderTest and Parameters
 
-`addTestDependencies` is an extension that helps us to register our dependencies in the application.
-
-```kotlin  hl_lines="4"
+```kotlin  hl_lines="4-8"
 springBoot(
   runner = { parameters ->
-    com.trendyol.exampleapp.run(parameters) {
-      addTestDependencies() // Enable TestInitializer with extensions call
+    runApplication<MyApp>(*parameters) {
+      addTestDependencies {
+        bean<TestSystemInterceptor>(isPrimary = true)
+        bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
+      }
     }
   },
   withParameters = listOf(

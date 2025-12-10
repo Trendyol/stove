@@ -31,6 +31,9 @@ dependencies {
     testImplementation("com.trendyol:stove-spring-testing-e2e:$stoveVersion")
     // OR
     testImplementation("com.trendyol:stove-ktor-testing-e2e:$stoveVersion")
+    // For Ktor, also add your preferred DI framework:
+    testImplementation("io.insert-koin:koin-ktor:$koinVersion")  // Koin
+    // OR testImplementation("io.ktor:ktor-server-di:$ktorVersion")  // Ktor-DI
     
     // Add components you need
     testImplementation("com.trendyol:stove-testing-e2e-http:$stoveVersion")
@@ -71,17 +74,18 @@ Stove needs to start your application from the test context. This requires a sma
     }
     ```
 
-=== "Ktor"
+=== "Ktor with Koin"
 
     ```kotlin
     // Before
     fun main() {
         embeddedServer(Netty, port = 8080) {
+            install(Koin) { modules(appModule) }
             configureRouting()
         }.start(wait = true)
     }
     
-    // After
+    // After - Accept test modules for overriding beans
     object MyApp {
         @JvmStatic
         fun main(args: Array<String>) = run(args)
@@ -89,13 +93,48 @@ Stove needs to start your application from the test context. This requires a sma
         fun run(
             args: Array<String>,
             wait: Boolean = true,
-            configure: Application.() -> Unit = {}
+            testModules: List<Module> = emptyList()
         ): Application {
-            // Your application setup
             return embeddedServer(Netty, port = args.getPort()) {
+                install(Koin) {
+                    modules(appModule, *testModules.toTypedArray())
+                }
                 configureRouting()
-                configure()
-            }.start(wait = wait)
+            }.start(wait = wait).application
+        }
+    }
+    ```
+
+=== "Ktor with Ktor-DI"
+
+    ```kotlin
+    // Before
+    fun main() {
+        embeddedServer(Netty, port = 8080) {
+            install(DI) { dependencies { provide<MyService> { MyServiceImpl() } } }
+            configureRouting()
+        }.start(wait = true)
+    }
+    
+    // After - Accept test dependency overrides
+    object MyApp {
+        @JvmStatic
+        fun main(args: Array<String>) = run(args)
+        
+        fun run(
+            args: Array<String>,
+            wait: Boolean = true,
+            testDependencies: (DependencyRegistrar.() -> Unit)? = null
+        ): Application {
+            return embeddedServer(Netty, port = args.getPort()) {
+                install(DI) {
+                    dependencies {
+                        provide<MyService> { MyServiceImpl() }
+                        testDependencies?.invoke(this)  // Apply test overrides
+                    }
+                }
+                configureRouting()
+            }.start(wait = wait).application
         }
     }
     ```

@@ -302,10 +302,10 @@ Message was not consumed within timeout
 
 1. **Verify Kafka interceptor is configured:**
    ```kotlin
-   // In TestInitializer
-   class TestInitializer : BaseApplicationContextInitializer({
+   // In your TestSystem setup
+   addTestDependencies {
        bean<TestSystemInterceptor>(isPrimary = true)
-   })
+   }
    ```
 
 2. **Check topic names:**

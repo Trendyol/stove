@@ -660,34 +660,60 @@ That's it! You have up-and-running API, can be tested with Stove.
     dependencies {
         testImplementation("com.trendyol:stove-ktor-testing-e2e:$version")
         
+        // Add your preferred DI framework (one of):
+        testImplementation("io.insert-koin:koin-ktor:$koinVersion")  // Koin
+        // OR
+        testImplementation("io.ktor:ktor-server-di:$ktorVersion")    // Ktor-DI
+        
         // You can add other components if you need
     }
     ```
 
+!!! note "DI Framework Required"
+    Ktor Bridge requires either Koin or Ktor-DI to be on the classpath. The `bridge()` function auto-detects which one is available.
+
 #### Example Setup
 
-```kotlin
-TestSystem()
-  .with {
-    // You can add other components if you need
-    // We removed for simplicity
+=== "Koin"
 
-    ktor(
-      withParameters = listOf(
-        "port=8080"
-      ),
-      runner = { parameters ->
-        stove.ktor.example.run(parameters) {
-          addTestSystemDependencies()
-        }
-      }
-    )
-  }.run()
-```
+    ```kotlin
+    TestSystem()
+      .with {
+        bridge()  // Auto-detects Koin
+        ktor(
+          withParameters = listOf("port=8080"),
+          runner = { parameters ->
+            stove.ktor.example.run(
+              parameters,
+              testModules = listOf(
+                module {
+                  single<TimeProvider>(override = true) { FixedTimeProvider() }
+                }
+              )
+            )
+          }
+        )
+      }.run()
+    ```
 
-After you've added `stove-ktor-testing-e2e` dependency, and configured the application's `main` function for Stove to
-enter,
-it is time to run your application for the first time from the test-context with Stove.
+=== "Ktor-DI"
+
+    ```kotlin
+    TestSystem()
+      .with {
+        bridge()  // Auto-detects Ktor-DI
+        ktor(
+          withParameters = listOf("port=8080"),
+          runner = { parameters ->
+            stove.ktor.example.run(parameters) {
+              provide<TimeProvider> { FixedTimeProvider() }
+            }
+          }
+        )
+      }.run()
+    ```
+
+After you've added `stove-ktor-testing-e2e` dependency and your preferred DI framework, and configured the application's `main` function for Stove to enter, it is time to run your application for the first time from the test-context with Stove.
 
 #### Tuning the application's entry point
 
@@ -707,30 +733,57 @@ Let's say the application has a standard `main` function, here how we will chang
     }
     ```
 
-=== "After"
+=== "After (Koin)"
 
     ```kotlin
     object ExampleApp {
       @JvmStatic
-      fun main(args: Array<String>) {
-         run(args)
-      }
+      fun main(args: Array<String>) = run(args)
         
-     fun run(args: Array<String>, 
-            wait: Boolean = true, 
-            configure: org.koin.core.module.Module = module { }
-        ): Application {
-         val config = loadConfiguration<Env>(args)
-         return startKtorApplication(config, wait) {
-             appModule(config, configure)
-         }
+      fun run(
+        args: Array<String>, 
+        wait: Boolean = true, 
+        testModules: List<Module> = emptyList()  // Accept test modules
+      ): Application {
+        val config = loadConfiguration<Env>(args)
+        return embeddedServer(Netty, port = config.port) {
+          install(Koin) {
+            modules(appModule, *testModules.toTypedArray())
+          }
+          configureRouting()
+        }.start(wait = wait).application
+      }
+    }
+    ```
+
+=== "After (Ktor-DI)"
+
+    ```kotlin
+    object ExampleApp {
+      @JvmStatic
+      fun main(args: Array<String>) = run(args)
+        
+      fun run(
+        args: Array<String>, 
+        wait: Boolean = true, 
+        testDependencies: (DependencyRegistrar.() -> Unit)? = null  // Accept test overrides
+      ): Application {
+        val config = loadConfiguration<Env>(args)
+        return embeddedServer(Netty, port = config.port) {
+          install(DI) {
+            dependencies {
+              provide<MyService> { MyServiceImpl() }
+              testDependencies?.invoke(this)  // Apply test overrides
+            }
+          }
+          configureRouting()
+        }.start(wait = wait).application
       }
     }
     ```
 
 As you can see from `before-after` sections, we have divided the application main function into two parts.
-`run(args, wait, configure)` method is the important point for the testing configuration. `configure` allows us to
-override any dependency from the testing side that is being `time` related or `configuration` related.
+The `run` method accepts parameters for test configuration, allowing you to override dependencies from the testing side (e.g., time-related or configuration-related beans).
 
 !!! note
 
@@ -848,9 +901,9 @@ class NoDelayBackgroundCommandBusImpl(
 }
 ```
 
-Now, it is time to tell to e2eTest system to use NoDelay implementation.
+Now, it is time to tell the e2e test system to use the NoDelay implementation.
 
-That brings us to initializers.
+This is done by registering test dependencies (see "Registering Test Dependencies" section below).
 
 ### Writing Your Own TestSystem
 
@@ -924,29 +977,46 @@ override suspend fun afterRun(context: ApplicationContext) {
 }
 ```
 
-### Writing a TestInitializer
+### Registering Test Dependencies
 
-The tests initializers help you to add test scoped beans, basically you can configure the Spring application from the
-test perspective.
+You can add test-scoped beans to configure the Spring application from the test perspective using `addTestDependencies`:
+
+**Spring Boot 2.x / 3.x:**
 
 ```kotlin
-class TestInitializer : BaseApplicationContextInitializer({
-  bean<YourInstanceToReplace>(isPrimary = true)
-  bean<NoDelayBackgroundCommandBusImpl>(isPrimary = true) // Optional dependency to alter delayed implementation with 0-wait.
-})
+import com.trendyol.stove.testing.e2e.addTestDependencies
 
-fun SpringApplication.addTestDependencies() {
-  this.addInitializers(TestInitializer())
+runApplication<MyApp>(*params) {
+    addTestDependencies {
+        bean<YourInstanceToReplace>(isPrimary = true)
+        bean<NoDelayBackgroundCommandBusImpl>(isPrimary = true)
+    }
 }
 ```
 
-`addTestDependencies` is an extension that helps us to register our dependencies in the application.
+**Spring Boot 4.x:**
 
-```kotlin  hl_lines="4"
-.springBoot(
+```kotlin
+import com.trendyol.stove.testing.e2e.addTestDependencies4x
+
+runApplication<MyApp>(*params) {
+    addTestDependencies4x {
+        registerBean<YourInstanceToReplace>(primary = true)
+        registerBean<NoDelayBackgroundCommandBusImpl>(primary = true)
+    }
+}
+```
+
+`addTestDependencies` / `addTestDependencies4x` are extensions that help us register our dependencies in the application.
+
+```kotlin  hl_lines="4-7"
+springBoot(
   runner = { parameters ->
-    com.trendyol.exampleapp.run(parameters) {
-      addTestDependencies()
+    runApplication<MyApp>(*parameters) {
+      addTestDependencies {
+        bean<YourInstanceToReplace>(isPrimary = true)
+        bean<NoDelayBackgroundCommandBusImpl>(isPrimary = true)
+      }
     }
   },
   withParameters = listOf(

@@ -196,15 +196,15 @@ suspend fun ValidationDsl.tasks(
 
 ### Step 4: Register the Listener Bean
 
-In your test initializer, register the listener as a Spring bean:
+In your test setup, register the listener as a Spring bean using `addTestDependencies`:
 
 ```kotlin
-class TestInitializer : BaseApplicationContextInitializer({
-    bean<StoveDbSchedulerListener>(isPrimary = true)
-})
+import com.trendyol.stove.testing.e2e.addTestDependencies
 
-fun SpringApplication.addTestDependencies() {
-    this.addInitializers(TestInitializer())
+runApplication<MyApp>(*params) {
+    addTestDependencies {
+        bean<StoveDbSchedulerListener>(isPrimary = true)
+    }
 }
 ```
 
@@ -398,10 +398,7 @@ suspend fun ValidationDsl.domainEvents(
 ### Step 4: Register and Use
 
 ```kotlin
-// TestInitializer
-class TestInitializer : BaseApplicationContextInitializer({
-    bean<StoveDomainEventListener>(isPrimary = true)
-})
+import com.trendyol.stove.testing.e2e.addTestDependencies
 
 // Configuration
 TestSystem()
@@ -409,7 +406,13 @@ TestSystem()
         httpClient { HttpClientSystemOptions(...) }
         domainEvents()  // Register custom system
         springBoot(
-            runner = { params -> myApp.run(params) { addTestDependencies() } }
+            runner = { params -> 
+                runApplication<MyApp>(*params) {
+                    addTestDependencies {
+                        bean<StoveDomainEventListener>(isPrimary = true)
+                    }
+                }
+            }
         )
     }
     .run()

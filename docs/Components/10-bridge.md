@@ -77,23 +77,171 @@ class SpringBridgeSystem(testSystem: TestSystem) : BridgeSystem<ApplicationConte
 
 ### Ktor
 
-For Ktor applications using Koin, Bridge provides access to the Koin container:
+Ktor Bridge supports multiple dependency injection frameworks with automatic detection:
+
+- **Koin** - Popular DI framework for Kotlin
+- **Ktor-DI** - Ktor's native DI plugin
+- **Custom** - Any DI framework via custom resolver
 
 ```kotlin
-// Bridge resolves beans from Koin
+// Bridge resolves beans from your DI container
 using<UserRepository> {
-    // 'this' is the UserRepository from Koin
+    // 'this' is the UserRepository from your DI
     save(user)
 }
 ```
 
-Under the hood, it uses Koin's `getKoin().get()`:
+#### DI Framework Setup
+
+**Using Koin:**
 
 ```kotlin
-class KtorBridgeSystem(testSystem: TestSystem) : BridgeSystem<Application>(testSystem) {
-    override fun <D : Any> get(klass: KClass<D>): D = ctx.getKoin().get(klass)
+dependencies {
+    testImplementation("io.insert-koin:koin-ktor:$koinVersion")
+}
+
+// In your test setup - bridge() auto-detects Koin
+TestSystem()
+    .with {
+        bridge()
+        ktor(runner = { params -> MyApp.run(params) })
+    }
+    .run()
+```
+
+**Using Ktor-DI:**
+
+```kotlin
+dependencies {
+    testImplementation("io.ktor:ktor-server-di:$ktorVersion")
+}
+
+// In your test setup - bridge() auto-detects Ktor-DI
+TestSystem()
+    .with {
+        bridge()
+        ktor(runner = { params -> MyApp.run(params) })
+    }
+    .run()
+```
+
+**Using Custom Resolver:**
+
+```kotlin
+// For any other DI framework (Kodein, Dagger, etc.)
+TestSystem()
+    .with {
+        bridge { application, type ->
+            // type is KType - preserves generic info like List<T>
+            myDiContainer.resolve(type)
+        }
+        ktor(runner = { params -> MyApp.run(params) })
+    }
+    .run()
+```
+
+#### Generic Type Resolution
+
+Bridge preserves generic type information, enabling resolution of types like `List<Service>`:
+
+```kotlin
+// Works with Koin or Ktor-DI
+using<List<PaymentService>> {
+    forEach { service -> service.pay(order) }
 }
 ```
+
+#### Registering Test Dependencies in Ktor
+
+Unlike Spring Boot's unified `addTestDependencies`, Ktor test dependency registration differs by DI framework:
+
+**Koin - Using Modules:**
+
+```kotlin
+object MyApp {
+    fun run(
+        args: Array<String>,
+        testModules: List<Module> = emptyList()  // Accept test modules
+    ): Application {
+        return embeddedServer(Netty, port = args.getPort()) {
+            install(Koin) {
+                modules(
+                    productionModule,
+                    *testModules.toTypedArray()  // Add test modules
+                )
+            }
+            configureRouting()
+        }.start(wait = false).application
+    }
+}
+
+// In your test setup
+TestSystem()
+    .with {
+        bridge()
+        ktor(
+            runner = { params ->
+                MyApp.run(
+                    params,
+                    testModules = listOf(
+                        module {
+                            // Override production beans with test doubles
+                            single<TimeProvider>(override = true) { FixedTimeProvider() }
+                            single<EmailService>(override = true) { MockEmailService() }
+                        }
+                    )
+                )
+            }
+        )
+    }
+    .run()
+```
+
+**Ktor-DI - Using Dependencies Block:**
+
+```kotlin
+object MyApp {
+    fun run(
+        args: Array<String>,
+        testDependencies: (DependencyRegistrar.() -> Unit)? = null  // Accept test registrations
+    ): Application {
+        return embeddedServer(Netty, port = args.getPort()) {
+            install(DI) {
+                dependencies {
+                    // Production dependencies
+                    provide<UserService> { UserServiceImpl() }
+                    provide<TimeProvider> { SystemTimeProvider() }
+                    
+                    // Apply test overrides if provided
+                    testDependencies?.invoke(this)
+                }
+            }
+            configureRouting()
+        }.start(wait = false).application
+    }
+}
+
+// In your test setup
+TestSystem()
+    .with {
+        bridge()
+        ktor(
+            runner = { params ->
+                MyApp.run(params) {
+                    // Override production beans with test doubles
+                    provide<TimeProvider> { FixedTimeProvider() }
+                    provide<EmailService> { MockEmailService() }
+                }
+            }
+        )
+    }
+    .run()
+```
+
+!!! tip "Test Dependency Patterns"
+    - **Koin**: Use `override = true` in test modules to replace production beans
+    - **Ktor-DI**: Later `provide<T>` calls override earlier ones
+    - Both frameworks support the pattern of passing test-specific configuration to your app's run function
 
 ## Usage
 
@@ -318,10 +466,10 @@ class FixedTimeProvider(private var time: Instant) : TimeProvider {
     fun advance(duration: Duration) { time = time.plus(duration) }
 }
 
-// Register test implementation in TestInitializer
-class TestInitializer : BaseApplicationContextInitializer({
+// Register test implementation in your TestSystem setup
+addTestDependencies {
     bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.parse("2024-01-01T00:00:00Z")) }
-})
+}
 
 // Use in tests
 test("should expire session after timeout") {
@@ -354,7 +502,7 @@ test("should expire session after timeout") {
 Capture and verify domain events:
 
 ```kotlin
-// Test event listener (registered in TestInitializer)
+// Test event listener (registered via addTestDependencies)
 class TestEventCapture {
     private val events = ConcurrentLinkedQueue<Any>()
     
@@ -389,66 +537,80 @@ test("should publish UserCreatedEvent when user registers") {
 }
 ```
 
-## Test Initializers
+## Test Bean Registration
 
-Use `BaseApplicationContextInitializer` to register test-specific beans:
+Register test-specific beans using `addTestDependencies`:
+
+**Spring Boot 2.x / 3.x:**
 
 ```kotlin
-class TestInitializer : BaseApplicationContextInitializer({
-    // Replace production beans with test doubles
-    bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.now()) }
-    bean<EmailService>(isPrimary = true) { MockEmailService() }
-    
-    // Add test utilities
-    bean<TestEventCapture>()
-    bean<TestDataBuilder>()
-})
+import com.trendyol.stove.testing.e2e.addTestDependencies
 
-fun SpringApplication.addTestDependencies() {
-    addInitializers(TestInitializer())
-}
-
-// In TestSystem configuration
 TestSystem()
     .with {
         bridge()
         springBoot(
             runner = { params -> 
-                myApp.run(params) { addTestDependencies() }
+                runApplication<MyApp>(*params) {
+                    addTestDependencies {
+                        // Replace production beans with test doubles
+                        bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.now()) }
+                        bean<EmailService>(isPrimary = true) { MockEmailService() }
+                        
+                        // Add test utilities
+                        bean<TestEventCapture>()
+                        bean<TestDataBuilder>()
+                    }
+                }
             }
         )
     }
     .run()
 ```
 
-### Extending Initializers
-
-You can extend initializers with additional registrations:
+**Spring Boot 4.x:**
 
 ```kotlin
-class TestInitializer : BaseApplicationContextInitializer({
-    bean<MockEmailService>(isPrimary = true)
-}) {
-    init {
-        // Add more registrations
-        register {
-            bean<TestEventCapture>()
-            bean<FixedClock>(isPrimary = true) { FixedClock(Instant.now()) }
-        }
+import com.trendyol.stove.testing.e2e.addTestDependencies4x
+
+TestSystem()
+    .with {
+        bridge()
+        springBoot(
+            runner = { params -> 
+                runApplication<MyApp>(*params) {
+                    addTestDependencies4x {
+                        // Replace production beans with test doubles
+                        registerBean<TimeProvider>(primary = true) { FixedTimeProvider(Instant.now()) }
+                        registerBean<EmailService>(primary = true) { MockEmailService() }
+                        
+                        // Add test utilities
+                        registerBean<TestEventCapture>()
+                        registerBean<TestDataBuilder>()
+                    }
+                }
+            }
+        )
     }
-    
-    // React to application events
-    override fun onEvent(event: ApplicationEvent) {
-        when (event) {
-            is ContextRefreshedEvent -> println("Context refreshed")
-        }
-    }
-    
-    // Execute when application is ready
-    override fun applicationReady(applicationContext: GenericApplicationContext) {
-        println("Application is ready for testing")
-    }
-}
+    .run()
+```
+
+### Alternative: Using `addInitializers` Directly
+
+For more control, you can use `addInitializers` with `stoveSpringRegistrar`:
+
+```kotlin
+// Spring Boot 2.x / 3.x
+addInitializers(stoveSpringRegistrar {
+    bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.now()) }
+    bean<TestEventCapture>()
+})
+
+// Spring Boot 4.x
+addInitializers(stoveSpring4xRegistrar {
+    registerBean<TimeProvider>(primary = true) { FixedTimeProvider(Instant.now()) }
+    registerBean<TestEventCapture>()
+})
 ```
 
 ## Integration with Other Systems
@@ -569,16 +731,16 @@ Only replace what's necessary:
 
 ```kotlin
 // ✅ Good: Replace only time-sensitive components
-class TestInitializer : BaseApplicationContextInitializer({
+addTestDependencies {
     bean<Clock>(isPrimary = true) { Clock.fixed(fixedInstant, ZoneId.UTC) }
-})
+}
 
 // ❌ Avoid: Replacing too many components (reduces test value)
-class TestInitializer : BaseApplicationContextInitializer({
+addTestDependencies {
     bean<UserService>(isPrimary = true) { MockUserService() }
     bean<OrderService>(isPrimary = true) { MockOrderService() }
     bean<PaymentService>(isPrimary = true) { MockPaymentService() }
-})
+}
 ```
 
 ## Summary
