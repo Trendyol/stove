@@ -1809,10 +1809,10 @@
 <ol>
 <li>
 <p><strong>Verify Kafka interceptor is configured:</strong>
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1">// In TestInitializer</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1">// In your TestSystem setup</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemInterceptor</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="p">})</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="p">}</span>
 </code></pre></div></p>
 </li>
 <li>
