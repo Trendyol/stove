@@ -123,7 +123,7 @@ lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
-testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.21.3" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version = "1.21.4" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
