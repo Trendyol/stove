@@ -11,7 +11,7 @@ spring-dependency-management = "1.1.7"
 spring-kafka = "3.3.11"
 
 # arrow
-arrow = "2.2.0"
+arrow = "2.2.1.1"
 
 # Jackson
 jackson = "2.20"
