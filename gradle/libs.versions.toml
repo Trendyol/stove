@@ -25,7 +25,7 @@ kover = "0.9.4"
 ktor = "3.3.3"
 koin = "4.1.1"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.19.8"
+elastic = "8.19.9"
 mongodb = "5.6.2"
 wiremock = "3.13.2"
 testcontainers = "2.0.3"
@@ -131,7 +131,7 @@ elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "ela
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.2.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.2.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.23" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.2.1.jre11" }
 
@@ -206,7 +206,7 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
-protobuf = { id = "com.google.protobuf", version = "0.9.5" }
+protobuf = { id = "com.google.protobuf", version = "0.9.6" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
 google-ksp = { id = "com.google.devtools.ksp", version = "2.3.4" }
