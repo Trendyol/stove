@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 kotlinx = "1.10.2"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.5.9"
@@ -209,7 +209,7 @@ testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.3.3" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.3.4" }
 micronaut-application = { id = "io.micronaut.application", version = "4.6.1" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.6.1" }
 micronaut-library = { id = "io.micronaut.library", version = "4.6.1" }
