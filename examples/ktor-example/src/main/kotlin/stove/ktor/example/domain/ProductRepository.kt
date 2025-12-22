@@ -18,7 +18,7 @@ class ProductRepository(
     .awaitFirst()
     .map { r, rm ->
       Product(
-        (r.get(Product::id.name, rm.getColumnMetadata(Product::id.name).javaType!!) as Int).toInt(),
+        (r.get(Product::id.name, rm.getColumnMetadata(Product::id.name).javaType!!) as Int),
         r.get(Product::name.name, rm.getColumnMetadata(Product::name.name).javaType!!) as String
       )
     }.awaitSingle()
