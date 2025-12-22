@@ -1,8 +1,6 @@
 package com.trendyol.stove.recipes.quarkus;
 
-/**
- * Simple item class to demonstrate classloader limitations.
- */
+/** Simple item class to demonstrate classloader limitations. */
 public class Item {
   private final String id;
   private final String name;

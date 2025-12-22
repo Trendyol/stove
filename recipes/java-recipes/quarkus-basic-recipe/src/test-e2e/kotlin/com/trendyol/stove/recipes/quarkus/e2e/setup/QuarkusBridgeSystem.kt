@@ -35,7 +35,6 @@ import kotlin.reflect.KType
 class QuarkusBridgeSystem(
   override val testSystem: TestSystem
 ) : BridgeSystem<Unit>(testSystem) {
-
   @Suppress("UNCHECKED_CAST")
   override fun <D : Any> get(klass: KClass<D>): D {
     val realBean = ArcContainerAccessor.resolveBean(klass.java.name)
@@ -89,7 +88,9 @@ class QuarkusBridgeSystem(
 
   private fun resolveInterfaces(javaClass: Class<*>): Array<Class<*>> = when {
     javaClass.isInterface -> arrayOf(javaClass)
+
     javaClass.interfaces.isNotEmpty() -> javaClass.interfaces
+
     else -> error(
       "Class ${javaClass.name} has no interfaces. " +
         "Use interfaces for Quarkus beans to enable type-safe bridge."
@@ -103,7 +104,6 @@ class QuarkusBridgeSystem(
 private class BeanInvocationHandler(
   private val realBean: Any
 ) : InvocationHandler {
-
   override fun invoke(proxy: Any?, method: Method, args: Array<out Any>?): Any? =
     QuarkusContext.withContext {
       val targetMethod = realBean.javaClass.getMethod(method.name, *method.parameterTypes)

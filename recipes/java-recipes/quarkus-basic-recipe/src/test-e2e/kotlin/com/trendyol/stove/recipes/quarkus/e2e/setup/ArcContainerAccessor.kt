@@ -7,7 +7,6 @@ package com.trendyol.stove.recipes.quarkus.e2e.setup
  * all Arc API access must go through reflection.
  */
 object ArcContainerAccessor {
-
   /**
    * Scans running threads to find and capture the Quarkus classloader.
    * @return true if Arc container is running and classloader captured
@@ -57,7 +56,9 @@ object ArcContainerAccessor {
     if (isRunning) {
       QuarkusContext.setClassLoader(loader)
       true
-    } else false
+    } else {
+      false
+    }
   } catch (_: ClassNotFoundException) {
     false
   } catch (_: Exception) {
@@ -101,9 +102,7 @@ object ArcContainerAccessor {
     }
   }
 
-  private fun getBeanInstance(instance: Any): Any {
-    return instance.javaClass.getMethod("get").invoke(instance)
-  }
+  private fun getBeanInstance(instance: Any): Any = instance.javaClass.getMethod("get").invoke(instance)
 
   private fun extractBeanFromHandle(handle: Any?): Any? {
     if (handle == null) return null

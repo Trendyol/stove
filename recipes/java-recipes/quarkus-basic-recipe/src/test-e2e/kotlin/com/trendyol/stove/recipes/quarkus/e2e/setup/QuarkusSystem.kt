@@ -37,7 +37,6 @@ class QuarkusAppUnderTest(
   private val runner: Runner<Unit>,
   private val parameters: List<String>
 ) : ApplicationUnderTest<Unit> {
-
   override suspend fun start(configurations: List<String>): Unit = coroutineScope {
     configureQuarkusForTesting()
 
