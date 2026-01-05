@@ -12,6 +12,7 @@ import com.github.tomakehurst.wiremock.extension.Extension
 import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.reporting.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -182,8 +183,49 @@ class WireMockSystem(
   ctx: WireMockContext
 ) : PluggedSystem,
   ValidatedSystem,
-  RunAware {
+  RunAware,
+  Reports {
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
+
+  override fun snapshot(): SystemSnapshot {
+    val unmatched = wireMock.findAllUnmatchedRequests()
+    val allServeEvents = wireMock.allServeEvents
+
+    return SystemSnapshot(
+      system = reportSystemName,
+      state = mapOf(
+        "registeredStubs" to stubLog.asMap().values.map { stub ->
+          mapOf(
+            "id" to stub.id.toString(),
+            "method" to stub.request.method.value(),
+            "url" to stub.request.url,
+            "status" to stub.response.status
+          )
+        },
+        "servedRequests" to allServeEvents.map { event ->
+          mapOf(
+            "method" to event.request.method.value(),
+            "url" to event.request.url,
+            "matched" to event.wasMatched,
+            "responseStatus" to event.response.status
+          )
+        },
+        "unmatchedRequests" to unmatched.map { req ->
+          mapOf(
+            "method" to req.method.value(),
+            "url" to req.url,
+            "body" to req.bodyAsString
+          )
+        }
+      ),
+      summary = buildString {
+        appendLine("Registered stubs: ${stubLog.asMap().size}")
+        appendLine("Served requests: ${allServeEvents.size} (matched: ${allServeEvents.count { it.wasMatched }})")
+        appendLine("Unmatched requests: ${unmatched.size}")
+      }
+    )
+  }
+
   private var wireMock: WireMockServer
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -227,6 +269,12 @@ class WireMockSystem(
     metadata: Map<String, String> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
+    recordAction(
+      action = "Register stub: GET $url",
+      output = responseBody.getOrNull(),
+      metadata = mapOf("statusCode" to statusCode, "responseHeaders" to responseHeaders)
+    )
+
     val mockRequest = get(urlEqualTo(url))
     mockRequest.withMetadata(metadata)
     val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
@@ -259,6 +307,13 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
+    recordAction(
+      action = "Register stub: POST $url",
+      input = requestBody.getOrNull(),
+      output = responseBody.getOrNull(),
+      metadata = mapOf("statusCode" to statusCode)
+    )
+
     val mockRequest = post(urlEqualTo(url))
     configureBodyAndMetadata(mockRequest, metadata, requestBody)
     val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
@@ -855,16 +910,36 @@ class WireMockSystem(
                 QueryParams: $queryParams
         """.trimIndent()
     }
-    if (wireMock.findAllUnmatchedRequests().any()) {
-      val problems = wireMock.findAllUnmatchedRequests().joinToString("\n") {
+    val unmatched = wireMock.findAllUnmatchedRequests()
+    val passed = unmatched.isEmpty()
+
+    if (!passed) {
+      val problems = unmatched.joinToString("\n") {
         ValidationResult(
           "${it.method.value()} ${it.url}",
           it.bodyAsString,
           serde.serialize(it.queryParams).decodeToString()
         ).toString()
       }
-      throw AssertionError(
+      val error = AssertionError(
         "There are unmatched requests in the mock pipeline, please satisfy all the wanted requests.\n$problems"
+      )
+
+      recordAssertion(
+        description = "All requests should match registered stubs",
+        expected = "0 unmatched requests",
+        actual = "${unmatched.size} unmatched request(s)",
+        passed = false,
+        failure = error
+      )
+
+      throw error
+    } else {
+      recordAssertion(
+        description = "All requests should match registered stubs",
+        expected = "0 unmatched requests",
+        actual = "0 unmatched requests",
+        passed = true
       )
     }
   }

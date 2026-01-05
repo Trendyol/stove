@@ -1,12 +1,14 @@
 package com.trendyol.stove.testing.e2e.standalone.kafka.setup
 
 import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.standalone.kafka.setup.example.KafkaTestShared
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.github.nomisRev.kafka.publisher.PublisherSettings
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -276,6 +278,8 @@ private fun setupBridgePort() {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val strategy = KafkaTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()

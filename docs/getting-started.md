@@ -148,6 +148,8 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
     ```kotlin
     // src/test-e2e/kotlin/e2e/TestConfig.kt
     class TestConfig : AbstractProjectConfig() {
+        // Register StoveKotestExtension for detailed failure reports
+        override val extensions: List<Extension> = listOf(StoveKotestExtension())
         
         override suspend fun beforeProject() {
             TestSystem()
@@ -412,6 +414,7 @@ Or run specific test classes:
 ## Next Steps
 
 - Explore [Components](Components/index.md) documentation for each available component
+- Set up [Reporting](Components/13-reporting.md) for detailed failure diagnostics
 - Learn about [Best Practices](best-practices.md) for writing effective e2e tests
 - Check [Troubleshooting](troubleshooting.md) if you encounter issues
 - Browse [Examples](https://github.com/Trendyol/stove/tree/main/examples) for complete working projects

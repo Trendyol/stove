@@ -2,6 +2,8 @@ package com.trendyol.stove.testing.e2e.system
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.reporting.StoveReporter
+import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.instance
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlinx.coroutines.*
@@ -90,6 +92,7 @@ class TestSystem(
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   val options: TestSystemOptions = optionsDsl.options
+  val reporter: StoveReporter = StoveReporter(isEnabled = options.reportingEnabled)
 
   companion object {
     /**
@@ -97,6 +100,22 @@ class TestSystem(
      * DO NOT access it before [run] completes
      */
     internal lateinit var instance: TestSystem
+
+    /**
+     * Check if TestSystem instance has been initialized.
+     */
+    fun instanceInitialized(): Boolean = ::instance.isInitialized
+
+    fun reporter(): StoveReporter {
+      check(::instance.isInitialized) { "TestSystem is not initialized yet, do not forget to call TestSystem#run" }
+      return instance.reporter
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T : PluggedSystem> getSystem(kClass: KClass<*>): T {
+      check(::instance.isInitialized) { "TestSystem is not initialized yet, do not forget to call TestSystem#run" }
+      return instance.getSystemOrThrow(kClass) as T
+    }
 
     @StoveDsl
     suspend fun validate(
@@ -117,6 +136,11 @@ class TestSystem(
     this.applicationUnderTest = applicationUnderTest
     return this
   }
+
+  internal fun getSystemOrThrow(
+    kClass: KClass<*>
+  ): PluggedSystem = activeSystems[kClass]
+    ?: error("System of type ${kClass.simpleName} is not registered in TestSystem")
 
   private lateinit var applicationUnderTestContext: Any
 
@@ -215,7 +239,16 @@ class TestSystem(
 
   override fun close(): Unit =
     runBlocking {
-      Try { cleanup.forEach { it() } }
-        .recover { logger.warn("got an error while stopping the TestSystem: ${it.message}") }
+      Try {
+        if (options.dumpReportOnStop && options.reportingEnabled) {
+          // Only dump report if there are failures
+          val report = reporter.dumpIfFailed(options.defaultRenderer)
+          if (report.isNotEmpty()) {
+            logger.info("=== Stove Test Report (Failures Detected) ===")
+            logger.info(report)
+          }
+        }
+        cleanup.forEach { it() }
+      }.recover { logger.warn("got an error while stopping the TestSystem: ${it.message}") }
     }
 }

@@ -40,12 +40,14 @@ public final class com/trendyol/stove/testing/e2e/wiremock/WireMockRequestListen
 	public fun getName ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/e2e/wiremock/WireMockSystem : com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware, com/trendyol/stove/testing/e2e/system/abstractions/ValidatedSystem {
+public final class com/trendyol/stove/testing/e2e/wiremock/WireMockSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware, com/trendyol/stove/testing/e2e/system/abstractions/ValidatedSystem {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem$Companion;
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/wiremock/WireMockContext;)V
 	public final fun behaviourFor (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public fun close ()V
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun mockDelete (Ljava/lang/String;ILjava/util/Map;)Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;
 	public static synthetic fun mockDelete$default (Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;Ljava/lang/String;ILjava/util/Map;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;
@@ -77,7 +79,12 @@ public final class com/trendyol/stove/testing/e2e/wiremock/WireMockSystem : com/
 	public static synthetic fun mockPutConfigure$default (Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;
 	public final fun mockPutContaining (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;
 	public static synthetic fun mockPutContaining$default (Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/wiremock/WireMockSystem;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public fun validate (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

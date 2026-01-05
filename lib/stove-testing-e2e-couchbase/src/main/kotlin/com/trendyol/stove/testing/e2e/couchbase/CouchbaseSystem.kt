@@ -7,6 +7,7 @@ import com.couchbase.client.kotlin.Collection
 import com.couchbase.client.kotlin.codec.typeRef
 import com.couchbase.client.kotlin.query.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.flow.*
@@ -156,7 +157,8 @@ class CouchbaseSystem internal constructor(
   val context: CouchbaseContext
 ) : PluggedSystem,
   RunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   @PublishedApi
   internal lateinit var cluster: Cluster
 
@@ -192,10 +194,10 @@ class CouchbaseSystem internal constructor(
   @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
-    assertion: (List<T>) -> Unit
+    crossinline assertion: (List<T>) -> Unit
   ): CouchbaseSystem {
     val typeRef = typeRef<T>()
-    return flow {
+    val results = flow {
       cluster
         .query(
           statement = query,
@@ -203,66 +205,120 @@ class CouchbaseSystem internal constructor(
           consistency = QueryScanConsistency.requestPlus(),
           serializer = context.options.clusterSerDe
         ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
-    }.toList().also(assertion).let { this }
+    }.toList()
+
+    recordAndExecuteSuspend(
+      action = "N1QL Query",
+      input = query,
+      output = "${results.size} document(s)",
+      actual = results
+    ) {
+      assertion(results)
+    }
+
+    return this
   }
 
   @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldGet(
     key: String,
-    assertion: (T) -> Unit
-  ): CouchbaseSystem =
-    collection
-      .get(key)
-      .contentAs<T>()
-      .let(assertion)
-      .let { this }
+    crossinline assertion: (T) -> Unit
+  ): CouchbaseSystem {
+    val document = collection.get(key).contentAs<T>()
+    recordAndExecuteSuspend(
+      action = "Get document",
+      input = mapOf("id" to key),
+      output = document,
+      actual = document
+    ) {
+      assertion(document)
+    }
+    return this
+  }
 
   @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldGet(
     collection: String,
     key: String,
-    assertion: (T) -> Unit
-  ): CouchbaseSystem =
-    cluster
+    crossinline assertion: (T) -> Unit
+  ): CouchbaseSystem {
+    val document = cluster
       .bucket(context.bucket.name)
       .collection(collection)
       .get(key)
       .contentAs<T>()
-      .let(assertion)
-      .let { this }
+    recordAndExecuteSuspend(
+      action = "Get document",
+      input = mapOf("collection" to collection, "id" to key),
+      output = document,
+      actual = document
+    ) {
+      assertion(document)
+    }
+    return this
+  }
 
   @CouchbaseDsl
-  suspend fun shouldNotExist(key: String): CouchbaseSystem = when (collection.getOrNull(key)) {
-    null -> this
-    else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
+  suspend fun shouldNotExist(key: String): CouchbaseSystem {
+    val exists = collection.getOrNull(key) != null
+    recordAndExecuteSuspend(
+      action = "Document should not exist",
+      input = mapOf("id" to key),
+      expected = "Document not found",
+      actual = if (exists) "Document exists" else "Document not found"
+    ) {
+      if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
+    }
+    return this
   }
 
   @CouchbaseDsl
   suspend fun shouldNotExist(
     collection: String,
     key: String
-  ): CouchbaseSystem = when (
-    cluster
+  ): CouchbaseSystem {
+    val exists = cluster
       .bucket(context.bucket.name)
       .collection(collection)
-      .getOrNull(key)
-  ) {
-    null -> this
-    else -> throw AssertionError("The document with the given id($key) was not expected, but found!")
+      .getOrNull(key) != null
+    recordAndExecuteSuspend(
+      action = "Document should not exist",
+      input = mapOf("collection" to collection, "id" to key),
+      expected = "Document not found",
+      actual = if (exists) "Document exists" else "Document not found"
+    ) {
+      if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
+    }
+    return this
   }
 
   @CouchbaseDsl
-  suspend fun shouldDelete(key: String): CouchbaseSystem = collection.remove(key).let { this }
+  suspend fun shouldDelete(key: String): CouchbaseSystem {
+    collection.remove(key)
+    recordAction(
+      action = "Delete document",
+      input = mapOf("id" to key),
+      output = "Document deleted"
+    )
+    return this
+  }
 
   @CouchbaseDsl
   suspend fun shouldDelete(
     collection: String,
     key: String
-  ): CouchbaseSystem = cluster
-    .bucket(context.bucket.name)
-    .collection(collection)
-    .remove(key)
-    .let { this }
+  ): CouchbaseSystem {
+    cluster
+      .bucket(context.bucket.name)
+      .collection(collection)
+      .remove(key)
+    recordAction(
+      action = "Delete document",
+      input = mapOf("collection" to collection, "id" to key),
+      output = "Document deleted"
+    )
+    return this
+  }
 
   /**
    * Saves the [instance] with given [id] to the [collection]
@@ -273,11 +329,17 @@ class CouchbaseSystem internal constructor(
     collection: String,
     id: String,
     instance: T
-  ): CouchbaseSystem = cluster
-    .bucket(context.bucket.name)
-    .collection(collection)
-    .insert(id, instance)
-    .let { this }
+  ): CouchbaseSystem {
+    cluster.bucket(context.bucket.name).collection(collection).insert(id, instance)
+
+    recordAction(
+      action = "Save document",
+      input = instance,
+      metadata = mapOf("collection" to collection, "id" to id)
+    )
+
+    return this
+  }
 
   /**
    * Saves the [instance] with given [id] to the default collection

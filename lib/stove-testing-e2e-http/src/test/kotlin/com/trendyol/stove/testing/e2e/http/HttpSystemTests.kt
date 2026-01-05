@@ -6,11 +6,13 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
 import com.trendyol.stove.ConsoleSpec
 import com.trendyol.stove.testing.e2e.http.HttpSystem.Companion.client
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
@@ -31,6 +33,8 @@ class NoApplication : ApplicationUnderTest<Unit> {
 }
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   override suspend fun beforeProject(): Unit =
     TestSystem()
       .with {
@@ -176,7 +180,7 @@ class HttpSystemTests :
         }
 
         http {
-          getResponse("/get") { actual ->
+          getBodilessResponse("/get") { actual ->
             actual.status shouldBe 200
             actual::class shouldBe StoveHttpResponse.Bodiless::class
           }
@@ -348,7 +352,7 @@ class HttpSystemTests :
         }
 
         http {
-          this.getResponse("/get-behaviour") { actual ->
+          this.getResponse<Any>("/get-behaviour") { actual ->
             actual.status shouldBe 503
           }
 

@@ -1,9 +1,11 @@
 package com.trendyol.stove.testing.e2e
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
@@ -15,6 +17,8 @@ open class TestSpringBootApp
  * Uses [stoveSpringRegistrar] with `bean<T>()` DSL.
  */
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   override suspend fun beforeProject(): Unit =
     TestSystem()
       .with {

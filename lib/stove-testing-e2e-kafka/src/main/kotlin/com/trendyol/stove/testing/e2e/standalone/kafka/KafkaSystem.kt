@@ -1,8 +1,11 @@
+@file:Suppress("TooGenericExceptionCaught")
+
 package com.trendyol.stove.testing.e2e.standalone.kafka
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.messaging.*
+import com.trendyol.stove.testing.e2e.reporting.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.*
 import com.trendyol.stove.testing.e2e.system.*
@@ -172,7 +175,49 @@ class KafkaSystem(
   ExposesConfiguration,
   RunAware,
   AfterRunAware,
-  BeforeRunAware {
+  BeforeRunAware,
+  Reports {
+  override fun snapshot(): SystemSnapshot {
+    val store = sink.store
+    return SystemSnapshot(
+      system = reportSystemName,
+      state = mapOf<String, Any>(
+        "consumed" to store.consumedMessages().map { it.toReportMap() },
+        "published" to store.publishedMessages().map { it.toReportMap() },
+        "committed" to store.committedMessages().map { it.toReportMap() }
+      ),
+      summary = """
+        Consumed: ${store.consumedMessages().size}
+        Published: ${store.publishedMessages().size}
+        Committed: ${store.committedMessages().size}
+      """.trimIndent()
+    )
+  }
+
+  private fun ConsumedMessage.toReportMap(): Map<String, Any> = mapOf(
+    "id" to id,
+    "topic" to topic,
+    "key" to key,
+    "partition" to partition,
+    "offset" to offset,
+    "headers" to headers,
+    "message" to String(message.toByteArray())
+  )
+
+  private fun PublishedMessage.toReportMap(): Map<String, Any> = mapOf(
+    "id" to id,
+    "topic" to topic,
+    "key" to key,
+    "headers" to headers,
+    "message" to String(message.toByteArray())
+  )
+
+  private fun CommittedMessage.toReportMap(): Map<String, Any> = mapOf<String, Any>(
+    "topic" to topic,
+    "partition" to partition,
+    "offset" to offset
+  )
+
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaProducer<String, Any>
@@ -242,6 +287,16 @@ class KafkaSystem(
     partition: Int = 0,
     testCase: Option<String> = None
   ): KafkaSystem {
+    recordAction(
+      action = "Publish to '$topic'",
+      input = message,
+      metadata = buildMap {
+        key.onSome { put("key", it) }
+        put("headers", headers)
+        put("partition", partition)
+      }
+    )
+
     val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
     headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
     testCase.map { record.headers().add("testCase", it.toByteArray()) }
@@ -253,29 +308,97 @@ class KafkaSystem(
   suspend inline fun <reified T : Any> shouldBeConsumed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
-    parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
-  }.let { this }
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBeConsumed",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Message matching condition within $atLeastIn"
+  ) { onMatch ->
+    shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
+    }
+  }
 
   @StoveDsl
   suspend inline fun <reified T : Any> shouldBePublished(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBePublished",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Message matching condition within $atLeastIn"
+  ) { onMatch ->
     shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
-      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
 
   @StoveDsl
   suspend inline fun <reified T : Any> shouldBeFailed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBeFailed",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Failed message within $atLeastIn"
+  ) { onMatch ->
     shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
-      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
+
+  /**
+   * Helper to reduce boilerplate in Kafka assertion methods.
+   * Handles try-catch, recording, and re-throwing.
+   */
+  @PublishedApi
+  internal suspend inline fun <T : Any> assertKafkaMessage(
+    assertionName: String,
+    typeName: String,
+    timeout: Duration,
+    expected: String,
+    crossinline block: suspend ((T) -> Unit) -> Unit
+  ): KafkaSystem {
+    var matchedMessage: T? = null
+
+    val result = runCatching {
+      coroutineScope {
+        block { matchedMessage = it }
+      }
+    }
+
+    val failure = result.exceptionOrNull()?.let { e ->
+      e as? AssertionError ?: AssertionError(
+        "Expected $assertionName<$typeName> matching condition within $timeout, but none was found",
+        e
+      )
+    }
+
+    recordAssertion(
+      description = "$assertionName<$typeName>",
+      expected = expected,
+      actual = matchedMessage ?: "No matching message found",
+      passed = result.isSuccess,
+      failure = failure
+    )
+
+    failure?.let { throw it }
+    return this
+  }
 
   @StoveDsl
   suspend inline fun <reified T : Any> shouldBeRetried(

@@ -3,10 +3,12 @@ package com.stove.ktor.example.e2e
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.rdbms.postgres.*
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.standalone.kafka.*
 import com.trendyol.stove.testing.e2e.system.*
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import stove.ktor.example.app.objectMapperRef
 
 class Stove : AbstractProjectConfig() {
@@ -16,6 +18,8 @@ class Stove : AbstractProjectConfig() {
       System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
     }
   }
+
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   override suspend fun beforeProject() = TestSystem()
     .with {

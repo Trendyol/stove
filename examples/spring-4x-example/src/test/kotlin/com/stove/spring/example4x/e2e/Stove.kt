@@ -3,13 +3,17 @@ package com.stove.spring.example4x.e2e
 import com.trendyol.stove.testing.e2e.*
 import com.trendyol.stove.testing.e2e.http.*
 import com.trendyol.stove.testing.e2e.kafka.*
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import org.slf4j.*
 import tools.jackson.databind.json.JsonMapper
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
 
   override suspend fun beforeProject(): Unit =

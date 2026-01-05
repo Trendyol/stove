@@ -3,6 +3,7 @@ package com.trendyol.stove.testing.e2e.kafka
 import arrow.core.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.messaging.*
+import com.trendyol.stove.testing.e2e.reporting.*
 import com.trendyol.stove.testing.e2e.serialization.StoveSerde
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
@@ -20,19 +21,61 @@ import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
 @KafkaDsl
-@Suppress("TooManyFunctions", "unused")
+@Suppress("TooManyFunctions", "unused", "TooGenericExceptionCaught")
 class KafkaSystem(
   override val testSystem: TestSystem,
   private val context: KafkaContext
 ) : PluggedSystem,
   RunnableSystemWithContext<ApplicationContext>,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private lateinit var applicationContext: ApplicationContext
   private lateinit var kafkaTemplate: KafkaTemplate<Any, Any>
   private lateinit var exposedConfiguration: KafkaExposedConfiguration
   private lateinit var admin: Admin
   val getInterceptor: () -> TestSystemKafkaInterceptor<Any, Any> = { applicationContext.getBean() }
+
+  override fun snapshot(): SystemSnapshot {
+    val store = getInterceptor().getStore()
+    return SystemSnapshot(
+      system = reportSystemName,
+      state = mapOf(
+        "consumed" to store.consumedRecords().map { it.toReportMap() },
+        "produced" to store.producedRecords().map { it.toReportMap() },
+        "failed" to store.failedRecords().map { it.toReportMap() }
+      ),
+      summary = buildString {
+        appendLine("Consumed: ${store.consumedRecords().size}")
+        appendLine("Produced: ${store.producedRecords().size}")
+        appendLine("Failed: ${store.failedRecords().size}")
+      }
+    )
+  }
+
+  private fun StoveMessage.Consumed.toReportMap(): Map<String, Any> = buildMap {
+    put("topic", topic)
+    put("key", metadata.key)
+    put("offset", offset ?: 0L)
+    put("headers", metadata.headers)
+    put("value", String(value))
+  }
+
+  private fun StoveMessage.Published.toReportMap(): Map<String, Any> = buildMap {
+    put("topic", topic)
+    put("key", metadata.key)
+    put("headers", metadata.headers)
+    put("value", String(value))
+  }
+
+  private fun StoveMessage.Failed.toReportMap(): Map<String, Any> = buildMap {
+    put("topic", topic)
+    put("key", metadata.key)
+    put("headers", metadata.headers)
+    put("reason", reason.message ?: "Unknown error")
+    put("value", String(value))
+  }
+
   private val state: StateStorage<KafkaExposedConfiguration> =
     testSystem.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
 
@@ -69,6 +112,16 @@ class KafkaSystem(
     serde: Option<StoveSerde<Any, *>> = None,
     testCase: Option<String> = None
   ): KafkaSystem {
+    recordAction(
+      action = "Publish to '$topic'",
+      input = message,
+      metadata = mapOf(
+        "key" to (key.getOrNull() ?: ""),
+        "headers" to headers,
+        "partition" to (partition.getOrNull()?.toString() ?: "")
+      )
+    )
+
     val record = ProducerRecord<String, Any>(
       topic,
       partition.getOrNull(),
@@ -95,11 +148,20 @@ class KafkaSystem(
   suspend inline fun <reified T : Any> shouldBeConsumed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBeConsumed",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Message matching condition within $atLeastIn"
+  ) { onMatch ->
     shouldBeConsumedInternal(T::class, atLeastIn) { parsed ->
-      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
 
   /**
    * Asserts that a message is failed.
@@ -108,12 +170,21 @@ class KafkaSystem(
   suspend inline fun <reified T : Any> shouldBeFailed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: FailedObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBeFailed",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Failed message matching condition within $atLeastIn"
+  ) { onMatch ->
     shouldBeFailedInternal(T::class, atLeastIn) { parsed ->
       parsed as FailedParsedMessage<T>
-      parsed.message.isSome { o -> condition(FailedObservedMessage(o, parsed.metadata, parsed.reason)) }
+      parsed.message.isSome { o ->
+        val result = condition(FailedObservedMessage(o, parsed.metadata, parsed.reason))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
 
   /**
    * Asserts that a message is published.
@@ -122,11 +193,59 @@ class KafkaSystem(
   suspend inline fun <reified T : Any> shouldBePublished(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBePublished",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Message matching condition within $atLeastIn"
+  ) { onMatch ->
     shouldBePublishedInternal(T::class, atLeastIn) { parsed ->
-      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
+
+  /**
+   * Helper to reduce boilerplate in Kafka assertion methods.
+   * Handles try-catch, recording, and re-throwing.
+   */
+  @PublishedApi
+  internal suspend inline fun <T : Any> assertKafkaMessage(
+    assertionName: String,
+    typeName: String,
+    timeout: Duration,
+    expected: String,
+    crossinline block: suspend ((T) -> Unit) -> Unit
+  ): KafkaSystem {
+    var matchedMessage: T? = null
+
+    val result = runCatching {
+      coroutineScope {
+        block { matchedMessage = it }
+      }
+    }
+
+    val failure = result.exceptionOrNull()?.let { e ->
+      e as? AssertionError ?: AssertionError(
+        "Expected $assertionName<$typeName> matching condition within $timeout, but none was found",
+        e
+      )
+    }
+
+    recordAssertion(
+      description = "$assertionName<$typeName>",
+      expected = expected,
+      actual = matchedMessage ?: "No matching message found",
+      passed = result.isSuccess,
+      failure = failure
+    )
+
+    failure?.let { throw it }
+    return this
+  }
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeConsumedInternal(

@@ -6,9 +6,11 @@ import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.trendyol.stove.testing.e2e.database.migrations.*
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import org.apache.http.HttpHost
@@ -176,6 +178,8 @@ class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val strategy = ElasticsearchTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()

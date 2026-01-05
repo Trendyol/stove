@@ -3,9 +3,11 @@ package com.trendyol.stove.testing.e2e.couchbase
 import com.couchbase.client.kotlin.Cluster
 import com.trendyol.stove.testing.e2e.couchbase.CouchbaseSystem.Companion.bucket
 import com.trendyol.stove.testing.e2e.database.migrations.*
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import org.slf4j.*
 import org.testcontainers.couchbase.*
 import org.testcontainers.utility.DockerImageName
@@ -180,6 +182,8 @@ class ProvidedCouchbaseStrategy : CouchbaseTestStrategy {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val strategy = CouchbaseTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()

@@ -60,7 +60,7 @@ class ExampleTest :
         }
 
         kafka {
-          shouldBePublished<DomainEvents.ProductUpdated>(20.seconds) {
+          shouldBePublished<DomainEvents.ProductUpdated>(5.seconds) {
             actual.id == givenId && actual.name == givenName
           }
           shouldBeConsumed<DomainEvents.ProductUpdated>(20.seconds) {

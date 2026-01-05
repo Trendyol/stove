@@ -1,7 +1,7 @@
 public abstract interface annotation class com/trendyol/stove/testing/e2e/grpc/GrpcDsl : java/lang/annotation/Annotation {
 }
 
-public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
+public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem$Companion;
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;)V
 	public final fun channelWithMetadata (Ljava/util/Map;)Lio/grpc/Channel;
@@ -9,12 +9,19 @@ public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getGrpcChannel ()Lio/grpc/ManagedChannel;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun getWireClientResources ()Lcom/trendyol/stove/testing/e2e/grpc/WireClientResources;
 	public final fun grpcClient ()Lcom/squareup/wire/GrpcClient;
 	public final fun managedChannel ()Lio/grpc/ManagedChannel;
 	public final fun rawChannel (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem;
 	public final fun rawWireClient (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun withEndpoint (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystem;
 }

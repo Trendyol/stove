@@ -3,6 +3,7 @@
 package com.trendyol.stove.testing.e2e.redis
 
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.reporting.*
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -127,8 +128,10 @@ class RedisSystem(
   private val context: RedisContext
 ) : PluggedSystem,
   RunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   private lateinit var client: RedisClient
+
   private lateinit var exposedConfiguration: RedisExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RedisExposedConfiguration> =
@@ -159,14 +162,25 @@ class RedisSystem(
    * This operation is not supported when using a provided instance.
    * @return RedisSystem
    */
-  fun pause(): RedisSystem = withContainerOrWarn("pause") { it.pause() }
+  fun pause(): RedisSystem {
+    recordAction(
+      action = "Pause container",
+      metadata = mapOf("operation" to "fault-injection")
+    )
+    return withContainerOrWarn("pause") { it.pause() }
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
    * This operation is not supported when using a provided instance.
    * @return RedisSystem
    */
-  fun unpause(): RedisSystem = withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): RedisSystem {
+    recordAction(
+      action = "Unpause container"
+    )
+    return withContainerOrWarn("unpause") { it.unpause() }
+  }
 
   private suspend fun obtainExposedConfiguration(): RedisExposedConfiguration =
     when {

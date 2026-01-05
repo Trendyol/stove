@@ -24,10 +24,12 @@ nav:
     - Bridge: Components/10-bridge.md
     - Provided Instances: Components/11-provided-instances.md
     - gRPC: Components/12-grpc.md
+    - Reporting: Components/13-reporting.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
   - Release Notes:
+      - 0.20.0: release-notes/0.20.0.md
       - 0.19.0: release-notes/0.19.0.md
       - 0.15.0: release-notes/0.15.0.md
 theme:

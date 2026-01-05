@@ -37,19 +37,26 @@ public final class com/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlOptionsKt {
 	public static final fun mssql-PmNtuJU (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
-public final class com/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
+public final class com/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlSystem$Companion;
 	public field sqlOperations Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public final fun getSqlOperations ()Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun ops (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun pause ()Lcom/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlSystem;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setSqlOperations (Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;)V
 	public final fun shouldExecute (Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlSystem;
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/rdbms/mssql/MsSqlSystem;

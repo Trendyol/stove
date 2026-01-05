@@ -29,6 +29,11 @@ class TestSystemKafkaInterceptor<K : Any, V : Any>(
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val store = MessageStore()
 
+  /**
+   * Get access to the message store for reporting purposes.
+   */
+  internal fun getStore(): MessageStore = store
+
   override fun onSuccess(
     record: ProducerRecord<K, V>,
     recordMetadata: RecordMetadata

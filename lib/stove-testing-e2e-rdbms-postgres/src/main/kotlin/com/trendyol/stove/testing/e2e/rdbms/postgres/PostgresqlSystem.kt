@@ -4,6 +4,7 @@ package com.trendyol.stove.testing.e2e.rdbms.postgres
 
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.rdbms.*
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -153,9 +154,12 @@ class PostgresqlSystem internal constructor(
   private val postgresContext: PostgresqlContext
 ) : PluggedSystem,
   RunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   @PublishedApi
   internal lateinit var sqlOperations: NativeSqlOperations
+
+  override val reportSystemName: String = "PostgreSQL"
 
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -184,19 +188,37 @@ class PostgresqlSystem internal constructor(
     postgresContext.options.configureExposedConfiguration(exposedConfiguration)
 
   @StoveDsl
-  inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     crossinline mapper: (Row) -> T,
-    assertion: (List<T>) -> Unit
+    crossinline assertion: (List<T>) -> Unit
   ): PostgresqlSystem {
     val results = sqlOperations.select(query) { mapper(it) }
-    assertion(results)
+    recordAndExecute(
+      action = "Query",
+      input = query.trim(),
+      output = "${results.size} row(s) returned",
+      metadata = mapOf("rowCount" to results.size),
+      expected = "Assertion passed",
+      actual = results
+    ) {
+      assertion(results)
+    }
     return this
   }
 
   @StoveDsl
   fun shouldExecute(sql: String): PostgresqlSystem {
-    check(sqlOperations.execute(sql) >= 0) { "Failed to execute sql: $sql" }
+    val affectedRows = sqlOperations.execute(sql)
+
+    recordAction(
+      action = "Execute SQL",
+      input = sql.trim(),
+      output = "$affectedRows row(s) affected",
+      metadata = mapOf("affectedRows" to affectedRows)
+    )
+
+    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
     return this
   }
 
@@ -206,7 +228,13 @@ class PostgresqlSystem internal constructor(
    * @return PostgresqlSystem
    */
   @StoveDsl
-  fun pause(): PostgresqlSystem = withContainerOrWarn("pause") { it.pause() }
+  fun pause(): PostgresqlSystem {
+    recordAction(
+      action = "Pause container",
+      metadata = mapOf("operation" to "fault-injection")
+    )
+    return withContainerOrWarn("pause") { it.pause() }
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
@@ -214,7 +242,12 @@ class PostgresqlSystem internal constructor(
    * @return PostgresqlSystem
    */
   @StoveDsl
-  fun unpause(): PostgresqlSystem = withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): PostgresqlSystem {
+    recordAction(
+      action = "Unpause container"
+    )
+    return withContainerOrWarn("unpause") { it.unpause() }
+  }
 
   private suspend fun obtainExposedConfiguration(): RelationalDatabaseExposedConfiguration =
     when {

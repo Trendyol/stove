@@ -96,7 +96,7 @@ public final class com/trendyol/stove/testing/e2e/mongodb/MongodbMigrationContex
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/e2e/mongodb/MongodbSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
+public final class com/trendyol/stove/testing/e2e/mongodb/MongodbSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/mongodb/MongodbSystem$Companion;
 	public static final field RESERVED_ID Ljava/lang/String;
 	public field mongoClient Lcom/mongodb/kotlin/client/coroutine/MongoClient;
@@ -105,15 +105,22 @@ public final class com/trendyol/stove/testing/e2e/mongodb/MongodbSystem : com/tr
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getContext ()Lcom/trendyol/stove/testing/e2e/mongodb/MongodbContext;
 	public final fun getMongoClient ()Lcom/mongodb/kotlin/client/coroutine/MongoClient;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun inspect ()Lcom/trendyol/stove/testing/e2e/containers/StoveContainerInspectInformation;
 	public final fun pause ()Lcom/trendyol/stove/testing/e2e/mongodb/MongodbSystem;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setMongoClient (Lcom/mongodb/kotlin/client/coroutine/MongoClient;)V
 	public final fun shouldDelete (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun shouldDelete$default (Lcom/trendyol/stove/testing/e2e/mongodb/MongodbSystem;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun shouldNotExist (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun shouldNotExist$default (Lcom/trendyol/stove/testing/e2e/mongodb/MongodbSystem;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/mongodb/MongodbSystem;

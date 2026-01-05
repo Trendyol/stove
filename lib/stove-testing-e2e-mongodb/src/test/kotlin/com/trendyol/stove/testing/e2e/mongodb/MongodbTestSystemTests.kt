@@ -1,10 +1,12 @@
 package com.trendyol.stove.testing.e2e.mongodb
 
 import com.fasterxml.jackson.annotation.JsonAlias
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAny
 import io.kotest.matchers.shouldBe
@@ -143,6 +145,8 @@ class ProvidedMongodbStrategy : MongodbTestStrategy {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val strategy = MongodbTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()

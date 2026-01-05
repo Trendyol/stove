@@ -104,6 +104,7 @@ TestSystem.validate {
 | Component | Use Case |
 |-----------|----------|
 | [Bridge](10-bridge.md) | Access application beans and services directly |
+| [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
 
 ## Common Configuration Pattern
 
@@ -264,3 +265,4 @@ test("should process order end-to-end") {
 - [Redis](09-redis.md) - In-memory data store for caching
 - [Bridge](10-bridge.md) - Direct access to application beans
 - [Provided Instances](11-provided-instances.md) - Use external infrastructure
+- [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics

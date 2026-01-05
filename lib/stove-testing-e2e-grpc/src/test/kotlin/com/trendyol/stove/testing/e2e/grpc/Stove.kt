@@ -1,8 +1,10 @@
 package com.trendyol.stove.testing.e2e.grpc
 
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 
 /**
  * Test application that wraps the [TestGrpcServer].
@@ -26,6 +28,8 @@ class TestGrpcApp(
 }
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   override suspend fun beforeProject() {
     TestSystem()
       .with {

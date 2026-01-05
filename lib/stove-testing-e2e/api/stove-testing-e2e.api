@@ -314,6 +314,330 @@ public final class com/trendyol/stove/testing/e2e/messaging/SuccessfulParsedMess
 	public fun getMetadata ()Lcom/trendyol/stove/testing/e2e/messaging/MessageMetadata;
 }
 
+public final class com/trendyol/stove/testing/e2e/reporting/ActionEntry : com/trendyol/stove/testing/e2e/reporting/ReportEntry {
+	public fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/time/Instant;
+	public final fun component10 ()Ljava/lang/Object;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/Object;
+	public final fun component6 ()Ljava/lang/Object;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun component8 ()Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public final fun component9 ()Ljava/lang/Object;
+	public final fun copy (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getActual ()Ljava/lang/Object;
+	public final fun getError ()Ljava/lang/String;
+	public final fun getExpected ()Ljava/lang/Object;
+	public final fun getInput ()Ljava/lang/Object;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getOutput ()Ljava/lang/Object;
+	public fun getResult ()Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public fun getSummary ()Ljava/lang/String;
+	public fun getSystem ()Ljava/lang/String;
+	public fun getTestId ()Ljava/lang/String;
+	public fun getTimestamp ()Ljava/time/Instant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/AssertionEntry : com/trendyol/stove/testing/e2e/reporting/ReportEntry {
+	public fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/time/Instant;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/Object;
+	public final fun component6 ()Ljava/lang/Object;
+	public final fun component7 ()Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public final fun component8 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Throwable;)Lcom/trendyol/stove/testing/e2e/reporting/AssertionEntry;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/AssertionEntry;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;Ljava/lang/Throwable;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/AssertionEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActual ()Ljava/lang/Object;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getExpected ()Ljava/lang/Object;
+	public final fun getFailure ()Ljava/lang/Throwable;
+	public fun getResult ()Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public fun getSummary ()Ljava/lang/String;
+	public fun getSystem ()Ljava/lang/String;
+	public fun getTestId ()Ljava/lang/String;
+	public fun getTimestamp ()Ljava/time/Instant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/AssertionResult : java/lang/Enum {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult$Companion;
+	public static final field FAILED Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public static final field PASSED Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public static fun values ()[Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/AssertionResult$Companion {
+	public final fun of (Z)Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/JsonReportEntry {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/lang/Object;
+	public final fun component11 ()Ljava/lang/Object;
+	public final fun component12 ()Ljava/lang/String;
+	public final fun component13 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/Object;
+	public final fun component7 ()Ljava/lang/Object;
+	public final fun component8 ()Ljava/util/Map;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/reporting/JsonReportEntry;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/JsonReportEntry;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/JsonReportEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getActual ()Ljava/lang/Object;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getError ()Ljava/lang/String;
+	public final fun getExpected ()Ljava/lang/Object;
+	public final fun getInput ()Ljava/lang/Object;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getOutput ()Ljava/lang/Object;
+	public final fun getResult ()Ljava/lang/String;
+	public final fun getSystem ()Ljava/lang/String;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTimestamp ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/JsonReportRenderer : com/trendyol/stove/testing/e2e/reporting/ReportRenderer {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/reporting/JsonReportRenderer;
+	public fun render (Lcom/trendyol/stove/testing/e2e/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/JsonSummary {
+	public fun <init> (IIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (IIII)Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;IIIIILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailedAssertions ()I
+	public final fun getPassedAssertions ()I
+	public final fun getTotalActions ()I
+	public final fun getTotalAssertions ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/JsonTestReport {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/Map;
+	public final fun component6 ()Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;)Lcom/trendyol/stove/testing/e2e/reporting/JsonTestReport;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/JsonTestReport;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/JsonTestReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getSummary ()Lcom/trendyol/stove/testing/e2e/reporting/JsonSummary;
+	public final fun getSystemSnapshots ()Ljava/util/Map;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTestName ()Ljava/lang/String;
+	public final fun getTimestamp ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/PrettyConsoleRenderer : com/trendyol/stove/testing/e2e/reporting/ReportRenderer {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/reporting/PrettyConsoleRenderer;
+	public fun render (Lcom/trendyol/stove/testing/e2e/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
+}
+
+public abstract class com/trendyol/stove/testing/e2e/reporting/ReportEntry {
+	public abstract fun getResult ()Lcom/trendyol/stove/testing/e2e/reporting/AssertionResult;
+	public abstract fun getSummary ()Ljava/lang/String;
+	public abstract fun getSystem ()Ljava/lang/String;
+	public abstract fun getTestId ()Ljava/lang/String;
+	public abstract fun getTimestamp ()Ljava/time/Instant;
+	public final fun isFailed ()Z
+	public final fun isPassed ()Z
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/ReportEntryFactory {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/reporting/ReportEntryFactory;
+	public final fun action (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;
+	public static synthetic fun action$default (Lcom/trendyol/stove/testing/e2e/reporting/ReportEntryFactory;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;
+	public final fun actionWithResult (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;
+	public static synthetic fun actionWithResult$default (Lcom/trendyol/stove/testing/e2e/reporting/ReportEntryFactory;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/ActionEntry;
+	public final fun assertion (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Throwable;)Lcom/trendyol/stove/testing/e2e/reporting/AssertionEntry;
+	public static synthetic fun assertion$default (Lcom/trendyol/stove/testing/e2e/reporting/ReportEntryFactory;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Throwable;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/AssertionEntry;
+}
+
+public abstract interface class com/trendyol/stove/testing/e2e/reporting/ReportRenderer {
+	public abstract fun render (Lcom/trendyol/stove/testing/e2e/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
+}
+
+public abstract interface class com/trendyol/stove/testing/e2e/reporting/Reports {
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public static synthetic fun recordAction$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;ILjava/lang/Object;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun recordAndExecute$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun recordAndExecuteSuspend$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
+	public static synthetic fun recordAssertion$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;ILjava/lang/Object;)V
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/Reports$DefaultImpls {
+	public static fun getReportSystemName (Lcom/trendyol/stove/testing/e2e/reporting/Reports;)Ljava/lang/String;
+	public static fun getReporter (Lcom/trendyol/stove/testing/e2e/reporting/Reports;)Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
+	public static fun recordAction (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public static synthetic fun recordAction$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;ILjava/lang/Object;)V
+	public static fun recordAndExecute (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun recordAndExecute$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun recordAndExecuteSuspend (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun recordAndExecuteSuspend$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun recordAssertion (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
+	public static synthetic fun recordAssertion$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;ILjava/lang/Object;)V
+	public static fun snapshot (Lcom/trendyol/stove/testing/e2e/reporting/Reports;)Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveJUnitExtension : org/junit/jupiter/api/extension/AfterEachCallback, org/junit/jupiter/api/extension/BeforeEachCallback, org/junit/jupiter/api/extension/TestExecutionExceptionHandler {
+	public fun <init> ()V
+	public fun afterEach (Lorg/junit/jupiter/api/extension/ExtensionContext;)V
+	public fun beforeEach (Lorg/junit/jupiter/api/extension/ExtensionContext;)V
+	public fun handleTestExecutionException (Lorg/junit/jupiter/api/extension/ExtensionContext;Ljava/lang/Throwable;)V
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveKotestExtension : io/kotest/core/extensions/TestCaseExtension {
+	public fun <init> ()V
+	public fun intercept (Lio/kotest/core/test/TestCase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveReporter {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter$Companion;
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear ()V
+	public final fun collectSnapshots ()Ljava/util/List;
+	public final fun currentTest ()Lcom/trendyol/stove/testing/e2e/reporting/TestReport;
+	public final fun currentTestId ()Ljava/lang/String;
+	public final fun currentTestOrNull ()Lcom/trendyol/stove/testing/e2e/reporting/TestReport;
+	public final fun dump (Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;)Ljava/lang/String;
+	public final fun dumpIfFailed (Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;)Ljava/lang/String;
+	public static synthetic fun dumpIfFailed$default (Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun endTest ()V
+	public final fun hasFailures ()Z
+	public final fun isEnabled ()Z
+	public final fun printIfFailed (Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;)V
+	public static synthetic fun printIfFailed$default (Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;ILjava/lang/Object;)V
+	public final fun record (Lcom/trendyol/stove/testing/e2e/reporting/ReportEntry;)V
+	public final fun startTest (Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext;)V
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveReporter$Companion {
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveTestContext : kotlin/coroutines/AbstractCoroutineContextElement {
+	public static final field Key Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext$Key;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSpecName ()Ljava/lang/String;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTestName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveTestContext$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveTestContextHolder {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContextHolder;
+	public final fun clear ()V
+	public final fun get ()Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext;
+	public final fun set (Lcom/trendyol/stove/testing/e2e/reporting/StoveTestContext;)V
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveTestContextKt {
+	public static final fun currentStoveTestContext (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveTestErrorException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/StoveTestFailureException : java/lang/AssertionError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/SystemSnapshot {
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getState ()Ljava/util/Map;
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun getSystem ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/TestReport {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun clear ()V
+	public final fun entries ()Ljava/util/List;
+	public final fun entriesForThisTest ()Ljava/util/List;
+	public final fun failures ()Ljava/util/List;
+	public final fun failuresForThisTest ()Ljava/util/List;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTestName ()Ljava/lang/String;
+	public final fun hasFailures ()Z
+	public final fun record (Lcom/trendyol/stove/testing/e2e/reporting/ReportEntry;)V
+}
+
+public final class com/trendyol/stove/testing/e2e/reporting/TestReportKt {
+	public static final fun actions (Ljava/util/List;)Ljava/util/List;
+	public static final fun assertions (Ljava/util/List;)Ljava/util/List;
+	public static final fun failures (Ljava/util/List;)Ljava/util/List;
+	public static final fun forSystem (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
+	public static final fun forTest (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
+	public static final fun passed (Ljava/util/List;)Ljava/util/List;
+	public static final fun withResults (Ljava/util/List;)Ljava/util/List;
+}
+
 public final class com/trendyol/stove/testing/e2e/serialization/E2eObjectMapperConfig {
 	public static final field INSTANCE Lcom/trendyol/stove/testing/e2e/serialization/E2eObjectMapperConfig;
 	public final fun createObjectMapperWithDefaults ()Lcom/fasterxml/jackson/databind/ObjectMapper;
@@ -458,7 +782,7 @@ public final class com/trendyol/stove/testing/e2e/serialization/StoveSerde$Stove
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
-public abstract class com/trendyol/stove/testing/e2e/system/BridgeSystem : com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
+public abstract class com/trendyol/stove/testing/e2e/system/BridgeSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem {
 	protected field ctx Ljava/lang/Object;
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)V
 	public fun afterRun (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -467,8 +791,15 @@ public abstract class com/trendyol/stove/testing/e2e/system/BridgeSystem : com/t
 	public abstract fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
 	public fun getByType (Lkotlin/reflect/KType;)Ljava/lang/Object;
 	protected final fun getCtx ()Ljava/lang/Object;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
 	protected final fun setCtx (Ljava/lang/Object;)V
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
@@ -498,6 +829,16 @@ public final class com/trendyol/stove/testing/e2e/system/PropertiesFile {
 public final class com/trendyol/stove/testing/e2e/system/PropertiesFile$Companion {
 }
 
+public final class com/trendyol/stove/testing/e2e/system/ReportingDsl {
+	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;)V
+	public final fun disabled ()Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public final fun dumpOnFailure (Z)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public static synthetic fun dumpOnFailure$default (Lcom/trendyol/stove/testing/e2e/system/ReportingDsl;ZILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public final fun enabled (Z)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public static synthetic fun enabled$default (Lcom/trendyol/stove/testing/e2e/system/ReportingDsl;ZILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public final fun failureRenderer (Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+}
+
 public final class com/trendyol/stove/testing/e2e/system/TestSystem : com/trendyol/stove/testing/e2e/system/abstractions/ReadyTestSystem, java/lang/AutoCloseable {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/system/TestSystem$Companion;
 	public fun <init> ()V
@@ -508,27 +849,49 @@ public final class com/trendyol/stove/testing/e2e/system/TestSystem : com/trendy
 	public fun close ()V
 	public final fun getActiveSystems ()Ljava/util/Map;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;
+	public final fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public final fun registerForDispose (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun with (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }
 
 public final class com/trendyol/stove/testing/e2e/system/TestSystem$Companion {
+	public final fun getSystem (Lkotlin/reflect/KClass;)Lcom/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem;
+	public final fun instanceInitialized ()Z
+	public final fun reporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public final fun stop ()V
 	public final fun validate (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/testing/e2e/system/TestSystemOptions {
 	public fun <init> ()V
-	public fun <init> (ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;Z)V
-	public synthetic fun <init> (ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;ZZZZLcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;ZZLjava/lang/String;)V
+	public synthetic fun <init> (ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;ZZZZLcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;ZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Z
+	public final fun component10 ()Z
+	public final fun component11 ()Z
+	public final fun component12 ()Ljava/lang/String;
 	public final fun component2 ()Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;
 	public final fun component3 ()Z
-	public final fun copy (ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;Z)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;ZILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;
+	public final fun component8 ()Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;
+	public final fun component9 ()Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;
+	public final fun copy (ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;ZZZZLcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;ZZLjava/lang/String;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;ZLcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;ZZZZLcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;ZZLjava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptions;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefaultRenderer ()Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;
+	public final fun getDumpReportOnStop ()Z
+	public final fun getDumpReportOnTestFailure ()Z
+	public final fun getFailureRenderer ()Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;
+	public final fun getFileRenderer ()Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;
 	public final fun getKeepDependenciesRunning ()Z
+	public final fun getReportFilePath ()Ljava/lang/String;
+	public final fun getReportToConsole ()Z
+	public final fun getReportToFile ()Z
+	public final fun getReportingEnabled ()Z
 	public final fun getRunMigrationsAlways ()Z
 	public final fun getStateStorageFactory ()Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;
 	public fun hashCode ()I
@@ -536,12 +899,22 @@ public final class com/trendyol/stove/testing/e2e/system/TestSystemOptions {
 }
 
 public final class com/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl {
+	public static final field Companion Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl$Companion;
 	public fun <init> ()V
+	public final fun dumpReportOnTestFailure (Z)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public static synthetic fun dumpReportOnTestFailure$default (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;ZILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
 	public final fun enableReuseForTestContainers ()V
+	public final fun failureRenderer (Lcom/trendyol/stove/testing/e2e/reporting/ReportRenderer;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
 	public final fun isRunningLocally ()Z
 	public final fun keepDependenciesRunning ()Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public final fun reporting (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public final fun reportingEnabled (Z)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+	public static synthetic fun reportingEnabled$default (Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;ZILjava/lang/Object;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
 	public final fun runMigrationsAlways ()Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
 	public final fun stateStorage (Lcom/trendyol/stove/testing/e2e/system/abstractions/StateStorageFactory;)Lcom/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl;
+}
+
+public final class com/trendyol/stove/testing/e2e/system/TestSystemOptionsDsl$Companion {
 }
 
 public final class com/trendyol/stove/testing/e2e/system/ValidationDsl {

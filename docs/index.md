@@ -493,7 +493,10 @@ it is time to run your application for the first time from the test-context with
     wide operation and executes **only one time**, as the name implies `beforeProject`.
     
     ```kotlin
-    class Stove : AbstractProjectConfig() {    
+    class Stove : AbstractProjectConfig() {
+        // Register StoveKotestExtension for detailed failure reports
+        override val extensions: List<Extension> = listOf(StoveKotestExtension())
+            
         override suspend fun beforeProject(): Unit = 
             TestSystem()
                 .with {

@@ -57,7 +57,7 @@ public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseExposedConf
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
+public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem$Companion;
 	public field cluster Lcom/couchbase/client/kotlin/Cluster;
 	public field collection Lcom/couchbase/client/kotlin/Collection;
@@ -67,8 +67,14 @@ public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem : co
 	public final fun getCluster ()Lcom/couchbase/client/kotlin/Cluster;
 	public final fun getCollection ()Lcom/couchbase/client/kotlin/Collection;
 	public final fun getContext ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseContext;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun pause ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setCluster (Lcom/couchbase/client/kotlin/Cluster;)V
 	public final fun setCollection (Lcom/couchbase/client/kotlin/Collection;)V
@@ -76,6 +82,7 @@ public final class com/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem : co
 	public final fun shouldDelete (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldNotExist (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldNotExist (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/couchbase/CouchbaseSystem;

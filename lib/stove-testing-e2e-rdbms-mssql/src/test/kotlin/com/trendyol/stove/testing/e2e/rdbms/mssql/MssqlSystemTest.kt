@@ -2,10 +2,12 @@ package com.trendyol.stove.testing.e2e.rdbms.mssql
 
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.database.migrations.*
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import org.slf4j.*
@@ -179,6 +181,8 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val strategy = MsSqlTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()

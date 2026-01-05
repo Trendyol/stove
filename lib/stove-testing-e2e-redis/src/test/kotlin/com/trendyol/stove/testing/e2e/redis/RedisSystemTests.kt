@@ -1,9 +1,11 @@
 package com.trendyol.stove.testing.e2e.redis
 
 import com.trendyol.stove.testing.e2e.redis.RedisSystem.Companion.client
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.future.await
@@ -123,6 +125,8 @@ class ProvidedRedisStrategy : RedisTestStrategy {
 // ============================================================================
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   private val strategy = RedisTestStrategy.select()
 
   override suspend fun beforeProject() = strategy.start()

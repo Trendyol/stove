@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch.core.*
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.runBlocking
@@ -15,7 +16,7 @@ import org.apache.http.auth.*
 import org.apache.http.client.CredentialsProvider
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
-import org.elasticsearch.client.*
+import org.elasticsearch.client.RestClient
 import org.slf4j.*
 import javax.net.ssl.SSLContext
 import kotlin.jvm.optionals.getOrElse
@@ -161,7 +162,8 @@ class ElasticsearchSystem internal constructor(
 ) : PluggedSystem,
   RunAware,
   AfterRunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   @PublishedApi
   internal lateinit var esClient: ElasticsearchClient
 
@@ -192,66 +194,103 @@ class ElasticsearchSystem internal constructor(
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
   @ElasticDsl
-  inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     index: String,
-    assertion: (List<T>) -> Unit
+    crossinline assertion: (List<T>) -> Unit
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(query.isNotBlank()) { "Query cannot be blank" }
-    return esClient
+
+    val results = esClient
       .search(
         SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
         T::class.java
       ).hits()
       .hits()
       .mapNotNull { it.source() }
-      .also(assertion)
-      .let { this }
+
+    recordAndExecute(
+      action = "Search '$index'",
+      input = mapOf("index" to index, "query" to query),
+      output = "${results.size} hit(s)",
+      actual = results
+    ) {
+      assertion(results)
+    }
+
+    return this
   }
 
   @ElasticDsl
-  inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: Query,
-    assertion: (List<T>) -> Unit
-  ): ElasticsearchSystem = esClient
-    .search(
-      SearchRequest.of { q -> q.query(query) },
-      T::class.java
-    ).hits()
-    .hits()
-    .mapNotNull { it.source() }
-    .also(assertion)
-    .let { this }
+    crossinline assertion: (List<T>) -> Unit
+  ): ElasticsearchSystem {
+    val results = esClient
+      .search(
+        SearchRequest.of { q -> q.query(query) },
+        T::class.java
+      ).hits()
+      .hits()
+      .mapNotNull { it.source() }
+
+    recordAndExecute(
+      action = "Search with Query DSL",
+      output = "${results.size} hit(s)",
+      actual = results
+    ) {
+      assertion(results)
+    }
+
+    return this
+  }
 
   @ElasticDsl
-  inline fun <reified T : Any> shouldGet(
+  suspend inline fun <reified T : Any> shouldGet(
     index: String,
     key: String,
-    assertion: (T) -> Unit
+    crossinline assertion: (T) -> Unit
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
-    return esClient
+
+    val document = esClient
       .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
       .source()
       .toOption()
-      .map(assertion)
-      .getOrElse { throw AssertionError("Resource with key ($key) is not found") }
-      .let { this }
+
+    recordAndExecute(
+      action = "Get document",
+      input = mapOf("index" to index, "id" to key),
+      output = document.getOrNull(),
+      actual = document.getOrNull()
+    ) {
+      document.map(assertion).getOrElse { throw AssertionError("Resource with key ($key) is not found") }
+    }
+
+    return this
   }
 
   @ElasticDsl
-  fun shouldNotExist(
+  suspend fun shouldNotExist(
     key: String,
     index: String
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
-    val exists = esClient.exists { req -> req.index(index).id(key) }
-    if (exists.value()) {
-      throw AssertionError("The document with the given id($key) was not expected, but found!")
+
+    val exists = esClient.exists { req -> req.index(index).id(key) }.value()
+
+    recordAndExecute(
+      action = "Document should not exist",
+      input = mapOf("index" to index, "id" to key),
+      expected = "Document not found",
+      actual = if (exists) "Document exists" else "Document not found"
+    ) {
+      if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
+
     return this
   }
 
@@ -262,6 +301,12 @@ class ElasticsearchSystem internal constructor(
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
+
+    recordAction(
+      action = "Delete document",
+      metadata = mapOf("index" to index, "id" to key)
+    )
+
     return esClient
       .delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
       .let { this }
@@ -275,14 +320,22 @@ class ElasticsearchSystem internal constructor(
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(id.isNotBlank()) { "Id cannot be blank" }
-    return esClient
-      .index { req ->
-        req
-          .index(index)
-          .id(id)
-          .document(instance)
-          .refresh(Refresh.WaitFor)
-      }.let { this }
+
+    esClient.index { req ->
+      req
+        .index(index)
+        .id(id)
+        .document(instance)
+        .refresh(Refresh.WaitFor)
+    }
+
+    recordAction(
+      action = "Index document",
+      input = instance,
+      metadata = mapOf("index" to index, "id" to id)
+    )
+
+    return this
   }
 
   /**

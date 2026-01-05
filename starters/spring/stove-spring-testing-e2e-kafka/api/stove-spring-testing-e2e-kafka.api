@@ -93,25 +93,33 @@ public final class com/trendyol/stove/testing/e2e/kafka/KafkaOps {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunnableSystemWithContext {
+public final class com/trendyol/stove/testing/e2e/kafka/KafkaSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunnableSystemWithContext {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem$Companion;
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/kafka/KafkaContext;)V
 	public final fun adminOperations (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public synthetic fun afterRun (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun afterRun (Lorg/springframework/context/ApplicationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun assertKafkaMessage-WPi__2c (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun beforeRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getGetInterceptor ()Lkotlin/jvm/functions/Function0;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun pause ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;
 	public final fun publish (Ljava/lang/String;Ljava/lang/Object;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun publish$default (Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;Ljava/lang/String;Ljava/lang/Object;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun recordAction (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;)V
+	public fun recordAndExecute (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAndExecuteSuspend (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordAssertion (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;ZLjava/lang/Throwable;Ljava/util/Map;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldBeConsumedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldBeFailedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldBePublishedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 	public final fun unpause ()Lcom/trendyol/stove/testing/e2e/kafka/KafkaSystem;

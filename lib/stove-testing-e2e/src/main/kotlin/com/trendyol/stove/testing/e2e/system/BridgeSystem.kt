@@ -1,6 +1,7 @@
 package com.trendyol.stove.testing.e2e.system
 
 import arrow.core.getOrElse
+import com.trendyol.stove.testing.e2e.reporting.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
 import kotlin.reflect.KClass
@@ -16,7 +17,8 @@ import kotlin.reflect.typeOf
 abstract class BridgeSystem<T : Any>(
   override val testSystem: TestSystem
 ) : PluggedSystem,
-  AfterRunAwareWithContext<T> {
+  AfterRunAwareWithContext<T>,
+  Reports {
   /**
    * The application context used to resolve dependencies.
    */
@@ -75,7 +77,28 @@ abstract class BridgeSystem<T : Any>(
    * @param block the block to execute with the resolved bean as receiver.
    */
   @StoveDsl
-  inline fun <reified D : Any> using(block: D.() -> Unit): Unit = block(resolve())
+  inline fun <reified D : Any> using(block: D.() -> Unit) {
+    val beanName = D::class.simpleName ?: "Unknown"
+    recordAction(
+      action = "Resolve bean: $beanName",
+      metadata = mapOf("type" to (D::class.qualifiedName ?: ""))
+    )
+
+    try {
+      block(resolve())
+      recordAssertion(
+        description = "Bean usage assertion: $beanName",
+        passed = true
+      )
+    } catch (e: AssertionError) {
+      recordAssertion(
+        description = "Bean usage assertion: $beanName",
+        passed = false,
+        failure = e
+      )
+      throw e
+    }
+  }
 }
 
 /**

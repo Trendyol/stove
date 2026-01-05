@@ -18,6 +18,10 @@ kotlin {
   }
 }
 
+tasks.e2eTest {
+  enabled = runningLocally
+}
+
 dependencies {
   implementation(enforcedPlatform(libs.quarkus))
   implementation(libs.quarkus.rest)

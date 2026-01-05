@@ -4,6 +4,7 @@ package com.trendyol.stove.testing.e2e.rdbms.mssql
 
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.rdbms.*
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -17,9 +18,12 @@ class MsSqlSystem internal constructor(
   private val mssqlContext: MsSqlContext
 ) : PluggedSystem,
   RunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   @PublishedApi
   internal lateinit var sqlOperations: NativeSqlOperations
+
+  override val reportSystemName: String = "MSSQL"
 
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -50,19 +54,37 @@ class MsSqlSystem internal constructor(
     mssqlContext.options.configureExposedConfiguration(exposedConfiguration)
 
   @StoveDsl
-  inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     crossinline mapper: (Row) -> T,
-    assertion: (List<T>) -> Unit
+    crossinline assertion: (List<T>) -> Unit
   ): MsSqlSystem {
     val results = sqlOperations.select(query) { mapper(it) }
-    assertion(results)
+    recordAndExecute(
+      action = "Query",
+      input = query.trim(),
+      output = "${results.size} row(s) returned",
+      metadata = mapOf("rowCount" to results.size),
+      expected = "Assertion passed",
+      actual = results
+    ) {
+      assertion(results)
+    }
     return this
   }
 
   @StoveDsl
   fun shouldExecute(sql: String): MsSqlSystem {
-    check(sqlOperations.execute(sql) >= 0) { "Failed to execute sql: $sql" }
+    val affectedRows = sqlOperations.execute(sql)
+
+    recordAction(
+      action = "Execute SQL",
+      input = sql.trim(),
+      output = "$affectedRows row(s) affected",
+      metadata = mapOf("affectedRows" to affectedRows)
+    )
+
+    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
     return this
   }
 
@@ -77,7 +99,13 @@ class MsSqlSystem internal constructor(
    * @return MsSqlSystem
    */
   @StoveDsl
-  fun pause(): MsSqlSystem = withContainerOrWarn("pause") { it.pause() }
+  fun pause(): MsSqlSystem {
+    recordAction(
+      action = "Pause container",
+      metadata = mapOf("operation" to "fault-injection")
+    )
+    return withContainerOrWarn("pause") { it.pause() }
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
@@ -85,7 +113,12 @@ class MsSqlSystem internal constructor(
    * @return MsSqlSystem
    */
   @StoveDsl
-  fun unpause(): MsSqlSystem = withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): MsSqlSystem {
+    recordAction(
+      action = "Unpause container"
+    )
+    return withContainerOrWarn("unpause") { it.unpause() }
+  }
 
   private suspend fun obtainExposedConfiguration(): RelationalDatabaseExposedConfiguration =
     when {

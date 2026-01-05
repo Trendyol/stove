@@ -2,6 +2,7 @@ package com.trendyol.stove.testing.e2e.grpc
 
 import arrow.core.getOrElse
 import com.squareup.wire.*
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -97,14 +98,12 @@ import java.util.concurrent.TimeUnit
 class GrpcSystem(
   override val testSystem: TestSystem,
   @PublishedApi internal val options: GrpcSystemOptions
-) : PluggedSystem {
-  private val lazyGrpcChannel = lazy {
-    options.createChannel(options.host, options.port)
-  }
+) : PluggedSystem, Reports {
+  private val lazyGrpcChannel = lazy { options.createChannel(options.host, options.port) }
 
-  private val lazyWireClientResources = lazy {
-    options.createWireClient(options.host, options.port)
-  }
+  override val reportSystemName: String = "gRPC"
+
+  private val lazyWireClientResources = lazy { options.createWireClient(options.host, options.port) }
 
   @PublishedApi
   internal val grpcChannel: ManagedChannel
@@ -133,11 +132,17 @@ class GrpcSystem(
    * @param block The block to execute with the client as receiver.
    */
   @GrpcDsl
-  inline fun <reified T : Service> wireClient(
-    block: @GrpcDsl T.() -> Unit
+  suspend inline fun <reified T : Service> wireClient(
+    crossinline block: @GrpcDsl suspend T.() -> Unit
   ): GrpcSystem {
+    val serviceName = T::class.simpleName ?: "Unknown"
     val client = wireClientResources.grpcClient.create(T::class)
-    block(client)
+    recordAndExecute(
+      action = "Wire client: $serviceName",
+      metadata = mapOf("service" to serviceName)
+    ) {
+      block(client)
+    }
     return this
   }
 
@@ -190,12 +195,18 @@ class GrpcSystem(
    * @param block The block to execute with the stub as receiver.
    */
   @GrpcDsl
-  inline fun <reified T : Any> channel(
+  suspend inline fun <reified T : Any> channel(
     metadata: Map<String, String> = emptyMap(),
-    block: @GrpcDsl T.() -> Unit
+    crossinline block: @GrpcDsl suspend T.() -> Unit
   ): GrpcSystem {
+    val stubName = T::class.simpleName ?: "Unknown"
     val stubInstance = createStubFromChannel<T>(metadata)
-    block(stubInstance)
+    recordAndExecute(
+      action = "Channel stub: $stubName",
+      metadata = mapOf("stub" to stubName, "hasMetadata" to metadata.isNotEmpty())
+    ) {
+      block(stubInstance)
+    }
     return this
   }
 

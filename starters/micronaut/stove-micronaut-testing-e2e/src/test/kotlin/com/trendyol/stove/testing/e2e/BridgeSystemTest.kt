@@ -2,9 +2,11 @@ package com.trendyol.stove.testing.e2e
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.trendyol.stove.testing.*
+import com.trendyol.stove.testing.e2e.reporting.StoveKotestExtension
 import com.trendyol.stove.testing.e2e.system.*
 import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
 import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
@@ -60,6 +62,8 @@ object TestAppRunner {
 }
 
 class Stove : AbstractProjectConfig() {
+  override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
   override suspend fun beforeProject() = TestSystem()
     .with {
       bridge()

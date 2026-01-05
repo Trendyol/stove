@@ -5,6 +5,7 @@ import com.mongodb.client.model.Filters.eq
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.containers.StoveContainerInspectInformation
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import kotlinx.coroutines.flow.*
@@ -152,9 +153,12 @@ class MongodbSystem internal constructor(
   val context: MongodbContext
 ) : PluggedSystem,
   RunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   @PublishedApi
   internal lateinit var mongoClient: MongoClient
+
+  override val reportSystemName: String = "MongoDB"
   private lateinit var exposedConfiguration: MongodbExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<MongodbExposedConfiguration> =
@@ -184,29 +188,51 @@ class MongodbSystem internal constructor(
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     collection: String = context.options.databaseOptions.default.collection,
-    assertion: (List<T>) -> Unit
-  ): MongodbSystem = mongoClient
-    .getDatabase(context.options.databaseOptions.default.name)
-    .getCollection<Document>(collection)
-    .find(BsonDocument.parse(query))
-    .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
-    .toList()
-    .also(assertion)
-    .let { this }
+    crossinline assertion: (List<T>) -> Unit
+  ): MongodbSystem {
+    val results = mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
+      .getCollection<Document>(collection)
+      .find(BsonDocument.parse(query))
+      .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
+      .toList()
+
+    recordAndExecuteSuspend(
+      action = "Query '$collection'",
+      input = mapOf("collection" to collection, "filter" to query),
+      output = "${results.size} document(s)",
+      actual = results
+    ) {
+      assertion(results)
+    }
+
+    return this
+  }
 
   @MongoDsl
   suspend inline fun <reified T : Any> shouldGet(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection,
-    assertion: (T) -> Unit
-  ): MongodbSystem = mongoClient
-    .getDatabase(context.options.databaseOptions.default.name)
-    .getCollection<Document>(collection)
-    .find(filterById(objectId))
-    .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
-    .first()
-    .also(assertion)
-    .let { this }
+    crossinline assertion: (T) -> Unit
+  ): MongodbSystem {
+    val document = mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
+      .getCollection<Document>(collection)
+      .find(filterById(objectId))
+      .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
+      .first()
+
+    recordAndExecuteSuspend(
+      action = "Get document",
+      input = mapOf("collection" to collection, "_id" to objectId),
+      output = document,
+      actual = document
+    ) {
+      assertion(document)
+    }
+
+    return this
+  }
 
   /**
    * Saves the [instance] with given [objectId] to the [collection]
@@ -216,17 +242,27 @@ class MongodbSystem internal constructor(
     instance: T,
     objectId: String = ObjectId().toHexString(),
     collection: String = context.options.databaseOptions.default.collection
-  ): MongodbSystem = mongoClient
-    .getDatabase(context.options.databaseOptions.default.name)
-    .getCollection<Document>(collection)
-    .also { coll ->
-      context.options.serde
-        .serialize(instance)
-        .let { BsonDocument.parse(it) }
-        .let { doc -> Document(doc) }
-        .append(RESERVED_ID, ObjectId(objectId))
-        .let { coll.insertOne(it) }
-    }.let { this }
+  ): MongodbSystem {
+    mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
+      .getCollection<Document>(collection)
+      .also { coll ->
+        context.options.serde
+          .serialize(instance)
+          .let { BsonDocument.parse(it) }
+          .let { doc -> Document(doc) }
+          .append(RESERVED_ID, ObjectId(objectId))
+          .let { coll.insertOne(it) }
+      }
+
+    recordAction(
+      action = "Insert document",
+      input = instance,
+      metadata = mapOf("collection" to collection, "_id" to objectId)
+    )
+
+    return this
+  }
 
   @MongoDsl
   suspend fun shouldNotExist(
@@ -238,9 +274,16 @@ class MongodbSystem internal constructor(
       .getCollection<Document>(collection)
       .find(filterById(objectId))
       .firstOrNull() != null
-    if (exists) {
-      throw AssertionError("The document with the given id($objectId) was not expected, but found!")
+
+    recordAndExecuteSuspend(
+      action = "Document should not exist",
+      input = mapOf("collection" to collection, "_id" to objectId),
+      expected = "Document not found",
+      actual = if (exists) "Document exists" else "Document not found"
+    ) {
+      if (exists) throw AssertionError("The document with the given id($objectId) was not expected, but found!")
     }
+
     return this
   }
 
@@ -248,11 +291,18 @@ class MongodbSystem internal constructor(
   suspend fun shouldDelete(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
-  ): MongodbSystem = mongoClient
-    .getDatabase(context.options.databaseOptions.default.name)
-    .getCollection<Document>(collection)
-    .deleteOne(filterById(objectId))
-    .let { this }
+  ): MongodbSystem {
+    recordAction(
+      action = "Delete document",
+      metadata = mapOf("collection" to collection, "_id" to objectId)
+    )
+
+    return mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
+      .getCollection<Document>(collection)
+      .deleteOne(filterById(objectId))
+      .let { this }
+  }
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
