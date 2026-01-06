@@ -1,30 +1,23 @@
 package com.trendyol.stove.testing.e2e.reporting
 
+import arrow.core.Some
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.time.Instant
 
 class ReportEntryTest :
   FunSpec({
 
-    test("ActionEntry generates correct summary") {
-      val entry = ActionEntry(
-        timestamp = Instant.now(),
-        system = "HTTP",
-        testId = "test-1",
-        action = "POST /api/users"
-      )
+    test("ReportEntry generates correct summary") {
+      val entry = ReportEntry.success("HTTP", "test-1", "POST /api/users")
 
       entry.summary shouldBe "[HTTP] POST /api/users"
     }
 
-    test("ActionEntry with failed result is detected as failure") {
-      val entry = ActionEntry(
-        timestamp = Instant.now(),
+    test("ReportEntry with failed result is detected as failure") {
+      val entry = ReportEntry.failure(
         system = "PostgreSQL",
         testId = "test-1",
         action = "Query",
-        result = AssertionResult.FAILED,
         error = "Row count mismatch"
       )
 
@@ -32,22 +25,20 @@ class ReportEntryTest :
       entry.isPassed shouldBe false
     }
 
-    test("AssertionEntry captures failure details") {
-      val error = AssertionError("Expected 200 but got 500")
-      val entry = AssertionEntry(
-        timestamp = Instant.now(),
+    test("ReportEntry captures failure details with Option") {
+      val entry = ReportEntry.action(
         system = "HTTP",
         testId = "test-1",
-        description = "Response status check",
-        expected = 200,
-        actual = 500,
-        result = AssertionResult.FAILED,
-        failure = error
+        action = "Response status check",
+        passed = false,
+        expected = Some(200),
+        actual = Some(500),
+        error = Some("Expected 200 but got 500")
       )
 
       entry.isFailed shouldBe true
-      entry.failure?.message shouldBe "Expected 200 but got 500"
-      entry.summary shouldBe "[HTTP] Response status check: FAILED"
+      entry.error shouldBe Some("Expected 200 but got 500")
+      entry.summary shouldBe "[HTTP] Response status check"
     }
 
     test("AssertionResult.of converts boolean correctly") {

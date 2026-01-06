@@ -112,16 +112,6 @@ class KafkaSystem(
     serde: Option<StoveSerde<Any, *>> = None,
     testCase: Option<String> = None
   ): KafkaSystem {
-    recordAction(
-      action = "Publish to '$topic'",
-      input = message,
-      metadata = mapOf(
-        "key" to (key.getOrNull() ?: ""),
-        "headers" to headers,
-        "partition" to (partition.getOrNull()?.toString() ?: "")
-      )
-    )
-
     val record = ProducerRecord<String, Any>(
       topic,
       partition.getOrNull(),
@@ -130,9 +120,18 @@ class KafkaSystem(
       headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
     )
 
-    return context.options.ops
-      .send(kafkaTemplate, record)
-      .let { this }
+    context.options.ops.send(kafkaTemplate, record)
+
+    recordSuccess(
+      action = "Publish to '$topic'",
+      input = arrow.core.Some(message),
+      metadata = mapOf(
+        "key" to (key.getOrNull() ?: ""),
+        "headers" to headers,
+        "partition" to (partition.getOrNull()?.toString() ?: "")
+      )
+    )
+    return this
   }
 
   /**
@@ -235,13 +234,24 @@ class KafkaSystem(
       )
     }
 
-    recordAssertion(
-      description = "$assertionName<$typeName>",
-      expected = expected,
-      actual = matchedMessage ?: "No matching message found",
-      passed = result.isSuccess,
-      failure = failure
-    )
+    if (result.isSuccess) {
+      recordSuccess(
+        action = "$assertionName<$typeName>",
+        output = matchedMessage.toOption(),
+        metadata = mapOf("timeout" to timeout.toString())
+      )
+    } else {
+      reporter.record(
+        ReportEntry.failure(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "$assertionName<$typeName>",
+          error = failure?.message ?: "No matching message found",
+          expected = expected.some(),
+          actual = (matchedMessage ?: "No matching message found").some()
+        )
+      )
+    }
 
     failure?.let { throw it }
     return this
@@ -438,6 +448,13 @@ class KafkaSystem(
   }
 
   companion object {
-    fun KafkaSystem.kafkaTemplate(): KafkaTemplate<Any, Any> = kafkaTemplate
+    /**
+     * Exposes the [KafkaTemplate] to the [KafkaSystem].
+     * Use this for advanced Kafka operations not covered by the DSL.
+     */
+    fun KafkaSystem.kafkaTemplate(): KafkaTemplate<Any, Any> {
+      recordSuccess(action = "Access underlying KafkaTemplate")
+      return kafkaTemplate
+    }
   }
 }

@@ -287,20 +287,20 @@ class KafkaSystem(
     partition: Int = 0,
     testCase: Option<String> = None
   ): KafkaSystem {
-    recordAction(
+    val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
+    headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
+    testCase.map { record.headers().add("testCase", it.toByteArray()) }
+    kafkaPublisher.dispatch(record)
+
+    recordSuccess(
       action = "Publish to '$topic'",
-      input = message,
+      input = arrow.core.Some(message),
       metadata = buildMap {
         key.onSome { put("key", it) }
         put("headers", headers)
         put("partition", partition)
       }
     )
-
-    val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
-    headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
-    testCase.map { record.headers().add("testCase", it.toByteArray()) }
-    kafkaPublisher.dispatch(record)
     return this
   }
 
@@ -388,13 +388,24 @@ class KafkaSystem(
       )
     }
 
-    recordAssertion(
-      description = "$assertionName<$typeName>",
-      expected = expected,
-      actual = matchedMessage ?: "No matching message found",
-      passed = result.isSuccess,
-      failure = failure
-    )
+    if (result.isSuccess) {
+      recordSuccess(
+        action = "$assertionName<$typeName>",
+        output = matchedMessage.toOption(),
+        metadata = mapOf("timeout" to timeout.toString())
+      )
+    } else {
+      reporter.record(
+        ReportEntry.failure(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "$assertionName<$typeName>",
+          error = failure?.message ?: "No matching message found",
+          expected = expected.some(),
+          actual = (matchedMessage ?: "No matching message found").some()
+        )
+      )
+    }
 
     failure?.let { throw it }
     return this

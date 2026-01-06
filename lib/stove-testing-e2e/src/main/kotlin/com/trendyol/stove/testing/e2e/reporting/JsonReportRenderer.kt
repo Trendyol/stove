@@ -1,6 +1,9 @@
 package com.trendyol.stove.testing.e2e.reporting
 
-import com.fasterxml.jackson.databind.*
+import arrow.core.Option
+import arrow.core.getOrElse
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -16,58 +19,38 @@ object JsonReportRenderer : ReportRenderer {
   private val timestampFormatter = DateTimeFormatter.ISO_INSTANT
 
   override fun render(report: TestReport, snapshots: List<SystemSnapshot>): String {
+    val entries = report.entries()
     val jsonReport = JsonTestReport(
       testId = report.testId,
       testName = report.testName,
       timestamp = timestampFormatter.format(Instant.now()),
-      entries = report.entries().map { it.toJsonEntry() },
+      entries = entries.map { it.toJsonEntry() },
       systemSnapshots = snapshots.associate { it.system to it.state },
       summary = JsonSummary(
-        totalActions = report.entries().filterIsInstance<ActionEntry>().size,
-        totalAssertions = report.entries().filterIsInstance<AssertionEntry>().size,
-        passedAssertions = report
-          .entries()
-          .filterIsInstance<AssertionEntry>()
-          .count { it.result == AssertionResult.PASSED },
-        failedAssertions = report.failures().size
+        total = entries.size,
+        passed = entries.count { it.isPassed },
+        failed = entries.count { it.isFailed }
       )
     )
     return mapper.writeValueAsString(jsonReport)
   }
 
-  private fun ReportEntry.toJsonEntry(): JsonReportEntry = when (this) {
-    is ActionEntry -> JsonReportEntry(
-      type = if (result != null) "action_with_result" else "action",
-      timestamp = timestampFormatter.format(timestamp),
-      system = system,
-      testId = testId,
-      action = action,
-      input = input,
-      output = output,
-      metadata = metadata,
-      description = null,
-      expected = expected,
-      actual = actual,
-      result = result?.name,
-      error = error
-    )
+  private fun ReportEntry.toJsonEntry(): JsonReportEntry = JsonReportEntry(
+    timestamp = timestampFormatter.format(timestamp),
+    system = system,
+    testId = testId,
+    action = action,
+    input = input.toJsonValue(),
+    output = output.toJsonValue(),
+    metadata = metadata,
+    expected = expected.toJsonValue(),
+    actual = actual.toJsonValue(),
+    result = result.name,
+    error = error.toJsonValue()
+  )
 
-    is AssertionEntry -> JsonReportEntry(
-      type = "assertion",
-      timestamp = timestampFormatter.format(timestamp),
-      system = system,
-      testId = testId,
-      action = null,
-      input = null,
-      output = null,
-      metadata = emptyMap(),
-      description = description,
-      expected = expected,
-      actual = actual,
-      result = result.name,
-      error = failure?.message
-    )
-  }
+  /** Convert Option to JSON-friendly value - empty string for None */
+  private fun <T : Any> Option<T>.toJsonValue(): Any = getOrElse { "" }
 }
 
 /**
@@ -84,29 +67,27 @@ data class JsonTestReport(
 
 /**
  * JSON representation of a report entry.
+ * No nullable fields - uses empty string/map for absent values.
  */
 data class JsonReportEntry(
-  val type: String,
   val timestamp: String,
   val system: String,
   val testId: String,
-  val action: String?,
-  val input: Any?,
-  val output: Any?,
+  val action: String,
+  val input: Any,
+  val output: Any,
   val metadata: Map<String, Any>,
-  val description: String?,
-  val expected: Any?,
-  val actual: Any?,
-  val result: String?,
-  val error: String?
+  val expected: Any,
+  val actual: Any,
+  val result: String,
+  val error: Any
 )
 
 /**
  * JSON representation of report summary.
  */
 data class JsonSummary(
-  val totalActions: Int,
-  val totalAssertions: Int,
-  val passedAssertions: Int,
-  val failedAssertions: Int
+  val total: Int,
+  val passed: Int,
+  val failed: Int
 )

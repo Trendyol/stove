@@ -196,11 +196,11 @@ class PostgresqlSystem internal constructor(
     val results = sqlOperations.select(query) { mapper(it) }
     recordAndExecute(
       action = "Query",
-      input = query.trim(),
-      output = "${results.size} row(s) returned",
+      input = arrow.core.Some(query.trim()),
+      output = arrow.core.Some("${results.size} row(s) returned"),
       metadata = mapOf("rowCount" to results.size),
-      expected = "Assertion passed",
-      actual = results
+      expected = arrow.core.Some("Assertion passed"),
+      actual = arrow.core.Some(results)
     ) {
       assertion(results)
     }
@@ -210,15 +210,14 @@ class PostgresqlSystem internal constructor(
   @StoveDsl
   fun shouldExecute(sql: String): PostgresqlSystem {
     val affectedRows = sqlOperations.execute(sql)
+    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
 
-    recordAction(
+    recordSuccess(
       action = "Execute SQL",
-      input = sql.trim(),
-      output = "$affectedRows row(s) affected",
+      input = arrow.core.Some(sql.trim()),
+      output = arrow.core.Some("$affectedRows row(s) affected"),
       metadata = mapOf("affectedRows" to affectedRows)
     )
-
-    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
     return this
   }
 
@@ -228,12 +227,11 @@ class PostgresqlSystem internal constructor(
    * @return PostgresqlSystem
    */
   @StoveDsl
-  fun pause(): PostgresqlSystem {
-    recordAction(
+  fun pause(): PostgresqlSystem = withContainerOrWarn("pause") { it.pause() }.also {
+    recordSuccess(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     )
-    return withContainerOrWarn("pause") { it.pause() }
   }
 
   /**
@@ -242,11 +240,8 @@ class PostgresqlSystem internal constructor(
    * @return PostgresqlSystem
    */
   @StoveDsl
-  fun unpause(): PostgresqlSystem {
-    recordAction(
-      action = "Unpause container"
-    )
-    return withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): PostgresqlSystem = withContainerOrWarn("unpause") { it.unpause() }.also {
+    recordSuccess(action = "Unpause container")
   }
 
   private suspend fun obtainExposedConfiguration(): RelationalDatabaseExposedConfiguration =
@@ -335,7 +330,14 @@ class PostgresqlSystem internal constructor(
   }
 
   companion object {
+    /**
+     * Exposes the [NativeSqlOperations] to the [PostgresqlSystem].
+     * Use this for advanced SQL operations not covered by the DSL.
+     */
     @StoveDsl
-    fun PostgresqlSystem.operations(): NativeSqlOperations = sqlOperations
+    fun PostgresqlSystem.operations(): NativeSqlOperations {
+      recordSuccess(action = "Access underlying NativeSqlOperations")
+      return sqlOperations
+    }
   }
 }

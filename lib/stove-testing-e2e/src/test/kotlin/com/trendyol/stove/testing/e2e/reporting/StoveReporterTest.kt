@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.reporting
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import java.time.Instant
 
 class StoveReporterTest :
   FunSpec({
@@ -23,7 +22,7 @@ class StoveReporterTest :
       val reporter = StoveReporter()
       reporter.startTest(StoveTestContext("test-1", "test1"))
 
-      reporter.record(ActionEntry(Instant.now(), "HTTP", "test-1", "GET /api"))
+      reporter.record(ReportEntry.success("HTTP", "test-1", "GET /api"))
 
       reporter.currentTest().entries() shouldHaveSize 1
     }
@@ -32,7 +31,7 @@ class StoveReporterTest :
       val reporter = StoveReporter(isEnabled = false)
       reporter.startTest(StoveTestContext("test-1", "test1"))
 
-      reporter.record(ActionEntry(Instant.now(), "HTTP", "test-1", "GET /api"))
+      reporter.record(ReportEntry.success("HTTP", "test-1", "GET /api"))
 
       reporter.currentTest().entries() shouldHaveSize 0
     }
@@ -59,15 +58,7 @@ class StoveReporterTest :
 
       reporter.hasFailures() shouldBe false
 
-      reporter.record(
-        AssertionEntry(
-          Instant.now(),
-          "HTTP",
-          "test-1",
-          "check",
-          result = AssertionResult.FAILED
-        )
-      )
+      reporter.record(ReportEntry.failure("HTTP", "test-1", "check", "assertion failed"))
 
       reporter.hasFailures() shouldBe true
     }

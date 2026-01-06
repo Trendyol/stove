@@ -2,8 +2,10 @@
 
 package com.trendyol.stove.testing.e2e.rdbms
 
+import arrow.core.Some
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.testing.e2e.containers.StoveContainer
+import com.trendyol.stove.testing.e2e.reporting.Reports
 import com.trendyol.stove.testing.e2e.system.TestSystem
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -19,7 +21,8 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   protected val context: RelationalDatabaseContext
 ) : PluggedSystem,
   RunAware,
-  ExposesConfiguration {
+  ExposesConfiguration,
+  Reports {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
@@ -73,12 +76,27 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   ): SELF {
     val results = internalSqlOperations.select(query) { mapper(it) }
     assertion(results)
+
+    recordSuccess(
+      action = "Query",
+      input = Some(query.trim()),
+      output = Some("${results.size} row(s) returned"),
+      metadata = mapOf("rowCount" to results.size)
+    )
     return this as SELF
   }
 
   @StoveDsl
   fun shouldExecute(sql: String): SELF {
-    check(internalSqlOperations.execute(sql) >= 0) { "Failed to execute sql: $sql" }
+    val affectedRows = internalSqlOperations.execute(sql)
+    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
+
+    recordSuccess(
+      action = "Execute SQL",
+      input = Some(sql.trim()),
+      output = Some("$affectedRows row(s) affected"),
+      metadata = mapOf("affectedRows" to affectedRows)
+    )
     return this as SELF
   }
 
@@ -112,7 +130,14 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     }
 
   companion object {
+    /**
+     * Exposes the [NativeSqlOperations] to the [RelationalDatabaseSystem].
+     * Use this for advanced SQL operations not covered by the DSL.
+     */
     @Suppress("unused")
-    fun RelationalDatabaseSystem<*>.operations(): NativeSqlOperations = this.sqlOperations
+    fun RelationalDatabaseSystem<*>.operations(): NativeSqlOperations {
+      recordSuccess(action = "Access underlying NativeSqlOperations")
+      return this.sqlOperations
+    }
   }
 }

@@ -31,7 +31,7 @@ public final class com/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExpose
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class com/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseSystem : com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
+public abstract class com/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseSystem : com/trendyol/stove/testing/e2e/reporting/Reports, com/trendyol/stove/testing/e2e/system/abstractions/ExposesConfiguration, com/trendyol/stove/testing/e2e/system/abstractions/PluggedSystem, com/trendyol/stove/testing/e2e/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseSystem$Companion;
 	protected field exposedConfiguration Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;
 	protected field sqlOperations Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
@@ -44,13 +44,18 @@ public abstract class com/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseSys
 	protected final fun getExposedConfiguration ()Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;
 	public final fun getInternalSqlOperations ()Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
 	protected abstract fun getProvidedConfig ()Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	protected final fun getSqlOperations ()Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;
 	public final fun getTestSystem ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
+	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	protected final fun setExposedConfiguration (Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseExposedConfiguration;)V
 	public final fun setInternalSqlOperations (Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;)V
 	protected final fun setSqlOperations (Lcom/trendyol/stove/testing/e2e/rdbms/NativeSqlOperations;)V
 	public final fun shouldExecute (Ljava/lang/String;)Lcom/trendyol/stove/testing/e2e/rdbms/RelationalDatabaseSystem;
+	public fun snapshot ()Lcom/trendyol/stove/testing/e2e/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/testing/e2e/system/TestSystem;
 }

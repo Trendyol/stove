@@ -56,15 +56,3 @@ fun List<ReportEntry>.failures(): List<ReportEntry> =
 /** Get only passed entries */
 fun List<ReportEntry>.passed(): List<ReportEntry> =
   filter { it.isPassed }
-
-/** Get only action entries */
-fun List<ReportEntry>.actions(): List<ActionEntry> =
-  filterIsInstance<ActionEntry>()
-
-/** Get only assertion entries */
-fun List<ReportEntry>.assertions(): List<AssertionEntry> =
-  filterIsInstance<AssertionEntry>()
-
-/** Get entries with assertion results (passed or failed) */
-fun List<ReportEntry>.withResults(): List<ReportEntry> =
-  filter { it.result != null }

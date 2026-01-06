@@ -207,11 +207,11 @@ class CouchbaseSystem internal constructor(
         ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
     }.toList()
 
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "N1QL Query",
-      input = query,
-      output = "${results.size} document(s)",
-      actual = results
+      input = arrow.core.Some(query),
+      output = arrow.core.Some("${results.size} document(s)"),
+      actual = arrow.core.Some(results)
     ) {
       assertion(results)
     }
@@ -225,11 +225,11 @@ class CouchbaseSystem internal constructor(
     crossinline assertion: (T) -> Unit
   ): CouchbaseSystem {
     val document = collection.get(key).contentAs<T>()
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Get document",
-      input = mapOf("id" to key),
-      output = document,
-      actual = document
+      input = arrow.core.Some(mapOf("id" to key)),
+      output = arrow.core.Some(document),
+      actual = arrow.core.Some(document)
     ) {
       assertion(document)
     }
@@ -247,11 +247,11 @@ class CouchbaseSystem internal constructor(
       .collection(collection)
       .get(key)
       .contentAs<T>()
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Get document",
-      input = mapOf("collection" to collection, "id" to key),
-      output = document,
-      actual = document
+      input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
+      output = arrow.core.Some(document),
+      actual = arrow.core.Some(document)
     ) {
       assertion(document)
     }
@@ -261,11 +261,11 @@ class CouchbaseSystem internal constructor(
   @CouchbaseDsl
   suspend fun shouldNotExist(key: String): CouchbaseSystem {
     val exists = collection.getOrNull(key) != null
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Document should not exist",
-      input = mapOf("id" to key),
-      expected = "Document not found",
-      actual = if (exists) "Document exists" else "Document not found"
+      input = arrow.core.Some(mapOf("id" to key)),
+      expected = arrow.core.Some("Document not found"),
+      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
     ) {
       if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
@@ -281,11 +281,11 @@ class CouchbaseSystem internal constructor(
       .bucket(context.bucket.name)
       .collection(collection)
       .getOrNull(key) != null
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Document should not exist",
-      input = mapOf("collection" to collection, "id" to key),
-      expected = "Document not found",
-      actual = if (exists) "Document exists" else "Document not found"
+      input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
+      expected = arrow.core.Some("Document not found"),
+      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
     ) {
       if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
@@ -295,10 +295,10 @@ class CouchbaseSystem internal constructor(
   @CouchbaseDsl
   suspend fun shouldDelete(key: String): CouchbaseSystem {
     collection.remove(key)
-    recordAction(
+    recordSuccess(
       action = "Delete document",
-      input = mapOf("id" to key),
-      output = "Document deleted"
+      input = arrow.core.Some(mapOf("id" to key)),
+      output = arrow.core.Some("Document deleted")
     )
     return this
   }
@@ -312,10 +312,10 @@ class CouchbaseSystem internal constructor(
       .bucket(context.bucket.name)
       .collection(collection)
       .remove(key)
-    recordAction(
+    recordSuccess(
       action = "Delete document",
-      input = mapOf("collection" to collection, "id" to key),
-      output = "Document deleted"
+      input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
+      output = arrow.core.Some("Document deleted")
     )
     return this
   }
@@ -332,9 +332,9 @@ class CouchbaseSystem internal constructor(
   ): CouchbaseSystem {
     cluster.bucket(context.bucket.name).collection(collection).insert(id, instance)
 
-    recordAction(
+    recordSuccess(
       action = "Save document",
-      input = instance,
+      input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "id" to id)
     )
 
@@ -432,10 +432,24 @@ class CouchbaseSystem internal constructor(
   }
 
   companion object {
+    /**
+     * Exposes the [Cluster] to the [CouchbaseSystem].
+     * Use this for advanced Couchbase operations not covered by the DSL.
+     */
     @CouchbaseDsl
-    fun CouchbaseSystem.cluster(): Cluster = this.cluster
+    fun CouchbaseSystem.cluster(): Cluster {
+      recordSuccess(action = "Access underlying Couchbase Cluster")
+      return this.cluster
+    }
 
+    /**
+     * Exposes the [Bucket] to the [CouchbaseSystem].
+     * Use this for advanced Couchbase operations not covered by the DSL.
+     */
     @CouchbaseDsl
-    fun CouchbaseSystem.bucket(): Bucket = this.cluster.bucket(this.context.bucket.name)
+    fun CouchbaseSystem.bucket(): Bucket {
+      recordSuccess(action = "Access underlying Couchbase Bucket")
+      return this.cluster.bucket(this.context.bucket.name)
+    }
   }
 }

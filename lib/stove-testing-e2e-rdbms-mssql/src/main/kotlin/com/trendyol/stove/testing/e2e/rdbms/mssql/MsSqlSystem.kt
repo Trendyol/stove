@@ -62,11 +62,11 @@ class MsSqlSystem internal constructor(
     val results = sqlOperations.select(query) { mapper(it) }
     recordAndExecute(
       action = "Query",
-      input = query.trim(),
-      output = "${results.size} row(s) returned",
+      input = arrow.core.Some(query.trim()),
+      output = arrow.core.Some("${results.size} row(s) returned"),
       metadata = mapOf("rowCount" to results.size),
-      expected = "Assertion passed",
-      actual = results
+      expected = arrow.core.Some("Assertion passed"),
+      actual = arrow.core.Some(results)
     ) {
       assertion(results)
     }
@@ -76,15 +76,14 @@ class MsSqlSystem internal constructor(
   @StoveDsl
   fun shouldExecute(sql: String): MsSqlSystem {
     val affectedRows = sqlOperations.execute(sql)
+    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
 
-    recordAction(
+    recordSuccess(
       action = "Execute SQL",
-      input = sql.trim(),
-      output = "$affectedRows row(s) affected",
+      input = arrow.core.Some(sql.trim()),
+      output = arrow.core.Some("$affectedRows row(s) affected"),
       metadata = mapOf("affectedRows" to affectedRows)
     )
-
-    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
     return this
   }
 
@@ -99,12 +98,11 @@ class MsSqlSystem internal constructor(
    * @return MsSqlSystem
    */
   @StoveDsl
-  fun pause(): MsSqlSystem {
-    recordAction(
+  fun pause(): MsSqlSystem = withContainerOrWarn("pause") { it.pause() }.also {
+    recordSuccess(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     )
-    return withContainerOrWarn("pause") { it.pause() }
   }
 
   /**
@@ -113,11 +111,8 @@ class MsSqlSystem internal constructor(
    * @return MsSqlSystem
    */
   @StoveDsl
-  fun unpause(): MsSqlSystem {
-    recordAction(
-      action = "Unpause container"
-    )
-    return withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): MsSqlSystem = withContainerOrWarn("unpause") { it.unpause() }.also {
+    recordSuccess(action = "Unpause container")
   }
 
   private suspend fun obtainExposedConfiguration(): RelationalDatabaseExposedConfiguration =
@@ -229,7 +224,14 @@ class MsSqlSystem internal constructor(
   }
 
   companion object {
+    /**
+     * Exposes the [NativeSqlOperations] to the [MsSqlSystem].
+     * Use this for advanced SQL operations not covered by the DSL.
+     */
     @StoveDsl
-    fun MsSqlSystem.operations(): NativeSqlOperations = sqlOperations
+    fun MsSqlSystem.operations(): NativeSqlOperations {
+      recordSuccess(action = "Access underlying NativeSqlOperations")
+      return sqlOperations
+    }
   }
 }

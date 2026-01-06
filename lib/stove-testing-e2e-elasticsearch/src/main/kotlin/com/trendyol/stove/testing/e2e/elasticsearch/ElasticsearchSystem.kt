@@ -212,9 +212,9 @@ class ElasticsearchSystem internal constructor(
 
     recordAndExecute(
       action = "Search '$index'",
-      input = mapOf("index" to index, "query" to query),
-      output = "${results.size} hit(s)",
-      actual = results
+      input = arrow.core.Some(mapOf("index" to index, "query" to query)),
+      output = arrow.core.Some("${results.size} hit(s)"),
+      actual = arrow.core.Some(results)
     ) {
       assertion(results)
     }
@@ -237,8 +237,8 @@ class ElasticsearchSystem internal constructor(
 
     recordAndExecute(
       action = "Search with Query DSL",
-      output = "${results.size} hit(s)",
-      actual = results
+      output = arrow.core.Some("${results.size} hit(s)"),
+      actual = arrow.core.Some(results)
     ) {
       assertion(results)
     }
@@ -262,9 +262,9 @@ class ElasticsearchSystem internal constructor(
 
     recordAndExecute(
       action = "Get document",
-      input = mapOf("index" to index, "id" to key),
-      output = document.getOrNull(),
-      actual = document.getOrNull()
+      input = arrow.core.Some(mapOf("index" to index, "id" to key)),
+      output = document,
+      actual = document
     ) {
       document.map(assertion).getOrElse { throw AssertionError("Resource with key ($key) is not found") }
     }
@@ -284,9 +284,9 @@ class ElasticsearchSystem internal constructor(
 
     recordAndExecute(
       action = "Document should not exist",
-      input = mapOf("index" to index, "id" to key),
-      expected = "Document not found",
-      actual = if (exists) "Document exists" else "Document not found"
+      input = arrow.core.Some(mapOf("index" to index, "id" to key)),
+      expected = arrow.core.Some("Document not found"),
+      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
     ) {
       if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
@@ -302,14 +302,13 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    recordAction(
+    esClient.delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
+
+    recordSuccess(
       action = "Delete document",
       metadata = mapOf("index" to index, "id" to key)
     )
-
-    return esClient
-      .delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
-      .let { this }
+    return this
   }
 
   @ElasticDsl
@@ -329,9 +328,9 @@ class ElasticsearchSystem internal constructor(
         .refresh(Refresh.WaitFor)
     }
 
-    recordAction(
+    recordSuccess(
       action = "Index document",
-      input = instance,
+      input = arrow.core.Some(instance),
       metadata = mapOf("index" to index, "id" to id)
     )
 
@@ -474,11 +473,14 @@ class ElasticsearchSystem internal constructor(
 
   companion object {
     /**
-     * Exposes the [ElasticsearchClient] for the given [ElasticsearchSystem]
-     * This is useful for custom queries
+     * Exposes the [ElasticsearchClient] for the given [ElasticsearchSystem].
+     * Use this for advanced Elasticsearch operations not covered by the DSL.
      */
     @Suppress("unused")
     @ElasticDsl
-    fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
+    fun ElasticsearchSystem.client(): ElasticsearchClient {
+      recordSuccess(action = "Access underlying ElasticsearchClient")
+      return this.esClient
+    }
   }
 }

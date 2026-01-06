@@ -2,17 +2,20 @@
 
 package com.trendyol.stove.testing.e2e.reporting
 
+import arrow.core.None
+import arrow.core.Option
+import arrow.core.toOption
 import com.trendyol.stove.testing.e2e.system.abstractions.PluggedSystem
 
 /**
  * Interface for systems that participate in test reporting.
  *
- * Provides recording capabilities for actions and assertions during test execution,
- * following the Single Responsibility Principle - this interface only handles reporting.
+ * Provides recording capabilities for actions during test execution.
+ * Every action has an implicit or explicit result (PASSED/FAILED).
  *
  * ## Design Principles
- * - **Functional**: Recording functions return unit, using callbacks for results
- * - **Immutable**: All recorded entries are immutable data classes
+ * - **Functional**: Uses Option monad, immutable data, no nullability
+ * - **Simple**: Single entry type for all operations
  * - **Composable**: `recordAndExecute` combines action recording with assertion execution
  */
 interface Reports {
@@ -41,22 +44,17 @@ interface Reports {
   )
 
   /**
-   * Record an action without assertion.
-   *
-   * @param action Description of the action performed
-   * @param input Optional input data (request body, query params, etc.)
-   * @param output Optional output data (response body, result, etc.)
-   * @param metadata Additional key-value metadata
+   * Record a successful action (action completed without throwing).
    */
-  fun recordAction(
+  fun recordSuccess(
     action: String,
-    input: Any? = null,
-    output: Any? = null,
+    input: Option<Any> = None,
+    output: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap()
   ) {
     if (!reporter.isEnabled) return
     reporter.record(
-      ReportEntryFactory.action(
+      ReportEntry.success(
         system = reportSystemName,
         testId = reporter.currentTestId(),
         action = action,
@@ -68,7 +66,7 @@ interface Reports {
   }
 
   /**
-   * Execute an assertion and record the combined action with result.
+   * Execute an action and record the result.
    *
    * This is the preferred method for actions that include assertions.
    * It handles success/failure recording automatically and re-throws on failure.
@@ -77,8 +75,8 @@ interface Reports {
    * ```kotlin
    * recordAndExecute(
    *   action = "GET /users/123",
-   *   input = queryParams,
-   *   expected = "200 OK"
+   *   input = Some(queryParams),
+   *   expected = Some("200 OK")
    * ) {
    *   response.status shouldBe 200
    * }
@@ -86,99 +84,47 @@ interface Reports {
    */
   suspend fun <T> recordAndExecute(
     action: String,
-    input: Any? = null,
-    output: Any? = null,
+    input: Option<Any> = None,
+    output: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap(),
-    expected: Any? = null,
-    actual: Any? = null,
-    assertion: suspend () -> T
-  ): T = executeWithRecording(action, input, output, metadata, expected, actual, assertion)
-
-  /**
-   * Alias for [recordAndExecute] - maintained for API compatibility.
-   */
-  suspend fun <T> recordAndExecuteSuspend(
-    action: String,
-    input: Any? = null,
-    output: Any? = null,
-    metadata: Map<String, Any> = emptyMap(),
-    expected: Any? = null,
-    actual: Any? = null,
-    assertion: suspend () -> T
-  ): T = recordAndExecute(action, input, output, metadata, expected, actual, assertion)
-
-  /**
-   * Record a standalone assertion result.
-   * Use when you need to record an assertion separate from an action.
-   */
-  fun recordAssertion(
-    description: String,
-    expected: Any? = null,
-    actual: Any? = null,
-    passed: Boolean,
-    failure: Throwable? = null,
-    metadata: Map<String, Any> = emptyMap()
-  ) {
-    if (!reporter.isEnabled) return
-
-    reporter.record(
-      ReportEntryFactory.assertion(
-        system = reportSystemName,
-        testId = reporter.currentTestId(),
-        description = description,
-        expected = expected,
-        actual = actual,
-        passed = passed,
-        failure = failure
-      )
-    )
-  }
-
-  // Private implementation - single place for recording logic
-  private suspend fun <T> executeWithRecording(
-    action: String,
-    input: Any?,
-    output: Any?,
-    metadata: Map<String, Any>,
-    expected: Any?,
-    actual: Any?,
+    expected: Option<Any> = None,
+    actual: Option<Any> = None,
     assertion: suspend () -> T
   ): T {
     if (!reporter.isEnabled) return assertion()
 
     return try {
       val result = assertion()
-      recordActionResult(action, input, output, metadata, expected, actual, true, null)
+      reporter.record(
+        ReportEntry.action(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = action,
+          passed = true,
+          input = input,
+          output = output,
+          metadata = metadata,
+          expected = expected,
+          actual = actual
+        )
+      )
       result
     } catch (e: Throwable) {
-      recordActionResult(action, input, output, metadata, expected, actual, false, e)
+      reporter.record(
+        ReportEntry.action(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = action,
+          passed = false,
+          input = input,
+          output = output,
+          metadata = metadata,
+          expected = expected,
+          actual = actual,
+          error = e.message.toOption()
+        )
+      )
       throw e
     }
-  }
-
-  private fun recordActionResult(
-    action: String,
-    input: Any?,
-    output: Any?,
-    metadata: Map<String, Any>,
-    expected: Any?,
-    actual: Any?,
-    passed: Boolean,
-    error: Throwable?
-  ) {
-    reporter.record(
-      ReportEntryFactory.actionWithResult(
-        system = reportSystemName,
-        testId = reporter.currentTestId(),
-        action = action,
-        input = input,
-        output = output,
-        metadata = metadata,
-        passed = passed,
-        expected = expected,
-        actual = actual,
-        error = error?.message
-      )
-    )
   }
 }

@@ -197,11 +197,11 @@ class MongodbSystem internal constructor(
       .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
       .toList()
 
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Query '$collection'",
-      input = mapOf("collection" to collection, "filter" to query),
-      output = "${results.size} document(s)",
-      actual = results
+      input = arrow.core.Some(mapOf("collection" to collection, "filter" to query)),
+      output = arrow.core.Some("${results.size} document(s)"),
+      actual = arrow.core.Some(results)
     ) {
       assertion(results)
     }
@@ -222,11 +222,11 @@ class MongodbSystem internal constructor(
       .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
       .first()
 
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Get document",
-      input = mapOf("collection" to collection, "_id" to objectId),
-      output = document,
-      actual = document
+      input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId)),
+      output = arrow.core.Some(document),
+      actual = arrow.core.Some(document)
     ) {
       assertion(document)
     }
@@ -255,9 +255,9 @@ class MongodbSystem internal constructor(
           .let { coll.insertOne(it) }
       }
 
-    recordAction(
+    recordSuccess(
       action = "Insert document",
-      input = instance,
+      input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "_id" to objectId)
     )
 
@@ -275,11 +275,11 @@ class MongodbSystem internal constructor(
       .find(filterById(objectId))
       .firstOrNull() != null
 
-    recordAndExecuteSuspend(
+    recordAndExecute(
       action = "Document should not exist",
-      input = mapOf("collection" to collection, "_id" to objectId),
-      expected = "Document not found",
-      actual = if (exists) "Document exists" else "Document not found"
+      input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId)),
+      expected = arrow.core.Some("Document not found"),
+      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
     ) {
       if (exists) throw AssertionError("The document with the given id($objectId) was not expected, but found!")
     }
@@ -292,16 +292,16 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    recordAction(
-      action = "Delete document",
-      metadata = mapOf("collection" to collection, "_id" to objectId)
-    )
-
-    return mongoClient
+    mongoClient
       .getDatabase(context.options.databaseOptions.default.name)
       .getCollection<Document>(collection)
       .deleteOne(filterById(objectId))
-      .let { this }
+
+    recordSuccess(
+      action = "Delete document",
+      metadata = mapOf("collection" to collection, "_id" to objectId)
+    )
+    return this
   }
 
   /**
@@ -412,10 +412,14 @@ class MongodbSystem internal constructor(
     internal fun filterById(key: String): Bson = eq(RESERVED_ID, ObjectId(key))
 
     /**
-     * Exposes the [MongoClient] to the [MongodbSystem]
+     * Exposes the [MongoClient] to the [MongodbSystem].
+     * Use this for advanced MongoDB operations not covered by the DSL.
      */
     @MongoDsl
     @Suppress("unused")
-    fun MongodbSystem.client(): MongoClient = mongoClient
+    fun MongodbSystem.client(): MongoClient {
+      recordSuccess(action = "Access underlying MongoClient")
+      return mongoClient
+    }
   }
 }

@@ -1,6 +1,6 @@
 package com.trendyol.stove.testing.e2e.system
 
-import arrow.core.getOrElse
+import arrow.core.*
 import com.trendyol.stove.testing.e2e.reporting.*
 import com.trendyol.stove.testing.e2e.system.abstractions.*
 import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
@@ -77,24 +77,26 @@ abstract class BridgeSystem<T : Any>(
    * @param block the block to execute with the resolved bean as receiver.
    */
   @StoveDsl
+  @Suppress("TooGenericExceptionCaught")
   inline fun <reified D : Any> using(block: D.() -> Unit) {
     val beanName = D::class.simpleName ?: "Unknown"
-    recordAction(
-      action = "Resolve bean: $beanName",
-      metadata = mapOf("type" to (D::class.qualifiedName ?: ""))
-    )
+    val metadata = mapOf("type" to (D::class.qualifiedName ?: ""))
 
     try {
       block(resolve())
-      recordAssertion(
-        description = "Bean usage assertion: $beanName",
-        passed = true
+      recordSuccess(
+        action = "Bean usage: $beanName",
+        metadata = metadata
       )
-    } catch (e: AssertionError) {
-      recordAssertion(
-        description = "Bean usage assertion: $beanName",
-        passed = false,
-        failure = e
+    } catch (e: Throwable) {
+      reporter.record(
+        ReportEntry.failure(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "Bean usage: $beanName",
+          error = e.message ?: "Unknown error",
+          metadata = metadata
+        )
       )
       throw e
     }

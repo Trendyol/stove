@@ -3,15 +3,14 @@ package com.trendyol.stove.testing.e2e.reporting
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.time.Instant
 
 class JsonReportRendererTest :
   FunSpec({
 
     test("generates valid JSON with entries and summary") {
       val report = TestReport("test-1", "should process order")
-      report.record(ActionEntry(Instant.now(), "HTTP", "test-1", "POST /api"))
-      report.record(AssertionEntry(Instant.now(), "HTTP", "test-1", "status", result = AssertionResult.PASSED))
+      report.record(ReportEntry.success("HTTP", "test-1", "POST /api"))
+      report.record(ReportEntry.action("HTTP", "test-1", "status check", passed = true))
 
       val json = JsonReportRenderer.render(report, emptyList())
       val parsed = ObjectMapper().readTree(json)
@@ -19,9 +18,9 @@ class JsonReportRendererTest :
       parsed["testId"].asText() shouldBe "test-1"
       parsed["testName"].asText() shouldBe "should process order"
       parsed["entries"].size() shouldBe 2
-      parsed["summary"]["totalActions"].asInt() shouldBe 1
-      parsed["summary"]["totalAssertions"].asInt() shouldBe 1
-      parsed["summary"]["passedAssertions"].asInt() shouldBe 1
+      parsed["summary"]["total"].asInt() shouldBe 2
+      parsed["summary"]["passed"].asInt() shouldBe 2
+      parsed["summary"]["failed"].asInt() shouldBe 0
     }
 
     test("includes system snapshots") {

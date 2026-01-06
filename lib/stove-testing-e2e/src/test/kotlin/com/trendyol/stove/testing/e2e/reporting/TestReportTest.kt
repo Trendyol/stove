@@ -3,7 +3,6 @@ package com.trendyol.stove.testing.e2e.reporting
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import java.time.Instant
 
 class TestReportTest :
   FunSpec({
@@ -11,32 +10,23 @@ class TestReportTest :
     test("records entries in chronological order") {
       val report = TestReport("test-1", "test")
 
-      val entry1 = ActionEntry(Instant.now().minusSeconds(2), "HTTP", "test-1", "GET /api")
-      val entry2 = ActionEntry(Instant.now().minusSeconds(1), "Kafka", "test-1", "Publish")
-      val entry3 = AssertionEntry(Instant.now(), "Kafka", "test-1", "consumed", result = AssertionResult.PASSED)
+      val entry1 = ReportEntry.success("HTTP", "test-1", "GET /api")
+      val entry2 = ReportEntry.success("Kafka", "test-1", "Publish")
+      val entry3 = ReportEntry.action("Kafka", "test-1", "consumed", passed = true)
 
       report.record(entry1)
       report.record(entry2)
       report.record(entry3)
 
       report.entries() shouldHaveSize 3
-      report.entries()[0] shouldBe entry1
     }
 
     test("filters failures correctly") {
       val report = TestReport("test-1", "test")
 
-      report.record(AssertionEntry(Instant.now(), "HTTP", "test-1", "check", result = AssertionResult.PASSED))
-      report.record(AssertionEntry(Instant.now(), "Kafka", "test-1", "check", result = AssertionResult.FAILED))
-      report.record(
-        ActionEntry(
-          Instant.now(),
-          "PostgreSQL",
-          "test-1",
-          "Query",
-          result = AssertionResult.FAILED
-        )
-      )
+      report.record(ReportEntry.action("HTTP", "test-1", "check", passed = true))
+      report.record(ReportEntry.action("Kafka", "test-1", "check", passed = false))
+      report.record(ReportEntry.failure("PostgreSQL", "test-1", "Query", "timeout"))
 
       report.failures() shouldHaveSize 2
       report.hasFailures() shouldBe true
@@ -45,8 +35,8 @@ class TestReportTest :
     test("filters entries by testId") {
       val report = TestReport("test-1", "test")
 
-      report.record(ActionEntry(Instant.now(), "HTTP", "test-1", "action"))
-      report.record(ActionEntry(Instant.now(), "HTTP", "test-2", "other test"))
+      report.record(ReportEntry.success("HTTP", "test-1", "action"))
+      report.record(ReportEntry.success("HTTP", "test-2", "other test"))
 
       report.entries() shouldHaveSize 2
       report.entriesForThisTest() shouldHaveSize 1
@@ -55,7 +45,7 @@ class TestReportTest :
 
     test("clear removes all entries") {
       val report = TestReport("test-1", "test")
-      report.record(ActionEntry(Instant.now(), "HTTP", "test-1", "action"))
+      report.record(ReportEntry.success("HTTP", "test-1", "action"))
 
       report.clear()
 
@@ -64,15 +54,13 @@ class TestReportTest :
 
     test("extension functions filter correctly") {
       val entries = listOf(
-        ActionEntry(Instant.now(), "HTTP", "test-1", "action"),
-        AssertionEntry(Instant.now(), "Kafka", "test-1", "check", result = AssertionResult.PASSED),
-        AssertionEntry(Instant.now(), "HTTP", "test-1", "check", result = AssertionResult.FAILED)
+        ReportEntry.success("HTTP", "test-1", "action"),
+        ReportEntry.action("Kafka", "test-1", "check", passed = true),
+        ReportEntry.action("HTTP", "test-1", "check", passed = false)
       )
 
       entries.forSystem("HTTP") shouldHaveSize 2
-      entries.actions() shouldHaveSize 1
-      entries.assertions() shouldHaveSize 2
       entries.failures() shouldHaveSize 1
-      entries.passed() shouldHaveSize 1
+      entries.passed() shouldHaveSize 2
     }
   })

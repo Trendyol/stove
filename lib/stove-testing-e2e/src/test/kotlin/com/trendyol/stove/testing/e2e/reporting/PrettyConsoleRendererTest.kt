@@ -1,9 +1,9 @@
 package com.trendyol.stove.testing.e2e.reporting
 
+import arrow.core.Some
 import com.trendyol.stove.ConsoleSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import java.time.Instant
 
 class PrettyConsoleRendererTest :
   ConsoleSpec({ output ->
@@ -12,14 +12,7 @@ class PrettyConsoleRendererTest :
 
     test("renders timeline with box drawing") {
       val report = TestReport("test-1", "should process order")
-      report.record(
-        ActionEntry(
-          timestamp = Instant.parse("2025-01-05T10:15:23.001Z"),
-          system = "HTTP",
-          testId = "test-1",
-          action = "POST /api/orders"
-        )
-      )
+      report.record(ReportEntry.success("HTTP", "test-1", "POST /api/orders"))
 
       val rendered = PrettyConsoleRenderer.render(report, emptyList())
       println(rendered)
@@ -35,13 +28,11 @@ class PrettyConsoleRendererTest :
     test("highlights failed assertions") {
       val report = TestReport("test-1", "should fail")
       report.record(
-        AssertionEntry(
-          timestamp = Instant.now(),
+        ReportEntry.failure(
           system = "Kafka",
           testId = "test-1",
-          description = "shouldBePublished<OrderEvent>",
-          result = AssertionResult.FAILED,
-          failure = AssertionError("Timed out")
+          action = "shouldBePublished<OrderEvent>",
+          error = "Timed out"
         )
       )
 
@@ -75,12 +66,11 @@ class PrettyConsoleRendererTest :
       val longInput = "This is a very long input that exceeds the box width and should be wrapped properly"
 
       report.record(
-        ActionEntry(
-          timestamp = Instant.now(),
+        ReportEntry.success(
           system = "HTTP",
           testId = "test-long",
           action = "POST /api/endpoint",
-          input = longInput
+          input = Some(longInput)
         )
       )
 
