@@ -175,13 +175,35 @@ inline fun <reified T : Any> ValidationDsl.using(
  * @param validation the block to execute with the resolved beans.
  */
 @StoveDsl
+@Suppress("TooGenericExceptionCaught")
 inline fun <
   reified T1 : Any,
   reified T2 : Any
-> ValidationDsl.using(validation: (T1, T2) -> Unit): Unit = testSystem.bridge().let {
-  val t1: T1 = it.resolve()
-  val t2: T2 = it.resolve()
-  validation(t1, t2)
+> ValidationDsl.using(validation: (T1, T2) -> Unit): Unit = testSystem.bridge().let { bridge ->
+  val name1 = T1::class.simpleName ?: "Unknown"
+  val name2 = T2::class.simpleName ?: "Unknown"
+  val beanNames = "$name1, $name2"
+  val metadata = mapOf(
+    "types" to listOf(T1::class.qualifiedName, T2::class.qualifiedName)
+  )
+
+  try {
+    val t1: T1 = bridge.resolve()
+    val t2: T2 = bridge.resolve()
+    validation(t1, t2)
+    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+  } catch (e: Throwable) {
+    bridge.reporter.record(
+      ReportEntry.failure(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        error = e.message ?: "Unknown error",
+        metadata = metadata
+      )
+    )
+    throw e
+  }
 }
 
 /**
@@ -193,18 +215,39 @@ inline fun <
  * @param validation the block to execute with the resolved beans.
  */
 @StoveDsl
+@Suppress("TooGenericExceptionCaught")
 inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any
-> ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = this.testSystem
-  .bridge()
-  .let {
-    val t1: T1 = it.resolve()
-    val t2: T2 = it.resolve()
-    val t3: T3 = it.resolve()
+> ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = testSystem.bridge().let { bridge ->
+  val name1 = T1::class.simpleName ?: "Unknown"
+  val name2 = T2::class.simpleName ?: "Unknown"
+  val name3 = T3::class.simpleName ?: "Unknown"
+  val beanNames = "$name1, $name2, $name3"
+  val metadata = mapOf(
+    "types" to listOf(T1::class.qualifiedName, T2::class.qualifiedName, T3::class.qualifiedName)
+  )
+
+  try {
+    val t1: T1 = bridge.resolve()
+    val t2: T2 = bridge.resolve()
+    val t3: T3 = bridge.resolve()
     validation(t1, t2, t3)
+    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+  } catch (e: Throwable) {
+    bridge.reporter.record(
+      ReportEntry.failure(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        error = e.message ?: "Unknown error",
+        metadata = metadata
+      )
+    )
+    throw e
   }
+}
 
 /**
  * Executes the specified block using four resolved beans.
@@ -216,20 +259,42 @@ inline fun <
  * @param validation the block to execute with the resolved beans.
  */
 @StoveDsl
+@Suppress("TooGenericExceptionCaught")
 inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any,
   reified T4 : Any
-> ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = this.testSystem
-  .bridge()
-  .let {
-    val t1: T1 = it.resolve()
-    val t2: T2 = it.resolve()
-    val t3: T3 = it.resolve()
-    val t4: T4 = it.resolve()
+> ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = testSystem.bridge().let { bridge ->
+  val name1 = T1::class.simpleName ?: "Unknown"
+  val name2 = T2::class.simpleName ?: "Unknown"
+  val name3 = T3::class.simpleName ?: "Unknown"
+  val name4 = T4::class.simpleName ?: "Unknown"
+  val beanNames = "$name1, $name2, $name3, $name4"
+  val metadata = mapOf(
+    "types" to listOf(T1::class.qualifiedName, T2::class.qualifiedName, T3::class.qualifiedName, T4::class.qualifiedName)
+  )
+
+  try {
+    val t1: T1 = bridge.resolve()
+    val t2: T2 = bridge.resolve()
+    val t3: T3 = bridge.resolve()
+    val t4: T4 = bridge.resolve()
     validation(t1, t2, t3, t4)
+    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+  } catch (e: Throwable) {
+    bridge.reporter.record(
+      ReportEntry.failure(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        error = e.message ?: "Unknown error",
+        metadata = metadata
+      )
+    )
+    throw e
   }
+}
 
 /**
  * Executes the specified block using five resolved beans.
@@ -242,19 +307,48 @@ inline fun <
  * @param validation the block to execute with the resolved beans.
  */
 @StoveDsl
+@Suppress("TooGenericExceptionCaught")
 inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any,
   reified T4 : Any,
   reified T5 : Any
-> ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = this.testSystem
-  .bridge()
-  .let {
-    val t1: T1 = it.resolve()
-    val t2: T2 = it.resolve()
-    val t3: T3 = it.resolve()
-    val t4: T4 = it.resolve()
-    val t5: T5 = it.resolve()
+> ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = testSystem.bridge().let { bridge ->
+  val name1 = T1::class.simpleName ?: "Unknown"
+  val name2 = T2::class.simpleName ?: "Unknown"
+  val name3 = T3::class.simpleName ?: "Unknown"
+  val name4 = T4::class.simpleName ?: "Unknown"
+  val name5 = T5::class.simpleName ?: "Unknown"
+  val beanNames = "$name1, $name2, $name3, $name4, $name5"
+  val metadata = mapOf(
+    "types" to listOf(
+      T1::class.qualifiedName,
+      T2::class.qualifiedName,
+      T3::class.qualifiedName,
+      T4::class.qualifiedName,
+      T5::class.qualifiedName
+    )
+  )
+
+  try {
+    val t1: T1 = bridge.resolve()
+    val t2: T2 = bridge.resolve()
+    val t3: T3 = bridge.resolve()
+    val t4: T4 = bridge.resolve()
+    val t5: T5 = bridge.resolve()
     validation(t1, t2, t3, t4, t5)
+    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+  } catch (e: Throwable) {
+    bridge.reporter.record(
+      ReportEntry.failure(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        error = e.message ?: "Unknown error",
+        metadata = metadata
+      )
+    )
+    throw e
   }
+}
