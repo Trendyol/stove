@@ -9,21 +9,25 @@
       
       
       
+        <link rel="prev" href="../../troubleshooting/">
+      
+      
+        <link rel="next" href="../0.19.0/">
       
       
         
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>0.20.0 (To be released) - Stove</title>
+        <title>0.20.0 - Stove</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.20.0 (To be released)
+              0.20.0
             
           </span>
         </div>
@@ -319,6 +323,8 @@
       
         
           
+        
+      
         
       
         
@@ -735,6 +741,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/13-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -827,8 +861,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -836,6 +872,8 @@
       
         
       
+        
+      
     
     
     
@@ -845,11 +883,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
@@ -870,7 +908,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -880,6 +918,436 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.20.0
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.20.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#new-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="New Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-reporting-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Reporting System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Reporting System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-kotest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start - Kotest
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-junit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start - JUnit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#available-renderers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Available Renderers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spring-boot-4x-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spring Boot 4.x Support
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-bean-registration-dsl-for-spring-boot-4x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Bean Registration DSL for Spring Boot 4.x
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ktor-di-flexibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ktor DI Flexibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generic-type-resolution-in-bridge-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generic Type Resolution in Bridge System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ktor-test-dependency-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ktor Test Dependency Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-version-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Version Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Guide
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-019x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From 0.19.x
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="From 0.19.x">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-the-test-extension-for-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add the Test Extension for Reporting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-spring-boot-2x-and-3x-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Spring Boot 2.x and 3.x Users
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-spring-boot-4x-users-new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Spring Boot 4.x Users (New!)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#baseapplicationcontextinitializer-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BaseApplicationContextInitializer Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#httpsystem-getresponse-renamed-to-getresponsebodiless" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HttpSystem: getResponse renamed to getResponseBodiless
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bridgesystem-api-enhancement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BridgeSystem API Enhancement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dead-letter-topic-naming-convention-spring-kafka" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead Letter Topic Naming Convention (Spring Kafka)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-disable-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: Disable Reporting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency Updates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-changelog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full Changelog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contributors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
             
               
                 
@@ -968,6 +1436,7 @@
 <p><strong>Release Date:</strong> To be released</p>
 <p>This release introduces:</p>
 <ul>
+<li><strong>Test Reporting System</strong>: Comprehensive reporting that tracks all actions and assertions during test execution</li>
 <li><strong>Spring Boot 4.x Support</strong>: Full support for Spring Boot 4.x and Spring Kafka 4.x</li>
 <li><strong>Unified Spring Modules</strong>: Single modules that work across Spring Boot 2.x, 3.x, and 4.x</li>
 <li><strong>New Bean Registration DSL</strong>: <code>stoveSpring4xRegistrar</code> for Spring Boot 4.x (since <code>BeanDefinitionDsl</code> is deprecated)</li>
@@ -977,49 +1446,121 @@
 </ul>
 <hr />
 <h2 id="new-features">New Features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h2>
+<h3 id="test-reporting-system">Test Reporting System<a class="headerlink" href="#test-reporting-system" title="Permanent link">&para;</a></h3>
+<p>Stove now includes a built-in reporting system that captures everything that happens during your tests. When a test fails, you get a detailed report showing exactly what happened, making debugging much easier.</p>
+<p><strong>Key capabilities:</strong></p>
+<ul>
+<li><strong>Automatic tracking</strong> of all system interactions (HTTP, Kafka, database, WireMock, gRPC)</li>
+<li><strong>Test failure enrichment</strong> with detailed execution reports embedded in test output</li>
+<li><strong>System snapshots</strong> showing internal state (Kafka messages, WireMock stubs) at the time of failure</li>
+<li><strong>Multiple renderers</strong> - human-readable console output or machine-readable JSON</li>
+<li><strong>Framework integration</strong> with both Kotest and JUnit</li>
+<li><strong>Stack trace preservation</strong> - original stack traces are preserved in test failures</li>
+</ul>
+<h4 id="quick-start-kotest">Quick Start - Kotest<a class="headerlink" href="#quick-start-kotest" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">extensions</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Extension</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="n">StoveKotestExtension</span><span class="p">())</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* your configuration */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">            </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">}</span>
+</code></pre></div>
+<h4 id="quick-start-junit">Quick Start - JUnit<a class="headerlink" href="#quick-start-junit" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@ExtendWith</span><span class="p">(</span><span class="n">StoveJUnitExtension</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyE2ETest</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1">// your tests</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</code></pre></div>
+<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">reporting</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="n">enabled</span><span class="p">()</span><span class="w">           </span><span class="c1">// Enable reporting (default: true)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="n">dumpOnFailure</span><span class="p">()</span><span class="w">     </span><span class="c1">// Dump report when tests fail (default: true)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">PrettyConsoleRenderer</span><span class="p">)</span><span class="w">  </span><span class="c1">// Set the renderer</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}</span>
+</code></pre></div>
+<h4 id="example-output">Example Output<a class="headerlink" href="#example-output" title="Permanent link">&para;</a></h4>
+<p>When a test fails, you'll see output like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>╔══════════════════════════════════════════════════════════════════════════════╗
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>║                           STOVE TEST EXECUTION REPORT                        ║
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>║ Test: should save the product                                                ║
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>║ Status: FAILED                                                               ║
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>╠══════════════════════════════════════════════════════════════════════════════╣
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>║ 14:47:38.215 ✓ PASSED [HTTP] POST /api/products                              ║
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>║     Input: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                                 ║
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>║                                                                              ║
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>║ 14:47:38.341 ✗ FAILED [Kafka] shouldBePublished&lt;ProductCreatedEvent&gt;         ║
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>║     Expected: Message matching condition within 5s                           ║
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>║     Actual: No matching message found                                        ║
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>║     Error: GOT A TIMEOUT: While expecting the publish of &#39;ProductCreatedEvent&#39;║
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>╠══════════════════════════════════════════════════════════════════════════════╣
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>║ SYSTEM SNAPSHOTS                                                             ║
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>║ ┌─ KAFKA ────────────────────────────────────────────────────────────────────║
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>║   Consumed: 0                                                                ║
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>║   Produced: 1                                                                ║
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>║   State Details:                                                             ║
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>║     produced: 1 item(s)                                                      ║
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>║       [0] topic: product-events, value: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}    ║
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>╚══════════════════════════════════════════════════════════════════════════════╝
+</code></pre></div>
+<h4 id="available-renderers">Available Renderers<a class="headerlink" href="#available-renderers" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>PrettyConsoleRenderer</strong> (default) - Colorized, box-drawing output for terminals</li>
+<li><strong>JsonReportRenderer</strong> - Machine-readable JSON for CI/CD integration</li>
+</ul>
+<p>See the <a href="../../Components/13-reporting/">Reporting documentation</a> for full details.</p>
+<hr />
 <h3 id="spring-boot-4x-support">Spring Boot 4.x Support<a class="headerlink" href="#spring-boot-4x-support" title="Permanent link">&para;</a></h3>
 <p>Stove now fully supports Spring Boot 4.x and Spring Kafka 4.x. The existing <code>stove-spring-testing-e2e</code> and <code>stove-spring-testing-e2e-kafka</code> modules work with all Spring Boot versions (2.x, 3.x, and 4.x).</p>
 <p><strong>Dependencies remain the same:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e:0.20.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-kafka:0.20.0&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e:0.20.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-kafka:0.20.0&quot;</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h3 id="new-bean-registration-dsl-for-spring-boot-4x">New Bean Registration DSL for Spring Boot 4.x<a class="headerlink" href="#new-bean-registration-dsl-for-spring-boot-4x" title="Permanent link">&para;</a></h3>
 <p>Spring Boot 4.x deprecates <code>BeanDefinitionDsl</code> (<code>beans { }</code> DSL). Stove provides new extension functions for cleaner bean registration:</p>
 <p><strong>Spring Boot 2.x / 3.x - use <code>addTestDependencies</code>:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">springBoot</span><span class="p">(</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">            </span><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">                </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">()</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">springBoot</span><span class="p">(</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">            </span><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">                </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">()</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">                </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="p">)</span>
 </code></pre></div>
 <p><strong>Spring Boot 4.x - use <code>addTestDependencies4x</code>:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies4x</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">springBoot</span><span class="p">(</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">            </span><span class="n">addTestDependencies4x</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">primary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies4x</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">springBoot</span><span class="p">(</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">            </span><span class="n">addTestDependencies4x</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">primary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="p">)</span>
 </code></pre></div>
 <p><strong>Alternative: Using <code>addInitializers</code> directly:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Spring Boot 2.x / 3.x</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">addInitializers</span><span class="p">(</span><span class="n">stoveSpringRegistrar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">})</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1">// Spring Boot 4.x</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">addInitializers</span><span class="p">(</span><span class="n">stoveSpring4xRegistrar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Spring Boot 2.x / 3.x</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">addInitializers</span><span class="p">(</span><span class="n">stoveSpringRegistrar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">})</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1">// Spring Boot 4.x</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">addInitializers</span><span class="p">(</span><span class="n">stoveSpring4xRegistrar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">})</span>
 </code></pre></div>
 <p><strong>Key differences for 4.x:</strong>
 - Use <code>registerBean&lt;T&gt;()</code> instead of <code>bean&lt;T&gt;()</code>
@@ -1035,42 +1576,42 @@
 </ol>
 <p>Both Koin and Ktor-DI are now <code>compileOnly</code> dependencies - you bring your preferred DI system.</p>
 <p><strong>Using Koin:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;io.insert-koin:koin-ktor:</span><span class="si">$</span><span class="n">koinVersion</span><span class="s">&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">}</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1">// In your test setup</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">bridge</span><span class="p">()</span><span class="w"> </span><span class="c1">// Auto-detects Koin</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;io.insert-koin:koin-ktor:</span><span class="si">$</span><span class="n">koinVersion</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">}</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1">// In your test setup</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">bridge</span><span class="p">()</span><span class="w"> </span><span class="c1">// Auto-detects Koin</span>
 </code></pre></div>
 <p><strong>Using Ktor-DI:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;io.ktor:ktor-server-di:</span><span class="si">$</span><span class="n">ktorVersion</span><span class="s">&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1">// In your test setup</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">bridge</span><span class="p">()</span><span class="w"> </span><span class="c1">// Auto-detects Ktor-DI</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;io.ktor:ktor-server-di:</span><span class="si">$</span><span class="n">ktorVersion</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="p">}</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1">// In your test setup</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">bridge</span><span class="p">()</span><span class="w"> </span><span class="c1">// Auto-detects Ktor-DI</span>
 </code></pre></div>
 <p><strong>Using a Custom Resolver:</strong></p>
 <p>For any other DI framework (Kodein, Dagger, manual, etc.):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">bridge</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">application</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="c1">// Your custom resolution logic - type is KType preserving generics</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">myDiContainer</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">bridge</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">application</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span><span class="c1">// Your custom resolution logic - type is KType preserving generics</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="n">myDiContainer</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="p">}</span>
 </code></pre></div>
 <hr />
 <h3 id="generic-type-resolution-in-bridge-system">Generic Type Resolution in Bridge System<a class="headerlink" href="#generic-type-resolution-in-bridge-system" title="Permanent link">&para;</a></h3>
 <p>The <code>using&lt;T&gt;</code> function now properly preserves generic type information, allowing you to resolve types like <code>List&lt;PaymentService&gt;</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Register multiple implementations</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">provide</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">PaymentService</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">listOf</span><span class="p">(</span><span class="n">StripePaymentService</span><span class="p">(),</span><span class="w"> </span><span class="n">PayPalPaymentService</span><span class="p">())</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">}</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1">// Resolve with full generic type preserved</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">validate</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="n">using</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">PaymentService</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">        </span><span class="n">forEach</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">service</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">service</span><span class="p">.</span><span class="na">pay</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Register multiple implementations</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">provide</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">PaymentService</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="n">listOf</span><span class="p">(</span><span class="n">StripePaymentService</span><span class="p">(),</span><span class="w"> </span><span class="n">PayPalPaymentService</span><span class="p">())</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="p">}</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="c1">// Resolve with full generic type preserved</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="n">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="n">using</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">PaymentService</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">        </span><span class="n">forEach</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">service</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">service</span><span class="p">.</span><span class="na">pay</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>This works by using <code>KType</code> instead of <code>KClass</code> internally, which preserves generic type parameters that would otherwise be lost due to JVM type erasure.</p>
 <p><strong>For custom BridgeSystem implementations:</strong> Override <code>getByType(type: KType)</code> to support generic types. The default implementation falls back to <code>get(klass: KClass)</code>.</p>
@@ -1078,136 +1619,164 @@
 <h3 id="ktor-test-dependency-registration">Ktor Test Dependency Registration<a class="headerlink" href="#ktor-test-dependency-registration" title="Permanent link">&para;</a></h3>
 <p>Unlike Spring Boot's unified <code>addTestDependencies</code>, Ktor test dependency registration differs by DI framework:</p>
 <p><strong>Koin:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">// In your app - accept test modules</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="n">Array</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">testModules</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emptyList</span><span class="p">()):</span><span class="w"> </span><span class="n">Application</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">embeddedServer</span><span class="p">(</span><span class="n">Netty</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">getPort</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">        </span><span class="n">install</span><span class="p">(</span><span class="n">Koin</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">modules</span><span class="p">(</span><span class="n">appModule</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">testModules</span><span class="p">.</span><span class="na">toTypedArray</span><span class="p">())</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="p">}.</span><span class="na">start</span><span class="p">(</span><span class="n">wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">).</span><span class="na">application</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">}</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1">// In tests - pass test modules with overrides</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">ktor</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="n">MyApp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">testModules</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">        </span><span class="n">module</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">            </span><span class="n">single</span><span class="o">&lt;</span><span class="n">TimeProvider</span><span class="o">&gt;</span><span class="p">(</span><span class="n">override</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FixedTimeProvider</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="p">))</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1">// In your app - accept test modules</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="n">Array</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">testModules</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emptyList</span><span class="p">()):</span><span class="w"> </span><span class="n">Application</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">embeddedServer</span><span class="p">(</span><span class="n">Netty</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">getPort</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">        </span><span class="n">install</span><span class="p">(</span><span class="n">Koin</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">modules</span><span class="p">(</span><span class="n">appModule</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">testModules</span><span class="p">.</span><span class="na">toTypedArray</span><span class="p">())</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="p">}.</span><span class="na">start</span><span class="p">(</span><span class="n">wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">).</span><span class="na">application</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="p">}</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="c1">// In tests - pass test modules with overrides</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="n">ktor</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">    </span><span class="n">MyApp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">testModules</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">        </span><span class="n">module</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">            </span><span class="n">single</span><span class="o">&lt;</span><span class="n">TimeProvider</span><span class="o">&gt;</span><span class="p">(</span><span class="n">override</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FixedTimeProvider</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">    </span><span class="p">))</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="p">})</span>
 </code></pre></div>
 <p><strong>Ktor-DI:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// In your app - accept test dependencies</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="n">Array</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">testDeps</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="n">DependencyRegistrar</span><span class="p">.()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Unit</span><span class="p">)</span><span class="o">?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">):</span><span class="w"> </span><span class="n">Application</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">embeddedServer</span><span class="p">(</span><span class="n">Netty</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">getPort</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">        </span><span class="n">install</span><span class="p">(</span><span class="n">DI</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">            </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">                </span><span class="n">provide</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">                </span><span class="n">testDeps</span><span class="o">?.</span><span class="na">invoke</span><span class="p">(</span><span class="k">this</span><span class="p">)</span><span class="w">  </span><span class="c1">// Later provides override earlier ones</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="p">}.</span><span class="na">start</span><span class="p">(</span><span class="n">wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">).</span><span class="na">application</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="p">}</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="c1">// In tests - pass test overrides</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">ktor</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">    </span><span class="n">MyApp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">        </span><span class="n">provide</span><span class="o">&lt;</span><span class="n">TimeProvider</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FixedTimeProvider</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">// In your app - accept test dependencies</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="n">Array</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">testDeps</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="n">DependencyRegistrar</span><span class="p">.()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Unit</span><span class="p">)</span><span class="o">?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">):</span><span class="w"> </span><span class="n">Application</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">embeddedServer</span><span class="p">(</span><span class="n">Netty</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">getPort</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">        </span><span class="n">install</span><span class="p">(</span><span class="n">DI</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">            </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">                </span><span class="n">provide</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">                </span><span class="n">testDeps</span><span class="o">?.</span><span class="na">invoke</span><span class="p">(</span><span class="k">this</span><span class="p">)</span><span class="w">  </span><span class="c1">// Later provides override earlier ones</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">    </span><span class="p">}.</span><span class="na">start</span><span class="p">(</span><span class="n">wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">).</span><span class="na">application</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="p">}</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="c1">// In tests - pass test overrides</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="n">ktor</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">    </span><span class="n">MyApp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">        </span><span class="n">provide</span><span class="o">&lt;</span><span class="n">TimeProvider</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FixedTimeProvider</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="p">})</span>
 </code></pre></div>
 <hr />
 <h3 id="runtime-version-checks">Runtime Version Checks<a class="headerlink" href="#runtime-version-checks" title="Permanent link">&para;</a></h3>
 <p>When Spring Boot, Spring Kafka, or Ktor DI is missing from the classpath, Stove now provides clear error messages:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>═══════════════════════════════════════════════════════════════════════════════
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  Spring Boot Not Found on Classpath!
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>═══════════════════════════════════════════════════════════════════════════════
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  stove-spring-testing-e2e requires Spring Boot to be on your classpath.
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  Spring Boot is declared as a &#39;compileOnly&#39; dependency, so you must add it
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  to your project.
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  Add one of the following to your build.gradle.kts:
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>  For Spring Boot 2.x:
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>    testImplementation(&quot;org.springframework.boot:spring-boot-starter:2.7.x&quot;)
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  For Spring Boot 3.x:
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>    testImplementation(&quot;org.springframework.boot:spring-boot-starter:3.x.x&quot;)
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>  For Spring Boot 4.x:
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>    testImplementation(&quot;org.springframework.boot:spring-boot-starter:4.x.x&quot;)
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>═══════════════════════════════════════════════════════════════════════════════
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>═══════════════════════════════════════════════════════════════════════════════
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  Spring Boot Not Found on Classpath!
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>═══════════════════════════════════════════════════════════════════════════════
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>  stove-spring-testing-e2e requires Spring Boot to be on your classpath.
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>  Spring Boot is declared as a &#39;compileOnly&#39; dependency, so you must add it
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>  to your project.
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>  Add one of the following to your build.gradle.kts:
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>  For Spring Boot 2.x:
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>    testImplementation(&quot;org.springframework.boot:spring-boot-starter:2.7.x&quot;)
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>  For Spring Boot 3.x:
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>    testImplementation(&quot;org.springframework.boot:spring-boot-starter:3.x.x&quot;)
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>  For Spring Boot 4.x:
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>    testImplementation(&quot;org.springframework.boot:spring-boot-starter:4.x.x&quot;)
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>═══════════════════════════════════════════════════════════════════════════════
 </code></pre></div>
 <hr />
 <h2 id="migration-guide">Migration Guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
 <h3 id="from-019x">From 0.19.x<a class="headerlink" href="#from-019x" title="Permanent link">&para;</a></h3>
+<h4 id="add-the-test-extension-for-reporting">Add the Test Extension for Reporting<a class="headerlink" href="#add-the-test-extension-for-reporting" title="Permanent link">&para;</a></h4>
+<p>To get the full benefit of the new reporting system, add the appropriate extension:</p>
+<p><strong>Kotest:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">extensions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="n">StoveKotestExtension</span><span class="p">())</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>JUnit:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nd">@ExtendWith</span><span class="p">(</span><span class="n">StoveJUnitExtension</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyE2ETest</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div></p>
 <h4 id="for-spring-boot-2x-and-3x-users">For Spring Boot 2.x and 3.x Users<a class="headerlink" href="#for-spring-boot-2x-and-3x-users" title="Permanent link">&para;</a></h4>
-<p><strong>If using <code>BaseApplicationContextInitializer</code>:</strong> Migrate to <code>addTestDependencies</code> (see Breaking Changes above).</p>
+<p><strong>If using <code>BaseApplicationContextInitializer</code>:</strong> Migrate to <code>addTestDependencies</code> (see Breaking Changes below).</p>
 <p><strong>If using <code>beans { }</code> directly:</strong> Your existing code continues to work. Optionally, use the new cleaner API:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Old way (still works)</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">addInitializers</span><span class="p">(</span><span class="n">beans</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">})</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1">// New way (recommended)</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1">// Old way (still works)</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">addInitializers</span><span class="p">(</span><span class="n">beans</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">})</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1">// New way (recommended)</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
 <h4 id="for-spring-boot-4x-users-new">For Spring Boot 4.x Users (New!)<a class="headerlink" href="#for-spring-boot-4x-users-new" title="Permanent link">&para;</a></h4>
 <p>Spring Boot 4.x is newly supported in this release. Use <code>addTestDependencies4x</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies4x</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">springBoot</span><span class="p">(</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">        </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">            </span><span class="n">addTestDependencies4x</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">primary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies4x</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="n">springBoot</span><span class="p">(</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">        </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">            </span><span class="n">addTestDependencies4x</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">primary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">                </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="p">)</span>
 </code></pre></div>
 <p>Note: The <code>beans { }</code> DSL from Spring is deprecated in 4.x, which is why Stove provides <code>addTestDependencies4x</code> with <code>registerBean&lt;T&gt;()</code>.</p>
 <hr />
-<h3 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
-<h4 id="baseapplicationcontextinitializer-removed"><code>BaseApplicationContextInitializer</code> Removed<a class="headerlink" href="#baseapplicationcontextinitializer-removed" title="Permanent link">&para;</a></h4>
+<h2 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h2>
+<h3 id="baseapplicationcontextinitializer-removed"><code>BaseApplicationContextInitializer</code> Removed<a class="headerlink" href="#baseapplicationcontextinitializer-removed" title="Permanent link">&para;</a></h3>
 <p><code>BaseApplicationContextInitializer</code> has been removed. Migrate to <code>addTestDependencies</code>:</p>
 <p><strong>Before (0.19.0):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestSystemInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">()</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="p">})</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="c1">// Usage</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="n">addInitializers</span><span class="p">(</span><span class="n">TestSystemInitializer</span><span class="p">())</span>
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestSystemInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">()</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="p">})</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="c1">// Usage</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">    </span><span class="n">addInitializers</span><span class="p">(</span><span class="n">TestSystemInitializer</span><span class="p">())</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>After (0.20.0):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">        </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">()</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">        </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">        </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">()</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">        </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">MyService</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MyServiceImpl</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="p">}</span>
 </code></pre></div>
 <p>This is simpler - no need to create a separate class.</p>
 <hr />
-<h3 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h3>
-<h4 id="bridgesystem-api-enhancement">BridgeSystem API Enhancement<a class="headerlink" href="#bridgesystem-api-enhancement" title="Permanent link">&para;</a></h4>
+<h3 id="httpsystem-getresponse-renamed-to-getresponsebodiless">HttpSystem: <code>getResponse</code> renamed to <code>getResponseBodiless</code><a class="headerlink" href="#httpsystem-getresponse-renamed-to-getresponsebodiless" title="Permanent link">&para;</a></h3>
+<p>The <code>getResponse</code> method in <code>HttpSystem</code> has been renamed to <code>getResponseBodiless</code> to better reflect its purpose - it returns a response without parsing the body.</p>
+<p><strong>Before:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">http</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">    </span><span class="n">getResponse</span><span class="p">(</span><span class="s">&quot;/api/endpoint&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">status</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">200</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>After:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">http</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">    </span><span class="n">getResponseBodiless</span><span class="p">(</span><span class="s">&quot;/api/endpoint&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">status</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">200</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<h3 id="bridgesystem-api-enhancement">BridgeSystem API Enhancement<a class="headerlink" href="#bridgesystem-api-enhancement" title="Permanent link">&para;</a></h3>
 <p>The <code>BridgeSystem</code> abstract class now has a new method <code>getByType(type: KType)</code> which is used by <code>resolve()</code> to support generic types. If you have a custom <code>BridgeSystem</code> implementation:</p>
 <ul>
 <li><strong>No action required</strong> if you only use simple types - the default implementation falls back to <code>get(klass: KClass)</code></li>
 <li><strong>Override <code>getByType(type: KType)</code></strong> if you want to support generic types like <code>List&lt;T&gt;</code>, <code>Map&lt;K,V&gt;</code>, etc.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1">// Example for custom bridge</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">D</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Any</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getByType</span><span class="p">(</span><span class="n">type</span><span class="p">:</span><span class="w"> </span><span class="n">KType</span><span class="p">):</span><span class="w"> </span><span class="n">D</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="c1">// Use type.classifier for KClass</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="c1">// Use type.arguments for generic parameters</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">myDiFramework</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1">// Example for custom bridge</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">D</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Any</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getByType</span><span class="p">(</span><span class="n">type</span><span class="p">:</span><span class="w"> </span><span class="n">KType</span><span class="p">):</span><span class="w"> </span><span class="n">D</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">    </span><span class="c1">// Use type.classifier for KClass</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="c1">// Use type.arguments for generic parameters</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">myDiFramework</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="p">}</span>
 </code></pre></div>
-<h4 id="dead-letter-topic-naming-convention-spring-kafka">Dead Letter Topic Naming Convention (Spring Kafka)<a class="headerlink" href="#dead-letter-topic-naming-convention-spring-kafka" title="Permanent link">&para;</a></h4>
+<h3 id="dead-letter-topic-naming-convention-spring-kafka">Dead Letter Topic Naming Convention (Spring Kafka)<a class="headerlink" href="#dead-letter-topic-naming-convention-spring-kafka" title="Permanent link">&para;</a></h3>
 <p>Be aware that Spring Kafka changed the default DLT (Dead Letter Topic) naming convention between versions:</p>
 <table>
 <thead>
@@ -1231,6 +1800,12 @@
 </tbody>
 </table>
 <p>This is not a Stove change, but something to be aware of when writing Kafka tests across different Spring Kafka versions.</p>
+<h3 id="optional-disable-reporting">Optional: Disable Reporting<a class="headerlink" href="#optional-disable-reporting" title="Permanent link">&para;</a></h3>
+<p>If you don't want the new reporting feature (not recommended), you can disable it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="p">}</span>
+</code></pre></div>
 <hr />
 <h2 id="dependency-updates">Dependency Updates<a class="headerlink" href="#dependency-updates" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1247,17 +1822,17 @@
 <p>Thanks to all contributors who made this release possible!</p>
 <hr />
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e:0.20.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e:0.20.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="c1">// Add component-specific dependencies as needed</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-kafka:0.20.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e:0.20.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e:0.20.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="c1">// Add component-specific dependencies as needed</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-kafka:0.20.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="p">}</span>
 </code></pre></div>
 <p>For snapshot versions, add the snapshot repository:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://central.sonatype.com/repository/maven-snapshots&quot;</span><span class="p">)</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://central.sonatype.com/repository/maven-snapshots&quot;</span><span class="p">)</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="p">}</span>
 </code></pre></div>
 
 
@@ -1291,6 +1866,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../troubleshooting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Troubleshooting">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Troubleshooting
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../0.19.0/" class="md-footer__link md-footer__link--next" aria-label="Next: 0.19.0">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                0.19.0
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
@@ -1334,10 +1947,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.top", "navigation.tracking", "navigation.sections", "navigation.indexes", "navigation.footer", "search.highlight", "search.share", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.top", "navigation.tracking", "navigation.sections", "navigation.indexes", "navigation.footer", "search.highlight", "search.share", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
