@@ -72,10 +72,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests") {
 
   val testImplementation by configurations
   val libs = rootProject.libs
-  dependencies {
-    api(libs.arrow.core)
-  }
-
   detekt {
     buildUponDefaultConfig = true
     parallel = true

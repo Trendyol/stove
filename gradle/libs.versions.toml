@@ -88,7 +88,6 @@ couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer",
 # Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-arrow = { module = "io.arrow-kt:arrow-integrations-jackson-module", version = "0.15.1" }
 jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 
 # Jackson 3
