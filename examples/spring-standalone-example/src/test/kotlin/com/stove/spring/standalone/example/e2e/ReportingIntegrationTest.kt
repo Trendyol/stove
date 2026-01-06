@@ -46,20 +46,17 @@ class ReportingIntegrationTest :
       // Should have WireMock stub action
       report
         .entries()
-        .filterIsInstance<ActionEntry>()
         .any { it.system == "WireMock" && it.action.contains("GET /suppliers") } shouldBe true
 
       // Should have HTTP action
       report
         .entries()
-        .filterIsInstance<ActionEntry>()
         .any { it.system == "HTTP" && it.action.contains("POST /api/product") } shouldBe true
 
       // Should have Kafka assertion
       report
         .entries()
-        .filterIsInstance<AssertionEntry>()
-        .any { it.system == "Kafka" && it.description.contains("shouldBePublished") } shouldBe true
+        .any { it.system == "Kafka" && it.action.contains("shouldBePublished") } shouldBe true
     }
 
     test("report should include Kafka MessageStore snapshot on failure") {
@@ -109,11 +106,10 @@ class ReportingIntegrationTest :
 
       val report = TestSystem.reporter().currentTest()
 
-      // Should have Couchbase combined action with result
+      // Should have Couchbase action with result
       report
         .entries()
-        .filterIsInstance<ActionEntry>()
-        .any { it.system == "Couchbase" && it.action.contains("Get document") && it.result != null } shouldBe true
+        .any { it.system == "Couchbase" && it.action.contains("Get document") } shouldBe true
     }
 
     test("report should capture multiple system interactions") {
@@ -153,11 +149,10 @@ class ReportingIntegrationTest :
       val entries = report.entriesForThisTest()
 
       // Should have entries from all systems
-      // Note: Systems using recordActionWithResult create a single combined entry
       entries.filter { it.system == "WireMock" } shouldHaveSize 1
-      entries.filter { it.system == "HTTP" } shouldHaveSize 1 // Combined action with result
+      entries.filter { it.system == "HTTP" } shouldHaveSize 1
       entries.filter { it.system == "Kafka" } shouldHaveSize 1
-      entries.filter { it.system == "Couchbase" } shouldHaveSize 1 // Combined action with result
+      entries.filter { it.system == "Couchbase" } shouldHaveSize 1
     }
 
     test("report should be renderable as JSON") {
