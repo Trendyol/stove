@@ -112,17 +112,7 @@ class KafkaSystem(
     serde: Option<StoveSerde<Any, *>> = None,
     testCase: Option<String> = None
   ): KafkaSystem {
-    val record = ProducerRecord<String, Any>(
-      topic,
-      partition.getOrNull(),
-      key.getOrNull(),
-      message,
-      headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
-    )
-
-    context.options.ops.send(kafkaTemplate, record)
-
-    recordSuccess(
+    recordAndExecute(
       action = "Publish to '$topic'",
       input = arrow.core.Some(message),
       metadata = mapOf(
@@ -130,7 +120,16 @@ class KafkaSystem(
         "headers" to headers,
         "partition" to (partition.getOrNull()?.toString() ?: "")
       )
-    )
+    ) {
+      val record = ProducerRecord<String, Any>(
+        topic,
+        partition.getOrNull(),
+        key.getOrNull(),
+        message,
+        headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
+      )
+      context.options.ops.send(kafkaTemplate, record)
+    }
     return this
   }
 

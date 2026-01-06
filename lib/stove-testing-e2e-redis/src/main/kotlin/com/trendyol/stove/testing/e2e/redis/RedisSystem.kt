@@ -162,11 +162,14 @@ class RedisSystem(
    * This operation is not supported when using a provided instance.
    * @return RedisSystem
    */
-  fun pause(): RedisSystem = withContainerOrWarn("pause") { it.pause() }.also {
-    recordSuccess(
+  fun pause(): RedisSystem {
+    executeAndRecord(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
-    )
+    ) {
+      withContainerOrWarn("pause") { it.pause() }
+    }
+    return this
   }
 
   /**
@@ -174,8 +177,11 @@ class RedisSystem(
    * This operation is not supported when using a provided instance.
    * @return RedisSystem
    */
-  fun unpause(): RedisSystem = withContainerOrWarn("unpause") { it.unpause() }.also {
-    recordSuccess(action = "Unpause container")
+  fun unpause(): RedisSystem {
+    executeAndRecord(action = "Unpause container") {
+      withContainerOrWarn("unpause") { it.unpause() }
+    }
+    return this
   }
 
   private suspend fun obtainExposedConfiguration(): RedisExposedConfiguration =

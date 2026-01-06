@@ -6,6 +6,7 @@ public final class com/trendyol/stove/testing/e2e/grpc/GrpcSystem : com/trendyol
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;)V
 	public final fun channelWithMetadata (Ljava/util/Map;)Lio/grpc/Channel;
 	public fun close ()V
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getGrpcChannel ()Lio/grpc/ManagedChannel;
 	public final fun getOptions ()Lcom/trendyol/stove/testing/e2e/grpc/GrpcSystemOptions;

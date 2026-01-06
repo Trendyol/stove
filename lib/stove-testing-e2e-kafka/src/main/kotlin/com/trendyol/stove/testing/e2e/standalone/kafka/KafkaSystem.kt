@@ -287,12 +287,7 @@ class KafkaSystem(
     partition: Int = 0,
     testCase: Option<String> = None
   ): KafkaSystem {
-    val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
-    headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
-    testCase.map { record.headers().add("testCase", it.toByteArray()) }
-    kafkaPublisher.dispatch(record)
-
-    recordSuccess(
+    recordAndExecute(
       action = "Publish to '$topic'",
       input = arrow.core.Some(message),
       metadata = buildMap {
@@ -300,7 +295,12 @@ class KafkaSystem(
         put("headers", headers)
         put("partition", partition)
       }
-    )
+    ) {
+      val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
+      headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
+      testCase.map { record.headers().add("testCase", it.toByteArray()) }
+      kafkaPublisher.dispatch(record)
+    }
     return this
   }
 

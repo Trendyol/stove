@@ -202,23 +202,20 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(query.isNotBlank()) { "Query cannot be blank" }
 
-    val results = esClient
-      .search(
-        SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
-        T::class.java
-      ).hits()
-      .hits()
-      .mapNotNull { it.source() }
-
     recordAndExecute(
       action = "Search '$index'",
-      input = arrow.core.Some(mapOf("index" to index, "query" to query)),
-      output = arrow.core.Some("${results.size} hit(s)"),
-      actual = arrow.core.Some(results)
+      input = arrow.core.Some(mapOf("index" to index, "query" to query))
     ) {
+      val results = esClient
+        .search(
+          SearchRequest.of { req -> req.index(index).query { q -> q.withJson(query.reader()) } },
+          T::class.java
+        ).hits()
+        .hits()
+        .mapNotNull { it.source() }
       assertion(results)
+      results
     }
-
     return this
   }
 
@@ -227,22 +224,17 @@ class ElasticsearchSystem internal constructor(
     query: Query,
     crossinline assertion: (List<T>) -> Unit
   ): ElasticsearchSystem {
-    val results = esClient
-      .search(
-        SearchRequest.of { q -> q.query(query) },
-        T::class.java
-      ).hits()
-      .hits()
-      .mapNotNull { it.source() }
-
-    recordAndExecute(
-      action = "Search with Query DSL",
-      output = arrow.core.Some("${results.size} hit(s)"),
-      actual = arrow.core.Some(results)
-    ) {
+    recordAndExecute(action = "Search with Query DSL") {
+      val results = esClient
+        .search(
+          SearchRequest.of { q -> q.query(query) },
+          T::class.java
+        ).hits()
+        .hits()
+        .mapNotNull { it.source() }
       assertion(results)
+      results
     }
-
     return this
   }
 
@@ -255,20 +247,17 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    val document = esClient
-      .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
-      .source()
-      .toOption()
-
     recordAndExecute(
       action = "Get document",
-      input = arrow.core.Some(mapOf("index" to index, "id" to key)),
-      output = document,
-      actual = document
+      input = arrow.core.Some(mapOf("index" to index, "id" to key))
     ) {
+      val document = esClient
+        .get({ req -> req.index(index).id(key).refresh(true) }, T::class.java)
+        .source()
+        .toOption()
       document.map(assertion).getOrElse { throw AssertionError("Resource with key ($key) is not found") }
+      document
     }
-
     return this
   }
 
@@ -280,17 +269,14 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    val exists = esClient.exists { req -> req.index(index).id(key) }.value()
-
     recordAndExecute(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("index" to index, "id" to key)),
-      expected = arrow.core.Some("Document not found"),
-      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
+      expected = arrow.core.Some("Document not found")
     ) {
+      val exists = esClient.exists { req -> req.index(index).id(key) }.value()
       if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
-
     return this
   }
 
@@ -302,12 +288,12 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    esClient.delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
-
-    recordSuccess(
+    executeAndRecord(
       action = "Delete document",
       metadata = mapOf("index" to index, "id" to key)
-    )
+    ) {
+      esClient.delete(DeleteRequest.of { req -> req.index(index).id(key).refresh(Refresh.WaitFor) })
+    }
     return this
   }
 
@@ -320,20 +306,19 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(id.isNotBlank()) { "Id cannot be blank" }
 
-    esClient.index { req ->
-      req
-        .index(index)
-        .id(id)
-        .document(instance)
-        .refresh(Refresh.WaitFor)
-    }
-
-    recordSuccess(
+    executeAndRecord(
       action = "Index document",
       input = arrow.core.Some(instance),
       metadata = mapOf("index" to index, "id" to id)
-    )
-
+    ) {
+      esClient.index { req ->
+        req
+          .index(index)
+          .id(id)
+          .document(instance)
+          .refresh(Refresh.WaitFor)
+      }
+    }
     return this
   }
 
@@ -344,7 +329,15 @@ class ElasticsearchSystem internal constructor(
    */
   @Suppress("unused")
   @ElasticDsl
-  fun pause(): ElasticsearchSystem = withContainerOrWarn("pause") { it.pause() }
+  fun pause(): ElasticsearchSystem {
+    executeAndRecord(
+      action = "Pause container",
+      metadata = mapOf("operation" to "fault-injection")
+    ) {
+      withContainerOrWarn("pause") { it.pause() }
+    }
+    return this
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
@@ -353,7 +346,12 @@ class ElasticsearchSystem internal constructor(
    */
   @Suppress("unused")
   @ElasticDsl
-  fun unpause(): ElasticsearchSystem = withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): ElasticsearchSystem {
+    executeAndRecord(action = "Unpause container") {
+      withContainerOrWarn("unpause") { it.unpause() }
+    }
+    return this
+  }
 
   private suspend fun obtainExposedConfiguration(): ElasticSearchExposedConfiguration =
     when {

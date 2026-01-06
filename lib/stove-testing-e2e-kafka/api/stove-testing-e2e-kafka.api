@@ -262,6 +262,7 @@ public final class com/trendyol/stove/testing/e2e/standalone/kafka/KafkaSystem :
 	public fun configuration ()Ljava/util/List;
 	public final fun consumer-IY8X1Ik (Ljava/lang/String;ZLjava/lang/String;ZLkotlin/jvm/functions/Function1;Lorg/apache/kafka/common/serialization/Deserializer;Lorg/apache/kafka/common/serialization/Deserializer;JJLjava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun consumer-IY8X1Ik$default (Lcom/trendyol/stove/testing/e2e/standalone/kafka/KafkaSystem;Ljava/lang/String;ZLjava/lang/String;ZLkotlin/jvm/functions/Function1;Lorg/apache/kafka/common/serialization/Deserializer;Lorg/apache/kafka/common/serialization/Deserializer;JJLjava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getReportSystemName ()Ljava/lang/String;
 	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;

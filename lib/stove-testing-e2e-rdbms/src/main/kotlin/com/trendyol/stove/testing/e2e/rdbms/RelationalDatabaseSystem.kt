@@ -72,31 +72,31 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   inline fun <reified T : Any> shouldQuery(
     query: String,
     crossinline mapper: (Row) -> T,
-    assertion: (List<T>) -> Unit
+    crossinline assertion: (List<T>) -> Unit
   ): SELF {
-    val results = internalSqlOperations.select(query) { mapper(it) }
-    assertion(results)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Query",
       input = Some(query.trim()),
-      output = Some("${results.size} row(s) returned"),
-      metadata = mapOf("rowCount" to results.size)
-    )
+      metadata = mapOf("sql" to query.trim())
+    ) {
+      val results = internalSqlOperations.select(query) { mapper(it) }
+      assertion(results)
+      "${results.size} row(s) returned"
+    }
     return this as SELF
   }
 
   @StoveDsl
   fun shouldExecute(sql: String): SELF {
-    val affectedRows = internalSqlOperations.execute(sql)
-    check(affectedRows >= 0) { "Failed to execute sql: $sql" }
-
-    recordSuccess(
+    executeAndRecord(
       action = "Execute SQL",
       input = Some(sql.trim()),
-      output = Some("$affectedRows row(s) affected"),
-      metadata = mapOf("affectedRows" to affectedRows)
-    )
+      metadata = mapOf("sql" to sql.trim())
+    ) {
+      val affectedRows = internalSqlOperations.execute(sql)
+      check(affectedRows >= 0) { "Failed to execute sql: $sql" }
+      "$affectedRows row(s) affected"
+    }
     return this as SELF
   }
 

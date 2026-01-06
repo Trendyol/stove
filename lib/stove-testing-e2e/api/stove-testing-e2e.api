@@ -454,6 +454,8 @@ public abstract interface class com/trendyol/stove/testing/e2e/reporting/ReportR
 }
 
 public abstract interface class com/trendyol/stove/testing/e2e/reporting/Reports {
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static synthetic fun executeAndRecord$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun getReportSystemName ()Ljava/lang/String;
 	public fun getReporter ()Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -464,6 +466,8 @@ public abstract interface class com/trendyol/stove/testing/e2e/reporting/Reports
 }
 
 public final class com/trendyol/stove/testing/e2e/reporting/Reports$DefaultImpls {
+	public static fun executeAndRecord (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static synthetic fun executeAndRecord$default (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ljava/lang/Object;
 	public static fun getReportSystemName (Lcom/trendyol/stove/testing/e2e/reporting/Reports;)Ljava/lang/String;
 	public static fun getReporter (Lcom/trendyol/stove/testing/e2e/reporting/Reports;)Lcom/trendyol/stove/testing/e2e/reporting/StoveReporter;
 	public static fun recordAndExecute (Lcom/trendyol/stove/testing/e2e/reporting/Reports;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -735,6 +739,7 @@ public abstract class com/trendyol/stove/testing/e2e/system/BridgeSystem : com/t
 	public fun <init> (Lcom/trendyol/stove/testing/e2e/system/TestSystem;)V
 	public fun afterRun (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
 	public fun getByType (Lkotlin/reflect/KType;)Ljava/lang/Object;

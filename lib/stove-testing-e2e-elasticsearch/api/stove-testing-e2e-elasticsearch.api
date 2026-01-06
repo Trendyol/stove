@@ -105,6 +105,7 @@ public final class com/trendyol/stove/testing/e2e/elasticsearch/ElasticsearchSys
 	public fun afterRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getEsClient ()Lco/elastic/clients/elasticsearch/ElasticsearchClient;
 	public fun getReportSystemName ()Ljava/lang/String;

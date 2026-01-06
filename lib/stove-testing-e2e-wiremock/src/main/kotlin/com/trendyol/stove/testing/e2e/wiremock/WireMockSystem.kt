@@ -269,17 +269,16 @@ class WireMockSystem(
     metadata: Map<String, String> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    val mockRequest = get(urlEqualTo(url))
-    mockRequest.withMetadata(metadata)
-    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: GET $url",
-      output = responseBody,
       metadata = mapOf("statusCode" to statusCode, "responseHeaders" to responseHeaders)
-    )
+    ) {
+      val mockRequest = get(urlEqualTo(url))
+      mockRequest.withMetadata(metadata)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -307,18 +306,17 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    val mockRequest = post(urlEqualTo(url))
-    configureBodyAndMetadata(mockRequest, metadata, requestBody)
-    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: POST $url",
       input = requestBody,
-      output = responseBody,
       metadata = mapOf("statusCode" to statusCode)
-    )
+    ) {
+      val mockRequest = post(urlEqualTo(url))
+      configureBodyAndMetadata(mockRequest, metadata, requestBody)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -346,18 +344,17 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    val req = put(urlEqualTo(url))
-    configureBodyAndMetadata(req, metadata, requestBody)
-    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-    val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: PUT $url",
       input = requestBody,
-      output = responseBody,
       metadata = mapOf("statusCode" to statusCode)
-    )
+    ) {
+      val req = put(urlEqualTo(url))
+      configureBodyAndMetadata(req, metadata, requestBody)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -385,18 +382,17 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    val req = patch(urlEqualTo(url))
-    configureBodyAndMetadata(req, metadata, requestBody)
-    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-    val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: PATCH $url",
       input = requestBody,
-      output = responseBody,
       metadata = mapOf("statusCode" to statusCode)
-    )
+    ) {
+      val req = patch(urlEqualTo(url))
+      configureBodyAndMetadata(req, metadata, requestBody)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -414,16 +410,16 @@ class WireMockSystem(
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    val mockRequest = delete(urlEqualTo(url))
-    configureBodyAndMetadata(mockRequest, metadata, None)
-    val mockResponse = configureResponse(statusCode, None, mapOf())
-    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: DELETE $url",
       metadata = mapOf("statusCode" to statusCode)
-    )
+    ) {
+      val mockRequest = delete(urlEqualTo(url))
+      configureBodyAndMetadata(mockRequest, metadata, None)
+      val mockResponse = configureResponse(statusCode, None, mapOf())
+      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -441,16 +437,16 @@ class WireMockSystem(
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    val mockRequest = head(urlEqualTo(url))
-    configureBodyAndMetadata(mockRequest, metadata, None)
-    val mockResponse = configureResponse(statusCode, None, mapOf())
-    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: HEAD $url",
       metadata = mapOf("statusCode" to statusCode)
-    )
+    ) {
+      val mockRequest = head(urlEqualTo(url))
+      configureBodyAndMetadata(mockRequest, metadata, None)
+      val mockResponse = configureResponse(statusCode, None, mapOf())
+      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -472,11 +468,11 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = put(urlPatternFn(url))
-    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(action = "Register stub: PUT $url (custom)")
+    executeAndRecord(action = "Register stub: PUT $url (custom)") {
+      val req = put(urlPatternFn(url))
+      val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -498,11 +494,11 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = patch(urlPatternFn(url))
-    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(action = "Register stub: PATCH $url (custom)")
+    executeAndRecord(action = "Register stub: PATCH $url (custom)") {
+      val req = patch(urlPatternFn(url))
+      val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -524,11 +520,11 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = get(urlPatternFn(url))
-    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(action = "Register stub: GET $url (custom)")
+    executeAndRecord(action = "Register stub: GET $url (custom)") {
+      val req = get(urlPatternFn(url))
+      val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -550,11 +546,11 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = head(urlPatternFn(url))
-    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(action = "Register stub: HEAD $url (custom)")
+    executeAndRecord(action = "Register stub: HEAD $url (custom)") {
+      val req = head(urlPatternFn(url))
+      val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -576,11 +572,11 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = delete(urlPatternFn(url))
-    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(action = "Register stub: DELETE $url (custom)")
+    executeAndRecord(action = "Register stub: DELETE $url (custom)") {
+      val req = delete(urlPatternFn(url))
+      val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -602,11 +598,11 @@ class WireMockSystem(
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    val req = post(urlPatternFn(url))
-    val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(action = "Register stub: POST $url (custom)")
+    executeAndRecord(action = "Register stub: POST $url (custom)") {
+      val req = post(urlPatternFn(url))
+      val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 
@@ -641,8 +637,9 @@ class WireMockSystem(
     method: (String) -> MappingBuilder,
     block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
   ) {
-    stubBehaviour(wireMock, serde = serde, url, method, block)
-    recordSuccess(action = "Register behaviour stub: $url")
+    executeAndRecord(action = "Register behaviour stub: $url") {
+      stubBehaviour(wireMock, serde = serde, url, method, block)
+    }
   }
 
   /**
@@ -864,20 +861,19 @@ class WireMockSystem(
   ): WireMockSystem {
     require(requestContaining.isNotEmpty()) { "requestContaining must not be empty" }
 
-    val mockRequest = method(urlPatternFn(url))
-    mockRequest.withMetadata(metadata)
-    mockRequest.withHeader("Content-Type", ContainsPattern("application/json"))
-    configureBodyContaining(mockRequest, requestContaining)
-    val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-    val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-    stubLog.put(stub.id, stub)
-
-    recordSuccess(
+    executeAndRecord(
       action = "Register stub: $url (partial match)",
       input = requestContaining.some(),
-      output = responseBody,
       metadata = mapOf("statusCode" to statusCode)
-    )
+    ) {
+      val mockRequest = method(urlPatternFn(url))
+      mockRequest.withMetadata(metadata)
+      mockRequest.withHeader("Content-Type", ContainsPattern("application/json"))
+      configureBodyContaining(mockRequest, requestContaining)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
+      stubLog.put(stub.id, stub)
+    }
     return this
   }
 

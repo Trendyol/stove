@@ -197,25 +197,22 @@ class CouchbaseSystem internal constructor(
     crossinline assertion: (List<T>) -> Unit
   ): CouchbaseSystem {
     val typeRef = typeRef<T>()
-    val results = flow {
-      cluster
-        .query(
-          statement = query,
-          metrics = false,
-          consistency = QueryScanConsistency.requestPlus(),
-          serializer = context.options.clusterSerDe
-        ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
-    }.toList()
-
     recordAndExecute(
       action = "N1QL Query",
-      input = arrow.core.Some(query),
-      output = arrow.core.Some("${results.size} document(s)"),
-      actual = arrow.core.Some(results)
+      input = arrow.core.Some(query)
     ) {
+      val results = flow {
+        cluster
+          .query(
+            statement = query,
+            metrics = false,
+            consistency = QueryScanConsistency.requestPlus(),
+            serializer = context.options.clusterSerDe
+          ).execute { row -> emit(context.options.clusterSerDe.deserialize(row.content, typeRef)) }
+      }.toList()
       assertion(results)
+      results
     }
-
     return this
   }
 
@@ -224,14 +221,13 @@ class CouchbaseSystem internal constructor(
     key: String,
     crossinline assertion: (T) -> Unit
   ): CouchbaseSystem {
-    val document = collection.get(key).contentAs<T>()
     recordAndExecute(
       action = "Get document",
-      input = arrow.core.Some(mapOf("id" to key)),
-      output = arrow.core.Some(document),
-      actual = arrow.core.Some(document)
+      input = arrow.core.Some(mapOf("id" to key))
     ) {
+      val document = collection.get(key).contentAs<T>()
       assertion(document)
+      document
     }
     return this
   }
@@ -242,31 +238,29 @@ class CouchbaseSystem internal constructor(
     key: String,
     crossinline assertion: (T) -> Unit
   ): CouchbaseSystem {
-    val document = cluster
-      .bucket(context.bucket.name)
-      .collection(collection)
-      .get(key)
-      .contentAs<T>()
     recordAndExecute(
       action = "Get document",
-      input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
-      output = arrow.core.Some(document),
-      actual = arrow.core.Some(document)
+      input = arrow.core.Some(mapOf("collection" to collection, "id" to key))
     ) {
+      val document = cluster
+        .bucket(context.bucket.name)
+        .collection(collection)
+        .get(key)
+        .contentAs<T>()
       assertion(document)
+      document
     }
     return this
   }
 
   @CouchbaseDsl
   suspend fun shouldNotExist(key: String): CouchbaseSystem {
-    val exists = collection.getOrNull(key) != null
     recordAndExecute(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("id" to key)),
-      expected = arrow.core.Some("Document not found"),
-      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
+      expected = arrow.core.Some("Document not found")
     ) {
+      val exists = collection.getOrNull(key) != null
       if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
     return this
@@ -277,16 +271,15 @@ class CouchbaseSystem internal constructor(
     collection: String,
     key: String
   ): CouchbaseSystem {
-    val exists = cluster
-      .bucket(context.bucket.name)
-      .collection(collection)
-      .getOrNull(key) != null
     recordAndExecute(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
-      expected = arrow.core.Some("Document not found"),
-      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
+      expected = arrow.core.Some("Document not found")
     ) {
+      val exists = cluster
+        .bucket(context.bucket.name)
+        .collection(collection)
+        .getOrNull(key) != null
       if (exists) throw AssertionError("The document with the given id($key) was not expected, but found!")
     }
     return this
@@ -294,12 +287,12 @@ class CouchbaseSystem internal constructor(
 
   @CouchbaseDsl
   suspend fun shouldDelete(key: String): CouchbaseSystem {
-    collection.remove(key)
-    recordSuccess(
+    recordAndExecute(
       action = "Delete document",
-      input = arrow.core.Some(mapOf("id" to key)),
-      output = arrow.core.Some("Document deleted")
-    )
+      input = arrow.core.Some(mapOf("id" to key))
+    ) {
+      collection.remove(key)
+    }
     return this
   }
 
@@ -308,15 +301,15 @@ class CouchbaseSystem internal constructor(
     collection: String,
     key: String
   ): CouchbaseSystem {
-    cluster
-      .bucket(context.bucket.name)
-      .collection(collection)
-      .remove(key)
-    recordSuccess(
+    recordAndExecute(
       action = "Delete document",
-      input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
-      output = arrow.core.Some("Document deleted")
-    )
+      input = arrow.core.Some(mapOf("collection" to collection, "id" to key))
+    ) {
+      cluster
+        .bucket(context.bucket.name)
+        .collection(collection)
+        .remove(key)
+    }
     return this
   }
 
@@ -330,14 +323,13 @@ class CouchbaseSystem internal constructor(
     id: String,
     instance: T
   ): CouchbaseSystem {
-    cluster.bucket(context.bucket.name).collection(collection).insert(id, instance)
-
-    recordSuccess(
+    recordAndExecute(
       action = "Save document",
       input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "id" to id)
-    )
-
+    ) {
+      cluster.bucket(context.bucket.name).collection(collection).insert(id, instance)
+    }
     return this
   }
 
@@ -357,7 +349,15 @@ class CouchbaseSystem internal constructor(
    * @return CouchbaseSystem
    */
   @CouchbaseDsl
-  fun pause(): CouchbaseSystem = withContainerOrWarn("pause") { it.pause() }
+  fun pause(): CouchbaseSystem {
+    executeAndRecord(
+      action = "Pause container",
+      metadata = mapOf("operation" to "fault-injection")
+    ) {
+      withContainerOrWarn("pause") { it.pause() }
+    }
+    return this
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
@@ -365,7 +365,12 @@ class CouchbaseSystem internal constructor(
    * @return CouchbaseSystem
    */
   @CouchbaseDsl
-  fun unpause(): CouchbaseSystem = withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): CouchbaseSystem {
+    executeAndRecord(action = "Unpause container") {
+      withContainerOrWarn("unpause") { it.unpause() }
+    }
+    return this
+  }
 
   private suspend fun obtainExposedConfiguration(): CouchbaseExposedConfiguration =
     when {

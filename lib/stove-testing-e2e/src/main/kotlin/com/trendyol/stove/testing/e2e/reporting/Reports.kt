@@ -66,7 +66,7 @@ interface Reports {
   }
 
   /**
-   * Execute an action and record the result.
+   * Execute an action and record the result (suspend version).
    *
    * This is the preferred method for actions that include assertions.
    * It handles success/failure recording automatically and re-throws on failure.
@@ -121,6 +121,50 @@ interface Reports {
           metadata = metadata,
           expected = expected,
           actual = actual,
+          error = e.message.toOption()
+        )
+      )
+      throw e
+    }
+  }
+
+  /**
+   * Execute a synchronous action and record the result.
+   *
+   * Non-suspend version for synchronous operations.
+   * It handles success/failure recording automatically and re-throws on failure.
+   */
+  fun <T> executeAndRecord(
+    action: String,
+    input: Option<Any> = None,
+    metadata: Map<String, Any> = emptyMap(),
+    block: () -> T
+  ): T {
+    if (!reporter.isEnabled) return block()
+
+    return try {
+      val result = block()
+      reporter.record(
+        ReportEntry.action(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = action,
+          passed = true,
+          input = input,
+          output = result.toOption(),
+          metadata = metadata
+        )
+      )
+      result
+    } catch (e: Throwable) {
+      reporter.record(
+        ReportEntry.action(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = action,
+          passed = false,
+          input = input,
+          metadata = metadata,
           error = e.message.toOption()
         )
       )

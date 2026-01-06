@@ -68,19 +68,17 @@ class StoveReporter(
     dumpIfFailed(renderer).takeIf { it.isNotEmpty() }?.let(::println) ?: Unit
 
   /** Collect snapshots from all reporting systems */
-  fun collectSnapshots(): List<SystemSnapshot> =
-    runCatching {
-      if (TestSystem.instanceInitialized()) {
-        TestSystem.instance.activeSystems.values
-          .filterIsInstance<Reports>()
-          .map { it.snapshot() }
-      } else {
-        emptyList()
-      }
-    }.getOrDefault(emptyList())
+  fun collectSnapshots(): List<SystemSnapshot> = runCatching {
+    if (TestSystem.instanceInitialized()) {
+      TestSystem.instance.activeSystems.values
+        .filterIsInstance<Reports>()
+        .map { it.snapshot() }
+    } else {
+      emptyList()
+    }
+  }.getOrDefault(emptyList())
 
-  private fun resolveTestId(): String? =
-    StoveTestContextHolder.get()?.testId ?: contextThreadLocal.get()
+  private fun resolveTestId(): String? = StoveTestContextHolder.get()?.testId ?: contextThreadLocal.get()
 
   companion object {
     private const val DEFAULT_TEST_ID = "default"

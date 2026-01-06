@@ -190,22 +190,19 @@ class MongodbSystem internal constructor(
     collection: String = context.options.databaseOptions.default.collection,
     crossinline assertion: (List<T>) -> Unit
   ): MongodbSystem {
-    val results = mongoClient
-      .getDatabase(context.options.databaseOptions.default.name)
-      .getCollection<Document>(collection)
-      .find(BsonDocument.parse(query))
-      .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
-      .toList()
-
     recordAndExecute(
       action = "Query '$collection'",
-      input = arrow.core.Some(mapOf("collection" to collection, "filter" to query)),
-      output = arrow.core.Some("${results.size} document(s)"),
-      actual = arrow.core.Some(results)
+      input = arrow.core.Some(mapOf("collection" to collection, "filter" to query))
     ) {
+      val results = mongoClient
+        .getDatabase(context.options.databaseOptions.default.name)
+        .getCollection<Document>(collection)
+        .find(BsonDocument.parse(query))
+        .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
+        .toList()
       assertion(results)
+      results
     }
-
     return this
   }
 
@@ -215,22 +212,19 @@ class MongodbSystem internal constructor(
     collection: String = context.options.databaseOptions.default.collection,
     crossinline assertion: (T) -> Unit
   ): MongodbSystem {
-    val document = mongoClient
-      .getDatabase(context.options.databaseOptions.default.name)
-      .getCollection<Document>(collection)
-      .find(filterById(objectId))
-      .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
-      .first()
-
     recordAndExecute(
       action = "Get document",
-      input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId)),
-      output = arrow.core.Some(document),
-      actual = arrow.core.Some(document)
+      input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId))
     ) {
+      val document = mongoClient
+        .getDatabase(context.options.databaseOptions.default.name)
+        .getCollection<Document>(collection)
+        .find(filterById(objectId))
+        .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
+        .first()
       assertion(document)
+      document
     }
-
     return this
   }
 
@@ -243,24 +237,23 @@ class MongodbSystem internal constructor(
     objectId: String = ObjectId().toHexString(),
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    mongoClient
-      .getDatabase(context.options.databaseOptions.default.name)
-      .getCollection<Document>(collection)
-      .also { coll ->
-        context.options.serde
-          .serialize(instance)
-          .let { BsonDocument.parse(it) }
-          .let { doc -> Document(doc) }
-          .append(RESERVED_ID, ObjectId(objectId))
-          .let { coll.insertOne(it) }
-      }
-
-    recordSuccess(
+    recordAndExecute(
       action = "Insert document",
       input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "_id" to objectId)
-    )
-
+    ) {
+      mongoClient
+        .getDatabase(context.options.databaseOptions.default.name)
+        .getCollection<Document>(collection)
+        .also { coll ->
+          context.options.serde
+            .serialize(instance)
+            .let { BsonDocument.parse(it) }
+            .let { doc -> Document(doc) }
+            .append(RESERVED_ID, ObjectId(objectId))
+            .let { coll.insertOne(it) }
+        }
+    }
     return this
   }
 
@@ -269,21 +262,18 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    val exists = mongoClient
-      .getDatabase(context.options.databaseOptions.default.name)
-      .getCollection<Document>(collection)
-      .find(filterById(objectId))
-      .firstOrNull() != null
-
     recordAndExecute(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId)),
-      expected = arrow.core.Some("Document not found"),
-      actual = arrow.core.Some(if (exists) "Document exists" else "Document not found")
+      expected = arrow.core.Some("Document not found")
     ) {
+      val exists = mongoClient
+        .getDatabase(context.options.databaseOptions.default.name)
+        .getCollection<Document>(collection)
+        .find(filterById(objectId))
+        .firstOrNull() != null
       if (exists) throw AssertionError("The document with the given id($objectId) was not expected, but found!")
     }
-
     return this
   }
 
@@ -292,15 +282,15 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    mongoClient
-      .getDatabase(context.options.databaseOptions.default.name)
-      .getCollection<Document>(collection)
-      .deleteOne(filterById(objectId))
-
-    recordSuccess(
+    recordAndExecute(
       action = "Delete document",
       metadata = mapOf("collection" to collection, "_id" to objectId)
-    )
+    ) {
+      mongoClient
+        .getDatabase(context.options.databaseOptions.default.name)
+        .getCollection<Document>(collection)
+        .deleteOne(filterById(objectId))
+    }
     return this
   }
 
@@ -310,7 +300,15 @@ class MongodbSystem internal constructor(
    * @return MongodbSystem
    */
   @MongoDsl
-  fun pause(): MongodbSystem = withContainerOrWarn("pause") { it.pause() }
+  fun pause(): MongodbSystem {
+    executeAndRecord(
+      action = "Pause container",
+      metadata = mapOf("operation" to "fault-injection")
+    ) {
+      withContainerOrWarn("pause") { it.pause() }
+    }
+    return this
+  }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
@@ -318,7 +316,12 @@ class MongodbSystem internal constructor(
    * @return MongodbSystem
    */
   @MongoDsl
-  fun unpause(): MongodbSystem = withContainerOrWarn("unpause") { it.unpause() }
+  fun unpause(): MongodbSystem {
+    executeAndRecord(action = "Unpause container") {
+      withContainerOrWarn("unpause") { it.unpause() }
+    }
+    return this
+  }
 
   /**
    * Inspects the container. This operation is not supported when using a provided instance.
