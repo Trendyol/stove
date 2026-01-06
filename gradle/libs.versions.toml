@@ -36,7 +36,7 @@ io-grpc = "1.78.0"
 io-grpc-kotlin = "1.5.0"
 google-protobuf = "4.33.2"
 hoplite = "2.9.0"
-junit-jupiter = "5.10.0"
+junit-jupiter = "6.0.1"
 kotest = "6.0.7"
 mockito = "6.1.0"
 kotlinx-serialization = "1.9.0"
@@ -192,7 +192,7 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-property", version.ref = "kotest" }
-kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "2.0.0" }
+kotest-arrow = { module = "io.kotest:kotest-assertions-arrow", version.ref = "kotest" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
 
 [plugins]
