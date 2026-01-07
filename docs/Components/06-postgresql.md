@@ -4,14 +4,17 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-rdbms-postgres:$version")
+            testImplementation(platform("com.trendyol:stove-bom:$version"))
+            testImplementation("com.trendyol:stove-postgres")
         }
     ```
 
 ## Configure
 
+Once you've added the dependency, you can configure PostgreSQL in your Stove setup:
+
 ```kotlin
-TestSystem()
+Stove()
   .with {
     postgresql {
       PostgresqlSystemOptions {
@@ -26,6 +29,8 @@ TestSystem()
     }
   }.run()
 ```
+
+The `it` reference gives you access to the PostgreSQL container's connection details, which you can pass to your application.
 
 ## Migrations
 
@@ -50,10 +55,10 @@ class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
 }
 ```
 
-Register migrations in your TestSystem configuration:
+Register migrations in your Stove configuration:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     postgresql {
       PostgresqlOptions(
@@ -80,7 +85,7 @@ TestSystem()
 Execute DDL and DML statements:
 
 ```kotlin
-TestSystem.validate {
+stove {
   postgresql {
     // Create tables
     shouldExecute(
@@ -124,7 +129,7 @@ data class Product(
   val stock: Int
 )
 
-TestSystem.validate {
+stove {
   postgresql {
     shouldQuery<Product>(
       query = "SELECT * FROM products WHERE price > 500",
@@ -149,7 +154,7 @@ TestSystem.validate {
 Use parameterized queries for safety:
 
 ```kotlin
-TestSystem.validate {
+stove {
   postgresql {
     val minPrice = 100.0
     shouldQuery<Product>(
@@ -181,7 +186,7 @@ data class User(
   val phone: String?
 )
 
-TestSystem.validate {
+stove {
   postgresql {
     shouldQuery<User>(
       query = "SELECT * FROM users",
@@ -212,7 +217,7 @@ data class OrderSummary(
   val totalAmount: Double
 )
 
-TestSystem.validate {
+stove {
   postgresql {
     shouldQuery<OrderSummary>(
       query = """
@@ -246,7 +251,7 @@ TestSystem.validate {
 Test failure scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   postgresql {
     // Database is running
     shouldQuery<Product>(
@@ -282,7 +287,7 @@ Here's a complete end-to-end test:
 
 ```kotlin
 test("should create user via API and verify in database") {
-  TestSystem.validate {
+  stove {
     val userName = "John Doe"
     val userEmail = "john@example.com"
 
@@ -332,7 +337,7 @@ Use the bridge to access application components:
 
 ```kotlin
 test("should use repository to save user") {
-  TestSystem.validate {
+  stove {
     val user = User(id = 1L, name = "Jane Doe", email = "jane@example.com")
 
     // Use application's repository
@@ -365,7 +370,7 @@ test("should use repository to save user") {
 Execute multiple operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   postgresql {
     // Create tables
     shouldExecute(
@@ -405,7 +410,7 @@ TestSystem.validate {
 Access SQL operations directly for advanced use cases:
 
 ```kotlin
-TestSystem.validate {
+stove {
   postgresql {
     val ops = operations()
     
@@ -476,10 +481,10 @@ class UsersDbMigration : DatabaseMigration<PostgresSqlMigrationContext> {
 }
 ```
 
-#### Step 2: Configure TestSystem with Multiple Database URLs
+#### Step 2: Configure Stove with Multiple Database URLs
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         postgresql {
             PostgresqlOptions(
@@ -566,7 +571,7 @@ class SetupDatabasesMigration : DatabaseMigration<PostgresSqlMigrationContext> {
 }
 
 // Test configuration
-TestSystem()
+Stove()
     .with {
         postgresql {
             PostgresqlOptions(
@@ -599,7 +604,7 @@ TestSystem()
 
 // In tests
 test("should save user and create order in separate databases") {
-    TestSystem.validate {
+    stove {
         // Create user (goes to users_db)
         http {
             postAndExpectBodilessResponse("/users", body = CreateUserRequest(...).some()) {
@@ -628,7 +633,7 @@ test("should save user and create order in separate databases") {
 The same pattern works with provided PostgreSQL instances:
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         postgresql {
             PostgresqlOptions.provided(

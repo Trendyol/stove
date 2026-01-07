@@ -1,0 +1,36 @@
+public final class com/trendyol/stove/ktor/DependencyResolvers {
+	public static final field INSTANCE Lcom/trendyol/stove/ktor/DependencyResolvers;
+	public final fun autoDetect ()Lkotlin/jvm/functions/Function2;
+	public final fun getKoin ()Lkotlin/jvm/functions/Function2;
+	public final fun getKtorDi ()Lkotlin/jvm/functions/Function2;
+}
+
+public final class com/trendyol/stove/ktor/KtorApplicationUnderTest : com/trendyol/stove/system/abstractions/ApplicationUnderTest {
+	public fun <init> (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;Ljava/util/List;)V
+	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/ktor/KtorApplicationUnderTestKt {
+	public static final fun ktor-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;Ljava/util/List;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+	public static synthetic fun ktor-SscbJ7Y$default (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+}
+
+public final class com/trendyol/stove/ktor/KtorBridgeSystem : com/trendyol/stove/system/BridgeSystem, com/trendyol/stove/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/system/abstractions/PluggedSystem {
+	public fun <init> (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;)V
+	public fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public fun getByType (Lkotlin/reflect/KType;)Ljava/lang/Object;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/ktor/KtorBridgeSystemKt {
+	public static final fun bridge-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/system/Stove;
+	public static synthetic fun bridge-ypJx7X8$default (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/ktor/KtorDiCheck {
+	public static final field INSTANCE Lcom/trendyol/stove/ktor/KtorDiCheck;
+	public final fun isKoinAvailable ()Z
+	public final fun isKtorDiAvailable ()Z
+}
+

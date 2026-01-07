@@ -1,6 +1,6 @@
 # Troubleshooting & FAQ
 
-This guide helps you diagnose and resolve common issues when working with Stove.
+Having issues? This guide covers the most common problems and how to fix them. If you don't find what you're looking for, feel free to open an issue on GitHub.
 
 ## Common Issues
 
@@ -218,7 +218,7 @@ MismatchedInputException: Cannot deserialize
        disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
    }
    
-   TestSystem()
+   Stove()
        .with {
            http {
                HttpClientSystemOptions(
@@ -302,7 +302,7 @@ Message was not consumed within timeout
 
 1. **Verify Kafka interceptor is configured:**
    ```kotlin
-   // In your TestSystem setup
+   // In your Stove setup
    addTestDependencies {
        bean<TestSystemInterceptor>(isPrimary = true)
    }
@@ -355,7 +355,7 @@ Mock not found / unexpected request
 
 1. **Ensure ALL external service URLs point to WireMock:**
    ```kotlin
-   TestSystem()
+   Stove()
        .with {
            wiremock {
                WireMockSystemOptions(port = 9090)
@@ -449,7 +449,7 @@ java.lang.OutOfMemoryError: Java heap space
 
 2. **Use provided instances:**
    ```kotlin
-   TestSystem()
+   Stove()
        .with {
            kafka {
                KafkaSystemOptions.provided(
@@ -545,7 +545,7 @@ Tests fail when multiple builds run in parallel
 ```kotlin
 class MyE2ETest : FunSpec({
     test("should create order") {
-        TestSystem.validate {
+        stove {
             http {
                 postAndExpectBodilessResponse(
                     uri = "/orders",
@@ -634,7 +634,7 @@ fun containerFactory(
 **A:** Add multiple database components:
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         postgresql { PostgresqlOptions(...) }
         mongodb { MongodbSystemOptions(...) }

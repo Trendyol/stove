@@ -20,7 +20,7 @@ Each system's options class (e.g., `CouchbaseSystemOptions`, `PostgresqlOptions`
 All systems follow the same pattern:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     // Option 1: Container-based (default)
     systemName {
@@ -50,7 +50,7 @@ TestSystem()
 
 ```kotlin
 // Container-based with cleanup
-TestSystem()
+Stove()
   .with {
     couchbase {
       CouchbaseSystemOptions(
@@ -71,7 +71,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     couchbase {
       CouchbaseSystemOptions.provided(
@@ -100,7 +100,7 @@ TestSystem()
 
 ```kotlin
 // Container-based
-TestSystem()
+Stove()
   .with {
     kafka {
       KafkaSystemOptions(
@@ -116,7 +116,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     kafka {
       KafkaSystemOptions.provided(
@@ -137,7 +137,7 @@ TestSystem()
 
 ```kotlin
 // Container-based
-TestSystem()
+Stove()
   .with {
     redis {
       RedisOptions(
@@ -157,7 +157,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     redis {
       RedisOptions.provided(
@@ -185,7 +185,7 @@ TestSystem()
 
 ```kotlin
 // Container-based
-TestSystem()
+Stove()
   .with {
     postgresql {
       PostgresqlOptions(
@@ -206,7 +206,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     postgresql {
       PostgresqlOptions.provided(
@@ -237,7 +237,7 @@ TestSystem()
 
 ```kotlin
 // Container-based
-TestSystem()
+Stove()
   .with {
     mssql {
       MsSqlOptions(
@@ -261,7 +261,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     mssql {
       MsSqlOptions.provided(
@@ -292,7 +292,7 @@ TestSystem()
 
 ```kotlin
 // Container-based
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions(
@@ -312,7 +312,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions.provided(
@@ -339,7 +339,7 @@ TestSystem()
 
 ```kotlin
 // Container-based
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions(
@@ -358,7 +358,7 @@ TestSystem()
   .run()
 
 // Provided instance
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions.provided(
@@ -426,7 +426,7 @@ When using provided instances, migrations are controlled by the `runMigrations` 
 - **`runMigrations = false` (default for Kafka/Redis)**: Migrations are skipped
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     postgresql {
       PostgresqlOptions.provided(
@@ -461,7 +461,7 @@ Here's a complete setup for a CI/CD pipeline using provided instances:
 ```kotlin
 class TestSetup : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem()
+    Stove()
       .with {
         httpClient {
           HttpClientSystemOptions(baseUrl = "http://localhost:8080")
@@ -507,7 +507,7 @@ class TestSetup : AbstractProjectConfig() {
   }
 
   override suspend fun afterProject() {
-    TestSystem.stop()
+    Stove.stop()
   }
 }
 ```
@@ -551,7 +551,7 @@ object TestRunContext {
 #### PostgreSQL / MSSQL - Unique Database
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         postgresql {
             PostgresqlOptions.provided(
@@ -613,7 +613,7 @@ TestSystem()
 #### Kafka - Unique Topic Prefix
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         kafka {
             KafkaSystemOptions.provided(
@@ -653,7 +653,7 @@ TestSystem()
 #### Elasticsearch - Unique Index Prefix
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         elasticsearch {
             ElasticsearchSystemOptions.provided(
@@ -687,7 +687,7 @@ TestSystem()
 #### Couchbase - Unique Document Prefix or Scope
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         couchbase {
             CouchbaseSystemOptions.provided(
@@ -720,7 +720,7 @@ TestSystem()
 #### MongoDB - Unique Database or Collection Prefix
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         mongodb {
             MongodbSystemOptions.provided(
@@ -749,7 +749,7 @@ TestSystem()
 #### Redis - Unique Key Prefix or Database Number
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         redis {
             // Use unique database number (0-15) or key prefix
@@ -797,7 +797,7 @@ object TestRunContext {
 
 class TestConfig : AbstractProjectConfig() {
     override suspend fun beforeProject() {
-        TestSystem()
+        Stove()
             .with {
                 postgresql {
                     PostgresqlOptions.provided(
@@ -840,7 +840,7 @@ class TestConfig : AbstractProjectConfig() {
     }
     
     override suspend fun afterProject() {
-        TestSystem.stop()
+        Stove.stop()
         // Resources cleaned up by cleanup functions
     }
 }

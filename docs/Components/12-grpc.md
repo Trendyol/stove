@@ -4,7 +4,7 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-grpc:$version")
+            testImplementation("com.trendyol:stove-grpc:$version")
         }
     ```
 
@@ -13,7 +13,7 @@
 After getting the library from the maven source, while configuring TestSystem you will have access to `grpc`:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     grpc {
       GrpcSystemOptions(
@@ -102,7 +102,7 @@ Stove's gRPC module supports multiple gRPC providers through a provider-agnostic
 For services generated with [Wire](https://github.com/square/wire):
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     wireClient<GreeterServiceClient> {
       val response = SayHello().execute(HelloRequest(name = "World"))
@@ -117,7 +117,7 @@ TestSystem.validate {
 For any stub that takes a Channel constructor. This works with both grpc-kotlin generated stubs and Wire-generated stubs:
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     channel<GreeterServiceStub> {
       // 'this' is the stub - direct method calls
@@ -131,7 +131,7 @@ TestSystem.validate {
 #### With Per-Call Metadata
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     channel<GreeterServiceStub>(
       metadata = mapOf("authorization" to "Bearer custom-token")
@@ -148,7 +148,7 @@ TestSystem.validate {
 For any other gRPC library, use `withEndpoint` with a factory function:
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     withEndpoint({ host, port -> 
       // Create your client however you want
@@ -166,7 +166,7 @@ TestSystem.validate {
 For advanced scenarios where you need full control:
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     rawChannel { channel ->
       // Full control over channel
@@ -185,7 +185,7 @@ All streaming types work naturally with Kotlin coroutines.
 ### Server Streaming
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     channel<StreamServiceStub> {
       val responses = serverStream(request).toList()
@@ -201,7 +201,7 @@ TestSystem.validate {
 ### Client Streaming
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     channel<StreamServiceStub> {
       val requestFlow = flow {
@@ -221,7 +221,7 @@ TestSystem.validate {
 ### Bidirectional Streaming
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     channel<StreamServiceStub> {
       val requestFlow = flow {
@@ -243,7 +243,7 @@ TestSystem.validate {
 ### Direct GrpcClient Access
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     rawWireClient { client ->
       val service = client.create(GreeterServiceClient::class)
@@ -257,7 +257,7 @@ TestSystem.validate {
 ### Wire Client with Custom OkHttp Configuration
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     withEndpoint({ host, port ->
       val okHttpClient = OkHttpClient.Builder()
@@ -299,7 +299,7 @@ class LoggingInterceptor : ClientInterceptor {
   }
 }
 
-TestSystem()
+Stove()
   .with {
     grpc {
       GrpcSystemOptions(
@@ -314,7 +314,7 @@ TestSystem()
 ### Per-Call Metadata
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     // Metadata is applied via interceptor automatically
     channel<SecureServiceStub>(
@@ -335,7 +335,7 @@ TestSystem.validate {
 ### Testing Authentication Errors
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     // Wire client - throws GrpcException
     wireClient<SecureServiceClient> {
@@ -359,7 +359,7 @@ TestSystem.validate {
 ### Testing Not Found
 
 ```kotlin
-TestSystem.validate {
+stove {
   grpc {
     channel<UserServiceStub> {
       val exception = shouldThrow<StatusException> {
@@ -377,7 +377,7 @@ Here's a complete test example with various gRPC operations:
 
 ```kotlin
 test("should perform gRPC operations") {
-  TestSystem.validate {
+  stove {
     // Test unary call
     grpc {
       channel<UserServiceStub> {
@@ -414,7 +414,7 @@ test("should perform gRPC operations") {
 ### gRPC + Database
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Create via gRPC
   var userId: Long = 0
   grpc {
@@ -440,7 +440,7 @@ TestSystem.validate {
 ### gRPC + Kafka
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Trigger event via gRPC
   grpc {
     channel<OrderServiceStub> {

@@ -2,26 +2,31 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "stove"
 include(
-  "lib:stove-testing-e2e",
-  "lib:stove-testing-e2e-wiremock",
-  "lib:stove-testing-e2e-http",
-  "lib:stove-testing-e2e-grpc",
-  "lib:stove-testing-e2e-kafka",
-  "lib:stove-testing-e2e-couchbase",
-  "lib:stove-testing-e2e-rdbms",
-  "lib:stove-testing-e2e-rdbms-postgres",
-  "lib:stove-testing-e2e-rdbms-mssql",
-  "lib:stove-testing-e2e-elasticsearch",
-  "lib:stove-testing-e2e-redis",
-  "lib:stove-testing-e2e-mongodb"
+  "lib:stove-bom",
+  "lib:stove",
+  "lib:stove-wiremock",
+  "lib:stove-http",
+  "lib:stove-grpc",
+  "lib:stove-kafka",
+  "lib:stove-couchbase",
+  "lib:stove-rdbms",
+  "lib:stove-postgres",
+  "lib:stove-mssql",
+  "lib:stove-elasticsearch",
+  "lib:stove-redis",
+  "lib:stove-mongodb"
 )
 include(
-  "starters:ktor:stove-ktor-testing-e2e",
+  "test-extensions:stove-extensions-kotest",
+  "test-extensions:stove-extensions-junit"
+)
+include(
+  "starters:ktor:stove-ktor",
   "starters:ktor:tests:ktor-test-fixtures",
   "starters:ktor:tests:ktor-koin-tests",
   "starters:ktor:tests:ktor-di-tests",
-  "starters:spring:stove-spring-testing-e2e",
-  "starters:spring:stove-spring-testing-e2e-kafka",
+  "starters:spring:stove-spring",
+  "starters:spring:stove-spring-kafka",
   "starters:spring:tests:spring-test-fixtures",
   "starters:spring:tests:spring-2x-tests",
   "starters:spring:tests:spring-2x-kafka-tests",
@@ -29,7 +34,7 @@ include(
   "starters:spring:tests:spring-3x-kafka-tests",
   "starters:spring:tests:spring-4x-tests",
   "starters:spring:tests:spring-4x-kafka-tests",
-  "starters:micronaut:stove-micronaut-testing-e2e"
+  "starters:micronaut:stove-micronaut"
 )
 include(
   "examples:spring-example",

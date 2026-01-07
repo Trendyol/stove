@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-  testFixturesApi(projects.starters.ktor.stoveKtorTestingE2e)
+  testFixturesApi(projects.starters.ktor.stoveKtor)
   testFixturesApi(libs.kotest.runner.junit5)
   testFixturesApi(libs.ktor.server.host.common)
 
@@ -11,4 +11,3 @@ dependencies {
   testFixturesCompileOnly(libs.koin.ktor)
   testFixturesCompileOnly(libs.ktor.server.di)
 }
-

@@ -4,7 +4,7 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-mongodb:$version")
+            testImplementation("com.trendyol:stove-mongodb:$version")
         }
     ```
 
@@ -14,7 +14,7 @@ After getting the library from the maven source, while configuring TestSystem yo
 This function configures the MongoDB Docker container that is going to be started.
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions(
@@ -36,7 +36,7 @@ TestSystem()
 Customize the MongoDB container:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions(
@@ -67,7 +67,7 @@ TestSystem()
 Configure the default database and collection:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions(
@@ -93,7 +93,7 @@ TestSystem()
 Customize the MongoDB client settings:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions(
@@ -121,7 +121,7 @@ TestSystem()
 Configure custom serialization for your documents:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       val customSerde = StoveSerde.jackson.anyJsonStringSerde(
@@ -171,10 +171,10 @@ class CreateIndexesMigration : DatabaseMigration<MongodbMigrationContext> {
 }
 ```
 
-Register migrations in your TestSystem configuration:
+Register migrations in your Stove configuration:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions(
@@ -203,7 +203,7 @@ data class User(
   val age: Int
 )
 
-TestSystem.validate {
+stove {
   mongodb {
     val userId = ObjectId().toHexString()
     
@@ -228,7 +228,7 @@ TestSystem.validate {
 Retrieve and validate documents by ObjectId:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val userId = ObjectId().toHexString()
     
@@ -255,7 +255,7 @@ TestSystem.validate {
 Verify that documents don't exist:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val nonExistentId = ObjectId().toHexString()
     
@@ -273,7 +273,7 @@ TestSystem.validate {
 Delete documents and verify deletion:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val userId = ObjectId().toHexString()
     
@@ -298,7 +298,7 @@ TestSystem.validate {
 Query documents using MongoDB query syntax:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     // Setup test data
     listOf(
@@ -342,7 +342,7 @@ TestSystem.validate {
 For advanced operations, access the MongoDB client:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val mongoClient = client()
     
@@ -369,7 +369,7 @@ TestSystem.validate {
 Control the MongoDB container for testing failure scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val userId = ObjectId().toHexString()
     
@@ -405,7 +405,7 @@ TestSystem.validate {
 Inspect the MongoDB container:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val info = inspect()
     info?.let {
@@ -433,7 +433,7 @@ data class Product(
 )
 
 test("should create product and store in mongodb") {
-  TestSystem.validate {
+  stove {
     val productId = ObjectId().toHexString()
     val productName = "Gaming Laptop"
     val categoryId = 1
@@ -517,7 +517,7 @@ Verify application behavior using the bridge:
 
 ```kotlin
 test("should use repository to save product") {
-  TestSystem.validate {
+  stove {
     val productId = ObjectId().toHexString()
     val product = Product(
       id = productId,
@@ -553,7 +553,7 @@ test("should use repository to save product") {
 ### Aggregation Queries
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val mongoClient = client()
     val db = mongoClient.getDatabase("myDatabase")
@@ -582,7 +582,7 @@ TestSystem.validate {
 ### Bulk Operations
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val mongoClient = client()
     val db = mongoClient.getDatabase("myDatabase")
@@ -615,7 +615,7 @@ TestSystem.validate {
 ### Transaction Support
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val mongoClient = client()
     
@@ -652,7 +652,7 @@ TestSystem.validate {
 ### Working with Indexes
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     val mongoClient = client()
     val db = mongoClient.getDatabase("myDatabase")
@@ -690,7 +690,7 @@ TestSystem.validate {
 For CI/CD pipelines or shared infrastructure:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mongodb {
       MongodbSystemOptions.provided(
@@ -717,7 +717,7 @@ TestSystem()
 ## Error Handling
 
 ```kotlin
-TestSystem.validate {
+stove {
   mongodb {
     // Document not found
     val nonExistentId = ObjectId().toHexString()
@@ -754,7 +754,7 @@ data class UserWithStringId(
   val email: String
 )
 
-TestSystem.validate {
+stove {
   mongodb {
     // Generate ObjectId
     val objectId = ObjectId()

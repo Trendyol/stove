@@ -1,6 +1,6 @@
 # Best Practices
 
-This guide covers best practices for writing effective end-to-end tests with Stove.
+Here are some practices we've found helpful when writing end-to-end tests with Stove. These aren't hard rules, but they'll make your tests more maintainable and easier to work with.
 
 ## Test Organization
 
@@ -14,7 +14,7 @@ src/
 ├── test/kotlin/           # Unit tests
 └── test-e2e/kotlin/       # E2E tests with Stove
     ├── config/
-    │   └── TestConfig.kt  # Contains TestSystem setup with addTestDependencies
+    │   └── TestConfig.kt  # Contains Stove setup
     ├── features/
     │   ├── OrderE2ETest.kt
     │   ├── UserE2ETest.kt
@@ -24,9 +24,9 @@ src/
         └── Assertions.kt
 ```
 
-### Gradle Configuration for test-e2e
+### Gradle Configuration
 
-Configure the `test-e2e` source set in your `build.gradle.kts`:
+Here's how to set up the `test-e2e` source set in your `build.gradle.kts`:
 
 ```kotlin
 sourceSets {
@@ -98,20 +98,20 @@ Configure Stove once for all tests:
 // ✅ Good: Single configuration for all tests
 class TestConfig : AbstractProjectConfig() {
     override suspend fun beforeProject() {
-        TestSystem()
+        Stove()
             .with { /* configuration */ }
             .run()
     }
     
     override suspend fun afterProject() {
-        TestSystem.stop()
+        Stove.stop()
     }
 }
 
 // ❌ Bad: Configuration per test class
 class MyTest : FunSpec({
     beforeSpec {
-        TestSystem().with { /* */ }.run()  // Don't do this!
+        Stove().with { /* */ }.run()  // Don't do this!
     }
 })
 ```
@@ -128,7 +128,7 @@ test("should create order") {
     val orderId = UUID.randomUUID().toString()
     val userId = "user-${UUID.randomUUID()}"
     
-    TestSystem.validate {
+    stove {
         http {
             postAndExpectBody<OrderResponse>(
                 uri = "/orders",
@@ -160,7 +160,7 @@ object TestRunContext {
 }
 
 // Use unique names in configuration
-TestSystem()
+Stove()
     .with {
         postgresql {
             PostgresqlOptions.provided(
@@ -185,7 +185,7 @@ TestSystem()
 Clean up test data to maintain isolation. The `cleanup` parameter is passed inside the options:
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         couchbase {
             CouchbaseSystemOptions(
@@ -260,7 +260,7 @@ Test specific behaviors, not just successful responses:
 
 ```kotlin
 // ✅ Good: Specific assertions
-TestSystem.validate {
+stove {
     http {
         postAndExpectBody<OrderResponse>(
             uri = "/orders",
@@ -276,7 +276,7 @@ TestSystem.validate {
 }
 
 // ❌ Bad: Only checking status code
-TestSystem.validate {
+stove {
     http {
         postAndExpectBodilessResponse("/orders", body = order.some()) { response ->
             response.status shouldBe 201  // Not enough!
@@ -293,7 +293,7 @@ Test the complete flow including side effects:
 test("should process order completely") {
     val orderId = UUID.randomUUID().toString()
     
-    TestSystem.validate {
+    stove {
         // 1. Make the request
         http {
             postAndExpectBody<OrderResponse>(
@@ -397,7 +397,7 @@ Use WireMock for external services:
 
 ```kotlin
 // ✅ Good: Mock external services
-TestSystem.validate {
+stove {
     wiremock {
         mockPost(
             url = "/payments/charge",
@@ -429,7 +429,7 @@ Test how your application handles failures:
 
 ```kotlin
 test("should handle payment failure gracefully") {
-    TestSystem.validate {
+    stove {
         wiremock {
             mockPost(
                 url = "/payments/charge",
@@ -451,7 +451,7 @@ test("should handle payment failure gracefully") {
 }
 
 test("should retry on transient failures") {
-    TestSystem.validate {
+    stove {
         wiremock {
             behaviourFor("/payments/charge", WireMock::post) {
                 initially {
@@ -495,7 +495,7 @@ val customObjectMapper = ObjectMapper().apply {
     setSerializationInclusion(JsonInclude.Include.NON_NULL)
 }
 
-TestSystem()
+Stove()
     .with {
         http {
             HttpClientSystemOptions(
@@ -550,7 +550,7 @@ class ExternalServicesConfig(
 )
 
 // In tests, pass WireMock URL for all external services
-TestSystem()
+Stove()
     .with {
         wiremock {
             WireMockSystemOptions(port = 9090)
@@ -615,7 +615,7 @@ springBoot(
 Debug container issues:
 
 ```kotlin
-TestSystem.validate {
+stove {
     mongodb {
         val info = inspect()
         println("Container ID: ${info?.containerId}")
@@ -630,7 +630,7 @@ TestSystem.validate {
 Debug by accessing application components:
 
 ```kotlin
-TestSystem.validate {
+stove {
     using<OrderRepository> {
         val order = findById(orderId)
         println("Order state: $order")
@@ -651,7 +651,7 @@ For faster CI builds, use pre-provisioned infrastructure:
 ```kotlin
 val isCI = System.getenv("CI") == "true"
 
-TestSystem()
+Stove()
     .with {
         kafka {
             if (isCI) {
@@ -685,7 +685,7 @@ DEFAULT_REGISTRY = System.getenv("DOCKER_REGISTRY") ?: "docker.io"
 Configure for CI resource limits:
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         couchbase {
             CouchbaseSystemOptions(

@@ -4,19 +4,18 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-wiremock:$version")
+            testImplementation("com.trendyol:stove-wiremock:$version")
         }
     ```
 
 ## Configure
 
-After getting the library from the maven source, while configuring TestSystem you will have access to `wiremock`
-function.
+Once you've added the dependency, you'll have access to the `wiremock` function when configuring Stove.
 
-This will start an instance of Wiremock server. You can configure the port of the Wiremock server.
+This starts a WireMock server instance. You can configure which port it runs on.
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     wiremock {
       WiremockSystemOptions(
@@ -83,7 +82,7 @@ For testing, **all** these base URLs must be replaced with the WireMock URL (e.g
 You can pass these as application parameters:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     wiremock {
       WireMockSystemOptions(
@@ -138,7 +137,7 @@ application calls.
 Mock GET requests with various configurations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // Simple GET mock
     mockGet(
@@ -176,7 +175,7 @@ TestSystem.validate {
 Mock POST requests with request/response bodies:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // POST with request and response body
     mockPost(
@@ -211,7 +210,7 @@ TestSystem.validate {
 Mock PUT requests for updates:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // PUT with full update
     mockPut(
@@ -236,7 +235,7 @@ TestSystem.validate {
 Mock PATCH requests for partial updates:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // PATCH for partial update
     mockPatch(
@@ -254,7 +253,7 @@ TestSystem.validate {
 Mock DELETE requests:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // DELETE returning success
     mockDelete(
@@ -277,7 +276,7 @@ TestSystem.validate {
 Mock HEAD requests:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     mockHead(
       url = "/api/products/exists/123",
@@ -297,7 +296,7 @@ TestSystem.validate {
 For complex scenarios, use the configure methods:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // Advanced GET configuration
     mockGetConfigure(
@@ -345,7 +344,7 @@ use the `*Containing` methods. This is useful when:
 Match requests containing specific fields:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // Only matches requests where productId = 123, ignores other fields
     mockPostContaining(
@@ -368,7 +367,7 @@ When you specify multiple fields, they are matched using **AND** logic - **all**
 must be present and match for the stub to be triggered:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // ALL three fields must match for this stub to respond
     mockPostContaining(
@@ -399,7 +398,7 @@ TestSystem.validate {
 Match specific fields deep within nested JSON structures using dot notation:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // Match a single field deep in the JSON structure
     mockPostContaining(
@@ -432,7 +431,7 @@ TestSystem.validate {
 Match multiple fields at different levels of nesting:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     mockPostContaining(
       url = "/api/checkout",
@@ -453,7 +452,7 @@ TestSystem.validate {
 Match nested objects with partial comparison (extra fields in nested objects are ignored):
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     // Match if the "settings" object contains at least {enabled: true}
     mockPutContaining(
@@ -498,7 +497,7 @@ All methods support:
 Combine URL patterns with partial body matching:
 
 ```kotlin
-TestSystem.validate {
+stove {
   wiremock {
     mockPostContaining(
       url = "/api/v[0-9]+/orders",
@@ -518,7 +517,7 @@ Simulate service behavior changes over multiple calls:
 
 ```kotlin
 test("service recovers from failure") {
-  TestSystem.validate {
+  stove {
     wiremock {
       behaviourFor("/api/external-service", WireMock::get) {
         initially {
@@ -566,7 +565,7 @@ Test circuit breaker patterns with WireMock:
 
 ```kotlin
 test("circuit breaker opens after failures") {
-  TestSystem.validate {
+  stove {
     wiremock {
       // Mock service that fails
       mockGet(
@@ -613,7 +612,7 @@ Here's a complete test with multiple external service mocks:
 
 ```kotlin
 test("should create order with external service validation") {
-  TestSystem.validate {
+  stove {
     val userId = "user-123"
     val productId = "product-456"
     val categoryId = 1
@@ -713,7 +712,7 @@ Test how your application handles external service failures:
 
 ```kotlin
 test("should handle external service unavailability") {
-  TestSystem.validate {
+  stove {
     // Mock external service returning 503
     wiremock {
       mockGet(
@@ -733,7 +732,7 @@ test("should handle external service unavailability") {
 }
 
 test("should handle timeout") {
-  TestSystem.validate {
+  stove {
     wiremock {
       mockGetConfigure("/slow-endpoint") { builder, _ ->
         builder.willReturn(
@@ -761,7 +760,7 @@ Test complex integrations with multiple services:
 
 ```kotlin
 test("should orchestrate multiple services") {
-  TestSystem.validate {
+  stove {
     val userId = "user-123"
 
     // Mock authentication service
@@ -805,7 +804,7 @@ Verify that requests were made as expected:
 
 ```kotlin
 test("should verify request details") {
-  TestSystem.validate {
+  stove {
     wiremock {
       mockPost(
         url = "/api/webhook",

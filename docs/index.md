@@ -1,68 +1,52 @@
 # Stove
 
-Stove is an end-to-end testing framework that spins up physical dependencies and your application all together. So you
-have a control over dependencies via Kotlin code.
+Stove is an end-to-end testing framework that spins up your application along with all its physical dependencies (databases, message queues, etc.) so you can test the real thing. Everything is controlled through Kotlin code, giving you full control over your test environment.
 
-In the JVM world, thanks to code interoperability, you application code and test can be written with different JVM
-languages and can be run together.
-For example, you can write your application code with Java and write your tests with Kotlin, or Application code with
-Scala and test with Kotlin, etc.
-Stove uses this ability and provides a way to write your tests in Kotlin.
+Since JVM languages can interoperate, your application and tests don't need to use the same language. Write your app in Java and tests in Kotlin, or mix Scala and Kotlin—whatever works for your team. Stove takes advantage of this and lets you write all your tests in Kotlin, regardless of what your application is written in.
 
-Your tests will be infra agnostic, but component aware, so they can use easily necessary physical components with Stove
-provided APIs.
-All the infra is **pluggable**, and can be added easily. You can also create your own infra needs by using the
-abstractions
-that Stove provides.
-Having said that, the only dependency is `docker` since Stove is
-using [testcontainers](https://github.com/testcontainers/testcontainers-java) underlying.
+Your tests stay infrastructure-agnostic but component-aware. You can easily plug in whatever physical components you need using Stove's APIs. All the infrastructure is **pluggable**—add what you need, skip what you don't. If Stove doesn't have a component you need, you can build your own using the abstractions it provides.
 
-You can use JUnit and Kotest for running the tests. You can run all the tests on your CI, too.
-But that needs **DinD(docker-in-docker)** integration.
+The only hard requirement is Docker, since Stove uses [testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
 
-The medium story about the motivation behind the framework:
-[A New Approach to the API End-to-End Testing in Kotlin](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)
+You can run tests with either JUnit or Kotest. CI works too, though you'll need **DinD (docker-in-docker)** setup for that.
 
-_Note: Stove is not a replacement for the unit tests, it is a framework for end-to-end/component tests._
+Want to know more about why we built Stove? Check out the [Medium article](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5) that explains the motivation behind the framework.
 
-## What is the problem?
+!!! note "Not a Replacement for Unit Tests"
+    Stove is for end-to-end and component tests, not unit tests. You'll still want unit tests for fast feedback on individual components.
 
-In the JVM world, we have a lot of frameworks for the application code, but when it comes to integration/component/e2e
-testing
-we don't have a single framework that can be used for all the tech stacks. We have testcontainers but you still need to
-do lots of plumbing to make it work with your tech stack.
+## Why Stove?
 
-The use-cases that led us develop the Stove are to increase the productivity of the developers while keeping the quality
-of the codebase high and coherent.
+The JVM ecosystem has tons of frameworks for building applications, but when it comes to integration, component, or e2e testing, there's no single framework that works across all tech stacks. Testcontainers exists, but you still end up writing a lot of boilerplate to wire it up with your specific stack.
 
-Those use-cases are:
+We built Stove to solve this. We wanted to boost developer productivity while keeping code quality high, and we needed it to work across different tech stacks:
 
-- Kotlin app with Spring-Boot
-- Kotlin app with Ktor
-- Java app with Spring-Boot
-- Java app with Micronaut
-- Java app with Quarkus
-- Scala app with Spring-Boot
+- Kotlin apps with Spring Boot
+- Kotlin apps with Ktor
+- Java apps with Spring Boot
+- Java apps with Micronaut
+- Java apps with Quarkus
+- Scala apps with Spring Boot
 
-People have different tech stacks and each time when they want to write e2e tests, they need to write a lot of
-boilerplate code.
-Alongside the physical components that are needed to be started, we need to write the code to start the application, and
-the code to access the beans of the application.
-Stove is here to solve this problem. It provides a single API to write e2e tests for all the tech stacks.
+Every time someone wants to write e2e tests, they end up writing the same boilerplate: starting physical components, figuring out how to start the application from tests, accessing application beans, and so on. Stove eliminates all that by providing a single API that works across all these stacks.
 
-**Stove unifies the testing experience whatever you use.**
+**Stove unifies the testing experience, no matter what you're using.**
 
 ## High Level Architecture
 
 ![img](./assets/stove_architecture.svg)
 
-## How to build the source code?
+## Building from Source
+
+To build Stove from source, you'll need:
 
 - JDK 17+
-- Docker for running the tests (please use the latest version)
+- Docker (latest version recommended)
+
+Then just run:
 
 ```shell
-./gradlew build # that will build and run the tests
+./gradlew build  # This builds and runs all tests
 ```
 
 ## Getting Started
@@ -76,9 +60,7 @@ Stove is here to solve this problem. It provides a single API to write e2e tests
     - Gradle is the default build tool for Stove, and it is used in the examples.
     - If you are using Intellij IDEA, Kotest plugin is recommended.
 
-The framework still under development and is getting matured. It is working well and in use at Trendyol.
-Besides, the Stove tests are highly likely going to be located under your testing context and the folder,
-so, it is risk-free to apply and use, give it a try!
+The framework is still evolving, but it's working well and is actively used at Trendyol. Since Stove tests live in your test source set (separate from your application code), trying it out is completely risk-free—give it a shot!
 
 `$version = please check the current version`
 
@@ -96,9 +78,9 @@ Versions are available at [Releases](https://github.com/Trendyol/stove/releases)
       }
       ```
 
-Every physical component that your testing needs is a separate module in Stove. You can add them according to your
-needs.
-Stove supports the following components:
+Every physical component you might need for testing is a separate module in Stove. Add only what you need.
+
+Stove supports these components:
 
 - [Kafka](Components/02-kafka.md)
 - [MongoDB](Components/07-mongodb.md)
@@ -119,27 +101,30 @@ Stove supports the following components:
     }
 
     dependencies {
+      // Import BOM for version management
+      testImplementation(platform("com.trendyol:stove-bom:$version"))
+      
       // Application Under Test
       
       // Spring Boot
-      testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+      testImplementation("com.trendyol:stove-spring")
       
       // or
 
       // Ktor
-      testImplementation("com.trendyol:stove-ktor-testing-e2e:$version")
+      testImplementation("com.trendyol:stove-ktor")
       
       // Components
-      testImplementation("com.trendyol:stove-testing-e2e:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-mongodb:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-mssql:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-postgresql:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-redis:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-elasticsearch:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-couchbase:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-wiremock:$version")
-      testImplementation("com.trendyol:stove-testing-e2e-http:$version")
+      testImplementation("com.trendyol:stove")
+      testImplementation("com.trendyol:stove-kafka")
+      testImplementation("com.trendyol:stove-mongodb")
+      testImplementation("com.trendyol:stove-mssql")
+      testImplementation("com.trendyol:stove-postgres")
+      testImplementation("com.trendyol:stove-redis")
+      testImplementation("com.trendyol:stove-elasticsearch")
+      testImplementation("com.trendyol:stove-couchbase")
+      testImplementation("com.trendyol:stove-wiremock")
+      testImplementation("com.trendyol:stove-http")
     }
     ```
 
@@ -148,21 +133,21 @@ Stove supports the following components:
 Stove uses your application entrance point to start your application alongside the physical components. The
 application's `main` is the entrance point for the applications in general.
 
-Everything starts with the `TestSystem` class. You can configure your system with the `with` function.
+Everything starts with the `Stove` class. You configure your system using the `with` function.
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     // your configurations depending on the dependencies you need
   }.run()
 ```
 
-`with` function is a lambda that you can configure your system. You can add your physical components.
-It is also a place to plug your custom **systems** that you might want to create.
-If you added `com.trendyol:stove-testing-e2e-kafka` package, you can use `kafka` function in the `with` block.
+The `with` function is a lambda where you configure your system. You can add physical components here, and it's also where you plug in any custom **systems** you might want to create.
+
+If you've added the `com.trendyol:stove-kafka` package, you can use the `kafka` function in the `with` block:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     kafka {
       // your kafka configurations
@@ -201,7 +186,7 @@ Right now Stove supports Spring Boot, Ktor. But it is easy to add new frameworks
 !!! Note
 
     If you want to add a new framework, you can check the
-    `com.trendyol.stove.testing.e2e.system.abstractions.ApplicationUnderTest` interface.
+    `com.trendyol.stove.system.abstractions.ApplicationUnderTest` interface.
     You can implement this interface for your framework.
 
 Let's create an example for a Spring-Boot application with Kafka and explain the setup flow.
@@ -210,15 +195,18 @@ The dependencies we will need in the `build.gradle.kts` file are:
 
 ```kotlin
  dependencies {
-  testImplementation("com.trendyol:stove-testing-e2e:$version")
-  testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
-  testImplementation("com.trendyol:stove-testing-e2e-http:$version")
-  testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+  // Import BOM for version management
+  testImplementation(platform("com.trendyol:stove-bom:$version"))
+  
+  testImplementation("com.trendyol:stove")
+  testImplementation("com.trendyol:stove-kafka")
+  testImplementation("com.trendyol:stove-http")
+  testImplementation("com.trendyol:stove-spring")
 }
 ```
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     httpClient {
       HttpClientSystemOptions(
@@ -298,7 +286,7 @@ created and the DI container is accessed in the tests.
 If you want to access to the beans of the application, you can simply do:
 
 ```kotlin
-TestSystem.validate {
+stove {
   using<UserApplicationService> {
     this.getUserById(1) shouldBe User(1, "John", "Doe")
   }
@@ -339,8 +327,7 @@ kafka {
 ```
 
 The list of properties are exposed by the Kafka component and you can use them in the application.
-The reference `it` in this block is the physical component itself and it's exposed properties. Whenever Kafka and
-testing suite start, the properties are changed and passed down to the application.
+The `it` reference in this block is the physical component itself with all its exposed properties. When Kafka and the testing suite start, these properties are automatically passed down to your application.
 
 ### `run` function
 
@@ -352,14 +339,14 @@ Runs the entire setup. It starts the physical components and the application.
     You can run it in the `@BeforeAll` function of JUnit or implement `AbstractProjectConfig#beforeProject` in Kotest.
     Teardown is also important to call. You can run it in the `@AfterAll` function of JUnit or implement
     `AbstractProjectConfig#afterProject` in Kotest.
-    Simply calling `TestSystem.stop()` is enough to stop the setup.
+    Simply calling `Stove.stop()` is enough to stop everything.
 
 ### Writing Tests
 
-After the setup is done, you can write your tests. You can use the `validate` function to write your tests.
+After the setup is done, you can write your tests. Use the `stove` function to write your test assertions:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     get<String>("/hello/index") { actual ->
       actual shouldContain "Hi from Stove framework"
@@ -431,7 +418,7 @@ You need to add the Stove-Spring dependency to be able to write e2e tests for th
 
     ```kotlin
     dependencies {
-        testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-spring:$version")
         
         // You can add other components if you need
     }
@@ -493,12 +480,17 @@ it is time to run your application for the first time from the test-context with
     wide operation and executes **only one time**, as the name implies `beforeProject`.
     
     ```kotlin
+    import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+    import com.trendyol.stove.system.Stove
+    import com.trendyol.stove.http.*
+    import com.trendyol.stove.spring.springBoot
+    
     class Stove : AbstractProjectConfig() {
         // Register StoveKotestExtension for detailed failure reports
         override val extensions: List<Extension> = listOf(StoveKotestExtension())
             
         override suspend fun beforeProject(): Unit = 
-            TestSystem()
+            Stove()
                 .with {
                     httpClient {
                         HttpClientSystemOptions (
@@ -523,18 +515,25 @@ it is time to run your application for the first time from the test-context with
                     )
                 }.run()
     
-        override suspend fun afterProject(): Unit = TestSystem.stop()
+        override suspend fun afterProject(): Unit = Stove.stop()
     }
     ```
 
 === "JUnit"
 
     ```kotlin
-    class TestSystemConfig {
+    import com.trendyol.stove.extensions.junit.StoveJUnitExtension
+    import com.trendyol.stove.system.Stove
+    import com.trendyol.stove.http.*
+    import com.trendyol.stove.spring.springBoot
+    import org.junit.jupiter.api.extension.ExtendWith
+    
+    @ExtendWith(StoveJUnitExtension::class)
+    class StoveConfig {
     
         @BeforeAll
         fun beforeProject() = runBlocking {
-             TestSystem()
+             Stove()
                 .with {
                     httpClient {
                         HttpClientSystemOptions (
@@ -562,23 +561,19 @@ it is time to run your application for the first time from the test-context with
     
         @AfterAll
         fun afterProject() = runBlocking {
-            TestSystem.stop()
+            Stove.stop()
         }
     }
     ```
 
-In the section of `springBoot` function, we have configured the application's entry point, and the parameters that are
-passed to the application. `stove.spring.example.run(parameters)` is the entrance point of the application.
+In the `springBoot` function, we configure the application's entry point and the parameters passed to it. `stove.spring.example.run(parameters)` is where your application starts.
 
-Like the concept of `service under test` from the Test-Driven-Development.
-Here we have the similar concept, since we're testing the entire system, it is called `Application Under Test`
-
-In here we're configuring the Spring Boot application as _application under test_.
+This is similar to the "service under test" concept from TDD, but since we're testing the entire system, we call it the "Application Under Test". Here we're configuring the Spring Boot application as the application under test.
 
 !!! note
 
-    `server.port=8001` is a Spring config, TestSystem's `baseUrl` needs to match with it, since Http requests are made
-     against the `baseUrl` that is defined. `withDefaultHttp` creates a WebClient and uses the `baseUrl` that is passed.
+    `server.port=8001` is a Spring config, and Stove's `baseUrl` needs to match it, since HTTP requests are made
+     against the `baseUrl` you define. `httpClient` creates a WebClient and uses the `baseUrl` you pass.
 
 ##### Writing Tests
 
@@ -589,7 +584,7 @@ Here is an example test that validates `http://localhost:$port/hello/index` retu
     class ExampleTest: FunSpec({
 
         test("should return hi"){
-            TestSystem.validate {
+            stove {
                 http {
                     get<String>("/hello/index") { actual -> 
                         actual shouldContain "Hi from Stove framework" 
@@ -605,7 +600,7 @@ Here is an example test that validates `http://localhost:$port/hello/index` retu
 
         @Test
         fun `should return hi`() {
-            TestSystem.validate {
+            stove {
                 http {
                     get<String>("/hello/index") { actual -> 
                         actual shouldContain "Hi from Stove framework" 
@@ -625,7 +620,7 @@ That's it! You have up-and-running API, can be tested with Stove.
     Example:
 
     ```kotlin
-    TestSystem.validate {
+    stove {
         http {
             get<String>("/hello/index") { actual -> 
                 actual shouldContain "Hi from Stove framework" 
@@ -661,7 +656,7 @@ That's it! You have up-and-running API, can be tested with Stove.
 
     ```kotlin
     dependencies {
-        testImplementation("com.trendyol:stove-ktor-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-ktor:$version")
         
         // Add your preferred DI framework (one of):
         testImplementation("io.insert-koin:koin-ktor:$koinVersion")  // Koin
@@ -680,7 +675,7 @@ That's it! You have up-and-running API, can be tested with Stove.
 === "Koin"
 
     ```kotlin
-    TestSystem()
+    Stove()
       .with {
         bridge()  // Auto-detects Koin
         ktor(
@@ -702,7 +697,7 @@ That's it! You have up-and-running API, can be tested with Stove.
 === "Ktor-DI"
 
     ```kotlin
-    TestSystem()
+    Stove()
       .with {
         bridge()  // Auto-detects Ktor-DI
         ktor(
@@ -716,7 +711,7 @@ That's it! You have up-and-running API, can be tested with Stove.
       }.run()
     ```
 
-After you've added `stove-ktor-testing-e2e` dependency and your preferred DI framework, and configured the application's `main` function for Stove to enter, it is time to run your application for the first time from the test-context with Stove.
+After you've added `stove-ktor` dependency and your preferred DI framework, and configured the application's `main` function for Stove to enter, it is time to run your application for the first time from the test-context with Stove.
 
 #### Tuning the application's entry point
 
@@ -827,7 +822,7 @@ KafkaSystemOptions(
 Each component has its own serialization and deserialization mechanism. You can align Stove's serialization and
 deserialization mechanism with your application's serialization and deserialization mechanism.
 
-Stove works with multiple serializers and deserializers. The package `stove-testing-e2e` provides the following
+Stove works with multiple serializers and deserializers. The package `stove` provides the following
 serializers and deserializers:
 
 * Jackson
@@ -908,9 +903,9 @@ Now, it is time to tell the e2e test system to use the NoDelay implementation.
 
 This is done by registering test dependencies (see "Registering Test Dependencies" section below).
 
-### Writing Your Own TestSystem
+### Writing Your Own Custom System
 
-Stove's pluggable architecture allows you to create custom systems for any component or behavior specific to your application. This is useful for:
+Stove's pluggable architecture lets you create custom systems for any component or behavior specific to your application. This is useful for:
 
 - Capturing domain events in memory
 - Integrating with schedulers (db-scheduler, Quartz, etc.)
@@ -920,16 +915,16 @@ Stove's pluggable architecture allows you to create custom systems for any compo
 Here's a simple example of a custom scheduler system:
 
 ```kotlin
-fun TestSystem.withSchedulerSystem(): TestSystem {
+fun Stove.withSchedulerSystem(): Stove {
   getOrRegister(SchedulerSystem(this))
   return this
 }
 
-fun TestSystem.scheduler(): SchedulerSystem = getOrNone<SchedulerSystem>().getOrElse {
+fun Stove.scheduler(): SchedulerSystem = getOrNone<SchedulerSystem>().getOrElse {
   throw SystemNotRegisteredException(SchedulerSystem::class)
 }
 
-class SchedulerSystem(override val testSystem: TestSystem) : AfterRunAware<ApplicationContext>, PluggedSystem {
+class SchedulerSystem(override val stove: Stove) : AfterRunAware<ApplicationContext>, PluggedSystem {
 
   private lateinit var scheduler: WaitingRoomScheduler
   private lateinit var backgroundCommandBus: BackgroundCommandBusImpl
@@ -987,7 +982,7 @@ You can add test-scoped beans to configure the Spring application from the test 
 **Spring Boot 2.x / 3.x:**
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies
+import com.trendyol.stove.addTestDependencies
 
 runApplication<MyApp>(*params) {
     addTestDependencies {
@@ -1000,7 +995,7 @@ runApplication<MyApp>(*params) {
 **Spring Boot 4.x:**
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies4x
+import com.trendyol.stove.addTestDependencies4x
 
 runApplication<MyApp>(*params) {
     addTestDependencies4x {

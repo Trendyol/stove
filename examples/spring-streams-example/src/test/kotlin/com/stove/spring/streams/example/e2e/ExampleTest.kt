@@ -2,8 +2,8 @@ package com.stove.spring.streams.example.e2e
 
 import arrow.core.Option
 import com.google.protobuf.Message
-import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.FunSpec
 import org.apache.kafka.common.serialization.StringDeserializer
 import stove.example.protobuf.*
@@ -40,7 +40,7 @@ class ExampleTest :
         this.age = age
       }
 
-      TestSystem.validate {
+      stove {
         kafka {
         /*-------------------------
          |  publish kafka messages

@@ -1,0 +1,200 @@
+public final class com/trendyol/stove/mongodb/DatabaseOptions {
+	public fun <init> ()V
+	public fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;
+	public final fun copy (Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;)Lcom/trendyol/stove/mongodb/DatabaseOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/DatabaseOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefault ()Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/DatabaseOptions$DefaultDatabase;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCollection ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/mongodb/MongoContainerOptions : com/trendyol/stove/containers/ContainerOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun component6 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/mongodb/MongoContainerOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/MongoContainerOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/MongoContainerOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompatibleSubstitute ()Ljava/lang/String;
+	public fun getContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun getImage ()Ljava/lang/String;
+	public fun getImageWithTag ()Ljava/lang/String;
+	public fun getRegistry ()Ljava/lang/String;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUseContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class com/trendyol/stove/mongodb/MongoDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/mongodb/MongodbContext {
+	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+	public final fun component2 ()Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
+	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;)Lcom/trendyol/stove/mongodb/MongodbContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/MongodbContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/MongodbContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOptions ()Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/mongodb/MongodbExposedConfiguration : com/trendyol/stove/system/abstractions/ExposedConfiguration {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConnectionString ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPort ()I
+	public final fun getReplicaSetUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/mongodb/MongodbMigrationContext {
+	public fun <init> (Lcom/mongodb/kotlin/client/coroutine/MongoClient;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;)V
+	public final fun component1 ()Lcom/mongodb/kotlin/client/coroutine/MongoClient;
+	public final fun component2 ()Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
+	public final fun copy (Lcom/mongodb/kotlin/client/coroutine/MongoClient;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;)Lcom/trendyol/stove/mongodb/MongodbMigrationContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/MongodbMigrationContext;Lcom/mongodb/kotlin/client/coroutine/MongoClient;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/MongodbMigrationContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClient ()Lcom/mongodb/kotlin/client/coroutine/MongoClient;
+	public final fun getOptions ()Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+	public static final field Companion Lcom/trendyol/stove/mongodb/MongodbSystem$Companion;
+	public static final field RESERVED_ID Ljava/lang/String;
+	public field mongoClient Lcom/mongodb/kotlin/client/coroutine/MongoClient;
+	public fun close ()V
+	public fun configuration ()Ljava/util/List;
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getContext ()Lcom/trendyol/stove/mongodb/MongodbContext;
+	public final fun getMongoClient ()Lcom/mongodb/kotlin/client/coroutine/MongoClient;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public final fun inspect ()Lcom/trendyol/stove/containers/StoveContainerInspectInformation;
+	public final fun pause ()Lcom/trendyol/stove/mongodb/MongodbSystem;
+	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setMongoClient (Lcom/mongodb/kotlin/client/coroutine/MongoClient;)V
+	public final fun shouldDelete (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun shouldDelete$default (Lcom/trendyol/stove/mongodb/MongodbSystem;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun shouldNotExist (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun shouldNotExist$default (Lcom/trendyol/stove/mongodb/MongodbSystem;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+	public final fun unpause ()Lcom/trendyol/stove/mongodb/MongodbSystem;
+}
+
+public final class com/trendyol/stove/mongodb/MongodbSystem$Companion {
+	public final fun client (Lcom/trendyol/stove/mongodb/MongodbSystem;)Lcom/mongodb/kotlin/client/coroutine/MongoClient;
+	public final fun filterById (Ljava/lang/String;)Lorg/bson/conversions/Bson;
+}
+
+public class com/trendyol/stove/mongodb/MongodbSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/mongodb/MongodbSystemOptions$Companion;
+	public fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/MongoContainerOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/MongoContainerOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getConfigureClient ()Lkotlin/jvm/functions/Function1;
+	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
+	public fun getContainer ()Lcom/trendyol/stove/mongodb/MongoContainerOptions;
+	public fun getDatabaseOptions ()Lcom/trendyol/stove/mongodb/DatabaseOptions;
+	public fun getJsonWriterSettings ()Lorg/bson/json/JsonWriterSettings;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/database/migrations/MigrationCollection;
+	public fun getSerde ()Lcom/trendyol/stove/serialization/StoveSerde;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
+}
+
+public final class com/trendyol/stove/mongodb/MongodbSystemOptions$Companion {
+	public final fun provided (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/mongodb/DatabaseOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/mongodb/ProvidedMongodbSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/mongodb/MongodbSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/mongodb/DatabaseOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/ProvidedMongodbSystemOptions;
+}
+
+public final class com/trendyol/stove/mongodb/ObjectIdDeserializer : com/fasterxml/jackson/databind/deser/std/StdDeserializer {
+	public fun <init> ()V
+	public synthetic fun deserialize (Lcom/fasterxml/jackson/core/JsonParser;Lcom/fasterxml/jackson/databind/DeserializationContext;)Ljava/lang/Object;
+	public fun deserialize (Lcom/fasterxml/jackson/core/JsonParser;Lcom/fasterxml/jackson/databind/DeserializationContext;)Lorg/bson/types/ObjectId;
+}
+
+public final class com/trendyol/stove/mongodb/ObjectIdModule : com/fasterxml/jackson/databind/module/SimpleModule {
+	public fun <init> ()V
+}
+
+public final class com/trendyol/stove/mongodb/ObjectIdSerializer : com/fasterxml/jackson/databind/ser/std/StdSerializer {
+	public fun <init> ()V
+	public synthetic fun serialize (Ljava/lang/Object;Lcom/fasterxml/jackson/core/JsonGenerator;Lcom/fasterxml/jackson/databind/SerializerProvider;)V
+	public fun serialize (Lorg/bson/types/ObjectId;Lcom/fasterxml/jackson/core/JsonGenerator;Lcom/fasterxml/jackson/databind/SerializerProvider;)V
+}
+
+public final class com/trendyol/stove/mongodb/OptionsKt {
+	public static final fun mongodb-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun mongodb-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/mongodb/ProvidedMongodbSystemOptions : com/trendyol/stove/mongodb/MongodbSystemOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;Lcom/trendyol/stove/mongodb/DatabaseOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;Lcom/trendyol/stove/mongodb/DatabaseOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/mongodb/MongodbExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
+}
+
+public class com/trendyol/stove/mongodb/StoveMongoContainer : org/testcontainers/mongodb/MongoDBContainer, com/trendyol/stove/containers/StoveContainer {
+	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
+	public fun execCommand ([Ljava/lang/String;J)Lcom/trendyol/stove/containers/ExecResult;
+	public fun getContainerIdAccess ()Ljava/lang/String;
+	public fun getDockerClientAccess ()Lkotlin/Lazy;
+	public fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
+	public fun inspect ()Lcom/trendyol/stove/containers/StoveContainerInspectInformation;
+	public fun pause ()V
+	public fun unpause ()V
+}
+
+public final class com/trendyol/stove/mongodb/StoveMongoJsonWriterSettings {
+	public static final field INSTANCE Lcom/trendyol/stove/mongodb/StoveMongoJsonWriterSettings;
+	public final fun getObjectIdAsString ()Lorg/bson/json/JsonWriterSettings;
+}
+

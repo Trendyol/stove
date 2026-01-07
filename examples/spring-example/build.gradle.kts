@@ -22,12 +22,13 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(projects.stove.lib.stoveTestingE2eHttp)
-  testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
-  testImplementation(projects.stove.lib.stoveTestingE2eCouchbase)
-  testImplementation(projects.stove.lib.stoveTestingE2eElasticsearch)
-  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2e)
-  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2eKafka)
+  testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.stove.lib.stoveHttp)
+  testImplementation(projects.stove.lib.stoveWiremock)
+  testImplementation(projects.stove.lib.stoveCouchbase)
+  testImplementation(projects.stove.lib.stoveElasticsearch)
+  testImplementation(projects.stove.starters.spring.stoveSpring)
+  testImplementation(projects.stove.starters.spring.stoveSpringKafka)
 }
 
 application { mainClass.set("stove.spring.example.ExampleAppkt") }

@@ -1,9 +1,9 @@
 package com.stove.spring.example4x.e2e
 
 import arrow.core.some
-import com.trendyol.stove.testing.e2e.http.*
-import com.trendyol.stove.testing.e2e.kafka.kafka
-import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.http.*
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.system.*
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.seconds
 class ExampleTest :
   FunSpec({
     test("index should be reachable") {
-      TestSystem.validate {
+      stove {
         http {
           get<String>("/api/index", queryParams = mapOf("keyword" to testCase.name.name)) { actual ->
             actual shouldContain "Hi from Stove framework with ${testCase.name.name}"
@@ -30,7 +30,7 @@ class ExampleTest :
     }
 
     test("should create new product when send product create request from api") {
-      TestSystem.validate {
+      stove {
         val productCreateRequest = ProductCreateRequest(1L, name = "product name", 99L)
 
         http {
@@ -50,7 +50,7 @@ class ExampleTest :
     }
 
     test("should consume product create command from kafka") {
-      TestSystem.validate {
+      stove {
         val createProductCommand = CreateProductCommand(2L, name = "product from kafka", 100L)
 
         kafka {

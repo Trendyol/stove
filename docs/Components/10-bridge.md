@@ -1,18 +1,18 @@
 # Bridge
 
-The Bridge component provides direct access to your application's dependency injection (DI) container from within your tests. This enables you to resolve and use any bean or service registered in your application, making it possible to test internal state, verify side effects, or set up test data through application services.
+The Bridge component gives you direct access to your application's dependency injection (DI) container from your tests. This lets you grab any bean or service your application has registered, which is super useful for testing internal state, verifying side effects, or setting up test data through your application's own services.
 
-## Overview
+## When You'd Use This
 
-When testing an application end-to-end, you often need to:
+When writing end-to-end tests, you often need to:
 
-- **Verify internal state** that isn't exposed through APIs
-- **Access application services** to set up test data
-- **Invoke domain services** directly to test business logic
-- **Replace time-dependent implementations** for deterministic tests
-- **Verify side effects** that happen within the application
+- **Check internal state** that isn't exposed through APIs
+- **Use application services** to set up test data
+- **Call domain services directly** to test business logic
+- **Swap out time-dependent implementations** for deterministic tests
+- **Verify side effects** that happen inside the application
 
-The Bridge provides a type-safe way to access any component from your application's DI container.
+Bridge gives you a type-safe way to access any component from your application's DI container.
 
 ## Configuration
 
@@ -22,7 +22,7 @@ Bridge is built into the framework starters, so no extra dependency is needed.
 
     ```kotlin
     dependencies {
-        testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-spring:$version")
     }
     ```
 
@@ -30,16 +30,16 @@ Bridge is built into the framework starters, so no extra dependency is needed.
 
     ```kotlin
     dependencies {
-        testImplementation("com.trendyol:stove-ktor-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-ktor:$version")
     }
     ```
 
 ### Setup
 
-Enable Bridge in your TestSystem configuration:
+Enable Bridge in your Stove configuration:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
     
@@ -101,7 +101,7 @@ dependencies {
 }
 
 // In your test setup - bridge() auto-detects Koin
-TestSystem()
+Stove()
     .with {
         bridge()
         ktor(runner = { params -> MyApp.run(params) })
@@ -117,7 +117,7 @@ dependencies {
 }
 
 // In your test setup - bridge() auto-detects Ktor-DI
-TestSystem()
+Stove()
     .with {
         bridge()
         ktor(runner = { params -> MyApp.run(params) })
@@ -129,7 +129,7 @@ TestSystem()
 
 ```kotlin
 // For any other DI framework (Kodein, Dagger, etc.)
-TestSystem()
+Stove()
     .with {
         bridge { application, type ->
             // type is KType - preserves generic info like List<T>
@@ -176,7 +176,7 @@ object MyApp {
 }
 
 // In your test setup
-TestSystem()
+Stove()
     .with {
         bridge()
         ktor(
@@ -222,7 +222,7 @@ object MyApp {
 }
 
 // In your test setup
-TestSystem()
+Stove()
     .with {
         bridge()
         ktor(
@@ -250,7 +250,7 @@ TestSystem()
 Access a single bean and perform operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
     using<UserService> {
         // 'this' refers to UserService
         val user = findById(123)
@@ -265,7 +265,7 @@ TestSystem.validate {
 Access multiple beans in a single block (up to 5 beans supported):
 
 ```kotlin
-TestSystem.validate {
+stove {
     // Two beans
     using<UserService, OrderService> { userService, orderService ->
         val user = userService.findById(123)
@@ -297,7 +297,7 @@ TestSystem.validate {
 When you need to capture a value from inside the `using` block for later use, declare a variable outside the block and assign it inside:
 
 ```kotlin
-TestSystem.validate {
+stove {
     // Declare variable outside, assign inside
     var userId: Long = 0
     using<UserService> {
@@ -345,7 +345,7 @@ Use application repositories to set up test data:
 
 ```kotlin
 test("should return user orders") {
-    TestSystem.validate {
+    stove {
         // Create test data using application's repository
         var userId: Long = 0
         using<UserRepository> {
@@ -374,7 +374,7 @@ Verify state that isn't exposed through APIs:
 
 ```kotlin
 test("should update inventory after order") {
-    TestSystem.validate {
+    stove {
         val productId = "PROD-123"
         
         // Check initial inventory
@@ -407,7 +407,7 @@ Test business logic that may be complex to trigger through APIs:
 
 ```kotlin
 test("should calculate shipping cost correctly") {
-    TestSystem.validate {
+    stove {
         using<ShippingCalculator> {
             // Test various scenarios directly
             calculate(weight = 1.0, destination = "US") shouldBe 5.99
@@ -424,7 +424,7 @@ Manually trigger scheduled jobs for testing:
 
 ```kotlin
 test("should process pending orders when scheduler runs") {
-    TestSystem.validate {
+    stove {
         // Setup: Create pending orders
         using<OrderRepository> {
             save(Order(status = "PENDING", createdAt = Instant.now().minusHours(2)))
@@ -466,14 +466,14 @@ class FixedTimeProvider(private var time: Instant) : TimeProvider {
     fun advance(duration: Duration) { time = time.plus(duration) }
 }
 
-// Register test implementation in your TestSystem setup
+// Register test implementation in your Stove setup
 addTestDependencies {
     bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.parse("2024-01-01T00:00:00Z")) }
 }
 
 // Use in tests
 test("should expire session after timeout") {
-    TestSystem.validate {
+    stove {
         // Create session and capture the session ID
         var sessionId: String = ""
         http {
@@ -516,7 +516,7 @@ class TestEventCapture {
 }
 
 test("should publish UserCreatedEvent when user registers") {
-    TestSystem.validate {
+    stove {
         // Clear previous events
         using<TestEventCapture> { clear() }
         
@@ -544,9 +544,9 @@ Register test-specific beans using `addTestDependencies`:
 **Spring Boot 2.x / 3.x:**
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies
+import com.trendyol.stove.addTestDependencies
 
-TestSystem()
+Stove()
     .with {
         bridge()
         springBoot(
@@ -571,9 +571,9 @@ TestSystem()
 **Spring Boot 4.x:**
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies4x
+import com.trendyol.stove.addTestDependencies4x
 
-TestSystem()
+Stove()
     .with {
         bridge()
         springBoot(
@@ -619,7 +619,7 @@ Bridge works seamlessly with other Stove systems:
 
 ```kotlin
 test("should process order end-to-end") {
-    TestSystem.validate {
+    stove {
         val orderId = UUID.randomUUID().toString()
         
         // Mock external payment service
@@ -707,7 +707,7 @@ using<OrderRepository> {
 
 ```kotlin
 // Use cleanup functions or explicit cleanup in tests
-TestSystem.validate {
+stove {
     var userId: Long = 0
     using<UserRepository> {
         userId = save(user).id

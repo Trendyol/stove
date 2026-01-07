@@ -4,18 +4,18 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-http:$version")
+            testImplementation("com.trendyol:stove-http:$version")
         }
     ```
 
 ## Configure
 
-After getting the library from the maven source, while configuring TestSystem you will have access to `http`
+Once you've added the dependency, you'll have access to the `httpClient` function when configuring Stove:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
-    http {
+    httpClient {
       HttpClientSystemOptions(
         baseUrl = "http://localhost:8080",
       )
@@ -57,7 +57,7 @@ data class HttpClientSystemOptions(
 Making GET requests with various options:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // Simple GET request with type-safe response
     get<UserResponse>("/users/123") { user ->
@@ -94,7 +94,7 @@ TestSystem.validate {
 When you need access to status code and headers:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     getResponse<UserResponse>("/users/123") { response ->
       response.status shouldBe 200
@@ -115,7 +115,7 @@ TestSystem.validate {
 Various POST request patterns:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // POST with request body and expect JSON response
     postAndExpectJson<UserResponse>("/users") {
@@ -162,7 +162,7 @@ TestSystem.validate {
 Update operations with PUT:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // PUT with response body
     putAndExpectJson<UserResponse>("/users/123") {
@@ -197,7 +197,7 @@ TestSystem.validate {
 Partial updates with PATCH:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // PATCH with response body
     patchAndExpectBody<UserResponse>(
@@ -216,7 +216,7 @@ TestSystem.validate {
 Delete operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // DELETE without response body
     deleteAndExpectBodilessResponse("/users/123") { response ->
@@ -239,7 +239,7 @@ TestSystem.validate {
 Upload files using multipart form data:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     postMultipartAndExpectResponse<UploadResponse>(
       uri = "/products/import",
@@ -267,7 +267,7 @@ TestSystem.validate {
 For advanced scenarios, access the underlying Ktor HttpClient:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     client { baseUrl ->
       // Direct access to Ktor HttpClient
@@ -287,7 +287,7 @@ Here's a complete CRUD test example:
 
 ```kotlin
 test("should perform CRUD operations on products") {
-  TestSystem.validate {
+  stove {
     var productId: Long? = null
 
     // CREATE
@@ -342,7 +342,7 @@ test("should perform CRUD operations on products") {
 ### HTTP + Database
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Create via API and capture user ID
   var userId: Long = 0
   http {
@@ -367,7 +367,7 @@ TestSystem.validate {
 ### HTTP + Kafka
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Trigger event via API
   http {
     postAndExpectBodilessResponse("/orders", body = CreateOrderRequest(amount = 100.0).some()) { response ->
@@ -387,7 +387,7 @@ TestSystem.validate {
 ### HTTP + WireMock
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Mock external service
   wiremock {
     mockGet(
@@ -409,7 +409,7 @@ TestSystem.validate {
 ## Error Handling
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // Test validation errors
     postAndExpectBody<ValidationErrorResponse>("/users", body = InvalidUserRequest().some()) { response ->
@@ -445,7 +445,7 @@ Stove provides built-in support for testing WebSocket endpoints. The WebSocket f
 Send and receive messages through a WebSocket connection:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/chat") {
       // Send a text message
@@ -464,7 +464,7 @@ TestSystem.validate {
 Multiple ways to send messages:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/endpoint") {
       // Send text message
@@ -486,7 +486,7 @@ TestSystem.validate {
 Various methods to receive messages:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/endpoint") {
       // Receive text
@@ -519,7 +519,7 @@ TestSystem.validate {
 Collect a batch of messages:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/broadcast") {
       // Collect 5 text messages with a 10 second timeout
@@ -541,7 +541,7 @@ TestSystem.validate {
 Use Kotlin Flow for streaming scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/events") {
       // Stream text messages
@@ -577,7 +577,7 @@ TestSystem.validate {
 Connect with authentication or custom headers:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     // With bearer token
     webSocket(
@@ -608,7 +608,7 @@ TestSystem.validate {
 Use `webSocketExpect` for assertion-focused tests:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocketExpect("/notifications") {
       val messages = collectTexts(count = 3)
@@ -624,7 +624,7 @@ TestSystem.validate {
 For advanced scenarios, access the underlying Ktor WebSocket session:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocketRaw("/advanced") {
       // Direct access to Ktor's DefaultClientWebSocketSession
@@ -648,7 +648,7 @@ TestSystem.validate {
 Access the underlying session from within `StoveWebSocketSession`:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/endpoint") {
       // Use simplified API first
@@ -670,7 +670,7 @@ TestSystem.validate {
 Gracefully close WebSocket connections:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/chat") {
       send("Hello")
@@ -689,7 +689,7 @@ A comprehensive example testing a chat application:
 
 ```kotlin
 test("should handle chat room operations") {
-  TestSystem.validate {
+  stove {
     http {
       // Test echo functionality
       webSocket("/chat/echo") {
@@ -735,7 +735,7 @@ test("should handle chat room operations") {
 Test WebSocket events that trigger Kafka messages:
 
 ```kotlin
-TestSystem.validate {
+stove {
   http {
     webSocket("/events") {
       send("""{"type": "order", "action": "create", "amount": 100.0}""")

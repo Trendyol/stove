@@ -4,7 +4,8 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-rdbms-mssql:$version")
+            testImplementation(platform("com.trendyol:stove-bom:$version"))
+            testImplementation("com.trendyol:stove-mssql")
         }
     ```
 
@@ -14,7 +15,7 @@ After getting the library from the maven source, while configuring TestSystem yo
 This function configures the MSSQL Docker container that is going to be started.
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mssql {
       MsSqlOptions(
@@ -39,7 +40,7 @@ TestSystem()
 Customize the MSSQL container:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mssql {
       MsSqlOptions(
@@ -110,10 +111,10 @@ class CreateOrdersTableMigration : DatabaseMigration<MsSqlMigrationContext> {
 }
 ```
 
-Register migrations in your TestSystem configuration:
+Register migrations in your Stove configuration:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mssql {
       MsSqlOptions(
@@ -143,7 +144,7 @@ TestSystem()
 Execute DDL and DML statements:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mssql {
     // Create tables
     shouldExecute(
@@ -188,7 +189,7 @@ data class Person(
   val city: String?
 )
 
-TestSystem.validate {
+stove {
   mssql {
     // Insert test data
     shouldExecute("INSERT INTO Person (LastName, FirstName, Address, City) VALUES ('Doe', 'John', '123 Main St', 'Springfield')")
@@ -224,7 +225,7 @@ TestSystem.validate {
 Access SQL operations directly for advanced use cases:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mssql {
     ops {
       // Simple select
@@ -264,7 +265,7 @@ data class OrderSummary(
   val totalAmount: Double
 )
 
-TestSystem.validate {
+stove {
   mssql {
     // Setup test data
     shouldExecute("INSERT INTO Person (LastName, FirstName, Address, City) VALUES ('Doe', 'John', '123 Main St', 'NYC')")
@@ -319,7 +320,7 @@ data class PersonWithNullable(
   val email: String?
 )
 
-TestSystem.validate {
+stove {
   mssql {
     // Insert with null values
     shouldExecute("INSERT INTO Person (LastName, FirstName) VALUES ('Solo', 'Han')")
@@ -353,7 +354,7 @@ TestSystem.validate {
 Test failure scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mssql {
     // Database is running
     shouldQuery<Int>(
@@ -396,7 +397,7 @@ data class User(
 )
 
 test("should create user via API and verify in database") {
-  TestSystem.validate {
+  stove {
     val username = "johndoe"
     val email = "john@example.com"
 
@@ -449,7 +450,7 @@ Use the bridge to access application components:
 
 ```kotlin
 test("should use repository to save user") {
-  TestSystem.validate {
+  stove {
     val user = User(id = 0, username = "janedoe", email = "jane@example.com", createdAt = LocalDateTime.now())
 
     // Use application's repository
@@ -483,7 +484,7 @@ test("should use repository to save user") {
 Execute multiple operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mssql {
     // Create tables
     shouldExecute(
@@ -522,7 +523,7 @@ TestSystem.validate {
 Test stored procedures:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mssql {
     // Create stored procedure
     shouldExecute(
@@ -566,7 +567,7 @@ TestSystem.validate {
 Test transaction behavior:
 
 ```kotlin
-TestSystem.validate {
+stove {
   mssql {
     ops {
       // Start transaction manually via SQL
@@ -596,7 +597,7 @@ TestSystem.validate {
 For CI/CD pipelines or shared infrastructure:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     mssql {
       MsSqlOptions.provided(
@@ -643,7 +644,7 @@ data class DataTypesExample(
   val varcharValue: String
 )
 
-TestSystem.validate {
+stove {
   mssql {
     // Create table with various types
     shouldExecute(

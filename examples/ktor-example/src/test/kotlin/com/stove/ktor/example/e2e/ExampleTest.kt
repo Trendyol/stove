@@ -1,11 +1,11 @@
 package com.stove.ktor.example.e2e
 
 import arrow.core.*
-import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.rdbms.postgres.postgresql
-import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
-import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
-import com.trendyol.stove.testing.e2e.system.using
+import com.trendyol.stove.http.http
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.postgres.postgresql
+import com.trendyol.stove.system.stove
+import com.trendyol.stove.system.using
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import stove.ktor.example.application.*
@@ -21,7 +21,7 @@ class ExampleTest :
     )
 
     test("should save the product") {
-      validate {
+      stove {
         val givenId = Random.nextInt()
         val givenName = "T-Shirt, Red, M"
         postgresql {
@@ -71,7 +71,7 @@ class ExampleTest :
     }
 
     test("stove should be able to override the test deps") {
-      validate {
+      stove {
         using<LockProvider> {
           (this is NoOpLockProvider) shouldBe true
         }

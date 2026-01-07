@@ -1,26 +1,39 @@
 # Reporting
 
-Stove provides a comprehensive reporting system that tracks all actions and assertions during test execution. When a test fails, you get detailed information about what happened, making debugging easier.
+When tests fail, you want to know what went wrong. Stove's reporting system tracks everything that happens during test execution—every HTTP call, database query, Kafka message, and more. When something fails, you get a detailed report showing exactly what happened, making debugging much easier.
 
-## Features
+## What You Get
 
-- **Automatic tracking** of all system interactions (HTTP, Kafka, database, etc.)
-- **Test failure enrichment** with detailed execution reports
-- **Multiple output formats** (console, JSON)
-- **Framework integration** with Kotest and JUnit
+- **Automatic tracking** of all system interactions (HTTP requests, Kafka messages, database queries, etc.)
+- **Rich failure reports** that show what happened before the failure
+- **Multiple output formats** - human-readable console output or machine-readable JSON
+- **Framework integration** with Kotest and JUnit (optional extensions)
 
 ## Quick Start
 
+The reporting extensions are optional but recommended. They automatically enrich test failures with detailed execution reports, making debugging much easier.
+
 ### Kotest Integration
 
-Add the `StoveKotestExtension` to your project configuration:
+If you're using Kotest, add the extension dependency:
 
 ```kotlin
+dependencies {
+    testImplementation("com.trendyol:stove-extensions-kotest")
+}
+```
+
+Then register it in your project config:
+
+```kotlin
+import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+import com.trendyol.stove.system.Stove
+
 class TestConfig : AbstractProjectConfig() {
     override val extensions: List<Extension> = listOf(StoveKotestExtension())
     
     override suspend fun beforeProject() {
-        TestSystem()
+        Stove()
             .with {
                 // your configuration
             }
@@ -28,28 +41,41 @@ class TestConfig : AbstractProjectConfig() {
     }
     
     override suspend fun afterProject() {
-        TestSystem.stop()
+        Stove.stop()
     }
 }
 ```
 
 ### JUnit Integration
 
-Add the `StoveJUnitExtension` to your test classes:
+For JUnit, add the extension dependency:
 
 ```kotlin
+dependencies {
+    testImplementation("com.trendyol:stove-extensions-junit")
+}
+```
+
+Then annotate your test class:
+
+```kotlin
+import com.trendyol.stove.extensions.junit.StoveJUnitExtension
+import org.junit.jupiter.api.extension.ExtendWith
+
 @ExtendWith(StoveJUnitExtension::class)
 class MyE2ETest {
     // your tests
 }
 ```
 
+The JUnit extension works with both JUnit 5 and 6 since they share the same Jupiter API.
+
 ## Configuration
 
-Configure reporting options in your `TestSystem` setup:
+You can configure reporting options when setting up Stove:
 
 ```kotlin
-TestSystem {
+Stove {
     reporting {
         enabled()           // Enable reporting (default: true)
         dumpOnFailure()     // Dump report when tests fail (default: true)
@@ -60,10 +86,10 @@ TestSystem {
 }.run()
 ```
 
-Or use the direct methods:
+Or use the direct methods if you prefer:
 
 ```kotlin
-TestSystem {
+Stove {
     reportingEnabled(true)
     dumpReportOnTestFailure(true)
     failureRenderer(PrettyConsoleRenderer)
@@ -142,7 +168,7 @@ Machine-readable JSON format, useful for:
 - Custom report processing
 
 ```kotlin
-TestSystem {
+Stove {
     failureRenderer(JsonReportRenderer)
 }
 ```
@@ -180,6 +206,14 @@ Example JSON output:
     "passedAssertions": 0,
     "failedAssertions": 1
   }
+}
+```
+
+To use the JSON renderer:
+
+```kotlin
+Stove {
+    failureRenderer(JsonReportRenderer)
 }
 ```
 
@@ -237,7 +271,7 @@ Shows registered stubs and unmatched requests:
 If you need to disable reporting (e.g., for performance-sensitive test runs):
 
 ```kotlin
-TestSystem {
+Stove {
     reporting {
         disabled()
     }
@@ -247,16 +281,19 @@ TestSystem {
 Or:
 
 ```kotlin
-TestSystem {
+Stove {
     reportingEnabled(false)
 }
 ```
 
 ## Best Practices
 
-### 1. Always Use the Extension
+### 1. Use the Extension for Better Debugging
 
-Register `StoveKotestExtension` or `StoveJUnitExtension` in your test configuration to get automatic test context tracking and failure enrichment.
+While optional, the extensions make debugging much easier by automatically tracking test context and enriching failures with detailed reports. Just add the dependency for your test framework:
+
+- Kotest: `testImplementation("com.trendyol:stove-extensions-kotest")`
+- JUnit: `testImplementation("com.trendyol:stove-extensions-junit")`
 
 ### 2. Use Descriptive Actions
 
@@ -280,19 +317,25 @@ The JSON renderer is particularly useful for CI/CD pipelines. You can:
 
 ### Reports Not Showing
 
-1. Ensure the extension is registered:
+If you're not seeing reports when tests fail, check these:
+
+1. **Extension dependency added?** (optional but recommended)
+   - Kotest: `testImplementation("com.trendyol:stove-extensions-kotest")`
+   - JUnit: `testImplementation("com.trendyol:stove-extensions-junit")`
+
+2. **Extension registered?**
    - Kotest: `override val extensions = listOf(StoveKotestExtension())`
    - JUnit: `@ExtendWith(StoveJUnitExtension::class)`
 
-2. Check that reporting is enabled:
+3. **Reporting enabled?**
    ```kotlin
-   TestSystem {
+   Stove {
        reportingEnabled(true)
        dumpReportOnTestFailure(true)
    }
    ```
 
-3. Verify `TestSystem` is initialized before tests run
+4. **Stove initialized?** Make sure `Stove().run()` is called before your tests execute.
 
 ### Truncated Output
 

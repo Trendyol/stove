@@ -1,6 +1,6 @@
 # Writing Custom Systems
 
-One of Stove's most powerful features is its extensibility. You can create your own custom systems to integrate with any component or capture any behavior specific to your application.
+One of Stove's best features is how extensible it is. If you need to integrate with something Stove doesn't support out of the box, or you want to capture behavior specific to your application, you can build your own custom system.
 
 ## Why Write Custom Systems?
 
@@ -20,7 +20,7 @@ All Stove systems implement the `PluggedSystem` interface:
 
 ```kotlin
 interface PluggedSystem : AutoCloseable {
-    val testSystem: TestSystem
+    val stove: Stove
 }
 ```
 
@@ -118,15 +118,15 @@ class StoveDbSchedulerListener : AbstractSchedulerListener() {
 Create the system class that integrates with Stove:
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.system.TestSystem
+import com.trendyol.stove.system.abstractions.*
 import org.springframework.context.ApplicationContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.coroutineScope
 
 class DbSchedulerSystem(
-    override val testSystem: TestSystem
+    override val stove: Stove
 ) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
     
     lateinit var listener: StoveDbSchedulerListener
@@ -158,22 +158,22 @@ Create extension functions for the Stove DSL:
 
 ```kotlin
 import arrow.core.getOrElse
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import com.trendyol.stove.system.*
+import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.annotations.StoveDsl
 
 /**
- * Registers the DbSchedulerSystem with TestSystem.
+ * Registers the DbSchedulerSystem with Stove.
  */
 @StoveDsl
-fun TestSystem.withDbSchedulerListener(): TestSystem = 
+fun Stove.withDbSchedulerListener(): Stove = 
     getOrRegister(DbSchedulerSystem(this)).let { this }
 
 /**
- * Gets the DbSchedulerSystem from TestSystem.
+ * Gets the DbSchedulerSystem from Stove.
  */
 @StoveDsl
-fun TestSystem.dbScheduler(): DbSchedulerSystem = 
+fun Stove.dbScheduler(): DbSchedulerSystem = 
     getOrNone<DbSchedulerSystem>().getOrElse { 
         throw SystemNotRegisteredException(DbSchedulerSystem::class) 
     }
@@ -182,8 +182,8 @@ fun TestSystem.dbScheduler(): DbSchedulerSystem =
  * Configuration DSL extension.
  */
 @StoveDsl
-fun WithDsl.dbScheduler(): TestSystem = 
-    this.testSystem.withDbSchedulerListener()
+fun WithDsl.dbScheduler(): Stove = 
+    this.stove.withDbSchedulerListener()
 
 /**
  * Validation DSL extension.
@@ -191,7 +191,7 @@ fun WithDsl.dbScheduler(): TestSystem =
 @StoveDsl
 suspend fun ValidationDsl.tasks(
     validation: suspend DbSchedulerSystem.() -> Unit
-): Unit = validation(this.testSystem.dbScheduler())
+): Unit = validation(this.stove.dbScheduler())
 ```
 
 ### Step 4: Register the Listener Bean
@@ -199,7 +199,7 @@ suspend fun ValidationDsl.tasks(
 In your test setup, register the listener as a Spring bean using `addTestDependencies`:
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies
+import com.trendyol.stove.addTestDependencies
 
 runApplication<MyApp>(*params) {
     addTestDependencies {
@@ -212,7 +212,7 @@ runApplication<MyApp>(*params) {
 
 ```kotlin
 // Configuration
-TestSystem()
+Stove()
     .with {
         httpClient { HttpClientSystemOptions(...) }
         postgresql { PostgresqlOptions(...) }
@@ -228,7 +228,7 @@ TestSystem()
 
 // In tests
 test("should execute scheduled task") {
-    TestSystem.validate {
+    stove {
         // Trigger task scheduling
         http {
             postAndExpectBodilessResponse("/schedule-task", body = TaskRequest(...).some()) {
@@ -284,15 +284,15 @@ class StoveDomainEventListener {
 ### Step 2: Create the System
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.system.abstractions.*
+import com.trendyol.stove.system.TestSystem
+import com.trendyol.stove.system.abstractions.*
 import kotlinx.coroutines.*
 import org.springframework.context.ApplicationContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class DomainEventSystem(
-    override val testSystem: TestSystem
+    override val stove: Stove
 ) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
 
     private lateinit var listener: StoveDomainEventListener
@@ -371,37 +371,37 @@ class DomainEventSystem(
 
 ```kotlin
 import arrow.core.getOrElse
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import com.trendyol.stove.system.*
+import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.annotations.StoveDsl
 
 @StoveDsl
-fun TestSystem.withDomainEvents(): TestSystem =
+fun Stove.withDomainEvents(): Stove =
     getOrRegister(DomainEventSystem(this)).let { this }
 
 @StoveDsl
-fun TestSystem.domainEvents(): DomainEventSystem =
+fun Stove.domainEvents(): DomainEventSystem =
     getOrNone<DomainEventSystem>().getOrElse {
         throw SystemNotRegisteredException(DomainEventSystem::class)
     }
 
 @StoveDsl
-fun WithDsl.domainEvents(): TestSystem =
-    this.testSystem.withDomainEvents()
+fun WithDsl.domainEvents(): Stove =
+    this.stove.withDomainEvents()
 
 @StoveDsl
 suspend fun ValidationDsl.domainEvents(
     validation: suspend DomainEventSystem.() -> Unit
-): Unit = validation(this.testSystem.domainEvents())
+): Unit = validation(this.stove.domainEvents())
 ```
 
 ### Step 4: Register and Use
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies
+import com.trendyol.stove.addTestDependencies
 
 // Configuration
-TestSystem()
+Stove()
     .with {
         httpClient { HttpClientSystemOptions(...) }
         domainEvents()  // Register custom system
@@ -419,7 +419,7 @@ TestSystem()
 
 // Tests
 test("should publish UserCreatedEvent when user is created") {
-    TestSystem.validate {
+    stove {
         val userId = UUID.randomUUID().toString()
         
         http {
@@ -477,7 +477,7 @@ class StoveTestClock : Clock() {
 }
 
 class TimeSystem(
-    override val testSystem: TestSystem
+    override val stove: Stove
 ) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
 
     private lateinit var clock: StoveTestClock
@@ -518,7 +518,7 @@ suspend fun ValidationDsl.time(
 
 // Usage in tests
 test("should expire session after 30 minutes") {
-    TestSystem.validate {
+    stove {
         // Create session and capture session ID
         var sessionId: String = ""
         http {
@@ -548,7 +548,7 @@ If your system needs to provide configuration to the application:
 
 ```kotlin
 class MyCustomSystem(
-    override val testSystem: TestSystem,
+    override val stove: Stove,
     private val options: MySystemOptions
 ) : PluggedSystem, RunAware, ExposesConfiguration {
 
@@ -571,7 +571,7 @@ class MyCustomSystem(
 }
 
 // Configuration will be collected and passed to the application
-TestSystem()
+Stove()
     .with {
         myCustomSystem {
             MySystemOptions(
@@ -622,8 +622,8 @@ data class GraphQLEnvelope(
 #### Step 2: Create Extension Functions
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.http.HttpSystem
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import com.trendyol.stove.http.HttpSystem
+import com.trendyol.stove.system.annotations.StoveDsl
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -902,7 +902,7 @@ data class User(
 )
 
 test("should query products by category") {
-    TestSystem.validate {
+    stove {
         http {
             val query = """
                 {
@@ -921,7 +921,7 @@ test("should query products by category") {
 }
 
 test("should query current user") {
-    TestSystem.validate {
+    stove {
         http {
             val query = """
                 {
@@ -938,7 +938,7 @@ test("should query current user") {
 }
 
 test("should handle GraphQL errors") {
-    TestSystem.validate {
+    stove {
         http {
             val query = """
                 {
@@ -954,7 +954,7 @@ test("should handle GraphQL errors") {
 }
 
 test("should navigate dynamic response") {
-    TestSystem.validate {
+    stove {
         http {
             val query = """
                 {
@@ -1101,7 +1101,7 @@ Use `@StoveDsl` for IDE support:
 @StoveDsl
 suspend fun ValidationDsl.mySystem(
     validation: suspend MySystem.() -> Unit
-): Unit = validation(this.testSystem.mySystem())
+): Unit = validation(this.stove.mySystem())
 ```
 
 ### 5. Document Your System

@@ -1,0 +1,209 @@
+public abstract interface annotation class com/trendyol/stove/grpc/GrpcDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/grpc/GrpcSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/PluggedSystem {
+	public static final field Companion Lcom/trendyol/stove/grpc/GrpcSystem$Companion;
+	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/grpc/GrpcSystemOptions;)V
+	public final fun channelWithMetadata (Ljava/util/Map;)Lio/grpc/Channel;
+	public fun close ()V
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getGrpcChannel ()Lio/grpc/ManagedChannel;
+	public final fun getOptions ()Lcom/trendyol/stove/grpc/GrpcSystemOptions;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public final fun getWireClientResources ()Lcom/trendyol/stove/grpc/WireClientResources;
+	public final fun grpcClient ()Lcom/squareup/wire/GrpcClient;
+	public final fun managedChannel ()Lio/grpc/ManagedChannel;
+	public final fun rawChannel (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/grpc/GrpcSystem;
+	public final fun rawWireClient (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/grpc/GrpcSystem;
+	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+	public final fun withEndpoint (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/grpc/GrpcSystem;
+}
+
+public final class com/trendyol/stove/grpc/GrpcSystem$Companion {
+}
+
+public final class com/trendyol/stove/grpc/GrpcSystemKt {
+	public static final fun grpc-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun grpc-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/grpc/GrpcSystemOptions : com/trendyol/stove/system/abstractions/SystemOptions {
+	public synthetic fun <init> (Ljava/lang/String;IZJLjava/util/List;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;IZJLjava/util/List;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Z
+	public final fun component4-UwyO8pc ()J
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/Map;
+	public final fun component7 ()Lkotlin/jvm/functions/Function2;
+	public final fun component8 ()Lkotlin/jvm/functions/Function2;
+	public final fun copy-mGOUYlo (Ljava/lang/String;IZJLjava/util/List;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/grpc/GrpcSystemOptions;
+	public static synthetic fun copy-mGOUYlo$default (Lcom/trendyol/stove/grpc/GrpcSystemOptions;Ljava/lang/String;IZJLjava/util/List;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lcom/trendyol/stove/grpc/GrpcSystemOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreateChannel ()Lkotlin/jvm/functions/Function2;
+	public final fun getCreateWireClient ()Lkotlin/jvm/functions/Function2;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getInterceptors ()Ljava/util/List;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getPort ()I
+	public final fun getTimeout-UwyO8pc ()J
+	public final fun getUsePlaintext ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/grpc/MetadataInterceptor : io/grpc/ClientInterceptor {
+	public fun <init> (Ljava/util/Map;)V
+	public fun interceptCall (Lio/grpc/MethodDescriptor;Lio/grpc/CallOptions;Lio/grpc/Channel;)Lio/grpc/ClientCall;
+}
+
+public final class com/trendyol/stove/grpc/WireClientResources {
+	public fun <init> (Lcom/squareup/wire/GrpcClient;Lokhttp3/OkHttpClient;)V
+	public final fun close ()V
+	public final fun component1 ()Lcom/squareup/wire/GrpcClient;
+	public final fun component2 ()Lokhttp3/OkHttpClient;
+	public final fun copy (Lcom/squareup/wire/GrpcClient;Lokhttp3/OkHttpClient;)Lcom/trendyol/stove/grpc/WireClientResources;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/grpc/WireClientResources;Lcom/squareup/wire/GrpcClient;Lokhttp3/OkHttpClient;ILjava/lang/Object;)Lcom/trendyol/stove/grpc/WireClientResources;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGrpcClient ()Lcom/squareup/wire/GrpcClient;
+	public final fun getOkHttpClient ()Lokhttp3/OkHttpClient;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/grpc/test/GrpcTestServiceClient : com/trendyol/stove/grpc/test/TestServiceClient {
+	public fun <init> (Lcom/squareup/wire/GrpcClient;)V
+	public fun AuthenticatedCall ()Lcom/squareup/wire/GrpcCall;
+	public fun BidiStream ()Lcom/squareup/wire/GrpcStreamingCall;
+	public fun ClientStream ()Lcom/squareup/wire/GrpcStreamingCall;
+	public fun ServerStream ()Lcom/squareup/wire/GrpcStreamingCall;
+	public fun Unary ()Lcom/squareup/wire/GrpcCall;
+}
+
+public final class com/trendyol/stove/grpc/test/TestRequest : com/squareup/wire/Message {
+	public static final field ADAPTER Lcom/squareup/wire/ProtoAdapter;
+	public static final field Companion Lcom/trendyol/stove/grpc/test/TestRequest$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ILokio/ByteString;)V
+	public synthetic fun <init> (Ljava/lang/String;ILokio/ByteString;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copy (Ljava/lang/String;ILokio/ByteString;)Lcom/trendyol/stove/grpc/test/TestRequest;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/grpc/test/TestRequest;Ljava/lang/String;ILokio/ByteString;ILjava/lang/Object;)Lcom/trendyol/stove/grpc/test/TestRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public synthetic fun newBuilder ()Lcom/squareup/wire/Message$Builder;
+	public synthetic fun newBuilder ()Ljava/lang/Void;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/grpc/test/TestRequest$Companion {
+}
+
+public final class com/trendyol/stove/grpc/test/TestResponse : com/squareup/wire/Message {
+	public static final field ADAPTER Lcom/squareup/wire/ProtoAdapter;
+	public static final field Companion Lcom/trendyol/stove/grpc/test/TestResponse$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;IZLokio/ByteString;)V
+	public synthetic fun <init> (Ljava/lang/String;IZLokio/ByteString;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copy (Ljava/lang/String;IZLokio/ByteString;)Lcom/trendyol/stove/grpc/test/TestResponse;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/grpc/test/TestResponse;Ljava/lang/String;IZLokio/ByteString;ILjava/lang/Object;)Lcom/trendyol/stove/grpc/test/TestResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSuccess ()Z
+	public fun hashCode ()I
+	public synthetic fun newBuilder ()Lcom/squareup/wire/Message$Builder;
+	public synthetic fun newBuilder ()Ljava/lang/Void;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/grpc/test/TestResponse$Companion {
+}
+
+public abstract interface class com/trendyol/stove/grpc/test/TestServiceClient : com/squareup/wire/Service {
+	public abstract fun AuthenticatedCall ()Lcom/squareup/wire/GrpcCall;
+	public abstract fun BidiStream ()Lcom/squareup/wire/GrpcStreamingCall;
+	public abstract fun ClientStream ()Lcom/squareup/wire/GrpcStreamingCall;
+	public abstract fun ServerStream ()Lcom/squareup/wire/GrpcStreamingCall;
+	public abstract fun Unary ()Lcom/squareup/wire/GrpcCall;
+}
+
+public abstract interface class com/trendyol/stove/grpc/test/TestServiceServer : com/squareup/wire/Service {
+	public abstract fun AuthenticatedCall (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun BidiStream (Lkotlinx/coroutines/channels/ReceiveChannel;Lkotlinx/coroutines/channels/SendChannel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun ClientStream (Lkotlinx/coroutines/channels/ReceiveChannel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun ServerStream (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlinx/coroutines/channels/SendChannel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun Unary (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/grpc/test/TestServiceWireGrpc {
+	public static final field INSTANCE Lcom/trendyol/stove/grpc/test/TestServiceWireGrpc;
+	public static final field SERVICE_NAME Ljava/lang/String;
+	public final fun getAuthenticatedCallMethod ()Lio/grpc/MethodDescriptor;
+	public final fun getBidiStreamMethod ()Lio/grpc/MethodDescriptor;
+	public final fun getClientStreamMethod ()Lio/grpc/MethodDescriptor;
+	public final fun getServerStreamMethod ()Lio/grpc/MethodDescriptor;
+	public final fun getServiceDescriptor ()Lio/grpc/ServiceDescriptor;
+	public final fun getUnaryMethod ()Lio/grpc/MethodDescriptor;
+	public final fun newStub (Lio/grpc/Channel;)Lcom/trendyol/stove/grpc/test/TestServiceWireGrpc$TestServiceStub;
+}
+
+public final class com/trendyol/stove/grpc/test/TestServiceWireGrpc$BindableAdapter : com/trendyol/stove/grpc/test/TestServiceWireGrpc$TestServiceImplBase {
+	public fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public fun AuthenticatedCall (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun BidiStream (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public fun ClientStream (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun ServerStream (Lcom/trendyol/stove/grpc/test/TestRequest;)Lkotlinx/coroutines/flow/Flow;
+	public fun Unary (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class com/trendyol/stove/grpc/test/TestServiceWireGrpc$TestServiceImplBase : com/squareup/wire/kotlin/grpcserver/WireBindableService {
+	public fun <init> ()V
+	public fun <init> (Lkotlin/coroutines/CoroutineContext;)V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun AuthenticatedCall (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun BidiStream (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public fun ClientStream (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun ServerStream (Lcom/trendyol/stove/grpc/test/TestRequest;)Lkotlinx/coroutines/flow/Flow;
+	public fun Unary (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun bindService ()Lio/grpc/ServerServiceDefinition;
+	protected final fun getContext ()Lkotlin/coroutines/CoroutineContext;
+}
+
+public final class com/trendyol/stove/grpc/test/TestServiceWireGrpc$TestServiceImplBase$TestRequestMarshaller : com/squareup/wire/kotlin/grpcserver/WireMethodMarshaller {
+	public fun <init> ()V
+	public fun marshalledClass ()Ljava/lang/Class;
+	public fun parse (Ljava/io/InputStream;)Lcom/trendyol/stove/grpc/test/TestRequest;
+	public synthetic fun parse (Ljava/io/InputStream;)Ljava/lang/Object;
+	public fun stream (Lcom/trendyol/stove/grpc/test/TestRequest;)Ljava/io/InputStream;
+	public synthetic fun stream (Ljava/lang/Object;)Ljava/io/InputStream;
+}
+
+public final class com/trendyol/stove/grpc/test/TestServiceWireGrpc$TestServiceImplBase$TestResponseMarshaller : com/squareup/wire/kotlin/grpcserver/WireMethodMarshaller {
+	public fun <init> ()V
+	public fun marshalledClass ()Ljava/lang/Class;
+	public fun parse (Ljava/io/InputStream;)Lcom/trendyol/stove/grpc/test/TestResponse;
+	public synthetic fun parse (Ljava/io/InputStream;)Ljava/lang/Object;
+	public fun stream (Lcom/trendyol/stove/grpc/test/TestResponse;)Ljava/io/InputStream;
+	public synthetic fun stream (Ljava/lang/Object;)Ljava/io/InputStream;
+}
+
+public final class com/trendyol/stove/grpc/test/TestServiceWireGrpc$TestServiceStub : io/grpc/kotlin/AbstractCoroutineStub {
+	public final fun AuthenticatedCall (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun BidiStream (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun ClientStream (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun ServerStream (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun Unary (Lcom/trendyol/stove/grpc/test/TestRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public synthetic fun build (Lio/grpc/Channel;Lio/grpc/CallOptions;)Lio/grpc/stub/AbstractStub;
+}
+

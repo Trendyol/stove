@@ -1,21 +1,21 @@
 # Components
 
-Stove provides a pluggable architecture where each physical dependency is a separate module that you can add based on your testing needs. All components are designed to work seamlessly together, allowing you to compose your test environment exactly as your production setup requires.
+Stove uses a pluggable architecture—each physical dependency is a separate module you can add based on what you need. All components work together seamlessly, so you can build your test environment to match your production setup.
 
 ## Available Components
 
 | Component | Module | Description |
 |-----------|--------|-------------|
-| [Kafka](02-kafka.md) | `stove-testing-e2e-kafka` | Message broker for event-driven architectures |
-| [Couchbase](01-couchbase.md) | `stove-testing-e2e-couchbase` | NoSQL document database |
-| [Elasticsearch](03-elasticsearch.md) | `stove-testing-e2e-elasticsearch` | Search and analytics engine |
-| [PostgreSQL](06-postgresql.md) | `stove-testing-e2e-rdbms-postgres` | Relational database |
-| [MongoDB](07-mongodb.md) | `stove-testing-e2e-mongodb` | NoSQL document database |
-| [MSSQL](08-mssql.md) | `stove-testing-e2e-rdbms-mssql` | Microsoft SQL Server |
-| [Redis](09-redis.md) | `stove-testing-e2e-redis` | In-memory data store |
-| [WireMock](04-wiremock.md) | `stove-testing-e2e-wiremock` | HTTP mock server for external services |
-| [HTTP Client](05-http.md) | `stove-testing-e2e-http` | HTTP client for testing your API |
-| [gRPC](12-grpc.md) | `stove-testing-e2e-grpc` | gRPC client for testing gRPC services |
+| [Kafka](02-kafka.md) | `stove-kafka` | Message broker for event-driven architectures |
+| [Couchbase](01-couchbase.md) | `stove-couchbase` | NoSQL document database |
+| [Elasticsearch](03-elasticsearch.md) | `stove-elasticsearch` | Search and analytics engine |
+| [PostgreSQL](06-postgresql.md) | `stove-postgres` | Relational database |
+| [MongoDB](07-mongodb.md) | `stove-mongodb` | NoSQL document database |
+| [MSSQL](08-mssql.md) | `stove-mssql` | Microsoft SQL Server |
+| [Redis](09-redis.md) | `stove-redis` | In-memory data store |
+| [WireMock](04-wiremock.md) | `stove-wiremock` | HTTP mock server for external services |
+| [HTTP Client](05-http.md) | `stove-http` | HTTP client for testing your API |
+| [gRPC](12-grpc.md) | `stove-grpc` | gRPC client for testing gRPC services |
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
 
 ## Quick Start
@@ -26,20 +26,23 @@ Add the components you need to your `build.gradle.kts`:
 
     ```kotlin
     dependencies {
+        // Import BOM for version management
+        testImplementation(platform("com.trendyol:stove-bom:$version"))
+        
         // Core testing framework
-        testImplementation("com.trendyol:stove-testing-e2e:$version")
+        testImplementation("com.trendyol:stove")
         
         // Application framework support
-        testImplementation("com.trendyol:stove-spring-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-spring")
         // or
-        testImplementation("com.trendyol:stove-ktor-testing-e2e:$version")
+        testImplementation("com.trendyol:stove-ktor")
         
         // Add components based on your needs
-        testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
-        testImplementation("com.trendyol:stove-testing-e2e-couchbase:$version")
-        testImplementation("com.trendyol:stove-testing-e2e-elasticsearch:$version")
-        testImplementation("com.trendyol:stove-testing-e2e-http:$version")
-        testImplementation("com.trendyol:stove-testing-e2e-wiremock:$version")
+        testImplementation("com.trendyol:stove-kafka")
+        testImplementation("com.trendyol:stove-couchbase")
+        testImplementation("com.trendyol:stove-elasticsearch")
+        testImplementation("com.trendyol:stove-http")
+        testImplementation("com.trendyol:stove-wiremock")
         // ... add more as needed
     }
     ```
@@ -54,7 +57,7 @@ Each component follows a consistent pattern:
 4. **Cleanup** - Automatic resource management
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     // Each component is configured in the `with` block
     kafka { KafkaSystemOptions(...) }
@@ -68,7 +71,7 @@ TestSystem()
   .run() // Starts all components and the application
 
 // Test your application
-TestSystem.validate {
+stove {
   http { /* HTTP assertions */ }
   kafka { /* Kafka assertions */ }
   couchbase { /* Database assertions */ }
@@ -211,7 +214,7 @@ couchbase(
 
 ```kotlin
 test("should process order end-to-end") {
-  TestSystem.validate {
+  stove {
     val orderId = UUID.randomUUID().toString()
     
     // Mock payment service

@@ -1,12 +1,13 @@
 package com.stove.spring.standalone.example.e2e
 
 import arrow.core.some
-import com.trendyol.stove.testing.e2e.couchbase.couchbase
-import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.reporting.*
-import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.couchbase.couchbase
+import com.trendyol.stove.http.http
+import com.trendyol.stove.kafka.*
+import com.trendyol.stove.reporting.*
+import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.stove
+import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.*
 import io.kotest.matchers.collections.shouldHaveSize
@@ -19,7 +20,7 @@ import kotlin.time.Duration.Companion.seconds
 class ReportingIntegrationTest :
   FunSpec({
     test("report should capture HTTP and Kafka operations") {
-      TestSystem.validate {
+      stove {
         val request = ProductCreateRequest(100L, "test product", 1L)
         val permission = SupplierPermission(request.supplierId, isAllowed = true)
 
@@ -41,7 +42,7 @@ class ReportingIntegrationTest :
       }
 
       // Validate the report contents
-      val report = TestSystem.reporter().currentTest()
+      val report = Stove.reporter().currentTest()
 
       // Should have WireMock stub action
       report
@@ -61,7 +62,7 @@ class ReportingIntegrationTest :
 
     test("report should include Kafka MessageStore snapshot on failure") {
       try {
-        TestSystem.validate {
+        stove {
           kafka {
             publish("orders.test", mapOf("id" to 1))
 
@@ -76,14 +77,14 @@ class ReportingIntegrationTest :
       }
 
       // Get the snapshot
-      val snapshot = TestSystem.getSystem<KafkaSystem>(KafkaSystem::class).snapshot()
+      val snapshot = Stove.getSystem<KafkaSystem>(KafkaSystem::class).snapshot()
       snapshot shouldNotBe null
       snapshot.system shouldBe "Kafka"
       (snapshot.state["published"] as? List<*>)?.size?.shouldBeGreaterThan(0)
     }
 
     test("report should capture Couchbase operations") {
-      TestSystem.validate {
+      stove {
         val request = ProductCreateRequest(200L, "couchbase test", 1L)
         val permission = SupplierPermission(request.supplierId, isAllowed = true)
 
@@ -104,7 +105,7 @@ class ReportingIntegrationTest :
         }
       }
 
-      val report = TestSystem.reporter().currentTest()
+      val report = Stove.reporter().currentTest()
 
       // Should have Couchbase action with result
       report
@@ -113,7 +114,7 @@ class ReportingIntegrationTest :
     }
 
     test("report should capture multiple system interactions") {
-      TestSystem.validate {
+      stove {
         val request = ProductCreateRequest(300L, "multi-system test", 1L)
         val permission = SupplierPermission(request.supplierId, isAllowed = true)
 
@@ -144,7 +145,7 @@ class ReportingIntegrationTest :
         }
       }
 
-      val report = TestSystem.reporter().currentTest()
+      val report = Stove.reporter().currentTest()
       // Use entriesForThisTest() to filter only entries for this specific test
       val entries = report.entriesForThisTest()
 
@@ -156,7 +157,7 @@ class ReportingIntegrationTest :
     }
 
     test("report should be renderable as JSON") {
-      TestSystem.validate {
+      stove {
         http {
           get<String>("/api/index") {
             it shouldContain "Hi from Stove framework"
@@ -164,7 +165,7 @@ class ReportingIntegrationTest :
         }
       }
 
-      val report = TestSystem.reporter().currentTest()
+      val report = Stove.reporter().currentTest()
       val json = JsonReportRenderer.render(report, emptyList())
 
       json shouldContain "testId"
@@ -175,7 +176,7 @@ class ReportingIntegrationTest :
     }
 
     test("report should be renderable as pretty console") {
-      TestSystem.validate {
+      stove {
         http {
           get<String>("/api/index") {
             it shouldContain "Hi from Stove framework"
@@ -183,7 +184,7 @@ class ReportingIntegrationTest :
         }
       }
 
-      val report = TestSystem.reporter().currentTest()
+      val report = Stove.reporter().currentTest()
       val pretty = PrettyConsoleRenderer.render(report, emptyList())
 
       pretty shouldContain "STOVE TEST EXECUTION REPORT"

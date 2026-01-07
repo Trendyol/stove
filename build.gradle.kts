@@ -43,10 +43,10 @@ kover {
       excludes {
         classes(
           "com.trendyol.stove.functional.*",
-          "com.trendyol.stove.testing.e2e.system.abstractions.*",
-          "com.trendyol.stove.testing.e2e.system.annotations.*",
-          "com.trendyol.stove.testing.e2e.serialization.*",
-          "com.trendyol.stove.testing.e2e.standalone.*",
+          "com.trendyol.stove.system.abstractions.*",
+          "com.trendyol.stove.system.annotations.*",
+          "com.trendyol.stove.serialization.*",
+          "com.trendyol.stove.standalone.*",
           "com.trendyol.stove.testing.e2e.streams.*",
           "stove.spring.example.*",
           "stove.spring.standalone.example.*",
@@ -57,10 +57,10 @@ kover {
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests")
+val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests", "test-extensions", except = listOf("stove-bom"))
 dependencies { related.forEach { kover(it) } }
 
-subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests") {
+subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests", "test-extensions", except = listOf("stove-bom")) {
   apply {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
@@ -128,25 +128,28 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests") {
 }
 
 val publishedProjects = listOf(
-  projects.lib.stoveTestingE2e.name,
-  projects.lib.stoveTestingE2eCouchbase.name,
-  projects.lib.stoveTestingE2eElasticsearch.name,
-  projects.lib.stoveTestingE2eGrpc.name,
-  projects.lib.stoveTestingE2eHttp.name,
-  projects.lib.stoveTestingE2eKafka.name,
-  projects.lib.stoveTestingE2eMongodb.name,
-  projects.lib.stoveTestingE2eRdbms.name,
-  projects.lib.stoveTestingE2eRdbmsMssql.name,
-  projects.lib.stoveTestingE2eRdbmsPostgres.name,
-  projects.lib.stoveTestingE2eWiremock.name,
-  projects.lib.stoveTestingE2eRedis.name,
-  projects.starters.ktor.stoveKtorTestingE2e.name,
-  projects.starters.spring.stoveSpringTestingE2e.name,
-  projects.starters.spring.stoveSpringTestingE2eKafka.name,
-  projects.starters.micronaut.stoveMicronautTestingE2e.name,
+  projects.lib.stoveBom.name,
+  projects.lib.stove.name,
+  projects.lib.stoveCouchbase.name,
+  projects.lib.stoveElasticsearch.name,
+  projects.lib.stoveGrpc.name,
+  projects.lib.stoveHttp.name,
+  projects.lib.stoveKafka.name,
+  projects.lib.stoveMongodb.name,
+  projects.lib.stoveRdbms.name,
+  projects.lib.stovePostgres.name,
+  projects.lib.stoveMssql.name,
+  projects.lib.stoveWiremock.name,
+  projects.lib.stoveRedis.name,
+  projects.starters.ktor.stoveKtor.name,
+  projects.starters.spring.stoveSpring.name,
+  projects.starters.spring.stoveSpringKafka.name,
+  projects.starters.micronaut.stoveMicronaut.name,
+  projects.testExtensions.stoveExtensionsKotest.name,
+  projects.testExtensions.stoveExtensionsJunit.name,
 )
 
-subprojects.of("lib", "spring", "ktor", "micronaut", filter = { p -> publishedProjects.contains(p.name) }) {
+subprojects.of("lib", "spring", "ktor", "micronaut", "test-extensions", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
   apply {
     plugin("java")
     plugin(rootProject.libs.plugins.maven.publish.pluginId)

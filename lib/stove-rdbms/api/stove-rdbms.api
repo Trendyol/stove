@@ -1,0 +1,67 @@
+public final class com/trendyol/stove/rdbms/NativeSqlOperations : java/lang/AutoCloseable {
+	public fun <init> (Lkotliquery/Session;)V
+	public fun close ()V
+	public final fun execute (Ljava/lang/String;[Lkotliquery/Parameter;)I
+	public static synthetic fun execute$default (Lcom/trendyol/stove/rdbms/NativeSqlOperations;Ljava/lang/String;[Lkotliquery/Parameter;ILjava/lang/Object;)I
+	public final fun select (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+}
+
+public abstract class com/trendyol/stove/rdbms/RelationalDatabaseContext {
+	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lkotlin/jvm/functions/Function1;)V
+	public final fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
+	public final fun getRuntime ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+}
+
+public final class com/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration : com/trendyol/stove/system/abstractions/ExposedConfiguration {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getJdbcUrl ()Ljava/lang/String;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getPort ()I
+	public final fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/trendyol/stove/rdbms/RelationalDatabaseSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+	public static final field Companion Lcom/trendyol/stove/rdbms/RelationalDatabaseSystem$Companion;
+	protected field exposedConfiguration Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	protected field sqlOperations Lcom/trendyol/stove/rdbms/NativeSqlOperations;
+	protected fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/rdbms/RelationalDatabaseContext;)V
+	public fun close ()V
+	public fun configuration ()Ljava/util/List;
+	protected abstract fun database (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;)Lkotliquery/Session;
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected final fun getContext ()Lcom/trendyol/stove/rdbms/RelationalDatabaseContext;
+	protected final fun getExposedConfiguration ()Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	public final fun getInternalSqlOperations ()Lcom/trendyol/stove/rdbms/NativeSqlOperations;
+	protected abstract fun getProvidedConfig ()Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	protected final fun getSqlOperations ()Lcom/trendyol/stove/rdbms/NativeSqlOperations;
+	public final fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected final fun setExposedConfiguration (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;)V
+	public final fun setInternalSqlOperations (Lcom/trendyol/stove/rdbms/NativeSqlOperations;)V
+	protected final fun setSqlOperations (Lcom/trendyol/stove/rdbms/NativeSqlOperations;)V
+	public final fun shouldExecute (Ljava/lang/String;)Lcom/trendyol/stove/rdbms/RelationalDatabaseSystem;
+	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/rdbms/RelationalDatabaseSystem$Companion {
+	public final fun operations (Lcom/trendyol/stove/rdbms/RelationalDatabaseSystem;)Lcom/trendyol/stove/rdbms/NativeSqlOperations;
+}
+

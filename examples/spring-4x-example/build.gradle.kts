@@ -19,11 +19,12 @@ dependencies {
 }
 
 dependencies {
+  testImplementation(project(":test-extensions:stove-extensions-kotest"))
   testImplementation(libs.jackson3.kotlin)
-  testImplementation(projects.stove.lib.stoveTestingE2eHttp)
-  testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
-  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2e)
-  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2eKafka)
+  testImplementation(projects.stove.lib.stoveHttp)
+  testImplementation(projects.stove.lib.stoveWiremock)
+  testImplementation(projects.stove.starters.spring.stoveSpring)
+  testImplementation(projects.stove.starters.spring.stoveSpringKafka)
 }
 
 application { mainClass.set("stove.spring.example4x.ExampleAppkt") }

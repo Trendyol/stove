@@ -1,0 +1,176 @@
+public final class com/trendyol/stove/elasticsearch/ElasticClientConfigurer {
+	public fun <init> ()V
+	public fun <init> (Lkotlin/jvm/functions/Function1;Larrow/core/Option;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;Larrow/core/Option;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlin/jvm/functions/Function1;
+	public final fun component2 ()Larrow/core/Option;
+	public final fun copy (Lkotlin/jvm/functions/Function1;Larrow/core/Option;)Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lkotlin/jvm/functions/Function1;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHttpClientBuilder ()Lkotlin/jvm/functions/Function1;
+	public final fun getRestClientOverrideFn ()Larrow/core/Option;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticContainerOptions : com/trendyol/stove/containers/ContainerOptions {
+	public static final field Companion Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions$Companion;
+	public static final field DEFAULT_ELASTIC_PORT I
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Z
+	public final fun component8 ()Lkotlin/jvm/functions/Function1;
+	public final fun component9 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompatibleSubstitute ()Ljava/lang/String;
+	public fun getContainerFn ()Lkotlin/jvm/functions/Function1;
+	public final fun getDisableSecurity ()Z
+	public final fun getExposedPorts ()Ljava/util/List;
+	public fun getImage ()Ljava/lang/String;
+	public fun getImageWithTag ()Ljava/lang/String;
+	public final fun getPassword ()Ljava/lang/String;
+	public fun getRegistry ()Ljava/lang/String;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUseContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticContainerOptions$Companion {
+}
+
+public abstract interface annotation class com/trendyol/stove/elasticsearch/ElasticDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration : com/trendyol/stove/system/abstractions/ExposedConfiguration {
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
+	public final fun copy (Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;)Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;ILjava/lang/Object;)Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCertificate ()Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getPort ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticsearchContext {
+	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+	public final fun component2 ()Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions;
+	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions;)Lcom/trendyol/stove/elasticsearch/ElasticsearchContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/elasticsearch/ElasticsearchContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/elasticsearch/ElasticsearchContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOptions ()Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate {
+	public static final field Companion Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate$Companion;
+	public fun <init> ([B)V
+	public final fun component1 ()[B
+	public final fun copy ([B)Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;[BILjava/lang/Object;)Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
+	public static final fun create ([B)Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBytes ()[B
+	public final fun getSslContext ()Ljavax/net/ssl/SSLContext;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate$Companion {
+	public final fun create ([B)Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/AfterRunAware, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+	public static final field Companion Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem$Companion;
+	public field esClient Lco/elastic/clients/elasticsearch/ElasticsearchClient;
+	public fun afterRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public fun configuration ()Ljava/util/List;
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getEsClient ()Lco/elastic/clients/elasticsearch/ElasticsearchClient;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public final fun pause ()Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun save (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/String;)Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+	public final fun setEsClient (Lco/elastic/clients/elasticsearch/ElasticsearchClient;)V
+	public final fun shouldDelete (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+	public final fun shouldNotExist (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+	public final fun unpause ()Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem$Companion {
+	public final fun client (Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;)Lco/elastic/clients/elasticsearch/ElasticsearchClient;
+}
+
+public class com/trendyol/stove/elasticsearch/ElasticsearchSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions$Companion;
+	public fun <init> (Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getClientConfigurer ()Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;
+	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
+	public fun getContainer ()Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;
+	public fun getJsonpMapper ()Lco/elastic/clients/json/JsonpMapper;
+	public fun getMigrationCollection ()Lcom/trendyol/stove/database/migrations/MigrationCollection;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions;
+}
+
+public final class com/trendyol/stove/elasticsearch/ElasticsearchSystemOptions$Companion {
+	public final fun provided (Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/elasticsearch/ProvidedElasticsearchSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions$Companion;Ljava/lang/String;ILjava/lang/String;Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/elasticsearch/ProvidedElasticsearchSystemOptions;
+}
+
+public final class com/trendyol/stove/elasticsearch/ExtensionsKt {
+	public static final fun elasticsearch-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun elasticsearch-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/elasticsearch/ProvidedElasticsearchSystemOptions : com/trendyol/stove/elasticsearch/ElasticsearchSystemOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/elasticsearch/ElasticSearchExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
+}
+
+public class com/trendyol/stove/elasticsearch/StoveElasticSearchContainer : org/testcontainers/elasticsearch/ElasticsearchContainer, com/trendyol/stove/containers/StoveContainer {
+	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
+	public fun execCommand ([Ljava/lang/String;J)Lcom/trendyol/stove/containers/ExecResult;
+	public fun getContainerIdAccess ()Ljava/lang/String;
+	public fun getDockerClientAccess ()Lkotlin/Lazy;
+	public fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
+	public fun inspect ()Lcom/trendyol/stove/containers/StoveContainerInspectInformation;
+	public fun pause ()V
+	public fun unpause ()V
+}
+

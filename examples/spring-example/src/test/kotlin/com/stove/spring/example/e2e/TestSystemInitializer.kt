@@ -1,8 +1,8 @@
 package com.stove.spring.example.e2e
 
-import com.trendyol.stove.testing.e2e.kafka.TestSystemKafkaInterceptor
-import com.trendyol.stove.testing.e2e.serialization.*
-import com.trendyol.stove.testing.e2e.stoveSpringRegistrar
+import com.trendyol.stove.kafka.TestSystemKafkaInterceptor
+import com.trendyol.stove.serialization.*
+import com.trendyol.stove.spring.stoveSpringRegistrar
 import org.springframework.boot.SpringApplication
 import stove.spring.example.infrastructure.ObjectMapperConfig
 

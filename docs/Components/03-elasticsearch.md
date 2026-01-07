@@ -4,7 +4,7 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-elasticsearch:$version")
+            testImplementation("com.trendyol:stove-elasticsearch:$version")
         }
     ```
 
@@ -14,7 +14,7 @@ After getting the library from the maven source, while configuring TestSystem yo
 function. This function configures the Elasticsearch Docker container that is going to be started.
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions(configureExposedConfiguration = { cfg ->
@@ -34,7 +34,7 @@ TestSystem()
 You can customize the Elasticsearch container:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions(
@@ -63,7 +63,7 @@ TestSystem()
 For secure Elasticsearch setups with authentication:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions(
@@ -90,7 +90,7 @@ TestSystem()
 Customize the Elasticsearch REST client:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions(
@@ -121,7 +121,7 @@ TestSystem()
 Use a custom Jackson ObjectMapper for serialization:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       val customMapper = ObjectMapper().apply {
@@ -164,10 +164,10 @@ class CreateProductIndex : DatabaseMigration<ElasticsearchClient> {
 }
 ```
 
-Register migrations in your TestSystem configuration:
+Register migrations in your Stove configuration:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions(
@@ -192,7 +192,7 @@ TestSystem()
 Save documents to Elasticsearch indices:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Save a document
     save(
@@ -214,7 +214,7 @@ TestSystem.validate {
 Retrieve and validate documents:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Get by ID and validate
     shouldGet<Product>(index = "products", key = "product-123") { product ->
@@ -232,7 +232,7 @@ TestSystem.validate {
 Verify that documents don't exist:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Verify document doesn't exist
     shouldNotExist(key = "product-999", index = "products")
@@ -245,7 +245,7 @@ TestSystem.validate {
 Delete documents and verify deletion:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Delete a document
     shouldDelete(key = "product-123", index = "products")
@@ -261,7 +261,7 @@ TestSystem.validate {
 Execute Elasticsearch queries using JSON DSL:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Query using JSON DSL
     shouldQuery<Product>(
@@ -289,7 +289,7 @@ TestSystem.validate {
 Use the Elasticsearch Java client's query builder:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Query using Query builder
     val query = Query.of { q ->
@@ -315,7 +315,7 @@ TestSystem.validate {
 For advanced operations, access the Elasticsearch client:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     val esClient = client()
     
@@ -348,7 +348,7 @@ TestSystem.validate {
 Control the Elasticsearch container for testing failure scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Elasticsearch is running
     shouldGet<Product>(index = "products", key = "product-123") { product ->
@@ -381,7 +381,7 @@ Here's a complete end-to-end test combining HTTP, Elasticsearch, and Kafka:
 
 ```kotlin
 test("should create product and index in elasticsearch") {
-  TestSystem.validate {
+  stove {
     val productId = UUID.randomUUID().toString()
     val productName = "Gaming Laptop"
     val categoryId = 1
@@ -451,7 +451,7 @@ Verify application behavior using the bridge:
 
 ```kotlin
 test("should use service to index product") {
-  TestSystem.validate {
+  stove {
     val productId = UUID.randomUUID().toString()
     val product = Product(id = productId, name = "Test Product", price = 99.99, category = "Test")
 
@@ -477,7 +477,7 @@ test("should use service to index product") {
 ### Full-Text Search
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     // Setup test data
     listOf(
@@ -510,7 +510,7 @@ TestSystem.validate {
 ### Aggregations
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     val esClient = client()
     
@@ -541,7 +541,7 @@ TestSystem.validate {
 ### Index Management
 
 ```kotlin
-TestSystem.validate {
+stove {
   elasticsearch {
     val esClient = client()
     
@@ -573,7 +573,7 @@ TestSystem.validate {
 For CI/CD pipelines or shared infrastructure:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     elasticsearch {
       ElasticsearchSystemOptions.provided(

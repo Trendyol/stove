@@ -1,7 +1,6 @@
 # Kafka
 
-There are two ways to work with Kafka in Stove. You can use standalone Kafka or Kafka with Spring. You can use only one
-of them in your project.
+Stove supports Kafka in two ways: standalone Kafka or Kafka with Spring integration. You can use either one, but not both in the same project.
 
 ## Standalone Kafka
 
@@ -9,14 +8,14 @@ of them in your project.
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
+            testImplementation("com.trendyol:stove-kafka:$version")
         }
     ```
 
 ### Configure
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     // other dependencies
 
@@ -57,7 +56,7 @@ class KafkaSystemOptions(
    *
    * The places where it was used listed below:
    *
-   * @see [com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge] for bridging the messages.
+   * @see [com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge] for bridging the messages.
    * @see StoveKafkaValueSerializer for serializing the messages.
    * @see StoveKafkaValueDeserializer for deserializing the messages.
    * @see valueSerializer for serializing the messages.
@@ -106,7 +105,7 @@ As you can see in the example above, you need to add a support to your applicati
 provides.
 
 ```kotlin
- "kafka.interceptorClasses=com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge"
+ "kafka.interceptorClasses=com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge"
 
 // or
 
@@ -128,7 +127,7 @@ of working. Stove-Kafka does that with intercepting the messages.
 
     ``` kotlin
         dependencies {
-          testImplementation("com.trendyol:stove-spring-testing-e2e-kafka:$version")
+          testImplementation("com.trendyol:stove-spring-kafka:$version")
         }
     ```
 
@@ -137,7 +136,7 @@ of working. Stove-Kafka does that with intercepting the messages.
     ```xml
      <dependency>
         <groupId>com.trendyol</groupId>
-        <artifactId>stove-spring-testing-e2e-kafka</artifactId>
+        <artifactId>stove-spring-kafka</artifactId>
         <version>${stove-version}</version>
      </dependency>
     ```
@@ -160,7 +159,7 @@ You better make them configurable, so from the e2e testing context we can change
 As an example:
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     httpClient {
       HttpClientSystemOptions(baseUrl = "http://localhost:8080")
@@ -200,7 +199,7 @@ your Kafka configuration.
 
 Locate to the point where you define your `ConcurrentKafkaListenerContainerFactory` or where you can set the
 interceptor. Interceptor needs to implement `ConsumerAwareRecordInterceptor<String, String>` since
-Stove-Kafka [relies on that](https://github.com/Trendyol/stove/blob/main/starters/spring/stove-spring-testing-e2e-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt).
+Stove-Kafka [relies on that](https://github.com/Trendyol/stove/blob/main/starters/spring/stove-spring-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt).
 
 ```kotlin
 @EnableKafka
@@ -237,7 +236,7 @@ Register the interceptor and serde using `addTestDependencies`:
 **Spring Boot 2.x / 3.x:**
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies
+import com.trendyol.stove.addTestDependencies
 
 springBoot(
   runner = { parameters ->
@@ -253,7 +252,7 @@ springBoot(
 **Spring Boot 4.x:**
 
 ```kotlin
-import com.trendyol.stove.testing.e2e.addTestDependencies4x
+import com.trendyol.stove.addTestDependencies4x
 
 springBoot(
   runner = { parameters ->
@@ -299,7 +298,7 @@ Now you're full set and have control over Kafka messages from the testing contex
 You can publish messages to Kafka topics for testing:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     publish(
       topic = "product-events",
@@ -317,7 +316,7 @@ TestSystem.validate {
 Test that your application publishes messages correctly:
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Trigger an action in your application
   http {
     postAndExpectBodilessResponse("/products", body = CreateProductRequest(name = "Laptop").some()) { response ->
@@ -342,7 +341,7 @@ TestSystem.validate {
 Test that your application consumes messages correctly:
 
 ```kotlin
-TestSystem.validate {
+stove {
   // Publish a message
   kafka {
     publish(
@@ -374,7 +373,7 @@ TestSystem.validate {
 Test that your application handles failures correctly:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     // Publish an invalid message
     publish("user-events", FailingEvent(id = 5L))
@@ -393,7 +392,7 @@ TestSystem.validate {
 Test that your application retries failed messages:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     publish("product-failing", ProductFailingCreated(productId = "789"))
     
@@ -415,7 +414,7 @@ TestSystem.validate {
 Access message metadata including headers, topic, partition, offset:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     shouldBeConsumed<OrderCreated> {
       actual.orderId == "123" &&
@@ -432,7 +431,7 @@ TestSystem.validate {
 Inspect messages without consuming them:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     // Peek at published messages
     peekPublishedMessages(atLeastIn = 5.seconds, topic = "product-events") { record ->
@@ -457,7 +456,7 @@ TestSystem.validate {
 Manage Kafka topics and configurations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     adminOperations {
       createTopic(NewTopic("test-topic", 1, 1))
@@ -472,7 +471,7 @@ TestSystem.validate {
 Create a consumer for advanced testing scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   kafka {
     consumer<String, ProductCreated>(
       topic = "product-events",
@@ -494,7 +493,7 @@ Here's a complete end-to-end test combining HTTP, Kafka, and database assertions
 
 ```kotlin
 test("should create product and publish event") {
-  TestSystem.validate {
+  stove {
     val productId = UUID.randomUUID()
     val productName = "Laptop"
 

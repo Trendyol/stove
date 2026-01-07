@@ -1,0 +1,138 @@
+public final class com/trendyol/stove/redis/ProvidedRedisOptions : com/trendyol/stove/redis/RedisOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {
+	public fun <init> (Lcom/trendyol/stove/redis/RedisExposedConfiguration;ILjava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/redis/RedisExposedConfiguration;ILjava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfig ()Lcom/trendyol/stove/redis/RedisExposedConfiguration;
+	public fun getProvidedConfig ()Lcom/trendyol/stove/redis/RedisExposedConfiguration;
+	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/system/abstractions/ExposedConfiguration;
+	public final fun getRunMigrations ()Z
+	public fun getRunMigrationsForProvided ()Z
+}
+
+public final class com/trendyol/stove/redis/RedisContainerOptions : com/trendyol/stove/containers/ContainerOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun component6 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/redis/RedisContainerOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/redis/RedisContainerOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/redis/RedisContainerOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompatibleSubstitute ()Ljava/lang/String;
+	public fun getContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun getImage ()Ljava/lang/String;
+	public fun getImageWithTag ()Ljava/lang/String;
+	public fun getRegistry ()Ljava/lang/String;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUseContainerFn ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/redis/RedisContext {
+	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/redis/RedisOptions;)V
+	public final fun component1 ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+	public final fun component2 ()Lcom/trendyol/stove/redis/RedisOptions;
+	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/redis/RedisOptions;)Lcom/trendyol/stove/redis/RedisContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/redis/RedisContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/redis/RedisOptions;ILjava/lang/Object;)Lcom/trendyol/stove/redis/RedisContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOptions ()Lcom/trendyol/stove/redis/RedisOptions;
+	public final fun getRuntime ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/redis/RedisExposedConfiguration : com/trendyol/stove/system/abstractions/ExposedConfiguration {
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/redis/RedisExposedConfiguration;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/redis/RedisExposedConfiguration;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/redis/RedisExposedConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDatabase ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getPort ()I
+	public final fun getRedisUri ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/redis/RedisMigrationContext {
+	public fun <init> (Lio/lettuce/core/api/StatefulRedisConnection;Lcom/trendyol/stove/redis/RedisOptions;)V
+	public final fun component1 ()Lio/lettuce/core/api/StatefulRedisConnection;
+	public final fun component2 ()Lcom/trendyol/stove/redis/RedisOptions;
+	public final fun copy (Lio/lettuce/core/api/StatefulRedisConnection;Lcom/trendyol/stove/redis/RedisOptions;)Lcom/trendyol/stove/redis/RedisMigrationContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/redis/RedisMigrationContext;Lio/lettuce/core/api/StatefulRedisConnection;Lcom/trendyol/stove/redis/RedisOptions;ILjava/lang/Object;)Lcom/trendyol/stove/redis/RedisMigrationContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConnection ()Lio/lettuce/core/api/StatefulRedisConnection;
+	public final fun getOptions ()Lcom/trendyol/stove/redis/RedisOptions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public class com/trendyol/stove/redis/RedisOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+	public static final field Companion Lcom/trendyol/stove/redis/RedisOptions$Companion;
+	public fun <init> (ILjava/lang/String;Lcom/trendyol/stove/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (ILjava/lang/String;Lcom/trendyol/stove/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
+	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
+	public fun getContainer ()Lcom/trendyol/stove/redis/RedisContainerOptions;
+	public fun getDatabase ()I
+	public fun getMigrationCollection ()Lcom/trendyol/stove/database/migrations/MigrationCollection;
+	public fun getPassword ()Ljava/lang/String;
+	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/database/migrations/SupportsMigrations;
+	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/redis/RedisOptions;
+}
+
+public final class com/trendyol/stove/redis/RedisOptions$Companion {
+	public final fun provided (Ljava/lang/String;ILjava/lang/String;IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/redis/ProvidedRedisOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/redis/RedisOptions$Companion;Ljava/lang/String;ILjava/lang/String;IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/redis/ProvidedRedisOptions;
+}
+
+public final class com/trendyol/stove/redis/RedisOptionsKt {
+	public static final fun redis-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun redis-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/redis/RedisSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+	public static final field Companion Lcom/trendyol/stove/redis/RedisSystem$Companion;
+	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/redis/RedisContext;)V
+	public fun close ()V
+	public fun configuration ()Ljava/util/List;
+	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public final fun pause ()Lcom/trendyol/stove/redis/RedisSystem;
+	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+	public final fun unpause ()Lcom/trendyol/stove/redis/RedisSystem;
+}
+
+public final class com/trendyol/stove/redis/RedisSystem$Companion {
+	public final fun client (Lcom/trendyol/stove/redis/RedisSystem;)Lio/lettuce/core/RedisClient;
+}
+
+public class com/trendyol/stove/redis/StoveRedisContainer : com/redis/testcontainers/RedisContainer, com/trendyol/stove/containers/StoveContainer {
+	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
+	public fun execCommand ([Ljava/lang/String;J)Lcom/trendyol/stove/containers/ExecResult;
+	public fun getContainerIdAccess ()Ljava/lang/String;
+	public fun getDockerClientAccess ()Lkotlin/Lazy;
+	public fun getImageNameAccess ()Lorg/testcontainers/utility/DockerImageName;
+	public fun inspect ()Lcom/trendyol/stove/containers/StoveContainerInspectInformation;
+	public fun pause ()V
+	public fun unpause ()V
+}
+

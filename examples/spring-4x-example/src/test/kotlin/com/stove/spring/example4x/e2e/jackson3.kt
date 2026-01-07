@@ -1,6 +1,6 @@
 package com.stove.spring.example4x.e2e
 
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
+import com.trendyol.stove.serialization.StoveSerde
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.json.JsonMapper
 

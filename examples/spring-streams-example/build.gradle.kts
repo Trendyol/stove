@@ -23,8 +23,9 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(projects.stove.lib.stoveTestingE2eKafka)
-  testImplementation(projects.stove.starters.spring.stoveSpringTestingE2e)
+  testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.stove.lib.stoveKafka)
+  testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(libs.testcontainers.kafka)
 }
 

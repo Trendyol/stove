@@ -1,18 +1,18 @@
 # Getting Started
 
-This guide will help you get Stove up and running in your project in just a few minutes.
+Get Stove running in your project in just a few minutes. Stove helps you write end-to-end tests by spinning up your application and all its dependencies (databases, message queues, etc.) together, so you can test the real thing instead of mocks.
 
-## Prerequisites
+## What You'll Need
 
-Before you begin, ensure you have:
+Make sure you have these installed:
 
-- **JDK 17+** - Stove requires Java 17 or higher
-- **Docker** - Latest version recommended (Stove uses testcontainers under the hood)
+- **JDK 17+** - Stove needs Java 17 or higher
+- **Docker** - Get the latest version (Stove uses testcontainers, so Docker is required)
 - **Kotlin 1.8+** - For writing your tests
-- **Gradle or Maven** - Gradle is recommended and used in all examples
+- **Gradle or Maven** - We use Gradle in all examples, but Maven works too
 
 !!! tip "IDE Setup"
-    If you're using IntelliJ IDEA, install the Kotest plugin for a better testing experience with run buttons and test discovery.
+    If you're using IntelliJ IDEA, grab the Kotest plugin. It adds run buttons and makes test discovery much smoother.
 
 ## Step 1: Add Dependencies
 
@@ -24,20 +24,29 @@ repositories {
 }
 
 dependencies {
+    // Import BOM for version management
+    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
+    
     // Core framework
-    testImplementation("com.trendyol:stove-testing-e2e:$stoveVersion")
+    testImplementation("com.trendyol:stove")
+    
+    // Optional: Test framework extension for better failure reporting
+    // Choose the one that matches your test framework
+    testImplementation("com.trendyol:stove-extensions-kotest")  // For Kotest
+    // OR
+    testImplementation("com.trendyol:stove-extensions-junit")   // For JUnit 5/6
     
     // Choose your application framework
-    testImplementation("com.trendyol:stove-spring-testing-e2e:$stoveVersion")
+    testImplementation("com.trendyol:stove-spring")
     // OR
-    testImplementation("com.trendyol:stove-ktor-testing-e2e:$stoveVersion")
+    testImplementation("com.trendyol:stove-ktor")
     // For Ktor, also add your preferred DI framework:
     testImplementation("io.insert-koin:koin-ktor:$koinVersion")  // Koin
     // OR testImplementation("io.ktor:ktor-server-di:$ktorVersion")  // Ktor-DI
     
     // Add components you need
-    testImplementation("com.trendyol:stove-testing-e2e-http:$stoveVersion")
-    testImplementation("com.trendyol:stove-testing-e2e-kafka:$stoveVersion")
+    testImplementation("com.trendyol:stove-http")
+    testImplementation("com.trendyol:stove-kafka")
     // ... add more as needed
 }
 ```
@@ -47,7 +56,7 @@ dependencies {
 
 ## Step 2: Prepare Your Application
 
-Stove needs to start your application from the test context. This requires a small modification to your main function.
+Stove needs to start your application from tests, which means we need to tweak your main function slightly. Instead of calling `runApplication` or `embeddedServer` directly, we'll extract that logic into a separate `run` function that Stove can call with test-specific parameters.
 
 === "Spring Boot"
 
@@ -141,18 +150,26 @@ Stove needs to start your application from the test context. This requires a sma
 
 ## Step 3: Create Test Configuration
 
-Set up Stove once for your entire test suite. We recommend using a dedicated `src/test-e2e` source set for e2e tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for Gradle configuration).
+Set up Stove once for your entire test suite. This configuration runs before all your tests and shuts down after they're done. 
+
+We recommend putting e2e tests in a separate `src/test-e2e` source set to keep them separate from unit tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for the Gradle setup).
 
 === "Kotest"
 
     ```kotlin
     // src/test-e2e/kotlin/e2e/TestConfig.kt
+    import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+    import com.trendyol.stove.system.Stove
+    import com.trendyol.stove.system.stove
+    import com.trendyol.stove.http.*
+    import com.trendyol.stove.spring.springBoot
+    
     class TestConfig : AbstractProjectConfig() {
-        // Register StoveKotestExtension for detailed failure reports
+        // Optional: Add this for detailed failure reports with execution context
         override val extensions: List<Extension> = listOf(StoveKotestExtension())
         
         override suspend fun beforeProject() {
-            TestSystem()
+            Stove()
                 .with {
                     httpClient {
                         HttpClientSystemOptions(
@@ -174,7 +191,7 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
         }
         
         override suspend fun afterProject() {
-            TestSystem.stop()
+            Stove.stop()
         }
     }
     ```
@@ -183,6 +200,14 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
 
     ```kotlin
     // src/test-e2e/kotlin/e2e/TestConfig.kt
+    import com.trendyol.stove.extensions.junit.StoveJUnitExtension
+    import com.trendyol.stove.system.Stove
+    import com.trendyol.stove.http.*
+    import com.trendyol.stove.spring.springBoot
+    import org.junit.jupiter.api.extension.ExtendWith
+    
+    // Optional: Add this annotation for detailed failure reports
+    @ExtendWith(StoveJUnitExtension::class)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     abstract class BaseE2ETest {
         
@@ -190,7 +215,7 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
             @JvmStatic
             @BeforeAll
             fun setup() = runBlocking {
-                TestSystem()
+                Stove()
                     .with {
                         httpClient {
                             HttpClientSystemOptions(
@@ -214,7 +239,7 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
             @JvmStatic
             @AfterAll
             fun teardown() = runBlocking {
-                TestSystem.stop()
+                Stove.stop()
             }
         }
     }
@@ -225,10 +250,12 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
 === "Kotest"
 
     ```kotlin
+    import com.trendyol.stove.system.stove
+    
     class MyFirstE2ETest : FunSpec({
         
         test("should return hello world") {
-            TestSystem.validate {
+            stove {
                 http {
                     get<String>("/hello") { response ->
                         response shouldBe "Hello, World!"
@@ -238,7 +265,7 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
         }
         
         test("should create a user") {
-            TestSystem.validate {
+            stove {
                 http {
                     postAndExpectBody<UserResponse>(
                         uri = "/users",
@@ -256,11 +283,13 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
 === "JUnit"
 
     ```kotlin
+    import com.trendyol.stove.system.stove
+    
     class MyFirstE2ETest : BaseE2ETest() {
         
         @Test
         fun `should return hello world`() = runBlocking {
-            TestSystem.validate {
+            stove {
                 http {
                     get<String>("/hello") { response ->
                         response shouldBe "Hello, World!"
@@ -271,7 +300,7 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
         
         @Test
         fun `should create a user`() = runBlocking {
-            TestSystem.validate {
+            stove {
                 http {
                     postAndExpectBody<UserResponse>(
                         uri = "/users",
@@ -288,10 +317,10 @@ Set up Stove once for your entire test suite. We recommend using a dedicated `sr
 
 ## Step 5: Add More Components
 
-As your application grows, add more components:
+Once you've got the basics working, you'll probably want to add more components. Here's how you'd set up a typical stack:
 
 ```kotlin
-TestSystem()
+Stove()
     .with {
         httpClient {
             HttpClientSystemOptions(baseUrl = "http://localhost:8080")
@@ -340,13 +369,15 @@ TestSystem()
     .run()
 ```
 
-## Step 6: Write Comprehensive Tests
+## Step 6: Write Tests That Span Multiple Systems
 
-Now you can write tests that span multiple systems:
+Here's where Stove really shines. You can write tests that touch multiple systems and verify everything works together:
 
 ```kotlin
+import com.trendyol.stove.system.stove
+
 test("should create order and publish event") {
-    TestSystem.validate {
+    stove {
         val orderId = UUID.randomUUID().toString()
         
         // Mock external payment service
@@ -399,43 +430,51 @@ test("should create order and publish event") {
 
 ## Running Tests
 
-Run your tests using Gradle:
+Run all your tests:
 
 ```bash
 ./gradlew test
 ```
 
-Or run specific test classes:
+Or run a specific test class:
 
 ```bash
 ./gradlew test --tests "com.myapp.e2e.OrderE2ETest"
 ```
 
+If you're using the `test-e2e` source set, you might have a separate task:
+
+```bash
+./gradlew e2eTest
+```
+
 ## Next Steps
 
-- Explore [Components](Components/index.md) documentation for each available component
-- Set up [Reporting](Components/13-reporting.md) for detailed failure diagnostics
-- Learn about [Best Practices](best-practices.md) for writing effective e2e tests
-- Check [Troubleshooting](troubleshooting.md) if you encounter issues
-- Browse [Examples](https://github.com/Trendyol/stove/tree/main/examples) for complete working projects
+Now that you're up and running, here's what to explore next:
+
+- **Components** - Check out the [Components documentation](Components/index.md) to see what's available
+- **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics (makes debugging way easier)
+- **Best Practices** - Read the [Best Practices guide](best-practices.md) for tips on writing effective e2e tests
+- **Troubleshooting** - Hit an issue? Check the [Troubleshooting guide](troubleshooting.md)
+- **Examples** - Browse the [Examples](https://github.com/Trendyol/stove/tree/main/examples) to see complete working projects
 
 ## Common Patterns
 
-### Keep Dependencies Running
+### Keep Containers Running Between Test Runs
 
-For faster development cycles, keep containers running between test runs:
+Starting containers takes time. During development, you can keep them running between test runs to speed things up:
 
 ```kotlin
-TestSystem {
+Stove {
     keepDependenciesRunning()
 }.with {
     // Your configuration
 }.run()
 ```
 
-### Custom Container Registry
+### Using a Custom Container Registry
 
-If you're behind a corporate firewall:
+If you're behind a corporate firewall or need to use a private registry:
 
 ```kotlin
 // Set globally
@@ -451,16 +490,16 @@ kafka {
 }
 ```
 
-### Use Random Test Data
+### Use Unique Test Data
 
-Generate unique data for each test:
+To avoid test conflicts, generate unique data for each test run:
 
 ```kotlin
 test("should create user") {
     val userId = UUID.randomUUID().toString()
     val email = "test-${UUID.randomUUID()}@example.com"
     
-    TestSystem.validate {
+    stove {
         // Use unique data to avoid conflicts
     }
 }

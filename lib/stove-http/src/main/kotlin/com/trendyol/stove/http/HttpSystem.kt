@@ -1,0 +1,856 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
+package com.trendyol.stove.http
+
+import arrow.core.*
+import com.trendyol.stove.reporting.Reports
+import com.trendyol.stove.serialization.StoveSerde
+import com.trendyol.stove.system.*
+import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.annotations.StoveDsl
+import io.ktor.client.call.*
+import io.ktor.client.plugins.websocket.*
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.*
+import io.ktor.serialization.jackson.*
+import io.ktor.util.*
+import io.ktor.util.reflect.*
+import kotlinx.coroutines.flow.Flow
+import java.nio.charset.Charset
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * Configuration options for the HTTP client system.
+ *
+ * ## Basic Configuration
+ *
+ * ```kotlin
+ * Stove()
+ *     .with {
+ *         httpClient {
+ *             HttpClientSystemOptions(
+ *                 baseUrl = "http://localhost:8080"
+ *             )
+ *         }
+ *     }
+ * ```
+ *
+ * ## Custom Serialization
+ *
+ * Match your application's JSON serialization:
+ *
+ * ```kotlin
+ * httpClient {
+ *     HttpClientSystemOptions(
+ *         baseUrl = "http://localhost:8080",
+ *         contentConverter = JacksonConverter(myObjectMapper),
+ *         timeout = 60.seconds
+ *     )
+ * }
+ * ```
+ *
+ * ## Custom HTTP Client
+ *
+ * For advanced scenarios (custom SSL, interceptors, etc.):
+ *
+ * ```kotlin
+ * httpClient {
+ *     HttpClientSystemOptions(
+ *         baseUrl = "http://localhost:8080",
+ *         createClient = { baseUrl ->
+ *             HttpClient(CIO) {
+ *                 install(ContentNegotiation) { jackson() }
+ *                 install(Logging) { level = LogLevel.ALL }
+ *                 defaultRequest { url(baseUrl) }
+ *             }
+ *         }
+ *     )
+ * }
+ * ```
+ *
+ * @property baseUrl The base URL for all HTTP requests (e.g., "http://localhost:8080").
+ * @property contentConverter The content converter for JSON serialization (default: Jackson).
+ * @property timeout Request timeout duration (default: 30 seconds).
+ * @property createClient Factory function for creating the underlying Ktor HTTP client.
+ */
+@HttpDsl
+data class HttpClientSystemOptions(
+  val baseUrl: String,
+  val contentConverter: ContentConverter = JacksonConverter(StoveSerde.jackson.default),
+  val webSocketContentConverter: WebsocketContentConverter = JacksonWebsocketContentConverter(
+    StoveSerde.jackson.default
+  ),
+  val timeout: kotlin.time.Duration = 30.seconds,
+  val wsPingInterval: kotlin.time.Duration = 20.seconds,
+  val configureClient: io.ktor.client.HttpClientConfig<*>.() -> Unit = {},
+  val configureWebSocket: WebSockets.Config.() -> Unit = {},
+  val createClient: (
+    baseUrl: String
+  ) -> io.ktor.client.HttpClient = { url ->
+    jsonHttpClient(
+      url,
+      timeout,
+      contentConverter,
+      webSocketContentConverter,
+      wsPingInterval,
+      configureWebSocket,
+      configureClient
+    )
+  }
+) : SystemOptions
+
+internal fun Stove.withHttpClient(options: HttpClientSystemOptions): Stove {
+  this.getOrRegister(HttpSystem(this, options))
+  return this
+}
+
+internal fun Stove.http(): HttpSystem = getOrNone<HttpSystem>().getOrElse {
+  throw SystemNotRegisteredException(HttpSystem::class)
+}
+
+/**
+ * Registers the HTTP client system with the test system.
+ *
+ * ```kotlin
+ * Stove()
+ *     .with {
+ *         httpClient {
+ *             HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+ *         }
+ *     }
+ * ```
+ *
+ * @param configure Configuration block returning [HttpClientSystemOptions].
+ * @return The test system for fluent chaining.
+ */
+@StoveDsl
+fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): Stove =
+  this.stove.withHttpClient(configure())
+
+/**
+ * Executes HTTP assertions within the validation DSL.
+ *
+ * ```kotlin
+ * Stove.validate {
+ *     http {
+ *         get<UserResponse>("/users/123") { user ->
+ *             user.name shouldBe "John"
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @param validation The HTTP assertion block.
+ */
+@StoveDsl
+suspend fun ValidationDsl.http(
+  validation: @HttpDsl suspend HttpSystem.() -> Unit
+): Unit = validation(this.stove.http())
+
+/**
+ * HTTP client system for testing REST APIs.
+ *
+ * Provides a fluent DSL for making HTTP requests and asserting responses.
+ * All methods return the system instance for chaining.
+ *
+ * ## GET Requests
+ *
+ * ```kotlin
+ * http {
+ *     // Get with typed response body
+ *     get<UserResponse>("/users/123") { user ->
+ *         user.name shouldBe "John"
+ *         user.email shouldBe "john@example.com"
+ *     }
+ *
+ *     // Get with query parameters
+ *     get<List<UserResponse>>("/users", queryParams = mapOf("role" to "admin")) { users ->
+ *         users.size shouldBeGreaterThan 0
+ *     }
+ *
+ *     // Get with full response access
+ *     getResponse<UserResponse>("/users/123") { response ->
+ *         response.status shouldBe 200
+ *         response.headers["Content-Type"] shouldContain "application/json"
+ *         response.body().name shouldBe "John"
+ *     }
+ *
+ *     // Get with headers and auth token
+ *     get<SecretData>(
+ *         uri = "/secrets",
+ *         headers = mapOf("X-Request-Id" to "123"),
+ *         token = "jwt-token".some()
+ *     ) { data ->
+ *         data shouldNotBe null
+ *     }
+ * }
+ * ```
+ *
+ * ## POST Requests
+ *
+ * ```kotlin
+ * http {
+ *     // Post with JSON body and typed response
+ *     postAndExpectJson<UserResponse>(
+ *         uri = "/users",
+ *         body = CreateUserRequest(name = "John", email = "john@example.com").some()
+ *     ) { user ->
+ *         user.id shouldNotBe null
+ *     }
+ *
+ *     // Post expecting only status code
+ *     postAndExpectBodilessResponse(
+ *         uri = "/users",
+ *         body = CreateUserRequest(name = "John").some()
+ *     ) { response ->
+ *         response.status shouldBe 201
+ *     }
+ *
+ *     // Post with full response access
+ *     postAndExpectBody<UserResponse>(
+ *         uri = "/users",
+ *         body = request.some()
+ *     ) { response ->
+ *         response.status shouldBe 201
+ *         response.body().id shouldNotBe null
+ *     }
+ * }
+ * ```
+ *
+ * ## PUT, PATCH, DELETE Requests
+ *
+ * ```kotlin
+ * http {
+ *     // PUT
+ *     putAndExpectJson<UserResponse>(
+ *         uri = "/users/123",
+ *         body = UpdateUserRequest(name = "Jane").some()
+ *     ) { user ->
+ *         user.name shouldBe "Jane"
+ *     }
+ *
+ *     // PATCH
+ *     patchAndExpectBodilessResponse(
+ *         uri = "/users/123",
+ *         body = mapOf("status" to "active").some()
+ *     ) { response ->
+ *         response.status shouldBe 200
+ *     }
+ *
+ *     // DELETE
+ *     deleteAndExpectBodilessResponse("/users/123") { response ->
+ *         response.status shouldBe 204
+ *     }
+ * }
+ * ```
+ *
+ * ## Multipart/Form Requests
+ *
+ * ```kotlin
+ * http {
+ *     postMultipartAndExpectResponse<UploadResponse>(
+ *         uri = "/upload",
+ *         body = listOf(
+ *             StoveMultiPartContent.Text("name", "document.pdf"),
+ *             StoveMultiPartContent.File(
+ *                 param = "file",
+ *                 fileName = "document.pdf",
+ *                 content = fileBytes,
+ *                 contentType = "application/pdf"
+ *             )
+ *         )
+ *     ) { response ->
+ *         response.body().fileId shouldNotBe null
+ *     }
+ * }
+ * ```
+ *
+ * ## Streaming Responses
+ *
+ * ```kotlin
+ * http {
+ *     readJsonStream<LogEntry>(
+ *         uri = "/logs/stream",
+ *         headers = mapOf("Accept" to "application/x-ndjson")
+ *     ) { flow ->
+ *         flow.collect { entry ->
+ *             println(entry.message)
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @property stove The parent test system.
+ * @property options HTTP client configuration options.
+ * @see HttpClientSystemOptions
+ * @see StoveHttpResponse
+ */
+@Suppress("TooManyFunctions")
+@HttpDsl
+class HttpSystem(
+  override val stove: Stove,
+  @PublishedApi internal val options: HttpClientSystemOptions
+) : PluggedSystem,
+  Reports {
+  @PublishedApi
+  internal val ktorHttpClient: io.ktor.client.HttpClient = options.createClient(options.baseUrl)
+
+  override val reportSystemName: String = "HTTP"
+
+  /**
+   * Performs a GET request and asserts on the bodiless response.
+   */
+  @HttpDsl
+  suspend fun getBodilessResponse(
+    uri: String,
+    queryParams: Map<String, String> = mapOf(),
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    expect: suspend (StoveHttpResponse.Bodiless) -> Unit
+  ): HttpSystem {
+    val response = get(uri, headers, queryParams, token)
+    recordAndExecute(
+      action = "GET $uri",
+      input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
+      output = "Status: ${response.status.value}".some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response matching expectation".some()
+    ) {
+      expect(response.toBodilessResponse())
+    }
+    return this
+  }
+
+  /**
+   * Performs a GET request and asserts on the typed response body.
+   */
+  @HttpDsl
+  suspend inline fun <reified T : Any> getResponse(
+    uri: String,
+    queryParams: Map<String, String> = mapOf(),
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: suspend (StoveHttpResponse.WithBody<T>) -> Unit
+  ): HttpSystem {
+    val response = get(uri, headers, queryParams, token)
+    recordAndExecute(
+      action = "GET $uri",
+      input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response<${T::class.simpleName}> matching expectation".some()
+    ) {
+      expect(response.toResponseWithBody())
+    }
+    return this
+  }
+
+  /**
+   * Performs a GET request and asserts on the deserialized response body.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> get(
+    uri: String,
+    queryParams: Map<String, String> = mapOf(),
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: (TExpected) -> Unit
+  ): HttpSystem {
+    val response = get(uri, headers, queryParams, token)
+    recordAndExecute(
+      action = "GET $uri",
+      input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "${TExpected::class.simpleName} matching expectation".some()
+    ) {
+      response.expectSuccessBody(expect)
+    }
+    return this
+  }
+
+  /**
+   * Performs a GET request and asserts on a list response.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> getMany(
+    uri: String,
+    queryParams: Map<String, String> = mapOf(),
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: (List<TExpected>) -> Unit
+  ): HttpSystem {
+    val response = get(uri, headers, queryParams, token)
+    recordAndExecute(
+      action = "GET $uri",
+      input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "List<${TExpected::class.simpleName}> matching expectation".some()
+    ) {
+      response.expectSuccessBody(expect)
+    }
+    return this
+  }
+
+  /**
+   * Performs a GET request for a JSON stream (NDJSON) and asserts on the flow.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> readJsonStream(
+    uri: String,
+    queryParams: Map<String, String> = mapOf(),
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: suspend (Flow<TExpected>) -> Unit
+  ): HttpSystem {
+    recordAndExecute(
+      action = "GET $uri (stream)",
+      input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
+      metadata = mapOf("headers" to headers),
+      expected = "Flow<${TExpected::class.simpleName}> stream".some()
+    ) {
+      val flow = ktorHttpClient
+        .prepareGet {
+          url { appendEncodedPathSegments(uri) }
+          headers.forEach { (key, value) -> header(key, value) }
+          header(HttpHeaders.Accept, "application/x-ndjson")
+          queryParams.forEach { (key, value) -> parameter(key, value) }
+          token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+        }.readJsonContentStream {
+          options.contentConverter.deserialize(Charset.defaultCharset(), typeInfo<TExpected>(), it) as TExpected
+        }
+      expect(flow)
+    }
+    return this
+  }
+
+  /**
+   * Performs a POST request and asserts on the bodiless response.
+   */
+  @HttpDsl
+  suspend fun postAndExpectBodilessResponse(
+    uri: String,
+    body: Option<Any>,
+    token: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    expect: suspend (StoveHttpResponse) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Post, uri, body, headers, token)
+    recordAndExecute(
+      action = "POST $uri",
+      input = body,
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response matching expectation".some()
+    ) {
+      expect(response.toBodilessResponse())
+    }
+    return this
+  }
+
+  /**
+   * Performs a POST request and asserts on the deserialized response body.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> postAndExpectJson(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: (actual: TExpected) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Post, uri, body, headers, token)
+    recordAndExecute(
+      action = "POST $uri",
+      input = body,
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "${TExpected::class.simpleName} matching expectation".some()
+    ) {
+      response.expectSuccessBody(expect)
+    }
+    return this
+  }
+
+  /**
+   * Performs a POST request and asserts on the typed response with body access.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> postAndExpectBody(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: suspend (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Post, uri, body, headers, token)
+    recordAndExecute(
+      action = "POST $uri",
+      input = body,
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response<${TExpected::class.simpleName}> matching expectation".some()
+    ) {
+      expect(response.toResponseWithBody())
+    }
+    return this
+  }
+
+  /**
+   * Performs a PUT request and asserts on the bodiless response.
+   */
+  @HttpDsl
+  suspend fun putAndExpectBodilessResponse(
+    uri: String,
+    body: Option<Any>,
+    token: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    expect: suspend (StoveHttpResponse) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Put, uri, body, headers, token)
+    recordAndExecute(
+      action = "PUT $uri",
+      input = body,
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response matching expectation".some()
+    ) {
+      expect(response.toBodilessResponse())
+    }
+    return this
+  }
+
+  /**
+   * Performs a PUT request and asserts on the deserialized response body.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> putAndExpectJson(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: (actual: TExpected) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Put, uri, body, headers, token)
+    recordAndExecute(
+      action = "PUT $uri",
+      input = body,
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "${TExpected::class.simpleName} matching expectation".some()
+    ) {
+      response.expectSuccessBody(expect)
+    }
+    return this
+  }
+
+  /**
+   * Performs a PUT request and asserts on the typed response with body access.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> putAndExpectBody(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: suspend (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Put, uri, body, headers, token)
+    recordAndExecute(
+      action = "PUT $uri",
+      input = body,
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response<${TExpected::class.simpleName}> matching expectation".some()
+    ) {
+      expect(response.toResponseWithBody())
+    }
+    return this
+  }
+
+  /**
+   * Performs a PATCH request and asserts on the bodiless response.
+   */
+  @HttpDsl
+  suspend fun patchAndExpectBodilessResponse(
+    uri: String,
+    body: Option<Any>,
+    token: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    expect: suspend (StoveHttpResponse) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
+    recordAndExecute(
+      action = "PATCH $uri",
+      input = body,
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response matching expectation".some()
+    ) {
+      expect(response.toBodilessResponse())
+    }
+    return this
+  }
+
+  /**
+   * Performs a PATCH request and asserts on the deserialized response body.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> patchAndExpectJson(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: (actual: TExpected) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
+    recordAndExecute(
+      action = "PATCH $uri",
+      input = body,
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "${TExpected::class.simpleName} matching expectation".some()
+    ) {
+      response.expectSuccessBody(expect)
+    }
+    return this
+  }
+
+  /**
+   * Performs a PATCH request and asserts on the typed response with body access.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> patchAndExpectBody(
+    uri: String,
+    body: Option<Any> = None,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: suspend (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
+  ): HttpSystem {
+    val response = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
+    recordAndExecute(
+      action = "PATCH $uri",
+      input = body,
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response<${TExpected::class.simpleName}> matching expectation".some()
+    ) {
+      expect(response.toResponseWithBody())
+    }
+    return this
+  }
+
+  /**
+   * Performs a DELETE request and asserts on the bodiless response.
+   */
+  @HttpDsl
+  suspend fun deleteAndExpectBodilessResponse(
+    uri: String,
+    token: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    expect: suspend (StoveHttpResponse) -> Unit
+  ): HttpSystem {
+    val response = ktorHttpClient.delete {
+      configureRequest(uri, headers, token)
+    }
+    recordAndExecute(
+      action = "DELETE $uri",
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response matching expectation".some()
+    ) {
+      expect(response.toBodilessResponse())
+    }
+    return this
+  }
+
+  /**
+   * Performs a DELETE request and asserts on the deserialized response body.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> deleteAndExpectJson(
+    uri: String,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: (actual: TExpected) -> Unit
+  ): HttpSystem {
+    val response = ktorHttpClient.delete {
+      configureRequest(uri, headers, token)
+    }
+    recordAndExecute(
+      action = "DELETE $uri",
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "${TExpected::class.simpleName} matching expectation".some()
+    ) {
+      response.expectSuccessBody(expect)
+    }
+    return this
+  }
+
+  /**
+   * Performs a HEAD request and asserts on the bodiless response.
+   */
+  @HttpDsl
+  suspend fun headAndExpectBodilessResponse(
+    uri: String,
+    token: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    expect: suspend (StoveHttpResponse) -> Unit
+  ): HttpSystem {
+    val response = ktorHttpClient.head {
+      configureRequest(uri, headers, token)
+    }
+    recordAndExecute(
+      action = "HEAD $uri",
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response matching expectation".some()
+    ) {
+      expect(response.toBodilessResponse())
+    }
+    return this
+  }
+
+  /**
+   * Performs a multipart POST request and asserts on the typed response.
+   */
+  @HttpDsl
+  suspend inline fun <reified TExpected : Any> postMultipartAndExpectResponse(
+    uri: String,
+    body: List<StoveMultiPartContent>,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    crossinline expect: suspend (StoveHttpResponse.WithBody<TExpected>) -> Unit
+  ): HttpSystem {
+    val response = ktorHttpClient.submitForm {
+      configureRequest(uri, headers, token)
+      setBody(MultiPartFormDataContent(toFormData(body)))
+    }
+    recordAndExecute(
+      action = "POST $uri (multipart)",
+      input = body.map { it::class.simpleName }.some(),
+      output = response.bodyAsText().some(),
+      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      expected = "Response<${TExpected::class.simpleName}> matching expectation".some()
+    ) {
+      expect(response.toResponseWithBody())
+    }
+    return this
+  }
+
+  @HttpDsl
+  override fun then(): Stove = stove
+
+  @PublishedApi
+  internal suspend fun get(
+    uri: String,
+    headers: Map<String, String>,
+    queryParams: Map<String, String>,
+    token: Option<String>
+  ) = ktorHttpClient.get {
+    configureRequest(uri, headers, token)
+    queryParams.forEach { (key, value) -> parameter(key, value) }
+  }
+
+  @PublishedApi
+  internal suspend fun executeWithBody(
+    method: HttpMethod,
+    uri: String,
+    body: Option<Any>,
+    headers: Map<String, String>,
+    token: Option<String>
+  ): HttpResponse = ktorHttpClient.request {
+    this.method = method
+    configureRequest(uri, headers, token)
+    body.map { setBody(it) }
+  }
+
+  @PublishedApi
+  internal fun HttpRequestBuilder.configureRequest(
+    uri: String,
+    headers: Map<String, String>,
+    token: Option<String>
+  ) {
+    url { appendEncodedPathSegments(uri) }
+    headers.forEach { (key, value) -> header(key, value) }
+    token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+  }
+
+  @PublishedApi
+  internal fun HttpResponse.toBodilessResponse(): StoveHttpResponse.Bodiless =
+    StoveHttpResponse.Bodiless(status.value, headers.toMap())
+
+  @PublishedApi
+  internal inline fun <reified T : Any> HttpResponse.toResponseWithBody(): StoveHttpResponse.WithBody<T> =
+    StoveHttpResponse.WithBody(status.value, headers.toMap()) { body() }
+
+  @PublishedApi
+  internal suspend inline fun <reified T : Any> HttpResponse.expectSuccessBody(expect: (T) -> Unit) {
+    check(status.isSuccess()) { "Expected a successful response, but got $status" }
+    expect(body())
+  }
+
+  @PublishedApi
+  internal fun toFormData(
+    body: List<StoveMultiPartContent>
+  ) = formData {
+    body.forEach {
+      when (it) {
+        is StoveMultiPartContent.Text -> append(it.param, it.value)
+
+        is StoveMultiPartContent.Binary -> append(
+          it.param,
+          it.content,
+          Headers.build {
+            append(HttpHeaders.ContentType, ContentType.Application.OctetStream)
+          }
+        )
+
+        is StoveMultiPartContent.File -> append(
+          it.param,
+          it.content,
+          Headers.build {
+            append(HttpHeaders.ContentType, ContentType.parse(it.contentType))
+            append(HttpHeaders.ContentDisposition, "filename=${it.fileName}")
+          }
+        )
+      }
+    }
+  }
+
+  override fun close() {
+    ktorHttpClient.close()
+  }
+
+  companion object {
+    object HeaderConstants {
+      const val AUTHORIZATION = "Authorization"
+
+      fun bearer(token: String) = "Bearer $token"
+    }
+
+    /**
+     * Exposes the [io.ktor.client.HttpClient] used by the [HttpSystem].
+     * Use this for advanced HTTP operations not covered by the DSL.
+     */
+    @Suppress("unused")
+    @HttpDsl
+    fun HttpSystem.client(): io.ktor.client.HttpClient {
+      recordSuccess(action = "Access underlying HttpClient")
+      return this.ktorHttpClient
+    }
+
+    /**
+     * Exposes the [io.ktor.client.HttpClient] used by the [HttpSystem].
+     * Use this for advanced HTTP operations not covered by the DSL.
+     */
+    @Suppress("unused")
+    @HttpDsl
+    suspend fun HttpSystem.client(
+      block: suspend io.ktor.client.HttpClient.(baseUrl: URLBuilder) -> Unit
+    ) {
+      recordSuccess(action = "Access underlying HttpClient with block")
+      block(this.ktorHttpClient, URLBuilder(this.options.baseUrl))
+    }
+  }
+}

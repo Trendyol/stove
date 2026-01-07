@@ -1,11 +1,11 @@
 package com.stove.spring.example.e2e
 
 import arrow.core.some
-import com.trendyol.stove.testing.e2e.couchbase.couchbase
-import com.trendyol.stove.testing.e2e.http.*
-import com.trendyol.stove.testing.e2e.kafka.kafka
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.couchbase.couchbase
+import com.trendyol.stove.http.*
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.system.*
+import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -19,7 +19,7 @@ import kotlin.time.Duration.Companion.seconds
 class ExampleTest :
   FunSpec({
     test("bridge should work") {
-      TestSystem.validate {
+      stove {
         using<CouchbaseProperties> {
           this.bucketName shouldBe "Stove"
         }
@@ -27,7 +27,7 @@ class ExampleTest :
     }
 
     test("index should be reachable") {
-      TestSystem.validate {
+      stove {
         http {
           get<String>("/api/index", queryParams = mapOf("keyword" to testCase.name.name)) { actual ->
             actual shouldContain "Hi from Stove framework with ${testCase.name.name}"
@@ -42,7 +42,7 @@ class ExampleTest :
     }
 
     test("should create new product when send product create request from api for the allowed supplier") {
-      TestSystem.validate {
+      stove {
         val productCreateRequest = ProductCreateRequest(1L, name = "product name", 99L)
         val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = true)
 
@@ -79,7 +79,7 @@ class ExampleTest :
     }
 
     test("should throw error when send product create request from api for for the not allowed supplier") {
-      TestSystem.validate {
+      stove {
         val productCreateRequest = ProductCreateRequest(2L, name = "product name", 98L)
         val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = false)
         wiremock {
@@ -98,7 +98,7 @@ class ExampleTest :
     }
 
     test("should throw error when send product create event for the not allowed supplier") {
-      TestSystem.validate {
+      stove {
         val command = CreateProductCommand(3L, name = "product name", 97L)
         val supplierPermission = SupplierPermission(command.supplierId, isAllowed = false)
 
@@ -120,7 +120,7 @@ class ExampleTest :
     }
 
     test("should create new product when send product create event for the allowed supplier") {
-      TestSystem.validate {
+      stove {
         val createProductCommand = CreateProductCommand(4L, name = "product name", 96L)
         val supplierPermission = SupplierPermission(createProductCommand.supplierId, isAllowed = true)
 
@@ -161,7 +161,7 @@ class ExampleTest :
     }
 
     test("when failing event is published then it should be validated") {
-      TestSystem.validate {
+      stove {
         kafka {
           publish("trendyol.stove.service.product.failing.0", FailingEvent(5L))
           shouldBeFailed<FailingEvent> {
@@ -176,7 +176,7 @@ class ExampleTest :
     }
 
     test("file import should work") {
-      TestSystem.validate {
+      stove {
         http {
           postMultipartAndExpectResponse<String>(
             "/api/product/import",

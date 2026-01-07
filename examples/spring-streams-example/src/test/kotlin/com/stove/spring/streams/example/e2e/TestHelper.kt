@@ -2,7 +2,7 @@ package com.stove.spring.streams.example.e2e
 
 import arrow.core.*
 import com.google.protobuf.Message
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
+import com.trendyol.stove.serialization.StoveSerde
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 import kotlinx.serialization.ExperimentalSerializationApi
 import okio.ByteString.Companion.toByteString

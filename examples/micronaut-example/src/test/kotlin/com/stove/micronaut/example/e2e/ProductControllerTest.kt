@@ -2,10 +2,10 @@ package com.stove.micronaut.example.e2e
 
 import arrow.core.some
 import com.couchbase.client.java.Bucket
-import com.trendyol.stove.testing.e2e.couchbase.couchbase
-import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.couchbase.couchbase
+import com.trendyol.stove.http.http
+import com.trendyol.stove.system.*
+import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -18,7 +18,7 @@ class ProductControllerTest :
   FunSpec({
 
     test("index should be reachable") {
-      TestSystem.validate {
+      stove {
         http {
           get<String>("/products/index", queryParams = mapOf("keyword" to "index")) { actual ->
             actual shouldContain "Hi from Stove framework with index"
@@ -33,7 +33,7 @@ class ProductControllerTest :
       val request = CreateProductRequest(id = id, name = "product name", supplierId = 120688)
       val supplierMock = SupplierPermission(id = 120688, isBlacklisted = false)
 
-      TestSystem.validate {
+      stove {
 
         wiremock {
           mockGet(
@@ -60,7 +60,7 @@ class ProductControllerTest :
     }
 
     test("a bean from application should be reachable") {
-      TestSystem.validate {
+      stove {
         using<Bucket> {
           this.name() shouldBe "Stove"
         }

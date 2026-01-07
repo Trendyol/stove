@@ -1,0 +1,7 @@
+public final class com/trendyol/stove/extensions/junit/StoveJUnitExtension : org/junit/jupiter/api/extension/AfterEachCallback, org/junit/jupiter/api/extension/BeforeEachCallback, org/junit/jupiter/api/extension/TestExecutionExceptionHandler {
+	public fun <init> ()V
+	public fun afterEach (Lorg/junit/jupiter/api/extension/ExtensionContext;)V
+	public fun beforeEach (Lorg/junit/jupiter/api/extension/ExtensionContext;)V
+	public fun handleTestExecutionException (Lorg/junit/jupiter/api/extension/ExtensionContext;Ljava/lang/Throwable;)V
+}
+

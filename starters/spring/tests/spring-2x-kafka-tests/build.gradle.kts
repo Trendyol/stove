@@ -1,5 +1,5 @@
 dependencies {
-  api(projects.starters.spring.stoveSpringTestingE2eKafka)
+  api(projects.starters.spring.stoveSpringKafka)
   implementation(libs.spring.boot.kafka)
 }
 
@@ -11,5 +11,5 @@ dependencies {
 }
 
 tasks.test.configure {
-  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.testing.e2e.kafka.Setup")
+  systemProperty("kotest.framework.config.fqn", "com.trendyol.stove.kafka.Setup")
 }

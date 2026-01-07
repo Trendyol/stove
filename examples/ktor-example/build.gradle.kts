@@ -33,12 +33,13 @@ dependencies {
 }
 
 dependencies {
+  testImplementation(project(":test-extensions:stove-extensions-kotest"))
   testImplementation(libs.logback.classic)
-  testImplementation(projects.stove.lib.stoveTestingE2eHttp)
-  testImplementation(projects.stove.lib.stoveTestingE2eWiremock)
-  testImplementation(projects.stove.lib.stoveTestingE2eRdbmsPostgres)
-  testImplementation(projects.stove.lib.stoveTestingE2eKafka)
-  testImplementation(projects.stove.starters.ktor.stoveKtorTestingE2e)
+  testImplementation(projects.stove.lib.stoveHttp)
+  testImplementation(projects.stove.lib.stoveWiremock)
+  testImplementation(projects.stove.lib.stovePostgres)
+  testImplementation(projects.stove.lib.stoveKafka)
+  testImplementation(projects.stove.starters.ktor.stoveKtor)
 }
 
 repositories {

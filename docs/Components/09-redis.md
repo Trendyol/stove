@@ -4,14 +4,14 @@
 
     ``` kotlin
         dependencies {
-            testImplementation("com.trendyol:stove-testing-e2e-redis:$version")
+            testImplementation("com.trendyol:stove-redis:$version")
         }
     ```
 
 ## Configure
 
 ```kotlin
-TestSystem()
+Stove()
   .with {
     redis {
       RedisSystemOptions {
@@ -64,7 +64,7 @@ The Redis component provides access to the underlying Lettuce Redis client, allo
 Access the Redis client using the `client()` extension function:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val redisClient = client()
     val connection = redisClient.connect()
@@ -79,7 +79,7 @@ TestSystem.validate {
 Test basic string operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -117,7 +117,7 @@ TestSystem.validate {
 Test Redis hash operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -160,7 +160,7 @@ TestSystem.validate {
 Test Redis list operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -192,7 +192,7 @@ TestSystem.validate {
 Test Redis set operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -235,7 +235,7 @@ TestSystem.validate {
 Test Redis sorted set operations:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -275,7 +275,7 @@ TestSystem.validate {
 Use async operations for better performance:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().async()
     
@@ -307,7 +307,7 @@ TestSystem.validate {
 Test Redis Pub/Sub:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val pubConnection = client().connectPubSub().sync()
     val subConnection = client().connectPubSub().sync()
@@ -343,7 +343,7 @@ TestSystem.validate {
 Test key expiration:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -374,7 +374,7 @@ TestSystem.validate {
 Test Redis transactions:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -400,7 +400,7 @@ TestSystem.validate {
 Test failure scenarios:
 
 ```kotlin
-TestSystem.validate {
+stove {
   redis {
     val connection = client().connect().sync()
     
@@ -435,7 +435,7 @@ Here's a complete caching test example:
 
 ```kotlin
 test("should cache product data in redis") {
-  TestSystem.validate {
+  stove {
     val productId = "product-123"
     
     // Product not in cache - verify using client()
@@ -480,7 +480,7 @@ Test application caching behavior:
 
 ```kotlin
 test("should use redis for session management") {
-  TestSystem.validate {
+  stove {
     val sessionId = UUID.randomUUID().toString()
     
     // Create session via API
@@ -555,7 +555,7 @@ fun RedisSystem.shouldSet(key: String, value: String): RedisSystem {
 }
 
 // Usage in tests
-TestSystem.validate {
+stove {
   redis {
     shouldSet("user:123", "John Doe")
     shouldGet("user:123") { value ->

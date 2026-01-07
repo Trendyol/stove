@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/maven-central/v/com.trendyol/stove-testing-e2e?versionPrefix=0&label=release&color=blue" alt="Release"/>
-  <a href="https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fcom%2Ftrendyol%2Fstove-testing-e2e%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=snapshot&color=orange" alt="Snapshot"/></a>
+  <img src="https://img.shields.io/maven-central/v/com.trendyol/stove?versionPrefix=0&label=release&color=blue" alt="Release"/>
+  <a href="https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fcom%2Ftrendyol%2Fstove%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=snapshot&color=orange" alt="Snapshot"/></a>
   <a href="https://codecov.io/gh/Trendyol/stove"><img src="https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7" alt="codecov"/></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove"><img src="https://img.shields.io/ossf-scorecard/github.com/Trendyol/stove?label=openssf%20scorecard&style=flat" alt="OpenSSF Scorecard"/></a>
 </p>
@@ -77,10 +77,16 @@ assertions even for code that is traditionally hard to test (async flows, messag
 
 ```kotlin
 dependencies {
-  testImplementation("com.trendyol:stove-testing-e2e:$version")
-  testImplementation("com.trendyol:stove-spring-testing-e2e:$version")  // or ktor, micronaut
-  testImplementation("com.trendyol:stove-testing-e2e-rdbms-postgres:$version")
-  testImplementation("com.trendyol:stove-testing-e2e-kafka:$version")
+  // Import BOM for version management
+  testImplementation(platform("com.trendyol:stove-bom:$version"))
+  
+  // Core and framework starter
+  testImplementation("com.trendyol:stove")
+  testImplementation("com.trendyol:stove-spring")  // or stove-ktor, stove-micronaut
+  
+  // Component modules
+  testImplementation("com.trendyol:stove-postgres")
+  testImplementation("com.trendyol:stove-kafka")
 }
 ```
 
