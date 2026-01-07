@@ -2,26 +2,26 @@ package com.trendyol.stove.examples.kotlin.ktor.e2e.setup
 
 import com.trendyol.stove.examples.kotlin.ktor.ExampleStoveKtorApp
 import com.trendyol.stove.examples.kotlin.ktor.infra.boilerplate.serialization.JacksonConfiguration
-import com.trendyol.stove.testing.e2e.*
-import com.trendyol.stove.testing.e2e.http.*
-import com.trendyol.stove.testing.e2e.rdbms.postgres.*
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
-import com.trendyol.stove.testing.e2e.standalone.kafka.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
-import com.trendyol.stove.testing.e2e.wiremock.*
+import com.trendyol.stove.http.*
+import com.trendyol.stove.kafka.*
+import com.trendyol.stove.ktor.*
+import com.trendyol.stove.postgres.*
+import com.trendyol.stove.serialization.StoveSerde
+import com.trendyol.stove.system.Stove
+import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.ktor.serialization.jackson.*
 import org.koin.dsl.module
 
 private const val DATABASE = "stove-kotlin-ktor"
 
-class Stove : AbstractProjectConfig() {
+class StoveConfig : AbstractProjectConfig() {
   init {
     stoveKafkaBridgePortDefault = "50054"
   }
 
   override suspend fun beforeProject() {
-    TestSystem()
+    Stove()
       .with {
         httpClient {
           HttpClientSystemOptions(
@@ -78,7 +78,7 @@ class Stove : AbstractProjectConfig() {
   }
 
   override suspend fun afterProject() {
-    TestSystem.stop()
+    Stove.stop()
   }
 
   private fun toR2dbcUrl(url: String): String = url.replace("jdbc:", "r2dbc:")

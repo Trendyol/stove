@@ -1,8 +1,8 @@
 package com.trendyol.stove.example.java.spring.e2e.setup.migrations
 
 import com.couchbase.client.kotlin.Cluster
+import com.trendyol.stove.database.migrations.DatabaseMigration
 import com.trendyol.stove.examples.java.spring.infra.components.product.persistency.CollectionConstants
-import com.trendyol.stove.testing.e2e.database.migrations.DatabaseMigration
 import kotlin.time.Duration.Companion.seconds
 
 class CouchbaseMigration : DatabaseMigration<Cluster> {

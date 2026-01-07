@@ -1,14 +1,14 @@
 package com.trendyol.stove.recipes.scala.spring.e2e.setup
 
+import com.trendyol.stove.http.*
 import com.trendyol.stove.recipes.scala.spring.SpringBootRecipeApp
-import com.trendyol.stove.testing.e2e.*
-import com.trendyol.stove.testing.e2e.http.*
-import com.trendyol.stove.testing.e2e.system.TestSystem
+import com.trendyol.stove.spring.*
+import com.trendyol.stove.system.Stove
 import io.kotest.core.config.AbstractProjectConfig
 
-class Stove : AbstractProjectConfig() {
+class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem()
+    Stove()
       .with {
         httpClient {
           HttpClientSystemOptions(
@@ -27,6 +27,6 @@ class Stove : AbstractProjectConfig() {
   }
 
   override suspend fun afterProject() {
-    TestSystem.stop()
+    Stove.stop()
   }
 }

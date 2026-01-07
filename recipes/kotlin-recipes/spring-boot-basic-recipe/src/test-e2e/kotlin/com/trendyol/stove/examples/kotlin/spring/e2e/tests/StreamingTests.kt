@@ -1,10 +1,10 @@
 package com.trendyol.stove.examples.kotlin.spring.e2e.tests
 
 import com.trendyol.stove.examples.kotlin.spring.ExampleData
-import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde.Companion.deserialize
-import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
+import com.trendyol.stove.http.http
+import com.trendyol.stove.serialization.StoveSerde
+import com.trendyol.stove.serialization.StoveSerde.Companion.deserialize
+import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.FunSpec
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
@@ -22,7 +22,7 @@ import kotlin.time.toJavaDuration
 class StreamingTests :
   FunSpec({
     test("streaming") {
-      validate {
+      stove {
         http {
           streamClient()
             .prepareGet {

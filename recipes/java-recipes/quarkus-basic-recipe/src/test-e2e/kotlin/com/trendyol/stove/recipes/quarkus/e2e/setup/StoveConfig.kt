@@ -1,16 +1,16 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
+import com.trendyol.stove.http.*
 import com.trendyol.stove.recipes.quarkus.QuarkusMainApp
-import com.trendyol.stove.testing.e2e.http.*
-import com.trendyol.stove.testing.e2e.system.*
+import com.trendyol.stove.system.*
 import io.kotest.core.config.AbstractProjectConfig
 
 /**
  * Kotest project configuration that sets up Stove TestSystem for Quarkus e2e tests.
  */
-class Stove : AbstractProjectConfig() {
+class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    TestSystem()
+    Stove()
       .with {
         httpClient {
           HttpClientSystemOptions(
@@ -30,6 +30,6 @@ class Stove : AbstractProjectConfig() {
   }
 
   override suspend fun afterProject() {
-    TestSystem.stop()
+    Stove.stop()
   }
 }

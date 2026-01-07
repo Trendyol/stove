@@ -1,9 +1,8 @@
 package com.trendyol.stove.recipes.quarkus.e2e.tests
 
+import com.trendyol.stove.http.http
 import com.trendyol.stove.recipes.quarkus.*
-import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
-import com.trendyol.stove.testing.e2e.system.using
+import com.trendyol.stove.system.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.*
@@ -13,7 +12,7 @@ class IndexTests :
   FunSpec({
 
     test("Index page should return 200") {
-      validate {
+      stove {
         http {
           get<String>(
             "/hello",
@@ -29,7 +28,7 @@ class IndexTests :
     }
 
     test("bridge should resolve single bean") {
-      validate {
+      stove {
         using<HelloService> {
           val result = hello()
           result shouldBe "Hello from Quarkus Service"
@@ -39,7 +38,7 @@ class IndexTests :
     }
 
     test("bridge should resolve all implementations of an interface") {
-      validate {
+      stove {
         // Resolve ALL implementations of GreetingService via List<T>
         using<List<GreetingService>> {
           this shouldHaveSize 3
@@ -55,7 +54,7 @@ class IndexTests :
     }
 
     test("bridge should allow interacting with repository using primitives") {
-      validate {
+      stove {
         using<ItemRepository> {
           clear()
           count() shouldBe 0
@@ -84,7 +83,7 @@ class IndexTests :
     // ============================================================
 
     test("LIMITATION: passing complex objects across classloader fails") {
-      validate {
+      stove {
         using<ItemRepository> {
           clear()
 
@@ -102,7 +101,7 @@ class IndexTests :
     }
 
     test("LIMITATION: returned complex objects cause ClassCastException") {
-      validate {
+      stove {
         using<ItemRepository> {
           clear()
           add("item-x", "Complex Item")

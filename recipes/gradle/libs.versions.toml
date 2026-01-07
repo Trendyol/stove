@@ -44,7 +44,7 @@ hoplite = "2.9.0"
 kediatr = "4.3.0"
 
 # Testing
-stove = "1.0.0.485-SNAPSHOT"
+stove = "1.0.0.486-SNAPSHOT"
 kotest = "6.0.7"
 exposed = "1.0.0-rc-4"
 postgresql = "42.7.8"
@@ -136,15 +136,7 @@ postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.
 r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
 
 # Stove
-stove-testing = { module = "com.trendyol:stove-testing-e2e", version.ref = "stove" }
-stove-spring-testing = { module = "com.trendyol:stove-spring-testing-e2e", version.ref = "stove" }
-stove-ktor-testing = { module = "com.trendyol:stove-ktor-testing-e2e", version.ref = "stove" }
-stove-testing-kafka = { module = "com.trendyol:stove-testing-e2e-kafka", version.ref = "stove" }
-stove-testing-http = { module = "com.trendyol:stove-testing-e2e-http", version.ref = "stove" }
-stove-testing-couchbase = { module = "com.trendyol:stove-testing-e2e-couchbase", version.ref = "stove" }
-stove-testing-wiremock = { module = "com.trendyol:stove-testing-e2e-wiremock", version.ref = "stove" }
-stove-testing-mongodb = { module = "com.trendyol:stove-testing-e2e-mongodb", version.ref = "stove" }
-stove-testing-postgresql = { module = "com.trendyol:stove-testing-e2e-rdbms-postgres", version.ref = "stove" }
+stove-bom = { module = "com.trendyol:stove-bom", version.ref = "stove" }
 
 # Scala
 scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }

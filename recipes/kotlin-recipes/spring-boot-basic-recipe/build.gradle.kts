@@ -13,12 +13,12 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(libs.stove.testing)
-  testImplementation(libs.stove.testing.couchbase)
-  testImplementation(libs.stove.testing.http)
-  testImplementation(libs.stove.testing.wiremock)
-  testImplementation(libs.stove.testing.kafka)
-  testImplementation(libs.stove.spring.testing)
+  testImplementation(stoveLibs.stove)
+  testImplementation(stoveLibs.stoveCouchbase)
+  testImplementation(stoveLibs.stoveHttp)
+  testImplementation(stoveLibs.stoveWiremock)
+  testImplementation(stoveLibs.stoveKafka)
+  testImplementation(stoveLibs.stoveSpring)
   testImplementation(libs.ktor.client.websockets)
   testImplementation(libs.ktor.client.okhttp)
   testImplementation(libs.ktor.client.content.negotiation)

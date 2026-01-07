@@ -1,8 +1,8 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import com.trendyol.stove.system.*
+import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.annotations.StoveDsl
 import kotlinx.coroutines.*
 
 /**
@@ -15,13 +15,13 @@ import kotlinx.coroutines.*
 fun WithDsl.quarkus(
   runner: Runner<Unit>,
   withParameters: List<String> = listOf()
-): ReadyTestSystem = this.testSystem.systemUnderTest(runner, withParameters)
+): ReadyStove = this.stove.systemUnderTest(runner, withParameters)
 
 @StoveDsl
-internal fun TestSystem.systemUnderTest(
+internal fun Stove.systemUnderTest(
   runner: Runner<Unit>,
   withParameters: List<String> = listOf()
-): ReadyTestSystem {
+): ReadyStove {
   this.applicationUnderTest(QuarkusAppUnderTest(this, runner, withParameters))
   return this
 }
@@ -33,7 +33,7 @@ internal fun TestSystem.systemUnderTest(
  * and capturing the Quarkus classloader for bridge operations.
  */
 class QuarkusAppUnderTest(
-  private val testSystem: TestSystem,
+  private val stove: Stove,
   private val runner: Runner<Unit>,
   private val parameters: List<String>
 ) : ApplicationUnderTest<Unit> {
@@ -100,7 +100,7 @@ class QuarkusAppUnderTest(
    * Notifies all registered systems that the application has started.
    */
   private suspend fun notifySystemsAfterRun() {
-    testSystem.activeSystems
+    stove.activeSystems
       .map { it.value }
       .filterIsInstance<AfterRunAwareWithContext<Unit>>()
       .forEach { it.afterRun(Unit) }

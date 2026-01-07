@@ -44,10 +44,10 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(libs.stove.testing)
-  testImplementation(libs.stove.testing.postgresql)
-  testImplementation(libs.stove.testing.http)
-  testImplementation(libs.stove.testing.wiremock)
-  testImplementation(libs.stove.testing.kafka)
-  testImplementation(libs.stove.ktor.testing)
+  testImplementation(stoveLibs.stove)
+  testImplementation(stoveLibs.stovePostgres)
+  testImplementation(stoveLibs.stoveHttp)
+  testImplementation(stoveLibs.stoveWiremock)
+  testImplementation(stoveLibs.stoveKafka)
+  testImplementation(stoveLibs.stoveKtor)
 }

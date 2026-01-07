@@ -8,13 +8,12 @@ import com.trendyol.stove.examples.kotlin.ktor.domain.product.ProductRepository
 import com.trendyol.stove.examples.kotlin.ktor.e2e.setup.TestData
 import com.trendyol.stove.examples.kotlin.ktor.infra.components.product.api.ProductCreateRequest
 import com.trendyol.stove.functional.get
+import com.trendyol.stove.http.http
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.mongodb.mongodb
 import com.trendyol.stove.recipes.shared.application.category.CategoryApiResponse
-import com.trendyol.stove.testing.e2e.http.http
-import com.trendyol.stove.testing.e2e.mongodb.mongodb
-import com.trendyol.stove.testing.e2e.standalone.kafka.kafka
-import com.trendyol.stove.testing.e2e.system.TestSystem.Companion.validate
-import com.trendyol.stove.testing.e2e.system.using
-import com.trendyol.stove.testing.e2e.wiremock.wiremock
+import com.trendyol.stove.system.*
+import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.util.*
@@ -23,7 +22,7 @@ import kotlin.time.Duration.Companion.seconds
 class CreateTests :
   FunSpec({
     test("product can be created with valid category") {
-      validate {
+      stove {
         val productName = TestData.Random.positiveInt().toString()
         val productId = UUID.nameUUIDFromBytes(productName.toByteArray())
 
@@ -76,7 +75,7 @@ class CreateTests :
     }
 
     test("when category is not active, product creation should fail") {
-      validate {
+      stove {
         val productName = TestData.Random.positiveInt().toString()
         val productId = UUID.nameUUIDFromBytes(productName.toByteArray())
         val categoryApiResponse = CategoryApiResponse(

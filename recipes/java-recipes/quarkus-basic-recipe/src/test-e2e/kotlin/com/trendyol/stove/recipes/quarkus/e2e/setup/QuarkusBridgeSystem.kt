@@ -1,11 +1,9 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
-import com.trendyol.stove.testing.e2e.system.*
-import com.trendyol.stove.testing.e2e.system.abstractions.*
-import com.trendyol.stove.testing.e2e.system.annotations.StoveDsl
+import com.trendyol.stove.system.*
+import com.trendyol.stove.system.annotations.StoveDsl
 import java.lang.reflect.*
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
+import kotlin.reflect.*
 
 /**
  * Bridge system for accessing Quarkus Arc container beans.
@@ -33,8 +31,8 @@ import kotlin.reflect.KType
  */
 @StoveDsl
 class QuarkusBridgeSystem(
-  override val testSystem: TestSystem
-) : BridgeSystem<Unit>(testSystem) {
+  override val stove: Stove
+) : BridgeSystem<Unit>(stove) {
   @Suppress("UNCHECKED_CAST")
   override fun <D : Any> get(klass: KClass<D>): D {
     val realBean = ArcContainerAccessor.resolveBean(klass.java.name)
@@ -119,5 +117,5 @@ private class BeanInvocationHandler(
  * DSL function to enable the Quarkus bridge system.
  */
 @StoveDsl
-fun WithDsl.bridge(): TestSystem =
-  this.testSystem.withBridgeSystem(QuarkusBridgeSystem(this.testSystem))
+fun WithDsl.bridge(): Stove =
+  this.stove.withBridgeSystem(QuarkusBridgeSystem(this.stove))
