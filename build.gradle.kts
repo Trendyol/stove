@@ -46,12 +46,13 @@ kover {
           "com.trendyol.stove.system.abstractions.*",
           "com.trendyol.stove.system.annotations.*",
           "com.trendyol.stove.serialization.*",
-          "com.trendyol.stove.standalone.*",
-          "com.trendyol.stove.testing.e2e.streams.*",
           "stove.spring.example.*",
           "stove.spring.standalone.example.*",
           "stove.spring.streams.example.*",
-          "stove.ktor.example.*"
+          "stove.ktor.example.*",
+          "stove.micronaut.example.*",
+          "stove.test.extensions.kotest.*",
+          "stove.test.extensions.junit.*",
         )
       }
     }
