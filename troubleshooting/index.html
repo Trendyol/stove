@@ -1582,7 +1582,7 @@
 
 
 <h1 id="troubleshooting-faq">Troubleshooting &amp; FAQ<a class="headerlink" href="#troubleshooting-faq" title="Permanent link">&para;</a></h1>
-<p>This guide helps you diagnose and resolve common issues when working with Stove.</p>
+<p>Having issues? This guide covers the most common problems and how to fix them. If you don't find what you're looking for, feel free to open an issue on GitHub.</p>
 <h2 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h2>
 <h3 id="docker-issues">Docker Issues<a class="headerlink" href="#docker-issues" title="Permanent link">&para;</a></h3>
 <h4 id="docker-not-found-not-running">Docker Not Found / Not Running<a class="headerlink" href="#docker-not-found-not-running" title="Permanent link">&para;</a></h4>
@@ -1789,7 +1789,7 @@
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="n">disable</span><span class="p">(</span><span class="n">DeserializationFeature</span><span class="p">.</span><span class="na">FAIL_ON_UNKNOWN_PROPERTIES</span><span class="p">)</span>
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="p">}</span>
 <a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">            </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span>
@@ -1869,7 +1869,7 @@
 <ol>
 <li>
 <p><strong>Verify Kafka interceptor is configured:</strong>
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1">// In your TestSystem setup</span>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1">// In your Stove setup</span>
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemInterceptor</span><span class="o">&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
 <a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="p">}</span>
@@ -1919,7 +1919,7 @@
 <ol>
 <li>
 <p><strong>Ensure ALL external service URLs point to WireMock:</strong>
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">        </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">            </span><span class="n">WireMockSystemOptions</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">9090</span><span class="p">)</span>
@@ -2010,7 +2010,7 @@
 </li>
 <li>
 <p><strong>Use provided instances:</strong>
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">        </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">            </span><span class="n">KafkaSystemOptions</span><span class="p">.</span><span class="na">provided</span><span class="p">(</span>
@@ -2098,7 +2098,7 @@
 <p><strong>A:</strong> Yes, you can use Stove in Java projects! However, the e2e tests themselves need to be written in Kotlin. Stove's DSL is designed specifically for Kotlin, providing a clean and expressive syntax:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyE2ETest</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">FunSpec</span><span class="p">({</span>
 <a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="w">    </span><span class="n">test</span><span class="p">(</span><span class="s">&quot;should create order&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="w">        </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="w">            </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a><span class="w">                </span><span class="n">postAndExpectBodilessResponse</span><span class="p">(</span>
 <a id="__codelineno-49-6" name="__codelineno-49-6" href="#__codelineno-49-6"></a><span class="w">                    </span><span class="n">uri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/orders&quot;</span><span class="p">,</span>
@@ -2168,7 +2168,7 @@
 </code></pre></div>
 <h4 id="q-how-do-i-test-multiple-databases">Q: How do I test multiple databases?<a class="headerlink" href="#q-how-do-i-test-multiple-databases" title="Permanent link">&para;</a></h4>
 <p><strong>A:</strong> Add multiple database components:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a><span class="w">        </span><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PostgresqlOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-54-4" name="__codelineno-54-4" href="#__codelineno-54-4"></a><span class="w">        </span><span class="n">mongodb</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">MongodbSystemOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>

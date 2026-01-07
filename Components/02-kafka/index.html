@@ -1372,21 +1372,20 @@
 
 
 <h1 id="kafka">Kafka<a class="headerlink" href="#kafka" title="Permanent link">&para;</a></h1>
-<p>There are two ways to work with Kafka in Stove. You can use standalone Kafka or Kafka with Spring. You can use only one
-of them in your project.</p>
+<p>Stove supports Kafka in two ways: standalone Kafka or Kafka with Spring integration. You can use either one, but not both in the same project.</p>
 <h2 id="standalone-kafka">Standalone Kafka<a class="headerlink" href="#standalone-kafka" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Gradle</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e-kafka:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-kafka:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 </div>
 </div>
 </div>
 <h3 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1">// other dependencies</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
@@ -1424,7 +1423,7 @@ of them in your project.</p>
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="cm">   *</span>
 <a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="cm">   * The places where it was used listed below:</span>
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="cm">   *</span>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="cm">   * @see [com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge] for bridging the messages.</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="cm">   * @see [com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge] for bridging the messages.</span>
 <a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="cm">   * @see StoveKafkaValueSerializer for serializing the messages.</span>
 <a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="cm">   * @see StoveKafkaValueDeserializer for deserializing the messages.</span>
 <a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="cm">   * @see valueSerializer for serializing the messages.</span>
@@ -1464,7 +1463,7 @@ application's needs.</p>
 <p>Stove Kafka bridge is a <strong>MUST</strong> to work with Kafka. Otherwise you can't assert any messages from your application.</p>
 <p>As you can see in the example above, you need to add a support to your application to work with interceptor that Stove
 provides.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w"> </span><span class="s">&quot;kafka.interceptorClasses=com.trendyol.stove.testing.e2e.standalone.kafka.intercepting.StoveKafkaBridge&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w"> </span><span class="s">&quot;kafka.interceptorClasses=com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge&quot;</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">// or</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
@@ -1482,14 +1481,14 @@ of working. Stove-Kafka does that with intercepting the messages.</p>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="w">    </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">      </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-testing-e2e-kafka:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">      </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring-kafka:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="w"> </span><span class="nt">&lt;dependency&gt;</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>com.trendyol<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>stove-spring-testing-e2e-kafka<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>stove-spring-kafka<span class="nt">&lt;/artifactId&gt;</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>${stove-version}<span class="nt">&lt;/version&gt;</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w"> </span><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
@@ -1508,7 +1507,7 @@ application testable we need to tweak a little bit.</p>
 </ul>
 <p>You better make them configurable, so from the e2e testing context we can change them work with Stove-Kafka testing.</p>
 <p>As an example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8080&quot;</span><span class="p">)</span>
@@ -1544,7 +1543,7 @@ these values instead of application-default values.</p>
 your Kafka configuration.</p>
 <p>Locate to the point where you define your <code>ConcurrentKafkaListenerContainerFactory</code> or where you can set the
 interceptor. Interceptor needs to implement <code>ConsumerAwareRecordInterceptor&lt;String, String&gt;</code> since
-Stove-Kafka <a href="https://github.com/Trendyol/stove/blob/main/starters/spring/stove-spring-testing-e2e-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt">relies on that</a>.</p>
+Stove-Kafka <a href="https://github.com/Trendyol/stove/blob/main/starters/spring/stove-spring-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt">relies on that</a>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nd">@EnableKafka</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nd">@Configuration</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="kd">class</span><span class="w"> </span><span class="nc">KafkaConsumerConfiguration</span><span class="p">(</span>
@@ -1570,7 +1569,7 @@ configuration values.</p>
 <h4 id="testsysteminterceptor-and-bean-registration">TestSystemInterceptor and Bean Registration<a class="headerlink" href="#testsysteminterceptor-and-bean-registration" title="Permanent link">&para;</a></h4>
 <p>Register the interceptor and serde using <code>addTestDependencies</code>:</p>
 <p><strong>Spring Boot 2.x / 3.x:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.addTestDependencies</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">springBoot</span><span class="p">(</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1583,7 +1582,7 @@ configuration values.</p>
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">  </span><span class="p">},</span>
 </code></pre></div>
 <p><strong>Spring Boot 4.x:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies4x</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.addTestDependencies4x</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">springBoot</span><span class="p">(</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1620,7 +1619,7 @@ configuration values.</p>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
 <h3 id="publishing-messages">Publishing Messages<a class="headerlink" href="#publishing-messages" title="Permanent link">&para;</a></h3>
 <p>You can publish messages to Kafka topics for testing:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="n">publish</span><span class="p">(</span>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">      </span><span class="n">topic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-events&quot;</span><span class="p">,</span>
@@ -1634,7 +1633,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="asserting-published-messages">Asserting Published Messages<a class="headerlink" href="#asserting-published-messages" title="Permanent link">&para;</a></h3>
 <p>Test that your application publishes messages correctly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="c1">// Trigger an action in your application</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="n">postAndExpectBodilessResponse</span><span class="p">(</span><span class="s">&quot;/products&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CreateProductRequest</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Laptop&quot;</span><span class="p">).</span><span class="na">some</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1655,7 +1654,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="asserting-consumed-messages">Asserting Consumed Messages<a class="headerlink" href="#asserting-consumed-messages" title="Permanent link">&para;</a></h3>
 <p>Test that your application consumes messages correctly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="c1">// Publish a message</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="n">publish</span><span class="p">(</span>
@@ -1683,7 +1682,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="testing-failed-messages">Testing Failed Messages<a class="headerlink" href="#testing-failed-messages" title="Permanent link">&para;</a></h3>
 <p>Test that your application handles failures correctly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="c1">// Publish an invalid message</span>
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="n">publish</span><span class="p">(</span><span class="s">&quot;user-events&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">FailingEvent</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5L</span><span class="p">))</span>
@@ -1698,7 +1697,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="testing-retry-logic">Testing Retry Logic<a class="headerlink" href="#testing-retry-logic" title="Permanent link">&para;</a></h3>
 <p>Test that your application retries failed messages:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="n">publish</span><span class="p">(</span><span class="s">&quot;product-failing&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ProductFailingCreated</span><span class="p">(</span><span class="n">productId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;789&quot;</span><span class="p">))</span>
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
@@ -1716,7 +1715,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="working-with-message-metadata">Working with Message Metadata<a class="headerlink" href="#working-with-message-metadata" title="Permanent link">&para;</a></h3>
 <p>Access message metadata including headers, topic, partition, offset:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="n">shouldBeConsumed</span><span class="o">&lt;</span><span class="n">OrderCreated</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">      </span><span class="n">actual</span><span class="p">.</span><span class="na">orderId</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span>
@@ -1729,7 +1728,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="peeking-messages">Peeking Messages<a class="headerlink" href="#peeking-messages" title="Permanent link">&para;</a></h3>
 <p>Inspect messages without consuming them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="c1">// Peek at published messages</span>
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="n">peekPublishedMessages</span><span class="p">(</span><span class="n">atLeastIn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5.</span><span class="n">seconds</span><span class="p">,</span><span class="w"> </span><span class="n">topic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-events&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">record</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1750,7 +1749,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="admin-operations">Admin Operations<a class="headerlink" href="#admin-operations" title="Permanent link">&para;</a></h3>
 <p>Manage Kafka topics and configurations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="n">adminOperations</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">      </span><span class="n">createTopic</span><span class="p">(</span><span class="n">NewTopic</span><span class="p">(</span><span class="s">&quot;test-topic&quot;</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">))</span>
@@ -1761,7 +1760,7 @@ configuration values.</p>
 </code></pre></div>
 <h3 id="in-flight-consumer">In-Flight Consumer<a class="headerlink" href="#in-flight-consumer" title="Permanent link">&para;</a></h3>
 <p>Create a consumer for advanced testing scenarios:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="n">consumer</span><span class="o">&lt;</span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">ProductCreated</span><span class="o">&gt;</span><span class="p">(</span>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">      </span><span class="n">topic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-events&quot;</span><span class="p">,</span>
@@ -1779,7 +1778,7 @@ configuration values.</p>
 <h2 id="complete-example">Complete Example<a class="headerlink" href="#complete-example" title="Permanent link">&para;</a></h2>
 <p>Here's a complete end-to-end test combining HTTP, Kafka, and database assertions:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should create product and publish event&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">productId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">()</span>
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">productName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Laptop&quot;</span>
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>

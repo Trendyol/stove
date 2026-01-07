@@ -1353,7 +1353,7 @@
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-testing-e2e-elasticsearch:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-elasticsearch:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 </div>
@@ -1362,7 +1362,7 @@
 <h2 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
 <p>After getting the library from the maven source, while configuring TestSystem you will have access to <code>elasticsearch</code>
 function. This function configures the Elasticsearch Docker container that is going to be started.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1378,7 +1378,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="container-options">Container Options<a class="headerlink" href="#container-options" title="Permanent link">&para;</a></h3>
 <p>You can customize the Elasticsearch container:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
@@ -1403,7 +1403,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="security-configuration">Security Configuration<a class="headerlink" href="#security-configuration" title="Permanent link">&para;</a></h3>
 <p>For secure Elasticsearch setups with authentication:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
@@ -1426,7 +1426,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="client-configurer">Client Configurer<a class="headerlink" href="#client-configurer" title="Permanent link">&para;</a></h3>
 <p>Customize the Elasticsearch REST client:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
@@ -1453,7 +1453,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="custom-json-mapper">Custom JSON Mapper<a class="headerlink" href="#custom-json-mapper" title="Permanent link">&para;</a></h3>
 <p>Use a custom Jackson ObjectMapper for serialization:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">      </span><span class="kd">val</span><span class="w"> </span><span class="nv">customMapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ObjectMapper</span><span class="p">().</span><span class="na">apply</span><span class="w"> </span><span class="p">{</span>
@@ -1491,8 +1491,8 @@ function. This function configures the Elasticsearch Docker container that is go
 <a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="p">}</span>
 </code></pre></div>
-<p>Register migrations in your TestSystem configuration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<p>Register migrations in your Stove configuration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
@@ -1512,7 +1512,7 @@ function. This function configures the Elasticsearch Docker container that is go
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <h3 id="saving-documents">Saving Documents<a class="headerlink" href="#saving-documents" title="Permanent link">&para;</a></h3>
 <p>Save documents to Elasticsearch indices:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="c1">// Save a document</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="n">save</span><span class="p">(</span>
@@ -1530,7 +1530,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="getting-documents">Getting Documents<a class="headerlink" href="#getting-documents" title="Permanent link">&para;</a></h3>
 <p>Retrieve and validate documents:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="c1">// Get by ID and validate</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="n">shouldGet</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="p">(</span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;products&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-123&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1544,7 +1544,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="checking-non-existence">Checking Non-Existence<a class="headerlink" href="#checking-non-existence" title="Permanent link">&para;</a></h3>
 <p>Verify that documents don't exist:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="c1">// Verify document doesn&#39;t exist</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="n">shouldNotExist</span><span class="p">(</span><span class="n">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-999&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;products&quot;</span><span class="p">)</span>
@@ -1553,7 +1553,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="deleting-documents">Deleting Documents<a class="headerlink" href="#deleting-documents" title="Permanent link">&para;</a></h3>
 <p>Delete documents and verify deletion:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="c1">// Delete a document</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="n">shouldDelete</span><span class="p">(</span><span class="n">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-123&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;products&quot;</span><span class="p">)</span>
@@ -1565,7 +1565,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="querying-with-json-query-dsl">Querying with JSON Query DSL<a class="headerlink" href="#querying-with-json-query-dsl" title="Permanent link">&para;</a></h3>
 <p>Execute Elasticsearch queries using JSON DSL:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="c1">// Query using JSON DSL</span>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="p">(</span>
@@ -1589,7 +1589,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="querying-with-query-builder">Querying with Query Builder<a class="headerlink" href="#querying-with-query-builder" title="Permanent link">&para;</a></h3>
 <p>Use the Elasticsearch Java client's query builder:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="c1">// Query using Query builder</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Query</span><span class="p">.</span><span class="na">of</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1611,7 +1611,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="accessing-the-client-directly">Accessing the Client Directly<a class="headerlink" href="#accessing-the-client-directly" title="Permanent link">&para;</a></h3>
 <p>For advanced operations, access the Elasticsearch client:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">esClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">()</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
@@ -1640,7 +1640,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h3 id="pause-and-unpause-container">Pause and Unpause Container<a class="headerlink" href="#pause-and-unpause-container" title="Permanent link">&para;</a></h3>
 <p>Control the Elasticsearch container for testing failure scenarios:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="c1">// Elasticsearch is running</span>
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="n">shouldGet</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="p">(</span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;products&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-123&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">-&gt;</span>
@@ -1670,7 +1670,7 @@ function. This function configures the Elasticsearch Docker container that is go
 <h2 id="complete-example">Complete Example<a class="headerlink" href="#complete-example" title="Permanent link">&para;</a></h2>
 <p>Here's a complete end-to-end test combining HTTP, Elasticsearch, and Kafka:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should create product and index in elasticsearch&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">productId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">productName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Gaming Laptop&quot;</span>
 <a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">categoryId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
@@ -1736,7 +1736,7 @@ function. This function configures the Elasticsearch Docker container that is go
 <h2 id="integration-with-application">Integration with Application<a class="headerlink" href="#integration-with-application" title="Permanent link">&para;</a></h2>
 <p>Verify application behavior using the bridge:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should use service to index product&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">productId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Product</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">productId</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Test Product&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">99.99</span><span class="p">,</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Test&quot;</span><span class="p">)</span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
@@ -1758,7 +1758,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h2 id="advanced-operations">Advanced Operations<a class="headerlink" href="#advanced-operations" title="Permanent link">&para;</a></h2>
 <h3 id="full-text-search">Full-Text Search<a class="headerlink" href="#full-text-search" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="c1">// Setup test data</span>
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="n">listOf</span><span class="p">(</span>
@@ -1788,7 +1788,7 @@ function. This function configures the Elasticsearch Docker container that is go
 <a id="__codelineno-18-28" name="__codelineno-18-28" href="#__codelineno-18-28"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="aggregations">Aggregations<a class="headerlink" href="#aggregations" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">esClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">()</span>
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
@@ -1816,7 +1816,7 @@ function. This function configures the Elasticsearch Docker container that is go
 <a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="index-management">Index Management<a class="headerlink" href="#index-management" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">esClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">()</span>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>
@@ -1844,7 +1844,7 @@ function. This function configures the Elasticsearch Docker container that is go
 </code></pre></div>
 <h2 id="provided-instance-external-elasticsearch">Provided Instance (External Elasticsearch)<a class="headerlink" href="#provided-instance-external-elasticsearch" title="Permanent link">&para;</a></h2>
 <p>For CI/CD pipelines or shared infrastructure:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">      </span><span class="n">ElasticsearchSystemOptions</span><span class="p">.</span><span class="na">provided</span><span class="p">(</span>

@@ -893,10 +893,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#gradle-configuration-for-test-e2e" class="md-nav__link">
+  <a href="#gradle-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gradle Configuration for test-e2e
+        Gradle Configuration
       
     </span>
   </a>
@@ -1587,7 +1587,7 @@
 
 
 <h1 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h1>
-<p>This guide covers best practices for writing effective end-to-end tests with Stove.</p>
+<p>Here are some practices we've found helpful when writing end-to-end tests with Stove. These aren't hard rules, but they'll make your tests more maintainable and easier to work with.</p>
 <h2 id="test-organization">Test Organization<a class="headerlink" href="#test-organization" title="Permanent link">&para;</a></h2>
 <h3 id="use-dedicated-source-set-for-e2e-tests">Use Dedicated Source Set for E2E Tests<a class="headerlink" href="#use-dedicated-source-set-for-e2e-tests" title="Permanent link">&para;</a></h3>
 <p>Instead of placing e2e tests in the regular <code>src/test</code> folder, create a dedicated <code>src/test-e2e</code> source set. This provides better separation between unit/integration tests and e2e tests:</p>
@@ -1596,7 +1596,7 @@
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── test/kotlin/           # Unit tests
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>└── test-e2e/kotlin/       # E2E tests with Stove
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    ├── config/
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    │   └── TestConfig.kt  # Contains TestSystem setup with addTestDependencies
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    │   └── TestConfig.kt  # Contains Stove setup
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    ├── features/
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    │   ├── OrderE2ETest.kt
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    │   ├── UserE2ETest.kt
@@ -1605,8 +1605,8 @@
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        ├── TestData.kt
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        └── Assertions.kt
 </code></pre></div>
-<h3 id="gradle-configuration-for-test-e2e">Gradle Configuration for test-e2e<a class="headerlink" href="#gradle-configuration-for-test-e2e" title="Permanent link">&para;</a></h3>
-<p>Configure the <code>test-e2e</code> source set in your <code>build.gradle.kts</code>:</p>
+<h3 id="gradle-configuration">Gradle Configuration<a class="headerlink" href="#gradle-configuration" title="Permanent link">&para;</a></h3>
+<p>Here's how to set up the <code>test-e2e</code> source set in your <code>build.gradle.kts</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">sourceSets</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nd">@Suppress</span><span class="p">(</span><span class="s">&quot;LocalVariableName&quot;</span><span class="p">)</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">`test-e2e`</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">creating</span><span class="w"> </span><span class="p">{</span>
@@ -1688,20 +1688,20 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// ✅ Good: Single configuration for all tests</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">            </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* configuration */</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="n">Stove</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">}</span>
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="c1">// ❌ Bad: Configuration per test class</span>
 <a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyTest</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">FunSpec</span><span class="p">({</span>
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="n">beforeSpec</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* */</span><span class="w"> </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span><span class="w">  </span><span class="c1">// Don&#39;t do this!</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* */</span><span class="w"> </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span><span class="w">  </span><span class="c1">// Don&#39;t do this!</span>
 <a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="p">})</span>
 </code></pre></div>
@@ -1713,7 +1713,7 @@
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">orderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">userId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;user-</span><span class="si">${</span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">()</span><span class="si">}</span><span class="s">&quot;</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">            </span><span class="n">postAndExpectBody</span><span class="o">&lt;</span><span class="n">OrderResponse</span><span class="o">&gt;</span><span class="p">(</span>
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">                </span><span class="n">uri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/orders&quot;</span><span class="p">,</span>
@@ -1741,7 +1741,7 @@
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="p">}</span>
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
 <a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1">// Use unique names in configuration</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">        </span><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">            </span><span class="n">PostgresqlOptions</span><span class="p">.</span><span class="na">provided</span><span class="p">(</span>
@@ -1763,7 +1763,7 @@
 </div>
 <h3 id="use-cleanup-functions">Use Cleanup Functions<a class="headerlink" href="#use-cleanup-functions" title="Permanent link">&para;</a></h3>
 <p>Clean up test data to maintain isolation. The <code>cleanup</code> parameter is passed inside the options:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="n">CouchbaseSystemOptions</span><span class="p">(</span>
@@ -1829,7 +1829,7 @@
 <h3 id="be-specific-with-assertions">Be Specific with Assertions<a class="headerlink" href="#be-specific-with-assertions" title="Permanent link">&para;</a></h3>
 <p>Test specific behaviors, not just successful responses:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">// ✅ Good: Specific assertions</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">        </span><span class="n">postAndExpectBody</span><span class="o">&lt;</span><span class="n">OrderResponse</span><span class="o">&gt;</span><span class="p">(</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">            </span><span class="n">uri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/orders&quot;</span><span class="p">,</span>
@@ -1845,7 +1845,7 @@
 <a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="p">}</span>
 <a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
 <a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="c1">// ❌ Bad: Only checking status code</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">    </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">        </span><span class="n">postAndExpectBodilessResponse</span><span class="p">(</span><span class="s">&quot;/orders&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="na">some</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">-&gt;</span>
 <a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">            </span><span class="n">response</span><span class="p">.</span><span class="na">status</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">201</span><span class="w">  </span><span class="c1">// Not enough!</span>
@@ -1858,7 +1858,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should process order completely&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">orderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">        </span><span class="c1">// 1. Make the request</span>
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">            </span><span class="n">postAndExpectBody</span><span class="o">&lt;</span><span class="n">OrderResponse</span><span class="o">&gt;</span><span class="p">(</span>
@@ -1945,7 +1945,7 @@
 <h3 id="mock-external-dependencies">Mock External Dependencies<a class="headerlink" href="#mock-external-dependencies" title="Permanent link">&para;</a></h3>
 <p>Use WireMock for external services:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">// ✅ Good: Mock external services</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">        </span><span class="n">mockPost</span><span class="p">(</span>
 <a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">            </span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/payments/charge&quot;</span><span class="p">,</span>
@@ -1973,7 +1973,7 @@
 <h3 id="test-error-scenarios">Test Error Scenarios<a class="headerlink" href="#test-error-scenarios" title="Permanent link">&para;</a></h3>
 <p>Test how your application handles failures:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should handle payment failure gracefully&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">        </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">            </span><span class="n">mockPost</span><span class="p">(</span>
 <a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">                </span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/payments/charge&quot;</span><span class="p">,</span>
@@ -1995,7 +1995,7 @@
 <a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="p">}</span>
 <a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>
 <a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should retry on transient failures&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="w">        </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="w">            </span><span class="n">behaviourFor</span><span class="p">(</span><span class="s">&quot;/payments/charge&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">WireMock</span><span class="o">::</span><span class="n">post</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="w">                </span><span class="n">initially</span><span class="w"> </span><span class="p">{</span>
@@ -2034,7 +2034,7 @@
 <a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="n">setSerializationInclusion</span><span class="p">(</span><span class="n">JsonInclude</span><span class="p">.</span><span class="na">Include</span><span class="p">.</span><span class="na">NON_NULL</span><span class="p">)</span>
 <a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="p">}</span>
 <a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">            </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span>
@@ -2080,7 +2080,7 @@
 <a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="p">)</span>
 <a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
 <a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="c1">// In tests, pass WireMock URL for all external services</span>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">        </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">            </span><span class="n">WireMockSystemOptions</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">9090</span><span class="p">)</span>
@@ -2129,7 +2129,7 @@
 </code></pre></div>
 <h3 id="use-container-inspection">Use Container Inspection<a class="headerlink" href="#use-container-inspection" title="Permanent link">&para;</a></h3>
 <p>Debug container issues:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">    </span><span class="n">mongodb</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inspect</span><span class="p">()</span>
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">        </span><span class="n">println</span><span class="p">(</span><span class="s">&quot;Container ID: </span><span class="si">${</span><span class="n">info</span><span class="o">?.</span><span class="na">containerId</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span>
@@ -2140,7 +2140,7 @@
 </code></pre></div>
 <h3 id="access-application-beans">Access Application Beans<a class="headerlink" href="#access-application-beans" title="Permanent link">&para;</a></h3>
 <p>Debug by accessing application components:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">    </span><span class="n">using</span><span class="o">&lt;</span><span class="n">OrderRepository</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">findById</span><span class="p">(</span><span class="n">orderId</span><span class="p">)</span>
 <a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">        </span><span class="n">println</span><span class="p">(</span><span class="s">&quot;Order state: </span><span class="si">$</span><span class="n">order</span><span class="s">&quot;</span><span class="p">)</span>
@@ -2156,7 +2156,7 @@
 <p>For faster CI builds, use pre-provisioned infrastructure:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">isCI</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;CI&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">        </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isCI</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -2182,7 +2182,7 @@
 </code></pre></div>
 <h3 id="handle-resource-constraints">Handle Resource Constraints<a class="headerlink" href="#handle-resource-constraints" title="Permanent link">&para;</a></h3>
 <p>Configure for CI resource limits:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">TestSystem</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">        </span><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">            </span><span class="n">CouchbaseSystemOptions</span><span class="p">(</span>

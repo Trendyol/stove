@@ -810,10 +810,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#what-you-get" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Features
+        What You Get
       
     </span>
   </a>
@@ -1022,10 +1022,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-always-use-the-extension" class="md-nav__link">
+  <a href="#1-use-the-extension-for-better-debugging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Always Use the Extension
+        1. Use the Extension for Better Debugging
       
     </span>
   </a>
@@ -1367,60 +1367,78 @@
 
 
 <h1 id="reporting">Reporting<a class="headerlink" href="#reporting" title="Permanent link">&para;</a></h1>
-<p>Stove provides a comprehensive reporting system that tracks all actions and assertions during test execution. When a test fails, you get detailed information about what happened, making debugging easier.</p>
-<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<p>When tests fail, you want to know what went wrong. Stove's reporting system tracks everything that happens during test execution—every HTTP call, database query, Kafka message, and more. When something fails, you get a detailed report showing exactly what happened, making debugging much easier.</p>
+<h2 id="what-you-get">What You Get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Automatic tracking</strong> of all system interactions (HTTP, Kafka, database, etc.)</li>
-<li><strong>Test failure enrichment</strong> with detailed execution reports</li>
-<li><strong>Multiple output formats</strong> (console, JSON)</li>
-<li><strong>Framework integration</strong> with Kotest and JUnit</li>
+<li><strong>Automatic tracking</strong> of all system interactions (HTTP requests, Kafka messages, database queries, etc.)</li>
+<li><strong>Rich failure reports</strong> that show what happened before the failure</li>
+<li><strong>Multiple output formats</strong> - human-readable console output or machine-readable JSON</li>
+<li><strong>Framework integration</strong> with Kotest and JUnit (optional extensions)</li>
 </ul>
 <h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<p>The reporting extensions are optional but recommended. They automatically enrich test failures with detailed execution reports, making debugging much easier.</p>
 <h3 id="kotest-integration">Kotest Integration<a class="headerlink" href="#kotest-integration" title="Permanent link">&para;</a></h3>
-<p>Add the <code>StoveKotestExtension</code> to your project configuration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">extensions</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Extension</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="n">StoveKotestExtension</span><span class="p">())</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">()</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">                </span><span class="c1">// your configuration</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">            </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">}</span>
+<p>If you're using Kotest, add the extension dependency:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-extensions-kotest&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>Then register it in your project config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.extensions.kotest.StoveKotestExtension</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.Stove</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">extensions</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Extension</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="n">StoveKotestExtension</span><span class="p">())</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="n">Stove</span><span class="p">()</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">                </span><span class="c1">// your configuration</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">            </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="n">Stove</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="junit-integration">JUnit Integration<a class="headerlink" href="#junit-integration" title="Permanent link">&para;</a></h3>
-<p>Add the <code>StoveJUnitExtension</code> to your test classes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@ExtendWith</span><span class="p">(</span><span class="n">StoveJUnitExtension</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyE2ETest</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1">// your tests</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+<p>For JUnit, add the extension dependency:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-extensions-junit&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">}</span>
 </code></pre></div>
+<p>Then annotate your test class:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.extensions.junit.StoveJUnitExtension</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.api.extension.ExtendWith</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nd">@ExtendWith</span><span class="p">(</span><span class="n">StoveJUnitExtension</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyE2ETest</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="c1">// your tests</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>The JUnit extension works with both JUnit 5 and 6 since they share the same Jupiter API.</p>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>Configure reporting options in your <code>TestSystem</code> setup:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">reporting</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="n">enabled</span><span class="p">()</span><span class="w">           </span><span class="c1">// Enable reporting (default: true)</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="n">dumpOnFailure</span><span class="p">()</span><span class="w">     </span><span class="c1">// Dump report when tests fail (default: true)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">PrettyConsoleRenderer</span><span class="p">)</span><span class="w">  </span><span class="c1">// Set the renderer</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="c1">// your configuration</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+<p>You can configure reporting options when setting up Stove:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">reporting</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="n">enabled</span><span class="p">()</span><span class="w">           </span><span class="c1">// Enable reporting (default: true)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="n">dumpOnFailure</span><span class="p">()</span><span class="w">     </span><span class="c1">// Dump report when tests fail (default: true)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">PrettyConsoleRenderer</span><span class="p">)</span><span class="w">  </span><span class="c1">// Set the renderer</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">}.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="c1">// your configuration</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </code></pre></div>
-<p>Or use the direct methods:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">dumpReportOnTestFailure</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">PrettyConsoleRenderer</span><span class="p">)</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="c1">// your configuration</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+<p>Or use the direct methods if you prefer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">dumpReportOnTestFailure</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">PrettyConsoleRenderer</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="c1">// your configuration</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="what-gets-reported">What Gets Reported<a class="headerlink" href="#what-gets-reported" title="Permanent link">&para;</a></h2>
 <h3 id="actions">Actions<a class="headerlink" href="#actions" title="Permanent link">&para;</a></h3>
@@ -1441,27 +1459,27 @@
 </ul>
 <h2 id="example-output">Example Output<a class="headerlink" href="#example-output" title="Permanent link">&para;</a></h2>
 <p>When a test fails, you'll see output like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>expected:&lt;2&gt; but was:&lt;1&gt;
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>═══════════════════════════════════════════════════════════════════════════════
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>                         STOVE EXECUTION REPORT
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>═══════════════════════════════════════════════════════════════════════════════
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>╔══════════════════════════════════════════════════════════════════════════════╗
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>║                           STOVE TEST REPORT                                  ║
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>║ Test: ExampleTest::should save the product                                   ║
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>╠══════════════════════════════════════════════════════════════════════════════╣
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>║ 14:47:38.215 ✓ PASSED [HTTP] POST /api/products                              ║
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>║     Input: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                                 ║
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>║     Output: 201 Created                                                      ║
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>║                                                                              ║
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>║ 14:47:38.341 ✗ FAILED [PostgreSQL] Query                                     ║
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>║     Input: SELECT * FROM Products WHERE id=1234                              ║
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>║     Output: 1 row(s) returned                                                ║
-<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>║     Expected: 2                                                              ║
-<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>║     Actual: 1                                                                ║
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>║     Error: expected:&lt;2&gt; but was:&lt;1&gt;                                          ║
-<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>╚══════════════════════════════════════════════════════════════════════════════╝
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>expected:&lt;2&gt; but was:&lt;1&gt;
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>═══════════════════════════════════════════════════════════════════════════════
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>                         STOVE EXECUTION REPORT
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>═══════════════════════════════════════════════════════════════════════════════
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>╔══════════════════════════════════════════════════════════════════════════════╗
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>║                           STOVE TEST REPORT                                  ║
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>║ Test: ExampleTest::should save the product                                   ║
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>╠══════════════════════════════════════════════════════════════════════════════╣
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>║ 14:47:38.215 ✓ PASSED [HTTP] POST /api/products                              ║
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>║     Input: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                                 ║
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>║     Output: 201 Created                                                      ║
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>║                                                                              ║
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>║ 14:47:38.341 ✗ FAILED [PostgreSQL] Query                                     ║
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>║     Input: SELECT * FROM Products WHERE id=1234                              ║
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>║     Output: 1 row(s) returned                                                ║
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>║     Expected: 2                                                              ║
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>║     Actual: 1                                                                ║
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>║     Error: expected:&lt;2&gt; but was:&lt;1&gt;                                          ║
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>╚══════════════════════════════════════════════════════════════════════════════╝
 </code></pre></div>
 <h2 id="renderers">Renderers<a class="headerlink" href="#renderers" title="Permanent link">&para;</a></h2>
 <p>Stove provides two built-in renderers:</p>
@@ -1480,103 +1498,112 @@
 <li>Log aggregation systems</li>
 <li>Custom report processing</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">JsonReportRenderer</span><span class="p">)</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">JsonReportRenderer</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">}</span>
 </code></pre></div>
 <p>Example JSON output:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;testId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ExampleTest::should save the product&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;testName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;should save the product&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">&quot;entries&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;action&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="nt">&quot;system&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HTTP&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST /api/products&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-05T14:47:38.215&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">      </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PASSED&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">      </span><span class="nt">&quot;input&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1234</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Test Product&quot;</span><span class="p">},</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">      </span><span class="nt">&quot;output&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;201 Created&quot;</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="p">},</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;action_with_result&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">      </span><span class="nt">&quot;system&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PostgreSQL&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">      </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Query&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-05T14:47:38.341&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">      </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FAILED&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">      </span><span class="nt">&quot;expected&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">      </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;expected:&lt;2&gt; but was:&lt;1&gt;&quot;</span>
-<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="w">  </span><span class="p">],</span>
-<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">  </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="w">    </span><span class="nt">&quot;totalActions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="w">    </span><span class="nt">&quot;totalAssertions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="w">    </span><span class="nt">&quot;passedAssertions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="w">    </span><span class="nt">&quot;failedAssertions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
-<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;testId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ExampleTest::should save the product&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;testName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;should save the product&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">&quot;entries&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;action&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">      </span><span class="nt">&quot;system&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HTTP&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">      </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST /api/products&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-05T14:47:38.215&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">      </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PASSED&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">      </span><span class="nt">&quot;input&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1234</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Test Product&quot;</span><span class="p">},</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">      </span><span class="nt">&quot;output&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;201 Created&quot;</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;action_with_result&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">      </span><span class="nt">&quot;system&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PostgreSQL&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">      </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Query&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-05T14:47:38.341&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">      </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FAILED&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">      </span><span class="nt">&quot;expected&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">      </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;expected:&lt;2&gt; but was:&lt;1&gt;&quot;</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">  </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">    </span><span class="nt">&quot;totalActions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">    </span><span class="nt">&quot;totalAssertions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="w">    </span><span class="nt">&quot;passedAssertions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="w">    </span><span class="nt">&quot;failedAssertions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="p">}</span>
+</code></pre></div>
+<p>To use the JSON renderer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="n">failureRenderer</span><span class="p">(</span><span class="n">JsonReportRenderer</span><span class="p">)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="system-snapshots">System Snapshots<a class="headerlink" href="#system-snapshots" title="Permanent link">&para;</a></h2>
 <p>Some systems provide state snapshots when tests fail, giving you visibility into the system's internal state:</p>
 <h3 id="kafka-snapshot">Kafka Snapshot<a class="headerlink" href="#kafka-snapshot" title="Permanent link">&para;</a></h3>
 <p>Shows all messages in the message store:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>╔══════════════════════════════════════════════════════════════════════════════╗
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>║ ┌─ KAFKA ────────────────────────────────────────────────────────────────────║
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>║                                                                              ║
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>║   Consumed: 1                                                                ║
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>║   Produced: 1                                                                ║
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>║   Failed: 0                                                                  ║
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>║                                                                              ║
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>║   State Details:                                                             ║
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>║     produced: 1 item(s)                                                      ║
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>║       [0]                                                                    ║
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>║         topic: product-events                                                ║
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>║         key: 1234                                                            ║
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>║         value: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                             ║
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>║     consumed: 1 item(s)                                                      ║
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>║       [0]                                                                    ║
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>║         topic: product-events                                                ║
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>║         value: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                             ║
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>║     failed: 0 item(s)                                                        ║
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>╚══════════════════════════════════════════════════════════════════════════════╝
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>╔══════════════════════════════════════════════════════════════════════════════╗
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>║ ┌─ KAFKA ────────────────────────────────────────────────────────────────────║
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>║                                                                              ║
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>║   Consumed: 1                                                                ║
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>║   Produced: 1                                                                ║
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>║   Failed: 0                                                                  ║
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>║                                                                              ║
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>║   State Details:                                                             ║
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>║     produced: 1 item(s)                                                      ║
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>║       [0]                                                                    ║
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>║         topic: product-events                                                ║
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>║         key: 1234                                                            ║
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>║         value: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                             ║
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>║     consumed: 1 item(s)                                                      ║
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>║       [0]                                                                    ║
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>║         topic: product-events                                                ║
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>║         value: {&quot;id&quot;:1234,&quot;name&quot;:&quot;Test Product&quot;}                             ║
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>║     failed: 0 item(s)                                                        ║
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>╚══════════════════════════════════════════════════════════════════════════════╝
 </code></pre></div>
 <h3 id="wiremock-snapshot">WireMock Snapshot<a class="headerlink" href="#wiremock-snapshot" title="Permanent link">&para;</a></h3>
 <p>Shows registered stubs and unmatched requests:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>╔══════════════════════════════════════════════════════════════════════════════╗
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>║ ┌─ WIREMOCK ─────────────────────────────────────────────────────────────────║
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>║                                                                              ║
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>║   Registered stubs: 2                                                        ║
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>║   Served requests: 1 (matched: 1)                                            ║
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>║   Unmatched requests: 0                                                      ║
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>║                                                                              ║
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>║   State Details:                                                             ║
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>║     registeredStubs: 2 item(s)                                               ║
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>║     servedRequests: 1 item(s)                                                ║
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>║     unmatchedRequests: 0 item(s)                                             ║
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>╚══════════════════════════════════════════════════════════════════════════════╝
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>╔══════════════════════════════════════════════════════════════════════════════╗
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>║ ┌─ WIREMOCK ─────────────────────────────────────────────────────────────────║
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>║                                                                              ║
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>║   Registered stubs: 2                                                        ║
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>║   Served requests: 1 (matched: 1)                                            ║
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>║   Unmatched requests: 0                                                      ║
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>║                                                                              ║
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>║   State Details:                                                             ║
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>║     registeredStubs: 2 item(s)                                               ║
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>║     servedRequests: 1 item(s)                                                ║
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>║     unmatchedRequests: 0 item(s)                                             ║
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>╚══════════════════════════════════════════════════════════════════════════════╝
 </code></pre></div>
 <h2 id="disabling-reporting">Disabling Reporting<a class="headerlink" href="#disabling-reporting" title="Permanent link">&para;</a></h2>
 <p>If you need to disable reporting (e.g., for performance-sensitive test runs):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="n">reporting</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">        </span><span class="n">disabled</span><span class="p">()</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="n">reporting</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">        </span><span class="n">disabled</span><span class="p">()</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="p">}</span>
 </code></pre></div>
 <p>Or:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-<h3 id="1-always-use-the-extension">1. Always Use the Extension<a class="headerlink" href="#1-always-use-the-extension" title="Permanent link">&para;</a></h3>
-<p>Register <code>StoveKotestExtension</code> or <code>StoveJUnitExtension</code> in your test configuration to get automatic test context tracking and failure enrichment.</p>
+<h3 id="1-use-the-extension-for-better-debugging">1. Use the Extension for Better Debugging<a class="headerlink" href="#1-use-the-extension-for-better-debugging" title="Permanent link">&para;</a></h3>
+<p>While optional, the extensions make debugging much easier by automatically tracking test context and enriching failures with detailed reports. Just add the dependency for your test framework:</p>
+<ul>
+<li>Kotest: <code>testImplementation("com.trendyol:stove-extensions-kotest")</code></li>
+<li>JUnit: <code>testImplementation("com.trendyol:stove-extensions-junit")</code></li>
+</ul>
 <h3 id="2-use-descriptive-actions">2. Use Descriptive Actions<a class="headerlink" href="#2-use-descriptive-actions" title="Permanent link">&para;</a></h3>
 <p>When writing custom assertions, provide meaningful descriptions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;SELECT * FROM products WHERE active = true&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">products</span><span class="w"> </span><span class="o">-&gt;</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="n">products</span><span class="p">.</span><span class="na">size</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="n">expectedCount</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;SELECT * FROM products WHERE active = true&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">products</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="n">products</span><span class="p">.</span><span class="na">size</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="n">expectedCount</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="3-review-reports-on-ci">3. Review Reports on CI<a class="headerlink" href="#3-review-reports-on-ci" title="Permanent link">&para;</a></h3>
 <p>The JSON renderer is particularly useful for CI/CD pipelines. You can:</p>
@@ -1587,22 +1614,30 @@
 </ul>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="reports-not-showing">Reports Not Showing<a class="headerlink" href="#reports-not-showing" title="Permanent link">&para;</a></h3>
+<p>If you're not seeing reports when tests fail, check these:</p>
 <ol>
-<li>Ensure the extension is registered:</li>
+<li><strong>Extension dependency added?</strong> (optional but recommended)</li>
+<li>Kotest: <code>testImplementation("com.trendyol:stove-extensions-kotest")</code></li>
+<li>
+<p>JUnit: <code>testImplementation("com.trendyol:stove-extensions-junit")</code></p>
+</li>
+<li>
+<p><strong>Extension registered?</strong></p>
+</li>
 <li>Kotest: <code>override val extensions = listOf(StoveKotestExtension())</code></li>
 <li>
 <p>JUnit: <code>@ExtendWith(StoveJUnitExtension::class)</code></p>
 </li>
 <li>
-<p>Check that reporting is enabled:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">TestSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="n">dumpReportOnTestFailure</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="p">}</span>
+<p><strong>Reporting enabled?</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span><span class="n">reportingEnabled</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="n">dumpReportOnTestFailure</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="p">}</span>
 </code></pre></div></p>
 </li>
 <li>
-<p>Verify <code>TestSystem</code> is initialized before tests run</p>
+<p><strong>Stove initialized?</strong> Make sure <code>Stove().run()</code> is called before your tests execute.</p>
 </li>
 </ol>
 <h3 id="truncated-output">Truncated Output<a class="headerlink" href="#truncated-output" title="Permanent link">&para;</a></h3>

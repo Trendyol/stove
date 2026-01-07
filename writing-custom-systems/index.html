@@ -1503,7 +1503,7 @@
 
 
 <h1 id="writing-custom-systems">Writing Custom Systems<a class="headerlink" href="#writing-custom-systems" title="Permanent link">&para;</a></h1>
-<p>One of Stove's most powerful features is its extensibility. You can create your own custom systems to integrate with any component or capture any behavior specific to your application.</p>
+<p>One of Stove's best features is how extensible it is. If you need to integrate with something Stove doesn't support out of the box, or you want to capture behavior specific to your application, you can build your own custom system.</p>
 <h2 id="why-write-custom-systems">Why Write Custom Systems?<a class="headerlink" href="#why-write-custom-systems" title="Permanent link">&para;</a></h2>
 <p>Custom systems are useful when you need to:</p>
 <ul>
@@ -1517,7 +1517,7 @@
 <h3 id="pluggedsystem-interface">PluggedSystem Interface<a class="headerlink" href="#pluggedsystem-interface" title="Permanent link">&para;</a></h3>
 <p>All Stove systems implement the <code>PluggedSystem</code> interface:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">interface</span><span class="w"> </span><span class="nc">PluggedSystem</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AutoCloseable</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">stove</span><span class="p">:</span><span class="w"> </span><span class="n">Stove</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="lifecycle-interfaces">Lifecycle Interfaces<a class="headerlink" href="#lifecycle-interfaces" title="Permanent link">&para;</a></h3>
@@ -1626,15 +1626,15 @@
 </code></pre></div>
 <h3 id="step-2-create-the-system">Step 2: Create the System<a class="headerlink" href="#step-2-create-the-system" title="Permanent link">&para;</a></h3>
 <p>Create the system class that integrates with Stove:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.TestSystem</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.abstractions.*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.TestSystem</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.abstractions.*</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">org.springframework.context.ApplicationContext</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">kotlin.time.Duration</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">import</span><span class="w"> </span><span class="nn">kotlin.time.Duration.Companion.seconds</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">import</span><span class="w"> </span><span class="nn">kotlinx.coroutines.coroutineScope</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="kd">class</span><span class="w"> </span><span class="nc">DbSchedulerSystem</span><span class="p">(</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">stove</span><span class="p">:</span><span class="w"> </span><span class="n">Stove</span>
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="p">,</span><span class="w"> </span><span class="n">AfterRunAwareWithContext</span><span class="o">&lt;</span><span class="n">ApplicationContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
 <a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">listener</span><span class="p">:</span><span class="w"> </span><span class="n">StoveDbSchedulerListener</span>
@@ -1662,22 +1662,22 @@
 <h3 id="step-3-create-dsl-extensions">Step 3: Create DSL Extensions<a class="headerlink" href="#step-3-create-dsl-extensions" title="Permanent link">&para;</a></h3>
 <p>Create extension functions for the Stove DSL:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">arrow.core.getOrElse</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.*</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.abstractions.*</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.annotations.StoveDsl</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.*</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.abstractions.*</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.annotations.StoveDsl</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="cm">/**</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="cm"> * Registers the DbSchedulerSystem with TestSystem.</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="cm"> * Registers the DbSchedulerSystem with Stove.</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="cm"> */</span>
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="nd">@StoveDsl</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">withDbSchedulerListener</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="kd">fun</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="nf">withDbSchedulerListener</span><span class="p">():</span><span class="w"> </span><span class="n">Stove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="n">getOrRegister</span><span class="p">(</span><span class="n">DbSchedulerSystem</span><span class="p">(</span><span class="k">this</span><span class="p">)).</span><span class="na">let</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">this</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="cm">/**</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="cm"> * Gets the DbSchedulerSystem from TestSystem.</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="cm"> * Gets the DbSchedulerSystem from Stove.</span>
 <a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="cm"> */</span>
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="nd">@StoveDsl</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">dbScheduler</span><span class="p">():</span><span class="w"> </span><span class="n">DbSchedulerSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="kd">fun</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="nf">dbScheduler</span><span class="p">():</span><span class="w"> </span><span class="n">DbSchedulerSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
 <a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">    </span><span class="n">getOrNone</span><span class="o">&lt;</span><span class="n">DbSchedulerSystem</span><span class="o">&gt;</span><span class="p">().</span><span class="na">getOrElse</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
 <a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="n">SystemNotRegisteredException</span><span class="p">(</span><span class="n">DbSchedulerSystem</span><span class="o">::</span><span class="n">class</span><span class="p">)</span><span class="w"> </span>
 <a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">    </span><span class="p">}</span>
@@ -1686,8 +1686,8 @@
 <a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="cm"> * Configuration DSL extension.</span>
 <a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="cm"> */</span>
 <a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="nd">@StoveDsl</span>
-<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="kd">fun</span><span class="w"> </span><span class="n">WithDsl</span><span class="p">.</span><span class="nf">dbScheduler</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
-<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">testSystem</span><span class="p">.</span><span class="na">withDbSchedulerListener</span><span class="p">()</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="kd">fun</span><span class="w"> </span><span class="n">WithDsl</span><span class="p">.</span><span class="nf">dbScheduler</span><span class="p">():</span><span class="w"> </span><span class="n">Stove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">withDbSchedulerListener</span><span class="p">()</span>
 <a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>
 <a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="cm">/**</span>
 <a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="cm"> * Validation DSL extension.</span>
@@ -1695,11 +1695,11 @@
 <a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="nd">@StoveDsl</span>
 <a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="n">ValidationDsl</span><span class="p">.</span><span class="nf">tasks</span><span class="p">(</span>
 <a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">    </span><span class="n">validation</span><span class="p">:</span><span class="w"> </span><span class="n">suspend</span><span class="w"> </span><span class="n">DbSchedulerSystem</span><span class="p">.()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Unit</span>
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="p">):</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">validation</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="na">testSystem</span><span class="p">.</span><span class="na">dbScheduler</span><span class="p">())</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="p">):</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">validation</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">dbScheduler</span><span class="p">())</span>
 </code></pre></div>
 <h3 id="step-4-register-the-listener-bean">Step 4: Register the Listener Bean<a class="headerlink" href="#step-4-register-the-listener-bean" title="Permanent link">&para;</a></h3>
 <p>In your test setup, register the listener as a Spring bean using <code>addTestDependencies</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.addTestDependencies</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
@@ -1709,7 +1709,7 @@
 </code></pre></div>
 <h3 id="step-5-use-in-tests">Step 5: Use in Tests<a class="headerlink" href="#step-5-use-in-tests" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Configuration</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PostgresqlOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
@@ -1725,7 +1725,7 @@
 <a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
 <a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="c1">// In tests</span>
 <a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should execute scheduled task&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">        </span><span class="c1">// Trigger task scheduling</span>
 <a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">            </span><span class="n">postAndExpectBodilessResponse</span><span class="p">(</span><span class="s">&quot;/schedule-task&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TaskRequest</span><span class="p">(...).</span><span class="na">some</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
@@ -1773,15 +1773,15 @@
 <a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="step-2-create-the-system_1">Step 2: Create the System<a class="headerlink" href="#step-2-create-the-system_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.TestSystem</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.abstractions.*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.TestSystem</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.abstractions.*</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">kotlinx.coroutines.*</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">org.springframework.context.ApplicationContext</span>
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">import</span><span class="w"> </span><span class="nn">kotlin.time.Duration</span>
 <a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="k">import</span><span class="w"> </span><span class="nn">kotlin.time.Duration.Companion.seconds</span>
 <a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
 <a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="kd">class</span><span class="w"> </span><span class="nc">DomainEventSystem</span><span class="p">(</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">stove</span><span class="p">:</span><span class="w"> </span><span class="n">Stove</span>
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="p">,</span><span class="w"> </span><span class="n">AfterRunAwareWithContext</span><span class="o">&lt;</span><span class="n">ApplicationContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">listener</span><span class="p">:</span><span class="w"> </span><span class="n">StoveDomainEventListener</span>
@@ -1857,34 +1857,34 @@
 </code></pre></div>
 <h3 id="step-3-create-dsl-extensions_1">Step 3: Create DSL Extensions<a class="headerlink" href="#step-3-create-dsl-extensions_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">arrow.core.getOrElse</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.*</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.abstractions.*</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.annotations.StoveDsl</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.*</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.abstractions.*</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.annotations.StoveDsl</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="nd">@StoveDsl</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">withDomainEvents</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="kd">fun</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="nf">withDomainEvents</span><span class="p">():</span><span class="w"> </span><span class="n">Stove</span><span class="w"> </span><span class="o">=</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="n">getOrRegister</span><span class="p">(</span><span class="n">DomainEventSystem</span><span class="p">(</span><span class="k">this</span><span class="p">)).</span><span class="na">let</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">this</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="nd">@StoveDsl</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="kd">fun</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">.</span><span class="nf">domainEvents</span><span class="p">():</span><span class="w"> </span><span class="n">DomainEventSystem</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="kd">fun</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="nf">domainEvents</span><span class="p">():</span><span class="w"> </span><span class="n">DomainEventSystem</span><span class="w"> </span><span class="o">=</span>
 <a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="n">getOrNone</span><span class="o">&lt;</span><span class="n">DomainEventSystem</span><span class="o">&gt;</span><span class="p">().</span><span class="na">getOrElse</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="n">SystemNotRegisteredException</span><span class="p">(</span><span class="n">DomainEventSystem</span><span class="o">::</span><span class="n">class</span><span class="p">)</span>
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>
 <a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="nd">@StoveDsl</span>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="kd">fun</span><span class="w"> </span><span class="n">WithDsl</span><span class="p">.</span><span class="nf">domainEvents</span><span class="p">():</span><span class="w"> </span><span class="n">TestSystem</span><span class="w"> </span><span class="o">=</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">testSystem</span><span class="p">.</span><span class="na">withDomainEvents</span><span class="p">()</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="kd">fun</span><span class="w"> </span><span class="n">WithDsl</span><span class="p">.</span><span class="nf">domainEvents</span><span class="p">():</span><span class="w"> </span><span class="n">Stove</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">withDomainEvents</span><span class="p">()</span>
 <a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>
 <a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="nd">@StoveDsl</span>
 <a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="n">ValidationDsl</span><span class="p">.</span><span class="nf">domainEvents</span><span class="p">(</span>
 <a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">    </span><span class="n">validation</span><span class="p">:</span><span class="w"> </span><span class="n">suspend</span><span class="w"> </span><span class="n">DomainEventSystem</span><span class="p">.()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Unit</span>
-<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="p">):</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">validation</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="na">testSystem</span><span class="p">.</span><span class="na">domainEvents</span><span class="p">())</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="p">):</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">validation</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">domainEvents</span><span class="p">())</span>
 </code></pre></div>
 <h3 id="step-4-register-and-use">Step 4: Register and Use<a class="headerlink" href="#step-4-register-and-use" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.addTestDependencies</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.addTestDependencies</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1">// Configuration</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="n">domainEvents</span><span class="p">()</span><span class="w">  </span><span class="c1">// Register custom system</span>
@@ -1902,7 +1902,7 @@
 <a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>
 <a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="c1">// Tests</span>
 <a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should publish UserCreatedEvent when user is created&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">userId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
 <a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>
 <a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
@@ -1956,7 +1956,7 @@
 <a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="p">}</span>
 <a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>
 <a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TimeSystem</span><span class="p">(</span>
-<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">stove</span><span class="p">:</span><span class="w"> </span><span class="n">Stove</span>
 <a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="p">,</span><span class="w"> </span><span class="n">AfterRunAwareWithContext</span><span class="o">&lt;</span><span class="n">ApplicationContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>
 <a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">lateinit</span><span class="w"> </span><span class="kd">var</span><span class="w"> </span><span class="nv">clock</span><span class="p">:</span><span class="w"> </span><span class="n">StoveTestClock</span>
@@ -1997,7 +1997,7 @@
 <a id="__codelineno-10-66" name="__codelineno-10-66" href="#__codelineno-10-66"></a>
 <a id="__codelineno-10-67" name="__codelineno-10-67" href="#__codelineno-10-67"></a><span class="c1">// Usage in tests</span>
 <a id="__codelineno-10-68" name="__codelineno-10-68" href="#__codelineno-10-68"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should expire session after 30 minutes&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-69" name="__codelineno-10-69" href="#__codelineno-10-69"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-69" name="__codelineno-10-69" href="#__codelineno-10-69"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-10-70" name="__codelineno-10-70" href="#__codelineno-10-70"></a><span class="w">        </span><span class="c1">// Create session and capture session ID</span>
 <a id="__codelineno-10-71" name="__codelineno-10-71" href="#__codelineno-10-71"></a><span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nv">sessionId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span>
 <a id="__codelineno-10-72" name="__codelineno-10-72" href="#__codelineno-10-72"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
@@ -2023,7 +2023,7 @@
 <h2 id="implementing-exposesconfiguration">Implementing ExposesConfiguration<a class="headerlink" href="#implementing-exposesconfiguration" title="Permanent link">&para;</a></h2>
 <p>If your system needs to provide configuration to the application:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyCustomSystem</span><span class="p">(</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">testSystem</span><span class="p">:</span><span class="w"> </span><span class="n">TestSystem</span><span class="p">,</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">stove</span><span class="p">:</span><span class="w"> </span><span class="n">Stove</span><span class="p">,</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">options</span><span class="p">:</span><span class="w"> </span><span class="n">MySystemOptions</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">PluggedSystem</span><span class="p">,</span><span class="w"> </span><span class="n">RunAware</span><span class="p">,</span><span class="w"> </span><span class="n">ExposesConfiguration</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
@@ -2046,7 +2046,7 @@
 <a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="p">}</span>
 <a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>
 <a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="c1">// Configuration will be collected and passed to the application</span>
-<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a><span class="n">TestSystem</span><span class="p">()</span>
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a><span class="n">Stove</span><span class="p">()</span>
 <a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a><span class="w">        </span><span class="n">myCustomSystem</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a><span class="w">            </span><span class="n">MySystemOptions</span><span class="p">(</span>
@@ -2087,8 +2087,8 @@
 <a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="p">)</span>
 </code></pre></div>
 <h4 id="step-2-create-extension-functions">Step 2: Create Extension Functions<a class="headerlink" href="#step-2-create-extension-functions" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.http.HttpSystem</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.testing.e2e.system.annotations.StoveDsl</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.http.HttpSystem</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.annotations.StoveDsl</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">io.ktor.client.request.*</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">io.ktor.client.statement.*</span>
 <a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">import</span><span class="w"> </span><span class="nn">io.ktor.http.*</span>
@@ -2360,7 +2360,7 @@
 <a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="p">)</span>
 <a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>
 <a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should query products by category&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="w">            </span><span class="kd">val</span><span class="w"> </span><span class="nv">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="s">                {</span>
@@ -2379,7 +2379,7 @@
 <a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a><span class="p">}</span>
 <a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a>
 <a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should query current user&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-35" name="__codelineno-15-35" href="#__codelineno-15-35"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-36" name="__codelineno-15-36" href="#__codelineno-15-36"></a><span class="w">            </span><span class="kd">val</span><span class="w"> </span><span class="nv">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <a id="__codelineno-15-37" name="__codelineno-15-37" href="#__codelineno-15-37"></a><span class="s">                {</span>
@@ -2396,7 +2396,7 @@
 <a id="__codelineno-15-48" name="__codelineno-15-48" href="#__codelineno-15-48"></a><span class="p">}</span>
 <a id="__codelineno-15-49" name="__codelineno-15-49" href="#__codelineno-15-49"></a>
 <a id="__codelineno-15-50" name="__codelineno-15-50" href="#__codelineno-15-50"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should handle GraphQL errors&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-51" name="__codelineno-15-51" href="#__codelineno-15-51"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-51" name="__codelineno-15-51" href="#__codelineno-15-51"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-52" name="__codelineno-15-52" href="#__codelineno-15-52"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-53" name="__codelineno-15-53" href="#__codelineno-15-53"></a><span class="w">            </span><span class="kd">val</span><span class="w"> </span><span class="nv">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <a id="__codelineno-15-54" name="__codelineno-15-54" href="#__codelineno-15-54"></a><span class="s">                {</span>
@@ -2412,7 +2412,7 @@
 <a id="__codelineno-15-64" name="__codelineno-15-64" href="#__codelineno-15-64"></a><span class="p">}</span>
 <a id="__codelineno-15-65" name="__codelineno-15-65" href="#__codelineno-15-65"></a>
 <a id="__codelineno-15-66" name="__codelineno-15-66" href="#__codelineno-15-66"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;should navigate dynamic response&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-67" name="__codelineno-15-67" href="#__codelineno-15-67"></a><span class="w">    </span><span class="n">TestSystem</span><span class="p">.</span><span class="na">validate</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-67" name="__codelineno-15-67" href="#__codelineno-15-67"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-68" name="__codelineno-15-68" href="#__codelineno-15-68"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-15-69" name="__codelineno-15-69" href="#__codelineno-15-69"></a><span class="w">            </span><span class="kd">val</span><span class="w"> </span><span class="nv">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <a id="__codelineno-15-70" name="__codelineno-15-70" href="#__codelineno-15-70"></a><span class="s">                {</span>
@@ -2538,7 +2538,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nd">@StoveDsl</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="n">ValidationDsl</span><span class="p">.</span><span class="nf">mySystem</span><span class="p">(</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="n">validation</span><span class="p">:</span><span class="w"> </span><span class="n">suspend</span><span class="w"> </span><span class="n">MySystem</span><span class="p">.()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Unit</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="p">):</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">validation</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="na">testSystem</span><span class="p">.</span><span class="na">mySystem</span><span class="p">())</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="p">):</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">validation</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">mySystem</span><span class="p">())</span>
 </code></pre></div>
 <h3 id="5-document-your-system">5. Document Your System<a class="headerlink" href="#5-document-your-system" title="Permanent link">&para;</a></h3>
 <p>Provide clear KDoc comments:</p>
