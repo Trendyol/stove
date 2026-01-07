@@ -13,7 +13,7 @@
 </p>
 
 ```kotlin
-validate {
+stove {
   // Call API and verify response
   http {
     postAndExpectBodilessResponse("/orders", body = CreateOrderRequest(userId, productId).some()) {
@@ -97,11 +97,11 @@ dependencies {
 > }
 > ```
 
-**2. Configure test system** (runs once before all tests)
+**2. Configure Stove** (runs once before all tests)
 
 ```kotlin
 class TestConfig : AbstractProjectConfig() {
-  override suspend fun beforeProject() = TestSystem()
+  override suspend fun beforeProject() = Stove()
     .with {
       httpClient {
         HttpClientSystemOptions(baseUrl = "http://localhost:8080")
@@ -124,11 +124,11 @@ class TestConfig : AbstractProjectConfig() {
       }
       bridge()
       springBoot(runner = { params ->
-        myApp.run(params) { addTestSystemDependencies() }
+        myApp.run(params) { addTestDependencies() }
       })
     }.run()
 
-  override suspend fun afterProject() = TestSystem.stop()
+  override suspend fun afterProject() = Stove.stop()
 }
 ```
 
@@ -136,7 +136,7 @@ class TestConfig : AbstractProjectConfig() {
 
 ```kotlin
 test("should process order") {
-  validate {
+  stove {
     http {
       get<Order>("/orders/123") {
         it.status shouldBe "CONFIRMED"
@@ -160,7 +160,7 @@ test("should process order") {
 
 ## Writing Tests
 
-All assertions happen inside `validate { }`. Each component has its own DSL block.
+All assertions happen inside `stove { }`. Each component has its own DSL block.
 
 ### HTTP
 
@@ -238,7 +238,7 @@ using<UserRepo, EmailService> { userRepo, emailService ->
 springBoot(
   runner = { params ->
     myApp.run(params) {
-      addTestSystemDependencies()
+      addTestDependencies()
     }
   }
 )
@@ -251,7 +251,7 @@ springBoot(
 ktor(
   runner = { params ->
     myApp.run(params) {
-      addTestSystemDependencies()
+      addTestDependencies()
     }
   }
 )
@@ -264,7 +264,7 @@ ktor(
 micronaut(
   runner = { params ->
     myApp.run(params) {
-      addTestSystemDependencies()
+      addTestDependencies()
     }
   }
 )
@@ -279,7 +279,7 @@ micronaut(
 Speed up local development by keeping containers running between test runs:
 
 ```kotlin
-TestSystem { keepDependenciesRunning() }.with { ... }
+Stove { keepDependenciesRunning() }.with { ... }
 ```
 
 ### Cleanup
@@ -330,7 +330,7 @@ kafka { KafkaSystemOptions.provided(bootstrapServers = "ci-kafka:9092", ...) }
 
 ```kotlin
 test("should create order with payment processing") {
-  validate {
+  stove {
     val userId = UUID.randomUUID().toString()
     val productId = UUID.randomUUID().toString()
 
