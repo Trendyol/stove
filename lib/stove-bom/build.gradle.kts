@@ -33,7 +33,7 @@ dependencies {
 
     // Extensions
     api(projects.testExtensions.stoveExtensionsKotest)
-    api(projects.testExtensions.stoveExtensionsKotest)
+    api(projects.testExtensions.stoveExtensionsJunit)
   }
 }
 
