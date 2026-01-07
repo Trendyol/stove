@@ -102,7 +102,6 @@ public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove
 	public field mongoClient Lcom/mongodb/kotlin/client/coroutine/MongoClient;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
-	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getContext ()Lcom/trendyol/stove/mongodb/MongodbContext;
 	public final fun getMongoClient ()Lcom/mongodb/kotlin/client/coroutine/MongoClient;
@@ -110,9 +109,8 @@ public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove
 	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
 	public fun getStove ()Lcom/trendyol/stove/system/Stove;
 	public final fun inspect ()Lcom/trendyol/stove/containers/StoveContainerInspectInformation;
-	public final fun pause ()Lcom/trendyol/stove/mongodb/MongodbSystem;
-	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public final fun pause (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setMongoClient (Lcom/mongodb/kotlin/client/coroutine/MongoClient;)V
 	public final fun shouldDelete (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -122,7 +120,7 @@ public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove
 	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/system/Stove;
-	public final fun unpause ()Lcom/trendyol/stove/mongodb/MongodbSystem;
+	public final fun unpause (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/mongodb/MongodbSystem$Companion {

@@ -287,7 +287,7 @@ class KafkaSystem(
     partition: Int = 0,
     testCase: Option<String> = None
   ): KafkaSystem {
-    recordAndExecute(
+    report(
       action = "Publish to '$topic'",
       input = arrow.core.Some(message),
       metadata = buildMap {
@@ -389,10 +389,14 @@ class KafkaSystem(
     }
 
     if (result.isSuccess) {
-      recordSuccess(
-        action = "$assertionName<$typeName>",
-        output = matchedMessage.toOption(),
-        metadata = mapOf("timeout" to timeout.toString())
+      reporter.record(
+        ReportEntry.success(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "$assertionName<$typeName>",
+          output = matchedMessage.toOption(),
+          metadata = mapOf("timeout" to timeout.toString())
+        )
       )
     } else {
       reporter.record(

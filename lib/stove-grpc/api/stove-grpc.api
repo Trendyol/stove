@@ -6,7 +6,6 @@ public final class com/trendyol/stove/grpc/GrpcSystem : com/trendyol/stove/repor
 	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/grpc/GrpcSystemOptions;)V
 	public final fun channelWithMetadata (Ljava/util/Map;)Lio/grpc/Channel;
 	public fun close ()V
-	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getGrpcChannel ()Lio/grpc/ManagedChannel;
 	public final fun getOptions ()Lcom/trendyol/stove/grpc/GrpcSystemOptions;
@@ -18,8 +17,7 @@ public final class com/trendyol/stove/grpc/GrpcSystem : com/trendyol/stove/repor
 	public final fun managedChannel ()Lio/grpc/ManagedChannel;
 	public final fun rawChannel (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/grpc/GrpcSystem;
 	public final fun rawWireClient (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/grpc/GrpcSystem;
-	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
 	public fun then ()Lcom/trendyol/stove/system/Stove;
 	public final fun withEndpoint (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/grpc/GrpcSystem;

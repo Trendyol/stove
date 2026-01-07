@@ -34,7 +34,6 @@ public final class com/trendyol/stove/http/HttpSystem : com/trendyol/stove/repor
 	public final fun configureRequest (Lio/ktor/client/request/HttpRequestBuilder;Ljava/lang/String;Ljava/util/Map;Larrow/core/Option;)V
 	public final fun deleteAndExpectBodilessResponse (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun deleteAndExpectBodilessResponse$default (Lcom/trendyol/stove/http/HttpSystem;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public final fun executeWithBody (Lio/ktor/http/HttpMethod;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun get (Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Larrow/core/Option;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -53,8 +52,7 @@ public final class com/trendyol/stove/http/HttpSystem : com/trendyol/stove/repor
 	public static synthetic fun postAndExpectBodilessResponse$default (Lcom/trendyol/stove/http/HttpSystem;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun putAndExpectBodilessResponse (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun putAndExpectBodilessResponse$default (Lcom/trendyol/stove/http/HttpSystem;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
 	public fun then ()Lcom/trendyol/stove/system/Stove;
 	public final fun toBodilessResponse (Lio/ktor/client/statement/HttpResponse;)Lcom/trendyol/stove/http/StoveHttpResponse$Bodiless;

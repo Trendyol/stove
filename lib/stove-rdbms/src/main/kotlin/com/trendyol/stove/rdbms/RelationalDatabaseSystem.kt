@@ -69,12 +69,12 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
   @StoveDsl
-  inline fun <reified T : Any> shouldQuery(
+  suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     crossinline mapper: (Row) -> T,
     crossinline assertion: (List<T>) -> Unit
   ): SELF {
-    executeAndRecord(
+    report(
       action = "Query",
       input = Some(query.trim()),
       metadata = mapOf("sql" to query.trim())
@@ -87,8 +87,8 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   }
 
   @StoveDsl
-  fun shouldExecute(sql: String): SELF {
-    executeAndRecord(
+  suspend fun shouldExecute(sql: String): SELF {
+    report(
       action = "Execute SQL",
       input = Some(sql.trim()),
       metadata = mapOf("sql" to sql.trim())
@@ -135,9 +135,6 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
      * Use this for advanced SQL operations not covered by the DSL.
      */
     @Suppress("unused")
-    fun RelationalDatabaseSystem<*>.operations(): NativeSqlOperations {
-      recordSuccess(action = "Access underlying NativeSqlOperations")
-      return this.sqlOperations
-    }
+    fun RelationalDatabaseSystem<*>.operations(): NativeSqlOperations = this.sqlOperations
   }
 }

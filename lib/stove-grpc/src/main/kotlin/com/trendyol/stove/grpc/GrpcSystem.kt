@@ -137,7 +137,7 @@ class GrpcSystem(
   ): GrpcSystem {
     val serviceName = T::class.simpleName ?: "Unknown"
     val client = wireClientResources.grpcClient.create(T::class)
-    recordAndExecute(
+    report(
       action = "Wire client: $serviceName",
       metadata = mapOf("service" to serviceName)
     ) {
@@ -201,7 +201,7 @@ class GrpcSystem(
   ): GrpcSystem {
     val stubName = T::class.simpleName ?: "Unknown"
     val stubInstance = createStubFromChannel<T>(metadata)
-    recordAndExecute(
+    report(
       action = "Channel stub: $stubName",
       metadata = mapOf("stub" to stubName, "hasMetadata" to metadata.isNotEmpty())
     ) {

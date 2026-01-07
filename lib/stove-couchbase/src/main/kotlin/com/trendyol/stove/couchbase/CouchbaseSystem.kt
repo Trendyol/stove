@@ -197,7 +197,7 @@ class CouchbaseSystem internal constructor(
     crossinline assertion: (List<T>) -> Unit
   ): CouchbaseSystem {
     val typeRef = typeRef<T>()
-    recordAndExecute(
+    report(
       action = "N1QL Query",
       input = arrow.core.Some(query)
     ) {
@@ -221,7 +221,7 @@ class CouchbaseSystem internal constructor(
     key: String,
     crossinline assertion: (T) -> Unit
   ): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Get document",
       input = arrow.core.Some(mapOf("id" to key))
     ) {
@@ -238,7 +238,7 @@ class CouchbaseSystem internal constructor(
     key: String,
     crossinline assertion: (T) -> Unit
   ): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Get document",
       input = arrow.core.Some(mapOf("collection" to collection, "id" to key))
     ) {
@@ -255,7 +255,7 @@ class CouchbaseSystem internal constructor(
 
   @CouchbaseDsl
   suspend fun shouldNotExist(key: String): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("id" to key)),
       expected = arrow.core.Some("Document not found")
@@ -271,7 +271,7 @@ class CouchbaseSystem internal constructor(
     collection: String,
     key: String
   ): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("collection" to collection, "id" to key)),
       expected = arrow.core.Some("Document not found")
@@ -287,7 +287,7 @@ class CouchbaseSystem internal constructor(
 
   @CouchbaseDsl
   suspend fun shouldDelete(key: String): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Delete document",
       input = arrow.core.Some(mapOf("id" to key))
     ) {
@@ -301,7 +301,7 @@ class CouchbaseSystem internal constructor(
     collection: String,
     key: String
   ): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Delete document",
       input = arrow.core.Some(mapOf("collection" to collection, "id" to key))
     ) {
@@ -323,7 +323,7 @@ class CouchbaseSystem internal constructor(
     id: String,
     instance: T
   ): CouchbaseSystem {
-    recordAndExecute(
+    report(
       action = "Save document",
       input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "id" to id)
@@ -349,8 +349,8 @@ class CouchbaseSystem internal constructor(
    * @return CouchbaseSystem
    */
   @CouchbaseDsl
-  fun pause(): CouchbaseSystem {
-    executeAndRecord(
+  suspend fun pause(): CouchbaseSystem {
+    report(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     ) {
@@ -365,8 +365,8 @@ class CouchbaseSystem internal constructor(
    * @return CouchbaseSystem
    */
   @CouchbaseDsl
-  fun unpause(): CouchbaseSystem {
-    executeAndRecord(action = "Unpause container") {
+  suspend fun unpause(): CouchbaseSystem {
+    report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
     }
     return this
@@ -442,19 +442,13 @@ class CouchbaseSystem internal constructor(
      * Use this for advanced Couchbase operations not covered by the DSL.
      */
     @CouchbaseDsl
-    fun CouchbaseSystem.cluster(): Cluster {
-      recordSuccess(action = "Access underlying Couchbase Cluster")
-      return this.cluster
-    }
+    fun CouchbaseSystem.cluster(): Cluster = this.cluster
 
     /**
      * Exposes the [Bucket] to the [CouchbaseSystem].
      * Use this for advanced Couchbase operations not covered by the DSL.
      */
     @CouchbaseDsl
-    fun CouchbaseSystem.bucket(): Bucket {
-      recordSuccess(action = "Access underlying Couchbase Bucket")
-      return this.cluster.bucket(this.context.bucket.name)
-    }
+    fun CouchbaseSystem.bucket(): Bucket = this.cluster.bucket(this.context.bucket.name)
   }
 }

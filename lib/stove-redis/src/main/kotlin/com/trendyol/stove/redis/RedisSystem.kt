@@ -162,8 +162,8 @@ class RedisSystem(
    * This operation is not supported when using a provided instance.
    * @return RedisSystem
    */
-  fun pause(): RedisSystem {
-    executeAndRecord(
+  suspend fun pause(): RedisSystem {
+    report(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     ) {
@@ -177,8 +177,8 @@ class RedisSystem(
    * This operation is not supported when using a provided instance.
    * @return RedisSystem
    */
-  fun unpause(): RedisSystem {
-    executeAndRecord(action = "Unpause container") {
+  suspend fun unpause(): RedisSystem {
+    report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
     }
     return this
@@ -254,7 +254,6 @@ class RedisSystem(
   companion object {
     fun RedisSystem.client(): RedisClient {
       if (!isInitialized()) throw SystemNotInitializedException(RedisSystem::class)
-      recordSuccess(action = "Access underlying RedisClient")
       return client
     }
   }

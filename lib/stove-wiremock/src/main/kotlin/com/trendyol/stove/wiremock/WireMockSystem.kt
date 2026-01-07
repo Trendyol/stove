@@ -262,14 +262,14 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockGet(
+  suspend fun mockGet(
     url: String,
     statusCode: Int,
     responseBody: Option<Any> = None,
     metadata: Map<String, String> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    executeAndRecord(
+    report(
       action = "Register stub: GET $url",
       metadata = mapOf("statusCode" to statusCode, "responseHeaders" to responseHeaders)
     ) {
@@ -298,7 +298,7 @@ class WireMockSystem(
    * @see mockPostContaining
    */
   @WiremockDsl
-  fun mockPost(
+  suspend fun mockPost(
     url: String,
     statusCode: Int,
     requestBody: Option<Any> = None,
@@ -306,7 +306,7 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    executeAndRecord(
+    report(
       action = "Register stub: POST $url",
       input = requestBody,
       metadata = mapOf("statusCode" to statusCode)
@@ -336,7 +336,7 @@ class WireMockSystem(
    * @see mockPutContaining
    */
   @WiremockDsl
-  fun mockPut(
+  suspend fun mockPut(
     url: String,
     statusCode: Int,
     requestBody: Option<Any> = None,
@@ -344,7 +344,7 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    executeAndRecord(
+    report(
       action = "Register stub: PUT $url",
       input = requestBody,
       metadata = mapOf("statusCode" to statusCode)
@@ -374,7 +374,7 @@ class WireMockSystem(
    * @see mockPatchContaining
    */
   @WiremockDsl
-  fun mockPatch(
+  suspend fun mockPatch(
     url: String,
     statusCode: Int,
     requestBody: Option<Any> = None,
@@ -382,7 +382,7 @@ class WireMockSystem(
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
   ): WireMockSystem {
-    executeAndRecord(
+    report(
       action = "Register stub: PATCH $url",
       input = requestBody,
       metadata = mapOf("statusCode" to statusCode)
@@ -405,12 +405,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockDelete(
+  suspend fun mockDelete(
     url: String,
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    executeAndRecord(
+    report(
       action = "Register stub: DELETE $url",
       metadata = mapOf("statusCode" to statusCode)
     ) {
@@ -432,12 +432,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockHead(
+  suspend fun mockHead(
     url: String,
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
   ): WireMockSystem {
-    executeAndRecord(
+    report(
       action = "Register stub: HEAD $url",
       metadata = mapOf("statusCode" to statusCode)
     ) {
@@ -463,12 +463,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockPutConfigure(
+  suspend fun mockPutConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    executeAndRecord(action = "Register stub: PUT $url (custom)") {
+    report(action = "Register stub: PUT $url (custom)") {
       val req = put(urlPatternFn(url))
       val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
       stubLog.put(stub.id, stub)
@@ -489,12 +489,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockPatchConfigure(
+  suspend fun mockPatchConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    executeAndRecord(action = "Register stub: PATCH $url (custom)") {
+    report(action = "Register stub: PATCH $url (custom)") {
       val req = patch(urlPatternFn(url))
       val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
       stubLog.put(stub.id, stub)
@@ -515,12 +515,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockGetConfigure(
+  suspend fun mockGetConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    executeAndRecord(action = "Register stub: GET $url (custom)") {
+    report(action = "Register stub: GET $url (custom)") {
       val req = get(urlPatternFn(url))
       val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
       stubLog.put(stub.id, stub)
@@ -541,12 +541,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockHeadConfigure(
+  suspend fun mockHeadConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    executeAndRecord(action = "Register stub: HEAD $url (custom)") {
+    report(action = "Register stub: HEAD $url (custom)") {
       val req = head(urlPatternFn(url))
       val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
       stubLog.put(stub.id, stub)
@@ -567,12 +567,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockDeleteConfigure(
+  suspend fun mockDeleteConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    executeAndRecord(action = "Register stub: DELETE $url (custom)") {
+    report(action = "Register stub: DELETE $url (custom)") {
       val req = delete(urlPatternFn(url))
       val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
       stubLog.put(stub.id, stub)
@@ -593,12 +593,12 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockPostConfigure(
+  suspend fun mockPostConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
   ): WireMockSystem {
-    executeAndRecord(action = "Register stub: POST $url (custom)") {
+    report(action = "Register stub: POST $url (custom)") {
       val req = post(urlPatternFn(url))
       val stub = wireMock.stubFor(configure(req, serde).withId(UUID.randomUUID()))
       stubLog.put(stub.id, stub)
@@ -632,12 +632,12 @@ class WireMockSystem(
    * @param block Lambda to define the sequence of responses.
    */
   @WiremockDsl
-  fun behaviourFor(
+  suspend fun behaviourFor(
     url: String,
     method: (String) -> MappingBuilder,
     block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
   ) {
-    executeAndRecord(action = "Register behaviour stub: $url") {
+    report(action = "Register behaviour stub: $url") {
       stubBehaviour(wireMock, serde = serde, url, method, block)
     }
   }
@@ -700,7 +700,7 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockPostContaining(
+  suspend fun mockPostContaining(
     url: String,
     requestContaining: Map<String, Any>,
     statusCode: Int = 200,
@@ -765,7 +765,7 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockPutContaining(
+  suspend fun mockPutContaining(
     url: String,
     requestContaining: Map<String, Any>,
     statusCode: Int = 200,
@@ -830,7 +830,7 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    */
   @WiremockDsl
-  fun mockPatchContaining(
+  suspend fun mockPatchContaining(
     url: String,
     requestContaining: Map<String, Any>,
     statusCode: Int = 200,
@@ -849,7 +849,7 @@ class WireMockSystem(
     urlPatternFn = urlPatternFn
   )
 
-  private fun mockRequestContaining(
+  private suspend fun mockRequestContaining(
     url: String,
     method: (UrlPattern) -> MappingBuilder,
     requestContaining: Map<String, Any>,
@@ -861,7 +861,7 @@ class WireMockSystem(
   ): WireMockSystem {
     require(requestContaining.isNotEmpty()) { "requestContaining must not be empty" }
 
-    executeAndRecord(
+    report(
       action = "Register stub: $url (partial match)",
       input = requestContaining.some(),
       metadata = mapOf("statusCode" to statusCode)
@@ -974,8 +974,12 @@ class WireMockSystem(
 
       throw error
     } else {
-      recordSuccess(
-        action = "Validate: All requests matched registered stubs"
+      reporter.record(
+        ReportEntry.success(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "Validate: All requests matched registered stubs"
+        )
       )
     }
   }
@@ -1029,9 +1033,6 @@ class WireMockSystem(
      */
     @Suppress("unused")
     @WiremockDsl
-    fun WireMockSystem.server(): WireMockServer {
-      recordSuccess(action = "Access underlying WireMockServer")
-      return wireMock
-    }
+    fun WireMockSystem.server(): WireMockServer = wireMock
   }
 }

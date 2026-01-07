@@ -59,7 +59,7 @@ class MsSqlSystem internal constructor(
     crossinline mapper: (Row) -> T,
     crossinline assertion: (List<T>) -> Unit
   ): MsSqlSystem {
-    recordAndExecute(
+    report(
       action = "Query",
       input = arrow.core.Some(query.trim()),
       metadata = mapOf("sql" to query.trim())
@@ -72,8 +72,8 @@ class MsSqlSystem internal constructor(
   }
 
   @StoveDsl
-  fun shouldExecute(sql: String): MsSqlSystem {
-    executeAndRecord(
+  suspend fun shouldExecute(sql: String): MsSqlSystem {
+    report(
       action = "Execute SQL",
       input = arrow.core.Some(sql.trim()),
       metadata = mapOf("sql" to sql.trim())
@@ -96,8 +96,8 @@ class MsSqlSystem internal constructor(
    * @return MsSqlSystem
    */
   @StoveDsl
-  fun pause(): MsSqlSystem {
-    executeAndRecord(
+  suspend fun pause(): MsSqlSystem {
+    report(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     ) {
@@ -112,8 +112,8 @@ class MsSqlSystem internal constructor(
    * @return MsSqlSystem
    */
   @StoveDsl
-  fun unpause(): MsSqlSystem {
-    executeAndRecord(action = "Unpause container") {
+  suspend fun unpause(): MsSqlSystem {
+    report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
     }
     return this
@@ -233,9 +233,6 @@ class MsSqlSystem internal constructor(
      * Use this for advanced SQL operations not covered by the DSL.
      */
     @StoveDsl
-    fun MsSqlSystem.operations(): NativeSqlOperations {
-      recordSuccess(action = "Access underlying NativeSqlOperations")
-      return sqlOperations
-    }
+    fun MsSqlSystem.operations(): NativeSqlOperations = sqlOperations
   }
 }

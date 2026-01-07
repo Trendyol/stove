@@ -84,9 +84,13 @@ abstract class BridgeSystem<T : Any>(
 
     try {
       block(resolve())
-      recordSuccess(
-        action = "Bean usage: $beanName",
-        metadata = metadata
+      reporter.record(
+        ReportEntry.success(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "Bean usage: $beanName",
+          metadata = metadata
+        )
       )
     } catch (e: Throwable) {
       reporter.record(
@@ -191,7 +195,14 @@ inline fun <
     val t1: T1 = bridge.resolve()
     val t2: T2 = bridge.resolve()
     validation(t1, t2)
-    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+    bridge.reporter.record(
+      ReportEntry.success(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        metadata = metadata
+      )
+    )
   } catch (e: Throwable) {
     bridge.reporter.record(
       ReportEntry.failure(
@@ -234,7 +245,14 @@ inline fun <
     val t2: T2 = bridge.resolve()
     val t3: T3 = bridge.resolve()
     validation(t1, t2, t3)
-    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+    bridge.reporter.record(
+      ReportEntry.success(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        metadata = metadata
+      )
+    )
   } catch (e: Throwable) {
     bridge.reporter.record(
       ReportEntry.failure(
@@ -281,7 +299,14 @@ inline fun <
     val t3: T3 = bridge.resolve()
     val t4: T4 = bridge.resolve()
     validation(t1, t2, t3, t4)
-    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+    bridge.reporter.record(
+      ReportEntry.success(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        metadata = metadata
+      )
+    )
   } catch (e: Throwable) {
     bridge.reporter.record(
       ReportEntry.failure(
@@ -338,7 +363,14 @@ inline fun <
     val t4: T4 = bridge.resolve()
     val t5: T5 = bridge.resolve()
     validation(t1, t2, t3, t4, t5)
-    bridge.recordSuccess(action = "Bean usage: $beanNames", metadata = metadata)
+    bridge.reporter.record(
+      ReportEntry.success(
+        system = bridge.reportSystemName,
+        testId = bridge.reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        metadata = metadata
+      )
+    )
   } catch (e: Throwable) {
     bridge.reporter.record(
       ReportEntry.failure(

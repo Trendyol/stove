@@ -193,7 +193,7 @@ class PostgresqlSystem internal constructor(
     crossinline mapper: (Row) -> T,
     crossinline assertion: (List<T>) -> Unit
   ): PostgresqlSystem {
-    recordAndExecute(
+    report(
       action = "Query",
       input = arrow.core.Some(query.trim()),
       metadata = mapOf("sql" to query.trim())
@@ -206,8 +206,8 @@ class PostgresqlSystem internal constructor(
   }
 
   @StoveDsl
-  fun shouldExecute(sql: String): PostgresqlSystem {
-    executeAndRecord(
+  suspend fun shouldExecute(sql: String): PostgresqlSystem {
+    report(
       action = "Execute SQL",
       input = arrow.core.Some(sql.trim()),
       metadata = mapOf("sql" to sql.trim())
@@ -225,8 +225,8 @@ class PostgresqlSystem internal constructor(
    * @return PostgresqlSystem
    */
   @StoveDsl
-  fun pause(): PostgresqlSystem {
-    executeAndRecord(
+  suspend fun pause(): PostgresqlSystem {
+    report(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     ) {
@@ -241,8 +241,8 @@ class PostgresqlSystem internal constructor(
    * @return PostgresqlSystem
    */
   @StoveDsl
-  fun unpause(): PostgresqlSystem {
-    executeAndRecord(action = "Unpause container") {
+  suspend fun unpause(): PostgresqlSystem {
+    report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
     }
     return this
@@ -339,9 +339,6 @@ class PostgresqlSystem internal constructor(
      * Use this for advanced SQL operations not covered by the DSL.
      */
     @StoveDsl
-    fun PostgresqlSystem.operations(): NativeSqlOperations {
-      recordSuccess(action = "Access underlying NativeSqlOperations")
-      return sqlOperations
-    }
+    fun PostgresqlSystem.operations(): NativeSqlOperations = sqlOperations
   }
 }

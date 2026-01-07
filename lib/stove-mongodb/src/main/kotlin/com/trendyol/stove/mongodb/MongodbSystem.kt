@@ -190,7 +190,7 @@ class MongodbSystem internal constructor(
     collection: String = context.options.databaseOptions.default.collection,
     crossinline assertion: (List<T>) -> Unit
   ): MongodbSystem {
-    recordAndExecute(
+    report(
       action = "Query '$collection'",
       input = arrow.core.Some(mapOf("collection" to collection, "filter" to query))
     ) {
@@ -212,7 +212,7 @@ class MongodbSystem internal constructor(
     collection: String = context.options.databaseOptions.default.collection,
     crossinline assertion: (T) -> Unit
   ): MongodbSystem {
-    recordAndExecute(
+    report(
       action = "Get document",
       input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId))
     ) {
@@ -237,7 +237,7 @@ class MongodbSystem internal constructor(
     objectId: String = ObjectId().toHexString(),
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    recordAndExecute(
+    report(
       action = "Insert document",
       input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "_id" to objectId)
@@ -262,7 +262,7 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    recordAndExecute(
+    report(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId)),
       expected = arrow.core.Some("Document not found")
@@ -282,7 +282,7 @@ class MongodbSystem internal constructor(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
   ): MongodbSystem {
-    recordAndExecute(
+    report(
       action = "Delete document",
       metadata = mapOf("collection" to collection, "_id" to objectId)
     ) {
@@ -300,8 +300,8 @@ class MongodbSystem internal constructor(
    * @return MongodbSystem
    */
   @MongoDsl
-  fun pause(): MongodbSystem {
-    executeAndRecord(
+  suspend fun pause(): MongodbSystem {
+    report(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     ) {
@@ -316,8 +316,8 @@ class MongodbSystem internal constructor(
    * @return MongodbSystem
    */
   @MongoDsl
-  fun unpause(): MongodbSystem {
-    executeAndRecord(action = "Unpause container") {
+  suspend fun unpause(): MongodbSystem {
+    report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
     }
     return this
@@ -420,9 +420,6 @@ class MongodbSystem internal constructor(
      */
     @MongoDsl
     @Suppress("unused")
-    fun MongodbSystem.client(): MongoClient {
-      recordSuccess(action = "Access underlying MongoClient")
-      return mongoClient
-    }
+    fun MongodbSystem.client(): MongoClient = mongoClient
   }
 }

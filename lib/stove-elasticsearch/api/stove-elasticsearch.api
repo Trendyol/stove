@@ -105,24 +105,22 @@ public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem : com/tr
 	public fun afterRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
-	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getEsClient ()Lco/elastic/clients/elasticsearch/ElasticsearchClient;
 	public fun getReportSystemName ()Ljava/lang/String;
 	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
 	public fun getStove ()Lcom/trendyol/stove/system/Stove;
-	public final fun pause ()Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
-	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public final fun pause (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun save (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/String;)Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+	public final fun save (Ljava/lang/String;Ljava/lang/Object;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setEsClient (Lco/elastic/clients/elasticsearch/ElasticsearchClient;)V
-	public final fun shouldDelete (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+	public final fun shouldDelete (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldNotExist (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/system/Stove;
-	public final fun unpause ()Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;
+	public final fun unpause (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem$Companion {

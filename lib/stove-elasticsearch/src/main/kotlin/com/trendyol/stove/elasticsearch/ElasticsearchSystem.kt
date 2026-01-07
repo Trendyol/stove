@@ -202,7 +202,7 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(query.isNotBlank()) { "Query cannot be blank" }
 
-    recordAndExecute(
+    report(
       action = "Search '$index'",
       input = arrow.core.Some(mapOf("index" to index, "query" to query))
     ) {
@@ -224,7 +224,7 @@ class ElasticsearchSystem internal constructor(
     query: Query,
     crossinline assertion: (List<T>) -> Unit
   ): ElasticsearchSystem {
-    recordAndExecute(action = "Search with Query DSL") {
+    report(action = "Search with Query DSL") {
       val results = esClient
         .search(
           SearchRequest.of { q -> q.query(query) },
@@ -247,7 +247,7 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    recordAndExecute(
+    report(
       action = "Get document",
       input = arrow.core.Some(mapOf("index" to index, "id" to key))
     ) {
@@ -269,7 +269,7 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    recordAndExecute(
+    report(
       action = "Document should not exist",
       input = arrow.core.Some(mapOf("index" to index, "id" to key)),
       expected = arrow.core.Some("Document not found")
@@ -281,14 +281,14 @@ class ElasticsearchSystem internal constructor(
   }
 
   @ElasticDsl
-  fun shouldDelete(
+  suspend fun shouldDelete(
     key: String,
     index: String
   ): ElasticsearchSystem {
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(key.isNotBlank()) { "Key cannot be blank" }
 
-    executeAndRecord(
+    report(
       action = "Delete document",
       metadata = mapOf("index" to index, "id" to key)
     ) {
@@ -298,7 +298,7 @@ class ElasticsearchSystem internal constructor(
   }
 
   @ElasticDsl
-  fun <T : Any> save(
+  suspend fun <T : Any> save(
     id: String,
     instance: T,
     index: String
@@ -306,7 +306,7 @@ class ElasticsearchSystem internal constructor(
     require(index.isNotBlank()) { "Index cannot be blank" }
     require(id.isNotBlank()) { "Id cannot be blank" }
 
-    executeAndRecord(
+    report(
       action = "Index document",
       input = arrow.core.Some(instance),
       metadata = mapOf("index" to index, "id" to id)
@@ -329,8 +329,8 @@ class ElasticsearchSystem internal constructor(
    */
   @Suppress("unused")
   @ElasticDsl
-  fun pause(): ElasticsearchSystem {
-    executeAndRecord(
+  suspend fun pause(): ElasticsearchSystem {
+    report(
       action = "Pause container",
       metadata = mapOf("operation" to "fault-injection")
     ) {
@@ -346,8 +346,8 @@ class ElasticsearchSystem internal constructor(
    */
   @Suppress("unused")
   @ElasticDsl
-  fun unpause(): ElasticsearchSystem {
-    executeAndRecord(action = "Unpause container") {
+  suspend fun unpause(): ElasticsearchSystem {
+    report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
     }
     return this
@@ -476,9 +476,6 @@ class ElasticsearchSystem internal constructor(
      */
     @Suppress("unused")
     @ElasticDsl
-    fun ElasticsearchSystem.client(): ElasticsearchClient {
-      recordSuccess(action = "Access underlying ElasticsearchClient")
-      return this.esClient
-    }
+    fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
   }
 }

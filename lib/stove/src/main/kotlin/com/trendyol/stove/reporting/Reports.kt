@@ -4,6 +4,7 @@ package com.trendyol.stove.reporting
 
 import arrow.core.None
 import arrow.core.Option
+import arrow.core.Some
 import arrow.core.toOption
 import com.trendyol.stove.system.abstractions.PluggedSystem
 
@@ -16,7 +17,7 @@ import com.trendyol.stove.system.abstractions.PluggedSystem
  * ## Design Principles
  * - **Functional**: Uses Option monad, immutable data, no nullability
  * - **Simple**: Single entry type for all operations
- * - **Composable**: `recordAndExecute` combines action recording with assertion execution
+ * - **Composable**: `record` combines action recording with execution
  */
 interface Reports {
   /**
@@ -44,36 +45,22 @@ interface Reports {
   )
 
   /**
-   * Record a successful action (action completed without throwing).
-   */
-  fun recordSuccess(
-    action: String,
-    input: Option<Any> = None,
-    output: Option<Any> = None,
-    metadata: Map<String, Any> = emptyMap()
-  ) {
-    if (!reporter.isEnabled) return
-    reporter.record(
-      ReportEntry.success(
-        system = reportSystemName,
-        testId = reporter.currentTestId(),
-        action = action,
-        input = input,
-        output = output,
-        metadata = metadata
-      )
-    )
-  }
-
-  /**
-   * Execute an action and record the result (suspend version).
+   * Execute an action and report the result.
    *
    * This is the preferred method for actions that include assertions.
-   * It handles success/failure recording automatically and re-throws on failure.
+   * It handles success/failure reporting automatically and re-throws on failure.
+   *
+   * @param action Description of the action being performed
+   * @param input Optional input data for the action
+   * @param output Optional output data (if not provided, block result is used)
+   * @param metadata Additional metadata for the report entry
+   * @param expected Optional expected result description
+   * @param actual Optional actual result description
+   * @param block The block to execute
    *
    * Example:
    * ```kotlin
-   * recordAndExecute(
+   * report(
    *   action = "GET /users/123",
    *   input = Some(queryParams),
    *   expected = Some("200 OK")
@@ -82,19 +69,20 @@ interface Reports {
    * }
    * ```
    */
-  suspend fun <T> recordAndExecute(
+  suspend fun <T> report(
     action: String,
     input: Option<Any> = None,
     output: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap(),
     expected: Option<Any> = None,
     actual: Option<Any> = None,
-    assertion: suspend () -> T
+    block: suspend () -> T
   ): T {
-    if (!reporter.isEnabled) return assertion()
+    if (!reporter.isEnabled) return block()
 
     return try {
-      val result = assertion()
+      val result = block()
+      val finalOutput = output.fold({ result.toOption() }, { Some(it) })
       reporter.record(
         ReportEntry.action(
           system = reportSystemName,
@@ -102,7 +90,7 @@ interface Reports {
           action = action,
           passed = true,
           input = input,
-          output = output,
+          output = finalOutput,
           metadata = metadata,
           expected = expected,
           actual = actual
@@ -121,50 +109,6 @@ interface Reports {
           metadata = metadata,
           expected = expected,
           actual = actual,
-          error = e.message.toOption()
-        )
-      )
-      throw e
-    }
-  }
-
-  /**
-   * Execute a synchronous action and record the result.
-   *
-   * Non-suspend version for synchronous operations.
-   * It handles success/failure recording automatically and re-throws on failure.
-   */
-  fun <T> executeAndRecord(
-    action: String,
-    input: Option<Any> = None,
-    metadata: Map<String, Any> = emptyMap(),
-    block: () -> T
-  ): T {
-    if (!reporter.isEnabled) return block()
-
-    return try {
-      val result = block()
-      reporter.record(
-        ReportEntry.action(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = action,
-          passed = true,
-          input = input,
-          output = result.toOption(),
-          metadata = metadata
-        )
-      )
-      result
-    } catch (e: Throwable) {
-      reporter.record(
-        ReportEntry.action(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = action,
-          passed = false,
-          input = input,
-          metadata = metadata,
           error = e.message.toOption()
         )
       )

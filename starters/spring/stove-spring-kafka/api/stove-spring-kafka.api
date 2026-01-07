@@ -103,7 +103,6 @@ public final class com/trendyol/stove/kafka/KafkaSystem : com/trendyol/stove/rep
 	public fun beforeRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
-	public fun executeAndRecord (Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getGetInterceptor ()Lkotlin/jvm/functions/Function0;
 	public fun getReportSystemName ()Ljava/lang/String;
@@ -112,8 +111,7 @@ public final class com/trendyol/stove/kafka/KafkaSystem : com/trendyol/stove/rep
 	public final fun pause ()Lcom/trendyol/stove/kafka/KafkaSystem;
 	public final fun publish (Ljava/lang/String;Ljava/lang/Object;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun publish$default (Lcom/trendyol/stove/kafka/KafkaSystem;Ljava/lang/String;Ljava/lang/Object;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public fun recordAndExecute (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun recordSuccess (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)V
+	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldBeConsumedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldBeFailedInternal-dWUq8MI (Lkotlin/reflect/KClass;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

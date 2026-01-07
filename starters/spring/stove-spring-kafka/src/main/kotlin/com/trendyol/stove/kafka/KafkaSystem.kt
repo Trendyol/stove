@@ -112,7 +112,7 @@ class KafkaSystem(
     serde: Option<StoveSerde<Any, *>> = None,
     testCase: Option<String> = None
   ): KafkaSystem {
-    recordAndExecute(
+    report(
       action = "Publish to '$topic'",
       input = arrow.core.Some(message),
       metadata = mapOf(
@@ -234,10 +234,14 @@ class KafkaSystem(
     }
 
     if (result.isSuccess) {
-      recordSuccess(
-        action = "$assertionName<$typeName>",
-        output = matchedMessage.toOption(),
-        metadata = mapOf("timeout" to timeout.toString())
+      reporter.record(
+        ReportEntry.success(
+          system = reportSystemName,
+          testId = reporter.currentTestId(),
+          action = "$assertionName<$typeName>",
+          output = matchedMessage.toOption(),
+          metadata = mapOf("timeout" to timeout.toString())
+        )
       )
     } else {
       reporter.record(
@@ -451,9 +455,6 @@ class KafkaSystem(
      * Exposes the [KafkaTemplate] to the [KafkaSystem].
      * Use this for advanced Kafka operations not covered by the DSL.
      */
-    fun KafkaSystem.kafkaTemplate(): KafkaTemplate<Any, Any> {
-      recordSuccess(action = "Access underlying KafkaTemplate")
-      return kafkaTemplate
-    }
+    fun KafkaSystem.kafkaTemplate(): KafkaTemplate<Any, Any> = kafkaTemplate
   }
 }

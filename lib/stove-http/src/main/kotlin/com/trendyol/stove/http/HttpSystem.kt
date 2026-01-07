@@ -312,7 +312,7 @@ class HttpSystem(
     expect: suspend (StoveHttpResponse.Bodiless) -> Unit
   ): HttpSystem {
     val response = get(uri, headers, queryParams, token)
-    recordAndExecute(
+    report(
       action = "GET $uri",
       input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
       output = "Status: ${response.status.value}".some(),
@@ -336,7 +336,7 @@ class HttpSystem(
     crossinline expect: suspend (StoveHttpResponse.WithBody<T>) -> Unit
   ): HttpSystem {
     val response = get(uri, headers, queryParams, token)
-    recordAndExecute(
+    report(
       action = "GET $uri",
       input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
       output = response.bodyAsText().some(),
@@ -360,7 +360,7 @@ class HttpSystem(
     crossinline expect: (TExpected) -> Unit
   ): HttpSystem {
     val response = get(uri, headers, queryParams, token)
-    recordAndExecute(
+    report(
       action = "GET $uri",
       input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
       output = response.bodyAsText().some(),
@@ -384,7 +384,7 @@ class HttpSystem(
     crossinline expect: (List<TExpected>) -> Unit
   ): HttpSystem {
     val response = get(uri, headers, queryParams, token)
-    recordAndExecute(
+    report(
       action = "GET $uri",
       input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
       output = response.bodyAsText().some(),
@@ -407,7 +407,7 @@ class HttpSystem(
     token: Option<String> = None,
     crossinline expect: suspend (Flow<TExpected>) -> Unit
   ): HttpSystem {
-    recordAndExecute(
+    report(
       action = "GET $uri (stream)",
       input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
       metadata = mapOf("headers" to headers),
@@ -440,7 +440,7 @@ class HttpSystem(
     expect: suspend (StoveHttpResponse) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Post, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "POST $uri",
       input = body,
       metadata = mapOf("status" to response.status.value, "headers" to headers),
@@ -463,7 +463,7 @@ class HttpSystem(
     crossinline expect: (actual: TExpected) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Post, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "POST $uri",
       input = body,
       output = response.bodyAsText().some(),
@@ -487,7 +487,7 @@ class HttpSystem(
     crossinline expect: suspend (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Post, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "POST $uri",
       input = body,
       output = response.bodyAsText().some(),
@@ -511,7 +511,7 @@ class HttpSystem(
     expect: suspend (StoveHttpResponse) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Put, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "PUT $uri",
       input = body,
       metadata = mapOf("status" to response.status.value, "headers" to headers),
@@ -534,7 +534,7 @@ class HttpSystem(
     crossinline expect: (actual: TExpected) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Put, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "PUT $uri",
       input = body,
       output = response.bodyAsText().some(),
@@ -558,7 +558,7 @@ class HttpSystem(
     crossinline expect: suspend (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Put, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "PUT $uri",
       input = body,
       output = response.bodyAsText().some(),
@@ -582,7 +582,7 @@ class HttpSystem(
     expect: suspend (StoveHttpResponse) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "PATCH $uri",
       input = body,
       metadata = mapOf("status" to response.status.value, "headers" to headers),
@@ -605,7 +605,7 @@ class HttpSystem(
     crossinline expect: (actual: TExpected) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "PATCH $uri",
       input = body,
       output = response.bodyAsText().some(),
@@ -629,7 +629,7 @@ class HttpSystem(
     crossinline expect: suspend (actual: StoveHttpResponse.WithBody<TExpected>) -> Unit
   ): HttpSystem {
     val response = executeWithBody(HttpMethod.Patch, uri, body, headers, token)
-    recordAndExecute(
+    report(
       action = "PATCH $uri",
       input = body,
       output = response.bodyAsText().some(),
@@ -654,7 +654,7 @@ class HttpSystem(
     val response = ktorHttpClient.delete {
       configureRequest(uri, headers, token)
     }
-    recordAndExecute(
+    report(
       action = "DELETE $uri",
       metadata = mapOf("status" to response.status.value, "headers" to headers),
       expected = "Response matching expectation".some()
@@ -677,7 +677,7 @@ class HttpSystem(
     val response = ktorHttpClient.delete {
       configureRequest(uri, headers, token)
     }
-    recordAndExecute(
+    report(
       action = "DELETE $uri",
       output = response.bodyAsText().some(),
       metadata = mapOf("status" to response.status.value, "headers" to headers),
@@ -701,7 +701,7 @@ class HttpSystem(
     val response = ktorHttpClient.head {
       configureRequest(uri, headers, token)
     }
-    recordAndExecute(
+    report(
       action = "HEAD $uri",
       metadata = mapOf("status" to response.status.value, "headers" to headers),
       expected = "Response matching expectation".some()
@@ -726,7 +726,7 @@ class HttpSystem(
       configureRequest(uri, headers, token)
       setBody(MultiPartFormDataContent(toFormData(body)))
     }
-    recordAndExecute(
+    report(
       action = "POST $uri (multipart)",
       input = body.map { it::class.simpleName }.some(),
       output = response.bodyAsText().some(),
@@ -835,10 +835,7 @@ class HttpSystem(
      */
     @Suppress("unused")
     @HttpDsl
-    fun HttpSystem.client(): io.ktor.client.HttpClient {
-      recordSuccess(action = "Access underlying HttpClient")
-      return this.ktorHttpClient
-    }
+    fun HttpSystem.client(): io.ktor.client.HttpClient = this.ktorHttpClient
 
     /**
      * Exposes the [io.ktor.client.HttpClient] used by the [HttpSystem].
@@ -849,7 +846,6 @@ class HttpSystem(
     suspend fun HttpSystem.client(
       block: suspend io.ktor.client.HttpClient.(baseUrl: URLBuilder) -> Unit
     ) {
-      recordSuccess(action = "Access underlying HttpClient with block")
       block(this.ktorHttpClient, URLBuilder(this.options.baseUrl))
     }
   }
