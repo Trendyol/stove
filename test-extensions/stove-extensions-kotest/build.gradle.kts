@@ -11,3 +11,22 @@ dependencies {
   testImplementation(libs.logback.classic)
   testImplementation(testFixtures(projects.lib.stove))
 }
+
+kover {
+  currentProject {
+    sources {
+      excludedSourceSets.addAll("test")
+    }
+  }
+  reports {
+    filters {
+      excludes {
+        classes(
+          "*Test",
+          "*Tests",
+          "*Config",
+        )
+      }
+    }
+  }
+}

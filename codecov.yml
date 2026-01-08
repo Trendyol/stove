@@ -9,6 +9,6 @@ ignore:
   - "examples/spring-example"
   - "examples/spring-standalone-example"
   - "examples/spring-streams-example"
-  - "test-extensions/stove-extensions-kotest"
-  - "test-extensions/stove-extensions-junit"
+  - "test-extensions/stove-extensions-kotest/src/test"
+  - "test-extensions/stove-extensions-junit/src/test"
   - "recipes/"

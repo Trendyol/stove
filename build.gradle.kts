@@ -51,8 +51,6 @@ kover {
           "stove.spring.streams.example.*",
           "stove.ktor.example.*",
           "stove.micronaut.example.*",
-          "stove.test.extensions.kotest.*",
-          "stove.test.extensions.junit.*",
         )
       }
     }
