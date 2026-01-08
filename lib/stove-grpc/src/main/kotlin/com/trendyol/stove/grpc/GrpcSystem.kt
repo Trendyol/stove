@@ -370,7 +370,7 @@ fun WithDsl.grpc(configure: @StoveDsl () -> GrpcSystemOptions): Stove =
  * Executes gRPC assertions within the validation DSL.
  *
  * ```kotlin
- * Stove.validate {
+ * stove {
  *     grpc {
  *         channel<GreeterServiceStub> {
  *             sayHello(request).message shouldBe "Hello!"

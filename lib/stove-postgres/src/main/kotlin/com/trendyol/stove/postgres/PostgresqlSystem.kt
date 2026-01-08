@@ -97,7 +97,7 @@ import org.slf4j.*
  *
  * ```kotlin
  * test("should create order and store in database") {
- *     Stove.validate {
+ *     stove {
  *         // Create order via API
  *         http {
  *             postAndExpectBody<OrderResponse>(

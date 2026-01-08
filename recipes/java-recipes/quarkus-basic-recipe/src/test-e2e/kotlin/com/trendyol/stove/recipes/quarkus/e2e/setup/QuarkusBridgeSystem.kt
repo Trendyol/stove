@@ -23,7 +23,7 @@ import kotlin.reflect.*
  *
  * **Example:**
  * ```kotlin
- * validate {
+ * stove {
  *   using<HelloService> { hello() }
  *   using<List<PaymentService>> { forEach { it.process() } }
  * }

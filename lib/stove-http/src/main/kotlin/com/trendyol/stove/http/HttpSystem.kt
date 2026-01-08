@@ -134,7 +134,7 @@ fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): Stov
  * Executes HTTP assertions within the validation DSL.
  *
  * ```kotlin
- * Stove.validate {
+ * stove {
  *     http {
  *         get<UserResponse>("/users/123") { user ->
  *             user.name shouldBe "John"

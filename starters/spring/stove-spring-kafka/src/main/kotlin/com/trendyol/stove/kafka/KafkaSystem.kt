@@ -86,7 +86,7 @@ class KafkaSystem(
    * If the KafkaTemplate of the application is desired to be used, then [BridgeSystem] functionality can be used.
    * For example:
    * ```kotlin
-   * validate {
+   * stove {
    *   using<KafkaTemplate<Any, Any>> {
    *      this.send(ProducerRecord("topic", "message"))
    *   }

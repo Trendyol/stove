@@ -16,7 +16,7 @@ package com.trendyol.stove.system.annotations
  *
  * ```kotlin
  * // Without @DslMarker, this would compile but be confusing:
- * Stove.validate {
+ * stove {
  *     http {
  *         kafka {  // Accidentally nested - should be at validation level
  *             // ...
@@ -25,7 +25,7 @@ package com.trendyol.stove.system.annotations
  * }
  *
  * // With @StoveDsl, the above code won't compile, forcing correct structure:
- * Stove.validate {
+ * stove {
  *     http {
  *         get<User>("/users/1") { /* ... */ }
  *     }

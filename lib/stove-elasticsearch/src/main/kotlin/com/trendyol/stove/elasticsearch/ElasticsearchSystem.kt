@@ -106,7 +106,7 @@ import kotlin.jvm.optionals.getOrElse
  *
  * ```kotlin
  * test("should index product and make it searchable") {
- *     Stove.validate {
+ *     stove {
  *         val productId = UUID.randomUUID().toString()
  *
  *         // Create product via API

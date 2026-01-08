@@ -29,7 +29,7 @@ import java.util.concurrent.*
  * Simulate network partitions or service unavailability:
  *
  * ```kotlin
- * Stove.validate {
+ * stove {
  *     // Pause the database to simulate outage
  *     postgresql {
  *         pause()

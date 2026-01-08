@@ -93,7 +93,7 @@ import org.slf4j.*
  *
  * ```kotlin
  * test("should create user via API and store in MongoDB") {
- *     Stove.validate {
+ *     stove {
  *         // Create user via API
  *         val userId: String
  *         http {

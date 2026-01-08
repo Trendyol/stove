@@ -75,7 +75,7 @@ import reactor.core.publisher.Mono
  *
  * ```kotlin
  * test("should cache user after first request") {
- *     Stove.validate {
+ *     stove {
  *         // Ensure cache is empty
  *         redis {
  *             val conn = client().connect().sync()

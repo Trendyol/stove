@@ -951,7 +951,7 @@ class SchedulerSystem(override val stove: Stove) : AfterRunAware<ApplicationCont
 Later you can use it in testing:
 
 ```kotlin
-validate {
+stove {
   scheduler {
     advance()
   }

@@ -99,7 +99,7 @@ import org.slf4j.*
  *
  * ```kotlin
  * test("should create user via API and store in Couchbase") {
- *     Stove.validate {
+ *     stove {
  *         // Setup: ensure clean state
  *         couchbase {
  *             shouldNotExist("user::new-user")

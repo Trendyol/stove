@@ -128,7 +128,7 @@ typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
  *
  * ```kotlin
  * test("should process payment via external gateway") {
- *     Stove.validate {
+ *     stove {
  *         // Mock external payment gateway
  *         wiremock {
  *             mockPost(
