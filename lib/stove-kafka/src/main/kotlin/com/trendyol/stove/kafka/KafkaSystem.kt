@@ -184,12 +184,16 @@ class KafkaSystem(
       state = mapOf<String, Any>(
         "consumed" to store.consumedMessages().map { it.toReportMap() },
         "published" to store.publishedMessages().map { it.toReportMap() },
-        "committed" to store.committedMessages().map { it.toReportMap() }
+        "committed" to store.committedMessages().map { it.toReportMap() },
+        "failed" to store.failedMessages().map { it.toReportMap() },
+        "retried" to store.retriedMessages().map { it.toReportMap() }
       ),
       summary = """
         Consumed: ${store.consumedMessages().size}
         Published: ${store.publishedMessages().size}
         Committed: ${store.committedMessages().size}
+        Failed: ${store.failedMessages().size}
+        Retried: ${store.retriedMessages().size}
       """.trimIndent()
     )
   }
