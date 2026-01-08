@@ -225,6 +225,119 @@ using<UserRepo, EmailService> { userRepo, emailService ->
 }
 ```
 
+### Reporting
+
+When tests fail, Stove automatically enriches exceptions with a detailed execution report showing exactly what happened:
+
+<details>
+<summary><strong>Example Report</strong></summary>
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                   STOVE TEST EXECUTION REPORT                                    ║
+║                                                                                                  ║
+║ Test: should create new product when send product create request from api for the allowed        ║
+║ supplier                                                                                         ║
+║ ID: ExampleTest::should create new product when send product create request from api for the     ║
+║ allowed supplier                                                                                 ║
+║ Status: FAILED                                                                                   ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                                  ║
+║ TIMELINE                                                                                         ║
+║ ────────                                                                                         ║
+║                                                                                                  ║
+║ 12:41:12.371 ✓ PASSED [WireMock] Register stub: GET /suppliers/99/allowed                        ║
+║     Output: kotlin.Unit                                                                          ║
+║     Metadata: {statusCode=200, responseHeaders={}}                                               ║
+║                                                                                                  ║
+║ 12:41:13.405 ✓ PASSED [HTTP] POST /api/product/create                                            ║
+║     Input: ProductCreateRequest(id=1, name=product name, supplierId=99)                          ║
+║     Output: kotlin.Unit                                                                          ║
+║     Metadata: {status=200, headers={}}                                                           ║
+║                                                                                                  ║
+║ 12:41:13.424 ✓ PASSED [Kafka] shouldBePublished<ProductCreatedEvent>                             ║
+║     Output: ProductCreatedEvent(id=1, name=product name, supplierId=99, createdDate=Thu Jan 08   ║
+║     12:41:12 CET 2026, type=ProductCreatedEvent)                                                 ║
+║     Metadata: {timeout=5s}                                                                       ║
+║                                                                                                  ║
+║ 12:41:13.455 ✗ FAILED [Couchbase] Get document                                                   ║
+║     Input: {id=product:1}                                                                        ║
+║     Error: expected:<100L> but was:<99L>                                                         ║
+║                                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                                  ║
+║ SYSTEM SNAPSHOTS                                                                                 ║
+║ ────────────────                                                                                 ║
+║                                                                                                  ║
+║ ┌─ HTTP ──────────────────────────────────────────────────────────────────────────────────────── ║
+║                                                                                                  ║
+║   No detailed state available                                                                    ║
+║                                                                                                  ║
+║ ┌─ COUCHBASE ─────────────────────────────────────────────────────────────────────────────────── ║
+║                                                                                                  ║
+║   No detailed state available                                                                    ║
+║                                                                                                  ║
+║ ┌─ KAFKA ─────────────────────────────────────────────────────────────────────────────────────── ║
+║                                                                                                  ║
+║   Consumed: 0                                                                                    ║
+║   Published: 1                                                                                   ║
+║   Committed: 0                                                                                   ║
+║                                                                                                  ║
+║   State Details:                                                                                 ║
+║     consumed: 0 item(s)                                                                          ║
+║     published: 1 item(s)                                                                         ║
+║       [0]                                                                                        ║
+║         id: 376db940-a367-4419-a628-4754c9466421                                                 ║
+║         topic: stove-standalone-example.productCreated.1                                         ║
+║         key: 1                                                                                   ║
+║         headers: {X-EventType=ProductCreatedEvent, X-MessageId=29902970-056d-4ae9-9a84-...}      ║
+║         message: {"id":1,"name":"product name","supplierId":99,...}                              ║
+║     committed: 0 item(s)                                                                         ║
+║                                                                                                  ║
+║ ┌─ WIREMOCK ──────────────────────────────────────────────────────────────────────────────────── ║
+║                                                                                                  ║
+║   Registered stubs: 0                                                                            ║
+║   Served requests: 0 (matched: 0)                                                                ║
+║   Unmatched requests: 0                                                                          ║
+║                                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</details>
+
+**Features:**
+- Timeline of all operations with timestamps and results
+- Input/output for each action
+- Expected vs actual values on failures
+- System snapshots (Kafka messages, WireMock stubs, etc.)
+
+**Test Framework Extensions:**
+
+Use the provided extensions to automatically enrich failures:
+
+```kotlin
+// Kotest - register in project config
+class TestConfig : AbstractProjectConfig() {
+  override val extensions = listOf(StoveKotestExtension())
+}
+
+// JUnit 5 - annotate test class
+@ExtendWith(StoveJUnitExtension::class)
+class MyTest { ... }
+```
+
+**Configuration:**
+
+```kotlin
+Stove(
+  StoveOptions(
+    reportingEnabled = true,           // Enable/disable reporting (default: true)
+    dumpReportOnTestFailure = true,    // Enrich failures with report (default: true)
+    failureRenderer = PrettyConsoleRenderer  // Custom renderer (default: PrettyConsoleRenderer)
+  )
+).with { ... }
+```
+
 ## Configuration
 
 ### Framework Setup
