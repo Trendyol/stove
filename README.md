@@ -518,7 +518,7 @@ test("should create order with payment processing") {
 | Kafka         |     ✅      |    ✅    |         ✅         |       ✅       |
 | WireMock      |    n/a     |   n/a   |        n/a        |      n/a      |
 | HTTP Client   |    n/a     |   n/a   |        n/a        |      n/a      |
-| gRPC Mock     |    n/a     |    ✅    |        n/a        |      n/a      |
+| gRPC Mock     |    n/a     |   n/a   |        n/a        |      n/a      |
 
 <details>
 <summary><strong>FAQ</strong></summary>
