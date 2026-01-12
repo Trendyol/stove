@@ -55,7 +55,7 @@ fun Application.mainModule(config: AppConfiguration, applicationOverrides: () ->
       module { single { config } },
       kafka(),
       postgresql(),
-      app(),
+      app(config),
       applicationOverrides()
     )
   }

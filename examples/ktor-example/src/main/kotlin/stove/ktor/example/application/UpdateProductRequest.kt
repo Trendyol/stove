@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UpdateProductRequest(
-  val name: String
+  val name: String,
+  val userId: String? = null
 )

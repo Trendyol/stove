@@ -14,6 +14,7 @@ Stove uses a pluggable architecture—each physical dependency is a separate mod
 | [MSSQL](08-mssql.md) | `stove-mssql` | Microsoft SQL Server |
 | [Redis](09-redis.md) | `stove-redis` | In-memory data store |
 | [WireMock](04-wiremock.md) | `stove-wiremock` | HTTP mock server for external services |
+| [gRPC Mock](14-grpc-mock.md) | `stove-grpc-mock` | gRPC mock server for external gRPC services |
 | [HTTP Client](05-http.md) | `stove-http` | HTTP client for testing your API |
 | [gRPC](12-grpc.md) | `stove-grpc` | gRPC client for testing gRPC services |
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
@@ -101,6 +102,7 @@ stove {
 | [HTTP Client](05-http.md) | Testing your application's REST API |
 | [gRPC](12-grpc.md) | Testing your application's gRPC services |
 | [WireMock](04-wiremock.md) | Mocking external HTTP services |
+| [gRPC Mock](14-grpc-mock.md) | Mocking external gRPC services |
 
 ### Application Integration
 
@@ -260,6 +262,7 @@ test("should process order end-to-end") {
 - [Kafka](02-kafka.md) - Message streaming with producer/consumer testing
 - [Elasticsearch](03-elasticsearch.md) - Search engine with query DSL support
 - [WireMock](04-wiremock.md) - Mock external HTTP dependencies
+- [gRPC Mock](14-grpc-mock.md) - Mock external gRPC services
 - [HTTP Client](05-http.md) - Test your REST API endpoints
 - [gRPC](12-grpc.md) - Test your gRPC services with Wire and grpc-kotlin
 - [PostgreSQL](06-postgresql.md) - Relational database with SQL support

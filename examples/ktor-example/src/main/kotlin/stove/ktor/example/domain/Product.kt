@@ -8,6 +8,7 @@ data class Product(
 object DomainEvents {
   data class ProductUpdated(
     val id: Int,
-    val name: String
+    val name: String,
+    val price: Double = 0.0
   )
 }
