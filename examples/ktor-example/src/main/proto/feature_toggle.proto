@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package featuretoggle;
+
+option java_package = "stove.ktor.example.grpc";
+option java_multiple_files = true;
+
+// Request to check if a feature is enabled
+message IsFeatureEnabledRequest {
+  string feature_name = 1;
+  string context = 2;  // e.g., user_id, tenant_id, etc.
+}
+
+// Response with feature status
+message IsFeatureEnabledResponse {
+  bool enabled = 1;
+  string variant = 2;  // Optional variant name for A/B testing
+}
+
+// Request to get all features for a context
+message GetFeaturesRequest {
+  string context = 1;
+}
+
+// Response with all feature flags
+message GetFeaturesResponse {
+  map<string, bool> features = 1;
+}
+
+// External Feature Toggle service (hypothetical dependency)
+service FeatureToggleService {
+  // Check if a specific feature is enabled
+  rpc IsFeatureEnabled(IsFeatureEnabledRequest) returns (IsFeatureEnabledResponse);
+  
+  // Get all feature flags for a context
+  rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
+}

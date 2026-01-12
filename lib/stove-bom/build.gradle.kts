@@ -24,6 +24,7 @@ dependencies {
     api(projects.lib.stoveMssql)
     api(projects.lib.stoveRedis)
     api(projects.lib.stoveWiremock)
+    api(projects.lib.stoveGrpcMock)
 
     // Starters
     api(projects.starters.spring.stoveSpring)

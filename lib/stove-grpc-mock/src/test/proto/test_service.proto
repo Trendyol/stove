@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package test;
+
+option java_package = "com.trendyol.stove.testing.grpcmock.test";
+option java_multiple_files = true;
+
+// Request message
+message TestRequest {
+  string message = 1;
+  int32 count = 2;
+}
+
+// Response message
+message TestResponse {
+  string message = 1;
+  int32 count = 2;
+}
+
+// Item for streaming tests
+message Item {
+  string id = 1;
+  string name = 2;
+  int32 value = 3;
+}
+
+// Test service with all RPC types
+service TestService {
+  // Unary RPC - single request, single response
+  rpc Unary(TestRequest) returns (TestResponse);
+
+  // Server streaming RPC - single request, stream of responses
+  rpc ServerStream(TestRequest) returns (stream Item);
+
+  // Client streaming RPC - stream of requests, single response
+  rpc ClientStream(stream TestRequest) returns (TestResponse);
+
+  // Bidirectional streaming RPC - stream of requests, stream of responses
+  rpc BidiStream(stream TestRequest) returns (stream TestResponse);
+}

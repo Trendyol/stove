@@ -1,0 +1,301 @@
+public final class com/trendyol/stove/testing/grpcmock/GrpcMetadataKeys {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/grpcmock/GrpcMetadataKeys;
+	public final fun ascii (Ljava/lang/String;)Lio/grpc/Metadata$Key;
+	public final fun binary (Ljava/lang/String;)Lio/grpc/Metadata$Key;
+	public final fun getAUTHORIZATION ()Lio/grpc/Metadata$Key;
+	public final fun getCONTENT_TYPE ()Lio/grpc/Metadata$Key;
+}
+
+public abstract interface annotation class com/trendyol/stove/testing/grpcmock/GrpcMockDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware, com/trendyol/stove/system/abstractions/ValidatedSystem {
+	public static final field Companion Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem$Companion;
+	public fun close ()V
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getReportSystemName ()Ljava/lang/String;
+	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public final fun mockBidiStream (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockBidiStream$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockClientStream (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockClientStream$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockError (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lio/grpc/Status$Code;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockError$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lio/grpc/Status$Code;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockServerStream (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockServerStream$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Ljava/util/List;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockUnary (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockUnary$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+	public fun validate (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystem$Companion {
+	public final fun server (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;)Lio/grpc/Server;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystemOptions : com/trendyol/stove/system/abstractions/SystemOptions {
+	public fun <init> ()V
+	public fun <init> (IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Z
+	public final fun component3 ()Lkotlin/jvm/functions/Function2;
+	public final fun component4 ()Lkotlin/jvm/functions/Function2;
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystemOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystemOptions;IZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystemOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAfterStubMatched ()Lkotlin/jvm/functions/Function2;
+	public final fun getOnRequestReceived ()Lkotlin/jvm/functions/Function2;
+	public final fun getPort ()I
+	public final fun getRemoveStubAfterRequestMatched ()Z
+	public final fun getServerBuilder ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystemOptionsKt {
+	public static final fun grpcMock-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun grpcMock-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+}
+
+public abstract class com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+}
+
+public final class com/trendyol/stove/testing/grpcmock/MetadataMatcher$All : com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> ([Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$All;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$All;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$All;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMatchers ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/MetadataMatcher$Any : com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$Any;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/MetadataMatcher$BearerToken : com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$BearerToken;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$BearerToken;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$BearerToken;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/MetadataMatcher$Custom : com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public final fun component1 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$Custom;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$Custom;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$Custom;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMatcher ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/MetadataMatcher$HasHeader : com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$HasHeader;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$HasHeader;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$HasHeader;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/MetadataMatcher$RequiresAuth : com/trendyol/stove/testing/grpcmock/MetadataMatcher {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher$RequiresAuth;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/ReceivedRequest {
+	public fun <init> (Lcom/trendyol/stove/testing/grpcmock/StubKey;[BLio/grpc/Metadata;JZLjava/lang/String;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/grpcmock/StubKey;[BLio/grpc/Metadata;JZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/grpcmock/StubKey;
+	public final fun component2 ()[B
+	public final fun component3 ()Lio/grpc/Metadata;
+	public final fun component4 ()J
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Lcom/trendyol/stove/testing/grpcmock/StubKey;[BLio/grpc/Metadata;JZLjava/lang/String;)Lcom/trendyol/stove/testing/grpcmock/ReceivedRequest;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/ReceivedRequest;Lcom/trendyol/stove/testing/grpcmock/StubKey;[BLio/grpc/Metadata;JZLjava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/ReceivedRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationHeader ()Ljava/lang/String;
+	public final fun getBearerToken ()Ljava/lang/String;
+	public final fun getMatched ()Z
+	public final fun getMetadata ()Lio/grpc/Metadata;
+	public final fun getRequestBytes ()[B
+	public final fun getStubId ()Ljava/lang/String;
+	public final fun getStubKey ()Lcom/trendyol/stove/testing/grpcmock/StubKey;
+	public final fun getTimestamp ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/trendyol/stove/testing/grpcmock/RequestMatcher {
+}
+
+public final class com/trendyol/stove/testing/grpcmock/RequestMatcher$Any : com/trendyol/stove/testing/grpcmock/RequestMatcher {
+	public static final field INSTANCE Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$Any;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/RequestMatcher$Custom : com/trendyol/stove/testing/grpcmock/RequestMatcher {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public final fun component1 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$Custom;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$Custom;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$Custom;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMatcher ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/RequestMatcher$ExactBytes : com/trendyol/stove/testing/grpcmock/RequestMatcher {
+	public fun <init> ([B)V
+	public final fun component1 ()[B
+	public final fun copy ([B)Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$ExactBytes;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$ExactBytes;[BILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$ExactBytes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBytes ()[B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/RequestMatcher$ExactMessage : com/trendyol/stove/testing/grpcmock/RequestMatcher {
+	public fun <init> (Lcom/google/protobuf/Message;)V
+	public final fun component1 ()Lcom/google/protobuf/Message;
+	public final fun copy (Lcom/google/protobuf/Message;)Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$ExactMessage;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$ExactMessage;Lcom/google/protobuf/Message;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/RequestMatcher$ExactMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/google/protobuf/Message;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/trendyol/stove/testing/grpcmock/StubDefinition {
+	public abstract fun getMetadataMatcher ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public abstract fun getRequestMatcher ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/StubDefinition$BidiStream : com/trendyol/stove/testing/grpcmock/StubDefinition {
+	public fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun component2 ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public final fun component3 ()Lkotlin/jvm/functions/Function2;
+	public final fun copy (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$BidiStream;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/StubDefinition$BidiStream;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$BidiStream;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHandler ()Lkotlin/jvm/functions/Function2;
+	public fun getMetadataMatcher ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public fun getRequestMatcher ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/StubDefinition$ClientStream : com/trendyol/stove/testing/grpcmock/StubDefinition {
+	public fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun component2 ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public final fun component3 ()Lcom/google/protobuf/Message;
+	public final fun copy (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$ClientStream;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/StubDefinition$ClientStream;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$ClientStream;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMetadataMatcher ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public fun getRequestMatcher ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun getResponse ()Lcom/google/protobuf/Message;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/StubDefinition$Error : com/trendyol/stove/testing/grpcmock/StubDefinition {
+	public fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lio/grpc/Status;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lio/grpc/Status;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun component2 ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public final fun component3 ()Lio/grpc/Status;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lio/grpc/Status;Ljava/lang/String;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$Error;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/StubDefinition$Error;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lio/grpc/Status;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public fun getMetadataMatcher ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public fun getRequestMatcher ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun getStatus ()Lio/grpc/Status;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/StubDefinition$ServerStream : com/trendyol/stove/testing/grpcmock/StubDefinition {
+	public fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Ljava/util/List;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun component2 ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Ljava/util/List;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$ServerStream;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/StubDefinition$ServerStream;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$ServerStream;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMetadataMatcher ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public fun getRequestMatcher ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun getResponses ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/StubDefinition$Unary : com/trendyol/stove/testing/grpcmock/StubDefinition {
+	public fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun component2 ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public final fun component3 ()Lcom/google/protobuf/Message;
+	public final fun copy (Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$Unary;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/StubDefinition$Unary;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/StubDefinition$Unary;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMetadataMatcher ()Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;
+	public fun getRequestMatcher ()Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;
+	public final fun getResponse ()Lcom/google/protobuf/Message;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/testing/grpcmock/StubKey {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/testing/grpcmock/StubKey;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/testing/grpcmock/StubKey;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/testing/grpcmock/StubKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFullMethodName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMethodName ()Ljava/lang/String;
+	public final fun getServiceName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

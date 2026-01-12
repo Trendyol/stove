@@ -5,6 +5,7 @@ include(
   "lib:stove-bom",
   "lib:stove",
   "lib:stove-wiremock",
+  "lib:stove-grpc-mock",
   "lib:stove-http",
   "lib:stove-grpc",
   "lib:stove-kafka",

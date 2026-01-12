@@ -179,7 +179,10 @@ io-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
 io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
 io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
 io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
+grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "io-grpc" }
+grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "io-grpc-kotlin" }
 google-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf" }
+google-protobuf-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "google-protobuf" }
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 google-gson = { module = "com.google.code.gson:gson", version = "2.13.2" }

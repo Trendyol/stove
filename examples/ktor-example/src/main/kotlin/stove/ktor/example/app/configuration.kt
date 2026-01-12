@@ -31,7 +31,19 @@ inline fun <reified T : Any> loadConfiguration(args: Array<String> = arrayOf()):
 data class AppConfiguration(
   val port: Int,
   val database: DatabaseConfiguration,
-  val kafka: KafkaConfiguration
+  val kafka: KafkaConfiguration,
+  val featureToggle: FeatureToggleConfiguration = FeatureToggleConfiguration(),
+  val pricing: PricingConfiguration = PricingConfiguration()
+)
+
+data class FeatureToggleConfiguration(
+  val host: String = "localhost",
+  val port: Int = 9090
+)
+
+data class PricingConfiguration(
+  val host: String = "localhost",
+  val port: Int = 9090
 )
 
 data class DatabaseConfiguration(

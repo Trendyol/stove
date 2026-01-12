@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package pricing;
+
+option java_package = "stove.ktor.example.grpc";
+option java_multiple_files = true;
+
+// Request to calculate price
+message CalculatePriceRequest {
+  string product_id = 1;
+  int32 quantity = 2;
+  string currency = 3;
+  string customer_tier = 4;  // e.g., "standard", "premium", "vip"
+}
+
+// Price calculation response
+message CalculatePriceResponse {
+  double base_price = 1;
+  double discount = 2;
+  double final_price = 3;
+  string currency = 4;
+}
+
+// Request to get discount for a customer
+message GetDiscountRequest {
+  string customer_id = 1;
+  string product_category = 2;
+}
+
+// Discount response
+message GetDiscountResponse {
+  double discount_percentage = 1;
+  string discount_code = 2;
+  bool is_applicable = 3;
+}
+
+// External Pricing service (hypothetical dependency)
+service PricingService {
+  // Calculate price for a product
+  rpc CalculatePrice(CalculatePriceRequest) returns (CalculatePriceResponse);
+  
+  // Get applicable discount for a customer
+  rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
+}
