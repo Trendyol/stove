@@ -502,7 +502,7 @@ test("should create order with payment processing") {
 | Databases  | PostgreSQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis |
 | Messaging  | Kafka                                                       |
 | HTTP       | Built-in client, WebSockets, WireMock                       |
-| gRPC       | Wire, grpc-kotlin                                           |
+| gRPC       | Client (grpc-kotlin), Mock Server (native)                  |
 | Frameworks | Spring Boot, Ktor, Micronaut, Quarkus (experimental)        |
 
 ### Feature Matrix
@@ -518,6 +518,7 @@ test("should create order with payment processing") {
 | Kafka         |     ✅      |    ✅    |         ✅         |       ✅       |
 | WireMock      |    n/a     |   n/a   |        n/a        |      n/a      |
 | HTTP Client   |    n/a     |   n/a   |        n/a        |      n/a      |
+| gRPC Mock     |    n/a     |    ✅    |        n/a        |      n/a      |
 
 <details>
 <summary><strong>FAQ</strong></summary>
