@@ -1,12 +1,10 @@
 package com.trendyol.stove.system
 
-import arrow.core.*
+import arrow.core.getOrElse
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
+import kotlin.reflect.*
 
 /**
  * A system that provides a bridge between the test system and the application context.
@@ -78,7 +76,7 @@ abstract class BridgeSystem<T : Any>(
    */
   @StoveDsl
   @Suppress("TooGenericExceptionCaught")
-  inline fun <reified D : Any> using(block: D.() -> Unit) {
+  suspend inline fun <reified D : Any> using(block: suspend D.() -> Unit) {
     val beanName = D::class.simpleName ?: "Unknown"
     val metadata = mapOf("type" to (D::class.qualifiedName ?: ""))
 
@@ -167,8 +165,8 @@ fun <T : Any> WithDsl.bridge(of: BridgeSystem<T>): Stove = this.stove.withBridge
  * @param block the block to execute with the resolved bean as receiver.
  */
 @StoveDsl
-inline fun <reified T : Any> ValidationDsl.using(
-  block: @StoveDsl T.() -> Unit
+suspend inline fun <reified T : Any> ValidationDsl.using(
+  block: @StoveDsl suspend T.() -> Unit
 ): Unit = this.stove.bridge().using(block)
 
 /**
@@ -180,10 +178,12 @@ inline fun <reified T : Any> ValidationDsl.using(
  */
 @StoveDsl
 @Suppress("TooGenericExceptionCaught")
-inline fun <
+suspend inline fun <
   reified T1 : Any,
   reified T2 : Any
-> ValidationDsl.using(validation: (T1, T2) -> Unit): Unit = stove.bridge().let { bridge ->
+> ValidationDsl.using(
+  crossinline validation: suspend (T1, T2) -> Unit
+): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val beanNames = "$name1, $name2"
@@ -227,11 +227,13 @@ inline fun <
  */
 @StoveDsl
 @Suppress("TooGenericExceptionCaught")
-inline fun <
+suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any
-> ValidationDsl.using(validation: (T1, T2, T3) -> Unit): Unit = stove.bridge().let { bridge ->
+> ValidationDsl.using(
+  crossinline validation: suspend (T1, T2, T3) -> Unit
+): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val name3 = T3::class.simpleName ?: "Unknown"
@@ -278,12 +280,14 @@ inline fun <
  */
 @StoveDsl
 @Suppress("TooGenericExceptionCaught")
-inline fun <
+suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any,
   reified T4 : Any
-> ValidationDsl.using(validation: (T1, T2, T3, T4) -> Unit): Unit = stove.bridge().let { bridge ->
+> ValidationDsl.using(
+  crossinline validation: suspend (T1, T2, T3, T4) -> Unit
+): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val name3 = T3::class.simpleName ?: "Unknown"
@@ -333,13 +337,15 @@ inline fun <
  */
 @StoveDsl
 @Suppress("TooGenericExceptionCaught")
-inline fun <
+suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any,
   reified T4 : Any,
   reified T5 : Any
-> ValidationDsl.using(validation: (T1, T2, T3, T4, T5) -> Unit): Unit = stove.bridge().let { bridge ->
+> ValidationDsl.using(
+  crossinline validation: suspend (T1, T2, T3, T4, T5) -> Unit
+): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val name3 = T3::class.simpleName ?: "Unknown"
