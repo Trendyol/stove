@@ -1,4 +1,4 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
+@file:Suppress("MemberVisibilityCanBePrivate", "unused")
 
 package com.trendyol.stove.http
 
@@ -18,7 +18,8 @@ import io.ktor.serialization.*
 import io.ktor.serialization.jackson.*
 import io.ktor.util.*
 import io.ktor.util.reflect.*
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import java.nio.charset.Charset
 import kotlin.time.Duration.Companion.seconds
 
@@ -423,7 +424,7 @@ class HttpSystem(
         }.readJsonContentStream {
           options.contentConverter.deserialize(Charset.defaultCharset(), typeInfo<TExpected>(), it) as TExpected
         }
-      expect(flow)
+      expect(flow.flowOn(Dispatchers.IO))
     }
     return this
   }
@@ -747,9 +748,16 @@ class HttpSystem(
     headers: Map<String, String>,
     queryParams: Map<String, String>,
     token: Option<String>
-  ) = ktorHttpClient.get {
-    configureRequest(uri, headers, token)
-    queryParams.forEach { (key, value) -> parameter(key, value) }
+  ) = report(
+    action = "GET $uri (internal)",
+    input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
+    metadata = mapOf("headers" to headers, "token" to token.map { "***" }.getOrElse { "none" }),
+    expected = "HTTP Response".some()
+  ) {
+    ktorHttpClient.get {
+      configureRequest(uri, headers, token)
+      queryParams.forEach { (key, value) -> parameter(key, value) }
+    }
   }
 
   @PublishedApi
@@ -759,10 +767,17 @@ class HttpSystem(
     body: Option<Any>,
     headers: Map<String, String>,
     token: Option<String>
-  ): HttpResponse = ktorHttpClient.request {
-    this.method = method
-    configureRequest(uri, headers, token)
-    body.map { setBody(it) }
+  ): HttpResponse = report(
+    action = "${method.value} $uri (internal)",
+    input = body,
+    metadata = mapOf("headers" to headers, "token" to token.map { "***" }.getOrElse { "none" }),
+    expected = "HTTP Response".some()
+  ) {
+    ktorHttpClient.request {
+      this.method = method
+      configureRequest(uri, headers, token)
+      body.map { setBody(it) }
+    }
   }
 
   @PublishedApi
@@ -846,7 +861,13 @@ class HttpSystem(
     suspend fun HttpSystem.client(
       block: suspend io.ktor.client.HttpClient.(baseUrl: URLBuilder) -> Unit
     ) {
-      block(this.ktorHttpClient, URLBuilder(this.options.baseUrl))
+      report(
+        action = "Custom HTTP Client Operation",
+        metadata = mapOf("baseUrl" to this.options.baseUrl),
+        expected = "Custom operation completed".some()
+      ) {
+        block(this.ktorHttpClient, URLBuilder(this.options.baseUrl))
+      }
     }
   }
 }

@@ -30,7 +30,7 @@ fun <T> HttpStatement.readJsonContentStream(transform: suspend (line: ByteReadCh
 }
 
 private suspend fun ByteReadChannel.readUTF8LineNonEmpty(onRead: suspend (String) -> Unit) {
-  readLineStrict().toOption().filter { it.isNotBlank() }.map { onRead(it) }
+  readLine().toOption().filter { it.isNotBlank() }.map { onRead(it) }
 }
 
 /**
