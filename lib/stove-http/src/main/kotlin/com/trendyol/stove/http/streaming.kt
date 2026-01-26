@@ -4,7 +4,6 @@ import arrow.core.toOption
 import com.trendyol.stove.serialization.StoveSerde
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.util.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.*
 
@@ -31,7 +30,7 @@ fun <T> HttpStatement.readJsonContentStream(transform: suspend (line: ByteReadCh
 }
 
 private suspend fun ByteReadChannel.readUTF8LineNonEmpty(onRead: suspend (String) -> Unit) {
-  readUTF8Line().toOption().filter { it.isNotBlank() }.map { onRead(it) }
+  readLineStrict().toOption().filter { it.isNotBlank() }.map { onRead(it) }
 }
 
 /**
