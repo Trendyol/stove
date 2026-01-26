@@ -17,7 +17,7 @@ arrow = "2.2.1.1"
 jackson = "2.21"
 
 # Couchbase
-couchbase-client = "3.10.0"
+couchbase-client = "3.10.1"
 
 # Kafka
 kafka = "4.1.1"
@@ -35,7 +35,7 @@ koin = "4.1.1"
 mongodb = "5.6.2"
 
 # Tooling
-spotless = "8.1.0"
+spotless = "8.2.0"
 detekt = "1.23.8"
 lombok = "1.18.42"
 
@@ -45,10 +45,10 @@ kediatr = "4.3.0"
 
 # Testing
 stove = "1.0.0.492-SNAPSHOT"
-kotest = "6.0.7"
-exposed = "1.0.0-rc-4"
-postgresql = "42.7.8"
-flyway = "11.20.1"
+kotest = "6.1.1"
+exposed = "1.0.0"
+postgresql = "42.7.9"
+flyway = "11.20.2"
 
 [libraries]
 # Kotlin
