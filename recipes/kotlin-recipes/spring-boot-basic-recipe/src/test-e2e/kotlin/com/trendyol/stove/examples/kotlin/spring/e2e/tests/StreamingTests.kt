@@ -47,7 +47,7 @@ class StreamingTests :
 fun <T> HttpStatement.readJsonStream(transform: (String) -> T): Flow<T> = flow {
   execute {
     while (!it.rawContent.isClosedForRead) {
-      val line = it.rawContent.readUTF8Line()
+      val line = it.rawContent.readLineStrict()
       if (line != null) {
         emit(transform(line))
       }
