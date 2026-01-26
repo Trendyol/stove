@@ -748,16 +748,9 @@ class HttpSystem(
     headers: Map<String, String>,
     queryParams: Map<String, String>,
     token: Option<String>
-  ) = report(
-    action = "GET $uri (internal)",
-    input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
-    metadata = mapOf("headers" to headers, "token" to token.map { "***" }.getOrElse { "none" }),
-    expected = "HTTP Response".some()
-  ) {
-    ktorHttpClient.get {
-      configureRequest(uri, headers, token)
-      queryParams.forEach { (key, value) -> parameter(key, value) }
-    }
+  ) = ktorHttpClient.get {
+    configureRequest(uri, headers, token)
+    queryParams.forEach { (key, value) -> parameter(key, value) }
   }
 
   @PublishedApi
@@ -767,17 +760,10 @@ class HttpSystem(
     body: Option<Any>,
     headers: Map<String, String>,
     token: Option<String>
-  ): HttpResponse = report(
-    action = "${method.value} $uri (internal)",
-    input = body,
-    metadata = mapOf("headers" to headers, "token" to token.map { "***" }.getOrElse { "none" }),
-    expected = "HTTP Response".some()
-  ) {
-    ktorHttpClient.request {
-      this.method = method
-      configureRequest(uri, headers, token)
-      body.map { setBody(it) }
-    }
+  ): HttpResponse = ktorHttpClient.request {
+    this.method = method
+    configureRequest(uri, headers, token)
+    body.map { setBody(it) }
   }
 
   @PublishedApi
