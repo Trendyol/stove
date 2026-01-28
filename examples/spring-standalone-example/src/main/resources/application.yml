@@ -4,10 +4,13 @@ spring:
   servlet:
     multipart:
       max-request-size: 10MB
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/stove
+  datasource:
+    url: jdbc:postgresql://localhost:5432/stove
     username: postgres
     password: postgres
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
 
 server:
   port: 8001

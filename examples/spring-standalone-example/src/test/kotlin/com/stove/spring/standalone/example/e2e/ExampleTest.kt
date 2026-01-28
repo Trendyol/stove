@@ -7,11 +7,10 @@ import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.system.*
 import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.springframework.http.MediaType
-import org.springframework.r2dbc.core.DatabaseClient
 import stove.spring.standalone.example.application.handlers.*
 import stove.spring.standalone.example.application.services.SupplierPermission
 import stove.spring.standalone.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
@@ -21,7 +20,7 @@ class ExampleTest :
   FunSpec({
     test("bridge should work") {
       stove {
-        using<DatabaseClient> {
+        using<Database> {
           this shouldNotBe null
         }
       }
@@ -49,7 +48,7 @@ class ExampleTest :
 
         wiremock {
           mockGet(
-            "/suppliers/${permission.id}/allowed",
+            "/suppliers/${request.supplierId}/allowed",
             statusCode = 200,
             responseBody = permission.some()
           )
@@ -95,7 +94,7 @@ class ExampleTest :
         val permission = SupplierPermission(request.supplierId, isAllowed = false)
         wiremock {
           mockGet(
-            "/suppliers/${permission.id}/allowed",
+            "/suppliers/${request.supplierId}/allowed",
             statusCode = 200,
             responseBody = permission.some()
           )
@@ -115,7 +114,7 @@ class ExampleTest :
 
         wiremock {
           mockGet(
-            "/suppliers/${supplierPermission.id}/allowed",
+            "/suppliers/${command.supplierId}/allowed",
             statusCode = 200,
             responseBody = supplierPermission.some()
           )
@@ -137,7 +136,7 @@ class ExampleTest :
 
         wiremock {
           mockGet(
-            "/suppliers/${supplierPermission.id}/allowed",
+            "/suppliers/${command.supplierId}/allowed",
             statusCode = 200,
             responseBody = supplierPermission.some()
           )
