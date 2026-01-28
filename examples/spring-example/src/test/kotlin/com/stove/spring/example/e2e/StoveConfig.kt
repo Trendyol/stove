@@ -34,7 +34,7 @@ class StoveConfig : AbstractProjectConfig() {
             databaseName = "stove",
             configureExposedConfiguration = { cfg ->
               listOf(
-                "spring.r2dbc.url=r2dbc:postgresql://${cfg.host}:${cfg.port}/${cfg.databaseName}",
+                "spring.r2dbc.url=r2dbc:postgresql://${cfg.host}:${cfg.port}/stove",
                 "spring.r2dbc.username=${cfg.username}",
                 "spring.r2dbc.password=${cfg.password}"
               )
