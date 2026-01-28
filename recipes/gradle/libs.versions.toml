@@ -65,6 +65,7 @@ spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-w
 spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
 spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
 spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+spring-boot-data-r2dbc = { module = "org.springframework.boot:spring-boot-starter-data-r2dbc", version.ref = "spring-boot" }
 
 # Quarkus
 quarkus = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }

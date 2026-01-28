@@ -16,13 +16,10 @@ micrometer:
     common-tags:
       application: "micronaut-example"
 
-couchbase:
-  hosts: localhost
-  username: username
-  password: password
-  bucketName: Stove
-  kvTimeout: 3000
-  connectTimeout: 15000
-  queryTimeout: 5000
-  viewTimeout: 5000
+r2dbc:
+  datasources:
+    default:
+      url: r2dbc:postgresql://localhost:5432/stove
+      username: postgres
+      password: postgres
 

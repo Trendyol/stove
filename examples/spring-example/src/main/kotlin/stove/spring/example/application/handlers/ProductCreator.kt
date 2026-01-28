@@ -1,10 +1,8 @@
 package stove.spring.example.application.handlers
 
-import com.couchbase.client.java.ReactiveCollection
-import com.couchbase.client.java.json.JsonObject
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Component
 import stove.spring.example.infrastructure.Headers
 import stove.spring.example.infrastructure.http.SupplierHttpService
@@ -15,8 +13,7 @@ import java.time.Instant
 @Component
 class ProductCreator(
   private val supplierHttpService: SupplierHttpService,
-  private val collection: ReactiveCollection,
-  private val objectMapper: ObjectMapper,
+  private val databaseClient: DatabaseClient,
   private val kafkaProducer: KafkaProducer
 ) {
   @Value("\${kafka.producer.product-created.topic-name}")
@@ -27,9 +24,20 @@ class ProductCreator(
     if (!supplierPermission.isAllowed) {
       return "Supplier with the given id(${req.supplierId}) is not allowed for product creation"
     }
-    val fromJson = JsonObject.fromJson(objectMapper.writeValueAsString(req))
 
-    collection.insert("product:${req.id}", fromJson).awaitFirst()
+    databaseClient
+      .sql(
+        """
+      INSERT INTO products (id, name, supplier_id, created_date) 
+      VALUES (:id, :name, :supplierId, :createdDate)
+      """
+      ).bind("id", req.id)
+      .bind("name", req.name)
+      .bind("supplierId", req.supplierId)
+      .bind("createdDate", Instant.now())
+      .fetch()
+      .rowsUpdated()
+      .awaitFirst()
 
     kafkaProducer.send(
       KafkaOutgoingMessage(

@@ -1,18 +1,18 @@
 package com.stove.spring.example.e2e
 
 import arrow.core.some
-import com.trendyol.stove.couchbase.couchbase
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.system.*
 import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.springframework.http.MediaType
+import org.springframework.r2dbc.core.DatabaseClient
 import stove.spring.example.application.handlers.*
 import stove.spring.example.application.services.SupplierPermission
-import stove.spring.example.infrastructure.couchbase.CouchbaseProperties
 import stove.spring.example.infrastructure.messaging.kafka.consumers.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -20,8 +20,8 @@ class ExampleTest :
   FunSpec({
     test("bridge should work") {
       stove {
-        using<CouchbaseProperties> {
-          this.bucketName shouldBe "Stove"
+        using<DatabaseClient> {
+          this shouldNotBe null
         }
       }
     }
@@ -68,11 +68,21 @@ class ExampleTest :
           }
         }
 
-        couchbase {
-          shouldGet<ProductCreateRequest>("product:${productCreateRequest.id}") { actual ->
-            actual.id shouldBe productCreateRequest.id
-            actual.name shouldBe productCreateRequest.name
-            actual.supplierId shouldBe productCreateRequest.supplierId
+        postgresql {
+          shouldQuery<ProductCreateRequest>(
+            "SELECT * FROM products WHERE id = ${productCreateRequest.id}",
+            mapper = { row ->
+              ProductCreateRequest(
+                row.long("id"),
+                row.string("name"),
+                row.long("supplier_id")
+              )
+            }
+          ) { products ->
+            products.size shouldBe 1
+            products.first().id shouldBe productCreateRequest.id
+            products.first().name shouldBe productCreateRequest.name
+            products.first().supplierId shouldBe productCreateRequest.supplierId
           }
         }
       }
@@ -142,11 +152,21 @@ class ExampleTest :
           }
         }
 
-        couchbase {
-          shouldGet<ProductCreateRequest>("product:${createProductCommand.id}") { actual ->
-            actual.id shouldBe createProductCommand.id
-            actual.name shouldBe createProductCommand.name
-            actual.supplierId shouldBe createProductCommand.supplierId
+        postgresql {
+          shouldQuery<ProductCreateRequest>(
+            "SELECT * FROM products WHERE id = ${createProductCommand.id}",
+            mapper = { row ->
+              ProductCreateRequest(
+                row.long("id"),
+                row.string("name"),
+                row.long("supplier_id")
+              )
+            }
+          ) { products ->
+            products.size shouldBe 1
+            products.first().id shouldBe createProductCommand.id
+            products.first().name shouldBe createProductCommand.name
+            products.first().supplierId shouldBe createProductCommand.supplierId
           }
         }
 

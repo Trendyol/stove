@@ -2,8 +2,6 @@ package stove.spring.example.infrastructure.http
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.netty.channel.ChannelOption
-import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,7 +13,6 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.web.reactive.function.client.*
 import reactor.netty.http.client.HttpClient
 import stove.spring.example.infrastructure.ObjectMapperConfig
-import java.util.concurrent.TimeUnit
 
 @Configuration
 @EnableConfigurationProperties(WebClientConfigurationProperties::class)
@@ -28,11 +25,8 @@ class WebClientConfiguration(
 
   @Bean
   fun supplierHttpClient(exchangeStrategies: ExchangeStrategies): WebClient =
-    defaultWebClientBuilder(
-      webClientConfigurationProperties.supplierHttp.url,
-      webClientConfigurationProperties.supplierHttp.connectTimeout,
-      webClientConfigurationProperties.supplierHttp.readTimeout
-    ).exchangeStrategies(exchangeStrategies)
+    defaultWebClientBuilder(webClientConfigurationProperties.supplierHttp.url)
+      .exchangeStrategies(exchangeStrategies)
       .build()
 
   @Bean
@@ -54,9 +48,7 @@ class WebClientConfiguration(
     }.build()
 
   private fun defaultWebClientBuilder(
-    baseUrl: String,
-    connectTimeout: Int,
-    readTimeout: Long
+    baseUrl: String
   ): WebClient.Builder = WebClient
     .builder()
     .baseUrl(baseUrl)
@@ -65,15 +57,6 @@ class WebClientConfiguration(
         HttpClient
           .create()
           .followRedirect(true)
-          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
-          .doOnConnected { conn ->
-            conn.addHandlerLast(
-              ReadTimeoutHandler(
-                readTimeout,
-                TimeUnit.MILLISECONDS
-              )
-            )
-          }
       )
     )
 }
