@@ -1,3 +1,5 @@
+import com.trendyol.stove.gradle.configureStoveTracing
+
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.four)
@@ -16,15 +18,37 @@ dependencies {
   implementation(libs.kotlinx.core)
   implementation(libs.kotlinx.reactive)
   implementation(libs.kotlinx.slf4j)
+
+  // OpenTelemetry instrumentation API for @WithSpan annotation
+  implementation(libs.opentelemetry.instrumentation.annotations)
 }
 
 dependencies {
-  testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.stove.testExtensions.stoveExtensionsKotest)
   testImplementation(libs.jackson3.kotlin)
   testImplementation(projects.stove.lib.stoveHttp)
   testImplementation(projects.stove.lib.stoveWiremock)
+  testImplementation(projects.stove.lib.stoveTracing)
   testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(projects.stove.starters.spring.stoveSpringKafka)
 }
 
 application { mainClass.set("stove.spring.example4x.ExampleAppkt") }
+
+// ============================================================================
+// TRACING SETUP - OpenTelemetry Java Agent
+// ============================================================================
+configureStoveTracing {
+  serviceName = "spring-4x-example"
+  // Plugin handles:
+  // - Adding opentelemetry-javaagent dependency
+  // - Configuring test task JVM args for OTLP export
+  // - Optimizing batch span processor for tests
+}
+
+tasks.test {
+  testLogging {
+    events("passed", "skipped", "failed", "standardOut", "standardError")
+    showStandardStreams = true
+  }
+}

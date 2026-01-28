@@ -4,6 +4,7 @@ rootProject.name = "stove"
 include(
   "lib:stove-bom",
   "lib:stove",
+  "lib:stove-tracing",
   "lib:stove-wiremock",
   "lib:stove-grpc-mock",
   "lib:stove-http",

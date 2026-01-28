@@ -1,8 +1,16 @@
 package com.trendyol.stove.extensions.junit
 
-import com.trendyol.stove.reporting.*
+import com.trendyol.stove.reporting.StoveTestContext
+import com.trendyol.stove.reporting.StoveTestContextHolder
+import com.trendyol.stove.reporting.StoveTestFailureException
 import com.trendyol.stove.system.Stove
-import org.junit.jupiter.api.extension.*
+import com.trendyol.stove.tracing.TraceContext
+import com.trendyol.stove.tracing.TraceReportBuilder
+import com.trendyol.stove.tracing.TraceReportBuilder.shouldEnrichFailures
+import org.junit.jupiter.api.extension.AfterEachCallback
+import org.junit.jupiter.api.extension.BeforeEachCallback
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler
 
 /**
  * JUnit extension that automatically manages test context and enriches test failures
@@ -35,48 +43,44 @@ class StoveJUnitExtension :
   override fun beforeEach(context: ExtensionContext) {
     if (!Stove.instanceInitialized()) return
 
-    val ctx = StoveTestContext(
-      testId = "${context.requiredTestClass.simpleName}::${context.requiredTestMethod.name}",
-      testName = context.displayName,
-      specName = context.requiredTestClass.simpleName
-    )
-
+    val ctx = context.toStoveContext()
     StoveTestContextHolder.set(ctx)
     Stove.reporter().startTest(ctx)
+    TraceContext.start(ctx.testId)
   }
 
   override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
-    if (!Stove.instanceInitialized()) {
-      throw throwable
-    }
+    if (!Stove.instanceInitialized()) throw throwable
 
-    val reporter = Stove.reporter()
     val options = Stove.options()
+    if (!options.shouldEnrichFailures()) throw throwable
 
-    // Enrich the exception with Stove report if enabled
-    if (options.dumpReportOnTestFailure && options.reportingEnabled) {
-      val report = reporter.dumpIfFailed(options.failureRenderer)
-      if (report.isNotEmpty()) {
-        throw StoveTestFailureException(
-          originalMessage = throwable.message ?: "Test failed",
-          stoveReport = report,
-          cause = throwable
-        )
-      }
+    val fullReport = TraceReportBuilder.buildFullReport()
+    if (fullReport.isNotEmpty()) {
+      throw StoveTestFailureException(
+        originalMessage = throwable.message ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE,
+        stoveReport = fullReport,
+        cause = throwable
+      )
     }
 
-    // Re-throw original exception if no report or reporting disabled
     throw throwable
   }
 
   override fun afterEach(context: ExtensionContext) {
     if (!Stove.instanceInitialized()) return
 
-    val reporter = Stove.reporter()
-
-    // Clear report for next test
-    reporter.endTest()
-    reporter.clear()
+    TraceContext.clear()
+    Stove.reporter().run {
+      endTest()
+      clear()
+    }
     StoveTestContextHolder.clear()
   }
+
+  private fun ExtensionContext.toStoveContext() = StoveTestContext(
+    testId = "${requiredTestClass.simpleName}::${requiredTestMethod.name}",
+    testName = displayName,
+    specName = requiredTestClass.simpleName
+  )
 }

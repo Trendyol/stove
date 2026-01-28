@@ -1,10 +1,12 @@
 package stove.spring.example4x.application.handlers
 
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.springframework.stereotype.Service
 import stove.spring.example4x.infrastructure.api.ProductCreateRequest
 
 @Service
 class ProductCreator {
+  @WithSpan("ProductCreator.create")
   suspend fun create(request: ProductCreateRequest) {
     // In a real application, this would persist the product
     println("Creating product: ${request.name} with id ${request.id}")

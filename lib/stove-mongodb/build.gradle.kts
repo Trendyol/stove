@@ -1,5 +1,6 @@
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveTracing)
   api(libs.testcontainers.mongodb)
   implementation(libs.mongodb.kotlin.coroutine)
   implementation(libs.kotlinx.io.reactor.extensions)

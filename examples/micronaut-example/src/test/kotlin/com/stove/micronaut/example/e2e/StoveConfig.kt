@@ -5,6 +5,7 @@ import com.trendyol.stove.http.*
 import com.trendyol.stove.micronaut.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
@@ -40,6 +41,10 @@ class StoveConfig : AbstractProjectConfig() {
           }
         }
         bridge()
+        tracing {
+          serviceName("micronaut-example")
+          enableSpanReceiver(port = 4318)
+        }
         wiremock {
           WireMockSystemOptions(
             port = 7079,

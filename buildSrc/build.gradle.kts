@@ -1,9 +1,9 @@
 plugins {
-  `kotlin-dsl`
+    `kotlin-dsl`
 }
 
 repositories {
-  mavenCentral()
-  google()
-  gradlePluginPortal()
+    mavenCentral()
+    google()
+    gradlePluginPortal()
 }

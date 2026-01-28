@@ -406,11 +406,13 @@ public final class com/trendyol/stove/reporting/PrettyConsoleRenderer : com/tren
 
 public final class com/trendyol/stove/reporting/ReportEntry {
 	public static final field Companion Lcom/trendyol/stove/reporting/ReportEntry$Companion;
-	public fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)V
-	public synthetic fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)V
+	public synthetic fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/time/Instant;
 	public final fun component10 ()Larrow/core/Option;
 	public final fun component11 ()Larrow/core/Option;
+	public final fun component12 ()Larrow/core/Option;
+	public final fun component13 ()Larrow/core/Option;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
@@ -419,13 +421,15 @@ public final class com/trendyol/stove/reporting/ReportEntry {
 	public final fun component7 ()Larrow/core/Option;
 	public final fun component8 ()Ljava/util/Map;
 	public final fun component9 ()Larrow/core/Option;
-	public final fun copy (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/reporting/ReportEntry;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public final fun copy (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/reporting/ReportEntry;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/reporting/AssertionResult;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAction ()Ljava/lang/String;
 	public final fun getActual ()Larrow/core/Option;
 	public final fun getError ()Larrow/core/Option;
+	public final fun getExecutionTrace ()Larrow/core/Option;
 	public final fun getExpected ()Larrow/core/Option;
+	public final fun getHasTrace ()Z
 	public final fun getInput ()Larrow/core/Option;
 	public final fun getMetadata ()Ljava/util/Map;
 	public final fun getOutput ()Larrow/core/Option;
@@ -434,6 +438,7 @@ public final class com/trendyol/stove/reporting/ReportEntry {
 	public final fun getSystem ()Ljava/lang/String;
 	public final fun getTestId ()Ljava/lang/String;
 	public final fun getTimestamp ()Ljava/time/Instant;
+	public final fun getTraceId ()Larrow/core/Option;
 	public fun hashCode ()I
 	public final fun isFailed ()Z
 	public final fun isPassed ()Z
@@ -441,8 +446,8 @@ public final class com/trendyol/stove/reporting/ReportEntry {
 }
 
 public final class com/trendyol/stove/reporting/ReportEntry$Companion {
-	public final fun action (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
-	public static synthetic fun action$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public final fun action (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public static synthetic fun action$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
 	public final fun failure (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
 	public static synthetic fun failure$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
 	public final fun success (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)Lcom/trendyol/stove/reporting/ReportEntry;
@@ -568,6 +573,15 @@ public final class com/trendyol/stove/reporting/TestReportKt {
 	public static final fun forSystem (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
 	public static final fun forTest (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
 	public static final fun passed (Ljava/util/List;)Ljava/util/List;
+}
+
+public abstract interface class com/trendyol/stove/reporting/TraceProvider {
+	public abstract fun getTraceVisualizationForCurrentTest (J)Larrow/core/Option;
+	public static synthetic fun getTraceVisualizationForCurrentTest$default (Lcom/trendyol/stove/reporting/TraceProvider;JILjava/lang/Object;)Larrow/core/Option;
+}
+
+public final class com/trendyol/stove/reporting/TraceProvider$DefaultImpls {
+	public static synthetic fun getTraceVisualizationForCurrentTest$default (Lcom/trendyol/stove/reporting/TraceProvider;JILjava/lang/Object;)Larrow/core/Option;
 }
 
 public final class com/trendyol/stove/serialization/E2eObjectMapperConfig {
@@ -786,6 +800,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 
 public final class com/trendyol/stove/system/Stove$Companion {
 	public final fun getSystem (Lkotlin/reflect/KClass;)Lcom/trendyol/stove/system/abstractions/PluggedSystem;
+	public final fun getSystemOrNone (Lkotlin/reflect/KClass;)Larrow/core/Option;
 	public final fun instanceInitialized ()Z
 	public final fun options ()Lcom/trendyol/stove/system/StoveOptions;
 	public final fun reporter ()Lcom/trendyol/stove/reporting/StoveReporter;
@@ -1010,5 +1025,157 @@ public abstract interface class com/trendyol/stove/system/abstractions/Validated
 }
 
 public abstract interface annotation class com/trendyol/stove/system/annotations/StoveDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/tracing/ExceptionInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)Lcom/trendyol/stove/tracing/ExceptionInfo;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/ExceptionInfo;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/ExceptionInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getStackTrace ()Ljava/util/List;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/SpanInfo {
+	public static final field Companion Lcom/trendyol/stove/tracing/SpanInfo$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLcom/trendyol/stove/tracing/SpanStatus;Ljava/util/Map;Lcom/trendyol/stove/tracing/ExceptionInfo;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLcom/trendyol/stove/tracing/SpanStatus;Ljava/util/Map;Lcom/trendyol/stove/tracing/ExceptionInfo;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Lcom/trendyol/stove/tracing/ExceptionInfo;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()Lcom/trendyol/stove/tracing/SpanStatus;
+	public final fun component9 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLcom/trendyol/stove/tracing/SpanStatus;Ljava/util/Map;Lcom/trendyol/stove/tracing/ExceptionInfo;)Lcom/trendyol/stove/tracing/SpanInfo;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/SpanInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJLcom/trendyol/stove/tracing/SpanStatus;Ljava/util/Map;Lcom/trendyol/stove/tracing/ExceptionInfo;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/SpanInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getDurationMs ()J
+	public final fun getDurationNanos ()J
+	public final fun getEndTimeNanos ()J
+	public final fun getException ()Lcom/trendyol/stove/tracing/ExceptionInfo;
+	public final fun getOperationName ()Ljava/lang/String;
+	public final fun getParentSpanId ()Ljava/lang/String;
+	public final fun getServiceName ()Ljava/lang/String;
+	public final fun getSpanId ()Ljava/lang/String;
+	public final fun getStartTimeNanos ()J
+	public final fun getStatus ()Lcom/trendyol/stove/tracing/SpanStatus;
+	public final fun getTraceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isFailed ()Z
+	public final fun isSuccess ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/SpanInfo$Companion {
+}
+
+public final class com/trendyol/stove/tracing/SpanNode {
+	public fun <init> (Lcom/trendyol/stove/tracing/SpanInfo;Ljava/util/List;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/tracing/SpanInfo;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/tracing/SpanInfo;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Lcom/trendyol/stove/tracing/SpanInfo;Ljava/util/List;)Lcom/trendyol/stove/tracing/SpanNode;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/SpanNode;Lcom/trendyol/stove/tracing/SpanInfo;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/SpanNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun findFailurePoint ()Lcom/trendyol/stove/tracing/SpanNode;
+	public final fun flatten ()Ljava/util/List;
+	public final fun getChildren ()Ljava/util/List;
+	public final fun getDepth ()I
+	public final fun getHasFailedDescendants ()Z
+	public final fun getSpan ()Lcom/trendyol/stove/tracing/SpanInfo;
+	public final fun getSpanCount ()I
+	public final fun getTotalDurationMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/SpanStatus : java/lang/Enum {
+	public static final field ERROR Lcom/trendyol/stove/tracing/SpanStatus;
+	public static final field OK Lcom/trendyol/stove/tracing/SpanStatus;
+	public static final field UNSET Lcom/trendyol/stove/tracing/SpanStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/tracing/SpanStatus;
+	public static fun values ()[Lcom/trendyol/stove/tracing/SpanStatus;
+}
+
+public final class com/trendyol/stove/tracing/SpanTree {
+	public static final field INSTANCE Lcom/trendyol/stove/tracing/SpanTree;
+	public final fun build (Ljava/util/List;)Lcom/trendyol/stove/tracing/SpanNode;
+	public final fun filterSpans (Lcom/trendyol/stove/tracing/SpanNode;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public final fun findSpan (Lcom/trendyol/stove/tracing/SpanNode;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/SpanNode;
+}
+
+public final class com/trendyol/stove/tracing/TraceTreeRenderer {
+	public static final field INSTANCE Lcom/trendyol/stove/tracing/TraceTreeRenderer;
+	public final fun render (Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;)Ljava/lang/String;
+	public static synthetic fun render$default (Lcom/trendyol/stove/tracing/TraceTreeRenderer;Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun renderCompact (Lcom/trendyol/stove/tracing/SpanNode;)Ljava/lang/String;
+	public final fun renderSummary (Lcom/trendyol/stove/tracing/SpanNode;)Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/TraceVisualization {
+	public static final field Companion Lcom/trendyol/stove/tracing/TraceVisualization$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceVisualization;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/TraceVisualization;Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TraceVisualization;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailedSpans ()I
+	public final fun getSpans ()Ljava/util/List;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTotalSpans ()I
+	public final fun getTraceId ()Ljava/lang/String;
+	public final fun getTree ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/TraceVisualization$Companion {
+	public final fun from (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)Lcom/trendyol/stove/tracing/TraceVisualization;
+}
+
+public final class com/trendyol/stove/tracing/VisualSpan {
+	public static final field Companion Lcom/trendyol/stove/tracing/VisualSpan$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;Ljava/util/Map;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()D
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;Ljava/util/Map;)Lcom/trendyol/stove/tracing/VisualSpan;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/VisualSpan;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/VisualSpan;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getDurationMs ()D
+	public final fun getOperationName ()Ljava/lang/String;
+	public final fun getParentSpanId ()Ljava/lang/String;
+	public final fun getServiceName ()Ljava/lang/String;
+	public final fun getSpanId ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/VisualSpan$Companion {
+	public final fun from (Lcom/trendyol/stove/tracing/SpanInfo;)Lcom/trendyol/stove/tracing/VisualSpan;
 }
 

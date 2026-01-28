@@ -1,5 +1,6 @@
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveTracing)
   api(libs.junit.jupiter.api)
 }
 

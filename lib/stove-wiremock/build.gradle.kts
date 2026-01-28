@@ -1,5 +1,6 @@
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveTracing)
   api(libs.wiremock.standalone)
   api(libs.caffeine)
 }

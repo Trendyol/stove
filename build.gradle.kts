@@ -129,6 +129,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests", "test-
 val publishedProjects = listOf(
   projects.lib.stoveBom.name,
   projects.lib.stove.name,
+  projects.lib.stoveTracing.name,
   projects.lib.stoveCouchbase.name,
   projects.lib.stoveElasticsearch.name,
   projects.lib.stoveGrpc.name,

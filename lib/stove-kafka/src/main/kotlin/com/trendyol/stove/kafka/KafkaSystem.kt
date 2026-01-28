@@ -11,6 +11,7 @@ import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.tracing.TraceContext
 import io.github.embeddedkafka.*
 import io.grpc.Server
 import io.grpc.netty.NettyServerBuilder
@@ -303,9 +304,17 @@ class KafkaSystem(
       val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
       headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
       testCase.map { record.headers().add("testCase", it.toByteArray()) }
+      injectTraceHeaders(record)
       kafkaPublisher.dispatch(record)
     }
     return this
+  }
+
+  private fun injectTraceHeaders(record: ProducerRecord<String, Any>) {
+    TraceContext.current()?.let { ctx ->
+      record.headers().add(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent().toByteArray())
+      record.headers().add(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId.toByteArray())
+    }
   }
 
   @StoveDsl

@@ -6,6 +6,7 @@ import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.tracing.TraceContext
 import io.grpc.*
 import java.util.concurrent.TimeUnit
 
@@ -291,14 +292,23 @@ class GrpcSystem(
 
   /**
    * Returns a channel with optional metadata interceptor applied.
+   * Automatically injects trace context headers when a trace is active.
    */
   @PublishedApi
-  internal fun channelWithMetadata(metadata: Map<String, String>): Channel =
-    if (metadata.isNotEmpty()) {
-      ClientInterceptors.intercept(grpcChannel, MetadataInterceptor(metadata))
+  internal fun channelWithMetadata(metadata: Map<String, String>): Channel {
+    val metadataWithTrace = buildMap {
+      putAll(metadata)
+      TraceContext.current()?.let { ctx ->
+        put(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent())
+        put(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId)
+      }
+    }
+    return if (metadataWithTrace.isNotEmpty()) {
+      ClientInterceptors.intercept(grpcChannel, MetadataInterceptor(metadataWithTrace))
     } else {
       grpcChannel
     }
+  }
 
   /**
    * Creates a stub instance from a Channel using Java reflection.

@@ -1,14 +1,11 @@
 package com.stove.spring.example4x.e2e
 
-import com.trendyol.stove.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.spring.addTestDependencies4x
-import com.trendyol.stove.spring.bridge
-import com.trendyol.stove.spring.springBoot
+import com.trendyol.stove.spring.*
 import com.trendyol.stove.system.Stove
-import com.trendyol.stove.system.stove
+import com.trendyol.stove.tracing.*
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
@@ -41,6 +38,13 @@ class StoveConfig : AbstractProjectConfig() {
           )
         }
         bridge()
+
+        // Enable tracing - starts OTLP gRPC receiver on port 4317
+        tracing {
+          serviceName("spring-4x-example")
+          enableSpanReceiver(port = 4317)
+        }
+
         wiremock {
           WireMockSystemOptions(
             port = 7080,
@@ -52,6 +56,8 @@ class StoveConfig : AbstractProjectConfig() {
         }
         springBoot(
           runner = { parameters ->
+            // The application will be auto-instrumented by OTel agent
+            // configured in build.gradle.kts tasks.test { }
             run(parameters) {
               addTestDependencies4x {
                 registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)

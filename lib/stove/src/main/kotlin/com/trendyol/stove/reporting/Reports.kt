@@ -7,6 +7,7 @@ import arrow.core.Option
 import arrow.core.Some
 import arrow.core.toOption
 import com.trendyol.stove.system.abstractions.PluggedSystem
+import com.trendyol.stove.tracing.TraceVisualization
 
 /**
  * Interface for systems that participate in test reporting.
@@ -98,6 +99,9 @@ interface Reports {
       )
       result
     } catch (e: Throwable) {
+      // Try to attach trace visualization if tracing system is available
+      val executionTrace = tryAttachTraceVisualization()
+
       reporter.record(
         ReportEntry.action(
           system = reportSystemName,
@@ -109,10 +113,31 @@ interface Reports {
           metadata = metadata,
           expected = expected,
           actual = actual,
-          error = e.message.toOption()
+          error = e.message.toOption(),
+          traceId = None,
+          executionTrace = executionTrace
         )
       )
       throw e
     }
+  }
+
+  /**
+   * Try to attach trace visualization from the tracing system if available.
+   * No reflection needed - uses TraceProvider interface.
+   *
+   * For failure cases, we wait longer (2 seconds) to ensure spans are exported,
+   * especially when exceptions are thrown immediately.
+   */
+  private fun tryAttachTraceVisualization(): Option<TraceVisualization> {
+    val stove = (this as? PluggedSystem)?.stove ?: return None
+
+    // Find any system that implements TraceProvider
+    val traceProvider = stove.activeSystems.values
+      .filterIsInstance<TraceProvider>()
+      .firstOrNull() ?: return None
+
+    // Wait longer for failures (2s) since exceptions might interrupt span export
+    return traceProvider.getTraceVisualizationForCurrentTest(waitTimeMs = 2000)
   }
 }

@@ -1,8 +1,13 @@
 package com.trendyol.stove.extensions.kotest
 
-import com.trendyol.stove.reporting.*
+import com.trendyol.stove.reporting.StoveReporter
+import com.trendyol.stove.reporting.StoveTestContext
+import com.trendyol.stove.reporting.StoveTestErrorException
+import com.trendyol.stove.reporting.StoveTestFailureException
 import com.trendyol.stove.system.Stove
-import com.trendyol.stove.system.StoveOptions
+import com.trendyol.stove.tracing.TraceContext
+import com.trendyol.stove.tracing.TraceReportBuilder
+import com.trendyol.stove.tracing.TraceReportBuilder.shouldEnrichFailures
 import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
@@ -30,11 +35,8 @@ class StoveKotestExtension : TestCaseExtension {
       return execute(testCase)
     }
 
-    val reporter = Stove.reporter()
-    val options = Stove.options()
-
-    return reporter.withTestContext(testCase.toStoveContext()) {
-      execute(testCase).enrichIfFailed(options, reporter)
+    return Stove.reporter().withTestContext(testCase.toStoveContext()) {
+      execute(testCase).enrichIfFailed()
     }
   }
 
@@ -44,60 +46,55 @@ class StoveKotestExtension : TestCaseExtension {
     specName = spec::class.simpleName
   )
 
-  private fun TestResult.enrichIfFailed(
-    options: StoveOptions,
-    reporter: StoveReporter
-  ): TestResult {
-    if (!options.shouldEnrichFailures()) return this
+  private fun TestResult.enrichIfFailed(): TestResult {
+    if (!Stove.options().shouldEnrichFailures()) return this
 
     return when (this) {
-      is TestResult.Failure -> enrichFailure(reporter, options)
-      is TestResult.Error -> enrichError(reporter, options)
+      is TestResult.Failure -> enrichFailure()
+      is TestResult.Error -> enrichError()
       else -> this
     }
   }
 
-  private fun TestResult.Failure.enrichFailure(
-    reporter: StoveReporter,
-    options: StoveOptions
-  ): TestResult = reporter
-    .dumpIfFailed(options.failureRenderer)
-    .takeIf { it.isNotEmpty() }
-    ?.let { report ->
+  private fun TestResult.Failure.enrichFailure(): TestResult {
+    val fullReport = TraceReportBuilder.buildFullReport()
+    return if (fullReport.isNotEmpty()) {
       TestResult.Failure(
         duration,
-        StoveTestFailureException(cause.message ?: "Test failed", report, cause)
+        StoveTestFailureException(cause.message ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE, fullReport, cause)
       )
-    } ?: this
+    } else {
+      this
+    }
+  }
 
-  private fun TestResult.Error.enrichError(
-    reporter: StoveReporter,
-    options: StoveOptions
-  ): TestResult = reporter
-    .dumpIfFailed(options.failureRenderer)
-    .takeIf { it.isNotEmpty() }
-    ?.let { report ->
+  private fun TestResult.Error.enrichError(): TestResult {
+    val fullReport = TraceReportBuilder.buildFullReport()
+    return if (fullReport.isNotEmpty()) {
       TestResult.Error(
         duration,
-        StoveTestErrorException(cause.message ?: "Test error", report, cause)
+        StoveTestErrorException(cause.message ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE, fullReport, cause)
       )
-    } ?: this
+    } else {
+      this
+    }
+  }
 }
-
-private fun StoveOptions.shouldEnrichFailures() =
-  dumpReportOnTestFailure && reportingEnabled
 
 /**
  * Executes the block within a test context, ensuring proper setup and cleanup.
+ * Also starts/ends tracing automatically for the test.
  */
 private inline fun <T> StoveReporter.withTestContext(
   ctx: StoveTestContext,
   block: () -> T
 ): T {
   startTest(ctx)
+  TraceContext.start(ctx.testId)
   return try {
     block()
   } finally {
+    TraceContext.clear()
     endTest()
     clear()
   }

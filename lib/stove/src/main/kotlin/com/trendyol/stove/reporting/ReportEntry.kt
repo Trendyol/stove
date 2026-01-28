@@ -3,6 +3,7 @@ package com.trendyol.stove.reporting
 import arrow.core.None
 import arrow.core.Option
 import arrow.core.Some
+import com.trendyol.stove.tracing.TraceVisualization
 import java.time.Instant
 
 /**
@@ -25,11 +26,14 @@ data class ReportEntry(
   val metadata: Map<String, Any> = emptyMap(),
   val expected: Option<Any> = None,
   val actual: Option<Any> = None,
-  val error: Option<String> = None
+  val error: Option<String> = None,
+  val traceId: Option<String> = None,
+  val executionTrace: Option<TraceVisualization> = None
 ) {
   val summary: String get() = "[$system] $action"
   val isFailed: Boolean get() = result == AssertionResult.FAILED
   val isPassed: Boolean get() = result == AssertionResult.PASSED
+  val hasTrace: Boolean get() = traceId.isSome()
 
   companion object {
     private fun now(): Instant = Instant.now()
@@ -68,7 +72,9 @@ data class ReportEntry(
       metadata: Map<String, Any> = emptyMap(),
       expected: Option<Any> = None,
       actual: Option<Any> = None,
-      error: Option<String> = None
+      error: Option<String> = None,
+      traceId: Option<String> = None,
+      executionTrace: Option<TraceVisualization> = None
     ): ReportEntry = ReportEntry(
       timestamp = now(),
       system = system,
@@ -80,7 +86,9 @@ data class ReportEntry(
       metadata = metadata,
       expected = expected,
       actual = actual,
-      error = error
+      error = error,
+      traceId = traceId,
+      executionTrace = executionTrace
     )
 
     /**

@@ -1,9 +1,9 @@
 package com.stove.spring.example4x.e2e
 
 import arrow.core.some
-import com.trendyol.stove.http.*
+import com.trendyol.stove.http.http
 import com.trendyol.stove.kafka.kafka
-import com.trendyol.stove.system.*
+import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -40,7 +40,13 @@ class ExampleTest :
         }
 
         kafka {
-          shouldBePublished<ProductCreatedEvent> {
+          shouldBePublished<ProductCreatedEvent>(10.seconds) {
+            actual.id == productCreateRequest.id &&
+              actual.name == productCreateRequest.name &&
+              actual.supplierId == productCreateRequest.supplierId
+          }
+
+          shouldBeConsumed<ProductCreatedEvent>(10.seconds) {
             actual.id == productCreateRequest.id &&
               actual.name == productCreateRequest.name &&
               actual.supplierId == productCreateRequest.supplierId

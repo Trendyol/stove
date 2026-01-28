@@ -1,5 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
+import com.trendyol.stove.gradle.configureStoveTracing
+
 plugins {
   kotlin("jvm") version libs.versions.kotlin
   application
@@ -17,6 +19,10 @@ application {
   applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
+configureStoveTracing {
+  serviceName = "ktor-example"
+}
+
 dependencies {
   implementation(libs.ktor.server)
   implementation(libs.ktor.server.netty)
@@ -31,6 +37,9 @@ dependencies {
   implementation(libs.hoplite.yaml)
   implementation(libs.jackson.kotlin)
   implementation(libs.jackson.databind)
+
+  // OpenTelemetry API for manual span recording (exceptions in catch blocks)
+  implementation(libs.opentelemetry.api)
 
   // gRPC service clients (FeatureToggle, Pricing)
   implementation(libs.io.grpc)

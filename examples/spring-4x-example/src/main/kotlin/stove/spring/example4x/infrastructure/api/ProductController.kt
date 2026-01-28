@@ -1,5 +1,6 @@
 package stove.spring.example4x.infrastructure.api
 
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import stove.spring.example4x.application.handlers.*
@@ -16,6 +17,7 @@ class ProductController(
     @RequestParam(required = false) keyword: String?
   ): ResponseEntity<String> = ResponseEntity.ok("Hi from Stove framework with ${keyword ?: "no keyword"}")
 
+  @WithSpan("ProductController.create")
   @PostMapping("/product/create")
   suspend fun create(
     @RequestBody request: ProductCreateRequest

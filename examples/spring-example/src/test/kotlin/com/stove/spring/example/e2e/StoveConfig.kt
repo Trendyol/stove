@@ -9,6 +9,7 @@ import com.trendyol.stove.spring.bridge
 import com.trendyol.stove.spring.springBoot
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
+import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
@@ -24,6 +25,10 @@ class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
     Stove()
       .with {
+        tracing {
+          serviceName("spring-example")
+          enableSpanReceiver()
+        }
         httpClient {
           HttpClientSystemOptions(
             baseUrl = "http://localhost:8004"
@@ -64,6 +69,7 @@ class StoveConfig : AbstractProjectConfig() {
             }
           )
         }
+
         springBoot(
           runner = { parameters ->
             run(parameters) {

@@ -26,6 +26,22 @@ class ProductCreateConsumer(
   }
 }
 
+@Component
+class ProductEventsConsumer {
+  private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+  @KafkaListener(
+    topics = ["trendyol.stove.service.productCreated.1"],
+    groupId = "\${kafka.groupId}",
+    containerFactory = "kafkaListenerContainerFactory"
+  )
+  fun consumeProductCreatedEvent(
+    @Payload message: String
+  ) {
+    logger.info("Received message: $message")
+  }
+}
+
 data class CreateProductCommand(
   val id: Long,
   val name: String,

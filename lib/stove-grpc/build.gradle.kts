@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveTracing)
   api(libs.io.grpc)
   api(libs.io.grpc.stub)
   api(libs.io.grpc.kotlin)

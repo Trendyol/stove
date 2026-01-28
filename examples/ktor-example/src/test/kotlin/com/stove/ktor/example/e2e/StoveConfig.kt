@@ -1,19 +1,15 @@
 package com.stove.ktor.example.e2e
 
-import com.trendyol.stove.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
-import com.trendyol.stove.grpc.GrpcSystemOptions
-import com.trendyol.stove.grpc.grpc
+import com.trendyol.stove.grpc.*
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.ktor.bridge
-import com.trendyol.stove.ktor.ktor
+import com.trendyol.stove.ktor.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
-import com.trendyol.stove.system.Stove
-import com.trendyol.stove.testing.grpcmock.GrpcMockSystemOptions
-import com.trendyol.stove.testing.grpcmock.grpcMock
+import com.trendyol.stove.testing.grpcmock.*
+import com.trendyol.stove.tracing.tracing
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import stove.ktor.example.app.objectMapperRef
@@ -39,6 +35,7 @@ class StoveConfig : AbstractProjectConfig() {
 
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
+  @Suppress("LongMethod")
   override suspend fun beforeProject() = Stove()
     .with {
       httpClient {
@@ -47,6 +44,10 @@ class StoveConfig : AbstractProjectConfig() {
         )
       }
       bridge()
+      tracing {
+        serviceName("ktor-example")
+        enableSpanReceiver(port = 4317)
+      }
       postgresql {
         PostgresqlOptions(configureExposedConfiguration = { cfg ->
           listOf(

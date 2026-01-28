@@ -11,6 +11,7 @@ import com.trendyol.stove.spring.springBoot
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
+import com.trendyol.stove.tracing.tracing
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import org.apache.kafka.clients.admin.NewTopic
@@ -42,6 +43,10 @@ class StoveConfig : AbstractProjectConfig() {
         }
       }
       bridge()
+      tracing {
+        serviceName("spring-streams-example")
+        enableSpanReceiver(port = 4318)
+      }
       springBoot(
         runner = { parameters ->
           run(parameters)

@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveTracing)
   api(libs.testcontainers.kafka)
   api(libs.kafka)
   api(libs.kafka.embedded)

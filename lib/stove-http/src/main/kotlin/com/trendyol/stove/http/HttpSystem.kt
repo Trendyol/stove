@@ -8,6 +8,7 @@ import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.tracing.TraceContext
 import io.ktor.client.call.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
@@ -775,6 +776,14 @@ class HttpSystem(
     url { appendEncodedPathSegments(uri) }
     headers.forEach { (key, value) -> header(key, value) }
     token.map { header(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it)) }
+    injectTraceHeaders()
+  }
+
+  private fun HttpRequestBuilder.injectTraceHeaders() {
+    TraceContext.current()?.let { ctx ->
+      header(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent())
+      header(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId)
+    }
   }
 
   @PublishedApi

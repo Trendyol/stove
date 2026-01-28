@@ -122,6 +122,24 @@ class Stove(
       return instance.getSystemOrThrow(kClass) as T
     }
 
+    /**
+     * Returns the system of the given type as an Option.
+     * Returns None if Stove is not initialized or the system is not registered.
+     */
+    inline fun <reified T : PluggedSystem> getSystemOrNone(): Option<T> =
+      getSystemOrNone(T::class)
+
+    /**
+     * Returns the system of the given type as an Option.
+     * Returns None if Stove is not initialized or the system is not registered.
+     */
+    @Suppress("UNCHECKED_CAST")
+    @PublishedApi
+    internal fun <T : PluggedSystem> getSystemOrNone(kClass: KClass<T>): Option<T> {
+      if (!::instance.isInitialized) return None
+      return instance.activeSystems.getOrNone(kClass).map { it as T }
+    }
+
     fun stop(): Unit = instance.close()
   }
 

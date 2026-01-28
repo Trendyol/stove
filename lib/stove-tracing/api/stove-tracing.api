@@ -1,0 +1,227 @@
+public abstract class com/trendyol/stove/tracing/OTLPReceiverError : java/lang/Exception {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/trendyol/stove/tracing/OTLPReceiverError$StartupFailed : com/trendyol/stove/tracing/OTLPReceiverError {
+	public fun <init> (ILjava/io/IOException;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/io/IOException;
+	public final fun copy (ILjava/io/IOException;)Lcom/trendyol/stove/tracing/OTLPReceiverError$StartupFailed;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/OTLPReceiverError$StartupFailed;ILjava/io/IOException;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/OTLPReceiverError$StartupFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCause ()Ljava/io/IOException;
+	public synthetic fun getCause ()Ljava/lang/Throwable;
+	public final fun getPort ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/OTLPSpanReceiver {
+	public fun <init> (Lcom/trendyol/stove/tracing/StoveTraceCollector;I)V
+	public synthetic fun <init> (Lcom/trendyol/stove/tracing/StoveTraceCollector;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEndpoint ()Ljava/lang/String;
+	public final fun start ()Larrow/core/Either;
+	public final fun stop ()V
+}
+
+public final class com/trendyol/stove/tracing/StoveTraceCollector {
+	public fun <init> ()V
+	public final fun clear (Ljava/lang/String;)V
+	public final fun clearAll ()V
+	public final fun clearForTest (Ljava/lang/String;)V
+	public final fun getAllTraces ()Ljava/util/Map;
+	public final fun getFailedSpans (Ljava/lang/String;)Ljava/util/List;
+	public final fun getTestId (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getTrace (Ljava/lang/String;)Ljava/util/List;
+	public final fun getTraceTree (Ljava/lang/String;)Lcom/trendyol/stove/tracing/SpanNode;
+	public final fun getTracesForTest (Ljava/lang/String;)Ljava/util/List;
+	public final fun hasFailures (Ljava/lang/String;)Z
+	public final fun record (Lcom/trendyol/stove/tracing/SpanInfo;)V
+	public final fun recordAll (Ljava/util/Collection;)V
+	public final fun registerTrace (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun spanCount (Ljava/lang/String;)I
+	public final fun totalSpanCount ()I
+	public final fun traceCount ()I
+	public final fun waitForSpans (Ljava/lang/String;IJ)Ljava/util/List;
+	public static synthetic fun waitForSpans$default (Lcom/trendyol/stove/tracing/StoveTraceCollector;Ljava/lang/String;IJILjava/lang/Object;)Ljava/util/List;
+}
+
+public final class com/trendyol/stove/tracing/TraceContext {
+	public static final field Companion Lcom/trendyol/stove/tracing/TraceContext$Companion;
+	public static final field STOVE_TEST_ID_HEADER Ljava/lang/String;
+	public static final field TRACEPARENT_HEADER Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/TraceContext;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TraceContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRootSpanId ()Ljava/lang/String;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTraceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun toTraceparent ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/TraceContext$Companion {
+	public final fun clear ()V
+	public final fun current ()Lcom/trendyol/stove/tracing/TraceContext;
+	public final fun generateSpanId ()Ljava/lang/String;
+	public final fun generateTraceId ()Ljava/lang/String;
+	public final fun parseTraceparent (Ljava/lang/String;)Lkotlin/Pair;
+	public final fun start (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceContext;
+	public final fun use (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/tracing/TraceReportBuilder {
+	public static final field DEFAULT_ERROR_MESSAGE Ljava/lang/String;
+	public static final field INSTANCE Lcom/trendyol/stove/tracing/TraceReportBuilder;
+	public final fun buildFullReport ()Ljava/lang/String;
+	public final fun shouldEnrichFailures (Lcom/trendyol/stove/system/StoveOptions;)Z
+}
+
+public final class com/trendyol/stove/tracing/TraceValidationDsl {
+	public fun <init> (Lcom/trendyol/stove/tracing/StoveTraceCollector;Ljava/lang/String;)V
+	public final fun executionTimeShouldBeGreaterThan-LRDsOJo (J)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun executionTimeShouldBeLessThan-LRDsOJo (J)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun findSpan (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/SpanInfo;
+	public final fun findSpanByName (Ljava/lang/String;)Lcom/trendyol/stove/tracing/SpanInfo;
+	public final fun getFailedSpanCount ()I
+	public final fun getFailedSpans ()Ljava/util/List;
+	public final fun getSpanCount ()I
+	public final fun getTotalDuration-UwyO8pc ()J
+	public final fun renderSummary ()Ljava/lang/String;
+	public final fun renderTree ()Ljava/lang/String;
+	public final fun shouldContainSpan (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldContainSpanMatching (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldHaveFailedSpan (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldHaveSpanWithAttribute (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldHaveSpanWithAttributeContaining (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldNotContainSpan (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldNotHaveFailedSpans ()Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanCountShouldBe (I)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanCountShouldBeAtLeast (I)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanCountShouldBeAtMost (I)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanTree ()Lcom/trendyol/stove/tracing/SpanNode;
+}
+
+public final class com/trendyol/stove/tracing/TracingConstants {
+	public static final field DEFAULT_MAX_SPANS_PER_TRACE I
+	public static final field DEFAULT_OTLP_GRPC_PORT I
+	public static final field DEFAULT_OTLP_HTTP_PORT I
+	public static final field DEFAULT_SPAN_POLL_INTERVAL_MS J
+	public static final field DEFAULT_SPAN_WAIT_TIMEOUT_MS J
+	public static final field INSTANCE Lcom/trendyol/stove/tracing/TracingConstants;
+	public static final field MAX_STACK_TRACE_LINES I
+	public static final field NANOS_TO_MILLIS J
+	public static final field OTEL_EXCEPTION_EVENT_NAME Ljava/lang/String;
+	public static final field OTEL_EXCEPTION_MESSAGE_ATTRIBUTE Ljava/lang/String;
+	public static final field OTEL_EXCEPTION_STACKTRACE_ATTRIBUTE Ljava/lang/String;
+	public static final field OTEL_EXCEPTION_TYPE_ATTRIBUTE Ljava/lang/String;
+	public static final field OTEL_SERVICE_NAME_ATTRIBUTE Ljava/lang/String;
+	public static final field OTEL_STATUS_CODE_ERROR I
+	public static final field SERVER_SHUTDOWN_TIMEOUT_SECONDS J
+	public static final field SPAN_ID_LENGTH I
+	public static final field STOVE_TRACING_PORT_ENV Ljava/lang/String;
+	public static final field STRAGGLER_WAIT_TIME_MS J
+	public static final field TRACEPARENT_MIN_PARTS I
+	public final fun getGRPC_INTERNAL_SPAN_PATTERNS ()Ljava/util/List;
+}
+
+public abstract interface annotation class com/trendyol/stove/tracing/TracingDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/trendyol/stove/tracing/TracingOptions {
+	public fun <init> ()V
+	public final fun copy ()Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun disabled ()Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun enableSpanReceiver (Ljava/lang/Integer;)Lcom/trendyol/stove/tracing/TracingOptions;
+	public static synthetic fun enableSpanReceiver$default (Lcom/trendyol/stove/tracing/TracingOptions;Ljava/lang/Integer;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun enabled ()Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun getEnabled ()Z
+	public final fun getMaxSpansPerTrace ()I
+	public final fun getServiceName ()Ljava/lang/String;
+	public final fun getSpanCollectionTimeout-UwyO8pc ()J
+	public final fun getSpanFilter ()Lkotlin/jvm/functions/Function1;
+	public final fun getSpanReceiverEnabled ()Z
+	public final fun getSpanReceiverPort ()I
+	public final fun maxSpansPerTrace (I)Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun serviceName (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun spanCollectionTimeout-LRDsOJo (J)Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun spanFilter (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/TracingOptions;
+}
+
+public final class com/trendyol/stove/tracing/TracingSystem : com/trendyol/stove/reporting/TraceProvider, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/tracing/TracingSystemOptions;)V
+	public fun close ()V
+	public final fun currentContext ()Larrow/core/Option;
+	public final fun endTrace ()V
+	public final fun ensureTraceStarted (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getStove ()Lcom/trendyol/stove/system/Stove;
+	public fun getTraceVisualizationForCurrentTest (J)Larrow/core/Option;
+	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun then ()Lcom/trendyol/stove/system/Stove;
+	public final fun validation ()Larrow/core/Option;
+	public final fun validation (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+}
+
+public final class com/trendyol/stove/tracing/TracingSystemKt {
+	public static final fun tracing-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun tracing-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
+	public static synthetic fun tracing-ypJx7X8$default (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/system/Stove;
+	public static final fun tracingSystem-71YW2E0 (Lcom/trendyol/stove/system/Stove;)Lcom/trendyol/stove/tracing/TracingSystem;
+}
+
+public final class com/trendyol/stove/tracing/TracingSystemOptions {
+	public fun <init> ()V
+	public fun <init> (Lcom/trendyol/stove/tracing/TracingOptions;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/tracing/TracingOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/tracing/TracingOptions;
+	public final fun copy (Lcom/trendyol/stove/tracing/TracingOptions;)Lcom/trendyol/stove/tracing/TracingSystemOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/TracingSystemOptions;Lcom/trendyol/stove/tracing/TracingOptions;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TracingSystemOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTracingOptions ()Lcom/trendyol/stove/tracing/TracingOptions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/TracingValidationScope {
+	public fun <init> (Lcom/trendyol/stove/tracing/TraceContext;Lcom/trendyol/stove/tracing/TraceValidationDsl;Lcom/trendyol/stove/tracing/StoveTraceCollector;)V
+	public final fun executionTimeShouldBeGreaterThan-LRDsOJo (J)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun executionTimeShouldBeLessThan-LRDsOJo (J)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun findSpan (Lkotlin/jvm/functions/Function1;)Larrow/core/Option;
+	public final fun findSpanByName (Ljava/lang/String;)Larrow/core/Option;
+	public final fun getAllTraceVisualizations ()Ljava/util/List;
+	public final fun getCollector ()Lcom/trendyol/stove/tracing/StoveTraceCollector;
+	public final fun getCtx ()Lcom/trendyol/stove/tracing/TraceContext;
+	public final fun getFailedSpanCount ()I
+	public final fun getFailedSpans ()Ljava/util/List;
+	public final fun getRootSpanId ()Ljava/lang/String;
+	public final fun getSpanCount ()I
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTotalDuration-UwyO8pc ()J
+	public final fun getTraceId ()Ljava/lang/String;
+	public final fun getTraceVisualization ()Lcom/trendyol/stove/tracing/TraceVisualization;
+	public final fun renderSummary ()Ljava/lang/String;
+	public final fun renderTree ()Ljava/lang/String;
+	public final fun shouldContainSpan (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldContainSpanMatching (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldHaveFailedSpan (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldHaveSpanWithAttribute (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldHaveSpanWithAttributeContaining (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldNotContainSpan (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun shouldNotHaveFailedSpans ()Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanCountShouldBe (I)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanCountShouldBeAtLeast (I)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanCountShouldBeAtMost (I)Lcom/trendyol/stove/tracing/TraceValidationDsl;
+	public final fun spanTree ()Larrow/core/Option;
+	public final fun toTraceparent ()Ljava/lang/String;
+	public final fun waitForSpans (IJ)Ljava/util/List;
+	public static synthetic fun waitForSpans$default (Lcom/trendyol/stove/tracing/TracingValidationScope;IJILjava/lang/Object;)Ljava/util/List;
+}
+

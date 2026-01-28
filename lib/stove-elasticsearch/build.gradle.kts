@@ -2,6 +2,7 @@ plugins {}
 
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveTracing)
   api(libs.elastic)
   api(libs.testcontainers.elasticsearch)
   implementation(libs.jackson.databind)

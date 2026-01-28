@@ -2,6 +2,7 @@ package com.trendyol.stove.reporting
 
 import arrow.core.Option
 import arrow.core.getOrElse
+import com.trendyol.stove.tracing.TraceVisualization
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -180,7 +181,43 @@ object PrettyConsoleRenderer : ReportRenderer {
       emptyList()
     }
 
-    return listOf(headerLine) + inputLine + outputLine + metadataLine + failureLines + emptyLine()
+    // Render trace information if available
+    val traceLines = entry.executionTrace.fold({
+      emptyList()
+    }) { trace ->
+      renderTraceVisualization(trace)
+    }
+
+    return listOf(headerLine) + inputLine + outputLine + metadataLine + failureLines + traceLines + emptyLine()
+  }
+
+  private fun renderTraceVisualization(trace: TraceVisualization): List<String> {
+    if (trace.totalSpans == 0) {
+      return emptyList()
+    }
+
+    val header = colorize("Execution Trace:", Colors.BOLD + Colors.CYAN)
+    val traceIdInfo = colorize("TraceId: ${trace.traceId}", Colors.DIM)
+    val summary = "Total spans: ${trace.totalSpans}" +
+      if (trace.failedSpans > 0) ", ${colorize("Failed: ${trace.failedSpans}", Colors.BRIGHT_RED)}" else ""
+
+    val treeLines = trace.tree.lines().map { line ->
+      // Colorize the tree based on status icons
+      val coloredLine = when {
+        line.contains("✗") -> colorize(line, Colors.BRIGHT_RED)
+        line.contains("✓") -> colorize(line, Colors.GREEN)
+        else -> colorize(line, Colors.WHITE)
+      }
+      contentLine(coloredLine, indent = 4)
+    }
+
+    return listOf(
+      emptyLine(),
+      contentLine(header, indent = 4),
+      contentLine(traceIdInfo, indent = 6),
+      contentLine(colorize(summary, Colors.YELLOW), indent = 6),
+      emptyLine()
+    ) + treeLines
   }
 
   private fun renderLabeledContent(label: String, content: String, labelColor: String, indent: Int): List<String> {
