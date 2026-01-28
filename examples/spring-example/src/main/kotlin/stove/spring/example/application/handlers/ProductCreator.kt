@@ -1,11 +1,10 @@
 package stove.spring.example.application.handlers
 
-import com.couchbase.client.java.ReactiveCollection
-import com.couchbase.client.java.json.JsonObject
-import com.fasterxml.jackson.databind.ObjectMapper
-import kotlinx.coroutines.reactive.awaitFirst
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import stove.spring.example.domain.Products
 import stove.spring.example.infrastructure.Headers
 import stove.spring.example.infrastructure.http.SupplierHttpService
 import stove.spring.example.infrastructure.messaging.kafka.*
@@ -15,21 +14,23 @@ import java.time.Instant
 @Component
 class ProductCreator(
   private val supplierHttpService: SupplierHttpService,
-  private val collection: ReactiveCollection,
-  private val objectMapper: ObjectMapper,
   private val kafkaProducer: KafkaProducer
 ) {
   @Value("\${kafka.producer.product-created.topic-name}")
   lateinit var productCreatedTopic: String
 
-  suspend fun create(req: ProductCreateRequest): String {
-    val supplierPermission = supplierHttpService.getSupplierPermission(req.id)
+  suspend fun create(req: ProductCreateRequest): String = suspendTransaction {
+    val supplierPermission = supplierHttpService.getSupplierPermission(req.supplierId)
     if (!supplierPermission.isAllowed) {
-      return "Supplier with the given id(${req.supplierId}) is not allowed for product creation"
+      return@suspendTransaction "Supplier with the given id(${req.supplierId}) is not allowed for product creation"
     }
-    val fromJson = JsonObject.fromJson(objectMapper.writeValueAsString(req))
 
-    collection.insert("product:${req.id}", fromJson).awaitFirst()
+    Products.insert {
+      it[id] = req.id
+      it[name] = req.name
+      it[supplierId] = req.supplierId
+      it[Products.createdDate] = Instant.now()
+    }
 
     kafkaProducer.send(
       KafkaOutgoingMessage(
@@ -40,7 +41,7 @@ class ProductCreator(
         payload = req.mapToProductCreatedEvent()
       )
     )
-    return "OK"
+    return@suspendTransaction "OK"
   }
 }
 

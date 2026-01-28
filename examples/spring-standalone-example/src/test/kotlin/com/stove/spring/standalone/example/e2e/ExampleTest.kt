@@ -1,18 +1,18 @@
 package com.stove.spring.standalone.example.e2e
 
 import arrow.core.some
-import com.trendyol.stove.couchbase.couchbase
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.system.*
 import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
+import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.springframework.http.MediaType
 import stove.spring.standalone.example.application.handlers.*
 import stove.spring.standalone.example.application.services.SupplierPermission
-import stove.spring.standalone.example.infrastructure.couchbase.CouchbaseProperties
 import stove.spring.standalone.example.infrastructure.messaging.kafka.consumers.CreateProductCommand
 import kotlin.time.Duration.Companion.seconds
 
@@ -20,8 +20,8 @@ class ExampleTest :
   FunSpec({
     test("bridge should work") {
       stove {
-        using<CouchbaseProperties> {
-          this.bucketName shouldBe "Stove"
+        using<Database> {
+          this shouldNotBe null
         }
       }
     }
@@ -48,7 +48,7 @@ class ExampleTest :
 
         wiremock {
           mockGet(
-            "/suppliers/${permission.id}/allowed",
+            "/suppliers/${request.supplierId}/allowed",
             statusCode = 200,
             responseBody = permission.some()
           )
@@ -68,11 +68,21 @@ class ExampleTest :
           }
         }
 
-        couchbase {
-          shouldGet<ProductCreateRequest>("product:${request.id}") { actual ->
-            actual.id shouldBe request.id
-            actual.name shouldBe request.name
-            actual.supplierId shouldBe request.supplierId
+        postgresql {
+          shouldQuery<ProductCreateRequest>(
+            "SELECT * FROM products WHERE id = ${request.id}",
+            mapper = { row ->
+              ProductCreateRequest(
+                row.long("id"),
+                row.string("name"),
+                row.long("supplier_id")
+              )
+            }
+          ) { products ->
+            products.size shouldBe 1
+            products.first().id shouldBe request.id
+            products.first().name shouldBe request.name
+            products.first().supplierId shouldBe request.supplierId
           }
         }
       }
@@ -84,7 +94,7 @@ class ExampleTest :
         val permission = SupplierPermission(request.supplierId, isAllowed = false)
         wiremock {
           mockGet(
-            "/suppliers/${permission.id}/allowed",
+            "/suppliers/${request.supplierId}/allowed",
             statusCode = 200,
             responseBody = permission.some()
           )
@@ -104,7 +114,7 @@ class ExampleTest :
 
         wiremock {
           mockGet(
-            "/suppliers/${supplierPermission.id}/allowed",
+            "/suppliers/${command.supplierId}/allowed",
             statusCode = 200,
             responseBody = supplierPermission.some()
           )
@@ -126,7 +136,7 @@ class ExampleTest :
 
         wiremock {
           mockGet(
-            "/suppliers/${supplierPermission.id}/allowed",
+            "/suppliers/${command.supplierId}/allowed",
             statusCode = 200,
             responseBody = supplierPermission.some()
           )
@@ -148,11 +158,21 @@ class ExampleTest :
           }
         }
 
-        couchbase {
-          shouldGet<ProductCreateRequest>("product:${command.id}") { actual ->
-            actual.id shouldBe command.id
-            actual.name shouldBe command.name
-            actual.supplierId shouldBe command.supplierId
+        postgresql {
+          shouldQuery<ProductCreateRequest>(
+            "SELECT * FROM products WHERE id = ${command.id}",
+            mapper = { row ->
+              ProductCreateRequest(
+                row.long("id"),
+                row.string("name"),
+                row.long("supplier_id")
+              )
+            }
+          ) { products ->
+            products.size shouldBe 1
+            products.first().id shouldBe command.id
+            products.first().name shouldBe command.name
+            products.first().supplierId shouldBe command.supplierId
           }
         }
       }

@@ -2,9 +2,11 @@ package stove.spring.standalone.example
 
 import org.springframework.boot.*
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ConfigurableApplicationContext
 
 @SpringBootApplication
+@ConfigurationPropertiesScan
 class ExampleApp
 
 fun main(args: Array<String>) {

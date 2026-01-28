@@ -14,6 +14,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -53,7 +54,7 @@ fun <T> HttpStatement.readJsonStream(transform: (String) -> T): Flow<T> = flow {
       }
     }
   }
-}
+}.flowOn(Dispatchers.IO)
 
 private fun streamClient(timeout: Duration = 30.seconds.toJavaDuration()): HttpClient {
   val client = HttpClient(OkHttp) {

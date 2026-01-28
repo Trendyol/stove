@@ -11,7 +11,7 @@ include(
   "kotlin-recipes:ktor-postgres-recipe",
   "kotlin-recipes:spring-boot-basic-recipe",
   "java-recipes",
-  "java-recipes:spring-boot-couchbase-recipe",
+  "java-recipes:spring-boot-postgres-recipe",
   "java-recipes:quarkus-basic-recipe",
   "scala-recipes",
   "scala-recipes:spring-boot-basic-recipe",

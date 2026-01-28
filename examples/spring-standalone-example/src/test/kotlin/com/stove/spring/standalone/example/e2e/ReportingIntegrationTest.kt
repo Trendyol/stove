@@ -1,9 +1,9 @@
 package com.stove.spring.standalone.example.e2e
 
 import arrow.core.some
-import com.trendyol.stove.couchbase.couchbase
 import com.trendyol.stove.http.http
 import com.trendyol.stove.kafka.*
+import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
@@ -15,6 +15,7 @@ import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.string.shouldContain
 import stove.spring.standalone.example.application.handlers.*
 import stove.spring.standalone.example.application.services.SupplierPermission
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 class ReportingIntegrationTest :
@@ -83,9 +84,9 @@ class ReportingIntegrationTest :
       (snapshot.state["published"] as? List<*>)?.size?.shouldBeGreaterThan(0)
     }
 
-    test("report should capture Couchbase operations") {
+    test("report should capture PostgreSQL operations") {
       stove {
-        val request = ProductCreateRequest(200L, "couchbase test", 1L)
+        val request = ProductCreateRequest(200L, "postgres test", 1L)
         val permission = SupplierPermission(request.supplierId, isAllowed = true)
 
         wiremock {
@@ -98,19 +99,29 @@ class ReportingIntegrationTest :
           }
         }
 
-        couchbase {
-          shouldGet<ProductCreateRequest>("product:${request.id}") {
-            it.id shouldBe request.id
+        postgresql {
+          shouldQuery<ProductCreateRequest>(
+            "SELECT * FROM products WHERE id = ${request.id}",
+            mapper = { row ->
+              ProductCreateRequest(
+                id = row.long("id"),
+                name = row.string("name"),
+                supplierId = row.long("supplier_id")
+              )
+            }
+          ) { products ->
+            products.size shouldBe 1
+            products.first().id shouldBe request.id
           }
         }
       }
 
       val report = Stove.reporter().currentTest()
 
-      // Should have Couchbase action with result
+      // Should have PostgreSQL action with result
       report
         .entries()
-        .any { it.system == "Couchbase" && it.action.contains("Get document") } shouldBe true
+        .any { it.system == "PostgreSQL" && it.action.contains("Query") } shouldBe true
     }
 
     test("report should capture multiple system interactions") {
@@ -137,10 +148,20 @@ class ReportingIntegrationTest :
           }
         }
 
-        // Couchbase
-        couchbase {
-          shouldGet<ProductCreateRequest>("product:${request.id}") {
-            it.id shouldBe request.id
+        // PostgreSQL
+        postgresql {
+          shouldQuery<ProductCreateRequest>(
+            "SELECT * FROM products WHERE id = ${request.id}",
+            mapper = { row ->
+              ProductCreateRequest(
+                id = row.long("id"),
+                name = row.string("name"),
+                supplierId = row.long("supplier_id")
+              )
+            }
+          ) { products ->
+            products.size shouldBe 1
+            products.first().id shouldBe request.id
           }
         }
       }
@@ -153,7 +174,7 @@ class ReportingIntegrationTest :
       entries.filter { it.system == "WireMock" } shouldHaveSize 1
       entries.filter { it.system == "HTTP" } shouldHaveSize 1
       entries.filter { it.system == "Kafka" } shouldHaveSize 1
-      entries.filter { it.system == "Couchbase" } shouldHaveSize 1
+      entries.filter { it.system == "PostgreSQL" } shouldHaveSize 1
     }
 
     test("report should be renderable as JSON") {

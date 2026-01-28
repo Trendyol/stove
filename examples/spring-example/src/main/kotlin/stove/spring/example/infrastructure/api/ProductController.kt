@@ -20,7 +20,7 @@ class ProductController(
 ) {
   @GetMapping("/index")
   suspend fun get(
-    @RequestParam(required = false) keyword: String
+    @RequestParam(required = false) keyword: String?
   ): String = "Hi from Stove framework with $keyword"
 
   @PostMapping("/product/create")

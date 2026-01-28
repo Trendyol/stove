@@ -4,22 +4,17 @@ spring:
   servlet:
     multipart:
       max-request-size: 10MB
+  datasource:
+    url: jdbc:postgresql://localhost:5432/stove
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 10
 
 server:
   port: 8001
   http2:
     enabled: false
-
-couchbase:
-  hosts: localhost
-  username: user
-  password: pass
-  bucketName: Stove
-  kvTimeout: 3000
-  connectTimeout: 15000
-  queryTimeout: 5000
-  viewTimeout: 5000
-
 
 http-clients:
   supplier-http:

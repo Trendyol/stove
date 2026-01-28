@@ -1,10 +1,10 @@
 package com.stove.spring.standalone.example.e2e
 
 import com.trendyol.stove.*
-import com.trendyol.stove.couchbase.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
+import com.trendyol.stove.postgres.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.spring.bridge
 import com.trendyol.stove.spring.springBoot
@@ -35,20 +35,19 @@ class StoveConfig : AbstractProjectConfig() {
             baseUrl = "http://localhost:8001"
           )
         }
-        couchbase {
-          CouchbaseSystemOptions(
-            "Stove",
-            containerOptions = CouchbaseContainerOptions(tag = "latest") {
-              withStartupAttempts(3)
-            },
+        postgresql {
+          PostgresqlOptions(
+            databaseName = "stove",
             configureExposedConfiguration = { cfg ->
               listOf(
-                "couchbase.hosts=${cfg.hostsWithPort}",
-                "couchbase.username=${cfg.username}",
-                "couchbase.password=${cfg.password}"
+                "spring.datasource.url=${cfg.jdbcUrl}",
+                "spring.datasource.username=${cfg.username}",
+                "spring.datasource.password=${cfg.password}"
               )
             }
-          )
+          ).migrations {
+            register<CreateProductsTableMigration>()
+          }
         }
         kafka {
           KafkaSystemOptions(
