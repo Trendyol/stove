@@ -169,9 +169,15 @@ private fun configureTestTask(
   otelAgentConfig: Configuration,
   config: StoveTracingConfig
 ) {
+  // Resolve at configuration time to avoid capturing Configuration in doFirst
+  // This is required for Gradle configuration cache compatibility
+  val resolvedAgentPath: String? = otelAgentConfig.resolve().firstOrNull()?.absolutePath
+
+  // Extract config values to a serializable format for configuration cache compatibility
+  val tracingConfig = ResolvedTracingConfig.from(config)
+
   testTask.doFirst {
-    val agentFiles = otelAgentConfig.files
-    if (agentFiles.isEmpty()) {
+    if (resolvedAgentPath == null) {
       testTask.logger.warn("No OTel agent JAR found in otelAgent configuration")
       return@doFirst
     }
@@ -180,8 +186,7 @@ private fun configureTestTask(
     val port = findAvailablePort()
     testTask.environment(TracingDefaults.STOVE_TRACING_PORT_ENV, port.toString())
 
-    val agentPath = agentFiles.first().absolutePath
-    val jvmArgs = buildJvmArgs(agentPath, config, port)
+    val jvmArgs = buildJvmArgs(resolvedAgentPath, tracingConfig, port)
 
     testTask.jvmArgs(jvmArgs)
     testTask.logger.info(
@@ -195,7 +200,39 @@ private fun configureTestTask(
 private fun findAvailablePort(): Int =
   ServerSocket(0).use { it.localPort }
 
-private fun buildJvmArgs(agentPath: String, config: StoveTracingConfig, port: Int): List<String> = buildList {
+/**
+ * Serializable copy of tracing config for Gradle configuration cache compatibility.
+ * Configuration cache requires all objects captured in task actions to be serializable.
+ */
+private data class ResolvedTracingConfig(
+  val protocol: String,
+  val serviceName: String,
+  val bspScheduleDelay: Int,
+  val bspMaxBatchSize: Int,
+  val captureHttpHeaders: Boolean,
+  val captureExperimentalTelemetry: Boolean,
+  val customAnnotations: List<String>,
+  val disabledInstrumentations: List<String>,
+  val additionalInstrumentations: List<String>
+) : java.io.Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+
+    fun from(config: StoveTracingConfig) = ResolvedTracingConfig(
+      protocol = config.protocol,
+      serviceName = config.serviceName,
+      bspScheduleDelay = config.bspScheduleDelay,
+      bspMaxBatchSize = config.bspMaxBatchSize,
+      captureHttpHeaders = config.captureHttpHeaders,
+      captureExperimentalTelemetry = config.captureExperimentalTelemetry,
+      customAnnotations = config.customAnnotations.toList(),
+      disabledInstrumentations = config.disabledInstrumentations.toList(),
+      additionalInstrumentations = config.additionalInstrumentations.toList()
+    )
+  }
+}
+
+private fun buildJvmArgs(agentPath: String, config: ResolvedTracingConfig, port: Int): List<String> = buildList {
   // Agent attachment
   add("-javaagent:$agentPath")
 
@@ -227,7 +264,7 @@ private fun buildJvmArgs(agentPath: String, config: StoveTracingConfig, port: In
   addAll(buildInstrumentationControlArgs(config))
 }
 
-private fun buildCoreExportArgs(config: StoveTracingConfig, port: Int): List<String> = buildList {
+private fun buildCoreExportArgs(config: ResolvedTracingConfig, port: Int): List<String> = buildList {
   val endpoint = "http://localhost:$port"
   add("-Dotel.traces.exporter=otlp")
   add("-Dotel.exporter.otlp.protocol=${config.protocol}")
@@ -243,7 +280,7 @@ private fun buildCoreExportArgs(config: StoveTracingConfig, port: Int): List<Str
   }
 }
 
-private fun buildTestOptimizationArgs(config: StoveTracingConfig): List<String> = listOf(
+private fun buildTestOptimizationArgs(config: ResolvedTracingConfig): List<String> = listOf(
   "-Dotel.traces.sampler=always_on",
   "-Dotel.bsp.schedule.delay=${config.bspScheduleDelay}",
   "-Dotel.bsp.max.export.batch.size=${config.bspMaxBatchSize}"
@@ -262,7 +299,7 @@ private fun buildExperimentalTelemetryArgs(): List<String> = listOf(
   "-Dotel.instrumentation.servlet.experimental.capture-request-parameters=*"
 )
 
-private fun buildInstrumentationControlArgs(config: StoveTracingConfig): List<String> = buildList {
+private fun buildInstrumentationControlArgs(config: ResolvedTracingConfig): List<String> = buildList {
   if (config.disabledInstrumentations.isNotEmpty()) {
     add("-Dotel.instrumentation.common.default-enabled=true")
     addAll(config.disabledInstrumentations.map { "-Dotel.instrumentation.$it.enabled=false" })
