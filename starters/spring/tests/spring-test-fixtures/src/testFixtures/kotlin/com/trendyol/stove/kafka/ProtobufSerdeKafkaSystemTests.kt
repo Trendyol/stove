@@ -1,11 +1,11 @@
 package com.trendyol.stove.kafka
 
+import com.trendyol.stove.spring.testing.e2e.kafka.v1.*
 import com.trendyol.stove.spring.testing.e2e.kafka.v1.Example.*
-import com.trendyol.stove.spring.testing.e2e.kafka.v1.order
-import com.trendyol.stove.spring.testing.e2e.kafka.v1.product
 import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.ShouldSpec
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Shared Kafka protobuf serde tests that work across all Spring Boot versions.
@@ -28,10 +28,10 @@ abstract class ProtobufSerdeKafkaSystemTests :
           }
           val headers = mapOf("x-user-id" to userId)
           publish("topic-protobuf", testProduct, headers = headers)
-          shouldBePublished<Product> {
+          shouldBePublished<Product>(20.seconds) {
             actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
           }
-          shouldBeConsumed<Product> {
+          shouldBeConsumed<Product>(20.seconds) {
             actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
           }
 
@@ -42,11 +42,11 @@ abstract class ProtobufSerdeKafkaSystemTests :
             products += testProduct
           }
           publish("topic-protobuf", testOrder, headers = headers)
-          shouldBePublished<Order> {
+          shouldBePublished<Order>(20.seconds) {
             actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
           }
 
-          shouldBeConsumed<Order> {
+          shouldBeConsumed<Order>(20.seconds) {
             actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
           }
         }

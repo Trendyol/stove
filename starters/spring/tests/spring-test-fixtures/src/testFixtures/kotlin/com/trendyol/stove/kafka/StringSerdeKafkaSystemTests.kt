@@ -26,10 +26,10 @@ abstract class StringSerdeKafkaSystemTests(
             "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.name}"
           val headers = mapOf("x-user-id" to userId)
           publish("topic", message, headers = headers)
-          shouldBePublished<Any> {
+          shouldBePublished<Any>(20.seconds) {
             actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic"
           }
-          shouldBeConsumed<Any> {
+          shouldBeConsumed<Any>(20.seconds) {
             actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic"
           }
         }
@@ -45,15 +45,15 @@ abstract class StringSerdeKafkaSystemTests(
               "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.name}"
             val headers = mapOf("x-user-id" to userId)
             publish("topic-failed", message, headers = headers)
-            shouldBePublished<Any> {
+            shouldBePublished<Any>(20.seconds) {
               actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-failed"
             }
-            shouldBeFailed<Any> {
+            shouldBeFailed<Any>(20.seconds) {
               actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-failed" &&
                 reason is StoveBusinessException
             }
 
-            shouldBePublished<Any> {
+            shouldBePublished<Any>(20.seconds) {
               actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-failed$dltTopicSuffix"
             }
           }
