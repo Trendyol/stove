@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldHaveLength
 import io.kotest.matchers.string.shouldMatch
 
@@ -110,5 +111,31 @@ class TraceContextTest :
       val sanitized = TraceContext.sanitizeToAscii(input)
 
       sanitized shouldBe "SimpleTest::simple test name 123"
+    }
+
+    test("sanitizeToAscii should handle Japanese characters with hash for uniqueness") {
+      val input1 = "MyTest::日本語テスト"
+      val input2 = "MyTest::別のテスト"
+
+      val sanitized1 = TraceContext.sanitizeToAscii(input1)
+      val sanitized2 = TraceContext.sanitizeToAscii(input2)
+
+      // Japanese characters become underscores, but hash suffix ensures uniqueness
+      sanitized1.all { it.code in 0x20..0x7E } shouldBe true
+      sanitized2.all { it.code in 0x20..0x7E } shouldBe true
+      // Different inputs should produce different outputs
+      sanitized1 shouldNotBe sanitized2
+      // Should contain hash suffix (underscore followed by hex chars)
+      sanitized1 shouldMatch Regex("MyTest::_______.+")
+    }
+
+    test("sanitizeToAscii should handle mixed scripts with hash") {
+      val input = "Test::Hello世界Test"
+
+      val sanitized = TraceContext.sanitizeToAscii(input)
+
+      // Contains non-decomposable chars, so hash is added
+      sanitized.all { it.code in 0x20..0x7E } shouldBe true
+      sanitized shouldMatch Regex("Test::Hello__Test_.+")
     }
   })

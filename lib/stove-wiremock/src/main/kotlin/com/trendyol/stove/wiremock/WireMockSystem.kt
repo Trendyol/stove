@@ -16,6 +16,7 @@ import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.tracing.TraceContext
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
@@ -200,7 +201,11 @@ class WireMockSystem(
       event.stubMapping?.id in testStubIds
     }
 
-    val unmatched = wireMock.findAllUnmatchedRequests()
+    // Filter unmatched requests to only include those from the current test
+    // by checking the X-Stove-Test-Id header
+    val unmatched = wireMock.findAllUnmatchedRequests().filter { req ->
+      req.getHeader(TraceContext.STOVE_TEST_ID_HEADER) == currentTestId
+    }
 
     return SystemSnapshot(
       system = reportSystemName,
@@ -969,7 +974,14 @@ class WireMockSystem(
                 QueryParams: $queryParams
         """.trimIndent()
     }
-    val unmatched = wireMock.findAllUnmatchedRequests()
+
+    val currentTestId = reporter.currentTestId()
+
+    // Filter unmatched requests to only include those from the current test
+    // by checking the X-Stove-Test-Id header
+    val unmatched = wireMock.findAllUnmatchedRequests().filter { req ->
+      req.getHeader(TraceContext.STOVE_TEST_ID_HEADER) == currentTestId
+    }
     val passed = unmatched.isEmpty()
 
     if (!passed) {

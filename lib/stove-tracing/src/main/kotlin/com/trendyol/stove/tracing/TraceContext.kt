@@ -85,14 +85,40 @@ data class TraceContext(
      * Uses Java's Normalizer to decompose characters (e.g., "ü" → "u" + combining diaeresis)
      * then strips combining marks, leaving only base ASCII characters.
      *
+     * For scripts that don't decompose to ASCII (e.g., Japanese, Chinese, Korean),
+     * a hash suffix is appended to ensure uniqueness.
+     *
      * This should be used when creating testId to ensure consistency between
      * what's stored internally and what's sent in HTTP/gRPC/Kafka headers.
      */
-    fun sanitizeToAscii(value: String): String =
-      Normalizer
+    fun sanitizeToAscii(value: String): String {
+      val sanitized = Normalizer
         .normalize(value, Normalizer.Form.NFD)
         .replace(COMBINING_MARKS_REGEX, "")
         .replace(NON_ASCII_REGEX, "_")
+
+      // If we replaced any characters with underscores (lost information),
+      // append a hash to ensure uniqueness for non-decomposable scripts like Japanese
+      val hasReplacements = sanitized.contains("_") && !value.all { it.code in ASCII_PRINTABLE_START..ASCII_PRINTABLE_END }
+      return if (hasReplacements) {
+        val hash = Integer.toHexString(value.hashCode() and POSITIVE_INT_MASK).takeLast(HASH_SUFFIX_LENGTH)
+        "${sanitized}_$hash"
+      } else {
+        sanitized
+      }
+    }
+
+    /** Length of hash suffix for uniqueness */
+    private const val HASH_SUFFIX_LENGTH = 6
+
+    /** Start of printable ASCII range (space character) */
+    private const val ASCII_PRINTABLE_START = 0x20
+
+    /** End of printable ASCII range (tilde character) */
+    private const val ASCII_PRINTABLE_END = 0x7E
+
+    /** Mask to convert hash to positive integer */
+    private const val POSITIVE_INT_MASK = 0x7FFFFFFF
 
     /** Regex to match Unicode combining marks (diacritics) */
     private val COMBINING_MARKS_REGEX = Regex("\\p{M}")
