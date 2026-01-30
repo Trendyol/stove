@@ -79,7 +79,7 @@ class StoveJUnitExtension :
   }
 
   private fun ExtensionContext.toStoveContext() = StoveTestContext(
-    testId = "${requiredTestClass.simpleName}::${requiredTestMethod.name}",
+    testId = TraceContext.sanitizeToAscii("${requiredTestClass.simpleName}::${requiredTestMethod.name}"),
     testName = displayName,
     specName = requiredTestClass.simpleName
   )

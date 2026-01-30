@@ -41,7 +41,7 @@ class StoveKotestExtension : TestCaseExtension {
   }
 
   private fun TestCase.toStoveContext() = StoveTestContext(
-    testId = "${spec::class.simpleName}::${name.name}",
+    testId = TraceContext.sanitizeToAscii("${spec::class.simpleName}::${name.name}"),
     testName = name.name,
     specName = spec::class.simpleName
   )

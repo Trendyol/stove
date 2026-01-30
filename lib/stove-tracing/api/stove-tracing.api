@@ -72,6 +72,7 @@ public final class com/trendyol/stove/tracing/TraceContext$Companion {
 	public final fun generateSpanId ()Ljava/lang/String;
 	public final fun generateTraceId ()Ljava/lang/String;
 	public final fun parseTraceparent (Ljava/lang/String;)Lkotlin/Pair;
+	public final fun sanitizeToAscii (Ljava/lang/String;)Ljava/lang/String;
 	public final fun start (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceContext;
 	public final fun use (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }

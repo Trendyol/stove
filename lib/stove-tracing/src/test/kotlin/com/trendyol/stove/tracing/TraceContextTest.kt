@@ -84,4 +84,31 @@ class TraceContextTest :
 
       ids.size shouldBe 100
     }
+
+    test("sanitizeToAscii should sanitize Turkish characters") {
+      val input = "ProductCreateCodeValidationTests::Geçerli, benzersiz code ile ürün oluşturma (happy-path)"
+
+      val sanitized = TraceContext.sanitizeToAscii(input)
+
+      sanitized shouldBe "ProductCreateCodeValidationTests::Gecerli, benzersiz code ile urun olusturma (happy-path)"
+      // Verify all characters are ASCII printable
+      sanitized.all { it.code in 0x20..0x7E } shouldBe true
+    }
+
+    test("sanitizeToAscii should handle various non-ASCII characters") {
+      val input = "Test::äöü ñ café résumé naïve"
+
+      val sanitized = TraceContext.sanitizeToAscii(input)
+
+      sanitized shouldBe "Test::aou n cafe resume naive"
+      sanitized.all { it.code in 0x20..0x7E } shouldBe true
+    }
+
+    test("sanitizeToAscii should preserve ASCII characters") {
+      val input = "SimpleTest::simple test name 123"
+
+      val sanitized = TraceContext.sanitizeToAscii(input)
+
+      sanitized shouldBe "SimpleTest::simple test name 123"
+    }
   })

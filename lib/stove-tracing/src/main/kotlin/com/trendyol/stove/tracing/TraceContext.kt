@@ -1,5 +1,6 @@
 package com.trendyol.stove.tracing
 
+import java.text.Normalizer
 import java.util.UUID
 
 data class TraceContext(
@@ -76,5 +77,27 @@ data class TraceContext(
         null
       }
     }
+
+    /**
+     * Sanitizes a string for use in HTTP headers and as a consistent identifier.
+     * Replaces non-ASCII characters with their closest ASCII equivalents or underscores.
+     *
+     * Uses Java's Normalizer to decompose characters (e.g., "ü" → "u" + combining diaeresis)
+     * then strips combining marks, leaving only base ASCII characters.
+     *
+     * This should be used when creating testId to ensure consistency between
+     * what's stored internally and what's sent in HTTP/gRPC/Kafka headers.
+     */
+    fun sanitizeToAscii(value: String): String =
+      Normalizer
+        .normalize(value, Normalizer.Form.NFD)
+        .replace(COMBINING_MARKS_REGEX, "")
+        .replace(NON_ASCII_REGEX, "_")
+
+    /** Regex to match Unicode combining marks (diacritics) */
+    private val COMBINING_MARKS_REGEX = Regex("\\p{M}")
+
+    /** Regex to match any remaining non-ASCII characters */
+    private val NON_ASCII_REGEX = Regex("[^\\x20-\\x7E]")
   }
 }
