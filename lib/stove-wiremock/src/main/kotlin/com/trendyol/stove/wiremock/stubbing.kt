@@ -10,16 +10,18 @@ internal fun stubBehaviour(
   serde: StoveSerde<Any, ByteArray>,
   url: String,
   method: (String) -> MappingBuilder,
+  metadata: Map<String, Any> = emptyMap(),
   block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
 ) {
-  val builder = StubBehaviourBuilder(wireMockServer, url, method)
+  val builder = StubBehaviourBuilder(wireMockServer, url, method, metadata)
   builder.block(serde)
 }
 
 class StubBehaviourBuilder(
   private val wireMockServer: WireMockServer,
   private val url: String,
-  private val method: (String) -> MappingBuilder
+  private val method: (String) -> MappingBuilder,
+  private val metadata: Map<String, Any> = emptyMap()
 ) {
   private val scenarioName = "Scenario for $url"
   private var previousState: String = STARTED
@@ -54,6 +56,7 @@ class StubBehaviourBuilder(
         .whenScenarioStateIs(whenState)
         .willReturn(response)
         .willSetStateTo(setState)
+        .withMetadata(metadata)
     )
   }
 }

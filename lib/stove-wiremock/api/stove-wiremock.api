@@ -8,7 +8,8 @@ public final class com/trendyol/stove/wiremock/OptionsKt {
 }
 
 public final class com/trendyol/stove/wiremock/StubBehaviourBuilder {
-	public fun <init> (Lcom/github/tomakehurst/wiremock/WireMockServer;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public fun <init> (Lcom/github/tomakehurst/wiremock/WireMockServer;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Ljava/util/Map;)V
+	public synthetic fun <init> (Lcom/github/tomakehurst/wiremock/WireMockServer;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun initially (Lkotlin/jvm/functions/Function0;)V
 	public final fun then (Lkotlin/jvm/functions/Function0;)V
 }
@@ -42,6 +43,7 @@ public final class com/trendyol/stove/wiremock/WireMockRequestListener : com/git
 
 public final class com/trendyol/stove/wiremock/WireMockSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware, com/trendyol/stove/system/abstractions/ValidatedSystem {
 	public static final field Companion Lcom/trendyol/stove/wiremock/WireMockSystem$Companion;
+	public static final field STOVE_TEST_ID_KEY Ljava/lang/String;
 	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/wiremock/WireMockContext;)V
 	public final fun behaviourFor (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
