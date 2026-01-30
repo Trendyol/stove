@@ -110,9 +110,9 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
       ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to config.offset,
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to Serdes.String().deserializer().javaClass,
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ProtobufValueDeserializer().javaClass,
-      ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to 2000,
-      ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to 6000,
-      ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG to 6000
+      ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to 10000,
+      ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to 30000,
+      ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG to 30000
     )
   )
 

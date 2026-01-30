@@ -1,11 +1,11 @@
 dependencies {
-    api(projects.starters.spring.stoveSpring)
-    implementation(libs.spring.boot)
-    
-    testImplementation(project(":test-extensions:stove-extensions-kotest"))
-    testImplementation(testFixtures(projects.starters.spring.tests.springTestFixtures))
-    testImplementation(libs.spring.boot.autoconfigure)
-    testImplementation(libs.slf4j.simple)
+  api(projects.starters.spring.stoveSpring)
+  implementation(libs.spring.boot)
+
+  testImplementation(projects.testExtensions.stoveExtensionsKotest)
+  testImplementation(testFixtures(projects.starters.spring.tests.springTestFixtures))
+  testImplementation(libs.spring.boot.autoconfigure)
+  testImplementation(libs.slf4j.simple)
 }
 
 tasks.test.configure {
