@@ -24,9 +24,9 @@ nav:
     - Bridge: Components/10-bridge.md
     - Provided Instances: Components/11-provided-instances.md
     - gRPC: Components/12-grpc.md
-    - gRPC Mocking: Components/14-grpc-mock.md
     - Reporting: Components/13-reporting.md
-    - Tracing: Components/14-tracing.md
+    - gRPC Mocking: Components/14-grpc-mock.md
+    - Tracing: Components/15-tracing.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
