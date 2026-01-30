@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../14-grpc-mock/">
+      
+      
+        <link rel="next" href="../../writing-custom-systems/">
       
       
         
@@ -19,7 +23,7 @@
     
     
       
-        <title>Distributed Tracing - Stove</title>
+        <title>Tracing - Stove</title>
       
     
     
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Distributed Tracing
+              Tracing
             
           </span>
         </div>
@@ -312,6 +316,8 @@
       
   
   
+    
+  
   
   
     
@@ -349,6 +355,8 @@
       
         
       
+        
+      
     
     
     
@@ -358,11 +366,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -390,7 +398,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -746,6 +754,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../13-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../14-grpc-mock/" class="md-nav__link">
         
   
@@ -771,17 +807,44 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../13-reporting/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reporting
+    Tracing
   
 
     
@@ -790,6 +853,364 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capturing-application-execution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capturing Application Execution Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Capturing Application Execution Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-enable-span-receiver-in-stove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Enable Span Receiver in Stove
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-configure-opentelemetry-java-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Configure OpenTelemetry Java Agent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Configure OpenTelemetry Java Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-a-copy-configuration-file-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A: Copy Configuration File (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-manual-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B: Manual Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#apply-to-specific-test-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apply to Specific Test Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-specific-instrumentations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disable Specific Instrumentations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-gets-instrumented-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Gets Instrumented Automatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-failure-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Failure Reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracing-dsl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracing DSL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-validation-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace Validation Methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recording-custom-spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recording Custom Spans
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-tree-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace Tree Rendering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automatic-header-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatic Header Injection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Automatic Header Injection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafka-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kafka Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grpc-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gRPC Calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-context-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace Context Properties
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spans-not-appearing-in-failure-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spans not appearing in failure report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#otel-agent-not-attaching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OTel agent not attaching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#too-many-spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Too many spans
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-parent-child-relationships" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing parent-child relationships
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1497,6 +1918,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../14-grpc-mock/" class="md-footer__link md-footer__link--prev" aria-label="Previous: gRPC Mocking">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                gRPC Mocking
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../writing-custom-systems/" class="md-footer__link md-footer__link--next" aria-label="Next: Writing Custom Systems">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Writing Custom Systems
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
