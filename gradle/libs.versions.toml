@@ -2,7 +2,7 @@
 kotlin = "2.3.0"
 kotlinx = "1.10.2"
 exposed = "1.0.0"
-hikari = "6.3.0"
+hikari = "7.0.2"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.5.10"
 spring-boot-4x = "4.0.2"
