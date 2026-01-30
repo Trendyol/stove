@@ -66,12 +66,13 @@ In your Stove test configuration:
 Stove(...)
     .with {
         tracing {
-            serviceName("my-service")
-            enableSpanReceiver(port = 4317)  // Start OTLP gRPC receiver
+            enableSpanReceiver()  // Port is auto-configured from STOVE_TRACING_PORT env var
         }
         // ... other systems
     }
 ```
+
+Note: The service name is automatically extracted from incoming spans (set by the OTel agent via `-Dotel.service.name`).
 
 ### Step 2: Configure OpenTelemetry Java Agent
 

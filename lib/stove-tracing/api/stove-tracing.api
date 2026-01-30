@@ -143,13 +143,11 @@ public final class com/trendyol/stove/tracing/TracingOptions {
 	public final fun enabled ()Lcom/trendyol/stove/tracing/TracingOptions;
 	public final fun getEnabled ()Z
 	public final fun getMaxSpansPerTrace ()I
-	public final fun getServiceName ()Ljava/lang/String;
 	public final fun getSpanCollectionTimeout-UwyO8pc ()J
 	public final fun getSpanFilter ()Lkotlin/jvm/functions/Function1;
 	public final fun getSpanReceiverEnabled ()Z
 	public final fun getSpanReceiverPort ()I
 	public final fun maxSpansPerTrace (I)Lcom/trendyol/stove/tracing/TracingOptions;
-	public final fun serviceName (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TracingOptions;
 	public final fun spanCollectionTimeout-LRDsOJo (J)Lcom/trendyol/stove/tracing/TracingOptions;
 	public final fun spanFilter (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/TracingOptions;
 }

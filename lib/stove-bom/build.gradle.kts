@@ -25,6 +25,7 @@ dependencies {
     api(projects.lib.stoveRedis)
     api(projects.lib.stoveWiremock)
     api(projects.lib.stoveGrpcMock)
+    api(projects.lib.stoveTracing)
 
     // Starters
     api(projects.starters.spring.stoveSpring)

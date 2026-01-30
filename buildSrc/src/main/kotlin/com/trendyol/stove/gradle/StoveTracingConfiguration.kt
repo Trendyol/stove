@@ -34,11 +34,12 @@ import java.net.ServerSocket
  *    Stove(...)
  *        .with {
  *            tracing {
- *                serviceName("my-service")
  *                enableSpanReceiver() // Port is auto-configured from STOVE_TRACING_PORT env var
  *            }
  *            // ... other systems
  *        }
+ *
+ *    Note: Service name is automatically extracted from incoming spans (set by OTel agent)
  *
  * CONFIGURATION OPTIONS:
  * ──────────────────────

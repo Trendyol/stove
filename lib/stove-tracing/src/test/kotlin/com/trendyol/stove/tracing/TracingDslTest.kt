@@ -164,13 +164,11 @@ class TracingDslTest :
       val options = TracingOptions().apply {
         enabled()
         maxSpansPerTrace(500)
-        serviceName("my-app")
         enableSpanReceiver(port = 4318)
       }
 
       options.enabled shouldBe true
       options.maxSpansPerTrace shouldBe 500
-      options.serviceName shouldBe "my-app"
       options.spanReceiverEnabled shouldBe true
       options.spanReceiverPort shouldBe 4318
     }

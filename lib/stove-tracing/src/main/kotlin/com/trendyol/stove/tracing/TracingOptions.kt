@@ -25,9 +25,6 @@ class TracingOptions {
   var maxSpansPerTrace: Int = TracingConstants.DEFAULT_MAX_SPANS_PER_TRACE
     private set
 
-  var serviceName: String = "stove-traced-app"
-    private set
-
   var spanReceiverEnabled: Boolean = false
     private set
 
@@ -48,10 +45,6 @@ class TracingOptions {
 
   fun maxSpansPerTrace(max: Int): TracingOptions = apply {
     maxSpansPerTrace = max
-  }
-
-  fun serviceName(name: String): TracingOptions = apply {
-    serviceName = name
   }
 
   /**
@@ -86,7 +79,6 @@ class TracingOptions {
     copy.spanCollectionTimeout = this.spanCollectionTimeout
     copy.spanFilter = this.spanFilter
     copy.maxSpansPerTrace = this.maxSpansPerTrace
-    copy.serviceName = this.serviceName
     copy.spanReceiverEnabled = this.spanReceiverEnabled
     copy.spanReceiverPort = this.spanReceiverPort
   }

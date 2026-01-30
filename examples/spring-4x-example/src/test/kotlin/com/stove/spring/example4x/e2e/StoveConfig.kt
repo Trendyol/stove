@@ -40,8 +40,8 @@ class StoveConfig : AbstractProjectConfig() {
         bridge()
 
         // Enable tracing - starts OTLP gRPC receiver on port 4317
+        // Service name is automatically extracted from incoming spans (set by OTel agent)
         tracing {
-          serviceName("spring-4x-example")
           enableSpanReceiver(port = 4317)
         }
 
