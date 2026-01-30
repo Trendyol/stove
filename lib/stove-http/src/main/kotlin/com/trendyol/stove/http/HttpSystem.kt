@@ -828,6 +828,141 @@ class HttpSystem(
     }
   }
 
+  // region WebSocket Methods
+
+  /**
+   * Establishes a WebSocket connection and executes the provided block.
+   *
+   * ## Basic Usage
+   *
+   * ```kotlin
+   * http {
+   *     webSocket("/chat") { session ->
+   *         session.send("Hello!")
+   *         val response = session.receiveText()
+   *         response shouldBe "Echo: Hello!"
+   *     }
+   * }
+   * ```
+   *
+   * ## With Headers and Token
+   *
+   * ```kotlin
+   * http {
+   *     webSocket(
+   *         uri = "/secure-chat",
+   *         headers = mapOf("X-Custom-Header" to "value"),
+   *         token = "jwt-token".some()
+   *     ) { session ->
+   *         session.send("Authenticated message")
+   *     }
+   * }
+   * ```
+   *
+   * @param uri The WebSocket endpoint URI (e.g., "/chat").
+   * @param headers Optional HTTP headers to send with the upgrade request.
+   * @param token Optional bearer token for authentication.
+   * @param block The test block to execute with the WebSocket session.
+   * @return The [HttpSystem] for fluent chaining.
+   */
+  @HttpDsl
+  suspend fun webSocket(
+    uri: String,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    block: suspend StoveWebSocketSession.() -> Unit
+  ): HttpSystem {
+    ktorHttpClient.webSocket(
+      urlString = buildWebSocketUrl(uri),
+      request = {
+        headers.forEach { (key, value) -> this.headers.append(key, value) }
+        token.map {
+          this.headers.append(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it))
+        }
+        injectWebSocketTraceHeaders()
+      }
+    ) {
+      val stoveSession = StoveWebSocketSession(this)
+      block(stoveSession)
+    }
+    return this
+  }
+
+  /**
+   * Establishes a WebSocket connection and executes assertions on the session.
+   *
+   * This is an alias for [webSocket] with a clearer intent for assertion-focused tests.
+   *
+   * @param uri The WebSocket endpoint URI.
+   * @param headers Optional HTTP headers.
+   * @param token Optional bearer token.
+   * @param expect The assertion block to execute.
+   * @return The [HttpSystem] for fluent chaining.
+   */
+  @HttpDsl
+  suspend fun webSocketExpect(
+    uri: String,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    expect: suspend StoveWebSocketSession.() -> Unit
+  ): HttpSystem = webSocket(uri, headers, token, expect)
+
+  /**
+   * Establishes a raw WebSocket connection for advanced use cases.
+   *
+   * This method provides direct access to the Ktor WebSocket session
+   * for scenarios where the simplified [StoveWebSocketSession] is not sufficient.
+   *
+   * @param uri The WebSocket endpoint URI.
+   * @param headers Optional HTTP headers.
+   * @param token Optional bearer token.
+   * @param block The block to execute with the raw Ktor WebSocket session.
+   * @return The [HttpSystem] for fluent chaining.
+   */
+  @HttpDsl
+  suspend fun webSocketRaw(
+    uri: String,
+    headers: Map<String, String> = mapOf(),
+    token: Option<String> = None,
+    block: suspend DefaultClientWebSocketSession.() -> Unit
+  ): HttpSystem {
+    ktorHttpClient.webSocket(
+      urlString = buildWebSocketUrl(uri),
+      request = {
+        headers.forEach { (key, value) -> this.headers.append(key, value) }
+        token.map {
+          this.headers.append(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it))
+        }
+        injectWebSocketTraceHeaders()
+      }
+    ) {
+      block()
+    }
+    return this
+  }
+
+  @PublishedApi
+  internal fun buildWebSocketUrl(uri: String): String {
+    val baseUrl = options.baseUrl
+    val wsUrl = when {
+      baseUrl.startsWith("https://") -> baseUrl.replace("https://", "wss://")
+      baseUrl.startsWith("http://") -> baseUrl.replace("http://", "ws://")
+      else -> "ws://$baseUrl"
+    }
+    return "$wsUrl${uri.ensureLeadingSlash()}"
+  }
+
+  private fun String.ensureLeadingSlash(): String = if (startsWith("/")) this else "/$this"
+
+  private fun HttpRequestBuilder.injectWebSocketTraceHeaders() {
+    TraceContext.current()?.let { ctx ->
+      headers.append(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent())
+      headers.append(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId)
+    }
+  }
+
+  // endregion
+
   override fun close() {
     ktorHttpClient.close()
   }

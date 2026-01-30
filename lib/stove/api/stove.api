@@ -1117,6 +1117,36 @@ public final class com/trendyol/stove/tracing/SpanTree {
 	public final fun findSpan (Lcom/trendyol/stove/tracing/SpanNode;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/SpanNode;
 }
 
+public final class com/trendyol/stove/tracing/TraceContext {
+	public static final field Companion Lcom/trendyol/stove/tracing/TraceContext$Companion;
+	public static final field STOVE_TEST_ID_HEADER Ljava/lang/String;
+	public static final field TRACEPARENT_HEADER Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/TraceContext;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TraceContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRootSpanId ()Ljava/lang/String;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTraceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun toTraceparent ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/tracing/TraceContext$Companion {
+	public final fun clear ()V
+	public final fun current ()Lcom/trendyol/stove/tracing/TraceContext;
+	public final fun generateSpanId ()Ljava/lang/String;
+	public final fun generateTraceId ()Ljava/lang/String;
+	public final fun parseTraceparent (Ljava/lang/String;)Lkotlin/Pair;
+	public final fun sanitizeToAscii (Ljava/lang/String;)Ljava/lang/String;
+	public final fun start (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceContext;
+	public final fun use (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
 public final class com/trendyol/stove/tracing/TraceTreeRenderer {
 	public static final field INSTANCE Lcom/trendyol/stove/tracing/TraceTreeRenderer;
 	public final fun render (Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;)Ljava/lang/String;

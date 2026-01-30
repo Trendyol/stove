@@ -3,6 +3,7 @@ package com.trendyol.stove.kafka
 import arrow.core.Option
 import com.trendyol.stove.messaging.MessageMetadata
 import com.trendyol.stove.serialization.StoveSerde
+import com.trendyol.stove.tracing.TraceContext
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 
@@ -77,3 +78,12 @@ private fun <V> serializeIfNotYet(
 
 internal fun (MutableMap<String, String>).addTestCase(testCase: Option<String>): MutableMap<String, String> =
   if (this.containsKey("testCase")) this else testCase.map { this["testCase"] = it }.let { this }
+
+internal fun (MutableMap<String, String>).addTraceContext(
+  traceContext: TraceContext?
+): MutableMap<String, String> =
+  traceContext?.let {
+    this[TraceContext.TRACEPARENT_HEADER] = it.toTraceparent()
+    this[TraceContext.STOVE_TEST_ID_HEADER] = it.testId
+    this
+  } ?: this

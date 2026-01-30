@@ -32,12 +32,6 @@ object TracingConstants {
   /** Default maximum spans per trace to prevent memory issues */
   const val DEFAULT_MAX_SPANS_PER_TRACE = 1000
 
-  /** Span ID length in W3C trace context */
-  const val SPAN_ID_LENGTH = 16
-
-  /** Minimum parts required in a W3C traceparent header */
-  const val TRACEPARENT_MIN_PARTS = 3
-
   /** Maximum stack trace lines to display in trace trees */
   const val MAX_STACK_TRACE_LINES = 3
 

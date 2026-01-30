@@ -17,6 +17,12 @@ data class TraceContext(
     /** Stove test ID header name */
     const val STOVE_TEST_ID_HEADER = "X-Stove-Test-Id"
 
+    /** Span ID length in W3C trace context */
+    private const val SPAN_ID_LENGTH = 16
+
+    /** Minimum parts required in a W3C traceparent header */
+    private const val TRACEPARENT_MIN_PARTS = 3
+
     /**
      * Uses InheritableThreadLocal to propagate trace context to child threads.
      * IMPORTANT: Always call [clear] when done with the trace to avoid memory leaks.
@@ -67,11 +73,11 @@ data class TraceContext(
         .randomUUID()
         .toString()
         .replace("-", "")
-        .take(TracingConstants.SPAN_ID_LENGTH)
+        .take(SPAN_ID_LENGTH)
 
     fun parseTraceparent(traceparent: String): Pair<String, String>? {
       val parts = traceparent.split("-")
-      return if (parts.size >= TracingConstants.TRACEPARENT_MIN_PARTS) {
+      return if (parts.size >= TRACEPARENT_MIN_PARTS) {
         parts[1] to parts[2]
       } else {
         null

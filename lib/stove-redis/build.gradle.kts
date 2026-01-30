@@ -1,6 +1,5 @@
 dependencies {
   api(projects.lib.stove)
-  api(projects.lib.stoveTracing)
   api(libs.lettuce.core)
   api(libs.testcontainers.redis)
 }

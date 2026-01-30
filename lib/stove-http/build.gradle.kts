@@ -1,6 +1,5 @@
 dependencies {
   api(projects.lib.stove)
-  api(projects.lib.stoveTracing)
   api(libs.ktor.client.core)
   api(libs.ktor.client.okhttp)
   api(libs.ktor.client.plugins.logging)

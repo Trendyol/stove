@@ -7,6 +7,7 @@ import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.tracing.TraceContext
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.producer.*
@@ -126,7 +127,11 @@ class KafkaSystem(
         partition.getOrNull(),
         key.getOrNull(),
         message,
-        headers.toMutableMap().addTestCase(testCase).map { RecordHeader(it.key, it.value.toByteArray()) }
+        headers
+          .toMutableMap()
+          .addTestCase(testCase)
+          .addTraceContext(TraceContext.current())
+          .map { RecordHeader(it.key, it.value.toByteArray()) }
       )
       context.options.ops.send(kafkaTemplate, record)
     }
