@@ -1526,12 +1526,12 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">(...)</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">            </span><span class="n">serviceName</span><span class="p">(</span><span class="s">&quot;my-service&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">            </span><span class="n">enableSpanReceiver</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4317</span><span class="p">)</span><span class="w">  </span><span class="c1">// Start OTLP gRPC receiver</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="c1">// ... other systems</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">            </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w">  </span><span class="c1">// Port is auto-configured from STOVE_TRACING_PORT env var</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="c1">// ... other systems</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">}</span>
 </code></pre></div>
+<p>Note: The service name is automatically extracted from incoming spans (set by the OTel agent via <code>-Dotel.service.name</code>).</p>
 <h3 id="step-2-configure-opentelemetry-java-agent">Step 2: Configure OpenTelemetry Java Agent<a class="headerlink" href="#step-2-configure-opentelemetry-java-agent" title="Permanent link">&para;</a></h3>
 <p>The easiest way to configure the OTel agent is to copy Stove's configuration helper to your project.</p>
 <h4 id="option-a-copy-configuration-file-recommended">Option A: Copy Configuration File (Recommended)<a class="headerlink" href="#option-a-copy-configuration-file-recommended" title="Permanent link">&para;</a></h4>
