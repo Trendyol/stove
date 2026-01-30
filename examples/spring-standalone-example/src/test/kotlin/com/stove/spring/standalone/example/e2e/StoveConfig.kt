@@ -66,8 +66,7 @@ class StoveConfig : AbstractProjectConfig() {
         }
         bridge()
         tracing {
-          serviceName("spring-standalone-example")
-          enableSpanReceiver(port = 4318)
+          enableSpanReceiver()
         }
         wiremock {
           WireMockSystemOptions(

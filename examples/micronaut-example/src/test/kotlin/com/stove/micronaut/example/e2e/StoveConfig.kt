@@ -42,8 +42,7 @@ class StoveConfig : AbstractProjectConfig() {
         }
         bridge()
         tracing {
-          serviceName("micronaut-example")
-          enableSpanReceiver(port = 4318)
+          enableSpanReceiver()
         }
         wiremock {
           WireMockSystemOptions(

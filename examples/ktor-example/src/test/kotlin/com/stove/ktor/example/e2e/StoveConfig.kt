@@ -45,8 +45,7 @@ class StoveConfig : AbstractProjectConfig() {
       }
       bridge()
       tracing {
-        serviceName("ktor-example")
-        enableSpanReceiver(port = 4317)
+        enableSpanReceiver()
       }
       postgresql {
         PostgresqlOptions(configureExposedConfiguration = { cfg ->

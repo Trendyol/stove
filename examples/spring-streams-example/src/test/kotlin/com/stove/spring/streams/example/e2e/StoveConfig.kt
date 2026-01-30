@@ -44,8 +44,7 @@ class StoveConfig : AbstractProjectConfig() {
       }
       bridge()
       tracing {
-        serviceName("spring-streams-example")
-        enableSpanReceiver(port = 4318)
+        enableSpanReceiver()
       }
       springBoot(
         runner = { parameters ->

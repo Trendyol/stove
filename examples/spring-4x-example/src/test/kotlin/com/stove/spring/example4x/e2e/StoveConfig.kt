@@ -42,7 +42,7 @@ class StoveConfig : AbstractProjectConfig() {
         // Enable tracing - starts OTLP gRPC receiver on port 4317
         // Service name is automatically extracted from incoming spans (set by OTel agent)
         tracing {
-          enableSpanReceiver(port = 4317)
+          enableSpanReceiver()
         }
 
         wiremock {
