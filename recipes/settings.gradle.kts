@@ -9,7 +9,7 @@ include(
   "kotlin-recipes",
   "kotlin-recipes:ktor-mongo-recipe",
   "kotlin-recipes:ktor-postgres-recipe",
-  "kotlin-recipes:spring-boot-basic-recipe",
+  "kotlin-recipes:spring-showcase",
   "java-recipes",
   "java-recipes:spring-boot-postgres-recipe",
   "java-recipes:quarkus-basic-recipe",
