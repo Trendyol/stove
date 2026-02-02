@@ -1,7 +1,6 @@
 package com.stove.ktor.example.e2e
 
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
-import com.trendyol.stove.grpc.*
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.ktor.*
@@ -17,16 +16,6 @@ import stove.ktor.example.run
 
 class StoveConfig : AbstractProjectConfig() {
   companion object {
-    /**
-     * Single gRPC mock server port that handles MULTIPLE services:
-     * - FeatureToggleService (featuretoggle.FeatureToggleService)
-     * - PricingService (pricing.PricingService)
-     *
-     * The mock server uses a dynamic handler registry that routes
-     * requests to the correct stub based on the service/method name.
-     */
-    const val GRPC_MOCK_PORT = 9097
-
     init {
       stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
       System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
@@ -72,30 +61,28 @@ class StoveConfig : AbstractProjectConfig() {
 
       // =====================================================
       // Single gRPC mock server for ALL external gRPC services
+      // Uses dynamic port (0) to avoid CI conflicts
       // =====================================================
       grpcMock {
         GrpcMockSystemOptions(
-          port = GRPC_MOCK_PORT,
-          removeStubAfterRequestMatched = true
-        )
-      }
-
-      // gRPC client for calling mocked services (optional, for direct testing)
-      grpc {
-        GrpcSystemOptions(
-          host = "localhost",
-          port = GRPC_MOCK_PORT
+          // port = 0 by default (dynamic port)
+          removeStubAfterRequestMatched = true,
+          configureExposedConfiguration = { cfg ->
+            // Both gRPC clients in the app point to the SAME mock server
+            listOf(
+              "featureToggle.host=${cfg.host}",
+              "featureToggle.port=${cfg.port}",
+              "pricing.host=${cfg.host}",
+              "pricing.port=${cfg.port}"
+            )
+          }
         )
       }
 
       ktor(
         withParameters = listOf(
-          "port=8080",
-          // Both gRPC clients point to the SAME mock server
-          "featureToggle.host=localhost",
-          "featureToggle.port=$GRPC_MOCK_PORT",
-          "pricing.host=localhost",
-          "pricing.port=$GRPC_MOCK_PORT"
+          "port=8080"
+          // gRPC settings are now auto-injected via grpcMock's configureExposedConfiguration
         ),
         runner = { parameters ->
           run(parameters) {

@@ -25,29 +25,53 @@ dependencies {
 
 ## Configuration
 
+By default, gRPC Mock uses a **dynamic port** (port = 0), which lets the system pick an available port automatically. This avoids port conflicts, especially in CI environments.
+
 ```kotlin
 Stove()
   .with {
     grpcMock {
       GrpcMockSystemOptions(
-        port = 9090,
-        removeStubAfterRequestMatched = true // optional, default false
+        // port = 0 by default (dynamic port)
+        removeStubAfterRequestMatched = true, // optional, default false
+        configureExposedConfiguration = { cfg ->
+          // cfg.host = "localhost"
+          // cfg.port = <dynamic-port>
+          listOf(
+            "grpcService.host=${cfg.host}",
+            "grpcService.port=${cfg.port}"
+          )
+        }
       )
     }
-    // Optional: gRPC client for direct testing
-    grpc {
-      GrpcSystemOptions(host = "localhost", port = 9090)
-    }
-    // Your application configuration
+    // Your application configuration - gRPC settings are auto-injected
     ktor(
-      withParameters = listOf(
-        "grpcService.host=localhost",
-        "grpcService.port=9090"
-      ),
       runner = { parameters -> run(parameters) }
     )
   }
 ```
+
+### Using Fixed Port (Not Recommended for CI)
+
+If you need a specific port:
+
+```kotlin
+grpcMock {
+  GrpcMockSystemOptions(
+    port = 9090  // Fixed port
+  )
+}
+```
+
+!!! tip "Dynamic Ports Avoid CI Conflicts"
+
+    Using `port = 0` (the default) lets the system pick an available port automatically. This is essential in CI environments where:
+    
+    - Multiple test runs may execute in parallel
+    - Other services might already be using common ports
+    - You get "Address already in use" errors with fixed ports
+    
+    The `configureExposedConfiguration` callback receives the actual port after the server starts.
 
 ## Usage
 

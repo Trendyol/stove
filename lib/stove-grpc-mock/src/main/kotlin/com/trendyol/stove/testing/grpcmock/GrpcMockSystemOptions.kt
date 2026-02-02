@@ -17,21 +17,40 @@ typealias AfterStubMatched = (StubKey, StubDefinition) -> Unit
 typealias OnRequestReceived = (StubKey, ByteArray) -> Unit
 
 /**
+ * Configuration exposed by gRPC Mock after it starts.
+ *
+ * This allows the application under test to receive the actual gRPC mock URL,
+ * which is especially useful when using dynamic ports (port = 0).
+ *
+ * @property host The host where gRPC mock is running.
+ * @property port The actual port gRPC mock is listening on.
+ */
+data class GrpcMockExposedConfiguration(
+  val host: String,
+  val port: Int
+) : ExposedConfiguration
+
+/**
  * Configuration options for the native gRPC mock server.
  *
  * @property port The port to run the mock server on.
+ *   Defaults to 0, which lets the system pick an available port automatically.
+ *   This avoids port conflicts, especially in CI environments.
  * @property removeStubAfterRequestMatched If true, stubs are removed after being matched once.
  * @property afterStubMatched Callback invoked after a stub is matched.
  * @property onRequestReceived Callback invoked for each request received.
  * @property serverBuilder Optional custom server builder configuration.
+ * @property configureExposedConfiguration Callback to expose the gRPC mock configuration to the application.
  */
 data class GrpcMockSystemOptions(
-  val port: Int = 9090,
+  val port: Int = 0,
   val removeStubAfterRequestMatched: Boolean = false,
   val afterStubMatched: AfterStubMatched = { _, _ -> },
   val onRequestReceived: OnRequestReceived = { _, _ -> },
-  val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*> = { it }
-) : SystemOptions
+  val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*> = { it },
+  override val configureExposedConfiguration: (GrpcMockExposedConfiguration) -> List<String> = { _ -> listOf() }
+) : SystemOptions,
+  ConfiguresExposedConfiguration<GrpcMockExposedConfiguration>
 
 /**
  * Internal context for the gRPC mock system.
@@ -41,7 +60,8 @@ internal data class GrpcMockContext(
   val removeStubAfterRequestMatched: Boolean,
   val afterStubMatched: AfterStubMatched,
   val onRequestReceived: OnRequestReceived,
-  val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*>
+  val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*>,
+  val configureExposedConfiguration: (GrpcMockExposedConfiguration) -> List<String>
 )
 
 internal fun Stove.withGrpcMock(options: GrpcMockSystemOptions): Stove =
@@ -52,7 +72,8 @@ internal fun Stove.withGrpcMock(options: GrpcMockSystemOptions): Stove =
       options.removeStubAfterRequestMatched,
       options.afterStubMatched,
       options.onRequestReceived,
-      options.serverBuilder
+      options.serverBuilder,
+      options.configureExposedConfiguration
     )
   ).also { getOrRegister(it) }
     .let { this }

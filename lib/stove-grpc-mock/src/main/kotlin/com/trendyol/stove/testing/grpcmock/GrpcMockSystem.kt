@@ -1,4 +1,4 @@
-@file:Suppress("unused", "MagicNumber")
+@file:Suppress("unused", "MagicNumber", "TooManyFunctions")
 
 package com.trendyol.stove.testing.grpcmock
 
@@ -90,6 +90,7 @@ class GrpcMockSystem internal constructor(
 ) : PluggedSystem,
   ValidatedSystem,
   RunAware,
+  ExposesConfiguration,
   Reports {
   private val logger = LoggerFactory.getLogger(javaClass)
   override val reportSystemName: String = "gRPC Mock"
@@ -101,6 +102,9 @@ class GrpcMockSystem internal constructor(
     .build()
 
   private lateinit var server: Server
+  private lateinit var exposedConfiguration: GrpcMockExposedConfiguration
+
+  override fun configuration(): List<String> = ctx.configureExposedConfiguration(exposedConfiguration)
 
   // ==================== Lifecycle ====================
 
@@ -111,7 +115,12 @@ class GrpcMockSystem internal constructor(
       .fallbackHandlerRegistry(DynamicHandlerRegistry())
       .build()
       .also { it.start() }
-    logger.info("gRPC Mock server started on port ${ctx.port}")
+
+    exposedConfiguration = GrpcMockExposedConfiguration(
+      host = "localhost",
+      port = server.port
+    )
+    logger.info("gRPC Mock server started on port ${server.port}")
   }
 
   override suspend fun stop() {
