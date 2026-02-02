@@ -34,27 +34,10 @@ class OrderService(
     logger.info { "Creating order for user=$userId, product=$productId, amount=$amount" }
     val orderId = UUID.randomUUID().toString()
 
-    // Check fraud via gRPC service
-    val fraudCheck = fraudDetectionClient.checkFraud(orderId, userId, amount, productId)
-    if (fraudCheck.isFraudulent) {
-      logger.warn { "Fraud detected for order=$orderId, reason=${fraudCheck.reason}" }
-      throw FraudDetectedException(fraudCheck.reason)
-    }
-    logger.info { "Fraud check passed: riskScore=${fraudCheck.riskScore}" }
-
-    // Check inventory
-    val inventory = inventoryClient.checkAvailability(productId)
-    if (!inventory.available) {
-      logger.warn { "Inventory not available for product=$productId" }
-      throw InventoryNotAvailableException(productId)
-    }
-
-    // Process payment
-    val payment = paymentClient.charge(userId, amount)
-    if (!payment.success) {
-      logger.error { "Payment failed for user=$userId, reason=${payment.errorMessage}" }
-      throw PaymentFailedException(payment.errorMessage ?: "Unknown error")
-    }
+    // Validate order prerequisites
+    validateFraudCheck(orderId, userId, amount, productId)
+    validateInventory(productId)
+    val payment = processPayment(userId, amount)
 
     // Create and save order
     val order = Order(
@@ -68,25 +51,55 @@ class OrderService(
     logger.info { "Order created: id=${savedOrder.id}, status=${savedOrder.status}" }
 
     // Publish events
+    publishOrderEvents(savedOrder, payment.transactionId)
+
+    return savedOrder
+  }
+
+  private suspend fun validateFraudCheck(orderId: String, userId: String, amount: Double, productId: String) {
+    val fraudCheck = fraudDetectionClient.checkFraud(orderId, userId, amount, productId)
+    if (fraudCheck.isFraudulent) {
+      logger.warn { "Fraud detected for order=$orderId, reason=${fraudCheck.reason}" }
+      throw FraudDetectedException(fraudCheck.reason)
+    }
+    logger.info { "Fraud check passed: riskScore=${fraudCheck.riskScore}" }
+  }
+
+  private suspend fun validateInventory(productId: String) {
+    val inventory = inventoryClient.checkAvailability(productId)
+    if (!inventory.available) {
+      logger.warn { "Inventory not available for product=$productId" }
+      throw InventoryNotAvailableException(productId)
+    }
+  }
+
+  private suspend fun processPayment(userId: String, amount: Double): com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentResponse {
+    val payment = paymentClient.charge(userId, amount)
+    if (!payment.success) {
+      logger.error { "Payment failed for user=$userId, reason=${payment.errorMessage}" }
+      throw PaymentFailedException(payment.errorMessage ?: "Unknown error")
+    }
+    return payment
+  }
+
+  private suspend fun publishOrderEvents(order: Order, transactionId: String) {
     eventPublisher.publish(
       OrderCreatedEvent(
-        orderId = savedOrder.id,
-        userId = savedOrder.userId,
-        productId = savedOrder.productId,
-        amount = savedOrder.amount
+        orderId = order.id,
+        userId = order.userId,
+        productId = order.productId,
+        amount = order.amount
       )
     )
 
     eventPublisher.publish(
       PaymentProcessedEvent(
-        orderId = savedOrder.id,
-        transactionId = payment.transactionId,
-        amount = savedOrder.amount,
+        orderId = order.id,
+        transactionId = transactionId,
+        amount = order.amount,
         success = true
       )
     )
-
-    return savedOrder
   }
 
   @WithSpan("OrderService.getOrder")

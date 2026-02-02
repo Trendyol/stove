@@ -35,7 +35,7 @@ class StoveConfig : AbstractProjectConfig() {
         kafka {
           KafkaSystemOptions(
             serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.default),
-            containerOptions = KafkaContainerOptions(tag = "7.8.1"),
+            containerOptions = KafkaContainerOptions(tag = "8.0.3"),
             configureExposedConfiguration = { cfg ->
               listOf(
                 "kafka.bootstrapServers=${cfg.bootstrapServers}",

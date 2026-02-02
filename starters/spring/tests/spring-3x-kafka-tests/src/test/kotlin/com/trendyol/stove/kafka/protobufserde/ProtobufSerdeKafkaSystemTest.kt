@@ -25,7 +25,7 @@ class Boot3xProtobufSerdeKafkaSystemTest : ProtobufSerdeKafkaSystemTests() {
                   "kafka.schemaRegistryUrl=mock://mock-registry"
                 )
               },
-              containerOptions = KafkaContainerOptions(tag = "7.8.1")
+              containerOptions = KafkaContainerOptions(tag = "8.0.3")
             )
           }
           springBoot(

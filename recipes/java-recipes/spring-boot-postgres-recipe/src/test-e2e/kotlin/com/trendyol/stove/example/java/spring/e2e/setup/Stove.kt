@@ -55,7 +55,7 @@ class Stove : AbstractProjectConfig() {
           KafkaSystemOptions(
             serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper()),
             valueSerializer = JsonSerializer(JacksonConfiguration.defaultObjectMapper()),
-            containerOptions = KafkaContainerOptions(tag = "7.8.1") {
+            containerOptions = KafkaContainerOptions(tag = "8.0.3") {
               withStartupAttempts(3)
             },
             configureExposedConfiguration = {

@@ -55,7 +55,7 @@ class StoveConfig : AbstractProjectConfig() {
             useEmbeddedKafka = true,
             topicSuffixes = TopicSuffixes().copy(error = listOf(".error", ".DLT", "dlt")),
             serde = StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default),
-            containerOptions = KafkaContainerOptions(tag = "7.8.1")
+            containerOptions = KafkaContainerOptions(tag = "8.0.3")
           ) {
             listOf(
               "kafka.bootstrapServers=${it.bootstrapServers}",

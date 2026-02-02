@@ -30,7 +30,7 @@ class StoveConfig : AbstractProjectConfig() {
           listenPublishedMessagesFromStove = false,
           serde = StoveProtobufSerde(),
           valueSerializer = StoveKafkaValueSerializer(),
-          containerOptions = KafkaContainerOptions(tag = "7.8.1")
+          containerOptions = KafkaContainerOptions(tag = "8.0.3")
         ) {
           listOf(
             "kafka.bootstrapServers=${it.bootstrapServers}",

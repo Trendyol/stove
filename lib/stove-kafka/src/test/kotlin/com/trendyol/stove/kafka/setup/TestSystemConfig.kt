@@ -147,7 +147,7 @@ class ContainerKafkaStrategy : KafkaTestStrategy {
     val options = KafkaSystemOptions(
       useEmbeddedKafka = false,
       listenPublishedMessagesFromStove = true,
-      containerOptions = KafkaContainerOptions(tag = "7.8.1"),
+      containerOptions = KafkaContainerOptions(tag = "8.0.3"),
       configureExposedConfiguration = { cfg ->
         listOf("kafka.servers=${cfg.bootstrapServers}")
       }
