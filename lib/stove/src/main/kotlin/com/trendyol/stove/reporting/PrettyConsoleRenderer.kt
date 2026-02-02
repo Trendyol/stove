@@ -26,7 +26,7 @@ object PrettyConsoleRenderer : ReportRenderer {
 
   private const val MIN_BOX_WIDTH = 60
   private const val MAX_BOX_WIDTH = 200
-  private const val BORDER_PADDING = 4 // "║ " + " ║"
+  private const val BORDER_PADDING = 2 // Leading + trailing space (no side borders)
   private const val INDENT_PADDING = 8 // Extra padding for indented content
 
   private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
@@ -195,16 +195,16 @@ object PrettyConsoleRenderer : ReportRenderer {
   // ══════════════════════════════════════════════════════════════════════════════
 
   private fun topBorder(color: String, boxWidth: Int): String =
-    "$color╔${"═".repeat(boxWidth - 2)}╗${Colors.RESET}"
+    "$color╔${"═".repeat(boxWidth - 1)}${Colors.RESET}"
 
   private fun bottomBorder(color: String, boxWidth: Int): String =
-    "$color╚${"═".repeat(boxWidth - 2)}╝${Colors.RESET}"
+    "$color╚${"═".repeat(boxWidth - 1)}${Colors.RESET}"
 
   private fun divider(color: String, boxWidth: Int): String =
-    "$color╠${"═".repeat(boxWidth - 2)}╣${Colors.RESET}"
+    "$color╠${"═".repeat(boxWidth - 1)}${Colors.RESET}"
 
   private fun emptyLine(boxWidth: Int): String =
-    "${Colors.CYAN}║${Colors.RESET}${" ".repeat(boxWidth - 2)}${Colors.CYAN}║${Colors.RESET}"
+    " ".repeat(boxWidth)
 
   // ══════════════════════════════════════════════════════════════════════════════
   // CONTENT LINES
@@ -215,7 +215,7 @@ object PrettyConsoleRenderer : ReportRenderer {
     val leftPadding = ((dim.contentWidth - plainText.length) / 2).coerceAtLeast(0)
     val rightPadding = (dim.contentWidth - leftPadding - plainText.length).coerceAtLeast(0)
     val coloredText = if (color.isNotEmpty()) colorize(plainText, color) else text
-    return "${Colors.CYAN}║${Colors.RESET} ${" ".repeat(leftPadding)}$coloredText${" ".repeat(rightPadding)} ${Colors.CYAN}║${Colors.RESET}"
+    return " ${" ".repeat(leftPadding)}$coloredText${" ".repeat(rightPadding)} "
   }
 
   private fun contentLine(text: String, dim: BoxDimensions, indent: Int = 0): String {
@@ -230,7 +230,7 @@ object PrettyConsoleRenderer : ReportRenderer {
 
   private fun formatContentLine(line: String, indentStr: String, availableWidth: Int): String {
     val padding = (availableWidth - stripAnsi(line).length).coerceAtLeast(0)
-    return "${Colors.CYAN}║${Colors.RESET} $indentStr$line${" ".repeat(padding)} ${Colors.CYAN}║${Colors.RESET}"
+    return " $indentStr$line${" ".repeat(padding)} "
   }
 
   // ══════════════════════════════════════════════════════════════════════════════

@@ -40,9 +40,26 @@ private fun buildStoveReportMessage(
 ): String = """
   |$originalMessage
   |
-  |═══════════════════════════════════════════════════════════════════════════════
-  |                         STOVE EXECUTION REPORT
-  |═══════════════════════════════════════════════════════════════════════════════
-  |
-  |$stoveReport
+  |${formatStoveReport(stoveReport)}
   """.trimMargin()
+
+private fun formatStoveReport(stoveReport: String): String {
+  if (stoveReport.isBlank()) return ""
+
+  return if (hasReportHeader(stoveReport)) {
+    stoveReport
+  } else {
+    """
+    |═══════════════════════════════════════════════════════════════════════════════
+    |                         STOVE EXECUTION REPORT
+    |═══════════════════════════════════════════════════════════════════════════════
+    |
+    |$stoveReport
+    """.trimMargin()
+  }
+}
+
+private fun hasReportHeader(stoveReport: String): Boolean {
+  val plain = stoveReport.replace(Regex("\u001B\\[[0-9;]*m"), "")
+  return plain.contains("STOVE EXECUTION REPORT") || plain.contains("STOVE TEST EXECUTION REPORT")
+}
