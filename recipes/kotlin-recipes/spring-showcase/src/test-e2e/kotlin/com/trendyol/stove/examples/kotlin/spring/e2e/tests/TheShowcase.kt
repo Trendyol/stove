@@ -154,7 +154,7 @@ class TheShowcase :
         }
 
         // ══════════════════════════════════════════════════════════════
-        // SECTION 5: Kafka - Verify Events
+        // SECTION 5: Kafka - Verify Events Published
         // "And check that the right events were published"
         // ══════════════════════════════════════════════════════════════
 
@@ -165,6 +165,39 @@ class TheShowcase :
 
           shouldBePublished<PaymentProcessedEvent>(10.seconds) {
             actual.amount == amount && actual.success
+          }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // SECTION 5b: Kafka - Verify Events Consumed + Side Effects
+        // "Now let's verify the consumer processed the event AND
+        //  updated the read model (CQRS pattern)"
+        // ══════════════════════════════════════════════════════════════
+
+        kafka {
+          shouldBeConsumed<OrderCreatedEvent>(10.seconds) {
+            actual.userId == userId && actual.orderId == orderId
+          }
+        }
+
+        // Verify the side effect: statistics read model was updated
+        postgresql {
+          shouldQuery<UserStatisticsRow>(
+            query = "SELECT user_id, total_orders, total_amount FROM user_order_statistics WHERE user_id = '$userId'",
+            mapper = { row ->
+              UserStatisticsRow(
+                userId = row.string("user_id"),
+                totalOrders = row.int("total_orders"),
+                totalAmount = row.double("total_amount")
+              )
+            }
+          ) { stats ->
+            stats.size shouldBe 1
+            stats.first().apply {
+              this.userId shouldBe userId
+              this.totalOrders shouldBe 1
+              this.totalAmount shouldBe amount
+            }
           }
         }
 
@@ -221,4 +254,13 @@ data class OrderRow(
   val productId: String,
   val amount: Double,
   val status: String
+)
+
+/**
+ * Data class for mapping user statistics rows.
+ */
+data class UserStatisticsRow(
+  val userId: String,
+  val totalOrders: Int,
+  val totalAmount: Double
 )

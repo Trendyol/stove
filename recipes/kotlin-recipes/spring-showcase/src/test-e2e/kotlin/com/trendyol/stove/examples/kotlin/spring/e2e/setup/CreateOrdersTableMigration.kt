@@ -22,9 +22,17 @@ class CreateOrdersTableMigration : DatabaseMigration<PostgresSqlMigrationContext
         status VARCHAR(50) NOT NULL,
         payment_transaction_id VARCHAR(255),
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
+      );
+      
+      DROP TABLE IF EXISTS user_order_statistics;
+      CREATE TABLE IF NOT EXISTS user_order_statistics (
+        user_id VARCHAR(255) PRIMARY KEY,
+        total_orders INT NOT NULL DEFAULT 0,
+        total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+        last_order_at TIMESTAMP
+      );
       """.trimIndent()
     )
-    logger.info { "Orders table created" }
+    logger.info { "Orders and user_order_statistics tables created" }
   }
 }

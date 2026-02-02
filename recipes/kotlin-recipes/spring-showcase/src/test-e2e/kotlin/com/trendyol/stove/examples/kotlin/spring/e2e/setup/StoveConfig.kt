@@ -17,6 +17,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 
 const val GRPC_MOCK_PORT = 9092
 const val GRPC_SERVER_PORT = 50051
+const val WIREMOCK_PORT = 9091
 
 class StoveConfig : AbstractProjectConfig() {
   init {
@@ -58,7 +59,7 @@ class StoveConfig : AbstractProjectConfig() {
 
         wiremock {
           WireMockSystemOptions(
-            port = 9091,
+            port = WIREMOCK_PORT,
             serde = StoveSerde.jackson.anyByteArraySerde()
           )
         }
@@ -88,7 +89,8 @@ class StoveConfig : AbstractProjectConfig() {
             configureExposedConfiguration = { cfg ->
               listOf(
                 "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}",
-                "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}"
+                "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}",
+                "spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}"
               )
             }
           )
@@ -102,10 +104,10 @@ class StoveConfig : AbstractProjectConfig() {
           withParameters = listOf(
             "server.port=8024",
             "grpc.server.port=$GRPC_SERVER_PORT",
-            "external-apis.inventory.url=http://localhost:9091",
-            "external-apis.payment.url=http://localhost:9091",
             "external-apis.fraud-detection.host=localhost",
-            "external-apis.fraud-detection.port=$GRPC_MOCK_PORT"
+            "external-apis.fraud-detection.port=$GRPC_MOCK_PORT",
+            "external-apis.inventory.url=http://localhost:$WIREMOCK_PORT",
+            "external-apis.payment.url=http://localhost:$WIREMOCK_PORT"
           )
         )
       }.run()

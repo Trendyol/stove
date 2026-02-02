@@ -181,12 +181,16 @@ typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
 @WiremockDsl
 class WireMockSystem(
   override val stove: Stove,
-  ctx: WireMockContext
+  private val ctx: WireMockContext
 ) : PluggedSystem,
   ValidatedSystem,
   RunAware,
+  ExposesConfiguration,
   Reports {
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
+  private lateinit var exposedConfiguration: WireMockExposedConfiguration
+
+  override fun configuration(): List<String> = ctx.configureExposedConfiguration(exposedConfiguration)
 
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
@@ -260,7 +264,13 @@ class WireMockSystem(
   /**
    * Starts the WireMock server.
    */
-  override suspend fun run(): Unit = wireMock.start()
+  override suspend fun run() {
+    wireMock.start()
+    exposedConfiguration = WireMockExposedConfiguration(
+      host = "localhost",
+      port = wireMock.port()
+    )
+  }
 
   /**
    * Stops the WireMock server.

@@ -12,18 +12,73 @@
 
 Once you've added the dependency, you'll have access to the `wiremock` function when configuring Stove.
 
-This starts a WireMock server instance. You can configure which port it runs on.
+This starts a WireMock server instance. By default, WireMock uses a **dynamic port** (port = 0), 
+which lets the system pick an available port automatically. This avoids port conflicts, especially in CI environments.
 
 ```kotlin
 Stove()
   .with {
     wiremock {
-      WiremockSystemOptions(
-        port = 8080,
+      WireMockSystemOptions(
+        // port = 0 by default (dynamic port)
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "external-api.url=${cfg.baseUrl}"  // e.g., http://localhost:54321
+          )
+        }
       )
     }
   }
   .run()
+```
+
+### Dynamic Port Configuration (Recommended)
+
+Using dynamic ports is the recommended approach as it:
+
+- **Avoids port conflicts** in CI/CD pipelines where multiple builds may run in parallel
+- **Eliminates "Address already in use" errors** that occur with hardcoded ports
+- **Automatically exposes** the actual port to your application via `configureExposedConfiguration`
+
+```kotlin
+Stove()
+  .with {
+    wiremock {
+      WireMockSystemOptions(
+        // Dynamic port (default)
+        configureExposedConfiguration = { cfg ->
+          // cfg.baseUrl = "http://localhost:<dynamic-port>"
+          // cfg.port = <dynamic-port>
+          // cfg.host = "localhost"
+          listOf(
+            "payment.service.url=${cfg.baseUrl}",
+            "inventory.service.url=${cfg.baseUrl}",
+            "notification.service.url=${cfg.baseUrl}"
+          )
+        }
+      )
+    }
+    springBoot(
+      runner = { params ->
+        com.myapp.run(params)
+      }
+      // No need to specify external service URLs here - 
+      // they're automatically injected via configureExposedConfiguration
+    )
+  }
+  .run()
+```
+
+### Fixed Port Configuration
+
+If you need a specific port (not recommended for CI), you can set it explicitly:
+
+```kotlin
+wiremock {
+  WireMockSystemOptions(
+    port = 9090  // Fixed port
+  )
+}
 ```
 
 ### Options
@@ -31,9 +86,11 @@ Stove()
 ```kotlin
 data class WireMockSystemOptions(
   /**
-   * Port of wiremock server
+   * Port of wiremock server.
+   * Defaults to 0, which lets WireMock pick an available port automatically.
+   * This avoids port conflicts, especially in CI environments.
    */
-  val port: Int = 9090,
+  val port: Int = 0,
   /**
    * Configures wiremock server
    */
@@ -54,13 +111,29 @@ data class WireMockSystemOptions(
   /**
    * ObjectMapper for serialization/deserialization
    */
-  val serde: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde()
+  val serde: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde(),
+  /**
+   * Configures the exposed configuration for the application under test.
+   * Use this to inject WireMock's URL into your application's configuration.
+   */
+  val configureExposedConfiguration: (WireMockExposedConfiguration) -> List<String> = { _ -> listOf() }
 ) : SystemOptions
+
+/**
+ * Configuration exposed by WireMock after it starts.
+ */
+data class WireMockExposedConfiguration(
+  val host: String,   // e.g., "localhost"
+  val port: Int       // The actual port WireMock is listening on
+) {
+  val baseUrl: String // e.g., "http://localhost:54321"
+}
 ```
 
 ## Mocking
 
-Wiremock starts a mock server on `localhost` with the configured port. 
+Wiremock starts a mock server on `localhost`. With dynamic ports (the default), the actual port is 
+automatically determined and exposed via `configureExposedConfiguration`.
 
 !!! warning "Critical: External Service URLs Must Match WireMock"
 
@@ -77,32 +150,46 @@ Say your application calls external services in production:
 - `http://inventory-service.com/api/stock`
 - `http://notification-service.com/api/notify`
 
-For testing, **all** these base URLs must be replaced with the WireMock URL (e.g., `http://localhost:9090`).
-
-You can pass these as application parameters:
+For testing, **all** these base URLs must be replaced with the WireMock URL. 
+Use `configureExposedConfiguration` to automatically inject the correct URL:
 
 ```kotlin
 Stove()
   .with {
     wiremock {
       WireMockSystemOptions(
-        port = 9090,
+        // port = 0 (default) - dynamic port
+        configureExposedConfiguration = { cfg ->
+          // cfg.baseUrl contains the actual WireMock URL (e.g., http://localhost:54321)
+          listOf(
+            "payment.service.url=${cfg.baseUrl}",
+            "inventory.service.url=${cfg.baseUrl}",
+            "notification.service.url=${cfg.baseUrl}"
+          )
+        }
       )
     }
     springBoot( // or ktor
       runner = { params ->
         com.myapp.run(params)
-      },
-      withParameters = listOf(
-        // All external services point to WireMock
-        "payment.service.url=http://localhost:9090",
-        "inventory.service.url=http://localhost:9090",
-        "notification.service.url=http://localhost:9090"
-      )
+      }
+      // External service URLs are automatically configured via configureExposedConfiguration
     )
   }
   .run()
 ```
+
+!!! tip "Why Dynamic Ports?"
+
+    Using `port = 0` (the default) lets WireMock pick an available port automatically. This is especially 
+    important in CI environments where:
+    
+    - Multiple test runs may execute in parallel
+    - Other services might already be using common ports like 8080, 9090
+    - You get "Address already in use" errors with fixed ports
+    
+    The `configureExposedConfiguration` callback receives the actual port after WireMock starts,
+    ensuring your application always connects to the correct URL.
 
 ### Application Configuration Tips
 

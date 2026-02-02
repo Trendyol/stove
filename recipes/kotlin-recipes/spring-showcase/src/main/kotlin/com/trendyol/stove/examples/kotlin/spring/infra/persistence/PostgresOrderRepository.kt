@@ -26,7 +26,7 @@ class PostgresOrderRepository(
     // This bug only triggers for high-value orders (> $1000), making it hard
     // to catch in simple unit tests. The trace will show exactly where it fails!
     // ══════════════════════════════════════════════════════════════════════════
-    validateOrderAmount(order)
+    // validateOrderAmount(order)
 
     databaseClient
       .sql(
