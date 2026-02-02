@@ -11,11 +11,18 @@ import com.trendyol.stove.system.StoveOptions
  * This centralizes the common logic for building reports that include
  * both Stove's execution report and the execution trace tree.
  */
+@Suppress("TooManyFunctions")
 object TraceReportBuilder {
   private const val SPAN_WAIT_TIME_MS = 500L
   private const val NO_SPANS_MESSAGE = "No spans in trace"
-  private const val TRACE_HEADER_LINE = "═══════════════════════════════════════════════════════════════"
-  private const val TRACE_HEADER_TITLE = "EXECUTION TRACE (Call Chain)"
+
+  // ANSI color codes for the header
+  private object Colors {
+    const val RESET = "\u001B[0m"
+    const val BOLD = "\u001B[1m"
+    const val CYAN = "\u001B[36m"
+    const val BRIGHT_CYAN = "\u001B[96m"
+  }
 
   const val DEFAULT_ERROR_MESSAGE = "Test failed"
 
@@ -25,7 +32,7 @@ object TraceReportBuilder {
   fun buildFullReport(): String {
     val options = Stove.options()
     val report = Stove.reporter().dumpIfFailed(options.failureRenderer)
-    val traceTree = getTraceTreeIfEnabled()
+    val traceTree = getColoredTraceTreeIfEnabled()
     return buildReport(report, traceTree)
   }
 
@@ -35,14 +42,18 @@ object TraceReportBuilder {
   fun StoveOptions.shouldEnrichFailures(): Boolean =
     dumpReportOnTestFailure && reportingEnabled
 
-  private fun getTraceTreeIfEnabled(): String =
+  private fun getColoredTraceTreeIfEnabled(): String =
     TraceContext
       .current()
       .toOption()
       .flatMap { Stove.getSystemOrNone<TracingSystem>() }
       .flatMap { it.getTraceVisualizationForCurrentTest(SPAN_WAIT_TIME_MS) }
-      .map { it.tree }
-      .getOrElse { "" }
+      .map { visualization ->
+        // Use the colored tree for terminal display
+        visualization.coloredTree.let { tree ->
+          if (tree.isNotEmpty() && tree != NO_SPANS_MESSAGE) tree else ""
+        }
+      }.getOrElse { "" }
 
   private fun buildReport(stoveReport: String, traceTree: String): String = buildString {
     if (stoveReport.isNotEmpty()) {
@@ -50,10 +61,16 @@ object TraceReportBuilder {
     }
     if (traceTree.isNotEmpty() && traceTree != NO_SPANS_MESSAGE) {
       if (isNotEmpty()) appendLine().appendLine()
-      appendLine(TRACE_HEADER_LINE)
-      appendLine(TRACE_HEADER_TITLE)
-      appendLine(TRACE_HEADER_LINE)
+      appendLine(buildColoredHeader())
       append(traceTree)
     }
+  }
+
+  private fun buildColoredHeader(): String = buildString {
+    val headerLine = "${Colors.CYAN}═══════════════════════════════════════════════════════════════${Colors.RESET}"
+    val title = "${Colors.BOLD}${Colors.BRIGHT_CYAN}EXECUTION TRACE${Colors.RESET} (Call Chain)"
+    appendLine(headerLine)
+    appendLine(title)
+    appendLine(headerLine)
   }
 }

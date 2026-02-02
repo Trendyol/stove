@@ -10,31 +10,33 @@ data class TraceVisualization(
   val totalSpans: Int,
   val failedSpans: Int,
   val spans: List<VisualSpan>,
-  val tree: String
+  val tree: String,
+  val coloredTree: String
 ) {
   companion object {
     fun from(traceId: String, testId: String, spans: List<SpanInfo>): TraceVisualization {
       val visualSpans = spans.map { VisualSpan.from(it) }
-      val tree = buildTraceTree(spans)
+      val (tree, coloredTree) = buildTraceTrees(spans)
       return TraceVisualization(
         traceId = traceId,
         testId = testId,
         totalSpans = spans.size,
         failedSpans = spans.count { it.status == SpanStatus.ERROR },
         spans = visualSpans,
-        tree = tree
+        tree = tree,
+        coloredTree = coloredTree
       )
     }
 
     /**
-     * Build a tree visualization of spans using SpanTree and TraceTreeRenderer.
-     * Consolidates tree-building logic in a single place.
+     * Build tree visualizations of spans using SpanTree and TraceTreeRenderer.
+     * Returns both plain and colored versions for different display contexts.
      */
-    private fun buildTraceTree(spans: List<SpanInfo>): String {
-      if (spans.isEmpty()) return "No spans in trace"
+    private fun buildTraceTrees(spans: List<SpanInfo>): Pair<String, String> {
+      if (spans.isEmpty()) return "No spans in trace" to "No spans in trace"
 
-      val root = SpanTree.build(spans) ?: return "No spans in trace"
-      return TraceTreeRenderer.render(root)
+      val root = SpanTree.build(spans) ?: return "No spans in trace" to "No spans in trace"
+      return TraceTreeRenderer.render(root) to TraceTreeRenderer.renderColored(root)
     }
   }
 }

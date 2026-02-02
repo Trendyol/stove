@@ -1151,22 +1151,26 @@ public final class com/trendyol/stove/tracing/TraceTreeRenderer {
 	public static final field INSTANCE Lcom/trendyol/stove/tracing/TraceTreeRenderer;
 	public final fun render (Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;)Ljava/lang/String;
 	public static synthetic fun render$default (Lcom/trendyol/stove/tracing/TraceTreeRenderer;Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun renderColored (Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;)Ljava/lang/String;
+	public static synthetic fun renderColored$default (Lcom/trendyol/stove/tracing/TraceTreeRenderer;Lcom/trendyol/stove/tracing/SpanNode;ZLjava/util/List;ILjava/lang/Object;)Ljava/lang/String;
 	public final fun renderCompact (Lcom/trendyol/stove/tracing/SpanNode;)Ljava/lang/String;
 	public final fun renderSummary (Lcom/trendyol/stove/tracing/SpanNode;)Ljava/lang/String;
 }
 
 public final class com/trendyol/stove/tracing/TraceVisualization {
 	public static final field Companion Lcom/trendyol/stove/tracing/TraceVisualization$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()I
 	public final fun component4 ()I
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceVisualization;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/TraceVisualization;Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TraceVisualization;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceVisualization;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/tracing/TraceVisualization;Ljava/lang/String;Ljava/lang/String;IILjava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/tracing/TraceVisualization;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColoredTree ()Ljava/lang/String;
 	public final fun getFailedSpans ()I
 	public final fun getSpans ()Ljava/util/List;
 	public final fun getTestId ()Ljava/lang/String;

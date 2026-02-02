@@ -1,0 +1,38 @@
+server:
+  port: 8024
+
+grpc:
+  server:
+    port: 50051
+
+spring:
+  application:
+    name: stove-kotlin-spring-showcase
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/stove
+    username: postgres
+    password: postgres
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+kafka:
+  topics:
+    orders-created: showcase.orders.created
+    payments-processed: showcase.payments.processed
+
+external-apis:
+  inventory:
+    url: http://localhost:9091
+  payment:
+    url: http://localhost:9091
+  fraud-detection:
+    host: localhost
+    port: 9092
+
+logging:
+  level:
+    com.trendyol.stove: DEBUG
+    org.springframework.r2dbc: DEBUG

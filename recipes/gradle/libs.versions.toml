@@ -43,8 +43,18 @@ lombok = "1.18.42"
 hoplite = "2.9.0"
 kediatr = "4.3.0"
 
+# OpenTelemetry
+opentelemetry = "1.58.0"
+opentelemetry-instrumentation = "2.24.0"
+
+# gRPC
+grpc = "1.72.0"
+grpc-kotlin = "1.4.3"
+protobuf = "4.31.1"
+protobuf-plugin = "0.9.4"
+
 # Testing
-stove = "1.0.0.494-SNAPSHOT"
+stove = "1.0.0.497-SNAPSHOT"
 kotest = "6.1.2"
 exposed = "1.0.0"
 postgresql = "42.7.9"
@@ -136,6 +146,20 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.1.RELEASE" }
 r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
 
+# OpenTelemetry
+opentelemetry-extension-kotlin = { module = "io.opentelemetry:opentelemetry-extension-kotlin", version.ref = "opentelemetry" }
+opentelemetry-instrumentation-annotations = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations", version.ref = "opentelemetry-instrumentation" }
+
+# gRPC
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-netty = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpc-kotlin" }
+protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }
+protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
+grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpc-kotlin" }
+
 # Stove
 stove-bom = { module = "com.trendyol:stove-bom", version.ref = "stove" }
 
@@ -143,6 +167,7 @@ stove-bom = { module = "com.trendyol:stove-bom", version.ref = "stove" }
 scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }
 
 [plugins]
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
 spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }

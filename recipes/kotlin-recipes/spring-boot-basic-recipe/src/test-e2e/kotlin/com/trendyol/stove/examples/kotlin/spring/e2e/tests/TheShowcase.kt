@@ -1,0 +1,220 @@
+package com.trendyol.stove.examples.kotlin.spring.e2e.tests
+
+import arrow.core.some
+import com.trendyol.stove.examples.kotlin.spring.domain.order.CreateOrderRequest
+import com.trendyol.stove.examples.kotlin.spring.domain.order.OrderResponse
+import com.trendyol.stove.examples.kotlin.spring.domain.order.OrderService
+import com.trendyol.stove.examples.kotlin.spring.domain.order.OrderStatus
+import com.trendyol.stove.examples.kotlin.spring.events.OrderCreatedEvent
+import com.trendyol.stove.examples.kotlin.spring.events.PaymentProcessedEvent
+import com.trendyol.stove.examples.kotlin.spring.grpc.CheckFraudResponse
+import com.trendyol.stove.examples.kotlin.spring.grpc.GetOrderRequest
+import com.trendyol.stove.examples.kotlin.spring.grpc.GetOrdersByUserRequest
+import com.trendyol.stove.examples.kotlin.spring.grpc.OrderQueryServiceGrpcKt
+import com.trendyol.stove.grpc.grpc
+import com.trendyol.stove.examples.kotlin.spring.infra.clients.InventoryResponse
+import com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentResult
+import com.trendyol.stove.http.http
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.postgres.postgresql
+import com.trendyol.stove.system.stove
+import com.trendyol.stove.system.using
+import com.trendyol.stove.testing.grpcmock.grpcMock
+import com.trendyol.stove.wiremock.wiremock
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import java.util.UUID
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * THE SHOWCASE - One comprehensive test demonstrating all Stove features.
+ *
+ * Walk through this test section-by-section during your presentation.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════
+ * 🎯 TWO WAYS TO DEMO FAILURE REPORTS:
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Option 1: ASSERTION FAILURE (simple)
+ *   → Edit line ~110: change "CONFIRMED" to "WRONG_STATUS"
+ *   → Shows: Test assertion failed, with full trace of what happened
+ *
+ * Option 2: DEEP APPLICATION BUG (realistic) ⭐ RECOMMENDED
+ *   → Go to PostgresOrderRepository.kt
+ *   → Uncomment the line: // validateOrderAmount(order)
+ *   → Shows: Bug deep in persistence layer, test assertions are correct!
+ *   → The trace reveals the exact failure point in the call stack
+ *
+ * The amount ($2499.99) is intentionally > $1000 to trigger the demo bug.
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+class TheShowcase : FunSpec({
+
+  test("The Complete Order Flow - Every Feature in One Test") {
+    stove {
+      val userId = "user-${UUID.randomUUID()}"
+      val productId = "macbook-pro-16"
+      val amount = 2499.99
+      var orderId: String? = null
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 1: gRPC Mock - Mock External gRPC Service
+      // "First, we mock the Fraud Detection gRPC service"
+      // ══════════════════════════════════════════════════════════════
+
+      grpcMock {
+        mockUnary(
+          serviceName = "frauddetection.FraudDetectionService",
+          methodName = "CheckFraud",
+          response = CheckFraudResponse.newBuilder()
+            .setIsFraudulent(false)
+            .setRiskScore(0.15)
+            .setReason("low_risk_user")
+            .build()
+        )
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 2: WireMock - Mock External REST APIs
+      // "Our order service also calls inventory and payment APIs"
+      // ══════════════════════════════════════════════════════════════
+
+      wiremock {
+        mockGet(
+          url = "/inventory/$productId",
+          statusCode = 200,
+          responseBody = InventoryResponse(
+            productId = productId,
+            available = true,
+            quantity = 10
+          ).some()
+        )
+
+        mockPost(
+          url = "/payments/charge",
+          statusCode = 200,
+          responseBody = PaymentResult(
+            success = true,
+            transactionId = "txn-${UUID.randomUUID()}",
+            amount = amount
+          ).some()
+        )
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 3: HTTP - Call Our API
+      // "Now we call our order endpoint"
+      // ══════════════════════════════════════════════════════════════
+
+      http {
+        postAndExpectBody<OrderResponse>(
+          uri = "/api/orders",
+          body = CreateOrderRequest(
+            userId = userId,
+            productId = productId,
+            amount = amount
+          ).some()
+        ) { response ->
+          response.status shouldBe 201
+          response.body().status shouldBe "CONFIRMED"
+          response.body().orderId shouldNotBe null
+          orderId = response.body().orderId
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 4: Database - Verify State
+      // "Let's check what's actually in the database"
+      // ══════════════════════════════════════════════════════════════
+
+      postgresql {
+        shouldQuery<OrderRow>(
+          query = "SELECT id, user_id, product_id, amount, status FROM orders WHERE user_id = '$userId'",
+          mapper = { row ->
+            OrderRow(
+              id = row.string("id"),
+              userId = row.string("user_id"),
+              productId = row.string("product_id"),
+              amount = row.double("amount"),
+              status = row.string("status")
+            )
+          }
+        ) { orders ->
+          orders.size shouldBe 1
+          orders.first().apply {
+            this.userId shouldBe userId
+            this.productId shouldBe productId
+            this.amount shouldBe amount
+            this.status shouldBe "CONFIRMED"  // <-- EDIT THIS TO "WRONG_STATUS" TO SHOW FAILURE REPORT
+          }
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 5: Kafka - Verify Events
+      // "And check that the right events were published"
+      // ══════════════════════════════════════════════════════════════
+
+      kafka {
+        shouldBePublished<OrderCreatedEvent>(10.seconds) {
+          actual.userId == userId && actual.productId == productId
+        }
+
+        shouldBePublished<PaymentProcessedEvent>(10.seconds) {
+          actual.amount == amount && actual.success
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 6: gRPC - Test OUR gRPC Server
+      // "Our app also exposes a gRPC API for querying orders"
+      // ══════════════════════════════════════════════════════════════
+
+      grpc {
+        channel<OrderQueryServiceGrpcKt.OrderQueryServiceCoroutineStub> {
+          // Query order by ID via gRPC
+          val orderById = getOrder(
+            GetOrderRequest.newBuilder()
+              .setOrderId(orderId!!)
+              .build()
+          )
+          orderById.found shouldBe true
+          orderById.order.userId shouldBe userId
+          orderById.order.status shouldBe "CONFIRMED"
+
+          // Query orders by user via gRPC
+          val ordersByUser = getOrdersByUser(
+            GetOrdersByUserRequest.newBuilder()
+              .setUserId(userId)
+              .build()
+          )
+          ordersByUser.ordersCount shouldBe 1
+          ordersByUser.ordersList.first().productId shouldBe productId
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // SECTION 7: Bridge - Access Application Beans
+      // "We can also access our services directly"
+      // ══════════════════════════════════════════════════════════════
+
+      using<OrderService> {
+        val order = getOrderByUserId(userId)
+        order shouldNotBe null
+        order!!.status shouldBe OrderStatus.CONFIRMED
+      }
+    }
+  }
+})
+
+/**
+ * Simple data class for mapping database rows.
+ */
+data class OrderRow(
+  val id: String,
+  val userId: String,
+  val productId: String,
+  val amount: Double,
+  val status: String
+)

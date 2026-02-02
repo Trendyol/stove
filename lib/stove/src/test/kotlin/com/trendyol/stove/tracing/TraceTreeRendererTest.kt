@@ -127,6 +127,52 @@ class TraceTreeRendererTest :
       }
     }
 
+    context("renderColored") {
+      test("should include ANSI color codes for failed spans") {
+        val node = SpanNode(createSpan(status = SpanStatus.ERROR, operationName = "failed-op"))
+
+        val result = TraceTreeRenderer.renderColored(node)
+
+        // Should contain ANSI escape codes
+        result shouldContain "\u001B["
+        result shouldContain "failed-op"
+        result shouldContain "✗"
+        result shouldContain "FAILURE POINT"
+      }
+
+      test("should color success spans green") {
+        val node = SpanNode(createSpan(status = SpanStatus.OK, operationName = "success-op"))
+
+        val result = TraceTreeRenderer.renderColored(node)
+
+        // Should contain bright green color code for checkmark
+        result shouldContain "\u001B[92m✓"
+      }
+
+      test("should color failure marker in bold yellow") {
+        val node = SpanNode(createSpan(status = SpanStatus.ERROR))
+
+        val result = TraceTreeRenderer.renderColored(node)
+
+        // Should contain bold + bright yellow for failure marker
+        result shouldContain "\u001B[1m\u001B[93m◄── FAILURE POINT"
+      }
+
+      test("should color exception info with red and yellow") {
+        val exception = ExceptionInfo(
+          type = "RuntimeException",
+          message = "Test error",
+          stackTrace = listOf("at Test.method(Test.kt:10)")
+        )
+        val node = SpanNode(createSpan(status = SpanStatus.ERROR, exception = exception))
+
+        val result = TraceTreeRenderer.renderColored(node)
+
+        // Exception type should be yellow
+        result shouldContain "\u001B[33mRuntimeException"
+      }
+    }
+
     context("renderCompact") {
       test("should render compact format with indentation") {
         val child = SpanNode(createSpan(spanId = "child", operationName = "child-op", durationMs = 50))
