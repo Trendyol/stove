@@ -16,7 +16,6 @@ class OrderEventPublisher(
   @param:Value("\${kafka.topics.orders-created}") private val ordersCreatedTopic: String,
   @param:Value("\${kafka.topics.payments-processed}") private val paymentsProcessedTopic: String
 ) {
-
   @WithSpan("OrderEventPublisher.publishOrderCreated")
   fun publish(event: OrderCreatedEvent) {
     logger.info { "Publishing OrderCreatedEvent: orderId=${event.orderId}" }

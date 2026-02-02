@@ -96,7 +96,8 @@ class StoveConfig : AbstractProjectConfig() {
 
         springBoot(
           runner = { params ->
-            com.trendyol.stove.examples.kotlin.spring.run(params)
+            com.trendyol.stove.examples.kotlin.spring
+              .run(params)
           },
           withParameters = listOf(
             "server.port=8024",

@@ -12,7 +12,6 @@ private val logger = KotlinLogging.logger {}
 
 @RestControllerAdvice
 class GlobalErrorHandler {
-
   @ExceptionHandler(InventoryNotAvailableException::class)
   fun handleInventoryNotAvailable(ex: InventoryNotAvailableException): ResponseEntity<ErrorResponse> {
     logger.warn(ex) { "Inventory not available" }

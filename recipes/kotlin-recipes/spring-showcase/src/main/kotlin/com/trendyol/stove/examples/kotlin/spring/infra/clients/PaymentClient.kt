@@ -13,14 +13,16 @@ private val logger = KotlinLogging.logger {}
 class PaymentClient(
   @param:Value("\${external-apis.payment.url}") private val baseUrl: String
 ) {
-  private val webClient = WebClient.builder()
+  private val webClient = WebClient
+    .builder()
     .baseUrl(baseUrl)
     .build()
 
   @WithSpan("PaymentClient.charge")
   suspend fun charge(userId: String, amount: Double): PaymentResult {
     logger.info { "Processing payment for user=$userId, amount=$amount" }
-    return webClient.post()
+    return webClient
+      .post()
       .uri("/payments/charge")
       .bodyValue(PaymentRequest(userId, amount))
       .retrieve()
@@ -40,4 +42,6 @@ data class PaymentResult(
   val errorMessage: String? = null
 )
 
-class PaymentFailedException(message: String) : RuntimeException("Payment failed: $message")
+class PaymentFailedException(
+  message: String
+) : RuntimeException("Payment failed: $message")

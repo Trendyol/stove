@@ -13,14 +13,16 @@ private val logger = KotlinLogging.logger {}
 class InventoryClient(
   @param:Value("\${external-apis.inventory.url}") private val baseUrl: String
 ) {
-  private val webClient = WebClient.builder()
+  private val webClient = WebClient
+    .builder()
     .baseUrl(baseUrl)
     .build()
 
   @WithSpan("InventoryClient.checkAvailability")
   suspend fun checkAvailability(productId: String): InventoryResponse {
     logger.info { "Checking inventory for product=$productId" }
-    return webClient.get()
+    return webClient
+      .get()
       .uri("/inventory/$productId")
       .retrieve()
       .awaitBody<InventoryResponse>()
@@ -33,5 +35,6 @@ data class InventoryResponse(
   val quantity: Int = 0
 )
 
-class InventoryNotAvailableException(productId: String) :
-  RuntimeException("Inventory not available for product: $productId")
+class InventoryNotAvailableException(
+  productId: String
+) : RuntimeException("Inventory not available for product: $productId")

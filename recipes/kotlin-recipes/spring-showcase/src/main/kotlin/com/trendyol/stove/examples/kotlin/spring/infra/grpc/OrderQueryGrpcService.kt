@@ -18,7 +18,6 @@ private val logger = KotlinLogging.logger {}
 class OrderQueryGrpcService(
   private val orderRepository: OrderRepository
 ) : OrderQueryServiceGrpcKt.OrderQueryServiceCoroutineImplBase() {
-
   @WithSpan("OrderQueryGrpcService.getOrder")
   override suspend fun getOrder(request: GetOrderRequest): GetOrderResponse {
     logger.info { "gRPC: GetOrder called for id=${request.orderId}" }
@@ -26,12 +25,14 @@ class OrderQueryGrpcService(
     val order = orderRepository.findById(request.orderId)
 
     return if (order != null) {
-      GetOrderResponse.newBuilder()
+      GetOrderResponse
+        .newBuilder()
         .setFound(true)
         .setOrder(order.toProto())
         .build()
     } else {
-      GetOrderResponse.newBuilder()
+      GetOrderResponse
+        .newBuilder()
         .setFound(false)
         .build()
     }
@@ -43,13 +44,15 @@ class OrderQueryGrpcService(
 
     val orders = orderRepository.findByUserId(request.userId)
 
-    return GetOrdersResponse.newBuilder()
+    return GetOrdersResponse
+      .newBuilder()
       .addAllOrders(orders.map { it.toProto() })
       .build()
   }
 
   private fun com.trendyol.stove.examples.kotlin.spring.domain.order.Order.toProto(): OrderProto =
-    OrderProto.newBuilder()
+    OrderProto
+      .newBuilder()
       .setId(id)
       .setUserId(userId)
       .setProductId(productId)

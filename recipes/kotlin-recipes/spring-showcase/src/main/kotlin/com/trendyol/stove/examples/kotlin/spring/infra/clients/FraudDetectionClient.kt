@@ -34,7 +34,8 @@ class FraudDetectionClient(
   ): FraudCheckResult {
     logger.info { "Checking fraud for order=$orderId, user=$userId, amount=$amount" }
 
-    val request = CheckFraudRequest.newBuilder()
+    val request = CheckFraudRequest
+      .newBuilder()
       .setOrderId(orderId)
       .setUserId(userId)
       .setAmount(amount)
@@ -62,5 +63,6 @@ data class FraudCheckResult(
   val reason: String
 )
 
-class FraudDetectedException(reason: String) :
-  RuntimeException("Order flagged as fraudulent: $reason")
+class FraudDetectedException(
+  reason: String
+) : RuntimeException("Order flagged as fraudulent: $reason")

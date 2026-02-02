@@ -17,7 +17,6 @@ private val logger = KotlinLogging.logger {}
 class PostgresOrderRepository(
   private val databaseClient: DatabaseClient
 ) : OrderRepository {
-
   @WithSpan("PostgresOrderRepository.save")
   override suspend fun save(order: Order): Order {
     logger.info { "Saving order: id=${order.id}" }
@@ -29,16 +28,16 @@ class PostgresOrderRepository(
     // ══════════════════════════════════════════════════════════════════════════
     validateOrderAmount(order)
 
-    databaseClient.sql(
-      """
+    databaseClient
+      .sql(
+        """
       INSERT INTO orders (id, user_id, product_id, amount, status, payment_transaction_id, created_at)
       VALUES (:id, :userId, :productId, :amount, :status, :paymentTransactionId, :createdAt)
       ON CONFLICT (id) DO UPDATE SET
         status = :status,
         payment_transaction_id = :paymentTransactionId
-      """.trimIndent()
-    )
-      .bind("id", order.id)
+        """.trimIndent()
+      ).bind("id", order.id)
       .bind("userId", order.userId)
       .bind("productId", order.productId)
       .bind("amount", order.amount)
@@ -53,47 +52,45 @@ class PostgresOrderRepository(
   }
 
   @WithSpan("PostgresOrderRepository.findById")
-  override suspend fun findById(@SpanAttribute("order.id") id: String): Order? {
-    return databaseClient.sql(
+  override suspend fun findById(
+    @SpanAttribute("order.id") id: String
+  ): Order? = databaseClient
+    .sql(
       """
       SELECT id, user_id, product_id, amount, status, payment_transaction_id, created_at
       FROM orders
       WHERE id = :id
       """.trimIndent()
-    )
-      .bind("id", id)
-      .map { row, _ -> mapToOrder(row) }
-      .first()
-      .awaitFirstOrNull()
-  }
+    ).bind("id", id)
+    .map { row, _ -> mapToOrder(row) }
+    .first()
+    .awaitFirstOrNull()
 
   @WithSpan("PostgresOrderRepository.findByUserId")
-  override suspend fun findByUserId(@SpanAttribute("order.userId") userId: String): List<Order> {
-    return databaseClient.sql(
+  override suspend fun findByUserId(
+    @SpanAttribute("order.userId") userId: String
+  ): List<Order> = databaseClient
+    .sql(
       """
       SELECT id, user_id, product_id, amount, status, payment_transaction_id, created_at
       FROM orders
       WHERE user_id = :userId
       """.trimIndent()
-    )
-      .bind("userId", userId)
-      .map { row, _ -> mapToOrder(row) }
-      .all()
-      .asFlow()
-      .toList()
-  }
+    ).bind("userId", userId)
+    .map { row, _ -> mapToOrder(row) }
+    .all()
+    .asFlow()
+    .toList()
 
-  private fun mapToOrder(row: io.r2dbc.spi.Row): Order {
-    return Order(
-      id = row.get("id", String::class.java)!!,
-      userId = row.get("user_id", String::class.java)!!,
-      productId = row.get("product_id", String::class.java)!!,
-      amount = (row.get("amount", java.math.BigDecimal::class.java)!!).toDouble(),
-      status = OrderStatus.valueOf(row.get("status", String::class.java)!!),
-      paymentTransactionId = row.get("payment_transaction_id", String::class.java),
-      createdAt = row.get("created_at", Instant::class.java)!!
-    )
-  }
+  private fun mapToOrder(row: io.r2dbc.spi.Row): Order = Order(
+    id = row.get("id", String::class.java)!!,
+    userId = row.get("user_id", String::class.java)!!,
+    productId = row.get("product_id", String::class.java)!!,
+    amount = (row.get("amount", java.math.BigDecimal::class.java)!!).toDouble(),
+    status = OrderStatus.valueOf(row.get("status", String::class.java)!!),
+    paymentTransactionId = row.get("payment_transaction_id", String::class.java),
+    createdAt = row.get("created_at", Instant::class.java)!!
+  )
 
   // ══════════════════════════════════════════════════════════════════════════
   // 🐛 DEMO BUG: Simulates a bug deep in the persistence layer
@@ -112,4 +109,6 @@ class PostgresOrderRepository(
   }
 }
 
-class OrderPersistenceException(message: String) : RuntimeException(message)
+class OrderPersistenceException(
+  message: String
+) : RuntimeException(message)

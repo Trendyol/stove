@@ -24,7 +24,8 @@ class GrpcServerConfig(
 
   @PostConstruct
   fun start() {
-    server = ServerBuilder.forPort(port)
+    server = ServerBuilder
+      .forPort(port)
       .addService(orderQueryGrpcService)
       .build()
       .start()

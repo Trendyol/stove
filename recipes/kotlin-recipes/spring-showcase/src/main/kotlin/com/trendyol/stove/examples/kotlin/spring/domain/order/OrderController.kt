@@ -8,10 +8,11 @@ import org.springframework.web.bind.annotation.*
 class OrderController(
   private val orderService: OrderService
 ) {
-
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  suspend fun createOrder(@RequestBody request: CreateOrderRequest): OrderResponse {
+  suspend fun createOrder(
+    @RequestBody request: CreateOrderRequest
+  ): OrderResponse {
     val order = orderService.createOrder(
       userId = request.userId,
       productId = request.productId,
@@ -27,7 +28,9 @@ class OrderController(
   }
 
   @GetMapping("/{id}")
-  suspend fun getOrder(@PathVariable id: String): OrderResponse? {
+  suspend fun getOrder(
+    @PathVariable id: String
+  ): OrderResponse? {
     val order = orderService.getOrder(id) ?: return null
     return OrderResponse(
       orderId = order.id,

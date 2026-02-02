@@ -8,6 +8,7 @@ import com.trendyol.stove.examples.kotlin.spring.infra.clients.InventoryClient
 import com.trendyol.stove.examples.kotlin.spring.infra.clients.InventoryNotAvailableException
 import com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentClient
 import com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentFailedException
+import com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentResponse
 import com.trendyol.stove.examples.kotlin.spring.infra.kafka.OrderEventPublisher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.opentelemetry.instrumentation.annotations.WithSpan
@@ -24,7 +25,6 @@ class OrderService(
   private val fraudDetectionClient: FraudDetectionClient,
   private val eventPublisher: OrderEventPublisher
 ) {
-
   @WithSpan("OrderService.createOrder")
   suspend fun createOrder(
     userId: String,
@@ -73,7 +73,7 @@ class OrderService(
     }
   }
 
-  private suspend fun processPayment(userId: String, amount: Double): com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentResponse {
+  private suspend fun processPayment(userId: String, amount: Double): PaymentResponse {
     val payment = paymentClient.charge(userId, amount)
     if (!payment.success) {
       logger.error { "Payment failed for user=$userId, reason=${payment.errorMessage}" }

@@ -47,6 +47,7 @@ subprojects {
 
     kotlin {
       ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      targetExclude("build/**", "**/build/**")
       targetExcludeIfContentContains("generated")
     }
   }

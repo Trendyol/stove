@@ -13,7 +13,6 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 
 @Configuration
 class KafkaConfig {
-
   @Bean
   fun producerFactory(
     kafkaProperties: KafkaProperties,
@@ -29,7 +28,5 @@ class KafkaConfig {
   }
 
   @Bean
-  fun kafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
-    return KafkaTemplate(producerFactory)
-  }
+  fun kafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> = KafkaTemplate(producerFactory)
 }

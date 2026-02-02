@@ -1,3 +1,5 @@
+@file:Suppress("all")
+
 package com.trendyol.stove.examples.kotlin.spring.e2e.painful
 
 /**
@@ -13,6 +15,7 @@ package com.trendyol.stove.examples.kotlin.spring.e2e.painful
  * This is NOT meant to be executed - it's a demonstration of the pain points.
  * ════════════════════════════════════════════════════════════════════════════════
  */
+object PainfulTestingDemo
 
 /*
 
@@ -21,91 +24,91 @@ package com.trendyol.stove.examples.kotlin.spring.e2e.painful
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 abstract class BaseIntegrationTest {
-    
+
     companion object {
         // ── Container declarations ──────────────────────────────────────────
         // One container per dependency, manual lifecycle management
-        
+
         @Container
         val postgres = PostgreSQLContainer("postgres:16-alpine")
             .withDatabaseName("test")
             .withUsername("test")
             .withPassword("test")
-        
-        @Container  
+
+        @Container
         val kafka = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.8.1"))
             .withStartupAttempts(3)
-        
+
         val wiremock = WireMockServer(WireMockConfiguration.options().dynamicPort())
-        
+
         // ── Manual lifecycle hooks ──────────────────────────────────────────
         // Forgot @AfterAll? Containers leak!
-        
+
         @JvmStatic
         @BeforeAll
-        fun startWiremock() { 
-            wiremock.start() 
+        fun startWiremock() {
+            wiremock.start()
         }
-        
+
         @JvmStatic
         @AfterAll
-        fun stopWiremock() { 
-            wiremock.stop() 
+        fun stopWiremock() {
+            wiremock.stop()
         }
-        
+
         // ── Property binding ceremony ───────────────────────────────────────
         // Copy-paste this for EVERY property, grows linearly with dependencies
-        
+
         @JvmStatic
         @DynamicPropertySource
         fun configureProperties(registry: DynamicPropertyRegistry) {
             // Database - 3 properties
-            registry.add("spring.r2dbc.url") { 
-                "r2dbc:postgresql://${postgres.host}:${postgres.firstMappedPort}/${postgres.databaseName}" 
+            registry.add("spring.r2dbc.url") {
+                "r2dbc:postgresql://${postgres.host}:${postgres.firstMappedPort}/${postgres.databaseName}"
             }
             registry.add("spring.r2dbc.username") { postgres.username }
             registry.add("spring.r2dbc.password") { postgres.password }
-            
+
             // Kafka - 2 properties
             registry.add("spring.kafka.bootstrap-servers") { kafka.bootstrapServers }
             registry.add("spring.kafka.producer.properties.interceptor.classes") { "" }
-            
+
             // WireMock - 2 properties
             registry.add("external-apis.inventory.url") { "http://localhost:${wiremock.port()}" }
             registry.add("external-apis.payment.url") { "http://localhost:${wiremock.port()}" }
-            
+
             // Add more dependencies? Add more properties here...
         }
     }
-    
+
     // ── Inject every dependency you need ────────────────────────────────────
-    
+
     @LocalServerPort
     protected var port: Int = 0
-    
+
     @Autowired
     protected lateinit var r2dbcEntityTemplate: R2dbcEntityTemplate
-    
+
     @Autowired
     protected lateinit var kafkaTemplate: KafkaTemplate<String, Any>
-    
+
     @Autowired
     protected lateinit var orderRepository: OrderRepository
-    
+
     @Autowired
     protected lateinit var objectMapper: ObjectMapper
-    
+
     // Need to test another bean? Add another @Autowired here...
-    
+
     // ── Cleanup ritual ──────────────────────────────────────────────────────
     // Pray you remember to clean everything
-    
+
     @BeforeEach
     fun setup() {
         RestAssured.port = port
         RestAssured.baseURI = "http://localhost"
         wiremock.resetAll()
-        
+
         // Database cleanup - hope you didn't miss a table!
         runBlocking {
             r2dbcEntityTemplate.databaseClient
@@ -114,7 +117,7 @@ abstract class BaseIntegrationTest {
                 .rowsUpdated()
                 .awaitSingle()
         }
-        
+
         // Kafka cleanup? Good luck with that...
     }
 }
@@ -124,13 +127,13 @@ abstract class BaseIntegrationTest {
 // ════════════════════════════════════════════════════════════════════════════════
 
 class OrderControllerPainfulTest : BaseIntegrationTest() {
-    
+
     @Test
     fun `should create order with all verifications`() {
         val userId = UUID.randomUUID().toString()
         val productId = "macbook-pro-16"
         val amount = 2499.99
-        
+
         // ── WireMock setup (its own API) ────────────────────────────────────
         wiremock.stubFor(
             get(urlEqualTo("/inventory/$productId"))
@@ -147,7 +150,7 @@ class OrderControllerPainfulTest : BaseIntegrationTest() {
                         """.trimIndent())
                 )
         )
-        
+
         wiremock.stubFor(
             post(urlEqualTo("/payments/charge"))
                 .willReturn(
@@ -163,7 +166,7 @@ class OrderControllerPainfulTest : BaseIntegrationTest() {
                         """.trimIndent())
                 )
         )
-        
+
         // ── HTTP call with RestAssured (API #1) ─────────────────────────────
         val response = given()
             .contentType(ContentType.JSON)
@@ -180,9 +183,9 @@ class OrderControllerPainfulTest : BaseIntegrationTest() {
             .statusCode(201)
             .extract()
             .asString()
-        
+
         val orderResponse = objectMapper.readValue(response, OrderResponse::class.java)
-        
+
         // ── Database verification with R2DBC (API #2) ───────────────────────
         // Completely different syntax than HTTP assertions
         runBlocking {
@@ -193,30 +196,30 @@ class OrderControllerPainfulTest : BaseIntegrationTest() {
                 .all()
                 .asFlow()
                 .toList()
-            
+
             assertEquals(1, orders.size)
             assertEquals("CONFIRMED", orders.first()["status"])
             assertEquals(amount, (orders.first()["amount"] as BigDecimal).toDouble())
         }
-        
+
         // ── Kafka verification with KafkaTestUtils (API #3) ─────────────────
         // Yet another API pattern to learn
         val consumer = createConsumer()
         consumer.subscribe(listOf("showcase.orders.created"))
-        
+
         val records = KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(10))
         assertTrue(records.count() > 0) { "Expected at least one Kafka message" }
-        
+
         val event = objectMapper.readValue(
-            records.first().value() as String, 
+            records.first().value() as String,
             OrderCreatedEvent::class.java
         )
         assertEquals(userId, event.userId)
         assertEquals(productId, event.productId)
-        
+
         consumer.close()
     }
-    
+
     private fun createConsumer(): KafkaConsumer<String, String> {
         // 10 more lines of Kafka consumer setup...
         val props = Properties().apply {
