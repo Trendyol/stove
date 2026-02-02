@@ -1,4 +1,4 @@
-@file:Suppress("unused", "DEPRECATION")
+@file:Suppress("unused")
 
 package com.trendyol.stove.mysql
 
@@ -9,14 +9,14 @@ import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
-import org.testcontainers.containers.MySQLContainer
+import org.testcontainers.mysql.MySQLContainer
 import org.testcontainers.utility.DockerImageName
 
 const val DEFAULT_MYSQL_IMAGE_NAME = "mysql"
 
 open class StoveMySqlContainer(
   override val imageNameAccess: DockerImageName
-) : MySQLContainer<StoveMySqlContainer>(imageNameAccess),
+) : MySQLContainer(imageNameAccess),
   StoveContainer
 
 /**

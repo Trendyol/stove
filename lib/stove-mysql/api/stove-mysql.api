@@ -98,7 +98,7 @@ public final class com/trendyol/stove/mysql/ProvidedMySqlOptions : com/trendyol/
 	public fun getRunMigrationsForProvided ()Z
 }
 
-public class com/trendyol/stove/mysql/StoveMySqlContainer : org/testcontainers/containers/MySQLContainer, com/trendyol/stove/containers/StoveContainer {
+public class com/trendyol/stove/mysql/StoveMySqlContainer : org/testcontainers/mysql/MySQLContainer, com/trendyol/stove/containers/StoveContainer {
 	public fun <init> (Lorg/testcontainers/utility/DockerImageName;)V
 	public fun execCommand ([Ljava/lang/String;J)Lcom/trendyol/stove/containers/ExecResult;
 	public fun getContainerIdAccess ()Ljava/lang/String;
