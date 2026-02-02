@@ -68,4 +68,68 @@ class StoveOptionsDslTest :
 
       stoveOptionsDsl.options.runMigrationsAlways shouldBe true
     }
+
+    test("should enable reporting") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+      stoveOptionsDsl.reportingEnabled(true)
+
+      stoveOptionsDsl.options.reportingEnabled shouldBe true
+    }
+
+    test("should disable reporting") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+      stoveOptionsDsl.reportingEnabled(false)
+
+      stoveOptionsDsl.options.reportingEnabled shouldBe false
+    }
+
+    test("should enable dump report on test failure") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+      stoveOptionsDsl.dumpReportOnTestFailure(true)
+
+      stoveOptionsDsl.options.dumpReportOnTestFailure shouldBe true
+    }
+
+    test("should disable dump report on test failure") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+      stoveOptionsDsl.dumpReportOnTestFailure(false)
+
+      stoveOptionsDsl.options.dumpReportOnTestFailure shouldBe false
+    }
+
+    test("should configure reporting via DSL block") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+
+      stoveOptionsDsl.reporting {
+        enabled()
+        dumpOnFailure()
+      }
+
+      stoveOptionsDsl.options.reportingEnabled shouldBe true
+      stoveOptionsDsl.options.dumpReportOnTestFailure shouldBe true
+    }
+
+    test("should disable reporting via DSL block") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+      stoveOptionsDsl.reportingEnabled(true)
+
+      stoveOptionsDsl.reporting {
+        disabled()
+      }
+
+      stoveOptionsDsl.options.reportingEnabled shouldBe false
+    }
+
+    test("should chain multiple options fluently") {
+      val stoveOptionsDsl = StoveOptionsDsl()
+
+      stoveOptionsDsl
+        .reportingEnabled(true)
+        .dumpReportOnTestFailure(true)
+        .runMigrationsAlways()
+
+      stoveOptionsDsl.options.reportingEnabled shouldBe true
+      stoveOptionsDsl.options.dumpReportOnTestFailure shouldBe true
+      stoveOptionsDsl.options.runMigrationsAlways shouldBe true
+    }
   })
