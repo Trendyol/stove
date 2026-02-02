@@ -21,6 +21,7 @@ dependencies {
     api(projects.lib.stoveMongodb)
     api(projects.lib.stoveRdbms)
     api(projects.lib.stovePostgres)
+    api(projects.lib.stoveMysql)
     api(projects.lib.stoveMssql)
     api(projects.lib.stoveRedis)
     api(projects.lib.stoveWiremock)

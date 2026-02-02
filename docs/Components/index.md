@@ -10,6 +10,7 @@ Stove uses a pluggable architecture—each physical dependency is a separate mod
 | [Couchbase](01-couchbase.md) | `stove-couchbase` | NoSQL document database |
 | [Elasticsearch](03-elasticsearch.md) | `stove-elasticsearch` | Search and analytics engine |
 | [PostgreSQL](06-postgresql.md) | `stove-postgres` | Relational database |
+| [MySQL](16-mysql.md) | `stove-mysql` | Relational database |
 | [MongoDB](07-mongodb.md) | `stove-mongodb` | NoSQL document database |
 | [MSSQL](08-mssql.md) | `stove-mssql` | Microsoft SQL Server |
 | [Redis](09-redis.md) | `stove-redis` | In-memory data store |
@@ -86,7 +87,7 @@ stove {
 | Type | Components | Use Case |
 |------|------------|----------|
 | Document | [Couchbase](01-couchbase.md), [MongoDB](07-mongodb.md), [Elasticsearch](03-elasticsearch.md) | JSON document storage, search |
-| Relational | [PostgreSQL](06-postgresql.md), [MSSQL](08-mssql.md) | Structured data, transactions |
+| Relational | [PostgreSQL](06-postgresql.md), [MySQL](16-mysql.md), [MSSQL](08-mssql.md) | Structured data, transactions |
 | Key-Value | [Redis](09-redis.md) | Caching, sessions, pub/sub |
 
 ### Messaging

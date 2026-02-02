@@ -139,6 +139,7 @@ val publishedProjects = listOf(
   projects.lib.stoveMongodb.name,
   projects.lib.stoveRdbms.name,
   projects.lib.stovePostgres.name,
+  projects.lib.stoveMysql.name,
   projects.lib.stoveMssql.name,
   projects.lib.stoveWiremock.name,
   projects.lib.stoveRedis.name,

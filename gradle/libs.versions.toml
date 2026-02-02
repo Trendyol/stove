@@ -31,6 +31,7 @@ elastic = "8.19.10"
 mongodb = "5.6.2"
 wiremock = "3.13.2"
 testcontainers = "2.0.3"
+mysql = "9.6.0"
 spotless = "8.2.1"
 detekt = "1.23.8"
 wire = "5.5.0"
@@ -138,6 +139,7 @@ h2Database = { module = "com.h2database:h2", version = "2.4.240" }
 
 # postgres
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.9" }
+mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
@@ -160,6 +162,7 @@ testcontainers-postgres = { module = "org.testcontainers:testcontainers-postgres
 testcontainers-elasticsearch = { module = "org.testcontainers:testcontainers-elasticsearch", version.ref = "testcontainers" }
 testcontainers-mongodb = { module = "org.testcontainers:testcontainers-mongodb", version.ref = "testcontainers" }
 testcontainers-mssql = { module = "org.testcontainers:testcontainers-mssqlserver", version.ref = "testcontainers" }
+testcontainers-mysql = { module = "org.testcontainers:testcontainers-mysql", version.ref = "testcontainers" }
 testcontainers-redis = { module = "com.redis.testcontainers:testcontainers-redis", version = "1.6.4" }
 
 # spring-boot 2x

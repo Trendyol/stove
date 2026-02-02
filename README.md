@@ -59,7 +59,7 @@ assertions even for code that is traditionally hard to test (async flows, messag
 
 **What Stove does:**
 
-- Starts containers via Testcontainers or connect **provided** infra (PostgreSQL, Kafka, etc.)
+- Starts containers via Testcontainers or connect **provided** infra (PostgreSQL, MySQL, Kafka, etc.)
 - Launches your **actual** application with test configuration
 - Exposes a unified DSL for assertions across all components
 - Provides access to your DI container from tests
@@ -86,6 +86,7 @@ dependencies {
   
   // Component modules
   testImplementation("com.trendyol:stove-postgres")
+  testImplementation("com.trendyol:stove-mysql")
   testImplementation("com.trendyol:stove-kafka")
 }
 ```
@@ -181,7 +182,7 @@ http {
 ### Database
 
 ```kotlin
-postgresql {  // also: mongodb, couchbase, mssql, elasticsearch, redis
+postgresql {  // also: mysql, mongodb, couchbase, mssql, elasticsearch, redis
   shouldExecute("INSERT INTO users (name) VALUES ('Jane')")
   shouldQuery<User>("SELECT * FROM users", mapper = { row ->
     User(row.string("name"))
@@ -409,7 +410,7 @@ kafka {
 }
 ```
 
-Available for Kafka, PostgreSQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis.
+Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis.
 
 ### Migrations
 
@@ -425,7 +426,7 @@ postgresql {
 }
 ```
 
-Available for Kafka, PostgreSQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis.
+Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis.
 
 ### Provided Instances
 
@@ -499,7 +500,7 @@ test("should create order with payment processing") {
 
 | Category   | Components                                                  |
 |------------|-------------------------------------------------------------|
-| Databases  | PostgreSQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis |
+| Databases  | PostgreSQL, MySQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis |
 | Messaging  | Kafka                                                       |
 | HTTP       | Built-in client, WebSockets, WireMock                       |
 | gRPC       | Client (grpc-kotlin), Mock Server (native)                  |
@@ -510,6 +511,7 @@ test("should create order with payment processing") {
 | Component     | Migrations | Cleanup | Provided Instance | Pause/Unpause |
 |---------------|:----------:|:-------:|:-----------------:|:-------------:|
 | PostgreSQL    |     ✅      |    ✅    |         ✅         |       ✅       |
+| MySQL         |     ✅      |    ✅    |         ✅         |       ✅       |
 | MSSQL         |     ✅      |    ✅    |         ✅         |       ✅       |
 | MongoDB       |     ✅      |    ✅    |         ✅         |       ✅       |
 | Couchbase     |     ✅      |    ✅    |         ✅         |       ✅       |

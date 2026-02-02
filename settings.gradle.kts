@@ -13,6 +13,7 @@ include(
   "lib:stove-couchbase",
   "lib:stove-rdbms",
   "lib:stove-postgres",
+  "lib:stove-mysql",
   "lib:stove-mssql",
   "lib:stove-elasticsearch",
   "lib:stove-redis",
