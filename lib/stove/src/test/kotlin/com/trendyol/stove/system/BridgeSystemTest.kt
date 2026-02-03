@@ -1,150 +1,109 @@
 package com.trendyol.stove.system
 
-import com.trendyol.stove.system.abstractions.SystemNotRegisteredException
+import com.trendyol.stove.reporting.StoveTestContext
+import com.trendyol.stove.system.abstractions.PluggedSystem
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
-import kotlin.reflect.typeOf
 
 class BridgeSystemTest :
   FunSpec({
+    test("using records success for single bean") {
+      val stove = Stove()
+      val serviceA = ServiceA("initial")
+      val bridge = TestBridgeSystem(stove, mapOf(ServiceA::class to serviceA))
+      stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
 
-    context("BridgeSystem") {
-      test("close should be no-op") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
+      stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
 
-        // Should not throw
-        bridge.close()
+      runBlocking {
+        ValidationDsl(stove).using<ServiceA> { value = "updated" }
       }
 
-      test("afterRun should initialize context") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-        val context = TestContext("initialized")
-
-        bridge.afterRun(context)
-
-        bridge.getContext() shouldBe context
-      }
-
-      test("get should resolve dependency by KClass") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-        val service = TestService("test-service")
-        bridge.registerDependency(TestService::class, service)
-
-        val resolved = bridge.get(TestService::class)
-
-        resolved shouldBe service
-      }
-
-      test("getByType should resolve dependency by KType") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-        val service = TestService("test-service")
-        bridge.registerDependency(TestService::class, service)
-
-        val resolved: TestService = bridge.getByType(typeOf<TestService>())
-
-        resolved shouldBe service
-      }
-
-      test("get should throw for unregistered dependency") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-
-        shouldThrow<IllegalArgumentException> {
-          bridge.get(TestService::class)
-        }.message shouldBe "Dependency TestService not registered"
-      }
-
-      test("reportSystemName should return TestBridge") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-
-        bridge.reportSystemName shouldBe "TestBridge"
-      }
+      val entry = stove.reporter
+        .currentTest()
+        .entries()
+        .single()
+      entry.isPassed shouldBe true
+      entry.action shouldContain "Bean usage: ServiceA"
+      serviceA.value shouldBe "updated"
     }
 
-    context("Stove.withBridgeSystem") {
-      test("should register bridge system") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
+    test("using records failure and rethrows") {
+      val stove = Stove()
+      val serviceA = ServiceA("initial")
+      val bridge = TestBridgeSystem(stove, mapOf(ServiceA::class to serviceA))
+      stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
 
-        val result = stove.withBridgeSystem(bridge)
+      stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
 
-        result shouldBe stove
-        // BridgeSystem is registered with BridgeSystem::class as the key, not TestBridgeSystem
-        stove.getOrNone<BridgeSystem<*>>().isSome() shouldBe true
-      }
-    }
-
-    context("Stove.bridge") {
-      test("should return registered bridge") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-        stove.withBridgeSystem(bridge)
-
-        val result = stove.bridge()
-
-        result shouldBe bridge
-      }
-
-      test("should throw when bridge not registered") {
-        val stove = Stove()
-
-        shouldThrow<SystemNotRegisteredException> {
-          stove.bridge()
+      val error = shouldThrow<IllegalStateException> {
+        runBlocking {
+          ValidationDsl(stove).using<ServiceA> { error("boom") }
         }
       }
+
+      error.message shouldBe "boom"
+      val entry = stove.reporter
+        .currentTest()
+        .entries()
+        .single()
+      entry.isFailed shouldBe true
+      entry.action shouldContain "Bean usage: ServiceA"
     }
 
-    context("WithDsl.bridge") {
-      test("should register bridge via DSL") {
-        val stove = Stove()
-        val bridge = TestBridgeSystem(stove)
-        val withDsl = WithDsl(stove)
+    test("using with two beans records success") {
+      val stove = Stove()
+      val serviceA = ServiceA("a")
+      val serviceB = ServiceB(42)
+      val bridge = TestBridgeSystem(
+        stove,
+        mapOf(
+          ServiceA::class to serviceA,
+          ServiceB::class to serviceB
+        )
+      )
+      stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
 
-        withDsl.bridge(bridge)
+      stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
 
-        // BridgeSystem is registered with BridgeSystem::class as the key, not TestBridgeSystem
-        stove.getOrNone<BridgeSystem<*>>().isSome() shouldBe true
+      runBlocking {
+        ValidationDsl(stove).using<ServiceA, ServiceB> { a, b ->
+          a.value shouldBe "a"
+          b.number shouldBe 42
+        }
       }
+
+      val entry = stove.reporter
+        .currentTest()
+        .entries()
+        .single()
+      entry.isPassed shouldBe true
+      entry.action shouldContain "Bean usage: ServiceA, ServiceB"
     }
   })
 
-/**
- * Test context for BridgeSystem.
- */
-data class TestContext(
-  val value: String
+private data class ServiceA(
+  var value: String
 )
 
-/**
- * Test service for dependency resolution.
- */
-data class TestService(
-  val name: String
+private data class ServiceB(
+  val number: Int
 )
 
-/**
- * Test implementation of BridgeSystem.
- */
-class TestBridgeSystem(
-  stove: Stove
-) : BridgeSystem<TestContext>(stove) {
-  private val dependencies = mutableMapOf<KClass<*>, Any>()
+private class TestContext
 
-  fun <D : Any> registerDependency(klass: KClass<D>, instance: D) {
-    dependencies[klass] = instance
-  }
-
-  fun getContext(): TestContext = ctx
+private class TestBridgeSystem(
+  override val stove: Stove,
+  private val beans: Map<KClass<*>, Any>
+) : BridgeSystem<TestContext>(stove),
+  PluggedSystem {
+  override fun then(): Stove = stove
 
   @Suppress("UNCHECKED_CAST")
   override fun <D : Any> get(klass: KClass<D>): D =
-    dependencies[klass] as? D
-      ?: throw IllegalArgumentException("Dependency ${klass.simpleName} not registered")
+    beans[klass] as? D ?: error("Missing bean for ${klass.simpleName}")
 }

@@ -66,6 +66,43 @@ class ReportsTest :
         snapshot.summary shouldBe "Custom snapshot"
       }
     }
+
+    context("report") {
+      test("should record success entry and return result") {
+        val stove = Stove()
+        val reports = TestReportsSystem(stove)
+        val reporter = stove.reporter
+        reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
+
+        val result = reports.report(action = "action") { "ok" }
+
+        result shouldBe "ok"
+        reporter.currentTest().entries().size shouldBe 1
+        reporter
+          .currentTest()
+          .entries()
+          .first()
+          .isPassed shouldBe true
+      }
+
+      test("should record failure entry and rethrow") {
+        val stove = Stove()
+        val reports = TestReportsSystem(stove)
+        val reporter = stove.reporter
+        reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
+
+        val error = shouldThrow<IllegalStateException> {
+          reports.report(action = "action") { error("boom") }
+        }
+
+        error.message shouldBe "boom"
+        reporter
+          .currentTest()
+          .entries()
+          .first()
+          .isFailed shouldBe true
+      }
+    }
   })
 
 /**

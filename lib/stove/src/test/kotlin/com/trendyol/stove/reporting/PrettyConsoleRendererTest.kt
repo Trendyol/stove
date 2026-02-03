@@ -15,6 +15,8 @@ class PrettyConsoleRendererTest :
 
     fun String.stripAnsi(): String = replace(Regex("\u001B\\[[0-9;]*m"), "")
 
+    fun String.boxLines(): List<String> = lines().filter { it.isNotEmpty() }
+
     // Dynamic width constants (from PrettyConsoleRenderer)
     val minBoxWidth = 60
     val maxBoxWidth = 200
@@ -86,14 +88,10 @@ class PrettyConsoleRendererTest :
       val rendered = PrettyConsoleRenderer.render(report, emptyList())
       println(rendered)
 
-      // Verify all content lines end with the closing border
+      // Verify frame width consistency and no side borders
       val plainRendered = rendered.stripAnsi()
-      plainRendered
-        .lines()
-        .filter { it.startsWith("║") }
-        .forEach { line ->
-          line.endsWith("║") shouldBe true
-        }
+      plainRendered shouldNotContain "║"
+      plainRendered.boxLines().map { it.length }.distinct() shouldHaveSize 1
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -107,15 +105,13 @@ class PrettyConsoleRendererTest :
 
         val rendered = PrettyConsoleRenderer.render(report, emptyList())
         val plainRendered = rendered.stripAnsi()
-        val lines = plainRendered.lines().filter { it.isNotEmpty() }
+        val lines = plainRendered.boxLines()
 
-        // All lines with box characters should have the same width (dynamic)
-        val contentLines = lines.filter { it.startsWith("║") || it.startsWith("╔") || it.startsWith("╚") || it.startsWith("╠") }
-        contentLines.shouldHaveSize(contentLines.size)
-        contentLines.map { it.length }.distinct() shouldHaveSize 1
+        // All rendered lines should have the same width (dynamic)
+        lines.map { it.length }.distinct() shouldHaveSize 1
 
         // Width should be within bounds
-        val actualWidth = contentLines.first().length
+        val actualWidth = lines.first().length
         actualWidth shouldBeGreaterThanOrEqual minBoxWidth
         actualWidth shouldBeLessThanOrEqual maxBoxWidth
       }
@@ -144,10 +140,10 @@ class PrettyConsoleRendererTest :
 
         plainRendered
           .lines()
-          .filter { it.contains("║") && !it.contains("╔") && !it.contains("╚") && !it.contains("╠") }
+          .filter { it.isNotEmpty() && !it.startsWith("╔") && !it.startsWith("╚") && !it.startsWith("╠") }
           .forEach { line ->
-            line.first() shouldBe '║'
-            line.last() shouldBe '║'
+            line.first() shouldBe ' '
+            line.last() shouldBe ' '
           }
       }
     }
@@ -169,9 +165,7 @@ class PrettyConsoleRendererTest :
         val plainRendered = rendered.stripAnsi()
 
         // Verify all box-framed lines have consistent width (dynamic)
-        val boxLines = plainRendered
-          .lines()
-          .filter { it.startsWith("║") || it.startsWith("╔") || it.startsWith("╚") || it.startsWith("╠") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
 
         // Content should be fully present (no truncation)
@@ -192,10 +186,7 @@ class PrettyConsoleRendererTest :
         println(rendered)
 
         // Frame should still be intact - all lines same width
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
-        boxLines.forEach { line ->
-          line.endsWith("║") shouldBe true
-        }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
 
         // Full content should be present (no "..." truncation)
@@ -227,7 +218,7 @@ class PrettyConsoleRendererTest :
         plainRendered shouldContain "Line 3"
 
         // Frame should remain intact - consistent width
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
     }
@@ -246,7 +237,7 @@ class PrettyConsoleRendererTest :
         val plainRendered = rendered.stripAnsi()
 
         // Even with colors, all lines should have consistent width (dynamic)
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
 
@@ -263,7 +254,7 @@ class PrettyConsoleRendererTest :
 
         // Plain output should be aligned and NOT truncated
         val plainRendered = rendered.stripAnsi()
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
 
         // Full content should be present (no "..." truncation)
@@ -285,9 +276,7 @@ class PrettyConsoleRendererTest :
 
         plainRendered shouldContain "╔"
         plainRendered shouldContain "╚"
-        val boxLines = plainRendered
-          .lines()
-          .filter { it.startsWith("║") || it.startsWith("╔") || it.startsWith("╚") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
         boxLines.first().length shouldBeGreaterThanOrEqual minBoxWidth
       }
@@ -305,12 +294,7 @@ class PrettyConsoleRendererTest :
         println(rendered)
 
         // Frame should still be valid
-        plainRendered
-          .lines()
-          .filter { it.startsWith("║") }
-          .forEach { line ->
-            line.endsWith("║") shouldBe true
-          }
+        plainRendered shouldNotContain "║"
       }
 
       test("Unicode characters should be handled correctly") {
@@ -355,10 +339,7 @@ class PrettyConsoleRendererTest :
         println(rendered)
 
         // Frame should remain intact despite nesting - all lines consistent width
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
-        boxLines.forEach { line ->
-          line.endsWith("║") shouldBe true
-        }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
     }
@@ -376,7 +357,7 @@ class PrettyConsoleRendererTest :
         val plainRendered = rendered.stripAnsi()
 
         // Even with short content, all lines should be padded and consistent
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
         boxLines.first().length shouldBeGreaterThanOrEqual minBoxWidth
       }
@@ -393,7 +374,7 @@ class PrettyConsoleRendererTest :
         val plainRendered = rendered.stripAnsi()
 
         // All lines should be consistent
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
 
@@ -415,7 +396,7 @@ class PrettyConsoleRendererTest :
         plainRendered shouldContain "Word Word Word"
 
         // All lines should maintain consistent frame width
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
 
@@ -442,7 +423,7 @@ class PrettyConsoleRendererTest :
         plainRendered shouldContain "end of the line"
 
         // Frame should be intact - all lines consistent
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
 
@@ -465,7 +446,7 @@ class PrettyConsoleRendererTest :
         contentLines.size shouldBeGreaterThan 1
 
         // Frame should still be intact - capped at max width
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.forEach { line ->
           line.length shouldBeLessThanOrEqual maxBoxWidth
         }
@@ -498,7 +479,7 @@ class PrettyConsoleRendererTest :
         contentLines.size shouldBe 1
 
         // Frame should expand to fit the word
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
 
@@ -517,10 +498,7 @@ class PrettyConsoleRendererTest :
         plainRendered shouldNotContain "..."
 
         // Frame should still be intact regardless of content
-        val boxLines = plainRendered.lines().filter { it.startsWith("║") }
-        boxLines.forEach { line ->
-          line.endsWith("║") shouldBe true
-        }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
       }
     }
@@ -591,9 +569,7 @@ class PrettyConsoleRendererTest :
 
         // Verify frame integrity - all box lines should have consistent width
         val plainRendered = rendered.stripAnsi()
-        val boxLines = plainRendered
-          .lines()
-          .filter { it.startsWith("║") || it.startsWith("╔") || it.startsWith("╚") || it.startsWith("╠") }
+        val boxLines = plainRendered.boxLines()
         boxLines.map { it.length }.distinct() shouldHaveSize 1
 
         // Verify all sections are present

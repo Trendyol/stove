@@ -159,7 +159,7 @@ class StoveTestExceptionsTest :
         )
 
         exception.message shouldContain "Test failed"
-        exception.message shouldContain "STOVE EXECUTION REPORT"
+        exception.message?.trim() shouldBe "Test failed"
       }
 
       test("should handle special characters in message") {
