@@ -17,7 +17,6 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 
 const val GRPC_MOCK_PORT = 9092
 const val GRPC_SERVER_PORT = 50051
-const val WIREMOCK_PORT = 9091
 
 class StoveConfig : AbstractProjectConfig() {
   init {
@@ -59,8 +58,14 @@ class StoveConfig : AbstractProjectConfig() {
 
         wiremock {
           WireMockSystemOptions(
-            port = WIREMOCK_PORT,
-            serde = StoveSerde.jackson.anyByteArraySerde()
+            port = 0, // Dynamic port allocation for CI compatibility
+            serde = StoveSerde.jackson.anyByteArraySerde(),
+            configureExposedConfiguration = { cfg ->
+              listOf(
+                "external-apis.inventory.url=${cfg.baseUrl}",
+                "external-apis.payment.url=${cfg.baseUrl}"
+              )
+            }
           )
         }
 
@@ -118,9 +123,8 @@ class StoveConfig : AbstractProjectConfig() {
             "server.port=8024",
             "grpc.server.port=$GRPC_SERVER_PORT",
             "external-apis.fraud-detection.host=localhost",
-            "external-apis.fraud-detection.port=$GRPC_MOCK_PORT",
-            "external-apis.inventory.url=http://localhost:$WIREMOCK_PORT",
-            "external-apis.payment.url=http://localhost:$WIREMOCK_PORT"
+            "external-apis.fraud-detection.port=$GRPC_MOCK_PORT"
+            // WireMock URLs are set via configureExposedConfiguration for dynamic port support
           )
         )
       }.run()
