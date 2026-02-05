@@ -1,30 +1,22 @@
 package com.trendyol.stove.examples.kotlin.spring.e2e.tests
 
 import arrow.core.some
-import com.trendyol.stove.examples.kotlin.spring.domain.order.CreateOrderRequest
-import com.trendyol.stove.examples.kotlin.spring.domain.order.OrderResponse
-import com.trendyol.stove.examples.kotlin.spring.domain.order.OrderService
-import com.trendyol.stove.examples.kotlin.spring.domain.order.OrderStatus
-import com.trendyol.stove.examples.kotlin.spring.events.OrderCreatedEvent
-import com.trendyol.stove.examples.kotlin.spring.events.PaymentProcessedEvent
-import com.trendyol.stove.examples.kotlin.spring.grpc.CheckFraudResponse
-import com.trendyol.stove.examples.kotlin.spring.grpc.GetOrderRequest
-import com.trendyol.stove.examples.kotlin.spring.grpc.GetOrdersByUserRequest
-import com.trendyol.stove.examples.kotlin.spring.grpc.OrderQueryServiceGrpcKt
-import com.trendyol.stove.examples.kotlin.spring.infra.clients.InventoryResponse
-import com.trendyol.stove.examples.kotlin.spring.infra.clients.PaymentResult
+import com.trendyol.stove.examples.kotlin.spring.domain.order.*
+import com.trendyol.stove.examples.kotlin.spring.e2e.setup.tasks
+import com.trendyol.stove.examples.kotlin.spring.events.*
+import com.trendyol.stove.examples.kotlin.spring.grpc.*
+import com.trendyol.stove.examples.kotlin.spring.infra.clients.*
+import com.trendyol.stove.examples.kotlin.spring.infra.scheduling.OrderEmailPayload
 import com.trendyol.stove.grpc.grpc
 import com.trendyol.stove.http.http
 import com.trendyol.stove.kafka.kafka
 import com.trendyol.stove.postgres.postgresql
-import com.trendyol.stove.system.stove
-import com.trendyol.stove.system.using
+import com.trendyol.stove.system.*
 import com.trendyol.stove.testing.grpcmock.grpcMock
 import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import java.util.UUID
+import io.kotest.matchers.*
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -240,6 +232,21 @@ class TheShowcase :
           val order = getOrderByUserId(userId)
           order shouldNotBe null
           order!!.status shouldBe OrderStatus.CONFIRMED
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // SECTION 8: db-scheduler - Verify Scheduled Tasks
+        // "When an order is created, we schedule a confirmation email.
+        //  Let's verify the task was executed with the correct payload.
+        //  This showcases how to write your own Stove System!"
+        // ══════════════════════════════════════════════════════════════
+
+        tasks {
+          shouldBeExecuted<OrderEmailPayload> {
+            this.orderId == orderId &&
+              this.userId == userId &&
+              this.amount == amount
+          }
         }
       }
     }

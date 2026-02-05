@@ -15,6 +15,11 @@ dependencies {
   // Database
   implementation(libs.postgresql.r2dbc)
   implementation(libs.r2dbc.pool)
+  implementation(libs.spring.boot.starter.jdbc) // Required for db-scheduler
+  implementation(libs.postgresql) // JDBC driver for db-scheduler
+
+  // Scheduling
+  implementation(libs.db.scheduler.spring.boot.starter)
 
   // Kotlin Coroutines
   implementation(libs.kotlinx.core)

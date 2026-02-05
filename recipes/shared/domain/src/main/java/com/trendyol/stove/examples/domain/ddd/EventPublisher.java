@@ -1,5 +1,5 @@
 package com.trendyol.stove.examples.domain.ddd;
 
 public interface EventPublisher {
-  <TId> void publishFor(AggregateRoot<TId> aggregateRoot);
+    <TId> void publishFor(AggregateRoot<TId> aggregateRoot);
 }

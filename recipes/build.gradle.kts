@@ -35,20 +35,22 @@ subprojects {
 
   spotless {
     java {
-      googleJavaFormat("1.25.0")
-      targetExclude("build", "generated", "out")
+      palantirJavaFormat("2.86.0").style("AOSP").formatJavadoc(true)
       targetExcludeIfContentContains("generated")
+      targetExclude("build/**", "**/build/**", "**/generated/**")
       targetExcludeIfContentContainsRegex(".*generated.*")
     }
 
     scala {
-      scalafmt()
+      scalafmt("3.10.6")
     }
 
     kotlin {
-      ktlint(libs.versions.ktlint.get()).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
-      targetExclude("build/**", "**/build/**")
+      ktlint(libs.versions.ktlint.get())
+        .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      targetExclude("build/**", "**/build/**", "**/generated/**")
       targetExcludeIfContentContains("generated")
+      targetExcludeIfContentContainsRegex(".*generated.*")
     }
   }
 

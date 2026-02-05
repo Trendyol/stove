@@ -53,8 +53,11 @@ grpc-kotlin = "1.4.3"
 protobuf = "4.31.1"
 protobuf-plugin = "0.9.4"
 
+# db-scheduler
+db-scheduler = "16.7.1"
+
 # Testing
-stove = "1.0.0.497-SNAPSHOT"
+stove = "1.0.0.499-SNAPSHOT"
 kotest = "6.1.2"
 exposed = "1.0.0"
 postgresql = "42.7.9"
@@ -76,6 +79,10 @@ spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-aut
 spring-boot-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
 spring-boot-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
 spring-boot-data-r2dbc = { module = "org.springframework.boot:spring-boot-starter-data-r2dbc", version.ref = "spring-boot" }
+spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "spring-boot" }
+
+# db-scheduler
+db-scheduler-spring-boot-starter = { module = "com.github.kagkarlsson:db-scheduler-spring-boot-starter", version.ref = "db-scheduler" }
 
 # Quarkus
 quarkus = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }

@@ -12,6 +12,11 @@ spring:
     url: r2dbc:postgresql://localhost:5432/stove
     username: postgres
     password: postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/stove
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -36,3 +41,16 @@ logging:
   level:
     com.trendyol.stove: DEBUG
     org.springframework.r2dbc: DEBUG
+    com.github.kagkarlsson.scheduler: DEBUG
+
+# db-scheduler configuration
+db-scheduler:
+  enabled: true
+  table-name: scheduled_tasks
+  threads: 2
+  polling-interval: 100ms
+  polling-strategy: lock-and-fetch
+  polling-strategy-lower-limit-fraction-of-threads: 0.5
+  polling-strategy-upper-limit-fraction-of-threads: 2.0
+  immediate-execution-enabled: true
+  always-persist-timestamp-in-utc: true

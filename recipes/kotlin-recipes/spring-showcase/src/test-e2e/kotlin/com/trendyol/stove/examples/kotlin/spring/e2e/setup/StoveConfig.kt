@@ -69,13 +69,18 @@ class StoveConfig : AbstractProjectConfig() {
             databaseName = "stove",
             configureExposedConfiguration = { cfg ->
               listOf(
+                // R2DBC configuration for reactive database access
                 "spring.r2dbc.url=r2dbc:postgresql://${cfg.host}:${cfg.port}/stove",
                 "spring.r2dbc.username=${cfg.username}",
-                "spring.r2dbc.password=${cfg.password}"
+                "spring.r2dbc.password=${cfg.password}",
+                // JDBC configuration for db-scheduler
+                "spring.datasource.url=jdbc:postgresql://${cfg.host}:${cfg.port}/stove",
+                "spring.datasource.username=${cfg.username}",
+                "spring.datasource.password=${cfg.password}"
               )
             }
           ).migrations {
-            register<CreateOrdersTableMigration>()
+            register<OrderExampleInitialMigration>()
           }
         }
 
@@ -96,10 +101,18 @@ class StoveConfig : AbstractProjectConfig() {
           )
         }
 
+        // db-scheduler system for testing scheduled tasks
+        dbScheduler()
+
         springBoot(
           runner = { params ->
             com.trendyol.stove.examples.kotlin.spring
-              .run(params)
+              .run(params) {
+                // Register test-specific beans for db-scheduler
+                addTestDependencies {
+                  bean<StoveDbSchedulerListener>(isPrimary = true)
+                }
+              }
           },
           withParameters = listOf(
             "server.port=8024",
