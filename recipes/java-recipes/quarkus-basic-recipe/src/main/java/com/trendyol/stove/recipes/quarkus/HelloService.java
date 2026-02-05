@@ -5,5 +5,5 @@ package com.trendyol.stove.recipes.quarkus;
  * testing through dynamic proxies.
  */
 public interface HelloService {
-    String hello();
+  String hello();
 }

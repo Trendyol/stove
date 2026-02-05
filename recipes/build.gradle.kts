@@ -35,7 +35,7 @@ subprojects {
 
   spotless {
     java {
-      palantirJavaFormat("2.86.0").style("AOSP").formatJavadoc(true)
+      palantirJavaFormat("2.86.0").style("GOOGLE").formatJavadoc(true)
       targetExcludeIfContentContains("generated")
       targetExclude("build/**", "**/build/**", "**/generated/**")
       targetExcludeIfContentContainsRegex(".*generated.*")
