@@ -32,7 +32,7 @@ ktor = "3.4.0"
 koin = "4.1.1"
 
 # mongo
-mongodb = "5.6.2"
+mongodb = "5.6.3"
 
 # Tooling
 spotless = "8.2.1"
