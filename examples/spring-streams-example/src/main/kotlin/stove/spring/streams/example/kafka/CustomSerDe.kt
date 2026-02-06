@@ -1,6 +1,7 @@
 package stove.spring.streams.example.kafka
 
 import com.google.protobuf.Message
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
@@ -31,8 +32,8 @@ sealed class KafkaRegistry(
 
     fun createSerde(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {
       val schemaRegistryClient = when (registry) {
-        is Mock -> MockSchemaRegistry.getClientForScope("mock-registry")
-        is Defined -> MockSchemaRegistry.getClientForScope(registry.url)
+        is Mock -> MockSchemaRegistry.getClientForScope("mock-registry", listOf(ProtobufSchemaProvider()))
+        is Defined -> MockSchemaRegistry.getClientForScope(registry.url, listOf(ProtobufSchemaProvider()))
       }
       val serde: KafkaProtobufSerde<Message> = KafkaProtobufSerde<Message>(schemaRegistryClient)
       val serdeConfig: MutableMap<String, Any?> = HashMap()
