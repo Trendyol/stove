@@ -250,7 +250,7 @@ protobuf = { id = "com.google.protobuf", version = "0.9.6" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
 google-ksp = { id = "com.google.devtools.ksp", version = "2.3.5" }
-micronaut-application = { id = "io.micronaut.application", version = "4.6.1" }
-micronaut-aot = { id = "io.micronaut.aot", version = "4.6.1" }
-micronaut-library = { id = "io.micronaut.library", version = "4.6.1" }
+micronaut-application = { id = "io.micronaut.application", version = "4.6.2" }
+micronaut-aot = { id = "io.micronaut.aot", version = "4.6.2" }
+micronaut-library = { id = "io.micronaut.library", version = "4.6.2" }
 maven-publish = { id = "com.vanniktech.maven.publish", version = "0.36.0" }
