@@ -17,7 +17,7 @@ arrow = "2.2.1.1"
 jackson = "2.21"
 
 # Couchbase
-couchbase-client = "3.10.1"
+couchbase-client = "3.11.0"
 
 # Kafka
 kafka = "4.1.1"
@@ -49,16 +49,16 @@ opentelemetry-instrumentation = "2.24.0"
 
 # gRPC
 grpc = "1.79.0"
-grpc-kotlin = "1.4.3"
+grpc-kotlin = "1.5.0"
 protobuf = "4.33.5"
-protobuf-plugin = "0.9.4"
+protobuf-plugin = "0.9.6"
 
 # db-scheduler
 db-scheduler = "16.7.1"
 
 # Testing
 stove = "1.0.0.499-SNAPSHOT"
-kotest = "6.1.2"
+kotest = "6.1.3"
 exposed = "1.0.0"
 postgresql = "42.7.9"
 flyway = "12.0.0"
