@@ -28,6 +28,16 @@ import java.util.*
 
 const val TEST_INDEX = "stove-test-index"
 const val ANOTHER_INDEX = "stove-another-index"
+const val DEFAULT_ELASTICSEARCH_TEST_TAG = "8.9.0"
+
+object ElasticsearchTestRuntimeConfig {
+  val tag: String =
+    System.getenv("ELASTICSEARCH_TEST_TAG")
+      ?: System.getProperty("elasticsearchTestTag")
+      ?: DEFAULT_ELASTICSEARCH_TEST_TAG
+
+  val imageName: DockerImageName = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:$tag")
+}
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
@@ -95,13 +105,13 @@ class ContainerElasticsearchStrategy : ElasticsearchTestStrategy {
   override val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   override suspend fun start() {
-    logger.info("Starting Elasticsearch tests with container mode")
+    logger.info("Starting Elasticsearch tests with container mode. tag=${ElasticsearchTestRuntimeConfig.tag}")
 
     val options = ElasticsearchSystemOptions(
       clientConfigurer = ElasticClientConfigurer(
         restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
       ),
-      ElasticContainerOptions(tag = "8.9.0"),
+      ElasticContainerOptions(tag = ElasticsearchTestRuntimeConfig.tag),
       configureExposedConfiguration = { _ -> listOf() }
     ).migrations {
       register<TestIndexMigrator>()
@@ -132,10 +142,10 @@ class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
   private lateinit var externalContainer: ElasticsearchContainer
 
   override suspend fun start() {
-    logger.info("Starting Elasticsearch tests with provided mode")
+    logger.info("Starting Elasticsearch tests with provided mode. tag=${ElasticsearchTestRuntimeConfig.tag}")
 
     // Start an external container to simulate a provided instance
-    externalContainer = ElasticsearchContainer(DockerImageName.parse("elasticsearch:8.9.0"))
+    externalContainer = ElasticsearchContainer(ElasticsearchTestRuntimeConfig.imageName)
       .withEnv("xpack.security.enabled", "false")
       .withEnv("discovery.type", "single-node")
       .apply { start() }

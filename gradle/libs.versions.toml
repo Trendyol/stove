@@ -27,7 +27,7 @@ kover = "0.9.6"
 ktor = "3.4.0"
 koin = "4.1.1"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "8.19.11"
+elastic = "9.3.0"
 mongodb = "5.6.3"
 wiremock = "3.13.2"
 testcontainers = "2.0.3"
@@ -143,6 +143,7 @@ mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
+elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version.ref = "elastic" }
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }

@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch.core.*
+import co.elastic.clients.transport.rest_client.RestClientOptions
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
@@ -16,6 +17,7 @@ import org.apache.http.auth.*
 import org.apache.http.client.CredentialsProvider
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
+import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestClient
 import org.slf4j.*
 import javax.net.ssl.SSLContext
@@ -395,8 +397,18 @@ class ElasticsearchSystem internal constructor(
   private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
     context.options.clientConfigurer.restClientOverrideFn
       .getOrElse { { cfg -> restClient(cfg) } }
-      .let { RestClientTransport(it(exposedConfiguration), context.options.jsonpMapper) }
-      .let { ElasticsearchClient(it) }
+      .let { it(exposedConfiguration) }
+      .let { restClient ->
+        RestClientTransport(restClient, context.options.jsonpMapper, restClientCompatibilityOptions())
+      }.let { ElasticsearchClient(it) }
+
+  private fun restClientCompatibilityOptions(): RestClientOptions =
+    RestClientOptions
+      .Builder(RequestOptions.DEFAULT.toBuilder())
+      .apply {
+        setHeader("Accept", ELASTICSEARCH_COMPATIBILITY_HEADER)
+        setHeader("Content-Type", ELASTICSEARCH_COMPATIBILITY_HEADER)
+      }.build()
 
   private fun restClient(cfg: ElasticSearchExposedConfiguration): RestClient =
     when (isSecurityDisabled(cfg)) {
@@ -470,6 +482,8 @@ class ElasticsearchSystem internal constructor(
   }
 
   companion object {
+    private const val ELASTICSEARCH_COMPATIBILITY_HEADER = "application/vnd.elasticsearch+json; compatible-with=8"
+
     /**
      * Exposes the [ElasticsearchClient] for the given [ElasticsearchSystem].
      * Use this for advanced Elasticsearch operations not covered by the DSL.
