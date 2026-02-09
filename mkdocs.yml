@@ -26,11 +26,13 @@ nav:
     - gRPC: Components/12-grpc.md
     - Reporting: Components/13-reporting.md
     - gRPC Mocking: Components/14-grpc-mock.md
-    - Tracing: Components/15-tracing.md
+    - Distributed Tracing: Components/15-tracing.md
+    - MySQL: Components/16-mysql.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
   - Release Notes:
+      - 0.21.0 (Upcoming): release-notes/0.21.0.md
       - 0.20.0: release-notes/0.20.0.md
       - 0.19.0: release-notes/0.19.0.md
       - 0.15.0: release-notes/0.15.0.md
