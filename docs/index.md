@@ -86,12 +86,17 @@ Stove supports these components:
 - [MongoDB](Components/07-mongodb.md)
 - [MSSQL](Components/08-mssql.md)
 - [PostgreSQL](Components/06-postgresql.md)
+- [MySQL](Components/16-mysql.md)
 - [Redis](Components/09-redis.md)
 - [Elasticsearch](Components/03-elasticsearch.md)
 - [Couchbase](Components/01-couchbase.md)
-- [Wiremock](Components/04-wiremock.md)
+- [WireMock](Components/04-wiremock.md)
 - [HTTP](Components/05-http.md)
+- [gRPC](Components/12-grpc.md)
+- [gRPC Mocking](Components/14-grpc-mock.md)
 - [Bridge](Components/10-bridge.md)
+- [Reporting](Components/13-reporting.md)
+- [Distributed Tracing](Components/15-tracing.md)
 
 === "Gradle"
 

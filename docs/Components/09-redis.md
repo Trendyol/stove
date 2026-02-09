@@ -14,13 +14,15 @@
 Stove()
   .with {
     redis {
-      RedisSystemOptions {
-        listOf(
-          "redis.host=${it.host}",
-          "redis.port=${it.port}",
-          "redis.password=${it.password}"
-        )
-      }
+      RedisOptions(
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "redis.host=${cfg.host}",
+            "redis.port=${cfg.port}",
+            "redis.password=${cfg.password}"
+          )
+        }
+      )
     }
   }.run()
 ```

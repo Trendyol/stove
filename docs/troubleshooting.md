@@ -304,7 +304,7 @@ Message was not consumed within timeout
    ```kotlin
    // In your Stove setup
    addTestDependencies {
-       bean<TestSystemInterceptor>(isPrimary = true)
+       bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
    }
    ```
 
@@ -469,7 +469,7 @@ java.lang.OutOfMemoryError: Java heap space
 1. **Use provided instances** for external infrastructure
 2. **Enable container reuse:**
    ```kotlin
-   TestSystem {
+   Stove {
        keepDependenciesRunning()  // In development only
    }
    ```
@@ -613,7 +613,7 @@ elasticsearch {
 
 **A:** Ensure:
 
-1. `TestSystemInterceptor` is registered as a bean
+1. `TestSystemKafkaInterceptor` is registered as a bean
 2. `kafka.interceptorClasses` is configured correctly
 3. Your Kafka listener container uses the interceptor
 
@@ -698,7 +698,7 @@ elasticsearch {
 
 1. **Keep containers running:**
    ```kotlin
-   TestSystem { keepDependenciesRunning() }
+   Stove { keepDependenciesRunning() }
    ```
 
 2. **Use provided instances in CI:**

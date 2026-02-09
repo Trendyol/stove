@@ -453,10 +453,12 @@ If you're using the `test-e2e` source set, you might have a separate task:
 Now that you're up and running, here's what to explore next:
 
 - **Components** - Check out the [Components documentation](Components/index.md) to see what's available
-- **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics (makes debugging way easier)
+- **Distributed Tracing** - Enable [Distributed Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
+- **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics
+- **gRPC Mocking** - Mock external gRPC services with [gRPC Mocking](Components/14-grpc-mock.md)
 - **Best Practices** - Read the [Best Practices guide](best-practices.md) for tips on writing effective e2e tests
 - **Troubleshooting** - Hit an issue? Check the [Troubleshooting guide](troubleshooting.md)
-- **Examples** - Browse the [Examples](https://github.com/Trendyol/stove/tree/main/examples) to see complete working projects
+- **Examples** - Browse the [Examples](https://github.com/Trendyol/stove/tree/main/examples) and [Recipes](https://github.com/Trendyol/stove/tree/main/recipes) for complete working projects
 
 ## Common Patterns
 

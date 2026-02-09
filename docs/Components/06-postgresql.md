@@ -17,15 +17,17 @@ Once you've added the dependency, you can configure PostgreSQL in your Stove set
 Stove()
   .with {
     postgresql {
-      PostgresqlSystemOptions {
-        listOf(
-          "postgresql.host=${it.host}",
-          "postgresql.port=${it.port}",
-          "postgresql.database=${it.database}",
-          "postgresql.username=${it.username}",
-          "postgresql.password=${it.password}"
-        )
-      }
+      PostgresqlOptions(
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "postgresql.host=${cfg.host}",
+            "postgresql.port=${cfg.port}",
+            "postgresql.database=${cfg.database}",
+            "postgresql.username=${cfg.username}",
+            "postgresql.password=${cfg.password}"
+          )
+        }
+      )
     }
   }.run()
 ```

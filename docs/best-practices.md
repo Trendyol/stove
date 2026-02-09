@@ -340,7 +340,7 @@ test("should process order completely") {
 Speed up local development:
 
 ```kotlin
-TestSystem {
+Stove {
     keepDependenciesRunning()  // Containers stay running between test runs
 }.with {
     // ...
