@@ -318,7 +318,11 @@ class HttpSystem(
       action = "GET $uri",
       input = queryParams.takeIf { it.isNotEmpty() }.toOption(),
       output = "Status: ${response.status.value}".some(),
-      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      metadata = mapOf(
+        "status" to response.status.value,
+        "headers" to headers,
+        "response" to response.bodyAsText()
+      ),
       expected = "Response matching expectation".some()
     ) {
       expect(response.toBodilessResponse())
@@ -445,7 +449,11 @@ class HttpSystem(
     report(
       action = "POST $uri",
       input = body,
-      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      metadata = mapOf(
+        "status" to response.status.value,
+        "headers" to headers,
+        "response" to response.bodyAsText()
+      ),
       expected = "Response matching expectation".some()
     ) {
       expect(response.toBodilessResponse())
@@ -516,7 +524,11 @@ class HttpSystem(
     report(
       action = "PUT $uri",
       input = body,
-      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      metadata = mapOf(
+        "status" to response.status.value,
+        "headers" to headers,
+        "response" to response.bodyAsText()
+      ),
       expected = "Response matching expectation".some()
     ) {
       expect(response.toBodilessResponse())
@@ -587,7 +599,11 @@ class HttpSystem(
     report(
       action = "PATCH $uri",
       input = body,
-      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      metadata = mapOf(
+        "status" to response.status.value,
+        "headers" to headers,
+        "response" to response.bodyAsText()
+      ),
       expected = "Response matching expectation".some()
     ) {
       expect(response.toBodilessResponse())
@@ -658,7 +674,11 @@ class HttpSystem(
     }
     report(
       action = "DELETE $uri",
-      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      metadata = mapOf(
+        "status" to response.status.value,
+        "headers" to headers,
+        "response" to response.bodyAsText()
+      ),
       expected = "Response matching expectation".some()
     ) {
       expect(response.toBodilessResponse())
@@ -705,7 +725,11 @@ class HttpSystem(
     }
     report(
       action = "HEAD $uri",
-      metadata = mapOf("status" to response.status.value, "headers" to headers),
+      metadata = mapOf(
+        "status" to response.status.value,
+        "headers" to headers,
+        "response" to response.bodyAsText()
+      ),
       expected = "Response matching expectation".some()
     ) {
       expect(response.toBodilessResponse())
