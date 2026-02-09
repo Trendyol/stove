@@ -1308,6 +1308,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#migration-type-aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Type Aliases
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1678,6 +1689,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#migration-type-aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Type Aliases
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1921,6 +1943,7 @@
 <li><strong>MySQL Support</strong>: New <code>stove-mysql</code> module for testing against MySQL databases</li>
 <li><strong>WireMock Test Scoping</strong>: WireMock snapshots are now scoped to the current test for cleaner failure reports</li>
 <li><strong>Dynamic Port Allocation</strong>: WireMock now defaults to <code>port = 0</code> and gRPC Mock supports it -- no more port conflicts in CI</li>
+<li><strong>Migration Type Aliases</strong>: <code>PostgresqlMigration</code>, <code>MongodbMigration</code>, etc. -- no more remembering <code>DatabaseMigration&lt;XyzContext&gt;</code></li>
 <li><strong>Elasticsearch 9 Support</strong>: Adapted to work with Elasticsearch 9.x</li>
 <li><strong>Spring Showcase Recipe</strong>: A comprehensive example project demonstrating all Stove features together</li>
 </ul>
@@ -2051,6 +2074,59 @@
 </ul>
 <p>This is the best starting point for understanding how Stove fits into a real project.</p>
 <hr />
+<h3 id="migration-type-aliases">Migration Type Aliases<a class="headerlink" href="#migration-type-aliases" title="Permanent link">&para;</a></h3>
+<p>Each module that supports migrations now provides a convenient type alias, so you no longer need to remember <code>DatabaseMigration&lt;PostgresSqlMigrationContext&gt;</code> and similar verbose signatures:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Before</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kd">class</span><span class="w"> </span><span class="nc">CreateUsersTable</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">DatabaseMigration</span><span class="o">&lt;</span><span class="n">PostgresSqlMigrationContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1">// After</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="kd">class</span><span class="w"> </span><span class="nc">CreateUsersTable</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">PostgresqlMigration</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>Available aliases:</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Type Alias</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>stove-postgres</td>
+<td><code>PostgresqlMigration</code></td>
+</tr>
+<tr>
+<td>stove-mysql</td>
+<td><code>MySqlMigration</code></td>
+</tr>
+<tr>
+<td>stove-mssql</td>
+<td><code>MsSqlMigration</code></td>
+</tr>
+<tr>
+<td>stove-mongodb</td>
+<td><code>MongodbMigration</code></td>
+</tr>
+<tr>
+<td>stove-couchbase</td>
+<td><code>CouchbaseMigration</code></td>
+</tr>
+<tr>
+<td>stove-elasticsearch</td>
+<td><code>ElasticsearchMigration</code></td>
+</tr>
+<tr>
+<td>stove-redis</td>
+<td><code>RedisMigration</code></td>
+</tr>
+<tr>
+<td>stove-kafka</td>
+<td><code>KafkaMigration</code></td>
+</tr>
+</tbody>
+</table>
+<p>The generic <code>DatabaseMigration&lt;T&gt;</code> interface remains fully supported -- the aliases are purely additive.</p>
+<hr />
 <h2 id="improvements">Improvements<a class="headerlink" href="#improvements" title="Permanent link">&para;</a></h2>
 <h3 id="elasticsearch-9-support">Elasticsearch 9 Support<a class="headerlink" href="#elasticsearch-9-support" title="Permanent link">&para;</a></h3>
 <p><code>stove-elasticsearch</code> now works with Elasticsearch 9.x (specifically 9.3.0). The module adapts to the updated client API automatically.</p>
@@ -2105,20 +2181,20 @@
 </ul>
 <hr />
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:0.21.0&quot;</span><span class="p">))</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-extensions-kotest&quot;</span><span class="p">)</span>
-</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="c1">// Add components as needed</span>
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="p">}</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:0.21.0&quot;</span><span class="p">))</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-extensions-kotest&quot;</span><span class="p">)</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="c1">// Add components as needed</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>For snapshot versions:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://central.sonatype.com/repository/maven-snapshots&quot;</span><span class="p">)</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="p">}</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://central.sonatype.com/repository/maven-snapshots&quot;</span><span class="p">)</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="p">}</span>
 </span></code></pre></div>
 
 
