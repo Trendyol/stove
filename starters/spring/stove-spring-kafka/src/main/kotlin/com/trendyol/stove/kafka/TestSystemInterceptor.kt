@@ -109,8 +109,6 @@ class TestSystemKafkaInterceptor<K : Any, V : Any>(
       val outcome = deserializeCatching(it.value, clazz)
       outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
     }
-
-    throwIfFailed(clazz, condition)
   }
 
   private fun extractCause(
@@ -145,7 +143,11 @@ class TestSystemKafkaInterceptor<K : Any, V : Any>(
           it.reason
         )
       )
-    }.forEach { throw it.reason }
+    }.forEach {
+      throw AssertionError(
+        "Message was expected to be consumed successfully, but failed: $it \n ${dumpMessages()}"
+      )
+    }
 
   private fun <T : Any> throwIfSucceeded(
     clazz: KClass<T>,
