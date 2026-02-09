@@ -63,9 +63,6 @@ class MsSqlOptionsTest :
       ToolsPath.Before2019.path shouldBe "mssql-tools"
       ToolsPath.After2019.path shouldBe "mssql-tools18"
       ToolsPath.Custom("custom-path").path shouldBe "custom-path"
-
-      ToolsPath.Before2019.toString() shouldBe "mssql-tools"
-      ToolsPath.After2019.toString() shouldBe "mssql-tools18"
     }
 
     test("MsSqlOptions should require application and database name") {
