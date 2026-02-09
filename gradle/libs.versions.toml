@@ -149,7 +149,7 @@ elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-cl
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.3.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.4.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.28" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.2.1.jre11" }
 
