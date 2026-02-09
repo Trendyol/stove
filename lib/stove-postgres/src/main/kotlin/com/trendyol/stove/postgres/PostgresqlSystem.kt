@@ -190,6 +190,7 @@ class PostgresqlSystem internal constructor(
   @StoveDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
+    parameters: List<Parameter<*>> = emptyList(),
     crossinline mapper: (Row) -> T,
     crossinline assertion: (List<T>) -> Unit
   ): PostgresqlSystem {
@@ -198,7 +199,7 @@ class PostgresqlSystem internal constructor(
       input = arrow.core.Some(query.trim()),
       metadata = mapOf("sql" to query.trim())
     ) {
-      val results = sqlOperations.select(query) { mapper(it) }
+      val results = sqlOperations.select(sql = query, parameters = parameters) { mapper(it) }
       assertion(results)
       results
     }
@@ -206,13 +207,13 @@ class PostgresqlSystem internal constructor(
   }
 
   @StoveDsl
-  suspend fun shouldExecute(sql: String): PostgresqlSystem {
+  suspend fun shouldExecute(sql: String, parameters: List<Parameter<*>> = emptyList()): PostgresqlSystem {
     report(
       action = "Execute SQL",
       input = arrow.core.Some(sql.trim()),
       metadata = mapOf("sql" to sql.trim())
     ) {
-      val affectedRows = sqlOperations.execute(sql)
+      val affectedRows = sqlOperations.execute(sql = sql, parameters = parameters)
       check(affectedRows >= 0) { "Failed to execute sql: $sql" }
       "$affectedRows row(s) affected"
     }

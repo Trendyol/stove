@@ -1,9 +1,10 @@
 public final class com/trendyol/stove/rdbms/NativeSqlOperations : java/lang/AutoCloseable {
 	public fun <init> (Lkotliquery/Session;)V
 	public fun close ()V
-	public final fun execute (Ljava/lang/String;[Lkotliquery/Parameter;)I
-	public static synthetic fun execute$default (Lcom/trendyol/stove/rdbms/NativeSqlOperations;Ljava/lang/String;[Lkotliquery/Parameter;ILjava/lang/Object;)I
-	public final fun select (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public final fun execute (Ljava/lang/String;Ljava/util/List;)I
+	public static synthetic fun execute$default (Lcom/trendyol/stove/rdbms/NativeSqlOperations;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)I
+	public final fun select (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public static synthetic fun select$default (Lcom/trendyol/stove/rdbms/NativeSqlOperations;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
 }
 
 public abstract class com/trendyol/stove/rdbms/RelationalDatabaseContext {

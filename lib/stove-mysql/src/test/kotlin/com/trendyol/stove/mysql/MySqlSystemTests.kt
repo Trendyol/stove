@@ -4,6 +4,7 @@ import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import kotliquery.param
 
 /**
  * MySQL system tests that run against both container-based and provided instances.
@@ -126,6 +127,86 @@ class MySqlSystemTests :
           ) { actual ->
             actual.size shouldBeGreaterThan 0
             actual.first().description shouldBe testCase.name.name
+          }
+        }
+      }
+    }
+
+    test("should work with parameterized queries") {
+      stove {
+        mysql {
+          shouldExecute("DROP TABLE IF EXISTS Products")
+          shouldExecute(
+            """
+            CREATE TABLE IF NOT EXISTS Products (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              name VARCHAR (100) NOT NULL,
+              price DECIMAL(10,2) NOT NULL,
+              category VARCHAR (50) NOT NULL
+            )
+            """.trimIndent()
+          )
+
+          // Insert with parameters
+          shouldExecute(
+            sql = "INSERT INTO Products (name, price, category) VALUES (?, ?, ?)",
+            parameters = listOf("Laptop".param(), 999.99.param(), "Electronics".param())
+          )
+
+          shouldExecute(
+            sql = "INSERT INTO Products (name, price, category) VALUES (?, ?, ?)",
+            parameters = listOf("Mouse".param(), 29.99.param(), "Electronics".param())
+          )
+
+          shouldExecute(
+            sql = "INSERT INTO Products (name, price, category) VALUES (?, ?, ?)",
+            parameters = listOf("Desk".param(), 299.99.param(), "Furniture".param())
+          )
+
+          data class Product(
+            val id: Long,
+            val name: String,
+            val price: Double,
+            val category: String
+          )
+
+          // Query with parameters
+          shouldQuery<Product>(
+            query = "SELECT * FROM Products WHERE category = ? ORDER BY price",
+            parameters = listOf("Electronics".param()),
+            mapper = { row ->
+              Product(
+                row.long("id"),
+                row.string("name"),
+                row.double("price"),
+                row.string("category")
+              )
+            }
+          ) { actual ->
+            actual.size shouldBe 2
+            actual.first().name shouldBe "Mouse"
+            actual.last().name shouldBe "Laptop"
+          }
+
+          // Query with multiple parameters
+          shouldQuery<Product>(
+            query = "SELECT * FROM Products WHERE category = ? AND price > ?",
+            parameters = listOf("Electronics".param(), 50.0.param()),
+            mapper = { row ->
+              Product(
+                row.long("id"),
+                row.string("name"),
+                row.double("price"),
+                row.string("category")
+              )
+            }
+          ) { actual ->
+            actual.size shouldBe 1
+            actual.first().apply {
+              name shouldBe "Laptop"
+              price shouldBe 999.99
+              category shouldBe "Electronics"
+            }
           }
         }
       }

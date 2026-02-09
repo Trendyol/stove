@@ -4,6 +4,7 @@ import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import kotliquery.param
 
 /**
  * PostgreSQL system tests that run against both container-based and provided instances.
@@ -139,6 +140,81 @@ class PostgresqlSystemTests :
           ) { actual ->
             actual.size shouldBeGreaterThan 0
             actual.first().description shouldBe testCase.name.name
+          }
+        }
+      }
+    }
+
+    test("should work with parameterized queries") {
+      stove {
+        postgresql {
+          shouldExecute(
+            """
+            DROP TABLE IF EXISTS Users;
+            CREATE TABLE IF NOT EXISTS Users (
+              id serial PRIMARY KEY,
+              name VARCHAR (100) NOT NULL,
+              age INT NOT NULL,
+              email VARCHAR (100) NOT NULL
+            );
+            """.trimIndent()
+          )
+
+          // Insert with parameters
+          shouldExecute(
+            sql = "INSERT INTO Users (name, age, email) VALUES (?, ?, ?)",
+            parameters = listOf("Alice".param(), 30.param(), "alice@example.com".param())
+          )
+
+          shouldExecute(
+            sql = "INSERT INTO Users (name, age, email) VALUES (?, ?, ?)",
+            parameters = listOf("Bob".param(), 25.param(), "bob@example.com".param())
+          )
+
+          data class User(
+            val id: Long,
+            val name: String,
+            val age: Int,
+            val email: String
+          )
+
+          // Query with parameters
+          shouldQuery<User>(
+            query = "SELECT * FROM Users WHERE age > ? ORDER BY age",
+            parameters = listOf(20.param()),
+            mapper = { row ->
+              User(
+                row.long("id"),
+                row.string("name"),
+                row.int("age"),
+                row.string("email")
+              )
+            }
+          ) { actual ->
+            actual.size shouldBe 2
+            actual.first().name shouldBe "Bob"
+            actual.last().name shouldBe "Alice"
+          }
+
+          // Query with multiple parameters
+          shouldQuery<User>(
+            query = "SELECT * FROM Users WHERE name = ? AND age = ?",
+            parameters = listOf("Alice".param(), 30.param()),
+            mapper = { row ->
+              User(
+                row.long("id"),
+                row.string("name"),
+                row.int("age"),
+                row.string("email")
+              )
+            }
+          ) { actual ->
+            actual.size shouldBe 1
+            actual.first().apply {
+              name shouldBe "Alice"
+              age shouldBe 30
+              email shouldBe "alice@example.com"
+            }
           }
         }
       }

@@ -10,6 +10,7 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import kotliquery.param
 import org.slf4j.*
 import org.testcontainers.mssqlserver.MSSQLServerContainer
 import org.testcontainers.utility.DockerImageName
@@ -229,6 +230,86 @@ class MssqlSystemTests :
               firstName shouldBe "John"
               address shouldBe "123 Main St"
               city shouldBe "Springfield"
+            }
+          }
+        }
+      }
+    }
+
+    should("work with parameterized queries") {
+      stove {
+        mssql {
+          // Insert with parameters
+          shouldExecute(
+            sql = "insert into Person values (?, ?, ?, ?, ?)",
+            parameters = listOf(
+              2.param(),
+              "Smith".param(),
+              "Jane".param(),
+              "456 Oak Ave".param(),
+              "Boston".param()
+            )
+          )
+
+          shouldExecute(
+            sql = "insert into Person values (?, ?, ?, ?, ?)",
+            parameters = listOf(
+              3.param(),
+              "Johnson".param(),
+              "Mike".param(),
+              "789 Pine Rd".param(),
+              "Boston".param()
+            )
+          )
+
+          // Query with parameters
+          shouldQuery<Person>(
+            query = "select * from Person where City = ? order by PersonID",
+            parameters = listOf("Boston".param()),
+            mapper = {
+              Person(
+                it.int(1),
+                it.string(2),
+                it.string(3),
+                it.string(4),
+                it.string(5)
+              )
+            }
+          ) { result ->
+            result.size shouldBe 2
+            result.first().apply {
+              personId shouldBe 2
+              lastName shouldBe "Smith"
+              firstName shouldBe "Jane"
+              city shouldBe "Boston"
+            }
+            result.last().apply {
+              personId shouldBe 3
+              lastName shouldBe "Johnson"
+              firstName shouldBe "Mike"
+              city shouldBe "Boston"
+            }
+          }
+
+          // Query with multiple parameters
+          shouldQuery<Person>(
+            query = "select * from Person where LastName = ? and FirstName = ?",
+            parameters = listOf("Smith".param(), "Jane".param()),
+            mapper = {
+              Person(
+                it.int(1),
+                it.string(2),
+                it.string(3),
+                it.string(4),
+                it.string(5)
+              )
+            }
+          ) { result ->
+            result.size shouldBe 1
+            result.first().apply {
+              lastName shouldBe "Smith"
+              firstName shouldBe "Jane"
+              address shouldBe "456 Oak Ave"
             }
           }
         }
