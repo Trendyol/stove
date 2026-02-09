@@ -2,7 +2,7 @@
 
 Stove's built-in systems cover databases, Kafka, HTTP, gRPC, and more -- but your application is unique. Maybe you use a job scheduler, publish domain events, need to control time in tests, or talk to a service over a custom protocol. Custom systems let you bring **anything** into the Stove DSL so your tests read like this:
 
-```kotlin
+```kotlin hl_lines="7-10"
 test("should send welcome email after user signs up") {
     stove {
         http {
@@ -28,7 +28,7 @@ Every custom system has three pieces:
 
 Implement `PluggedSystem` and pick a lifecycle interface that fits your needs:
 
-```kotlin
+```kotlin hl_lines="1-2 11-16"
 class DbSchedulerSystem(
     override val stove: Stove
 ) : PluggedSystem, AfterRunAwareWithContext<ApplicationContext> {
@@ -64,7 +64,7 @@ The available lifecycle interfaces are:
 
 Two extension functions wire your system into Stove's DSL:
 
-```kotlin
+```kotlin hl_lines="1-3 5-8"
 @StoveDsl
 fun WithDsl.dbScheduler(): Stove =
     this.stove.getOrRegister(DbSchedulerSystem(this.stove)).let { this.stove }
@@ -83,7 +83,7 @@ The first one registers the system during setup (`.with { dbScheduler() }`). The
 
 If your system needs a component inside the application (like a listener), register it as a test bean:
 
-```kotlin
+```kotlin hl_lines="4-6"
 springBoot(
     runner = { params ->
         runApplication<MyApp>(*params) {
@@ -201,7 +201,7 @@ Stove collects all `configuration()` outputs and passes them to the application 
 
 You don't always need a full system. Sometimes an extension function on an existing system is enough:
 
-```kotlin
+```kotlin hl_lines="1-2 15-17"
 @StoveDsl
 suspend fun KafkaSystem.publishWithCorrelationId(
     topic: String,

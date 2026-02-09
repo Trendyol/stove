@@ -18,7 +18,7 @@ Make sure you have these installed:
 
 Add Stove to your `build.gradle.kts`:
 
-```kotlin
+```kotlin hl_lines="7-8 10-11 14-15"
 repositories {
     mavenCentral()
 }
@@ -156,7 +156,7 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
 
 === "Kotest"
 
-    ```kotlin
+    ```kotlin hl_lines="11-13 16 30"
     // src/test-e2e/kotlin/e2e/TestConfig.kt
     import com.trendyol.stove.extensions.kotest.StoveKotestExtension
     import com.trendyol.stove.system.Stove
@@ -373,7 +373,7 @@ Stove()
 
 Here's where Stove really shines. You can write tests that touch multiple systems and verify everything works together:
 
-```kotlin
+```kotlin hl_lines="4 8 17 31 38 46"
 import com.trendyol.stove.system.stove
 
 test("should create order and publish event") {
@@ -466,7 +466,7 @@ Now that you're up and running, here's what to explore next:
 
 Starting containers takes time. During development, you can keep them running between test runs to speed things up:
 
-```kotlin
+```kotlin hl_lines="2"
 Stove {
     keepDependenciesRunning()
 }.with {

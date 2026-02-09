@@ -92,7 +92,7 @@ Two steps. That's it.
 
 ### Step 1: Enable tracing in your Stove config
 
-```kotlin
+```kotlin hl_lines="3-5"
 Stove()
     .with {
         tracing {
@@ -107,7 +107,7 @@ Stove()
 
 Copy [StoveTracingConfiguration.kt](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
 
-```kotlin
+```kotlin hl_lines="3-5"
 import com.trendyol.stove.gradle.configureStoveTracing
 
 configureStoveTracing {
@@ -169,7 +169,7 @@ Every HTTP request gets a `traceparent` header. Every Kafka message gets trace h
 
 Beyond automatic failure reports, you can actively query and assert on traces using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it did.
 
-```kotlin
+```kotlin hl_lines="9-13"
 test("order processing should call payment service") {
     stove {
         http {
@@ -243,7 +243,7 @@ tracing {
 
 Here's a realistic scenario: an HTTP request triggers order processing, which publishes a Kafka event, which is consumed and writes to the database.
 
-```kotlin
+```kotlin hl_lines="28-33"
 test("should create order and notify downstream services") {
     stove {
         val orderId = UUID.randomUUID().toString()
@@ -307,7 +307,7 @@ Summary: 8 spans, 0 failures, total: 250ms
 
 Configure tracing behavior in your Stove setup:
 
-```kotlin
+```kotlin hl_lines="2"
 tracing {
     enableSpanReceiver()              // Required: starts the span receiver
     spanCollectionTimeout(10.seconds) // How long to wait for spans (default: 5s)
@@ -329,7 +329,7 @@ tracing {
 
 Configure the OpenTelemetry agent via `configureStoveTracing` in your `build.gradle.kts`:
 
-```kotlin
+```kotlin hl_lines="2"
 configureStoveTracing {
     serviceName = "my-service"
     testTaskNames = listOf("integrationTest") // Only apply to specific tasks

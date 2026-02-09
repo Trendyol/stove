@@ -1,6 +1,8 @@
 site_name: "Stove"
+site_description: "End-to-end testing framework for the JVM"
 repo_url: https://github.com/trendyol/stove
-edit_uri: https://github.com/trendyol/stove/edit/main/docs
+repo_name: trendyol/stove
+edit_uri: edit/main/docs/
 extra_css:
   - css/custom.css
 plugins:
@@ -39,59 +41,83 @@ nav:
 theme:
   name: material
   logo: assets/logo.png
+  favicon: assets/logo.png
   features:
-    - content.code.annotate
-    - content.tabs.link
-    - content.tooltips
-    - header.autohide
-    - navigation.top
+    # Navigation
+    - navigation.instant
+    - navigation.instant.progress
     - navigation.tracking
+    - navigation.tabs
     - navigation.sections
     - navigation.indexes
+    - navigation.top
     - navigation.footer
+    - navigation.path
+    # Search
     - search.highlight
     - search.share
     - search.suggest
-    - toc.integrate
+    # Content
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    # Header
+    - header.autohide
+    # Table of contents
+    - toc.follow
 
   palette:
     - scheme: default
-      primary: indigo
-      accent: indigo
+      primary: teal
+      accent: amber
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-sunny
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: teal
+      accent: amber
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-night
         name: Switch to light mode
   font:
-    text: Roboto
-    code: Roboto Mono
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
 
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
-  - tables
-  - attr_list
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
-  - toc:
-      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - attr_list
+  - md_in_html
+  - def_list
+  - toc:
+      permalink: true
 
 extra:
   social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/trendyol/stove
     - icon: fontawesome/regular/building
       link: https://trendyol.github.io/
