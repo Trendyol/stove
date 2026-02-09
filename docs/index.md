@@ -17,7 +17,7 @@ Want to know more about why we built Stove? Check out the [Medium article](https
 
 ## Why Stove?
 
-The JVM ecosystem has tons of frameworks for building applications, but when it comes to integration, component, or e2e testing, there's no single framework that works across all tech stacks. Testcontainers exists, but you still end up writing a lot of boilerplate to wire it up with your specific stack.
+The JVM ecosystem has great frameworks for building applications, but when it comes to integration, component, or e2e testing, there's no single framework that works across all tech stacks. Testcontainers exists, but you still end up writing a lot of boilerplate to wire it up with your specific stack.
 
 We built Stove to solve this. We wanted to boost developer productivity while keeping code quality high, and we needed it to work across different tech stacks:
 
