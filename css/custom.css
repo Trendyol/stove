@@ -1,18 +1,30 @@
-/* Maximum space for text block */
+/* Wider content area */
 .md-grid {
-    /*max-width: 100%;*/
-    margin-top: 0
+    max-width: 1400px;
+    margin-top: 0;
 }
 
+/* Responsive images */
 img {
     width: 100%;
 }
 
+/* Social link styling */
 .md-social__link {
     width: max-content;
 }
 
-.md-social__link:after {
-    content: "❤️ Trendyol";
-    display: flex;
+/* Code block refinements */
+.highlight code {
+    font-size: 0.75rem;
+}
+
+/* Slightly tighter line height in code for density */
+code {
+    font-size: 0.82em;
+}
+
+/* Admonition title font weight */
+.md-typeset .admonition-title {
+    font-weight: 600;
 }
