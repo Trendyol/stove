@@ -967,7 +967,7 @@
   <span class="md-ellipsis">
     
   
-    Distributed Tracing
+    Tracing
   
 
     
@@ -1243,10 +1243,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#distributed-tracing" class="md-nav__link">
+  <a href="#tracing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Distributed Tracing
+        Tracing
       
     </span>
   </a>
@@ -1624,10 +1624,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#distributed-tracing" class="md-nav__link">
+  <a href="#tracing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Distributed Tracing
+        Tracing
       
     </span>
   </a>
@@ -1938,7 +1938,7 @@
 <p><strong>Expected Release:</strong> February 2026</p>
 <p>This release introduces:</p>
 <ul>
-<li><strong>Distributed Tracing</strong>: See the full execution trace of your application when a test fails -- every controller, database query, Kafka message, and HTTP call with timing and failure points</li>
+<li><strong>Tracing</strong>: See the full execution trace of your application when a test fails -- every controller, database query, Kafka message, and HTTP call with timing and failure points</li>
 <li><strong>gRPC Mocking</strong>: Mock external gRPC services in your tests with a type-safe DSL</li>
 <li><strong>MySQL Support</strong>: New <code>stove-mysql</code> module for testing against MySQL databases</li>
 <li><strong>WireMock Test Scoping</strong>: WireMock snapshots are now scoped to the current test for cleaner failure reports</li>
@@ -1949,7 +1949,7 @@
 </ul>
 <hr />
 <h2 id="new-features">New Features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h2>
-<h3 id="distributed-tracing">Distributed Tracing<a class="headerlink" href="#distributed-tracing" title="Permanent link">&para;</a></h3>
+<h3 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h3>
 <p>When a test fails, you no longer have to guess what happened inside your application. Stove captures the <strong>entire call chain</strong> -- every controller method, database query, Kafka message, and HTTP call -- and displays it as a trace tree in the failure report:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>═══════════════════════════════════════════════════════════════════════════════
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>EXECUTION TRACE (Call Chain)
@@ -1990,7 +1990,7 @@
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">executionTimeShouldBeLessThan</span><span class="p">(</span><span class="m">500.</span><span class="n">milliseconds</span><span class="p">)</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>See the <a href="../../Components/15-tracing/">Distributed Tracing documentation</a> for full details.</p>
+<p>See the <a href="../../Components/15-tracing/">Tracing documentation</a> for full details.</p>
 <hr />
 <h3 id="grpc-mocking">gRPC Mocking<a class="headerlink" href="#grpc-mocking" title="Permanent link">&para;</a></h3>
 <p>New <code>stove-grpc-mock</code> module for mocking external gRPC services in your tests. This lets you test gRPC client code without running the actual upstream services.</p>
@@ -2068,7 +2068,7 @@
 <li>Kafka producers and consumers</li>
 <li>gRPC server and client with mocked upstream</li>
 <li>WireMock for external HTTP APIs</li>
-<li>Distributed tracing</li>
+<li>Tracing</li>
 <li>Database migrations</li>
 <li>db-scheduler integration</li>
 </ul>
@@ -2170,7 +2170,7 @@
 <h3 id="from-020x-to-0210">From 0.20.x to 0.21.0<a class="headerlink" href="#from-020x-to-0210" title="Permanent link">&para;</a></h3>
 <p>This is a <strong>non-breaking</strong> release. All existing APIs remain compatible.</p>
 <h4 id="new-features-to-opt-into">New Features to Opt Into<a class="headerlink" href="#new-features-to-opt-into" title="Permanent link">&para;</a></h4>
-<p><strong>Distributed Tracing</strong> -- Add <code>stove-tracing</code> to your dependencies and follow the <a href="../../Components/15-tracing/">setup guide</a>.</p>
+<p><strong>Tracing</strong> -- Add <code>stove-tracing</code> to your dependencies and follow the <a href="../../Components/15-tracing/">setup guide</a>.</p>
 <p><strong>gRPC Mocking</strong> -- Add <code>stove-grpc-mock</code> to your dependencies if you need to mock external gRPC services. See the <a href="../../Components/14-grpc-mock/">gRPC Mocking documentation</a>.</p>
 <p><strong>MySQL</strong> -- Add <code>stove-mysql</code> if you're testing against MySQL. See the <a href="../../Components/16-mysql/">MySQL documentation</a>.</p>
 <h4 id="recommended-updates">Recommended Updates<a class="headerlink" href="#recommended-updates" title="Permanent link">&para;</a></h4>
