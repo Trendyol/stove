@@ -45,7 +45,7 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+class TestIndexMigrator : ElasticsearchMigration {
   override val order: Int = MigrationPriority.HIGHEST.value
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -60,7 +60,7 @@ class TestIndexMigrator : DatabaseMigration<ElasticsearchClient> {
   }
 }
 
-class AnotherIndexMigrator : DatabaseMigration<ElasticsearchClient> {
+class AnotherIndexMigrator : ElasticsearchMigration {
   override val order: Int = MigrationPriority.HIGHEST.value + 1
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 

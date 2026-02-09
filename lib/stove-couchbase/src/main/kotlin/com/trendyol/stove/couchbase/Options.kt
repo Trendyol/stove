@@ -106,6 +106,19 @@ class ProvidedCouchbaseSystemOptions(
   override val runMigrationsForProvided: Boolean = runMigrations
 }
 
+/**
+ * Convenience type alias for Couchbase migrations.
+ *
+ * Instead of writing `DatabaseMigration<Cluster>`, use `CouchbaseMigration`:
+ * ```kotlin
+ * class MyMigration : CouchbaseMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: Cluster) { ... }
+ * }
+ * ```
+ */
+typealias CouchbaseMigration = DatabaseMigration<Cluster>
+
 @StoveDsl
 data class CouchbaseContext(
   val bucket: BucketDefinition,

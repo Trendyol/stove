@@ -12,14 +12,31 @@ import com.trendyol.stove.system.abstractions.AfterRunAware
  * - Seeding reference data
  * - Any setup that requires a running database
  *
+ * ## Module-Specific Type Aliases
+ *
+ * Each Stove module provides a convenience type alias so you don't need to
+ * remember the generic `DatabaseMigration<XyzContext>` form:
+ *
+ * | Module          | Type Alias                | Resolves To                                    |
+ * |-----------------|---------------------------|------------------------------------------------|
+ * | stove-postgres  | `PostgresqlMigration`     | `DatabaseMigration<PostgresSqlMigrationContext>`|
+ * | stove-mysql     | `MySqlMigration`          | `DatabaseMigration<MySqlMigrationContext>`      |
+ * | stove-mssql     | `MsSqlMigration`          | `DatabaseMigration<SqlMigrationContext>`        |
+ * | stove-mongodb   | `MongodbMigration`        | `DatabaseMigration<MongodbMigrationContext>`    |
+ * | stove-couchbase | `CouchbaseMigration`      | `DatabaseMigration<Cluster>`                   |
+ * | stove-elasticsearch | `ElasticsearchMigration` | `DatabaseMigration<ElasticsearchClient>`    |
+ * | stove-redis     | `RedisMigration`          | `DatabaseMigration<RedisMigrationContext>`      |
+ * | stove-kafka     | `KafkaMigration`          | `DatabaseMigration<KafkaMigrationContext>`      |
+ *
  * ## Creating a Migration
  *
  * ```kotlin
- * class CreateUsersTableMigration : DatabaseMigration<Connection> {
+ * // Using the module-specific type alias (recommended):
+ * class CreateUsersTableMigration : PostgresqlMigration {
  *     override val order: Int = MigrationPriority.HIGHEST.value
  *
- *     override suspend fun execute(connection: Connection) {
- *         connection.createStatement().execute("""
+ *     override suspend fun execute(connection: PostgresSqlMigrationContext) {
+ *         connection.operations.execute("""
  *             CREATE TABLE IF NOT EXISTS users (
  *                 id SERIAL PRIMARY KEY,
  *                 name VARCHAR(255) NOT NULL,
@@ -29,17 +46,14 @@ import com.trendyol.stove.system.abstractions.AfterRunAware
  *     }
  * }
  *
- * class SeedTestDataMigration : DatabaseMigration<Connection> {
+ * // Or using the generic interface directly:
+ * class SeedTestDataMigration : DatabaseMigration<PostgresSqlMigrationContext> {
  *     override val order: Int = 100  // Run after schema creation
  *
- *     override suspend fun execute(connection: Connection) {
- *         connection.prepareStatement(
- *             "INSERT INTO users (name, email) VALUES (?, ?)"
- *         ).apply {
- *             setString(1, "Test User")
- *             setString(2, "test@example.com")
- *             executeUpdate()
- *         }
+ *     override suspend fun execute(connection: PostgresSqlMigrationContext) {
+ *         connection.operations.execute(
+ *             "INSERT INTO users (name, email) VALUES ('Test User', 'test@example.com')"
+ *         )
  *     }
  * }
  * ```
@@ -104,17 +118,17 @@ interface DatabaseMigration<in TConnection> {
  * ## Usage
  *
  * ```kotlin
- * class SchemaCreation : DatabaseMigration<Connection> {
+ * class SchemaCreation : PostgresqlMigration {
  *     override val order = MigrationPriority.HIGHEST.value  // Runs first
  *     // ...
  * }
  *
- * class DataSeeding : DatabaseMigration<Connection> {
+ * class DataSeeding : PostgresqlMigration {
  *     override val order = MigrationPriority.LOWEST.value   // Runs last
  *     // ...
  * }
  *
- * class MiddleMigration : DatabaseMigration<Connection> {
+ * class MiddleMigration : PostgresqlMigration {
  *     override val order = 50  // Custom priority
  *     // ...
  * }

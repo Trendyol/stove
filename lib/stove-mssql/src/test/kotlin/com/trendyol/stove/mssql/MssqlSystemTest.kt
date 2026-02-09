@@ -24,7 +24,7 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class InitialMigration : DatabaseMigration<SqlMigrationContext> {
+class InitialMigration : MsSqlMigration {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   override val order: Int = MigrationPriority.HIGHEST.value + 1

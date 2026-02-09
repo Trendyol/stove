@@ -1,6 +1,5 @@
 package com.trendyol.stove.postgres
 
-import com.trendyol.stove.database.migrations.DatabaseMigration
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
@@ -20,7 +19,7 @@ class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun stop() = Unit
 }
 
-class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
+class InitialMigration : PostgresqlMigration {
   private val logger: Logger = LoggerFactory.getLogger(InitialMigration::class.java)
 
   override val order: Int = 1

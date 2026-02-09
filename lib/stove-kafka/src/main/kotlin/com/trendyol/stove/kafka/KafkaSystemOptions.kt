@@ -159,6 +159,19 @@ data class KafkaMigrationContext(
 )
 
 /**
+ * Convenience type alias for Kafka migrations.
+ *
+ * Instead of writing `DatabaseMigration<KafkaMigrationContext>`, use `KafkaMigration`:
+ * ```kotlin
+ * class MyMigration : KafkaMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: KafkaMigrationContext) { ... }
+ * }
+ * ```
+ */
+typealias KafkaMigration = DatabaseMigration<KafkaMigrationContext>
+
+/**
  * Suffixes for error and retry topics in the application.
  * Stove Kafka uses these suffixes to understand the intent of the topic and the message.
  */

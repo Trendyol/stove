@@ -149,6 +149,19 @@ data class SqlMigrationContext(
   val executeAsRoot: suspend (String) -> Unit
 )
 
+/**
+ * Convenience type alias for MSSQL migrations.
+ *
+ * Instead of writing `DatabaseMigration<SqlMigrationContext>`, use `MsSqlMigration`:
+ * ```kotlin
+ * class MyMigration : MsSqlMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: SqlMigrationContext) { ... }
+ * }
+ * ```
+ */
+typealias MsSqlMigration = DatabaseMigration<SqlMigrationContext>
+
 @StoveDsl
 data class MsSqlContext(
   val runtime: SystemRuntime,

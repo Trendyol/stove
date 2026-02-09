@@ -107,6 +107,19 @@ class ProvidedElasticsearchSystemOptions(
   override val runMigrationsForProvided: Boolean = runMigrations
 }
 
+/**
+ * Convenience type alias for Elasticsearch migrations.
+ *
+ * Instead of writing `DatabaseMigration<ElasticsearchClient>`, use `ElasticsearchMigration`:
+ * ```kotlin
+ * class MyMigration : ElasticsearchMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: ElasticsearchClient) { ... }
+ * }
+ * ```
+ */
+typealias ElasticsearchMigration = DatabaseMigration<ElasticsearchClient>
+
 data class ElasticSearchExposedConfiguration(
   val host: String,
   val port: Int,

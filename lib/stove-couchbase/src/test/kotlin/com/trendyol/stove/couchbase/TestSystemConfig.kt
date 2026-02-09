@@ -48,7 +48,7 @@ class ExtendedCouchbaseContainer(
 /**
  * Migration that creates the 'another' collection for testing.
  */
-class DefaultMigration : DatabaseMigration<Cluster> {
+class DefaultMigration : CouchbaseMigration {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   override val order: Int = MigrationPriority.HIGHEST.value

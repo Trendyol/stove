@@ -24,6 +24,19 @@ data class MongodbMigrationContext(
 )
 
 /**
+ * Convenience type alias for MongoDB migrations.
+ *
+ * Instead of writing `DatabaseMigration<MongodbMigrationContext>`, use `MongodbMigration`:
+ * ```kotlin
+ * class MyMigration : MongodbMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: MongodbMigrationContext) { ... }
+ * }
+ * ```
+ */
+typealias MongodbMigration = DatabaseMigration<MongodbMigrationContext>
+
+/**
  * Options for configuring the MongoDB system in container mode.
  */
 @StoveDsl

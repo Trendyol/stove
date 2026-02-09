@@ -41,6 +41,19 @@ data class RedisMigrationContext(
 )
 
 /**
+ * Convenience type alias for Redis migrations.
+ *
+ * Instead of writing `DatabaseMigration<RedisMigrationContext>`, use `RedisMigration`:
+ * ```kotlin
+ * class MyMigration : RedisMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: RedisMigrationContext) { ... }
+ * }
+ * ```
+ */
+typealias RedisMigration = DatabaseMigration<RedisMigrationContext>
+
+/**
  * Options for configuring the Redis system in container mode.
  */
 @StoveDsl

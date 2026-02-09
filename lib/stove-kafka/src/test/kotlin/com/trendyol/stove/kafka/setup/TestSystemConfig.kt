@@ -1,6 +1,5 @@
 package com.trendyol.stove.kafka.setup
 
-import com.trendyol.stove.database.migrations.DatabaseMigration
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.kafka.setup.example.KafkaTestShared
@@ -81,7 +80,7 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
 /**
  * Migration that creates additional topics for testing.
  */
-class CreateTestTopicsMigration : DatabaseMigration<KafkaMigrationContext> {
+class CreateTestTopicsMigration : KafkaMigration {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   override val order: Int = 1

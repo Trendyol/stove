@@ -127,6 +127,19 @@ data class PostgresSqlMigrationContext(
   val executeAsRoot: suspend (String) -> Unit
 )
 
+/**
+ * Convenience type alias for PostgreSQL migrations.
+ *
+ * Instead of writing `DatabaseMigration<PostgresSqlMigrationContext>`, use `PostgresqlMigration`:
+ * ```kotlin
+ * class MyMigration : PostgresqlMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: PostgresSqlMigrationContext) { ... }
+ * }
+ * ```
+ */
+typealias PostgresqlMigration = DatabaseMigration<PostgresSqlMigrationContext>
+
 internal class PostgresqlContext(
   val runtime: SystemRuntime,
   val options: PostgresqlOptions

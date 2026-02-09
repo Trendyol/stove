@@ -130,6 +130,19 @@ data class MySqlMigrationContext(
   val executeAsRoot: suspend (String) -> Unit
 )
 
+/**
+ * Convenience type alias for MySQL migrations.
+ *
+ * Instead of writing `DatabaseMigration<MySqlMigrationContext>`, use `MySqlMigration`:
+ * ```kotlin
+ * class MyMigration : MySqlMigration {
+ *   override val order: Int = 1
+ *   override suspend fun execute(connection: MySqlMigrationContext) { ... }
+ * }
+ * ```
+ */
+typealias MySqlMigration = DatabaseMigration<MySqlMigrationContext>
+
 internal class MySqlContext(
   val runtime: SystemRuntime,
   val options: MySqlOptions
