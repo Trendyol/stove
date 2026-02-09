@@ -290,6 +290,126 @@ class WebSocketTests :
         }
       }
     }
+
+    test("should send StoveWebSocketMessage.Binary and receive binary response") {
+      stove {
+        http {
+          webSocket("/binary") {
+            val data = byteArrayOf(10, 20, 30)
+            send(StoveWebSocketMessage.Binary(data))
+            val response = receiveBinary()
+            response shouldBe byteArrayOf(30, 20, 10)
+          }
+        }
+      }
+    }
+
+    test("should receive binary with timeout") {
+      stove {
+        http {
+          webSocket("/binary") {
+            send(byteArrayOf(1, 2, 3))
+            val response = receiveBinaryWithTimeout(5.seconds)
+            response.isSome() shouldBe true
+            response.getOrNull() shouldBe byteArrayOf(3, 2, 1)
+          }
+        }
+      }
+    }
+
+    test("should collect multiple binary messages") {
+      stove {
+        http {
+          webSocket("/binary") {
+            repeat(3) { i ->
+              send(byteArrayOf((i + 1).toByte()))
+            }
+            val responses = collectBinaries(count = 3, timeout = 10.seconds)
+            responses shouldHaveSize 3
+            responses[0] shouldBe byteArrayOf(1)
+            responses[1] shouldBe byteArrayOf(2)
+            responses[2] shouldBe byteArrayOf(3)
+          }
+        }
+      }
+    }
+
+    test("should use incoming flow for binary streaming") {
+      stove {
+        http {
+          webSocket("/binary") {
+            repeat(3) { i ->
+              send(byteArrayOf((i + 10).toByte()))
+            }
+            val messages = incomingBinaries()
+              .take(3)
+              .toList()
+
+            messages shouldHaveSize 3
+          }
+        }
+      }
+    }
+
+    test("should use generic incoming flow for mixed messages") {
+      stove {
+        http {
+          webSocket("/echo") {
+            send("Test message")
+            val messages = incoming()
+              .take(1)
+              .toList()
+
+            messages shouldHaveSize 1
+            (messages[0] is StoveWebSocketMessage.Text) shouldBe true
+            (messages[0] as StoveWebSocketMessage.Text).content shouldBe "Echo: Test message"
+          }
+        }
+      }
+    }
+  })
+
+class StoveWebSocketMessageTests :
+  FunSpec({
+    test("Binary equals should return true for same content") {
+      val a = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      val b = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      (a == b) shouldBe true
+    }
+
+    test("Binary equals should return false for different content") {
+      val a = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      val b = StoveWebSocketMessage.Binary(byteArrayOf(4, 5, 6))
+      (a == b) shouldBe false
+    }
+
+    test("Binary equals should return true for same instance") {
+      val a = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      (a == a) shouldBe true
+    }
+
+    @Suppress("EqualsNullCall")
+    test("Binary equals should return false for different type") {
+      val a = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      a.equals("not binary") shouldBe false
+    }
+
+    test("Binary hashCode should be consistent for same content") {
+      val a = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      val b = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      a.hashCode() shouldBe b.hashCode()
+    }
+
+    test("Binary hashCode should differ for different content") {
+      val a = StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3))
+      val b = StoveWebSocketMessage.Binary(byteArrayOf(4, 5, 6))
+      (a.hashCode() != b.hashCode()) shouldBe true
+    }
+
+    test("Text should have correct content") {
+      val msg = StoveWebSocketMessage.Text("hello")
+      msg.content shouldBe "hello"
+    }
   })
 
 class WebSocketUrlBuildingTests :

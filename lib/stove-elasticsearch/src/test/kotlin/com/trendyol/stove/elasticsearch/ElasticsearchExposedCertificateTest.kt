@@ -10,6 +10,52 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 
 class ElasticsearchExposedCertificateTest :
   FunSpec({
+
+    test("equals should return true for same byte content") {
+      val bytes1 = "test-cert-bytes".toByteArray()
+      val bytes2 = "test-cert-bytes".toByteArray()
+      val cert1 = ElasticsearchExposedCertificate(bytes1)
+      val cert2 = ElasticsearchExposedCertificate(bytes2)
+
+      (cert1 == cert2) shouldBe true
+    }
+
+    test("equals should return false for different byte content") {
+      val cert1 = ElasticsearchExposedCertificate("cert-a".toByteArray())
+      val cert2 = ElasticsearchExposedCertificate("cert-b".toByteArray())
+
+      (cert1 == cert2) shouldBe false
+    }
+
+    test("equals should return true for same instance") {
+      val cert = ElasticsearchExposedCertificate("test".toByteArray())
+
+      (cert == cert) shouldBe true
+    }
+
+    test("equals should return false for different type") {
+      val cert = ElasticsearchExposedCertificate("test".toByteArray())
+
+      cert.equals("not a certificate") shouldBe false
+      (cert == null) shouldBe false
+    }
+
+    test("hashCode should be consistent for same content") {
+      val bytes1 = "test-cert".toByteArray()
+      val bytes2 = "test-cert".toByteArray()
+      val cert1 = ElasticsearchExposedCertificate(bytes1)
+      val cert2 = ElasticsearchExposedCertificate(bytes2)
+
+      cert1.hashCode() shouldBe cert2.hashCode()
+    }
+
+    test("hashCode should differ for different content") {
+      val cert1 = ElasticsearchExposedCertificate("cert-a".toByteArray())
+      val cert2 = ElasticsearchExposedCertificate("cert-b".toByteArray())
+
+      cert1.hashCode() shouldNotBe cert2.hashCode()
+    }
+
     test("ser/de") {
       val state =
         """

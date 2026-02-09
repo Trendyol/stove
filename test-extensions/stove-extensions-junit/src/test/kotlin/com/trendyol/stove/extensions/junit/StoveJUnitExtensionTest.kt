@@ -2,7 +2,9 @@ package com.trendyol.stove.extensions.junit
 
 import arrow.core.some
 import com.trendyol.stove.http.*
+import com.trendyol.stove.reporting.ReportEntry
 import com.trendyol.stove.reporting.StoveTestContextHolder
+import com.trendyol.stove.reporting.StoveTestFailureException
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.wiremock.*
@@ -13,6 +15,7 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.ExtensionContext
 
 private val WIREMOCK_PORT = PortFinder.findAvailablePort()
 
@@ -172,5 +175,58 @@ class StoveJUnitExtensionTest {
         }
       }
     }
+  }
+
+  @Test
+  fun `handleTestExecutionException should enrich failures when reporter has recorded failures`() {
+    // Record a failure in the reporter so buildFullReport() returns non-empty
+    val reporter = Stove.reporter()
+    reporter.record(
+      ReportEntry.failure(
+        system = "TestSystem",
+        testId = reporter.currentTestId(),
+        action = "simulated action",
+        error = "simulated failure for enrichment test"
+      )
+    )
+
+    val extension = StoveJUnitExtension()
+    val originalError = AssertionError("Original test assertion failure")
+
+    // Create a stub ExtensionContext via Proxy since handleTestExecutionException
+    // doesn't use the context parameter
+    val stubContext = java.lang.reflect.Proxy.newProxyInstance(
+      ExtensionContext::class.java.classLoader,
+      arrayOf(ExtensionContext::class.java)
+    ) { _, _, _ -> null } as ExtensionContext
+
+    // handleTestExecutionException always throws - verify it wraps with StoveTestFailureException
+    val thrown = shouldThrow<StoveTestFailureException> {
+      extension.handleTestExecutionException(stubContext, originalError)
+    }
+
+    thrown.message shouldContain "Original test assertion failure"
+  }
+
+  @Test
+  fun `handleTestExecutionException should rethrow original when report is empty`() {
+    // Don't record any failures, so buildFullReport() returns empty
+    // Clear the current test report to ensure no prior failures
+    Stove.reporter().clear()
+
+    val extension = StoveJUnitExtension()
+    val originalError = IllegalStateException("Original error without enrichment")
+
+    val stubContext = java.lang.reflect.Proxy.newProxyInstance(
+      ExtensionContext::class.java.classLoader,
+      arrayOf(ExtensionContext::class.java)
+    ) { _, _, _ -> null } as ExtensionContext
+
+    // When report is empty, it should rethrow the original exception
+    val thrown = shouldThrow<IllegalStateException> {
+      extension.handleTestExecutionException(stubContext, originalError)
+    }
+
+    thrown.message shouldBe "Original error without enrichment"
   }
 }
