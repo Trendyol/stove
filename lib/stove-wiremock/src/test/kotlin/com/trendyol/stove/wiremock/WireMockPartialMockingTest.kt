@@ -33,7 +33,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"productId": $uniqueProductId, "quantity": 5, "customerName": "John Doe"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -64,7 +64,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"productId": $productId, "customerId": "$customerId", "extra": "ignored"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -95,7 +95,7 @@ class WireMockPartialMockingTest :
       // Request only has productId, missing customerId - should NOT match
       val requestBody = """{"productId": 123, "extra": "data"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -124,7 +124,7 @@ class WireMockPartialMockingTest :
       // Request has both fields but status has wrong value - should NOT match
       val requestBody = """{"productId": 123, "status": "inactive"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -150,7 +150,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"userId": "$userId", "name": "Updated Name", "email": "test@example.com"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .PUT(BodyPublishers.ofString(requestBody))
         .build()
@@ -177,7 +177,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"status": "$status", "updatedBy": "admin", "timestamp": 1234567890}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .method("PATCH", BodyPublishers.ofString(requestBody))
         .build()
@@ -204,7 +204,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"transactionId": "$transactionId", "amount": 99.99}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098/payments/credit-card"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL/payments/credit-card"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -230,7 +230,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"id": 1, "extra": "data"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -256,7 +256,7 @@ class WireMockPartialMockingTest :
 
       val requestBody = """{"user": {"id": 123, "name": "John"}, "action": "update"}"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -300,7 +300,7 @@ class WireMockPartialMockingTest :
         "timestamp": 1234567890
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -336,7 +336,7 @@ class WireMockPartialMockingTest :
         "metadata": {}
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -378,7 +378,7 @@ class WireMockPartialMockingTest :
         }
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .PUT(BodyPublishers.ofString(requestBody))
         .build()
@@ -418,7 +418,7 @@ class WireMockPartialMockingTest :
         }
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .method("PATCH", BodyPublishers.ofString(requestBody))
         .build()
@@ -459,7 +459,7 @@ class WireMockPartialMockingTest :
         "metadata": {"source": "test"}
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -506,7 +506,7 @@ class WireMockPartialMockingTest :
         }
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -547,7 +547,7 @@ class WireMockPartialMockingTest :
         }
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(requestBody))
         .build()
@@ -585,7 +585,7 @@ class WireMockPartialMockingTest :
         }
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .PUT(BodyPublishers.ofString(requestBody))
         .build()
@@ -623,7 +623,7 @@ class WireMockPartialMockingTest :
         }
       }"""
       val request = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
         .method("PATCH", BodyPublishers.ofString(requestBody))
         .build()

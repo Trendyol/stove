@@ -26,9 +26,10 @@ val testWithProvided = tasks.register<Test>("testWithProvided") {
   classpath = sourceSets.test.get().runtimeClasspath
   useJUnitPlatform()
   systemProperty("useProvided", "true")
-  systemProperty("elasticsearchTestTag", elasticsearchTestTag.get())
+  val tag = elasticsearchTestTag.get()
+  systemProperty("elasticsearchTestTag", tag)
   doFirst {
-    println("Starting Elasticsearch tests with provided instance and tag=${elasticsearchTestTag.get()}...")
+    println("Starting Elasticsearch tests with provided instance and tag=$tag...")
   }
 }
 

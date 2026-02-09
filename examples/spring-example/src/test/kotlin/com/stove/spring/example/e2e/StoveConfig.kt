@@ -5,6 +5,7 @@ import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.spring.*
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.*
@@ -14,6 +15,8 @@ import org.slf4j.*
 import stove.spring.example.run
 
 class StoveConfig : AbstractProjectConfig() {
+  private val appPort = PortFinder.findAvailablePort()
+
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
@@ -27,7 +30,7 @@ class StoveConfig : AbstractProjectConfig() {
         }
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8004"
+            baseUrl = "http://localhost:$appPort"
           )
         }
         postgresql {
@@ -58,10 +61,13 @@ class StoveConfig : AbstractProjectConfig() {
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 7078,
+            port = 0,
             removeStubAfterRequestMatched = true,
             afterRequest = { e, _ ->
               logger.info(e.request.toString())
+            },
+            configureExposedConfiguration = { cfg ->
+              listOf("http-clients.supplier-http.url=${cfg.baseUrl}")
             }
           )
         }
@@ -73,7 +79,7 @@ class StoveConfig : AbstractProjectConfig() {
             }
           },
           withParameters = listOf(
-            "server.port=8004",
+            "server.port=$appPort",
             "logging.level.root=info",
             "logging.level.org.springframework.web=info",
             "spring.profiles.active=default",

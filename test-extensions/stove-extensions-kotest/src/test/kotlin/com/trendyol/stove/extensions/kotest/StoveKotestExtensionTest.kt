@@ -13,6 +13,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
+private val WIREMOCK_PORT = PortFinder.findAvailablePort()
+
 class NoApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) {
     // do nothing
@@ -31,12 +33,12 @@ class StoveConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8090"
+            baseUrl = "http://localhost:$WIREMOCK_PORT"
           )
         }
 
         wiremock {
-          WireMockSystemOptions(8090)
+          WireMockSystemOptions(WIREMOCK_PORT)
         }
 
         applicationUnderTest(NoApplication())

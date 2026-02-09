@@ -19,10 +19,10 @@ class WireMockSystemTests :
     lateinit var reqBuilder: HttpRequest.Builder
     val url = "post-url"
     beforeSpec {
-      wireMock = WireMockServer(9090)
+      wireMock = WireMockServer(0)
       wireMock.start()
       client = HttpClient.newBuilder().build()
-      reqBuilder = HttpRequest.newBuilder(URI("http://localhost:9090/$url"))
+      reqBuilder = HttpRequest.newBuilder(URI("http://localhost:${wireMock.port()}/$url"))
     }
 
     test("Single thread stubbing") {
@@ -81,7 +81,7 @@ class WireMockSystemTests :
 
     context("Response Headers") {
       val reqBuilder = HttpRequest
-        .newBuilder(URI("http://localhost:9098/headers"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL/headers"))
         .header("Content-Type", "application/json")
 
       val headers = mapOf("CustomHeaderKey" to "CustomHeaderValue")

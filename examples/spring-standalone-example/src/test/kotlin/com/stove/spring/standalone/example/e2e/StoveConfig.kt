@@ -20,6 +20,7 @@ import stove.spring.standalone.example.run
 
 class StoveConfig : AbstractProjectConfig() {
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
+  private val appPort = PortFinder.findAvailablePort()
 
   init {
     stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
@@ -33,7 +34,7 @@ class StoveConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8001"
+            baseUrl = "http://localhost:$appPort"
           )
         }
         postgresql {
@@ -70,10 +71,13 @@ class StoveConfig : AbstractProjectConfig() {
         }
         wiremock {
           WireMockSystemOptions(
-            port = 9099,
+            port = 0,
             removeStubAfterRequestMatched = true,
             afterRequest = { e, _ ->
               logger.info(e.request.toString())
+            },
+            configureExposedConfiguration = { cfg ->
+              listOf("http-clients.supplier-http.url=${cfg.baseUrl}")
             }
           )
         }
@@ -82,7 +86,7 @@ class StoveConfig : AbstractProjectConfig() {
             run(parameters)
           },
           withParameters = listOf(
-            "server.port=8001",
+            "server.port=$appPort",
             "logging.level.root=info",
             "logging.level.org.springframework.web=info",
             "spring.profiles.active=default",

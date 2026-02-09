@@ -24,7 +24,7 @@ class WireMockOperationsTest :
       val url = "/post-url"
       val client = HttpClient.newBuilder().build()
       val reqBuilder = HttpRequest
-        .newBuilder(URI("http://localhost:9098/$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL/$url"))
         .header("Content-Type", "application/json")
 
       stove {
@@ -74,7 +74,7 @@ class WireMockOperationsTest :
       val url = "categories/createCategory"
       val client = HttpClient.newBuilder().build()
       val reqBuilder = HttpRequest
-        .newBuilder(URI("http://localhost:9098/$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL/$url"))
         .header("Content-Type", "application/json")
 
       stove {
@@ -149,7 +149,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val uri = URI.create("$WIREMOCK_BASE_URL/suppliers/$id?active=$active")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Content-Type", "application/json")
@@ -160,7 +160,7 @@ class WireMockOperationsTest :
 
       id = 2
       active = false
-      val uri2 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val uri2 = URI.create("$WIREMOCK_BASE_URL/suppliers/$id?active=$active")
       val reqBuilder2 = HttpRequest
         .newBuilder(uri2)
         .header("Content-Type", "application/json")
@@ -207,7 +207,7 @@ class WireMockOperationsTest :
 
       var id = 1
       var active = true
-      val uri1 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val uri1 = URI.create("$WIREMOCK_BASE_URL/suppliers/$id?active=$active")
       val request1 = HttpRequest
         .newBuilder(uri1)
         .header("Content-Type", "application/json")
@@ -218,7 +218,7 @@ class WireMockOperationsTest :
 
       id = 2
       active = false
-      val uri2 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val uri2 = URI.create("$WIREMOCK_BASE_URL/suppliers/$id?active=$active")
       val request2 = HttpRequest
         .newBuilder(uri2)
         .header("Content-Type", "application/json")
@@ -242,7 +242,7 @@ class WireMockOperationsTest :
         }
       }
       active = true
-      val uri3 = URI.create("http://localhost:9098/suppliers/$id?active=$active")
+      val uri3 = URI.create("$WIREMOCK_BASE_URL/suppliers/$id?active=$active")
       val request3 = HttpRequest
         .newBuilder(uri3)
         .header("Content-Type", "application/json")
@@ -276,7 +276,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/resources/1")
+      val uri = URI.create("$WIREMOCK_BASE_URL/resources/1")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Content-Type", "application/json")
@@ -311,7 +311,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/resources/123")
+      val uri = URI.create("$WIREMOCK_BASE_URL/resources/123")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Content-Type", "application/json")
@@ -342,7 +342,7 @@ class WireMockOperationsTest :
           }
         }
 
-        val uri = URI.create("http://localhost:9098/resources/1")
+        val uri = URI.create("$WIREMOCK_BASE_URL/resources/1")
         val reqBuilder = HttpRequest
           .newBuilder(uri)
           .header("Authorization", "Bearer token")
@@ -375,7 +375,7 @@ class WireMockOperationsTest :
           }
         }
 
-        val uri = URI.create("http://localhost:9098/resources/123")
+        val uri = URI.create("$WIREMOCK_BASE_URL/resources/123")
         val reqBuilder = HttpRequest
           .newBuilder(uri)
           .header("Authorization", "Bearer token")
@@ -412,7 +412,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/resources/1")
+      val uri = URI.create("$WIREMOCK_BASE_URL/resources/1")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Content-Type", "application/json")
@@ -447,7 +447,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/resources/123")
+      val uri = URI.create("$WIREMOCK_BASE_URL/resources/123")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Content-Type", "application/json")
@@ -481,7 +481,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/resources/1")
+      val uri = URI.create("$WIREMOCK_BASE_URL/resources/1")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Authorization", "Bearer token")
@@ -516,7 +516,7 @@ class WireMockOperationsTest :
         }
       }
 
-      val uri = URI.create("http://localhost:9098/resources/123")
+      val uri = URI.create("$WIREMOCK_BASE_URL/resources/123")
       val reqBuilder = HttpRequest
         .newBuilder(uri)
         .header("Authorization", "Bearer token")

@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
 import com.trendyol.stove.ConsoleSpec
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.HttpSystem.Companion.client
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.stove
@@ -33,6 +34,8 @@ class NoApplication : ApplicationUnderTest<Unit> {
   }
 }
 
+private val WIREMOCK_PORT = PortFinder.findAvailablePort()
+
 class StoveConfig : AbstractProjectConfig() {
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
@@ -41,12 +44,12 @@ class StoveConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8086"
+            baseUrl = "http://localhost:$WIREMOCK_PORT"
           )
         }
 
         wiremock {
-          WireMockSystemOptions(8086)
+          WireMockSystemOptions(WIREMOCK_PORT)
         }
 
         applicationUnderTest(NoApplication())

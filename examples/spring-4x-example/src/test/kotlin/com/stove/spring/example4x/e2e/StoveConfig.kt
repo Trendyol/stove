@@ -4,6 +4,7 @@ import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.spring.*
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.tracing.*
 import com.trendyol.stove.wiremock.*
@@ -14,6 +15,8 @@ import stove.spring.example4x.run
 import tools.jackson.databind.json.JsonMapper
 
 class StoveConfig : AbstractProjectConfig() {
+  private val appPort = PortFinder.findAvailablePort()
+
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   private val logger: Logger = LoggerFactory.getLogger("WireMockMonitor")
@@ -23,7 +26,7 @@ class StoveConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8005"
+            baseUrl = "http://localhost:$appPort"
           )
         }
         kafka {
@@ -47,7 +50,7 @@ class StoveConfig : AbstractProjectConfig() {
 
         wiremock {
           WireMockSystemOptions(
-            port = 7080,
+            port = 0,
             removeStubAfterRequestMatched = true,
             afterRequest = { e, _ ->
               logger.info(e.request.toString())
@@ -69,7 +72,7 @@ class StoveConfig : AbstractProjectConfig() {
             }
           },
           withParameters = listOf(
-            "server.port=8005",
+            "server.port=$appPort",
             "logging.level.root=info",
             "logging.level.org.springframework.web=info",
             "spring.profiles.active=default",

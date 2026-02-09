@@ -80,8 +80,8 @@ jobs:
           gradle build test koverXmlReport \
             --build-cache \
             --configuration-cache \
-            --no-daemon \
-            -Dorg.gradle.parallel=true
+            --parallel \
+            --no-daemon
 
       # Upload test results
       - name: Upload test results

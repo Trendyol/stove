@@ -1,6 +1,7 @@
 package com.trendyol.stove.grpc
 
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.stove
@@ -52,6 +53,6 @@ class StoveConfig : AbstractProjectConfig() {
 
   companion object {
     const val TEST_HOST = "localhost"
-    const val TEST_PORT = 50199
+    val TEST_PORT = PortFinder.findAvailablePort()
   }
 }

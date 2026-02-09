@@ -3,10 +3,13 @@ package com.trendyol.stove.testing.grpcmock
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.grpc.GrpcSystemOptions
 import com.trendyol.stove.grpc.grpc
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
+
+private val GRPC_PORT = PortFinder.findAvailablePort()
 
 class StoveConfig : AbstractProjectConfig() {
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
@@ -16,14 +19,14 @@ class StoveConfig : AbstractProjectConfig() {
       .with {
         grpcMock {
           GrpcMockSystemOptions(
-            port = 9098,
+            port = GRPC_PORT,
             removeStubAfterRequestMatched = true
           )
         }
         grpc {
           GrpcSystemOptions(
             host = "localhost",
-            port = 9098
+            port = GRPC_PORT
           )
         }
         applicationUnderTest(

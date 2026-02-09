@@ -14,6 +14,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.extension.ExtendWith
 
+private val WIREMOCK_PORT = PortFinder.findAvailablePort()
+
 class NoApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) {
     // do nothing
@@ -38,12 +40,12 @@ class StoveJUnitExtensionTest {
         .with {
           httpClient {
             HttpClientSystemOptions(
-              baseUrl = "http://localhost:8091"
+              baseUrl = "http://localhost:$WIREMOCK_PORT"
             )
           }
 
           wiremock {
-            WireMockSystemOptions(8091)
+            WireMockSystemOptions(WIREMOCK_PORT)
           }
 
           applicationUnderTest(NoApplication())

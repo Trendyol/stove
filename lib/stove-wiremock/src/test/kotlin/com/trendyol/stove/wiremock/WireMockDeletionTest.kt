@@ -36,7 +36,7 @@ class WireMockDeletionTest :
 
       val client = HttpClient.newBuilder().build()
       val reqBuilder = HttpRequest
-        .newBuilder(URI("http://localhost:9098/post-url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL/post-url"))
         .header("Content-Type", "application/json")
 
       val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
@@ -73,7 +73,7 @@ class WireMockDeletionTest :
 
       val client = HttpClient.newBuilder().build()
       val reqBuilder = HttpRequest
-        .newBuilder(URI("http://localhost:9098$url"))
+        .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
 
       val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()

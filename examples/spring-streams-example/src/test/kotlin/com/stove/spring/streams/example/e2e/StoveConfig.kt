@@ -18,6 +18,8 @@ import org.apache.kafka.clients.admin.NewTopic
 import stove.spring.streams.example.run
 
 class StoveConfig : AbstractProjectConfig() {
+  private val appPort = PortFinder.findAvailablePort()
+
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   @Suppress("LongMethod")
@@ -51,7 +53,7 @@ class StoveConfig : AbstractProjectConfig() {
           run(parameters)
         },
         withParameters = listOf(
-          "server.port=8001",
+          "server.port=$appPort",
           "logging.level.root=info",
           "logging.level.org.springframework.web=info",
           "spring.profiles.active=default",
