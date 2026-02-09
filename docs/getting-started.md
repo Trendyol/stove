@@ -453,7 +453,7 @@ If you're using the `test-e2e` source set, you might have a separate task:
 Now that you're up and running, here's what to explore next:
 
 - **Components** - Check out the [Components documentation](Components/index.md) to see what's available
-- **Distributed Tracing** - Enable [Distributed Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
+- **Tracing** - Enable [Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
 - **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics
 - **gRPC Mocking** - Mock external gRPC services with [gRPC Mocking](Components/14-grpc-mock.md)
 - **Best Practices** - Read the [Best Practices guide](best-practices.md) for tips on writing effective e2e tests

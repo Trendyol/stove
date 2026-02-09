@@ -96,7 +96,7 @@ Stove supports these components:
 - [gRPC Mocking](Components/14-grpc-mock.md)
 - [Bridge](Components/10-bridge.md)
 - [Reporting](Components/13-reporting.md)
-- [Distributed Tracing](Components/15-tracing.md)
+- [Tracing](Components/15-tracing.md)
 
 === "Gradle"
 

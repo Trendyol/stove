@@ -28,7 +28,7 @@ nav:
     - gRPC: Components/12-grpc.md
     - Reporting: Components/13-reporting.md
     - gRPC Mocking: Components/14-grpc-mock.md
-    - Distributed Tracing: Components/15-tracing.md
+    - Tracing: Components/15-tracing.md
     - MySQL: Components/16-mysql.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md

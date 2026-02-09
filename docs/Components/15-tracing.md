@@ -1,4 +1,4 @@
-# Distributed Tracing
+# Tracing
 
 Your end-to-end test just failed. Now what?
 
