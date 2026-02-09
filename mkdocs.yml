@@ -5,6 +5,9 @@ repo_name: trendyol/stove
 edit_uri: edit/main/docs/
 extra_css:
   - css/custom.css
+extra_javascript:
+  - assets/rough-notation.iife.js
+  - js/rough-notation-mkdocs.js
 plugins:
   - search
   - awesome-pages:
@@ -33,6 +36,8 @@ nav:
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
+  - Blog:
+      - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
       - 0.21.0 (Upcoming): release-notes/0.21.0.md
       - 0.20.0: release-notes/0.20.0.md

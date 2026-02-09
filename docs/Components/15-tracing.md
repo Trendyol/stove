@@ -19,7 +19,7 @@ EXECUTION TRACE (Call Chain)
           ✗ orders.created process (82ms)  ← FAILURE POINT
 ```
 
-That's Stove tracing. When a test fails, you see the **entire call chain** of your application -- every controller method, every database query, every Kafka message, every HTTP call -- with timing and the exact point of failure. No other end-to-end testing framework does this.
+That's Stove tracing. When a test fails, you see the **entire call chain** of your application -- every controller method, every database query, every Kafka message, every HTTP call -- with timing and the exact point of failure. It's a unique feature.
 
 ## What You Get
 

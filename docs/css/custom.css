@@ -28,3 +28,23 @@ code {
 .md-typeset .admonition-title {
     font-weight: 600;
 }
+
+/* Stove annotated report blocks (RoughNotation) */
+.stove-report pre {
+    background: var(--md-code-bg-color);
+    color: var(--md-code-fg-color);
+    font-size: .75rem;
+    line-height: 1.5;
+    padding: 1em 1.2em;
+    border-radius: .1rem;
+    position: relative;
+    overflow-x: auto;
+}
+
+.stove-report pre code {
+    font-family: var(--md-code-font-family, "Roboto Mono", monospace);
+    background: transparent;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+}
