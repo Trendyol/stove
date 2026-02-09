@@ -37,7 +37,6 @@ class ElasticsearchExposedCertificateTest :
       val cert = ElasticsearchExposedCertificate("test".toByteArray())
 
       cert.equals("not a certificate") shouldBe false
-      (cert == null) shouldBe false
     }
 
     test("hashCode should be consistent for same content") {
