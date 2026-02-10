@@ -19,6 +19,7 @@ Stove uses a pluggable architecture—each physical dependency is a separate mod
 | [HTTP Client](05-http.md) | `stove-http` | HTTP client for testing your API |
 | [gRPC](12-grpc.md) | `stove-grpc` | gRPC client for testing gRPC services |
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
+| [Tracing](15-tracing.md) | `stove-tracing` | Execution tracing with OpenTelemetry for failure diagnostics |
 
 ## Quick Start
 
@@ -66,6 +67,7 @@ Stove()
     couchbase { CouchbaseSystemOptions(...) }
     http { HttpClientSystemOptions(...) }
     wiremock { WireMockSystemOptions(...) }
+    tracing { enableSpanReceiver() }
     
     // Application under test
     springBoot(runner = { params -> myApp.run(params) })
@@ -111,6 +113,7 @@ stove {
 |-----------|----------|
 | [Bridge](10-bridge.md) | Access application beans and services directly |
 | [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
+| [Tracing](15-tracing.md) | <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span> |
 
 ## Common Configuration Pattern
 
@@ -273,3 +276,4 @@ test("should process order end-to-end") {
 - [Bridge](10-bridge.md) - Direct access to application beans
 - [Provided Instances](11-provided-instances.md) - Use external infrastructure
 - [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
+- [Tracing](15-tracing.md) - Execution tracing with OpenTelemetry for full call chain visibility
