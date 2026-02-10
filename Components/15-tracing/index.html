@@ -2003,7 +2003,7 @@
   
 
 
-<h1 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h1>
+<h1 id="tracing"><span data-rn="underline" data-rn-color="#ff9800">Tracing</span><a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h1>
 <p>Your end-to-end test just failed. Now what?</p>
 <p>You stare at a stack trace that says <em>"expected message not found within timeout"</em>. You dig through application logs. You check Kafka topics. You wonder if the HTTP request even reached the controller. Was it a database error? A serialization issue? A Kafka consumer that silently died?</p>
 <p><strong>What if your test failure told you exactly what happened inside your application?</strong></p>
@@ -2018,7 +2018,7 @@
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        ✓ orders.created publish (81ms)
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>          ✗ orders.created process (82ms)  ← FAILURE POINT
 </span></code></pre></div>
-<p>That's Stove tracing. When a test fails, you see the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. It's a unique feature.</p>
+<p>That's Stove tracing. When a test fails, you see the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application, powered by <span data-rn="underline" data-rn-color="#ff9800">OpenTelemetry</span>: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. It's a unique feature.</p>
 <h2 id="what-you-get">What You Get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <p>When tracing is enabled, every test failure comes with the full story:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>STOVE EXECUTION REPORT
@@ -2081,8 +2081,8 @@
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="hll"><span class="w">        </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span>
 </span></span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="hll"><span class="w">            </span><span class="n">enableSpanReceiver</span><span class="p">()</span>
-</span></span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="hll"><span class="w">        </span><span class="p">}</span>
-</span></span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="c1">// ... your other systems (http, kafka, etc.)</span>
+</span></span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="c1">// ... your other systems (http, kafka, etc.)</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
@@ -2092,8 +2092,8 @@
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="hll"><span class="n">configureStoveTracing</span><span class="w"> </span><span class="p">{</span>
 </span></span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="hll"><span class="w">    </span><span class="n">serviceName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my-service&quot;</span>
-</span></span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="hll"><span class="p">}</span>
-</span></span></code></pre></div>
+</span></span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+</span></code></pre></div>
 <p>This handles everything: downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.</p>
 <div class="admonition tip">
 <p class="admonition-title">That's all you need</p>
@@ -2150,8 +2150,8 @@
 </span></span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="hll"><span class="w">            </span><span class="n">shouldContainSpan</span><span class="p">(</span><span class="s">&quot;OrderService.processOrder&quot;</span><span class="p">)</span>
 </span></span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="hll"><span class="w">            </span><span class="n">shouldContainSpan</span><span class="p">(</span><span class="s">&quot;PaymentClient.charge&quot;</span><span class="p">)</span>
 </span></span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="hll"><span class="w">            </span><span class="n">shouldNotHaveFailedSpans</span><span class="p">()</span>
-</span></span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="hll"><span class="w">            </span><span class="n">executionTimeShouldBeLessThan</span><span class="p">(</span><span class="m">500.</span><span class="n">milliseconds</span><span class="p">)</span>
-</span></span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">        </span><span class="p">}</span>
+</span></span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">            </span><span class="n">executionTimeShouldBeLessThan</span><span class="p">(</span><span class="m">500.</span><span class="n">milliseconds</span><span class="p">)</span>
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">        </span><span class="p">}</span>
 </span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="p">}</span>
 </span></code></pre></div>

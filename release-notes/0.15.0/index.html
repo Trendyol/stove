@@ -1757,13 +1757,13 @@
   
 
 
-<h1 id="0150">0.15.0<a class="headerlink" href="#0150" title="Permanent link">&para;</a></h1>
+<h1 id="0150"><span data-rn="underline" data-rn-color="#ff9800">0.15.0</span><a class="headerlink" href="#0150" title="Permanent link">&para;</a></h1>
 <h2 id="from-014x-to-015x">From 0.14.x to 0.15.x<a class="headerlink" href="#from-014x-to-015x" title="Permanent link">&para;</a></h2>
 <h3 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
-<p>The most notable breaking change is ser/de operations. The framework was only relying on Jackson for serialization and
+<p>The most notable breaking change is <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">ser/de operations</span>. The framework was only relying on Jackson for serialization and
 deserialization. Now, it provides a way to use other serialization libraries. <code>StoveSerde&lt;TIn, TOut&gt;</code> is the new interface
 that you can implement to provide your own serialization and deserialization logic.</p>
-<p><code>StoveSerde</code> also provides the access to the other serializers that <code>com-trendyol:stove-testing-e2e</code> package has.</p>
+<p><code>StoveSerde</code> also provides the access to the other serializers that <code>com-trendyol:stove-testing-e2e</code> package has:</p>
 <ul>
 <li>Jackson</li>
 <li>Gson</li>
@@ -1775,14 +1775,14 @@ that you can implement to provide your own serialization and deserialization log
 <p>You can of course use your default Jackson implementation by providing the <code>ObjectMapperConfig.default()</code> to the <code>StoveSerde.jackson.anyByteArraySerde</code> function.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">TestSystemInitializer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseApplicationContextInitializer</span><span class="p">({</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="n">bean</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">())</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// or any other serde that is &lt;Any, ByteArray&gt;</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">})</span>
-</span></code></pre></div>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="hll"><span class="w">  </span><span class="n">bean</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">())</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// or any other serde that is &lt;Any, ByteArray&gt;</span>
+</span></span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="hll"><span class="p">})</span>
+</span></span></code></pre></div>
 <h3 id="standalone-kafka">Standalone Kafka<a class="headerlink" href="#standalone-kafka" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="n">KafkaSystemOptions</span><span class="p">(</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">)</span><span class="w"> </span><span class="c1">// or any other serde that is &lt;Any, ByteArray&gt;</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="c1">//...</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="hll"><span class="w">    </span><span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">ObjectMapperConfig</span><span class="p">.</span><span class="na">default</span><span class="p">)</span><span class="w"> </span><span class="c1">// or any other serde that is &lt;Any, ByteArray&gt;</span>
+</span></span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="c1">//...</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p">)</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
 </span></code></pre></div>
@@ -1790,8 +1790,8 @@ that you can implement to provide your own serialization and deserialization log
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">CouchbaseSystemOptions</span><span class="p">(</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">clusterSerDe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JacksonJsonSerializer</span><span class="p">(</span><span class="n">CouchbaseConfiguration</span><span class="p">.</span><span class="na">objectMapper</span><span class="p">),</span><span class="w"> </span><span class="c1">// here you can provide your own serde</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="c1">//...</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="hll"><span class="w">    </span><span class="c1">//...</span>
+</span></span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p">)</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="http">Http<a class="headerlink" href="#http" title="Permanent link">&para;</a></h3>

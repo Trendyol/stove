@@ -2240,7 +2240,7 @@
 <p>Stove is an end-to-end testing framework that spins up your application along with all its physical dependencies (databases, message queues, etc.) so you can test the real thing. Everything is controlled through Kotlin code, giving you full control over your test environment.</p>
 <p>Since JVM languages can interoperate, your application and tests don't need to use the same language. Write your app in Java and tests in Kotlin, or mix Scala and Kotlin—whatever works for your team. Stove takes advantage of this and lets you write all your tests in Kotlin, regardless of what your application is written in.</p>
 <p>Your tests stay infrastructure-agnostic but component-aware. You can easily plug in whatever physical components you need using Stove's APIs. All the infrastructure is <strong>pluggable</strong>—add what you need, skip what you don't. If Stove doesn't have a component you need, you can build your own using the abstractions it provides.</p>
-<p><span data-rn="underline" data-rn-color="#009688">The only hard requirement is Docker</span>, since Stove uses <a href="https://github.com/testcontainers/testcontainers-java">testcontainers</a> under the hood.</p>
+<p>The only hard requirement is <span data-rn="underline" data-rn-color="#ff9800">Docker</span>, since Stove uses <a href="https://github.com/testcontainers/testcontainers-java">testcontainers</a> under the hood.</p>
 <p>You can run tests with either JUnit or Kotest. CI works too, though you'll need <strong>DinD (docker-in-docker)</strong> setup for that.</p>
 <p>Want to know more about why we built Stove? Check out the <a href="https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5">Medium article</a> that explains the motivation behind the framework.</p>
 <div class="admonition note">
@@ -2251,9 +2251,12 @@
 <p>The JVM ecosystem has great frameworks for building applications, but when it comes to integration, component, or e2e testing, there's no single framework that works across all tech stacks. Testcontainers exists, but you still end up writing a lot of boilerplate to wire it up with your specific stack.</p>
 <p>We built Stove to solve this. We wanted to boost developer productivity while keeping code quality high, and we needed it to work across different tech stacks:</p>
 <ul>
-<li>Kotlin apps with Spring Boot</li>
-<li>Kotlin apps with Ktor</li>
-<li>Java apps with Spring Boot</li>
+<li><span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Spring Boot</span></li>
+<li><span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Ktor</span></li>
+<li><span data-rn="underline" data-rn-color="#ff9800">Java apps with Spring Boot</span></li>
+<li>Java apps with Micronaut</li>
+<li>Java apps with Quarkus</li>
+<li>Scala apps with Spring Boot</li>
 <li>Java apps with Micronaut</li>
 <li>Java apps with Quarkus</li>
 <li>Scala apps with Spring Boot</li>
@@ -2324,14 +2327,14 @@ SNAPSHOT versions are released with the <code>1.0.0.{buildNumber}-SNAPSHOT</code
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="c1">// Import BOM for version management</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">))</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="hll">
-</span></span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="c1">// Application Under Test</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="hll"><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">))</span>
+</span></span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="c1">// Application Under Test</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="c1">// Spring Boot</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="hll">
-</span></span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="c1">// or</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="hll"><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
+</span></span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="c1">// or</span>
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="c1">// Ktor</span>
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-ktor&quot;</span><span class="p">)</span>
