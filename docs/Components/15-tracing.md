@@ -19,7 +19,7 @@ EXECUTION TRACE (Call Chain)
           ✗ orders.created process (82ms)  ← FAILURE POINT
 ```
 
-That's Stove tracing. When a test fails, you see the **entire call chain** of your application -- every controller method, every database query, every Kafka message, every HTTP call -- with timing and the exact point of failure. It's a unique feature.
+That's Stove tracing. When a test fails, you see the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. It's a unique feature.
 
 ## What You Get
 
@@ -55,7 +55,7 @@ EXECUTION TRACE (Call Chain)
           ✗ orders.created process (82ms)  ← FAILURE POINT
 ```
 
-Everything is automatic:
+<span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Everything is automatic:</span>
 
 - Traces **start and end** with each test
 - W3C `traceparent` headers are **injected into HTTP requests**
@@ -118,11 +118,11 @@ configureStoveTracing {
 This handles everything: downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.
 
 !!! tip "That's all you need"
-    Now write your tests as usual. When a test fails, you'll see the execution trace automatically. No code changes to your application required -- the OpenTelemetry agent instruments 100+ libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) with zero code changes.
+    Now write your tests as usual. When a test fails, you'll see the execution trace automatically. <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">No code changes to your application required.</span> The OpenTelemetry agent instruments 100+ libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) with zero code changes.
 
 ### Dependencies
 
-```kotlin
+```kotlin hl_lines="2"
 dependencies {
     testImplementation("com.trendyol:stove-tracing:$stoveVersion")
     testImplementation("com.trendyol:stove-extensions-kotest:$stoveVersion")
@@ -163,7 +163,7 @@ You don't need to do anything special in your test code. Stove injects trace hea
     }
     ```
 
-Every HTTP request gets a `traceparent` header. Every Kafka message gets trace headers. Every gRPC call gets trace metadata. Your application picks these up through the OpenTelemetry agent, and Stove collects the resulting spans -- all without you writing a single line of tracing code.
+Every HTTP request gets a `traceparent` header. Every Kafka message gets trace headers. Every gRPC call gets trace metadata. Your application picks these up through the OpenTelemetry agent, and Stove collects the resulting spans, all without you writing a single line of tracing code.
 
 ## Trace Validation DSL
 
@@ -192,7 +192,7 @@ test("order processing should call payment service") {
 
 Verify which operations happened (or didn't) during a test:
 
-```kotlin
+```kotlin hl_lines="2 3 6 9"
 tracing {
     shouldContainSpan("UserService.findById")
     shouldContainSpanMatching { it.operationName.contains("Repository") }
@@ -210,7 +210,7 @@ tracing {
 
 Assert on execution timing and span counts:
 
-```kotlin
+```kotlin hl_lines="2 6"
 tracing {
     executionTimeShouldBeLessThan(500.milliseconds)
     executionTimeShouldBeGreaterThan(10.milliseconds)
@@ -281,7 +281,7 @@ test("should create order and notify downstream services") {
 }
 ```
 
-If any step fails, the trace tree shows you exactly where and why:
+If any step fails, the trace tree shows you <span data-rn="highlight" data-rn-color="#ef535044" data-rn-duration="800">exactly where and why</span>:
 
 ```
 ✓ POST (250ms)
@@ -385,14 +385,14 @@ configureStoveTracing {
 
 ## Best Practices
 
-1. **Just enable it** -- tracing is automatic and low-overhead; there's no reason not to use it
-2. **Use `tracing { }` sparingly** -- the automatic failure reports cover most debugging needs; use the DSL only when you want to assert on the execution flow
-3. **Start with `shouldNotHaveFailedSpans()`** -- the simplest assertion that catches unexpected errors
-4. **Filter noise** -- if you see too many spans, use `disabledInstrumentations` to exclude verbose libraries like `jdbc` or `spring-scheduling`
-5. **CI just works** -- ports are dynamically assigned, so parallel test runs don't conflict
+1. <span data-rn="underline" data-rn-color="#009688">**Just enable it.**</span> Tracing is automatic and low-overhead; there's no reason not to use it
+2. **Use `tracing { }` sparingly.** The automatic failure reports cover most debugging needs; use the DSL only when you want to assert on the execution flow
+3. **Start with `shouldNotHaveFailedSpans()`.** The simplest assertion that catches unexpected errors
+4. **Filter noise.** If you see too many spans, use `disabledInstrumentations` to exclude verbose libraries like `jdbc` or `spring-scheduling`
+5. **CI just works.** <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Ports are dynamically assigned</span>, so parallel test runs don't conflict
 
 !!! tip "Works with Reporting"
-    Tracing integrates seamlessly with Stove's [Reporting](13-reporting.md) system. When both are enabled, test failures include the execution report *and* the trace tree together, giving you the complete picture.
+    Tracing integrates seamlessly with Stove's [Reporting](13-reporting.md) system. When both are enabled, test failures include the execution report *and* the trace tree together, giving you <span data-rn="underline" data-rn-color="#009688">the complete picture</span>.
 
 ## Troubleshooting
 

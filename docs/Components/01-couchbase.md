@@ -18,7 +18,7 @@ You'll need to define a `defaultBucket` name. Make sure this matches what your a
 !!! warning
     Your application needs to use the same bucket names, otherwise tests will fail.
 
-```kotlin
+```kotlin hl_lines="4 5-9"
 Stove()
   .with {
     couchbase {
@@ -107,7 +107,7 @@ stove {
 
 Retrieve and validate documents:
 
-```kotlin
+```kotlin hl_lines="4 11"
 stove {
   couchbase {
     // Get from default collection
@@ -165,7 +165,7 @@ stove {
 
 Execute N1QL queries and validate results:
 
-```kotlin
+```kotlin hl_lines="4 11"
 stove {
   couchbase {
     // Simple query
@@ -235,9 +235,9 @@ stove {
 
 ## Complete Example
 
-Here's a complete end-to-end test combining HTTP, Couchbase, and Kafka:
+Here's a complete <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">end-to-end test combining HTTP, Couchbase, and Kafka</span>:
 
-```kotlin
+```kotlin hl_lines="10 19 32 42"
 test("should create product and store in couchbase") {
   stove {
     val productId = UUID.randomUUID().toString()

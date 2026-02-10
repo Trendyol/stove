@@ -12,7 +12,7 @@
 
 After getting the library from the maven source, while configuring TestSystem you will have access to `grpc`:
 
-```kotlin
+```kotlin hl_lines="3 5-6"
 Stove()
   .with {
     grpc {
@@ -90,7 +90,7 @@ grpc {
 
 ## Usage
 
-Stove's gRPC module supports multiple gRPC providers through a provider-agnostic design:
+Stove's gRPC module supports multiple gRPC providers through a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">provider-agnostic design</span>:
 
 - **Wire clients** (`wireClient<T>`) - For Wire-generated clients
 - **Typed channel** (`channel<T>`) - For any stub with a Channel constructor
@@ -101,7 +101,7 @@ Stove's gRPC module supports multiple gRPC providers through a provider-agnostic
 
 For services generated with [Wire](https://github.com/square/wire):
 
-```kotlin
+```kotlin hl_lines="3 5"
 stove {
   grpc {
     wireClient<GreeterServiceClient> {
@@ -116,7 +116,7 @@ stove {
 
 For any stub that takes a Channel constructor. This works with both grpc-kotlin generated stubs and Wire-generated stubs:
 
-```kotlin
+```kotlin hl_lines="3 5"
 stove {
   grpc {
     channel<GreeterServiceStub> {

@@ -29,7 +29,7 @@ flowchart LR
 
 Here's the service code. Each method is annotated with `@WithSpan` so the OpenTelemetry agent captures it:
 
-```kotlin
+```kotlin hl_lines="11"
 @Service
 class OrderService(
   private val orderRepository: OrderRepository,
@@ -145,15 +145,15 @@ test("The Complete Order Flow - Every Feature in One Test") {
 }
 ```
 
-One test covering eight integration points against real infrastructure.
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One test covering eight integration points against real infrastructure.</span>
 
 ## Setting Up Tracing
 
-Tracing takes two configuration steps.
+Tracing takes <span data-rn="underline" data-rn-color="#009688">two configuration steps</span>.
 
 ### Step 1: Enable in your Stove config
 
-```kotlin
+```kotlin hl_lines="3-4"
 Stove()
   .with {
     tracing {
@@ -168,7 +168,7 @@ Stove()
 
 Copy [`StoveTracingConfiguration.kt`](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
 
-```kotlin
+```kotlin hl_lines="3-4"
 import com.trendyol.stove.gradle.configureStoveTracing
 
 configureStoveTracing {
@@ -303,7 +303,7 @@ This is not something you get for free with OpenTelemetry. In production, a trac
 
 Beyond automatic failure reports, you can actively assert on the execution flow using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it produced the right output:
 
-```kotlin
+```kotlin hl_lines="12-15 18 21 24"
 test("order processing should call all expected services") {
   stove {
     http {

@@ -1,6 +1,6 @@
 # Reporting
 
-When tests fail, you want to know what went wrong. Stove's reporting system tracks everything that happens during test execution—every HTTP call, database query, Kafka message, and more. When something fails, you get a detailed report showing exactly what happened, making debugging much easier.
+When tests fail, you want to know what went wrong. Stove's reporting system <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">tracks everything that happens during test execution</span>—every HTTP call, database query, Kafka message, and more. When something fails, you get a detailed report showing exactly what happened, making debugging much easier.
 
 ## What You Get
 
@@ -11,7 +11,7 @@ When tests fail, you want to know what went wrong. Stove's reporting system trac
 
 ## Quick Start
 
-The reporting extensions are optional but recommended. They automatically enrich test failures with detailed execution reports, making debugging much easier.
+The reporting extensions are <span data-rn="underline" data-rn-color="#009688">optional but recommended</span>. They automatically enrich test failures with detailed execution reports, making debugging much easier.
 
 ### Kotest Integration
 
@@ -25,7 +25,7 @@ dependencies {
 
 Then register it in your project config:
 
-```kotlin
+```kotlin hl_lines="5"
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.system.Stove
 
@@ -74,7 +74,7 @@ The JUnit extension works with both JUnit 5 and 6 since they share the same Jupi
 
 You can configure reporting options when setting up Stove:
 
-```kotlin
+```kotlin hl_lines="3-5"
 Stove {
     reporting {
         enabled()           // Enable reporting (default: true)
@@ -88,7 +88,7 @@ Stove {
 
 Or use the direct methods if you prefer:
 
-```kotlin
+```kotlin hl_lines="2-4"
 Stove {
     reportingEnabled(true)
     dumpReportOnTestFailure(true)
@@ -102,7 +102,7 @@ Stove {
 
 ### Actions
 
-Every interaction with a Stove system is recorded:
+<span data-rn="underline" data-rn-color="#009688">Every interaction with a Stove system is recorded:</span>
 
 - **HTTP**: All requests and responses (GET, POST, PUT, DELETE, etc.)
 - **Kafka**: Message publishing, consumption, and failure assertions
@@ -219,7 +219,7 @@ Stove {
 
 ## System Snapshots
 
-Some systems provide state snapshots when tests fail, giving you visibility into the system's internal state:
+Some systems provide state snapshots when tests fail, giving you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">visibility into the system's internal state</span>:
 
 ### Kafka Snapshot
 
@@ -290,7 +290,7 @@ Stove {
 
 ### 1. Use the Extension for Better Debugging
 
-While optional, the extensions make debugging much easier by automatically tracking test context and enriching failures with detailed reports. Just add the dependency for your test framework:
+While optional, the extensions make debugging much easier by <span data-rn="underline" data-rn-color="#009688">automatically tracking test context and enriching failures with detailed reports</span>. Just add the dependency for your test framework:
 
 - Kotest: `testImplementation("com.trendyol:stove-extensions-kotest")`
 - JUnit: `testImplementation("com.trendyol:stove-extensions-junit")`
@@ -335,7 +335,7 @@ If you're not seeing reports when tests fail, check these:
    }
    ```
 
-4. **Stove initialized?** Make sure `Stove().run()` is called before your tests execute.
+4. **Stove initialized?** Make sure <span data-rn="box" data-rn-color="#ef5350">`Stove().run()` is called before your tests execute</span>.
 
 ### Truncated Output
 

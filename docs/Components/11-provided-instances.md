@@ -1,6 +1,6 @@
 # Provided Instances (Testcontainer-less Mode)
 
-Stove supports using externally provided infrastructure instances instead of testcontainers. This is particularly useful for:
+Stove supports using <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">externally provided infrastructure instances instead of testcontainers</span>. This is particularly useful for:
 
 - **CI/CD pipelines** with shared infrastructure
 - **Reducing startup time** by reusing existing instances
@@ -19,7 +19,7 @@ Each system's options class (e.g., `CouchbaseSystemOptions`, `PostgresqlOptions`
 
 All systems follow the same pattern:
 
-```kotlin
+```kotlin hl_lines="5 15"
 Stove()
   .with {
     // Option 1: Container-based (default)
@@ -48,7 +48,7 @@ Stove()
 
 ### Couchbase
 
-```kotlin
+```kotlin hl_lines="8 24-25"
 // Container-based with cleanup
 Stove()
   .with {
@@ -425,7 +425,7 @@ When using provided instances, migrations are controlled by the `runMigrations` 
 - **`runMigrations = true` (default for databases)**: Migrations will run on every test execution
 - **`runMigrations = false` (default for Kafka/Redis)**: Migrations are skipped
 
-```kotlin
+```kotlin hl_lines="4 11"
 Stove()
   .with {
     postgresql {
@@ -851,7 +851,7 @@ class TestConfig : AbstractProjectConfig() {
 | Practice | Description |
 |----------|-------------|
 | **Use CI Job ID** | Most CI systems provide unique job/build IDs - use them |
-| **Prefix everything** | Database names, topics, indices, keys - all should be unique |
+| **Prefix everything** | <span data-rn="underline" data-rn-color="#ff9800">Database names, topics, indices, keys</span> - all should be unique |
 | **Clean up after** | Use cleanup functions to remove test data |
 | **Short prefixes** | Keep prefixes short but unique (8 chars usually enough) |
 | **Log the prefix** | Print the run ID at test start for debugging |

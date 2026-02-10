@@ -1,6 +1,6 @@
 # gRPC Mock
 
-`stove-grpc-mock` provides a native gRPC mock server for testing gRPC service integrations. Unlike WireMock-based solutions, this implementation provides **full support for all gRPC RPC types** without external dependency conflicts.
+`stove-grpc-mock` provides a native gRPC mock server for testing gRPC service integrations. Unlike WireMock-based solutions, this implementation provides <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">**full support for all gRPC RPC types**</span> without external dependency conflicts.
 
 ## Features
 
@@ -27,7 +27,7 @@ dependencies {
 
 By default, gRPC Mock uses a **dynamic port** (port = 0), which lets the system pick an available port automatically. This avoids port conflicts, especially in CI environments.
 
-```kotlin
+```kotlin hl_lines="4-5 11-12"
 Stove()
   .with {
     grpcMock {
@@ -77,7 +77,7 @@ grpcMock {
 
 ### Mocking Unary Calls
 
-```kotlin
+```kotlin hl_lines="4-5 16"
 test("should mock unary gRPC call") {
   stove {
     grpcMock {
@@ -102,7 +102,7 @@ test("should mock unary gRPC call") {
 
 ### Mocking with Request Matching
 
-```kotlin
+```kotlin hl_lines="3 6 15 18"
 grpcMock {
   // Match specific request
   mockUnary(
@@ -186,7 +186,7 @@ grpcMock {
 
 ### Mocking Error Responses
 
-```kotlin
+```kotlin hl_lines="2 4-5 11 16-17"
 grpcMock {
   mockError(
     serviceName = "users.UserService",
@@ -500,6 +500,6 @@ test("should call mocked gRPC service directly") {
 
 3. **Test error scenarios** - Use `mockError()` to test how your application handles gRPC failures.
 
-4. **Multiple services, single port** - Point all gRPC clients to the same mock server port for simpler configuration.
+4. **Multiple services, single port** - <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Point all gRPC clients to the same mock server port</span> for simpler configuration.
 
 5. **Use `removeStubAfterRequestMatched`** - Enable this when testing retry logic or sequential calls with different responses.

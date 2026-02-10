@@ -14,7 +14,7 @@
 After getting the library from the maven source, while configuring TestSystem you will have access to `mssql` function.
 This function configures the MSSQL Docker container that is going to be started.
 
-```kotlin
+```kotlin hl_lines="4 9-12"
 Stove()
   .with {
     mssql {
@@ -143,7 +143,7 @@ Stove()
 
 Execute DDL and DML statements:
 
-```kotlin
+```kotlin hl_lines="4 17 25 28"
 stove {
   mssql {
     // Create tables
@@ -180,7 +180,7 @@ stove {
 
 Query data with type-safe mappers:
 
-```kotlin
+```kotlin hl_lines="14 17 28-29"
 data class Person(
   val personId: Int,
   val lastName: String,
@@ -386,9 +386,9 @@ stove {
 
 ## Complete Example
 
-Here's a complete end-to-end test:
+Here's a <span data-rn="underline" data-rn-color="#009688">complete end-to-end test</span>:
 
-```kotlin
+```kotlin hl_lines="15 25"
 data class User(
   val id: Int,
   val username: String,

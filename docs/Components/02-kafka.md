@@ -1,6 +1,6 @@
 # Kafka
 
-Stove supports Kafka in two ways: standalone Kafka or Kafka with Spring integration. You can use either one, but not both in the same project.
+Stove supports Kafka in two ways: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">standalone Kafka or Kafka with Spring integration</span>. You can use either one, but not both in the same project.
 
 ## Standalone Kafka
 
@@ -14,7 +14,7 @@ Stove supports Kafka in two ways: standalone Kafka or Kafka with Spring integrat
 
 ### Configure
 
-```kotlin
+```kotlin hl_lines="6-7 10-11"
 Stove()
   .with {
     // other dependencies
@@ -315,7 +315,7 @@ stove {
 
 Test that your application publishes messages correctly:
 
-```kotlin
+```kotlin hl_lines="4 11"
 stove {
   // Trigger an action in your application
   http {
@@ -340,7 +340,7 @@ stove {
 
 Test that your application consumes messages correctly:
 
-```kotlin
+```kotlin hl_lines="4 12 20"
 stove {
   // Publish a message
   kafka {
@@ -489,9 +489,9 @@ stove {
 
 ## Complete Example
 
-Here's a complete end-to-end test combining HTTP, Kafka, and database assertions:
+Here's a complete <span data-rn="underline" data-rn-color="#009688">end-to-end test combining HTTP, Kafka, and database assertions</span>:
 
-```kotlin
+```kotlin hl_lines="9 14 23 32 40"
 test("should create product and publish event") {
   stove {
     val productId = UUID.randomUUID()

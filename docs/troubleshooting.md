@@ -96,7 +96,7 @@ Bind for 0.0.0.0:8080 failed: port is already allocated
    )
    ```
 
-3. **Use dynamic ports:** Let the framework assign available ports when possible.
+3. **Use dynamic ports:** <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Let the framework assign available ports when possible.</span>
 
 ### Startup Issues
 
@@ -200,7 +200,7 @@ Timed out waiting for condition
    }
    ```
 
-#### Serialization/Deserialization Errors
+#### <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">Serialization/Deserialization Errors</span>
 
 **Symptoms:**
 ```
@@ -301,7 +301,7 @@ Message was not consumed within timeout
 **Solutions:**
 
 1. **Verify Kafka interceptor is configured:**
-   ```kotlin
+   ```kotlin hl_lines="3"
    // In your Stove setup
    addTestDependencies {
        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
@@ -319,7 +319,7 @@ Message was not consumed within timeout
    ```
 
 3. **Verify interceptor class is passed to application:**
-   ```kotlin
+   ```kotlin hl_lines="6"
    kafka {
        KafkaSystemOptions { cfg ->
            listOf(
@@ -349,12 +349,12 @@ Test timeout when calling mocked endpoint
 Mock not found / unexpected request
 ```
 
-**Cause:** This is almost always because your application's external service URLs don't match the WireMock URL.
+**Cause:** This is <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">almost always because your application's external service URLs don't match the WireMock URL</span>.
 
 **Solutions:**
 
-1. **Ensure ALL external service URLs point to WireMock:**
-   ```kotlin
+1. <span data-rn="box" data-rn-color="#ef5350">**Ensure ALL external service URLs point to WireMock:**</span>
+   ```kotlin hl_lines="11-13"
    Stove()
        .with {
            wiremock {
@@ -486,12 +486,12 @@ Data from another test run appears in assertions
 Tests fail when multiple builds run in parallel
 ```
 
-**Cause:** Multiple test runs are using the same resource names (databases, topics, indices) in shared infrastructure.
+**Cause:** <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">Multiple test runs are using the same resource names</span> (databases, topics, indices) in shared infrastructure.
 
 **Solutions:**
 
 1. **Use unique resource prefixes per test run:**
-   ```kotlin
+   ```kotlin hl_lines="2-3 5-7"
    object TestRunContext {
        val runId: String = System.getenv("CI_JOB_ID") 
            ?: UUID.randomUUID().toString().take(8)
@@ -503,7 +503,7 @@ Tests fail when multiple builds run in parallel
    ```
 
 2. **Apply prefixes to all resources:**
-   ```kotlin
+   ```kotlin hl_lines="3-5"
    springBoot(
        withParameters = listOf(
            "spring.datasource.url=jdbc:postgresql://db:5432/${TestRunContext.databaseName}",
@@ -540,7 +540,7 @@ Tests fail when multiple builds run in parallel
 
 #### Q: Can I use Stove with Java?
 
-**A:** Yes, you can use Stove in Java projects! However, the e2e tests themselves need to be written in Kotlin. Stove's DSL is designed specifically for Kotlin, providing a clean and expressive syntax:
+**A:** Yes, you can use Stove in Java projects! However, <span data-rn="underline" data-rn-color="#ff9800">the e2e tests themselves need to be written in Kotlin</span>. Stove's DSL is designed specifically for Kotlin, providing a clean and expressive syntax:
 
 ```kotlin
 class MyE2ETest : FunSpec({
@@ -723,7 +723,7 @@ elasticsearch {
 
 Solutions:
 - Pre-pull images in CI
-- Use `keepDependenciesRunning()` locally
+- <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Use `keepDependenciesRunning()` locally</span>
 - Increase startup timeout for slow containers
 
 ### Migration Questions

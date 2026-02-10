@@ -12,7 +12,7 @@
 
 Once you've added the dependency, you'll have access to the `httpClient` function when configuring Stove:
 
-```kotlin
+```kotlin hl_lines="3 5"
 Stove()
   .with {
     httpClient {
@@ -56,7 +56,7 @@ data class HttpClientSystemOptions(
 
 Making GET requests with various options:
 
-```kotlin
+```kotlin hl_lines="4 10 20 25"
 stove {
   http {
     // Simple GET request with type-safe response
@@ -283,9 +283,9 @@ stove {
 
 ## Complete Example
 
-Here's a complete CRUD test example:
+Here's a <span data-rn="underline" data-rn-color="#009688">complete CRUD test example</span>:
 
-```kotlin
+```kotlin hl_lines="7 20 30 38"
 test("should perform CRUD operations on products") {
   stove {
     var productId: Long? = null
@@ -341,7 +341,7 @@ test("should perform CRUD operations on products") {
 
 ### HTTP + Database
 
-```kotlin
+```kotlin hl_lines="4 12"
 stove {
   // Create via API and capture user ID
   var userId: Long = 0
@@ -438,13 +438,13 @@ stove {
 
 ## WebSocket Support
 
-Stove provides built-in support for testing WebSocket endpoints. The WebSocket functionality is integrated into the HTTP system and uses Ktor's WebSocket client under the hood.
+Stove provides <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">built-in support for testing WebSocket endpoints</span>. The WebSocket functionality is integrated into the HTTP system and uses Ktor's WebSocket client under the hood.
 
 ### Basic WebSocket Usage
 
 Send and receive messages through a WebSocket connection:
 
-```kotlin
+```kotlin hl_lines="3 5 8"
 stove {
   http {
     webSocket("/chat") {

@@ -6,7 +6,7 @@ Since JVM languages can interoperate, your application and tests don't need to u
 
 Your tests stay infrastructure-agnostic but component-aware. You can easily plug in whatever physical components you need using Stove's APIs. All the infrastructure is **pluggable**—add what you need, skip what you don't. If Stove doesn't have a component you need, you can build your own using the abstractions it provides.
 
-The only hard requirement is Docker, since Stove uses [testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
+<span data-rn="underline" data-rn-color="#009688">The only hard requirement is Docker</span>, since Stove uses [testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
 
 You can run tests with either JUnit or Kotest. CI works too, though you'll need **DinD (docker-in-docker)** setup for that.
 
@@ -30,7 +30,7 @@ We built Stove to solve this. We wanted to boost developer productivity while ke
 
 Every time someone wants to write e2e tests, they end up writing the same boilerplate: starting physical components, figuring out how to start the application from tests, accessing application beans, and so on. Stove eliminates all that by providing a single API that works across all these stacks.
 
-**Stove unifies the testing experience, no matter what you're using.**
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Stove unifies the testing experience, no matter what you're using.</span>
 
 ## High Level Architecture
 
@@ -60,7 +60,7 @@ Then just run:
     - Gradle is the default build tool for Stove, and it is used in the examples.
     - If you are using Intellij IDEA, Kotest plugin is recommended.
 
-The framework is still evolving, but it's working well and is actively used at Trendyol. Since Stove tests live in your test source set (separate from your application code), trying it out is completely risk-free—give it a shot!
+The framework is still evolving, but it's working well and is actively used at Trendyol. Since Stove tests live in your test source set (separate from your application code), <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">trying it out is completely risk-free</span>—give it a shot!
 
 `$version = please check the current version`
 
@@ -100,7 +100,7 @@ Stove supports these components:
 
 === "Gradle"
 
-    ```kotlin
+    ```kotlin hl_lines="8 13 21"
     repositories {
       mavenCentral()
     }
@@ -147,7 +147,7 @@ Stove()
   }.run()
 ```
 
-The `with` function is a lambda where you configure your system. You can add physical components here, and it's also where you plug in any custom **systems** you might want to create.
+The `with` function is a lambda where you <span data-rn="underline" data-rn-color="#009688">configure your system</span>. You can add physical components here, and it's also where you plug in any custom **systems** you might want to create.
 
 If you've added the `com.trendyol:stove-kafka` package, you can use the `kafka` function in the `with` block:
 
@@ -210,7 +210,7 @@ The dependencies we will need in the `build.gradle.kts` file are:
 }
 ```
 
-```kotlin
+```kotlin hl_lines="3 6 10 15-16 26 28-30"
 Stove()
   .with {
     httpClient {
@@ -225,7 +225,6 @@ Stove()
       ) {
         listOf(
           "kafka.bootstrapServers=${it.bootstrapServers}",
-          "kafka.isSecure=false",
           "kafka.interceptorClasses=${it.interceptorClass}",
           "kafka.heartbeatInSeconds=2",
           "kafka.autoCreateTopics=true",
@@ -290,7 +289,7 @@ created and the DI container is accessed in the tests.
 
 If you want to access to the beans of the application, you can simply do:
 
-```kotlin
+```kotlin hl_lines="2 6"
 stove {
   using<UserApplicationService> {
     this.getUserById(1) shouldBe User(1, "John", "Doe")
@@ -350,7 +349,7 @@ Runs the entire setup. It starts the physical components and the application.
 
 After the setup is done, you can write your tests. Use the `stove` function to write your test assertions:
 
-```kotlin
+```kotlin hl_lines="3 10 15 24"
 stove {
   http {
     get<String>("/hello/index") { actual ->
@@ -381,7 +380,7 @@ stove {
 }
 ```
 
-That's it! You have up-and-running API, can be tested with Stove. And each test is independent of each other.
+That's it! You have up-and-running API, can be tested with Stove. And <span data-rn="underline" data-rn-color="#009688">each test is independent of each other</span>.
 But they share the same instance of physical component of course, so you need to provide **random** data for each test.
 This is a good practice for the tests to be independent of each other.
 
@@ -444,7 +443,7 @@ Let's say the application has a standard `main` function, here how we will chang
 
 === "After"
 
-    ```kotlin
+    ```kotlin hl_lines="4 6 8"
     @SpringBootApplication
     class ExampleApplication
 
@@ -484,7 +483,7 @@ it is time to run your application for the first time from the test-context with
     It implements `AbstractProjectConfig` from Kotest framework that allows us to spin up Stove per run. This is project
     wide operation and executes **only one time**, as the name implies `beforeProject`.
     
-    ```kotlin
+    ```kotlin hl_lines="9 11 22 27"
     import com.trendyol.stove.extensions.kotest.StoveKotestExtension
     import com.trendyol.stove.system.Stove
     import com.trendyol.stove.http.*
@@ -619,7 +618,7 @@ That's it! You have up-and-running API, can be tested with Stove.
 
 !!! tip
 
-    DSL scopes can appear more than once while writing the tests. 
+    <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">DSL scopes can appear more than once</span> while writing the tests. 
     You can access to any DSL assertion scope such as http, kafka, using, etc. as many times as you need.
 
     Example:
@@ -786,7 +785,7 @@ Let's say the application has a standard `main` function, here how we will chang
     ```
 
 As you can see from `before-after` sections, we have divided the application main function into two parts.
-The `run` method accepts parameters for test configuration, allowing you to override dependencies from the testing side (e.g., time-related or configuration-related beans).
+The `run` method accepts parameters for test configuration, allowing you to <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">override dependencies from the testing side</span> (e.g., time-related or configuration-related beans).
 
 !!! note
 
@@ -861,7 +860,7 @@ StoveSerde.kotlinx.anyStringSerde(yourJson())
 
 ### Replacing Dependencies For Better Testability
 
-When it comes to handling the time, no one wants to wait for 30 minutes for a scheduler job, or for a delayed task to be
+When it comes to handling the time, <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">no one wants to wait for 30 minutes for a scheduler job</span>, or for a delayed task to be
 able to test it.
 In these situations what we need to do is `advancing` the time, or replacing the effect of the time for our needs. This
 may require you to change your code, too. Because, we might need to provide a time-free implementation to an interface,

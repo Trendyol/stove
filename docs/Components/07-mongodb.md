@@ -13,7 +13,7 @@
 After getting the library from the maven source, while configuring TestSystem you will have access to `mongodb` function.
 This function configures the MongoDB Docker container that is going to be started.
 
-```kotlin
+```kotlin hl_lines="4 6-9"
 Stove()
   .with {
     mongodb {
@@ -227,7 +227,7 @@ stove {
 
 Retrieve and validate documents by ObjectId:
 
-```kotlin
+```kotlin hl_lines="5 12"
 stove {
   mongodb {
     val userId = ObjectId().toHexString()
@@ -297,7 +297,7 @@ stove {
 
 Query documents using MongoDB query syntax:
 
-```kotlin
+```kotlin hl_lines="13 22"
 stove {
   mongodb {
     // Setup test data
@@ -421,7 +421,7 @@ stove {
 
 Here's a complete end-to-end test combining HTTP, MongoDB, and Kafka:
 
-```kotlin
+```kotlin hl_lines="20 30 46"
 data class Product(
   val id: String,
   val name: String,
@@ -745,7 +745,7 @@ stove {
 
 ## Working with ObjectId
 
-MongoDB uses `ObjectId` as the default identifier. Stove handles this transparently:
+MongoDB uses `ObjectId` as the default identifier. <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Stove handles this transparently:</span>
 
 ```kotlin
 data class UserWithStringId(

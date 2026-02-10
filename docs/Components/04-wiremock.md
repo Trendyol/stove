@@ -13,7 +13,7 @@
 Once you've added the dependency, you'll have access to the `wiremock` function when configuring Stove.
 
 This starts a WireMock server instance. By default, WireMock uses a **dynamic port** (port = 0), 
-which lets the system pick an available port automatically. This avoids port conflicts, especially in CI environments.
+which lets the system pick an available port automatically. This <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">avoids port conflicts, especially in CI environments</span>.
 
 ```kotlin
 Stove()
@@ -40,7 +40,7 @@ Using dynamic ports is the recommended approach as it:
 - **Eliminates "Address already in use" errors** that occur with hardcoded ports
 - **Automatically exposes** the actual port to your application via `configureExposedConfiguration`
 
-```kotlin
+```kotlin hl_lines="7 11-13 20"
 Stove()
   .with {
     wiremock {
@@ -223,7 +223,7 @@ application calls.
 
 Mock GET requests with various configurations:
 
-```kotlin
+```kotlin hl_lines="4-5 14-15 26-27"
 stove {
   wiremock {
     // Simple GET mock
@@ -382,7 +382,7 @@ stove {
 
 For complex scenarios, use the configure methods:
 
-```kotlin
+```kotlin hl_lines="4-5 19-20"
 stove {
   wiremock {
     // Advanced GET configuration
@@ -843,7 +843,7 @@ test("should handle timeout") {
 
 ## Integration Testing
 
-Test complex integrations with multiple services:
+<span data-rn="underline" data-rn-color="#009688">Test complex integrations with multiple services:</span>
 
 ```kotlin
 test("should orchestrate multiple services") {

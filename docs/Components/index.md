@@ -119,7 +119,7 @@ stove {
 
 All components follow a similar configuration pattern:
 
-```kotlin
+```kotlin hl_lines="4-8 12-16"
 componentName {
   ComponentSystemOptions(
     // Container configuration
@@ -214,11 +214,11 @@ couchbase(
 2. **Leverage cleanup functions** - Clean test data between runs
 3. **Configure timeouts appropriately** - Set realistic timeouts for your environment
 4. **Use the DSL consistently** - Leverage the fluent API for readable tests
-5. **Combine components** - Test complete workflows across multiple systems
+5. **Combine components** - <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Test complete workflows across multiple systems</span>
 
 ## Example: Full Stack Test
 
-```kotlin
+```kotlin hl_lines="7 12 19 26 31 36"
 test("should process order end-to-end") {
   stove {
     val orderId = UUID.randomUUID().toString()
@@ -276,4 +276,4 @@ test("should process order end-to-end") {
 - [Bridge](10-bridge.md) - Direct access to application beans
 - [Provided Instances](11-provided-instances.md) - Use external infrastructure
 - [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
-- [Tracing](15-tracing.md) - Execution tracing with OpenTelemetry for full call chain visibility
+- [Tracing](15-tracing.md) - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span>

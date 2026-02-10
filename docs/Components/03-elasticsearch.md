@@ -13,7 +13,7 @@
 After getting the library from the maven source, while configuring TestSystem you will have access to `elasticsearch`
 function. This function configures the Elasticsearch Docker container that is going to be started.
 
-```kotlin
+```kotlin hl_lines="4 5-9"
 Stove()
   .with {
     elasticsearch {
@@ -146,7 +146,7 @@ Stove()
 
 Stove provides a way to run index migrations before tests start:
 
-```kotlin
+```kotlin hl_lines="1 4 7-10"
 class CreateProductIndex : DatabaseMigration<ElasticsearchClient> {
   override val order: Int = 1
 
@@ -260,7 +260,7 @@ stove {
 
 Execute Elasticsearch queries using JSON DSL:
 
-```kotlin
+```kotlin hl_lines="4 17 18"
 stove {
   elasticsearch {
     // Query using JSON DSL
@@ -377,9 +377,9 @@ stove {
 
 ## Complete Example
 
-Here's a complete end-to-end test combining HTTP, Elasticsearch, and Kafka:
+Here's a complete <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">end-to-end test combining HTTP, Elasticsearch, and Kafka</span>:
 
-```kotlin
+```kotlin hl_lines="10 19 34 43"
 test("should create product and index in elasticsearch") {
   stove {
     val productId = UUID.randomUUID().toString()
@@ -570,7 +570,7 @@ stove {
 
 ## Provided Instance (External Elasticsearch)
 
-For CI/CD pipelines or shared infrastructure:
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">For CI/CD pipelines or shared infrastructure:</span>
 
 ```kotlin
 Stove()

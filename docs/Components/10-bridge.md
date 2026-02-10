@@ -1,6 +1,6 @@
 # Bridge
 
-The Bridge component gives you direct access to your application's dependency injection (DI) container from your tests. This lets you grab any bean or service your application has registered, which is super useful for testing internal state, verifying side effects, or setting up test data through your application's own services.
+The Bridge component gives you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">direct access to your application's dependency injection (DI) container</span> from your tests. This lets you grab any bean or service your application has registered, which is super useful for testing internal state, verifying side effects, or setting up test data through your application's own services.
 
 ## When You'd Use This
 
@@ -38,7 +38,7 @@ Bridge is built into the framework starters, so no extra dependency is needed.
 
 Enable Bridge in your Stove configuration:
 
-```kotlin
+```kotlin hl_lines="5 7"
 Stove()
   .with {
     httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
@@ -59,7 +59,7 @@ Stove()
 
 For Spring Boot applications, Bridge provides access to the `ApplicationContext`:
 
-```kotlin
+```kotlin hl_lines="2"
 // Bridge resolves beans from ApplicationContext
 using<UserService> {
     // 'this' is the UserService bean from Spring context
@@ -449,7 +449,7 @@ test("should process pending orders when scheduler runs") {
 
 Control time-dependent behavior:
 
-```kotlin
+```kotlin hl_lines="9 18 34"
 // First, create a testable time provider interface
 interface TimeProvider {
     fun now(): Instant
@@ -478,7 +478,7 @@ test("should expire session after timeout") {
         var sessionId: String = ""
         http {
             postAndExpectBody<SessionResponse>("/login", body = credentials.some()) { response ->
-                sessionId = response.body().sessionId 
+                sessionId = response.body().sessionId
             }
         }
         
@@ -757,4 +757,4 @@ The Bridge component enables:
 | **Job Triggering** | Manually trigger scheduled tasks |
 | **Service Testing** | Test domain services directly |
 
-Bridge is essential for comprehensive e2e testing, allowing you to verify and control aspects of your application that aren't accessible through external interfaces alone.
+<span data-rn="underline" data-rn-color="#009688">Bridge is essential for comprehensive e2e testing</span>, allowing you to verify and control aspects of your application that aren't accessible through external interfaces alone.

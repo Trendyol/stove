@@ -1,6 +1,6 @@
 # Writing Custom Systems
 
-Stove's built-in systems cover databases, Kafka, HTTP, gRPC, and more -- but your application is unique. Maybe you use a job scheduler, publish domain events, need to control time in tests, or talk to a service over a custom protocol. Custom systems let you bring **anything** into the Stove DSL so your tests read like this:
+Stove's built-in systems cover databases, Kafka, HTTP, gRPC, and more, but your application is unique. Maybe you use a job scheduler, publish domain events, need to control time in tests, or talk to a service over a custom protocol. Custom systems let you bring **anything** into the Stove DSL so your tests read like this:
 
 ```kotlin hl_lines="7-10"
 test("should send welcome email after user signs up") {
@@ -22,7 +22,7 @@ That `tasks { }` block is a custom system. Building one is straightforward.
 
 ## The Pattern
 
-Every custom system has three pieces:
+<span data-rn="underline" data-rn-color="#009688">Every custom system has three pieces:</span>
 
 ### 1. The System Class
 
@@ -95,17 +95,17 @@ springBoot(
 )
 ```
 
-That's the whole pattern. The rest is your domain logic.
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">That's the whole pattern.</span> The rest is your domain logic.
 
 ## Ideas
 
-Here are examples of what you can build. Each shows the test DSL -- the part your teammates will see -- not the implementation details.
+Here are examples of what you can build. Each shows the test DSL (the part your teammates will see), not the implementation details.
 
 ### Scheduled Task Testing
 
 Test that your application scheduled and executed a task with the expected payload:
 
-```kotlin
+```kotlin hl_lines="3 9"
 stove {
     http {
         postAndExpectBodilessResponse("/orders", body = orderRequest.some()) {
@@ -128,7 +128,7 @@ stove {
 
 Capture Spring application events in memory and assert on them:
 
-```kotlin
+```kotlin hl_lines="7 11"
 stove {
     http {
         post<UserResponse>("/users", createUserRequest) { it.status shouldBe 201 }
@@ -150,9 +150,9 @@ The system behind this is a `@EventListener` bean that collects events into a `C
 
 ### Time Control
 
-Replace your application's `Clock` with a test-controllable one:
+Replace your application's `Clock` with a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test-controllable one</span>:
 
-```kotlin
+```kotlin hl_lines="6-7 12"
 stove {
     http {
         post<SessionResponse>("/login", credentials) { sessionId = it.sessionId }
@@ -195,7 +195,7 @@ class MySystem(
 }
 ```
 
-Stove collects all `configuration()` outputs and passes them to the application as startup parameters.
+<span data-rn="underline" data-rn-color="#ff9800">Stove collects all `configuration()` outputs and passes them to the application as startup parameters.</span>
 
 ## Extending Built-In Systems
 
@@ -221,4 +221,4 @@ kafka {
 }
 ```
 
-This works for any built-in system -- `HttpSystem`, `KafkaSystem`, `PostgresqlSystem`, etc. Use `@StoveDsl` for IDE auto-completion support.
+This works for any built-in system: `HttpSystem`, `KafkaSystem`, `PostgresqlSystem`, etc. Use `@StoveDsl` for IDE auto-completion support.

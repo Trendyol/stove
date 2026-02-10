@@ -10,7 +10,7 @@
 
 ## Configure
 
-```kotlin
+```kotlin hl_lines="4 6-9"
 Stove()
   .with {
     redis {
@@ -59,7 +59,7 @@ redis {
 
 ## Usage
 
-The Redis component provides access to the underlying Lettuce Redis client, allowing you to test all Redis operations.
+The Redis component provides access to the underlying Lettuce Redis client, allowing you to <span data-rn="underline" data-rn-color="#009688">test all Redis operations</span>.
 
 ### Accessing the Redis Client
 
@@ -80,7 +80,7 @@ stove {
 
 Test basic string operations:
 
-```kotlin
+```kotlin hl_lines="3 7 8 12"
 stove {
   redis {
     val connection = client().connect().sync()
@@ -401,7 +401,7 @@ stove {
 
 Test failure scenarios:
 
-```kotlin
+```kotlin hl_lines="10 14 18"
 stove {
   redis {
     val connection = client().connect().sync()
@@ -435,7 +435,7 @@ stove {
 
 Here's a complete caching test example:
 
-```kotlin
+```kotlin hl_lines="7 14 22 30"
 test("should cache product data in redis") {
   stove {
     val productId = "product-123"
@@ -539,7 +539,7 @@ test("should use redis for session management") {
 
 ## Advanced: Custom Extensions
 
-Create reusable extensions for common patterns:
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Create reusable extensions for common patterns:</span>
 
 ```kotlin
 // Custom extension functions

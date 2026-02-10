@@ -6,7 +6,7 @@ Here are some practices we've found helpful when writing end-to-end tests with S
 
 ### Use Dedicated Source Set for E2E Tests
 
-Instead of placing e2e tests in the regular `src/test` folder, create a dedicated `src/test-e2e` source set. This provides better separation between unit/integration tests and e2e tests:
+Instead of placing e2e tests in the regular `src/test` folder, <span data-rn="underline" data-rn-color="#009688">create a dedicated `src/test-e2e` source set</span>. This provides better separation between unit/integration tests and e2e tests:
 
 ```
 src/
@@ -92,9 +92,9 @@ idea {
 
 ### Single Setup, Multiple Tests
 
-Configure Stove once for all tests:
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Configure Stove once for all tests:</span>
 
-```kotlin
+```kotlin hl_lines="4 11 18"
 // ✅ Good: Single configuration for all tests
 class TestConfig : AbstractProjectConfig() {
     override suspend fun beforeProject() {
@@ -122,7 +122,7 @@ class MyTest : FunSpec({
 
 Generate unique identifiers to prevent test interference:
 
-```kotlin
+```kotlin hl_lines="4 5 18"
 // ✅ Good: Unique data per test
 test("should create order") {
     val orderId = UUID.randomUUID().toString()
@@ -285,11 +285,11 @@ stove {
 }
 ```
 
-### Verify Side Effects
+### <span data-rn="underline" data-rn-color="#009688">Verify Side Effects</span>
 
 Test the complete flow including side effects:
 
-```kotlin
+```kotlin hl_lines="8 17 24 31 38"
 test("should process order completely") {
     val orderId = UUID.randomUUID().toString()
     
@@ -425,7 +425,7 @@ stove {
 
 ### Test Error Scenarios
 
-Test how your application handles failures:
+<span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">Test how your application handles failures:</span>
 
 ```kotlin
 test("should handle payment failure gracefully") {
@@ -485,7 +485,7 @@ test("should retry on transient failures") {
 
 ### Align Serializers
 
-Ensure Stove uses the same serialization as your application:
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Ensure Stove uses the same serialization as your application:</span>
 
 ```kotlin
 // If your app uses custom Jackson configuration
@@ -539,9 +539,9 @@ class KafkaConfig(
 
 ### External Service URLs Must Be Configurable
 
-When using WireMock, **all external service URLs must point to WireMock's URL**:
+When using WireMock, <span data-rn="box" data-rn-color="#ef5350">all external service URLs must point to WireMock's URL</span>:
 
-```kotlin
+```kotlin hl_lines="4-5 17-18"
 // ✅ Good: External service URLs are configurable
 @Configuration
 class ExternalServicesConfig(
@@ -564,14 +564,14 @@ Stove()
     }
 ```
 
-```kotlin
+```kotlin hl_lines="3"
 // ❌ Bad: Hardcoded URLs won't be intercepted by WireMock
 class PaymentClient {
     private val url = "http://payment-service.com"  // WireMock can't intercept this!
 }
 ```
 
-```kotlin
+```kotlin hl_lines="4"
 // ❌ Bad: Hardcoded values
 @Configuration
 class KafkaConfig {
@@ -581,7 +581,7 @@ class KafkaConfig {
 
 ### Use Test Profiles Wisely
 
-Minimize differences between test and production:
+<span data-rn="underline" data-rn-color="#009688">Minimize differences between test and production:</span>
 
 ```kotlin
 springBoot(
@@ -724,7 +724,7 @@ couchbase {
 
 ### ❌ Sleeping Instead of Waiting
 
-```kotlin
+```kotlin hl_lines="4 9"
 // Bad: Fixed sleep
 http { post("/async-operation") }
 Thread.sleep(5000)  // Fragile!
@@ -740,7 +740,7 @@ kafka {
 
 ### ❌ Sharing State Between Tests
 
-```kotlin
+```kotlin hl_lines="3 9 14"
 // Bad: Shared mutable state
 var createdUserId: String? = null
 

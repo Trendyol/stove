@@ -13,7 +13,7 @@
 
 Once you've added the dependency, you can configure PostgreSQL in your Stove setup:
 
-```kotlin
+```kotlin hl_lines="4 6-12"
 Stove()
   .with {
     postgresql {
@@ -38,7 +38,7 @@ The `it` reference gives you access to the PostgreSQL container's connection det
 
 Stove provides a way to run database migrations before tests start:
 
-```kotlin
+```kotlin hl_lines="1-2 5-6"
 class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
   override val order: Int = 1
 
@@ -123,7 +123,7 @@ stove {
 
 Query data with type-safe mappers:
 
-```kotlin
+```kotlin hl_lines="11 13 21-22"
 data class Product(
   val id: Long,
   val name: String,
@@ -285,9 +285,9 @@ stove {
 
 ## Complete Example
 
-Here's a complete end-to-end test:
+Here's a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">complete end-to-end test</span>:
 
-```kotlin
+```kotlin hl_lines="8 19 36"
 test("should create user via API and verify in database") {
   stove {
     val userName = "John Doe"
@@ -661,4 +661,4 @@ Stove()
 ```
 
 !!! tip "Production vs Test"
-    In production, these might be completely separate PostgreSQL instances (even in different regions). In tests, they're all in one container but behave identically from your application's perspective.
+    In production, these might be completely separate PostgreSQL instances (even in different regions). In tests, <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">they're all in one container but behave identically from your application's perspective</span>.

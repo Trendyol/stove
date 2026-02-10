@@ -1,6 +1,6 @@
 # Getting Started
 
-Get Stove running in your project in just a few minutes. Stove helps you write end-to-end tests by spinning up your application and all its dependencies (databases, message queues, etc.) together, so you can test the real thing instead of mocks.
+Get Stove running in your project in just a few minutes. Stove helps you write end-to-end tests by spinning up your application and all its dependencies (databases, message queues, etc.) together, so you can <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test the real thing instead of mocks</span>.
 
 ## What You'll Need
 
@@ -60,7 +60,7 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 === "Spring Boot"
 
-    ```kotlin
+    ```kotlin hl_lines="14 16-18"
     // Before
     @SpringBootApplication
     class MyApplication
@@ -85,7 +85,7 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 === "Ktor with Koin"
 
-    ```kotlin
+    ```kotlin hl_lines="10 14 15"
     // Before
     fun main() {
         embeddedServer(Netty, port = 8080) {
@@ -150,7 +150,7 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 ## Step 3: Create Test Configuration
 
-Set up Stove once for your entire test suite. This configuration runs before all your tests and shuts down after they're done. 
+<span data-rn="underline" data-rn-color="#009688">Set up Stove once for your entire test suite.</span> This configuration runs before all your tests and shuts down after they're done. 
 
 We recommend putting e2e tests in a separate `src/test-e2e` source set to keep them separate from unit tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for the Gradle setup).
 
@@ -317,9 +317,9 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
 
 ## Step 5: Add More Components
 
-Once you've got the basics working, you'll probably want to add more components. Here's how you'd set up a typical stack:
+Once you've got the basics working, you'll probably want to <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">add more components</span>. Here's how you'd set up a typical stack:
 
-```kotlin
+```kotlin hl_lines="9 19 33 38 40"
 Stove()
     .with {
         httpClient {
@@ -371,7 +371,7 @@ Stove()
 
 ## Step 6: Write Tests That Span Multiple Systems
 
-Here's where Stove really shines. You can write tests that touch multiple systems and verify everything works together:
+Here's where <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Stove really shines</span>. You can write tests that touch multiple systems and verify everything works together:
 
 ```kotlin hl_lines="4 8 17 31 38 46"
 import com.trendyol.stove.system.stove
@@ -464,7 +464,7 @@ Now that you're up and running, here's what to explore next:
 
 ### Keep Containers Running Between Test Runs
 
-Starting containers takes time. During development, you can keep them running between test runs to speed things up:
+Starting containers takes time. During development, you can <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">keep them running between test runs</span> to speed things up:
 
 ```kotlin hl_lines="2"
 Stove {
@@ -494,7 +494,7 @@ kafka {
 
 ### Use Unique Test Data
 
-To avoid test conflicts, generate unique data for each test run:
+To avoid test conflicts, <span data-rn="underline" data-rn-color="#ff9800">generate unique data for each test run</span>:
 
 ```kotlin
 test("should create user") {
