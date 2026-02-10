@@ -1291,7 +1291,7 @@
   <span class="md-ellipsis">
     
   
-    0.21.0 (Upcoming)
+    0.21.0
   
 
     
@@ -1766,6 +1766,11 @@
 <td>Built-in</td>
 <td>Access to application's DI container</td>
 </tr>
+<tr>
+<td><a href="15-tracing/">Tracing</a></td>
+<td><code>stove-tracing</code></td>
+<td>Execution tracing with OpenTelemetry for failure diagnostics</td>
+</tr>
 </tbody>
 </table>
 <h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
@@ -1812,18 +1817,19 @@
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">CouchbaseSystemOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="n">http</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">WireMockSystemOptions</span><span class="p">(...)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="c1">// Application under test</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">springBoot</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">myApp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="p">.</span><span class="na">run</span><span class="p">()</span><span class="w"> </span><span class="c1">// Starts all components and the application</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="c1">// Test your application</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">  </span><span class="n">http</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* HTTP assertions */</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Kafka assertions */</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Database assertions */</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="p">}</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="c1">// Application under test</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">springBoot</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">myApp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="p">.</span><span class="na">run</span><span class="p">()</span><span class="w"> </span><span class="c1">// Starts all components and the application</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1">// Test your application</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span><span class="n">http</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* HTTP assertions */</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Kafka assertions */</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Database assertions */</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="component-categories">Component Categories<a class="headerlink" href="#component-categories" title="Permanent link">&para;</a></h2>
 <h3 id="databases">Databases<a class="headerlink" href="#databases" title="Permanent link">&para;</a></h3>
@@ -1911,6 +1917,10 @@
 <tr>
 <td><a href="13-reporting/">Reporting</a></td>
 <td>Detailed execution reports and failure diagnostics</td>
+</tr>
+<tr>
+<td><a href="15-tracing/">Tracing</a></td>
+<td><span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span></td>
 </tr>
 </tbody>
 </table>
@@ -2049,6 +2059,7 @@
 <li><a href="10-bridge/">Bridge</a> - Direct access to application beans</li>
 <li><a href="11-provided-instances/">Provided Instances</a> - Use external infrastructure</li>
 <li><a href="13-reporting/">Reporting</a> - Detailed execution reports and failure diagnostics</li>
+<li><a href="15-tracing/">Tracing</a> - Execution tracing with OpenTelemetry for full call chain visibility</li>
 </ul>
 
 
