@@ -6,7 +6,7 @@ Here are some practices we've found helpful when writing end-to-end tests with S
 
 ### Use Dedicated Source Set for E2E Tests
 
-Instead of placing e2e tests in the regular `src/test` folder, <span data-rn="underline" data-rn-color="#009688">create a dedicated `src/test-e2e` source set</span>. This provides better separation between unit/integration tests and e2e tests:
+Instead of placing <span data-rn="underline" data-rn-color="#ff9800">e2e</span> tests in the regular `src/test` folder, <span data-rn="underline" data-rn-color="#009688">create a dedicated `src/test-e2e` source set</span>. This provides better separation between unit/integration tests and e2e tests:
 
 ```
 src/
@@ -94,7 +94,7 @@ idea {
 
 <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Configure Stove once for all tests:</span>
 
-```kotlin hl_lines="4 11 18"
+```kotlin hl_lines="4 10 18"
 // ✅ Good: Single configuration for all tests
 class TestConfig : AbstractProjectConfig() {
     override suspend fun beforeProject() {
@@ -287,7 +287,7 @@ stove {
 
 ### <span data-rn="underline" data-rn-color="#009688">Verify Side Effects</span>
 
-Test the complete flow including side effects:
+<span data-rn="underline" data-rn-color="#009688">Test the complete flow including side effects: make the request, then verify database state, published events, search index, and cache.</span>
 
 ```kotlin hl_lines="8 17 24 31 38"
 test("should process order completely") {
@@ -541,7 +541,7 @@ class KafkaConfig(
 
 When using WireMock, <span data-rn="box" data-rn-color="#ef5350">all external service URLs must point to WireMock's URL</span>:
 
-```kotlin hl_lines="4-5 17-18"
+```kotlin hl_lines="4 5 16 17"
 // ✅ Good: External service URLs are configurable
 @Configuration
 class ExternalServicesConfig(
@@ -740,7 +740,7 @@ kafka {
 
 ### ❌ Sharing State Between Tests
 
-```kotlin hl_lines="3 9 14"
+```kotlin hl_lines="2 5 9 14"
 // Bad: Shared mutable state
 var createdUserId: String? = null
 

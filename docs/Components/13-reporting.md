@@ -17,7 +17,7 @@ The reporting extensions are <span data-rn="underline" data-rn-color="#009688">o
 
 If you're using Kotest, add the extension dependency:
 
-```kotlin
+```kotlin hl_lines="3"
 dependencies {
     testImplementation("com.trendyol:stove-extensions-kotest")
 }
@@ -50,7 +50,7 @@ class TestConfig : AbstractProjectConfig() {
 
 For JUnit, add the extension dependency:
 
-```kotlin
+```kotlin hl_lines="3"
 dependencies {
     testImplementation("com.trendyol:stove-extensions-junit")
 }
@@ -58,7 +58,7 @@ dependencies {
 
 Then annotate your test class:
 
-```kotlin
+```kotlin hl_lines="4 6"
 import com.trendyol.stove.extensions.junit.StoveJUnitExtension
 import org.junit.jupiter.api.extension.ExtendWith
 
@@ -104,11 +104,13 @@ Stove {
 
 <span data-rn="underline" data-rn-color="#009688">Every interaction with a Stove system is recorded:</span>
 
-- **HTTP**: All requests and responses (GET, POST, PUT, DELETE, etc.)
-- **Kafka**: Message publishing, consumption, and failure assertions
-- **Database**: Queries, saves, deletes (Couchbase, PostgreSQL, MongoDB, etc.)
+<div data-rn-group>
+- **HTTP**: <span data-rn="highlight" data-rn-color="#00968855">All requests and responses</span> (GET, POST, PUT, DELETE, etc.)
+- **Kafka**: <span data-rn="underline" data-rn-color="#009688">Message publishing, consumption, and failure assertions</span>
+- **Database**: <span data-rn="underline" data-rn-color="#ff9800">Queries, saves, deletes</span> (Couchbase, PostgreSQL, MongoDB, etc.)
 - **WireMock**: Stub registrations and verifications
 - **gRPC**: Client connections and calls
+</div>
 
 ### Assertions
 
@@ -167,7 +169,7 @@ Machine-readable JSON format, useful for:
 - Log aggregation systems
 - Custom report processing
 
-```kotlin
+```kotlin hl_lines="2"
 Stove {
     failureRenderer(JsonReportRenderer)
 }
@@ -211,7 +213,7 @@ Example JSON output:
 
 To use the JSON renderer:
 
-```kotlin
+```kotlin hl_lines="2"
 Stove {
     failureRenderer(JsonReportRenderer)
 }

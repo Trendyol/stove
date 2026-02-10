@@ -1,4 +1,4 @@
-# Tracing
+# <span data-rn="underline" data-rn-color="#ff9800">Tracing</span>
 
 Your end-to-end test just failed. Now what?
 
@@ -19,7 +19,7 @@ EXECUTION TRACE (Call Chain)
           ✗ orders.created process (82ms)  ← FAILURE POINT
 ```
 
-That's Stove tracing. When a test fails, you see the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. It's a unique feature.
+That's Stove tracing. When a test fails, you see the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application, powered by <span data-rn="underline" data-rn-color="#ff9800">OpenTelemetry</span>: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. It's a unique feature.
 
 ## What You Get
 
@@ -92,7 +92,7 @@ Two steps. That's it.
 
 ### Step 1: Enable tracing in your Stove config
 
-```kotlin hl_lines="3-5"
+```kotlin hl_lines="3-4"
 Stove()
     .with {
         tracing {
@@ -107,7 +107,7 @@ Stove()
 
 Copy [StoveTracingConfiguration.kt](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
 
-```kotlin hl_lines="3-5"
+```kotlin hl_lines="3-4"
 import com.trendyol.stove.gradle.configureStoveTracing
 
 configureStoveTracing {
@@ -169,7 +169,7 @@ Every HTTP request gets a `traceparent` header. Every Kafka message gets trace h
 
 Beyond automatic failure reports, you can actively query and assert on traces using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it did.
 
-```kotlin hl_lines="9-13"
+```kotlin hl_lines="9 10 11 12"
 test("order processing should call payment service") {
     stove {
         http {

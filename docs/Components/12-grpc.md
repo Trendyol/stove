@@ -1,4 +1,4 @@
-# gRPC
+# <span data-rn="underline" data-rn-color="#ff9800">gRPC</span>
 
 === "Gradle"
 

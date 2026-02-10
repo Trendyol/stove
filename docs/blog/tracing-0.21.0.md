@@ -27,7 +27,7 @@ flowchart LR
     B --> H["db-scheduler - Schedule Email"]
 ```
 
-Here's the service code. Each method is annotated with `@WithSpan` so the OpenTelemetry agent captures it:
+Here's the service code. Each method is annotated with `@WithSpan` so the <span data-rn="underline" data-rn-color="#ff9800">OpenTelemetry</span> agent captures it:
 
 ```kotlin hl_lines="11"
 @Service
@@ -66,7 +66,7 @@ class OrderService(
 
 And here's how the Stove test covers the entire flow in a single test:
 
-```kotlin
+```kotlin hl_lines="2 4 5 16 25 26 34 46 56 64 72"
 test("The Complete Order Flow - Every Feature in One Test") {
   stove {
     // 1. Mock the external gRPC service (Fraud Detection)
@@ -303,7 +303,7 @@ This is not something you get for free with OpenTelemetry. In production, a trac
 
 Beyond automatic failure reports, you can actively assert on the execution flow using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it produced the right output:
 
-```kotlin hl_lines="12-15 18 21 24"
+```kotlin hl_lines="11 12 13 14 17 20 23"
 test("order processing should call all expected services") {
   stove {
     http {
@@ -387,7 +387,7 @@ Worth noting: the OTel agent does add some startup overhead to the test JVM (a f
 3. **Start with `shouldNotHaveFailedSpans()`.** The simplest assertion that catches unexpected errors anywhere in the call chain.
 4. **Filter noisy instrumentations.** Some libraries generate a lot of spans. Tune with `disabledInstrumentations`:
 
-```kotlin
+```kotlin hl_lines="3-4"
 configureStoveTracing {
   serviceName = "my-service"
   disabledInstrumentations = listOf("jdbc", "hibernate", "spring-scheduling")
@@ -398,7 +398,7 @@ configureStoveTracing {
 
 Add the dependencies:
 
-```kotlin
+```kotlin hl_lines="6 8 9"
 dependencies {
   testImplementation(platform("com.trendyol:stove-bom:0.21.0"))
 
@@ -412,7 +412,7 @@ dependencies {
 
 Enable tracing in two steps:
 
-```kotlin
+```kotlin hl_lines="3 6"
 // build.gradle.kts
 configureStoveTracing {
   serviceName = "my-service"
@@ -424,7 +424,7 @@ tracing {
 }
 ```
 
-For a complete working example, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase). It demonstrates all Stove features together (HTTP, gRPC, Kafka, PostgreSQL, WireMock, db-scheduler, and tracing) in a realistic Spring Boot application.
+<span data-rn="underline" data-rn-color="#009688">For a complete working example, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase). It demonstrates all Stove features together (HTTP, gRPC, Kafka, PostgreSQL, WireMock, db-scheduler, and tracing) in a realistic Spring Boot application.</span>
 
 ---
 

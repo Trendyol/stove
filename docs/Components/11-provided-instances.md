@@ -1,4 +1,4 @@
-# Provided Instances (Testcontainer-less Mode)
+# <span data-rn="underline" data-rn-color="#ff9800">Provided Instances</span> (Testcontainer-less Mode)
 
 Stove supports using <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">externally provided infrastructure instances instead of testcontainers</span>. This is particularly useful for:
 
@@ -48,7 +48,7 @@ Stove()
 
 ### Couchbase
 
-```kotlin hl_lines="8 24-25"
+```kotlin hl_lines="24-25"
 // Container-based with cleanup
 Stove()
   .with {

@@ -1,4 +1,4 @@
-# Microsoft SQL Server (MSSQL)
+# <span data-rn="underline" data-rn-color="#ff9800">Microsoft SQL Server (MSSQL)</span>
 
 === "Gradle"
 
@@ -143,7 +143,7 @@ Stove()
 
 Execute DDL and DML statements:
 
-```kotlin hl_lines="4 17 25 28"
+```kotlin hl_lines="11 16 24 27"
 stove {
   mssql {
     // Create tables

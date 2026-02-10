@@ -402,10 +402,7 @@ Mock not found / unexpected request
 
 #### OutOfMemoryError
 
-**Symptoms:**
-```
-java.lang.OutOfMemoryError: Java heap space
-```
+**Symptoms:** <span data-rn="underline" data-rn-color="#ff9800">OutOfMemoryError</span> (e.g. `Java heap space`)
 
 **Solutions:**
 
@@ -558,7 +555,7 @@ class MyE2ETest : FunSpec({
 })
 ```
 
-You can still test your Java application with Stove - just write your e2e test files in Kotlin.
+<span data-rn="underline" data-rn-color="#009688">You can still test your Java application with Stove — just write your e2e test files in Kotlin.</span>
 
 #### Q: Can I use JUnit instead of Kotest?
 

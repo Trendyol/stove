@@ -1,4 +1,4 @@
-# gRPC Mock
+# <span data-rn="underline" data-rn-color="#ff9800">gRPC Mock</span>
 
 `stove-grpc-mock` provides a native gRPC mock server for testing gRPC service integrations. Unlike WireMock-based solutions, this implementation provides <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">**full support for all gRPC RPC types**</span> without external dependency conflicts.
 

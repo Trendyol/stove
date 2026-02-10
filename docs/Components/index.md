@@ -1,6 +1,6 @@
 # Components
 
-Stove uses a pluggable architecture—each physical dependency is a separate module you can add based on what you need. All components work together seamlessly, so you can build your test environment to match your production setup.
+Stove uses a pluggable architecture—each physical dependency is a separate module you can add based on what you need. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood. All components work together seamlessly, so you can build your test environment to match your production setup.
 
 ## Available Components
 

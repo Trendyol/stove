@@ -6,7 +6,7 @@ Since JVM languages can interoperate, your application and tests don't need to u
 
 Your tests stay infrastructure-agnostic but component-aware. You can easily plug in whatever physical components you need using Stove's APIs. All the infrastructure is **pluggable**—add what you need, skip what you don't. If Stove doesn't have a component you need, you can build your own using the abstractions it provides.
 
-<span data-rn="underline" data-rn-color="#009688">The only hard requirement is Docker</span>, since Stove uses [testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
+The only hard requirement is <span data-rn="underline" data-rn-color="#ff9800">Docker</span>, since Stove uses [testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
 
 You can run tests with either JUnit or Kotest. CI works too, though you'll need **DinD (docker-in-docker)** setup for that.
 
@@ -21,9 +21,12 @@ The JVM ecosystem has great frameworks for building applications, but when it co
 
 We built Stove to solve this. We wanted to boost developer productivity while keeping code quality high, and we needed it to work across different tech stacks:
 
-- Kotlin apps with Spring Boot
-- Kotlin apps with Ktor
-- Java apps with Spring Boot
+- <span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Spring Boot</span>
+- <span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Ktor</span>
+- <span data-rn="underline" data-rn-color="#ff9800">Java apps with Spring Boot</span>
+- Java apps with Micronaut
+- Java apps with Quarkus
+- Scala apps with Spring Boot
 - Java apps with Micronaut
 - Java apps with Quarkus
 - Scala apps with Spring Boot
@@ -100,7 +103,7 @@ Stove supports these components:
 
 === "Gradle"
 
-    ```kotlin hl_lines="8 13 21"
+    ```kotlin hl_lines="7 12 21"
     repositories {
       mavenCentral()
     }

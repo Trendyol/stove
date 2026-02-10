@@ -18,7 +18,7 @@ Make sure you have these installed:
 
 Add Stove to your `build.gradle.kts`:
 
-```kotlin hl_lines="7-8 10-11 14-15"
+```kotlin hl_lines="7 10 14 16"
 repositories {
     mavenCentral()
 }
@@ -60,7 +60,7 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 === "Spring Boot"
 
-    ```kotlin hl_lines="14 16-18"
+    ```kotlin hl_lines="13 15 16 17 18"
     // Before
     @SpringBootApplication
     class MyApplication
@@ -85,7 +85,7 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 === "Ktor with Koin"
 
-    ```kotlin hl_lines="10 14 15"
+    ```kotlin hl_lines="10 12 14 15 21"
     // Before
     fun main() {
         embeddedServer(Netty, port = 8080) {
@@ -116,7 +116,7 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 === "Ktor with Ktor-DI"
 
-    ```kotlin
+    ```kotlin hl_lines="10 12 14 15 22"
     // Before
     fun main() {
         embeddedServer(Netty, port = 8080) {
@@ -150,13 +150,13 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 ## Step 3: Create Test Configuration
 
-<span data-rn="underline" data-rn-color="#009688">Set up Stove once for your entire test suite.</span> This configuration runs before all your tests and shuts down after they're done. 
+<span data-rn="underline" data-rn-color="#009688">Set up Stove once for your entire test suite.</span> This configuration runs before all your tests and shuts down after they're done. Use <span data-rn="underline" data-rn-color="#ff9800">Stove()</span> and <span data-rn="underline" data-rn-color="#ff9800">.with { }</span> to configure your test environment. 
 
 We recommend putting e2e tests in a separate `src/test-e2e` source set to keep them separate from unit tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for the Gradle setup).
 
 === "Kotest"
 
-    ```kotlin hl_lines="11-13 16 30"
+    ```kotlin hl_lines="10 12 13 16 31"
     // src/test-e2e/kotlin/e2e/TestConfig.kt
     import com.trendyol.stove.extensions.kotest.StoveKotestExtension
     import com.trendyol.stove.system.Stove
@@ -319,7 +319,7 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
 
 Once you've got the basics working, you'll probably want to <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">add more components</span>. Here's how you'd set up a typical stack:
 
-```kotlin hl_lines="9 19 33 38 40"
+```kotlin hl_lines="9 19 33 37 40"
 Stove()
     .with {
         httpClient {
@@ -427,6 +427,8 @@ test("should create order and publish event") {
     }
 }
 ```
+
+<span data-rn="underline" data-rn-color="#009688">Stove starts your application with its dependencies, runs your tests, and shuts everything down when done.</span>
 
 ## Running Tests
 

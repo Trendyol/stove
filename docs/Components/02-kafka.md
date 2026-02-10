@@ -1,4 +1,4 @@
-# Kafka
+# <span data-rn="underline" data-rn-color="#ff9800">Kafka</span>
 
 Stove supports Kafka in two ways: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">standalone Kafka or Kafka with Spring integration</span>. You can use either one, but not both in the same project.
 
@@ -267,7 +267,7 @@ springBoot(
 
 #### Configuring the SystemUnderTest and Parameters
 
-```kotlin  hl_lines="4-8"
+```kotlin hl_lines="4-8"
 springBoot(
   runner = { parameters ->
     runApplication<MyApp>(*parameters) {

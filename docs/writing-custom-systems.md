@@ -26,7 +26,7 @@ That `tasks { }` block is a custom system. Building one is straightforward.
 
 ### 1. The System Class
 
-Implement `PluggedSystem` and pick a lifecycle interface that fits your needs:
+Implement <span data-rn="underline" data-rn-color="#ff9800">PluggedSystem</span> and pick a lifecycle interface that fits your needs:
 
 ```kotlin hl_lines="1-2 11-16"
 class DbSchedulerSystem(
@@ -51,7 +51,7 @@ class DbSchedulerSystem(
 }
 ```
 
-The available lifecycle interfaces are:
+<span data-rn="underline" data-rn-color="#009688">The lifecycle interfaces control when your system runs: before the app starts, after it starts, or when configuration is collected.</span>
 
 | Interface | When Called |
 |-----------|------------|

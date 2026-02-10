@@ -1,4 +1,4 @@
-# MySQL
+# <span data-rn="underline" data-rn-color="#ff9800">MySQL</span>
 
 === "Gradle"
 
@@ -11,9 +11,9 @@
 
 ## Configure
 
-Once you've added the dependency, you can configure MySQL in your Stove setup:
+Once you've added the dependency, you can <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">configure MySQL in your Stove setup</span>:
 
-```kotlin
+```kotlin hl_lines="4 7-8"
 Stove()
   .with {
     mysql {
@@ -82,9 +82,9 @@ Stove()
 
 ### Executing SQL
 
-Execute DDL and DML statements:
+<span data-rn="underline" data-rn-color="#009688">Execute DDL and DML statements with `shouldExecute`:</span>
 
-```kotlin
+```kotlin hl_lines="4 11 19 22"
 stove {
   mysql {
     // Create tables
@@ -121,7 +121,7 @@ stove {
 
 Query data with type-safe mappers:
 
-```kotlin
+```kotlin hl_lines="4 12 17"
 data class Product(
   val id: Long,
   val name: String,

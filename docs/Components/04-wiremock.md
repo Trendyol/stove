@@ -1,4 +1,4 @@
-# Wiremock
+# <span data-rn="underline" data-rn-color="#ff9800">WireMock</span>
 
 === "Gradle"
 
@@ -40,7 +40,7 @@ Using dynamic ports is the recommended approach as it:
 - **Eliminates "Address already in use" errors** that occur with hardcoded ports
 - **Automatically exposes** the actual port to your application via `configureExposedConfiguration`
 
-```kotlin hl_lines="7 11-13 20"
+```kotlin hl_lines="11-13 20"
 Stove()
   .with {
     wiremock {
@@ -137,7 +137,7 @@ automatically determined and exposed via `configureExposedConfiguration`.
 
 !!! warning "Critical: External Service URLs Must Match WireMock"
 
-    **All external service URLs in your application must be configured to point to the WireMock server.**
+    **<span data-rn="box" data-rn-color="#ef5350">All external service URLs in your application must be configured to point to the WireMock server.</span>**
     
     This is one of the most common configuration mistakes. If your application's external service URLs 
     don't match WireMock's URL, your mocks won't be hit and tests will fail or timeout.

@@ -1,4 +1,4 @@
-# Elasticsearch
+# <span data-rn="underline" data-rn-color="#ff9800">Elasticsearch</span>
 
 === "Gradle"
 

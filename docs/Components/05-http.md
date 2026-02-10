@@ -1,4 +1,4 @@
-# HttpClient
+# <span data-rn="underline" data-rn-color="#ff9800">HTTP Client</span>
 
 === "Gradle"
 
@@ -444,7 +444,7 @@ Stove provides <span data-rn="highlight" data-rn-color="#00968855" data-rn-durat
 
 Send and receive messages through a WebSocket connection:
 
-```kotlin hl_lines="3 5 8"
+```kotlin hl_lines="3 5"
 stove {
   http {
     webSocket("/chat") {

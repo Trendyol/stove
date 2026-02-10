@@ -1,4 +1,4 @@
-# Bridge
+# <span data-rn="underline" data-rn-color="#ff9800">Bridge</span>
 
 The Bridge component gives you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">direct access to your application's dependency injection (DI) container</span> from your tests. This lets you grab any bean or service your application has registered, which is super useful for testing internal state, verifying side effects, or setting up test data through your application's own services.
 

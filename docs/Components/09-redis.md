@@ -1,4 +1,4 @@
-# Redis
+# <span data-rn="underline" data-rn-color="#ff9800">Redis</span>
 
 === "Gradle"
 
@@ -401,7 +401,7 @@ stove {
 
 Test failure scenarios:
 
-```kotlin hl_lines="10 14 18"
+```kotlin hl_lines="11 15 19"
 stove {
   redis {
     val connection = client().connect().sync()

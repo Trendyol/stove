@@ -1,4 +1,4 @@
-# Postgresql
+# <span data-rn="underline" data-rn-color="#ff9800">PostgreSQL</span>
 
 === "Gradle"
 
@@ -123,7 +123,7 @@ stove {
 
 Query data with type-safe mappers:
 
-```kotlin hl_lines="11 13 21-22"
+```kotlin hl_lines="11 13 21"
 data class Product(
   val id: Long,
   val name: String,
@@ -287,7 +287,7 @@ stove {
 
 Here's a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">complete end-to-end test</span>:
 
-```kotlin hl_lines="8 19 36"
+```kotlin hl_lines="7 12 24 28"
 test("should create user via API and verify in database") {
   stove {
     val userName = "John Doe"
