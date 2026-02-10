@@ -350,6 +350,28 @@
     
     
       <li class="md-tabs__item">
+        <a href="../../blog/tracing-0.21.0/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
         <a href="../../release-notes/0.21.0/" class="md-tabs__link">
           
   
@@ -1393,12 +1415,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -1422,7 +1438,7 @@
   <span class="md-ellipsis">
     
   
-    Release Notes
+    Blog
   
 
     
@@ -1435,6 +1451,103 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Blog
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/tracing-0.21.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Tracing in 0.21.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1905,7 +2018,7 @@
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        ✓ orders.created publish (81ms)
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>          ✗ orders.created process (82ms)  ← FAILURE POINT
 </span></code></pre></div>
-<p>That's Stove tracing. When a test fails, you see the <strong>entire call chain</strong> of your application -- every controller method, every database query, every Kafka message, every HTTP call -- with timing and the exact point of failure. No other end-to-end testing framework does this.</p>
+<p>That's Stove tracing. When a test fails, you see the <strong>entire call chain</strong> of your application -- every controller method, every database query, every Kafka message, every HTTP call -- with timing and the exact point of failure. It's a unique feature.</p>
 <h2 id="what-you-get">What You Get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <p>When tracing is enabled, every test failure comes with the full story:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>STOVE EXECUTION REPORT
@@ -2451,6 +2564,10 @@
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../assets/rough-notation.iife.js"></script>
+      
+        <script src="../../js/rough-notation-mkdocs.js"></script>
       
     
   </body>
