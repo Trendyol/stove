@@ -16,12 +16,13 @@ img {
 
 /* Code block refinements */
 .highlight code {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
+    line-height: 1.45;
 }
 
 /* Slightly tighter line height in code for density */
 code {
-    font-size: 0.82em;
+    font-size: 0.78em;
 }
 
 /* Admonition title font weight */
@@ -29,12 +30,29 @@ code {
     font-weight: 600;
 }
 
+/* Code block hl_lines: override default background for RoughNotation */
+.highlight pre .hll {
+    background-color: transparent !important;
+}
+.highlight pre {
+    position: relative;
+}
+/* Clip RoughNotation SVGs that extend beyond code block edges */
+.highlight {
+    overflow: hidden;
+}
+/* Contain annotation SVGs within the code block */
+.highlight pre > svg,
+.highlight code > svg {
+    pointer-events: none;
+}
+
 /* Stove annotated report blocks (RoughNotation) */
 .stove-report pre {
     background: var(--md-code-bg-color);
     color: var(--md-code-fg-color);
-    font-size: .75rem;
-    line-height: 1.5;
+    font-size: .68rem;
+    line-height: 1.45;
     padding: 1em 1.2em;
     border-radius: .1rem;
     position: relative;

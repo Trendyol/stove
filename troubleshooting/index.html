@@ -2593,7 +2593,7 @@
 </span></code></pre></div></p>
 </li>
 <li>
-<p><strong>Use dynamic ports:</strong> Let the framework assign available ports when possible.</p>
+<p><strong>Use dynamic ports:</strong> <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Let the framework assign available ports when possible.</span></p>
 </li>
 </ol>
 <h3 id="startup-issues">Startup Issues<a class="headerlink" href="#startup-issues" title="Permanent link">&para;</a></h3>
@@ -2697,7 +2697,7 @@
 </span></code></pre></div></p>
 </li>
 </ol>
-<h4 id="serializationdeserialization-errors">Serialization/Deserialization Errors<a class="headerlink" href="#serializationdeserialization-errors" title="Permanent link">&para;</a></h4>
+<h4 id="serializationdeserialization-errors"><span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">Serialization/Deserialization Errors</span><a class="headerlink" href="#serializationdeserialization-errors" title="Permanent link">&para;</a></h4>
 <p><strong>Symptoms:</strong>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>JsonParseException: Unrecognized field
 </span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>MismatchedInputException: Cannot deserialize
@@ -2794,8 +2794,8 @@
 <p><strong>Verify Kafka interceptor is configured:</strong>
    <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1">// In your Stove setup</span>
 </span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="n">addTestDependencies</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
-</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="p">}</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="hll"><span class="w">    </span><span class="n">bean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">isPrimary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+</span></span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="p">}</span>
 </span></code></pre></div></p>
 </li>
 <li>
@@ -2815,8 +2815,8 @@
 </span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">        </span><span class="n">listOf</span><span class="p">(</span>
 </span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">            </span><span class="s">&quot;kafka.bootstrapServers=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">bootstrapServers</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
 </span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">            </span><span class="s">&quot;kafka.interceptorClasses=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">interceptorClass</span><span class="si">}</span><span class="s">&quot;</span><span class="w">  </span><span class="c1">// Important!</span>
-</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">        </span><span class="p">)</span>
-</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="hll"><span class="w">        </span><span class="p">)</span>
+</span></span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="p">}</span>
 </span></code></pre></div></p>
 </li>
@@ -2837,11 +2837,11 @@
 </span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>Test timeout when calling mocked endpoint
 </span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>Mock not found / unexpected request
 </span></code></pre></div></p>
-<p><strong>Cause:</strong> This is almost always because your application's external service URLs don't match the WireMock URL.</p>
+<p><strong>Cause:</strong> This is <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">almost always because your application's external service URLs don't match the WireMock URL</span>.</p>
 <p><strong>Solutions:</strong></p>
 <ol>
 <li>
-<p><strong>Ensure ALL external service URLs point to WireMock:</strong>
+<p><span data-rn="box" data-rn-color="#ef5350"><strong>Ensure ALL external service URLs point to WireMock:</strong></span>
    <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">        </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
@@ -2852,10 +2852,10 @@
 </span><span id="__span-34-8"><a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="w">            </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
 </span><span id="__span-34-9"><a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="w">                </span><span class="c1">// ALL external services must use WireMock URL</span>
 </span><span id="__span-34-10"><a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="w">                </span><span class="s">&quot;payment.service.url=http://localhost:9090&quot;</span><span class="p">,</span>
-</span><span id="__span-34-11"><a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="w">                </span><span class="s">&quot;inventory.service.url=http://localhost:9090&quot;</span><span class="p">,</span>
-</span><span id="__span-34-12"><a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="w">                </span><span class="s">&quot;notification.service.url=http://localhost:9090&quot;</span>
-</span><span id="__span-34-13"><a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="w">            </span><span class="p">)</span>
-</span><span id="__span-34-14"><a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-34-11"><a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="hll"><span class="w">                </span><span class="s">&quot;inventory.service.url=http://localhost:9090&quot;</span><span class="p">,</span>
+</span></span><span id="__span-34-12"><a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="hll"><span class="w">                </span><span class="s">&quot;notification.service.url=http://localhost:9090&quot;</span>
+</span></span><span id="__span-34-13"><a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="hll"><span class="w">            </span><span class="p">)</span>
+</span></span><span id="__span-34-14"><a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="w">        </span><span class="p">)</span>
 </span><span id="__span-34-15"><a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a><span class="w">    </span><span class="p">}</span>
 </span></code></pre></div></p>
 </li>
@@ -2966,29 +2966,29 @@
 </span><span id="__span-44-3"><a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a>&quot;Topic already exists&quot; or &quot;Index already exists&quot; errors
 </span><span id="__span-44-4"><a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a>Tests fail when multiple builds run in parallel
 </span></code></pre></div></p>
-<p><strong>Cause:</strong> Multiple test runs are using the same resource names (databases, topics, indices) in shared infrastructure.</p>
+<p><strong>Cause:</strong> <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">Multiple test runs are using the same resource names</span> (databases, topics, indices) in shared infrastructure.</p>
 <p><strong>Solutions:</strong></p>
 <ol>
 <li>
 <p><strong>Use unique resource prefixes per test run:</strong>
    <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="kd">object</span><span class="w"> </span><span class="nc">TestRunContext</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">runId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;CI_JOB_ID&quot;</span><span class="p">)</span><span class="w"> </span>
-</span><span id="__span-45-3"><a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a><span class="w">        </span><span class="o">?:</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">().</span><span class="na">take</span><span class="p">(</span><span class="m">8</span><span class="p">)</span>
-</span><span id="__span-45-4"><a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a>
-</span><span id="__span-45-5"><a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">databaseName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;testdb_</span><span class="si">$</span><span class="n">runId</span><span class="s">&quot;</span>
-</span><span id="__span-45-6"><a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">topicPrefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;test_</span><span class="si">${</span><span class="n">runId</span><span class="si">}</span><span class="s">_&quot;</span>
-</span><span id="__span-45-7"><a id="__codelineno-45-7" name="__codelineno-45-7" href="#__codelineno-45-7"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">indexPrefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;test_</span><span class="si">${</span><span class="n">runId</span><span class="si">}</span><span class="s">_&quot;</span>
-</span><span id="__span-45-8"><a id="__codelineno-45-8" name="__codelineno-45-8" href="#__codelineno-45-8"></a><span class="p">}</span>
+</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a><span class="hll"><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">runId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;CI_JOB_ID&quot;</span><span class="p">)</span><span class="w"> </span>
+</span></span><span id="__span-45-3"><a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a><span class="hll"><span class="w">        </span><span class="o">?:</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">().</span><span class="na">take</span><span class="p">(</span><span class="m">8</span><span class="p">)</span>
+</span></span><span id="__span-45-4"><a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a>
+</span><span id="__span-45-5"><a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a><span class="hll"><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">databaseName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;testdb_</span><span class="si">$</span><span class="n">runId</span><span class="s">&quot;</span>
+</span></span><span id="__span-45-6"><a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a><span class="hll"><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">topicPrefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;test_</span><span class="si">${</span><span class="n">runId</span><span class="si">}</span><span class="s">_&quot;</span>
+</span></span><span id="__span-45-7"><a id="__codelineno-45-7" name="__codelineno-45-7" href="#__codelineno-45-7"></a><span class="hll"><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">indexPrefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;test_</span><span class="si">${</span><span class="n">runId</span><span class="si">}</span><span class="s">_&quot;</span>
+</span></span><span id="__span-45-8"><a id="__codelineno-45-8" name="__codelineno-45-8" href="#__codelineno-45-8"></a><span class="p">}</span>
 </span></code></pre></div></p>
 </li>
 <li>
 <p><strong>Apply prefixes to all resources:</strong>
    <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a><span class="n">springBoot</span><span class="p">(</span>
 </span><span id="__span-46-2"><a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a><span class="w">    </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
-</span><span id="__span-46-3"><a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a><span class="w">        </span><span class="s">&quot;spring.datasource.url=jdbc:postgresql://db:5432/</span><span class="si">${</span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">databaseName</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
-</span><span id="__span-46-4"><a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a><span class="w">        </span><span class="s">&quot;kafka.topic.orders=</span><span class="si">${</span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">topicPrefix</span><span class="si">}</span><span class="s">orders&quot;</span><span class="p">,</span>
-</span><span id="__span-46-5"><a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a><span class="w">        </span><span class="s">&quot;elasticsearch.index.products=</span><span class="si">${</span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">indexPrefix</span><span class="si">}</span><span class="s">products&quot;</span>
-</span><span id="__span-46-6"><a id="__codelineno-46-6" name="__codelineno-46-6" href="#__codelineno-46-6"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-46-3"><a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a><span class="hll"><span class="w">        </span><span class="s">&quot;spring.datasource.url=jdbc:postgresql://db:5432/</span><span class="si">${</span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">databaseName</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
+</span></span><span id="__span-46-4"><a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a><span class="hll"><span class="w">        </span><span class="s">&quot;kafka.topic.orders=</span><span class="si">${</span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">topicPrefix</span><span class="si">}</span><span class="s">orders&quot;</span><span class="p">,</span>
+</span></span><span id="__span-46-5"><a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a><span class="hll"><span class="w">        </span><span class="s">&quot;elasticsearch.index.products=</span><span class="si">${</span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">indexPrefix</span><span class="si">}</span><span class="s">products&quot;</span>
+</span></span><span id="__span-46-6"><a id="__codelineno-46-6" name="__codelineno-46-6" href="#__codelineno-46-6"></a><span class="w">    </span><span class="p">)</span>
 </span><span id="__span-46-7"><a id="__codelineno-46-7" name="__codelineno-46-7" href="#__codelineno-46-7"></a><span class="p">)</span>
 </span></code></pre></div></p>
 </li>
@@ -3018,7 +3018,7 @@
 <h2 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h2>
 <h3 id="general-questions">General Questions<a class="headerlink" href="#general-questions" title="Permanent link">&para;</a></h3>
 <h4 id="q-can-i-use-stove-with-java">Q: Can I use Stove with Java?<a class="headerlink" href="#q-can-i-use-stove-with-java" title="Permanent link">&para;</a></h4>
-<p><strong>A:</strong> Yes, you can use Stove in Java projects! However, the e2e tests themselves need to be written in Kotlin. Stove's DSL is designed specifically for Kotlin, providing a clean and expressive syntax:</p>
+<p><strong>A:</strong> Yes, you can use Stove in Java projects! However, <span data-rn="underline" data-rn-color="#ff9800">the e2e tests themselves need to be written in Kotlin</span>. Stove's DSL is designed specifically for Kotlin, providing a clean and expressive syntax:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-49-1"><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">MyE2ETest</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">FunSpec</span><span class="p">({</span>
 </span><span id="__span-49-2"><a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="w">    </span><span class="n">test</span><span class="p">(</span><span class="s">&quot;should create order&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-49-3"><a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="w">        </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
@@ -3164,7 +3164,7 @@
 </ul>
 <p>Solutions:
 - Pre-pull images in CI
-- Use <code>keepDependenciesRunning()</code> locally
+- <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Use <code>keepDependenciesRunning()</code> locally</span>
 - Increase startup timeout for slow containers</p>
 <h3 id="migration-questions">Migration Questions<a class="headerlink" href="#migration-questions" title="Permanent link">&para;</a></h3>
 <h4 id="q-how-do-i-migrate-from-014x-to-015x">Q: How do I migrate from 0.14.x to 0.15.x?<a class="headerlink" href="#q-how-do-i-migrate-from-014x-to-015x" title="Permanent link">&para;</a></h4>
