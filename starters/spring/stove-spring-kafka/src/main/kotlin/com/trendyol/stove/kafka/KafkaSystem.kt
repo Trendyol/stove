@@ -38,19 +38,29 @@ class KafkaSystem(
   val getInterceptor: () -> TestSystemKafkaInterceptor<Any, Any> = { applicationContext.getBean() }
 
   override fun snapshot(): SystemSnapshot {
+    val currentTestId = reporter.currentTestId()
     val store = getInterceptor().getStore()
+    val belongsToTest: (Map<String, Any>) -> Boolean = { headers ->
+      val testId = headers[TraceContext.STOVE_TEST_ID_HEADER].toOption()
+      testId.isNone() || testId.isSome { it.toString() == currentTestId }
+    }
+
+    val consumed = store.consumedRecords().filter { belongsToTest(it.metadata.headers) }
+    val produced = store.producedRecords().filter { belongsToTest(it.metadata.headers) }
+    val failed = store.failedRecords().filter { belongsToTest(it.metadata.headers) }
+
     return SystemSnapshot(
       system = reportSystemName,
       state = mapOf(
-        "consumed" to store.consumedRecords().map { it.toReportMap() },
-        "produced" to store.producedRecords().map { it.toReportMap() },
-        "failed" to store.failedRecords().map { it.toReportMap() }
+        "consumed" to consumed.map { it.toReportMap() },
+        "produced" to produced.map { it.toReportMap() },
+        "failed" to failed.map { it.toReportMap() }
       ),
-      summary = buildString {
-        appendLine("Consumed: ${store.consumedRecords().size}")
-        appendLine("Produced: ${store.producedRecords().size}")
-        appendLine("Failed: ${store.failedRecords().size}")
-      }
+      summary = listOf(
+        "Consumed (this test)" to consumed.size,
+        "Produced (this test)" to produced.size,
+        "Failed (this test)" to failed.size
+      ).joinToString("\n") { (label, count) -> "$label: $count" }
     )
   }
 

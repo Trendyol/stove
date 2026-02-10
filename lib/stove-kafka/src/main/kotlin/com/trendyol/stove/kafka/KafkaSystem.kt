@@ -179,23 +179,36 @@ class KafkaSystem(
   BeforeRunAware,
   Reports {
   override fun snapshot(): SystemSnapshot {
+    val currentTestId = reporter.currentTestId()
     val store = sink.store
+    val belongsToTest: (Map<String, String>) -> Boolean = { headers ->
+      val testId = headers[TraceContext.STOVE_TEST_ID_HEADER].toOption()
+      testId.isNone() || testId.isSome { it == currentTestId }
+    }
+
+    val consumed = store.consumedMessages().filter { belongsToTest(it.headers) }
+    val published = store.publishedMessages().filter { belongsToTest(it.headers) }
+    val failed = store.failedMessages().filter { belongsToTest(it.headers) }
+    val retried = store.retriedMessages().filter { belongsToTest(it.headers) }
+    val topicPartitions = consumed.map { it.topic to it.partition }.toSet()
+    val committed = store.committedMessages().filter { (it.topic to it.partition) in topicPartitions }
+
     return SystemSnapshot(
       system = reportSystemName,
       state = mapOf<String, Any>(
-        "consumed" to store.consumedMessages().map { it.toReportMap() },
-        "published" to store.publishedMessages().map { it.toReportMap() },
-        "committed" to store.committedMessages().map { it.toReportMap() },
-        "failed" to store.failedMessages().map { it.toReportMap() },
-        "retried" to store.retriedMessages().map { it.toReportMap() }
+        "consumed" to consumed.map { it.toReportMap() },
+        "published" to published.map { it.toReportMap() },
+        "committed" to committed.map { it.toReportMap() },
+        "failed" to failed.map { it.toReportMap() },
+        "retried" to retried.map { it.toReportMap() }
       ),
-      summary = """
-        Consumed: ${store.consumedMessages().size}
-        Published: ${store.publishedMessages().size}
-        Committed: ${store.committedMessages().size}
-        Failed: ${store.failedMessages().size}
-        Retried: ${store.retriedMessages().size}
-      """.trimIndent()
+      summary = listOf(
+        "Consumed (this test)" to consumed.size,
+        "Published (this test)" to published.size,
+        "Committed (this test)" to committed.size,
+        "Failed (this test)" to failed.size,
+        "Retried (this test)" to retried.size
+      ).joinToString("\n") { (label, count) -> "$label: $count" }
     )
   }
 
