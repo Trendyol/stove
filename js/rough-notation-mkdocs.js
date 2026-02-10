@@ -29,6 +29,15 @@
     multiline: true
   };
 
+  var CODE_DEFAULTS = {
+    type: 'highlight',
+    color: '#00968830',
+    strokeWidth: 1,
+    animationDuration: 400,
+    multiline: true,
+    padding: 0
+  };
+
   function parseOpts(el) {
     var opts = {
       type: el.dataset.rn,
@@ -83,6 +92,32 @@
 
       var ann = RN.annotate(el, parseOpts(el));
       observe(el, 0.5, function () { ann.show(); });
+    });
+
+    // Code block hl_lines -> RoughNotation highlights
+    document.querySelectorAll('.highlight pre, pre').forEach(function (pre) {
+      if (pre.dataset.rnCodeInit) return;
+      var hlls = pre.querySelectorAll('.hll');
+      if (!hlls.length) return;
+      pre.dataset.rnCodeInit = '1';
+
+      var anns = [];
+      hlls.forEach(function (hll) {
+        hll.style.backgroundColor = 'transparent';
+        anns.push(RN.annotate(hll, {
+          type: CODE_DEFAULTS.type,
+          color: CODE_DEFAULTS.color,
+          strokeWidth: CODE_DEFAULTS.strokeWidth,
+          animationDuration: CODE_DEFAULTS.animationDuration,
+          multiline: CODE_DEFAULTS.multiline,
+          padding: CODE_DEFAULTS.padding
+        }));
+      });
+
+      if (anns.length) {
+        var group = RN.annotationGroup(anns);
+        observe(pre, 0.1, function () { group.show(); });
+      }
     });
   }
 
