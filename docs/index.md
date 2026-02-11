@@ -486,6 +486,9 @@ it is time to run your application for the first time from the test-context with
     It implements `AbstractProjectConfig` from Kotest framework that allows us to spin up Stove per run. This is project
     wide operation and executes **only one time**, as the name implies `beforeProject`.
     
+    !!! info "Test Framework Extensions"
+        `StoveKotestExtension` (`stove-extensions-kotest`) and `StoveJUnitExtension` (`stove-extensions-junit`) are separate packages. **Kotest** requires **6.1.3+**; **JUnit** requires **Jupiter 6.x** if possible. For Kotest, add a `kotest.properties` file with `kotest.framework.config.fqn=<your config class FQN>`. See [Step 3: Create Test Configuration](getting-started.md#step-3-create-test-configuration) for details.
+    
     ```kotlin hl_lines="9 11 22 27"
     import com.trendyol.stove.extensions.kotest.StoveKotestExtension
     import com.trendyol.stove.system.Stove

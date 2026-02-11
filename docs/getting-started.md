@@ -154,10 +154,27 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 We recommend putting e2e tests in a separate `src/test-e2e` source set to keep them separate from unit tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for the Gradle setup).
 
+!!! info "Test Framework Extensions"
+    `StoveKotestExtension` and `StoveJUnitExtension` are separate packages that must be on your classpath:
+
+    ```kotlin
+    testImplementation("com.trendyol:stove-extensions-kotest") // For Kotest
+    // or
+    testImplementation("com.trendyol:stove-extensions-junit")  // For JUnit
+    ```
+
+    **Kotest** requires **6.1.3** or later. **JUnit** requires **Jupiter 6.x** if possible. In Kotest 6.x, `AbstractProjectConfig` is no longer auto-scanned. Create a `kotest.properties` file in your test resources (e.g. `src/test-e2e/resources/kotest.properties`):
+
+    ```properties
+    kotest.framework.config.fqn=com.myapp.e2e.TestConfig
+    ```
+
+    Set the value to the fully qualified name of your `AbstractProjectConfig` class.
+
 === "Kotest"
 
     ```kotlin hl_lines="10 12 13 16 31"
-    // src/test-e2e/kotlin/e2e/TestConfig.kt
+    // src/test-e2e/kotlin/io/kotest/provided/ProjectConfig.kt
     import com.trendyol.stove.extensions.kotest.StoveKotestExtension
     import com.trendyol.stove.system.Stove
     import com.trendyol.stove.system.stove

@@ -131,6 +131,9 @@ dependencies {
 }
 ```
 
+!!! info "Test Framework Extensions"
+    `StoveKotestExtension` (`stove-extensions-kotest`) and `StoveJUnitExtension` (`stove-extensions-junit`) are separate packages that must be on your classpath. **Kotest** requires **6.1.3+**; **JUnit** requires **Jupiter 6.x** if possible. For Kotest, add a `kotest.properties` file with `kotest.framework.config.fqn=<your config class FQN>`. See the [Getting Started guide](../getting-started.md#step-3-create-test-configuration) for details.
+
 ## Zero-Effort Trace Propagation
 
 You don't need to do anything special in your test code. Stove injects trace headers into every interaction automatically:

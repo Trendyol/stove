@@ -23,6 +23,9 @@ dependencies {
 }
 ```
 
+!!! info "Test Framework Extensions"
+    `StoveKotestExtension` (`stove-extensions-kotest`) and `StoveJUnitExtension` (`stove-extensions-junit`) are separate packages. **Kotest** requires **6.1.3+**; **JUnit** requires **Jupiter 6.x** if possible. For Kotest, add a `kotest.properties` file with `kotest.framework.config.fqn=<your config class FQN>`. See the [Getting Started guide](../getting-started.md#step-3-create-test-configuration) for details.
+
 Then register it in your project config:
 
 ```kotlin hl_lines="5"
