@@ -1567,6 +1567,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#test-framework-extensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Framework Extensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#recommended-updates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1948,6 +1959,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#test-framework-extensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Framework Extensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#recommended-updates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2287,6 +2309,12 @@
 <p><strong>Tracing</strong>: Add <code>stove-tracing</code> to your dependencies and follow the <a href="../../Components/15-tracing/">setup guide</a>.</p>
 <p><strong>gRPC Mocking</strong>: Add <code>stove-grpc-mock</code> to your dependencies if you need to mock external gRPC services. See the <a href="../../Components/14-grpc-mock/">gRPC Mocking documentation</a>.</p>
 <p><strong>MySQL</strong>: Add <code>stove-mysql</code> if you're testing against MySQL. See the <a href="../../Components/16-mysql/">MySQL documentation</a>.</p>
+<h4 id="test-framework-extensions">Test Framework Extensions<a class="headerlink" href="#test-framework-extensions" title="Permanent link">&para;</a></h4>
+<p><code>StoveKotestExtension</code> (<code>stove-extensions-kotest</code>) and <code>StoveJUnitExtension</code> (<code>stove-extensions-junit</code>) are separate packages that must be on your classpath. <strong>Kotest</strong> requires <strong>6.1.3</strong> or later; <strong>JUnit</strong> requires <strong>Jupiter 6.x</strong> if possible.</p>
+<p>In Kotest 6.x, <code>AbstractProjectConfig</code> is no longer auto-scanned. Add a <code>kotest.properties</code> file in your test resources (e.g. <code>src/test-e2e/resources/kotest.properties</code>):</p>
+<div class="language-properties highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="na">kotest.framework.config.fqn</span><span class="o">=</span><span class="s">com.myapp.e2e.TestConfig</span>
+</span></code></pre></div>
+<p>Set the value to the fully qualified name of your <code>AbstractProjectConfig</code> class. See the <a href="../../getting-started/#step-3-create-test-configuration">Getting Started guide</a> for full details.</p>
 <h4 id="recommended-updates">Recommended Updates<a class="headerlink" href="#recommended-updates" title="Permanent link">&para;</a></h4>
 <ul>
 <li>If using Elasticsearch, verify compatibility with Elasticsearch 9.x</li>
@@ -2295,20 +2323,20 @@
 </ul>
 <hr />
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:0.21.0&quot;</span><span class="p">))</span>
-</span></span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
-</span></span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
-</span></span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span>
-</span></span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-extensions-kotest&quot;</span><span class="p">)</span>
-</span></span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="c1">// Add components as needed</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">}</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:0.21.0&quot;</span><span class="p">))</span>
+</span></span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
+</span></span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
+</span></span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span>
+</span></span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="hll"><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-extensions-kotest&quot;</span><span class="p">)</span>
+</span></span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="c1">// Add components as needed</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>For snapshot versions:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="hll"><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://central.sonatype.com/repository/maven-snapshots&quot;</span><span class="p">)</span>
-</span></span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="p">}</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="hll"><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://central.sonatype.com/repository/maven-snapshots&quot;</span><span class="p">)</span>
+</span></span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="p">}</span>
 </span></code></pre></div>
 
 

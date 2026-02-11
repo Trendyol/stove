@@ -2655,6 +2655,10 @@ it is time to run your application for the first time from the test-context with
 <div class="tabbed-block">
 <p>It implements <code>AbstractProjectConfig</code> from Kotest framework that allows us to spin up Stove per run. This is project
 wide operation and executes <strong>only one time</strong>, as the name implies <code>beforeProject</code>.</p>
+<div class="admonition info">
+<p class="admonition-title">Test Framework Extensions</p>
+<p><code>StoveKotestExtension</code> (<code>stove-extensions-kotest</code>) and <code>StoveJUnitExtension</code> (<code>stove-extensions-junit</code>) are separate packages. <strong>Kotest</strong> requires <strong>6.1.3+</strong>; <strong>JUnit</strong> requires <strong>Jupiter 6.x</strong> if possible. For Kotest, add a <code>kotest.properties</code> file with <code>kotest.framework.config.fqn=&lt;your config class FQN&gt;</code>. See <a href="getting-started/#step-3-create-test-configuration">Step 3: Create Test Configuration</a> for details.</p>
+</div>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.extensions.kotest.StoveKotestExtension</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.Stove</span>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.http.*</span>
