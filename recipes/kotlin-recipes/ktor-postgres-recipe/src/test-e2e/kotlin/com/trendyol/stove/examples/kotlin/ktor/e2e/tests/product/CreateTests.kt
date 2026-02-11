@@ -50,7 +50,8 @@ class CreateTests :
         postgresql {
           shouldQuery<Product>(
             "SELECT * FROM ${ProductTable.tableName} WHERE ${ProductTable.id.name} = '$productId'",
-            ProductFrom::invoke
+            parameters = emptyList(),
+            mapper = ProductFrom::invoke
           ) { actual ->
             actual.size shouldBe 1
             actual[0].name shouldBe productName
@@ -105,6 +106,7 @@ class CreateTests :
         postgresql {
           shouldQuery<Product>(
             "SELECT * FROM ${ProductTable.tableName} WHERE ${ProductTable.id.name} = '$productId'",
+            parameters = emptyList(),
             ProductFrom::invoke
           ) { actual ->
             actual.size shouldBe 0
