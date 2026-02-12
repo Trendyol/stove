@@ -138,7 +138,7 @@ kotliquery = { module = "com.github.seratch:kotliquery", version = "1.9.1" }
 h2Database = { module = "com.h2database:h2", version = "2.4.240" }
 
 # postgres
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.9" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
 mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 
 # elastic
