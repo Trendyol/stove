@@ -2,7 +2,7 @@
 kotlin = "2.3.10"
 kotlinx = "1.10.2"
 scala2x = "2.13.18"
-quarkus = "3.31.2"
+quarkus = "3.31.3"
 ktlint = "1.8.0"
 
 # Spring-Boot
