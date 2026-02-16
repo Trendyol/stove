@@ -52,7 +52,7 @@ ktlint = "1.8.0"
 opentelemetry = "1.59.0"
 opentelemetry-semconv = "1.39.0"
 opentelemetry-instrumentation = "2.25.0"
-bytebuddy = "1.18.4"
+bytebuddy = "1.18.5"
 
 [libraries]
 # exposed
