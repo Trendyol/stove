@@ -25,14 +25,6 @@ data class TraceContext(
     /** Stove test ID header name */
     const val STOVE_TEST_ID_HEADER = "X-Stove-Test-Id"
 
-    /**
-     * Backup header for Stove's traceparent value.
-     *
-     * The OTel Java Agent can overwrite the standard `traceparent` header during auto-instrumentation.
-     * This header preserves Stove's original value so downstream layers can restore it when needed.
-     */
-    const val STOVE_TRACEPARENT_BACKUP_HEADER = "X-Stove-Traceparent"
-
     /** Baggage key for propagating the Stove test ID through OTel's baggage propagator. */
     const val BAGGAGE_TEST_ID_KEY = "stove.test.id"
 
@@ -203,7 +195,8 @@ data class TraceContext(
         )
         val span = Span.wrap(spanContext)
         val baggage = Baggage
-          .builder()
+          .fromContext(Context.current())
+          .toBuilder()
           .put(BAGGAGE_TEST_ID_KEY, ctx.testId)
           .build()
         val otelCtx = Context
