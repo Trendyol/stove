@@ -299,8 +299,10 @@ class GrpcSystem(
     val metadataWithTrace = buildMap {
       putAll(metadata)
       TraceContext.current()?.let { ctx ->
-        put(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent())
+        val traceparent = ctx.toTraceparent()
+        put(TraceContext.TRACEPARENT_HEADER, traceparent)
         put(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId)
+        put(TraceContext.STOVE_TRACEPARENT_BACKUP_HEADER, traceparent)
       }
     }
     return if (metadataWithTrace.isNotEmpty()) {

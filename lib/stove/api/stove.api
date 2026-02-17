@@ -1120,6 +1120,7 @@ public final class com/trendyol/stove/tracing/SpanTree {
 public final class com/trendyol/stove/tracing/TraceContext {
 	public static final field Companion Lcom/trendyol/stove/tracing/TraceContext$Companion;
 	public static final field STOVE_TEST_ID_HEADER Ljava/lang/String;
+	public static final field STOVE_TRACEPARENT_BACKUP_HEADER Ljava/lang/String;
 	public static final field TRACEPARENT_HEADER Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;

@@ -83,7 +83,9 @@ internal fun (MutableMap<String, String>).addTraceContext(
   traceContext: TraceContext?
 ): MutableMap<String, String> =
   traceContext?.let {
-    this[TraceContext.TRACEPARENT_HEADER] = it.toTraceparent()
+    val traceparent = it.toTraceparent()
+    this[TraceContext.TRACEPARENT_HEADER] = traceparent
     this[TraceContext.STOVE_TEST_ID_HEADER] = it.testId
+    this[TraceContext.STOVE_TRACEPARENT_BACKUP_HEADER] = traceparent
     this
   } ?: this

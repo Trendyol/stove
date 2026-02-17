@@ -805,8 +805,13 @@ class HttpSystem(
 
   private fun HttpRequestBuilder.injectTraceHeaders() {
     TraceContext.current()?.let { ctx ->
-      header(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent())
+      val traceparent = ctx.toTraceparent()
+      header(TraceContext.TRACEPARENT_HEADER, traceparent)
       header(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId)
+      // Backup header: OTel Java Agent's OkHttp instrumentation overwrites 'traceparent'
+      // with its own trace ID. The StoveTraceNetworkInterceptor (OkHttp network interceptor)
+      // restores the original value from this backup header after the agent runs.
+      header(TraceContext.STOVE_TRACEPARENT_BACKUP_HEADER, traceparent)
     }
   }
 
@@ -980,8 +985,10 @@ class HttpSystem(
 
   private fun HttpRequestBuilder.injectWebSocketTraceHeaders() {
     TraceContext.current()?.let { ctx ->
-      headers.append(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent())
+      val traceparent = ctx.toTraceparent()
+      headers.append(TraceContext.TRACEPARENT_HEADER, traceparent)
       headers.append(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId)
+      headers.append(TraceContext.STOVE_TRACEPARENT_BACKUP_HEADER, traceparent)
     }
   }
 

@@ -17,6 +17,16 @@ data class TraceContext(
     /** Stove test ID header name */
     const val STOVE_TEST_ID_HEADER = "X-Stove-Test-Id"
 
+    /**
+     * Backup header for Stove's traceparent value.
+     *
+     * The OTel Java Agent instruments HTTP clients (OkHttp), Kafka producers, and gRPC channels
+     * at the bytecode level. It overwrites the standard `traceparent` header with its own trace ID,
+     * breaking Stove's trace correlation. This backup header preserves Stove's original traceparent
+     * so it can be restored by downstream interceptors (e.g., [StoveTraceNetworkInterceptor] for HTTP).
+     */
+    const val STOVE_TRACEPARENT_BACKUP_HEADER = "X-Stove-Traceparent"
+
     /** Span ID length in W3C trace context */
     private const val SPAN_ID_LENGTH = 16
 
