@@ -7,6 +7,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldHaveLength
 import io.kotest.matchers.string.shouldMatch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class TraceContextTest :
   FunSpec({
@@ -45,6 +47,31 @@ class TraceContextTest :
       TraceContext.clear()
 
       TraceContext.current().shouldBeNull()
+    }
+
+    test("withCurrentPropagation should keep trace context across dispatcher switches") {
+      val ctx = TraceContext.start("test-1")
+
+      TraceContext.withCurrentPropagation {
+        withContext(Dispatchers.Default) {
+          TraceContext.current() shouldBe ctx
+        }
+      }
+    }
+
+    test("withPropagation should restore the previous context after completion") {
+      val outer = TraceContext.start("outer-test")
+      val inner = TraceContext(
+        traceId = TraceContext.generateTraceId(),
+        testId = "inner-test",
+        rootSpanId = TraceContext.generateSpanId()
+      )
+
+      TraceContext.withPropagation(inner) {
+        TraceContext.current() shouldBe inner
+      }
+
+      TraceContext.current() shouldBe outer
     }
 
     test("toTraceparent should generate valid W3C traceparent header") {

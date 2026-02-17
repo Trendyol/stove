@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "TooManyFunctions")
 
 package com.trendyol.stove.tracing
 
@@ -162,8 +162,81 @@ class TracingSystem(
     testId: String,
     spans: List<SpanInfo>
   ): Option<TraceVisualization> = when {
-    spans.isNotEmpty() -> TraceVisualization.from(traceId, testId, spans).some()
-    else -> findMostRelevantTrace(testId)
+    spans.isNotEmpty() -> {
+      TraceVisualization.from(traceId, testId, spans).some()
+    }
+
+    else -> {
+      val traceByTestId = findTraceByTestIdAttribute(testId)
+      when (traceByTestId) {
+        is Some -> traceByTestId
+        None -> findMostRelevantTrace(testId)
+      }
+    }
+  }
+
+  /**
+   * Finds the most recent trace that explicitly carries the current test ID as a span attribute.
+   *
+   * This is a defense-in-depth fallback when the expected trace ID has no spans
+   * (e.g., `traceparent` was rewritten by external instrumentation).
+   */
+  private fun findTraceByTestIdAttribute(testId: String): Option<TraceVisualization> {
+    val matchingTrace = collector
+      .getAllTraces()
+      .asSequence()
+      .filter { (_, spans) -> spans.isNotEmpty() }
+      .filter { (_, spans) -> spans.any { span -> spanContainsTestId(span, testId) } }
+      .maxByOrNull { (_, spans) -> spans.maxOf { it.startTimeNanos } }
+      ?: return None
+
+    val (traceId, traceSpans) = matchingTrace
+    return TraceVisualization.from(traceId, testId, traceSpans).some()
+  }
+
+  private fun spanContainsTestId(span: SpanInfo, testId: String): Boolean =
+    span.attributes.any { (key, value) ->
+      isTestIdAttributeKey(key) && isTestIdAttributeValue(value, testId)
+    }
+
+  private fun isTestIdAttributeKey(key: String): Boolean {
+    val normalized = key.lowercase()
+    return normalized == TraceContext.STOVE_TEST_ID_HEADER.lowercase() ||
+      normalized.contains("x-stove-test-id") ||
+      normalized.contains("stove_test_id") ||
+      normalized.contains("stove.test.id")
+  }
+
+  private fun isTestIdAttributeValue(rawValue: String, testId: String): Boolean {
+    if (rawValue == testId) return true
+
+    return tokenizeAttributeValue(rawValue).any { token -> token == testId }
+  }
+
+  private fun tokenizeAttributeValue(rawValue: String): List<String> {
+    val normalized = rawValue
+      .removePrefix("[")
+      .removeSuffix("]")
+      .removePrefix("{")
+      .removeSuffix("}")
+
+    return normalized
+      .split(",", ";")
+      .flatMap { token ->
+        val separatorIndex = token.indexOfAny(charArrayOf('=', ':'))
+        if (separatorIndex >= 0) {
+          listOf(
+            token.substring(0, separatorIndex),
+            token.substring(separatorIndex + 1)
+          )
+        } else {
+          listOf(token)
+        }
+      }.map { token ->
+        token.trim().trim('"', '\'', '{', '}', '[', ']')
+      }.filter { token ->
+        token.isNotEmpty()
+      }
   }
 
   /**
@@ -328,7 +401,9 @@ suspend fun ValidationDsl.tracing(
   val system = this.stove.tracingSystem()
   val ctx = system.ensureTraceStarted()
   val scope = createTracingValidationScope(system, ctx)
-  validation(scope)
+  TraceContext.withPropagation(ctx) {
+    validation(scope)
+  }
 }
 
 private fun createTracingValidationScope(

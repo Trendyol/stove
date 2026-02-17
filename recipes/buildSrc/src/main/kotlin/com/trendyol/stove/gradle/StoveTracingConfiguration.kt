@@ -45,7 +45,7 @@ import java.net.ServerSocket
  * ──────────────────────
  * - serviceName: The service name shown in traces (required)
  * - enabled: Toggle tracing on/off (default: true)
- * - protocol: grpc or http/protobuf (default: grpc)
+ * - protocol: grpc (default and currently the only supported protocol)
  * - testTaskNames: Apply only to specific tasks (default: all test tasks)
  * - otelAgentVersion: OTel agent version (default: 2.24.0)
  *
@@ -83,6 +83,7 @@ private object TracingDefaults {
   const val DEFAULT_BSP_MAX_BATCH_SIZE = 1
   const val DEFAULT_OTEL_AGENT_VERSION = "2.24.0"
   const val DEFAULT_PROTOCOL = "grpc"
+  const val SUPPORTED_PROTOCOL = DEFAULT_PROTOCOL
 
   /** Environment variable name for passing the OTLP port to tests */
   const val STOVE_TRACING_PORT_ENV = "STOVE_TRACING_PORT"
@@ -113,6 +114,7 @@ private object TracingDefaults {
  */
 fun Project.configureStoveTracing(configure: StoveTracingConfig.() -> Unit = {}) {
   val config = StoveTracingConfig().apply(configure)
+  validateProtocol(config.protocol)
 
   // Create otelAgent configuration
   val otelAgentConfig = configurations.create("otelAgent").apply {
@@ -141,6 +143,13 @@ fun Project.configureStoveTracing(configure: StoveTracingConfig.() -> Unit = {})
     }
 
     logConfiguration(config, testTasks)
+  }
+}
+
+private fun validateProtocol(protocol: String) {
+  require(protocol == TracingDefaults.SUPPORTED_PROTOCOL) {
+    "Unsupported OTLP protocol '$protocol'. Stove tracing receiver currently supports only " +
+      "'${TracingDefaults.SUPPORTED_PROTOCOL}'."
   }
 }
 
@@ -288,9 +297,9 @@ private fun buildTestOptimizationArgs(config: ResolvedTracingConfig): List<Strin
 )
 
 private fun buildHttpHeaderCaptureArgs(): List<String> = listOf(
-  "-Dotel.instrumentation.http.client.capture-request-headers=content-type,accept",
+  "-Dotel.instrumentation.http.client.capture-request-headers=content-type,accept,x-stove-test-id",
   "-Dotel.instrumentation.http.client.capture-response-headers=content-type",
-  "-Dotel.instrumentation.http.server.capture-request-headers=content-type,accept,user-agent",
+  "-Dotel.instrumentation.http.server.capture-request-headers=content-type,accept,user-agent,x-stove-test-id",
   "-Dotel.instrumentation.http.server.capture-response-headers=content-type"
 )
 
@@ -321,10 +330,17 @@ class StoveTracingConfig {
   var enabled: Boolean = true
 
   /**
-   * The OTLP protocol to use. Options: "grpc" or "http/protobuf".
+   * The OTLP protocol to use.
+   * Currently only "grpc" is supported.
    * Note: The port is dynamically assigned to avoid conflicts when running parallel tests.
    */
   var protocol: String = TracingDefaults.DEFAULT_PROTOCOL
+    set(value) {
+      require(value == TracingDefaults.SUPPORTED_PROTOCOL) {
+        "Unsupported OTLP protocol '$value'. Supported protocol: '${TracingDefaults.SUPPORTED_PROTOCOL}'."
+      }
+      field = value
+    }
 
   /** The batch span processor schedule delay in milliseconds. Lower = faster export. */
   var bspScheduleDelay: Int = TracingDefaults.DEFAULT_BSP_SCHEDULE_DELAY

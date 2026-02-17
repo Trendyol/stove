@@ -1118,6 +1118,7 @@ public final class com/trendyol/stove/tracing/SpanTree {
 }
 
 public final class com/trendyol/stove/tracing/TraceContext {
+	public static final field BAGGAGE_TEST_ID_KEY Ljava/lang/String;
 	public static final field Companion Lcom/trendyol/stove/tracing/TraceContext$Companion;
 	public static final field STOVE_TEST_ID_HEADER Ljava/lang/String;
 	public static final field STOVE_TRACEPARENT_BACKUP_HEADER Ljava/lang/String;
@@ -1146,6 +1147,8 @@ public final class com/trendyol/stove/tracing/TraceContext$Companion {
 	public final fun sanitizeToAscii (Ljava/lang/String;)Ljava/lang/String;
 	public final fun start (Ljava/lang/String;)Lcom/trendyol/stove/tracing/TraceContext;
 	public final fun use (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public final fun withCurrentPropagation (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withPropagation (Lcom/trendyol/stove/tracing/TraceContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/tracing/TraceTreeRenderer {

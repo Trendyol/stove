@@ -1,7 +1,15 @@
 package com.trendyol.stove.tracing
 
+import io.opentelemetry.api.baggage.Baggage
+import io.opentelemetry.api.trace.*
+import io.opentelemetry.context.Context
+import io.opentelemetry.context.Scope
+import kotlinx.coroutines.ThreadContextElement
+import kotlinx.coroutines.withContext
 import java.text.Normalizer
 import java.util.UUID
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
 data class TraceContext(
   val traceId: String,
@@ -20,12 +28,13 @@ data class TraceContext(
     /**
      * Backup header for Stove's traceparent value.
      *
-     * The OTel Java Agent instruments HTTP clients (OkHttp), Kafka producers, and gRPC channels
-     * at the bytecode level. It overwrites the standard `traceparent` header with its own trace ID,
-     * breaking Stove's trace correlation. This backup header preserves Stove's original traceparent
-     * so it can be restored by downstream interceptors (e.g., [StoveTraceNetworkInterceptor] for HTTP).
+     * The OTel Java Agent can overwrite the standard `traceparent` header during auto-instrumentation.
+     * This header preserves Stove's original value so downstream layers can restore it when needed.
      */
     const val STOVE_TRACEPARENT_BACKUP_HEADER = "X-Stove-Traceparent"
+
+    /** Baggage key for propagating the Stove test ID through OTel's baggage propagator. */
+    const val BAGGAGE_TEST_ID_KEY = "stove.test.id"
 
     /** Span ID length in W3C trace context */
     private const val SPAN_ID_LENGTH = 16
@@ -40,6 +49,12 @@ data class TraceContext(
      */
     private val current = InheritableThreadLocal<TraceContext>()
 
+    /**
+     * Stores the OTel [Scope] so it can be closed in [clear].
+     * Not inheritable -- only the creating thread should close it.
+     */
+    private val otelScope = ThreadLocal<Scope>()
+
     fun start(testId: String): TraceContext {
       val ctx = TraceContext(
         traceId = generateTraceId(),
@@ -47,16 +62,39 @@ data class TraceContext(
         rootSpanId = generateSpanId()
       )
       current.set(ctx)
+      activateOtelContext(ctx)
       return ctx
     }
 
     fun current(): TraceContext? = current.get()
 
     /**
+     * Runs [block] while propagating the current [TraceContext] across coroutine thread switches.
+     *
+     * This keeps both Stove's thread-local context and OTel scope active when coroutines hop
+     * between worker threads.
+     */
+    suspend fun <T> withCurrentPropagation(block: suspend () -> T): T {
+      val ctx = current() ?: return block()
+      return withPropagation(ctx, block)
+    }
+
+    /**
+     * Runs [block] with the given [ctx] propagated across coroutine thread switches.
+     */
+    suspend fun <T> withPropagation(ctx: TraceContext, block: suspend () -> T): T =
+      withContext(TraceContextPropagationElement(ctx)) {
+        block()
+      }
+
+    /**
      * Clears the current trace context from the thread-local storage.
      * IMPORTANT: Always call this method when done with a trace to prevent memory leaks.
      */
-    fun clear() = current.remove()
+    fun clear() {
+      deactivateOtelContext()
+      current.remove()
+    }
 
     /**
      * Executes the given block with a new trace context, ensuring cleanup afterward.
@@ -141,5 +179,81 @@ data class TraceContext(
 
     /** Regex to match any remaining non-ASCII characters */
     private val NON_ASCII_REGEX = Regex("[^\\x20-\\x7E]")
+
+    /**
+     * Activates an OTel context with Stove's trace ID and test ID baggage.
+     *
+     * When the OTel Java Agent is present, this makes the agent treat subsequent
+     * outgoing calls (HTTP, Kafka, gRPC) as children of Stove's trace:
+     * - **SpanContext**: The agent sees an active trace and creates child spans
+     *   with Stove's trace ID instead of generating a new root trace.
+     * - **Baggage**: The test ID is propagated automatically via the W3C `baggage`
+     *   header across all transports, without manual header injection.
+     *
+     * When no agent is present, the OTel API is a no-op.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private fun activateOtelContext(ctx: TraceContext) {
+      try {
+        val spanContext = SpanContext.create(
+          ctx.traceId,
+          ctx.rootSpanId,
+          TraceFlags.getSampled(),
+          TraceState.getDefault()
+        )
+        val span = Span.wrap(spanContext)
+        val baggage = Baggage
+          .builder()
+          .put(BAGGAGE_TEST_ID_KEY, ctx.testId)
+          .build()
+        val otelCtx = Context
+          .current()
+          .with(span)
+          .with(baggage)
+        otelScope.set(otelCtx.makeCurrent())
+      } catch (_: Exception) {
+        // OTel API initialization failed -- trace headers still work as fallback
+      }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun deactivateOtelContext() {
+      try {
+        otelScope.get()?.close()
+      } catch (_: Exception) {
+        // Scope.close() may fail if called from a different thread than start()
+      }
+      otelScope.remove()
+    }
+
+    private data class PreviousThreadState(
+      val traceContext: TraceContext?
+    )
+
+    /**
+     * Propagates TraceContext and OTel scope across coroutine dispatcher thread switches.
+     */
+    private class TraceContextPropagationElement(
+      private val ctx: TraceContext
+    ) : AbstractCoroutineContextElement(Key),
+      ThreadContextElement<PreviousThreadState> {
+      companion object Key : CoroutineContext.Key<TraceContextPropagationElement>
+
+      override fun updateThreadContext(context: CoroutineContext): PreviousThreadState {
+        val previous = PreviousThreadState(current.get())
+        deactivateOtelContext()
+        current.set(ctx)
+        activateOtelContext(ctx)
+        return previous
+      }
+
+      override fun restoreThreadContext(context: CoroutineContext, oldState: PreviousThreadState) {
+        deactivateOtelContext()
+        oldState.traceContext?.let { previous ->
+          current.set(previous)
+          activateOtelContext(previous)
+        } ?: current.remove()
+      }
+    }
   }
 }

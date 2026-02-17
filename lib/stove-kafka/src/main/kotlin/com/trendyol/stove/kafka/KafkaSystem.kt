@@ -325,10 +325,8 @@ class KafkaSystem(
 
   private fun injectTraceHeaders(record: ProducerRecord<String, Any>) {
     TraceContext.current()?.let { ctx ->
-      val traceparent = ctx.toTraceparent()
-      record.headers().add(TraceContext.TRACEPARENT_HEADER, traceparent.toByteArray())
+      record.headers().add(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent().toByteArray())
       record.headers().add(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId.toByteArray())
-      record.headers().add(TraceContext.STOVE_TRACEPARENT_BACKUP_HEADER, traceparent.toByteArray())
     }
   }
 

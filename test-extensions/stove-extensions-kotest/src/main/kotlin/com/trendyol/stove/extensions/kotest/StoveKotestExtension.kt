@@ -85,14 +85,16 @@ class StoveKotestExtension : TestCaseExtension {
  * Executes the block within a test context, ensuring proper setup and cleanup.
  * Also starts/ends tracing automatically for the test.
  */
-private inline fun <T> StoveReporter.withTestContext(
+private suspend fun <T> StoveReporter.withTestContext(
   ctx: StoveTestContext,
-  block: () -> T
+  block: suspend () -> T
 ): T {
   startTest(ctx)
   TraceContext.start(ctx.testId)
   return try {
-    block()
+    TraceContext.withCurrentPropagation {
+      block()
+    }
   } finally {
     TraceContext.clear()
     endTest()

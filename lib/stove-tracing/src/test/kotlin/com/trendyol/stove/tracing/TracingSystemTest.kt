@@ -70,6 +70,90 @@ class TracingSystemTest :
       visualization.getOrElse { null }?.traceId shouldBe "other-trace"
     }
 
+    test("getTraceVisualizationForCurrentTest prefers trace with matching test ID attribute") {
+      TraceContext.clear()
+      val stove = Stove()
+      val system = TracingSystem(stove, TracingSystemOptions(TracingOptions().enabled()))
+
+      val ctx = system.ensureTraceStarted()
+
+      system.collector.record(
+        span(
+          traceId = "trace-with-test-id",
+          spanId = "root",
+          parentSpanId = null,
+          operationName = "root",
+          startTimeNanos = 10,
+          endTimeNanos = 20,
+          status = SpanStatus.OK,
+          attributes = mapOf(
+            "http.request.header.x_stove_test_id" to "[\"${ctx.testId}\"]"
+          )
+        )
+      )
+
+      // More recent span from another test should not win over matching test-id trace.
+      system.collector.record(
+        span(
+          traceId = "unrelated-recent-trace",
+          spanId = "root",
+          parentSpanId = null,
+          operationName = "root",
+          startTimeNanos = 30,
+          endTimeNanos = 40,
+          status = SpanStatus.OK,
+          attributes = mapOf(
+            "http.request.header.x_stove_test_id" to "[\"other-test-id\"]"
+          )
+        )
+      )
+
+      val visualization = system.getTraceVisualizationForCurrentTest(waitTimeMs = 1)
+      visualization.getOrElse { null }?.traceId shouldBe "trace-with-test-id"
+    }
+
+    test("getTraceVisualizationForCurrentTest matches stove.test.id attributes encoded as key-value payload") {
+      TraceContext.clear()
+      val stove = Stove()
+      val system = TracingSystem(stove, TracingSystemOptions(TracingOptions().enabled()))
+
+      val ctx = system.ensureTraceStarted()
+
+      system.collector.record(
+        span(
+          traceId = "trace-with-baggage-test-id",
+          spanId = "root",
+          parentSpanId = null,
+          operationName = "root",
+          startTimeNanos = 10,
+          endTimeNanos = 20,
+          status = SpanStatus.OK,
+          attributes = mapOf(
+            "otel.baggage.stove.test.id" to "{\"stove.test.id\":\"${ctx.testId}\"}"
+          )
+        )
+      )
+
+      // More recent trace from a different test should not be selected.
+      system.collector.record(
+        span(
+          traceId = "unrelated-newer-trace",
+          spanId = "root",
+          parentSpanId = null,
+          operationName = "root",
+          startTimeNanos = 30,
+          endTimeNanos = 40,
+          status = SpanStatus.OK,
+          attributes = mapOf(
+            "otel.baggage.stove.test.id" to "{\"stove.test.id\":\"other-test-id\"}"
+          )
+        )
+      )
+
+      val visualization = system.getTraceVisualizationForCurrentTest(waitTimeMs = 1)
+      visualization.getOrElse { null }?.traceId shouldBe "trace-with-baggage-test-id"
+    }
+
     test("stop clears traces and context") {
       TraceContext.clear()
       val stove = Stove()
@@ -102,7 +186,8 @@ private fun span(
   operationName: String,
   startTimeNanos: Long,
   endTimeNanos: Long,
-  status: SpanStatus
+  status: SpanStatus,
+  attributes: Map<String, String> = emptyMap()
 ): SpanInfo = SpanInfo(
   traceId = traceId,
   spanId = spanId,
@@ -111,5 +196,6 @@ private fun span(
   serviceName = "service",
   startTimeNanos = startTimeNanos,
   endTimeNanos = endTimeNanos,
-  status = status
+  status = status,
+  attributes = attributes
 )

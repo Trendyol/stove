@@ -220,11 +220,35 @@ private class TraceServiceImpl(
 
   private fun extractAttributeValue(value: io.opentelemetry.proto.common.v1.AnyValue): String = when {
     value.hasStringValue() -> value.stringValue
+
     value.hasIntValue() -> value.intValue.toString()
+
     value.hasBoolValue() -> value.boolValue.toString()
+
     value.hasDoubleValue() -> value.doubleValue.toString()
+
+    value.hasArrayValue() -> value.arrayValue.valuesList.joinToString(prefix = "[", postfix = "]") {
+      formatJsonValue(it)
+    }
+
+    value.hasKvlistValue() -> value.kvlistValue.valuesList.joinToString(prefix = "{", postfix = "}") { kv ->
+      "\"${escapeJson(kv.key)}\":${formatJsonValue(kv.value)}"
+    }
+
+    value.hasBytesValue() -> value.bytesValue.toHex()
+
     else -> ""
   }
+
+  private fun formatJsonValue(value: io.opentelemetry.proto.common.v1.AnyValue): String =
+    if (value.hasStringValue()) {
+      "\"${escapeJson(value.stringValue)}\""
+    } else {
+      extractAttributeValue(value)
+    }
+
+  private fun escapeJson(value: String): String =
+    value.replace("\\", "\\\\").replace("\"", "\\\"")
 
   private fun isInternalGrpcSpan(spanName: String): Boolean =
     TracingConstants.GRPC_INTERNAL_SPAN_PATTERNS.any { pattern ->

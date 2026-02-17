@@ -9,6 +9,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest
 import io.opentelemetry.proto.collector.trace.v1.TraceServiceGrpc
 import io.opentelemetry.proto.common.v1.AnyValue
+import io.opentelemetry.proto.common.v1.ArrayValue
 import io.opentelemetry.proto.common.v1.KeyValue
 import io.opentelemetry.proto.resource.v1.Resource
 import io.opentelemetry.proto.trace.v1.ResourceSpans
@@ -349,6 +350,47 @@ class OtlpSpanReceiverTest :
       }
     }
 
+    test("export should serialize array attributes as JSON-like values") {
+      val collector = StoveTraceCollector()
+      val receiver = OTLPSpanReceiver(collector, testPort)
+
+      try {
+        receiver.start()
+
+        val channel = ManagedChannelBuilder
+          .forAddress("localhost", testPort)
+          .usePlaintext()
+          .build()
+
+        try {
+          val stub = TraceServiceGrpc.newBlockingStub(channel)
+
+          val traceId = "99999999999999999999999999999999"
+          val request = createExportRequestWithArrayAttribute(
+            serviceName = "test-service",
+            traceId = traceId,
+            spanId = "aaaaaaaaaaaaaaaa",
+            spanName = "http-call",
+            attributeKey = "http.request.header.x_stove_test_id",
+            values = listOf("test-id-1", "test-id-2")
+          )
+
+          stub.export(request)
+
+          Thread.sleep(100)
+
+          val trace = collector.getTrace(traceId)
+          trace shouldHaveSize 1
+          trace[0].attributes["http.request.header.x_stove_test_id"] shouldBe "[\"test-id-1\", \"test-id-2\"]"
+        } finally {
+          channel.shutdown()
+          channel.awaitTermination(5, TimeUnit.SECONDS)
+        }
+      } finally {
+        receiver.stop()
+      }
+    }
+
     test("start should fail on port already in use") {
       val collector = StoveTraceCollector()
       val receiver1 = OTLPSpanReceiver(collector, testPort)
@@ -604,6 +646,64 @@ private fun createExportRequestWithExceptionEvent(
         .setMessage(exceptionMessage)
     ).addEvents(exceptionEvent)
     .build()
+
+  val scopeSpans = ScopeSpans
+    .newBuilder()
+    .addSpans(span)
+    .build()
+
+  val resourceSpans = ResourceSpans
+    .newBuilder()
+    .setResource(resource)
+    .addScopeSpans(scopeSpans)
+    .build()
+
+  return ExportTraceServiceRequest
+    .newBuilder()
+    .addResourceSpans(resourceSpans)
+    .build()
+}
+
+private fun createExportRequestWithArrayAttribute(
+  serviceName: String,
+  traceId: String,
+  spanId: String,
+  spanName: String,
+  attributeKey: String,
+  values: List<String>
+): ExportTraceServiceRequest {
+  val resource = Resource
+    .newBuilder()
+    .addAttributes(
+      KeyValue
+        .newBuilder()
+        .setKey("service.name")
+        .setValue(AnyValue.newBuilder().setStringValue(serviceName))
+    ).build()
+
+  val arrayValue = ArrayValue
+    .newBuilder()
+    .addAllValues(values.map { AnyValue.newBuilder().setStringValue(it).build() })
+    .build()
+
+  val span = Span
+    .newBuilder()
+    .setTraceId(hexStringToByteString(traceId))
+    .setSpanId(hexStringToByteString(spanId))
+    .setName(spanName)
+    .setStartTimeUnixNano(System.nanoTime())
+    .setEndTimeUnixNano(System.nanoTime() + 1_000_000)
+    .addAttributes(
+      KeyValue
+        .newBuilder()
+        .setKey(attributeKey)
+        .setValue(
+          AnyValue
+            .newBuilder()
+            .setArrayValue(arrayValue)
+            .build()
+        )
+    ).build()
 
   val scopeSpans = ScopeSpans
     .newBuilder()
