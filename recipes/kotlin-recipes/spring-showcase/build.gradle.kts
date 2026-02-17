@@ -101,4 +101,5 @@ protobuf {
 configureStoveTracing {
   serviceName = "stove-kotlin-spring-showcase"
   testTaskNames = listOf("e2eTest")
+  otelAgentVersion = libs.opentelemetry.instrumentation.annotations.get().version!!
 }
