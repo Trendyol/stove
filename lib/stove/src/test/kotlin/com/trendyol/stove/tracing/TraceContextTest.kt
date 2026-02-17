@@ -7,6 +7,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldHaveLength
 import io.kotest.matchers.string.shouldMatch
+import io.opentelemetry.api.baggage.Baggage
+import io.opentelemetry.context.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -111,6 +113,34 @@ class TraceContextTest :
       val ids = (1..100).map { TraceContext.generateSpanId() }.toSet()
 
       ids.size shouldBe 100
+    }
+
+    test("start should preserve existing OTel baggage entries") {
+      val existingBaggage = Baggage
+        .builder()
+        .put("tenant.id", "acme-corp")
+        .put("region", "eu-west-1")
+        .build()
+      val preExistingScope = Context.current().with(existingBaggage).makeCurrent()
+
+      try {
+        TraceContext.start("test-baggage")
+
+        val activeBaggage = Baggage.fromContext(Context.current())
+        activeBaggage.getEntryValue("tenant.id") shouldBe "acme-corp"
+        activeBaggage.getEntryValue("region") shouldBe "eu-west-1"
+        activeBaggage.getEntryValue(TraceContext.BAGGAGE_TEST_ID_KEY) shouldBe "test-baggage"
+      } finally {
+        TraceContext.clear()
+        preExistingScope.close()
+      }
+    }
+
+    test("start should work when no pre-existing baggage exists") {
+      TraceContext.start("test-no-prior-baggage")
+
+      val activeBaggage = Baggage.fromContext(Context.current())
+      activeBaggage.getEntryValue(TraceContext.BAGGAGE_TEST_ID_KEY) shouldBe "test-no-prior-baggage"
     }
 
     test("sanitizeToAscii should sanitize Turkish characters") {

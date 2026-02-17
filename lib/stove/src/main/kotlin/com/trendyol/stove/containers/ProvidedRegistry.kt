@@ -22,8 +22,31 @@ fun <T> withProvidedRegistry(
   registry: String = DEFAULT_REGISTRY,
   compatibleSubstitute: String? = null,
   containerBuilder: (DockerImageName) -> T
-): T = containerBuilder(
-  DockerImageName
-    .parse(registry.trim('/') + '/' + imageName.trim('/'))
-    .asCompatibleSubstituteFor(compatibleSubstitute ?: imageName)
-)
+): T {
+  val trimmedRegistry = registry.trim('/')
+  val trimmedImage = imageName.trim('/')
+
+  // Skip prepending the registry when the image already contains a registry
+  // (e.g. "mcr.microsoft.com/mssql/server") or when the registry is blank.
+  val fullImage = if (trimmedRegistry.isBlank() || containsRegistry(trimmedImage)) {
+    trimmedImage
+  } else {
+    "$trimmedRegistry/$trimmedImage"
+  }
+
+  return containerBuilder(
+    DockerImageName
+      .parse(fullImage)
+      .asCompatibleSubstituteFor(compatibleSubstitute ?: imageName)
+  )
+}
+
+/**
+ * Heuristic: an image name contains a registry if the part before the first `/`
+ * includes a dot (e.g. `mcr.microsoft.com`, `ghcr.io`, `registry.example.com`)
+ * or a colon for port (e.g. `localhost:5000`).
+ */
+private fun containsRegistry(imageName: String): Boolean {
+  val firstSegment = imageName.substringBefore('/')
+  return firstSegment != imageName && (firstSegment.contains('.') || firstSegment.contains(':'))
+}

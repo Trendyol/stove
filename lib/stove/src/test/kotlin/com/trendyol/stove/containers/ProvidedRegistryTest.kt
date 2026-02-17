@@ -143,5 +143,61 @@ class ProvidedRegistryTest :
 
         capturedImageName?.toString() shouldContain "docker.io/confluentinc/cp-kafka:7.0.0"
       }
+
+      test("should not prepend registry when image already contains a registry with a dot") {
+        var capturedImageName: DockerImageName? = null
+
+        withProvidedRegistry(
+          imageName = "mcr.microsoft.com/mssql/server:2022-CU16-ubuntu-22.04",
+          registry = "docker.io"
+        ) { imageName ->
+          capturedImageName = imageName
+          "container"
+        }
+
+        capturedImageName?.toString() shouldBe "mcr.microsoft.com/mssql/server:2022-CU16-ubuntu-22.04"
+      }
+
+      test("should not prepend registry when image contains ghcr.io") {
+        var capturedImageName: DockerImageName? = null
+
+        withProvidedRegistry(
+          imageName = "ghcr.io/my-org/my-image:latest",
+          registry = "docker.io"
+        ) { imageName ->
+          capturedImageName = imageName
+          "container"
+        }
+
+        capturedImageName?.toString() shouldBe "ghcr.io/my-org/my-image:latest"
+      }
+
+      test("should not prepend registry when image contains localhost with port") {
+        var capturedImageName: DockerImageName? = null
+
+        withProvidedRegistry(
+          imageName = "localhost:5000/my-image:latest",
+          registry = "docker.io"
+        ) { imageName ->
+          capturedImageName = imageName
+          "container"
+        }
+
+        capturedImageName?.toString() shouldBe "localhost:5000/my-image:latest"
+      }
+
+      test("should not prepend registry when registry is blank") {
+        var capturedImageName: DockerImageName? = null
+
+        withProvidedRegistry(
+          imageName = "postgres:15",
+          registry = ""
+        ) { imageName ->
+          capturedImageName = imageName
+          "container"
+        }
+
+        capturedImageName?.toString() shouldBe "postgres:15"
+      }
     }
   })
