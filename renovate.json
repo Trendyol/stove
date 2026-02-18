@@ -45,6 +45,12 @@
       "groupName": "confluent"
     },
     {
+      "matchDepNames": [
+        "/org.apache.kafka.*/"
+      ],
+      "groupName": "kafka"
+    },
+    {
       "groupName": "com.trendyol",
       "allowedVersions": "!/1f1ca59/",
       "matchPackageNames": [
