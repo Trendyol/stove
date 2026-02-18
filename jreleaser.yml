@@ -1,0 +1,32 @@
+project:
+  name: stove
+  description: The easiest way of e2e testing in Kotlin
+  license: Apache-2.0
+  links:
+    homepage: https://github.com/Trendyol/stove
+    documentation: https://github.com/Trendyol/stove
+    bugTracker: https://github.com/Trendyol/stove/issues
+  authors:
+    - Oguzhan Soykan
+  inceptionYear: "2022"
+
+release:
+  github:
+    owner: Trendyol
+    name: stove
+    tagName: "{{projectVersion}}"
+    releaseName: "{{projectVersion}}"
+    overwrite: false
+    skipTag: false
+    changelog:
+      enabled: true
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        enabled: false
+      hide:
+        categories:
+          - merge
+        contributors:
+          - "[bot]"
+          - "GitHub"

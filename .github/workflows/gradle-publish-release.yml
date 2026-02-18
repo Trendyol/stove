@@ -1,19 +1,21 @@
-name: Publish to Maven
+name: Release
 
 on:
-  release:
-    types: [ created ]
+  workflow_dispatch:
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     if: github.repository == 'Trendyol/stove'
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
@@ -27,7 +29,13 @@ jobs:
         with:
           gradle-version: current
 
-      - name: Gradle Build and Test
+      - name: Extract version from gradle.properties
+        run: |
+          VERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
+          echo "JRELEASER_PROJECT_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Releasing version: $VERSION"
+
+      - name: Publish to Maven Central
         run: gradle --no-configuration-cache publish
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.gpg_private_key }}
@@ -35,3 +43,20 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.ossrh_username }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ossrh_pass }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: jreleaser/release-action@v2
+        with:
+          arguments: full-release
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ env.JRELEASER_PROJECT_VERSION }}
+
+      - name: Upload JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jreleaser-release
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties

@@ -10,7 +10,6 @@ dependencies {
   implementation(libs.spring.boot.webflux)
   implementation(libs.spring.boot.autoconfigure)
   implementation(libs.spring.boot.kafka)
-  implementation(libs.couchbase.client)
   annotationProcessor(libs.spring.boot.annotationProcessor)
 }
 
