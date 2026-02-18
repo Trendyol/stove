@@ -17,7 +17,7 @@ arrow = "2.2.1.1"
 jackson = "2.21"
 
 # Kafka
-kafka = "4.1.1"
+kafka = "4.2.0"
 kafka-kotlin = "0.4.1"
 
 # Logging
