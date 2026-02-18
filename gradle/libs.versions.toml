@@ -141,7 +141,7 @@ mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
-elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version.ref = "elastic" }
+elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.3.0" }
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
