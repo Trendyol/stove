@@ -89,7 +89,6 @@ quarkus-kotlin = { module = "io.quarkus:quarkus-kotlin", version.ref = "quarkus"
 
 kafka = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kafkaKotlin = { module = "io.github.nomisrev:kotlin-kafka", version.ref = "kafka-kotlin" }
-couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
 
 # Jackson
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
