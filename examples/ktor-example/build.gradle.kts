@@ -1,9 +1,8 @@
 @file:Suppress("UnstableApiUsage")
 
-import com.trendyol.stove.gradle.configureStoveTracing
-
 plugins {
   kotlin("jvm") version libs.versions.kotlin
+  id("com.trendyol.stove.tracing")
   application
   idea
   kotlin("plugin.serialization") version libs.versions.kotlin
@@ -19,8 +18,8 @@ application {
   applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
-configureStoveTracing {
-  serviceName = "ktor-example"
+stoveTracing {
+  serviceName.set("ktor-example")
 }
 
 dependencies {

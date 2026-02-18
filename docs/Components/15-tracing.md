@@ -105,17 +105,33 @@ Stove()
 
 ### Step 2: Attach the OpenTelemetry agent in your build
 
-Copy [StoveTracingConfiguration.kt](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
+=== "Gradle Plugin (Recommended)"
 
-```kotlin hl_lines="3-4"
-import com.trendyol.stove.gradle.configureStoveTracing
+    ```kotlin hl_lines="2 6-7"
+    plugins {
+        id("com.trendyol.stove.tracing") version "<stove-version>"
+    }
 
-configureStoveTracing {
-    serviceName = "my-service"
-}
-```
+    stoveTracing {
+        serviceName.set("my-service")
+    }
+    ```
 
-This handles everything: downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.
+    The plugin is published to both the [Gradle Plugin Portal](https://plugins.gradle.org/) and Maven Central.
+
+=== "buildSrc (Copy-Paste)"
+
+    Copy [StoveTracingConfiguration.kt](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
+
+    ```kotlin hl_lines="3-4"
+    import com.trendyol.stove.gradle.stoveTracing
+
+    stoveTracing {
+        serviceName = "my-service"
+    }
+    ```
+
+Both approaches handle everything: downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.
 
 !!! tip "That's all you need"
     Now write your tests as usual. When a test fails, you'll see the execution trace automatically. <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">No code changes to your application required.</span> The OpenTelemetry agent instruments 100+ libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) with zero code changes.
@@ -328,15 +344,48 @@ tracing {
 | `maxSpansPerTrace` | `1000` | Maximum spans stored per trace (prevents memory issues) |
 | `spanFilter` | Accept all | Predicate to filter which spans are collected |
 
-### Gradle Build Config
+### Gradle Plugin
 
-Configure the OpenTelemetry agent via `configureStoveTracing` in your `build.gradle.kts`:
+The Stove Tracing Gradle plugin configures the OpenTelemetry Java Agent for your test tasks. It is published to both the **Gradle Plugin Portal** and **Maven Central**.
 
-```kotlin hl_lines="2"
-configureStoveTracing {
-    serviceName = "my-service"
-    testTaskNames = listOf("integrationTest") // Only apply to specific tasks
-    disabledInstrumentations = listOf("jdbc")  // Exclude noisy instrumentations
+=== "Gradle Plugin Portal"
+
+    ```kotlin
+    plugins {
+        id("com.trendyol.stove.tracing") version "<stove-version>"
+    }
+    ```
+
+=== "Maven Central"
+
+    If your project resolves plugins from Maven Central (e.g., for snapshot versions), add the Maven Central snapshot repository to your `pluginManagement` block:
+
+    ```kotlin
+    // settings.gradle.kts
+    pluginManagement {
+        repositories {
+            gradlePluginPortal()
+            mavenCentral()
+            maven("https://central.sonatype.com/repository/maven-snapshots")
+        }
+    }
+    ```
+
+    Then apply normally:
+
+    ```kotlin
+    plugins {
+        id("com.trendyol.stove.tracing") version "<stove-snapshot-version>"
+    }
+    ```
+
+Configure the plugin in your `build.gradle.kts`:
+
+```kotlin hl_lines="2-4"
+stoveTracing {
+    serviceName.set("my-service")
+    testTaskNames.set(listOf("integrationTest")) // Only apply to specific tasks
+    disabledInstrumentations.set(listOf("jdbc"))  // Exclude noisy instrumentations
 }
 ```
 
@@ -344,7 +393,7 @@ configureStoveTracing {
 |--------|---------|-------------|
 | `serviceName` | `"stove-traced-app"` | Service name shown in traces |
 | `enabled` | `true` | Toggle tracing on/off |
-| `protocol` | `"grpc"` | OTLP protocol (`grpc` or `http/protobuf`) |
+| `protocol` | `"grpc"` | OTLP protocol (currently only `grpc` is supported) |
 | `testTaskNames` | `[]` | Apply only to specific test tasks (empty = all) |
 | `otelAgentVersion` | `"2.24.0"` | OpenTelemetry Java Agent version |
 | `captureHttpHeaders` | `true` | Include HTTP headers in spans |
@@ -355,8 +404,11 @@ configureStoveTracing {
 | `bspScheduleDelay` | `100` | Batch span processor delay in ms (lower = faster export) |
 | `bspMaxBatchSize` | `1` | Batch size for span export (1 = immediate) |
 
-??? note "Manual OTel agent setup"
-    If you prefer not to use `configureStoveTracing`, you can configure the agent manually:
+??? note "Alternative: buildSrc copy-paste approach"
+    If you prefer not to use the plugin, copy [`StoveTracingConfiguration.kt`](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory and use `stoveTracing { ... }` in your build script.
+
+??? note "Alternative: Manual OTel agent setup"
+    If you prefer full control, you can configure the agent manually:
 
     ```kotlin
     // build.gradle.kts
@@ -403,7 +455,7 @@ configureStoveTracing {
 
 1. Ensure `stove-tracing` is in your dependencies
 2. Verify `enableSpanReceiver()` is called in your Stove config
-3. Verify `configureStoveTracing` is called in your `build.gradle.kts`
+3. Verify the `com.trendyol.stove.tracing` plugin is applied in your `build.gradle.kts`
 4. Look for *"Stove tracing: Attached OTel agent"* in test output
 
 ### Too many spans
@@ -411,9 +463,9 @@ configureStoveTracing {
 Use `disabledInstrumentations` to exclude noisy libraries:
 
 ```kotlin
-configureStoveTracing {
-    serviceName = "my-service"
-    disabledInstrumentations = listOf("jdbc", "hibernate", "spring-scheduling")
+stoveTracing {
+    serviceName.set("my-service")
+    disabledInstrumentations.set(listOf("jdbc", "hibernate", "spring-scheduling"))
 }
 ```
 

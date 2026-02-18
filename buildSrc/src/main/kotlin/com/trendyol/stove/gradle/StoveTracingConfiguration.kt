@@ -9,8 +9,30 @@ import java.net.ServerSocket
 
 /*
  * ════════════════════════════════════════════════════════════════════════════════
- * STOVE TRACING CONFIGURATION
+ * STOVE TRACING CONFIGURATION (buildSrc version)
  * ════════════════════════════════════════════════════════════════════════════════
+ *
+ * PREFERRED APPROACH: Use the Gradle plugin instead of copying this file.
+ *
+ *   plugins {
+ *       id("com.trendyol.stove.tracing") version "<stove-version>"
+ *   }
+ *
+ *   stoveTracing {
+ *       serviceName.set("my-service")
+ *   }
+ *
+ * The plugin is available on:
+ *   - Gradle Plugin Portal: id("com.trendyol.stove.tracing")
+ *   - Maven Central: com.trendyol:stove-tracing-gradle-plugin
+ *
+ * Release versions are published to both locations.
+ * Snapshot versions are available from Maven Central snapshots only.
+ * See: https://github.com/Trendyol/stove
+ *
+ * ────────────────────────────────────────────────────────────────────────
+ * LEGACY: buildSrc copy-paste approach (kept for internal Stove usage)
+ * ────────────────────────────────────────────────────────────────────────
  *
  * This file configures the OpenTelemetry Java Agent for Stove test tracing.
  * When a test fails, Stove can display the execution trace showing exactly
@@ -23,9 +45,9 @@ import java.net.ServerSocket
  *
  * 2. In your test module's build.gradle.kts, add:
  *
- *    import com.trendyol.stove.gradle.configureStoveTracing
+ *    import com.trendyol.stove.gradle.stoveTracing
  *
- *    configureStoveTracing {
+ *    stoveTracing {
  *        serviceName = "my-service"
  *    }
  *
@@ -55,19 +77,19 @@ import java.net.ServerSocket
  * ADVANCED USAGE:
  * ───────────────
  * // Apply only to integration tests
- * configureStoveTracing {
+ * stoveTracing {
  *     serviceName = "my-service"
  *     testTaskNames = listOf("integrationTest")
  * }
  *
  * // Custom OTel agent version
- * configureStoveTracing {
+ * stoveTracing {
  *     serviceName = "my-service"
  *     otelAgentVersion = "2.25.0"
  * }
  *
  * // Disable specific instrumentations
- * configureStoveTracing {
+ * stoveTracing {
  *     serviceName = "my-service"
  *     disabledInstrumentations = listOf("jdbc", "hibernate")
  * }
@@ -97,22 +119,22 @@ private object TracingDefaults {
  *
  * Example usage in build.gradle.kts:
  * ```kotlin
- * import com.trendyol.stove.gradle.configureStoveTracing
+ * import com.trendyol.stove.gradle.stoveTracing
  *
- * configureStoveTracing {
+ * stoveTracing {
  *     serviceName = "my-service"
  * }
  * ```
  *
  * To configure only specific test tasks:
  * ```kotlin
- * configureStoveTracing {
+ * stoveTracing {
  *     serviceName = "my-service"
  *     testTaskNames = listOf("integrationTest") // Only apply to integrationTest task
  * }
  * ```
  */
-fun Project.configureStoveTracing(configure: StoveTracingConfig.() -> Unit = {}) {
+fun Project.stoveTracing(configure: StoveTracingConfig.() -> Unit = {}) {
   val config = StoveTracingConfig().apply(configure)
   validateProtocol(config.protocol)
 
@@ -320,7 +342,7 @@ private fun buildInstrumentationControlArgs(config: ResolvedTracingConfig): List
 /**
  * Configuration for Stove tracing.
  *
- * @see configureStoveTracing
+ * @see stoveTracing
  */
 class StoveTracingConfig {
   /** The service name to use in traces. This should match your application's service name. */

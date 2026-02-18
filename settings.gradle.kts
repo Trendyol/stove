@@ -1,6 +1,15 @@
 @file:Suppress("UnstableApiUsage")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "stove"
+
+pluginManagement {
+  includeBuild("plugins/stove-tracing-gradle-plugin")
+  repositories {
+    gradlePluginPortal()
+    mavenCentral()
+  }
+}
+
 include(
   "lib:stove-bom",
   "lib:stove",
@@ -47,6 +56,7 @@ include(
   "examples:spring-streams-example",
   "examples:micronaut-example"
 )
+
 dependencyResolutionManagement {
   repositories {
     mavenCentral()

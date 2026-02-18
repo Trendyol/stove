@@ -168,16 +168,19 @@ Stove()
 
 Copy [`StoveTracingConfiguration.kt`](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
 
-```kotlin hl_lines="3-4"
-import com.trendyol.stove.gradle.configureStoveTracing
+```kotlin hl_lines="3-5"
+import com.trendyol.stove.gradle.stoveTracing
 
-configureStoveTracing {
+stoveTracing {
   serviceName = "my-service"
   testTaskNames = listOf("e2eTest") // optional: scope to specific test tasks
 }
 ```
 
 This handles downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.
+
+!!! tip "Gradle Plugin available since 0.21.2"
+    Starting with [0.21.2](../release-notes/0.21.2.md), a standalone Gradle plugin is available that eliminates the need to copy this file. See the [0.21.2 release notes](../release-notes/0.21.2.md) for details.
 
 <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">No code changes to your application are needed.</span> The OpenTelemetry agent instruments 100+ libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) automatically. The `@WithSpan` annotations are optional. They add your own method-level spans on top of what the agent already captures.
 
@@ -388,7 +391,7 @@ Worth noting: the OTel agent does add some startup overhead to the test JVM (a f
 4. **Filter noisy instrumentations.** Some libraries generate a lot of spans. Tune with `disabledInstrumentations`:
 
 ```kotlin hl_lines="3-4"
-configureStoveTracing {
+stoveTracing {
   serviceName = "my-service"
   disabledInstrumentations = listOf("jdbc", "hibernate", "spring-scheduling")
 }
@@ -414,7 +417,9 @@ Enable tracing in two steps:
 
 ```kotlin hl_lines="3 6"
 // build.gradle.kts
-configureStoveTracing {
+import com.trendyol.stove.gradle.stoveTracing
+
+stoveTracing {
   serviceName = "my-service"
 }
 

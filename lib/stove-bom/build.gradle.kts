@@ -37,6 +37,9 @@ dependencies {
     // Extensions
     api(projects.testExtensions.stoveExtensionsKotest)
     api(projects.testExtensions.stoveExtensionsJunit)
+
+    // Gradle Plugins (from includeBuild)
+    api(project(":stove-tracing-gradle-plugin"))
   }
 }
 

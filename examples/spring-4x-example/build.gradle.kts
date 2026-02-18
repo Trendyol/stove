@@ -1,6 +1,5 @@
-import com.trendyol.stove.gradle.configureStoveTracing
-
 plugins {
+  id("com.trendyol.stove.tracing")
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.four)
   idea
@@ -38,8 +37,8 @@ application { mainClass.set("stove.spring.example4x.ExampleAppkt") }
 // ============================================================================
 // TRACING SETUP - OpenTelemetry Java Agent
 // ============================================================================
-configureStoveTracing {
-  serviceName = "spring-4x-example"
+stoveTracing {
+  serviceName.set("spring-4x-example")
   // Plugin handles:
   // - Adding opentelemetry-javaagent dependency
   // - Configuring test task JVM args for OTLP export
