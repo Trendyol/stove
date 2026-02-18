@@ -10,9 +10,7 @@ spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.13"
 spring-kafka-4x = "4.0.3"
-couchbase-client = "3.11.0"
-couchbase-client-metrics = "3.11.0"
-couchbase-kotlin = "3.11.0"
+couchbase = "3.11.1"
 jackson = "2.21.0"
 jackson3 = "3.0.4"
 arrow = "2.2.1.1"
@@ -98,9 +96,9 @@ kafka-streams-protobuf-serde = { module = "io.confluent:kafka-streams-protobuf-s
 kafka-embedded = { module = "io.github.embeddedkafka:embedded-kafka_2.13", version.ref = "kafka-embedded" }
 
 # Couchbase
-couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase-kotlin" }
-couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase-client" }
-couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase-client-metrics" }
+couchbase-kotlin = { module = "com.couchbase.client:kotlin-client", version.ref = "couchbase" }
+couchbase-client = { module = "com.couchbase.client:java-client", version.ref = "couchbase" }
+couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer", version.ref = "couchbase" }
 
 # Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
