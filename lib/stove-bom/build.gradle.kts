@@ -38,8 +38,8 @@ dependencies {
     api(projects.testExtensions.stoveExtensionsKotest)
     api(projects.testExtensions.stoveExtensionsJunit)
 
-    // Gradle Plugins (from includeBuild)
-    api(project(":stove-tracing-gradle-plugin"))
+    // Gradle Plugins
+    api(projects.plugins.stoveTracingGradlePlugin)
   }
 }
 
@@ -69,5 +69,5 @@ mavenPublishing {
       url.set(project.properties["projectUrl"].toString())
     }
   }
-  signAllPublications()
+  if (hasSigningKey) signAllPublications()
 }

@@ -3,7 +3,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "stove"
 
 pluginManagement {
-  includeBuild("plugins/stove-tracing-gradle-plugin")
   repositories {
     gradlePluginPortal()
     mavenCentral()
@@ -55,6 +54,9 @@ include(
   "examples:ktor-example",
   "examples:spring-streams-example",
   "examples:micronaut-example"
+)
+include(
+  "plugins:stove-tracing-gradle-plugin"
 )
 
 dependencyResolutionManagement {

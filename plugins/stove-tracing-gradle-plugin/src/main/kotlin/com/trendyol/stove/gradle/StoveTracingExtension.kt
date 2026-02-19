@@ -23,7 +23,7 @@ abstract class StoveTracingExtension @Inject constructor(objects: ObjectFactory)
   val serviceName: Property<String> = objects.property(String::class.java)
     .convention(TracingDefaults.DEFAULT_SERVICE_NAME)
 
-  /** Whether tracing is enabled. Set to false to disable tracing without removing configuration. */
+  /** Whether tracing is enabled. Set false to disable tracing without removing configuration. */
   val enabled: Property<Boolean> = objects.property(Boolean::class.java)
     .convention(true)
 
