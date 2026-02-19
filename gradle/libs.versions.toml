@@ -253,3 +253,4 @@ micronaut-application = { id = "io.micronaut.application", version = "4.6.2" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.6.2" }
 micronaut-library = { id = "io.micronaut.library", version = "4.6.2" }
 maven-publish = { id = "com.vanniktech.maven.publish", version = "0.36.0" }
+plugin-publish = { id = "com.gradle.plugin-publish", version = "2.0.0" }

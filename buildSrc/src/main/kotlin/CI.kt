@@ -1,5 +1,11 @@
 import org.gradle.api.Project
 
+val Project.hasSigningKey: Boolean
+  get() =
+    rootProject.findProperty("signing.keyId") != null ||
+      rootProject.findProperty("signingInMemoryKey") != null ||
+      System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null
+
 object CI {
   private val isSnapshot: Boolean
     get() = System.getenv("SNAPSHOT") != null && System.getenv("SNAPSHOT") == "true"

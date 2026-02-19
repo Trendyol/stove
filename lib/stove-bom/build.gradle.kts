@@ -37,6 +37,9 @@ dependencies {
     // Extensions
     api(projects.testExtensions.stoveExtensionsKotest)
     api(projects.testExtensions.stoveExtensionsJunit)
+
+    // Gradle Plugins
+    api(projects.plugins.stoveTracingGradlePlugin)
   }
 }
 
@@ -66,5 +69,5 @@ mavenPublishing {
       url.set(project.properties["projectUrl"].toString())
     }
   }
-  signAllPublications()
+  if (hasSigningKey) signAllPublications()
 }

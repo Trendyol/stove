@@ -35,6 +35,7 @@ apiValidation {
     "ktor-di-tests",
     "ktor-koin-tests",
     "ktor-test-fixtures",
+    "stove-tracing-gradle-plugin",
   )
 }
 kover {
@@ -149,9 +150,10 @@ val publishedProjects = listOf(
   projects.starters.micronaut.stoveMicronaut.name,
   projects.testExtensions.stoveExtensionsKotest.name,
   projects.testExtensions.stoveExtensionsJunit.name,
+  projects.plugins.stoveTracingGradlePlugin.name,
 )
 
-subprojects.of("lib", "spring", "ktor", "micronaut", "test-extensions", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
+subprojects.of("lib", "spring", "ktor", "micronaut", "test-extensions", "plugins", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
   apply {
     plugin("java")
     plugin(rootProject.libs.plugins.maven.publish.pluginId)
@@ -183,7 +185,7 @@ subprojects.of("lib", "spring", "ktor", "micronaut", "test-extensions", filter =
         url.set(project.properties["projectUrl"].toString())
       }
     }
-    signAllPublications()
+    if (project.hasSigningKey) signAllPublications()
   }
 
   java {
