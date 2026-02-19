@@ -1,35 +1,34 @@
 # Gradle Configuration
 
+## Contents
+- [Dependencies (BOM)](#dependencies-bom)
+- [Register test-e2e source set](#register-test-e2e-source-set)
+- [Register e2eTest task](#register-e2etest-task)
+- [IDE integration](#ide-integration)
+- [JUnit base test class](#junit-base-test-class)
+- [Available artifacts](#available-artifacts)
+
 ## Dependencies (BOM)
 
 ```kotlin
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
-
-    // Core
     testImplementation("com.trendyol:stove")
+    testImplementation("com.trendyol:stove-spring")             // or stove-ktor
+    testImplementation("com.trendyol:stove-extensions-kotest")  // or stove-extensions-junit
 
-    // Application framework (pick one)
-    testImplementation("com.trendyol:stove-spring")
-    // testImplementation("com.trendyol:stove-ktor")
-
-    // Test framework extension (pick one)
-    testImplementation("com.trendyol:stove-extensions-kotest")  // Kotest 6.1.3+
-    // testImplementation("com.trendyol:stove-extensions-junit") // JUnit Jupiter 6.x
-
-    // Components — add only what you need
+    // Add only what you need:
     testImplementation("com.trendyol:stove-http")
     testImplementation("com.trendyol:stove-postgres")
-    testImplementation("com.trendyol:stove-kafka")          // Standalone Kafka
-    // testImplementation("com.trendyol:stove-spring-kafka") // Spring Kafka (richer assertions)
+    testImplementation("com.trendyol:stove-kafka")
     testImplementation("com.trendyol:stove-wiremock")
-    testImplementation("com.trendyol:stove-grpc")            // gRPC client testing
-    testImplementation("com.trendyol:stove-grpc-mock")       // gRPC mock server
+    testImplementation("com.trendyol:stove-grpc")
+    testImplementation("com.trendyol:stove-grpc-mock")
     testImplementation("com.trendyol:stove-tracing")
 }
 ```
 
-## Register `test-e2e` source set
+## Register test-e2e source set
 
 ```kotlin
 sourceSets {
@@ -46,7 +45,7 @@ sourceSets {
 }
 ```
 
-## Register `e2eTest` task
+## Register e2eTest task
 
 ```kotlin
 tasks.register<Test>("e2eTest") {
@@ -74,7 +73,27 @@ idea {
 }
 ```
 
-## Available artifact names
+## JUnit base test class
+
+Use this instead of `AbstractProjectConfig` when using JUnit:
+
+```kotlin
+@ExtendWith(StoveJUnitExtension::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+abstract class BaseE2ETest {
+    companion object {
+        @JvmStatic @BeforeAll
+        fun setup() = runBlocking {
+            Stove().with { /* systems */ }.run()
+        }
+
+        @JvmStatic @AfterAll
+        fun teardown() = runBlocking { Stove.stop() }
+    }
+}
+```
+
+## Available artifacts
 
 | Artifact | Description |
 |---|---|
@@ -84,13 +103,13 @@ idea {
 | `stove-http` | HTTP client system |
 | `stove-postgres` | PostgreSQL system |
 | `stove-kafka` | Standalone Kafka system |
-| `stove-spring-kafka` | Spring Kafka system (richer assertions) |
+| `stove-spring-kafka` | Spring Kafka (adds `shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`) |
 | `stove-wiremock` | WireMock system |
 | `stove-grpc` | gRPC client system |
 | `stove-grpc-mock` | gRPC mock server system |
 | `stove-tracing` | Tracing system |
-| `stove-extensions-kotest` | Kotest integration (reporting) |
-| `stove-extensions-junit` | JUnit integration (reporting) |
+| `stove-extensions-kotest` | Kotest reporting integration |
+| `stove-extensions-junit` | JUnit reporting integration |
 | `stove-couchbase` | Couchbase system |
 | `stove-elasticsearch` | Elasticsearch system |
 | `stove-redis` | Redis system |

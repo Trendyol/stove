@@ -1,6 +1,11 @@
 # Writing Your Own Stove System
 
-Stove is extensible. If your application uses a component Stove doesn't support out of the box, you can write your own system with a native-feeling DSL.
+## Contents
+- [Implement PluggedSystem](#1-implement-pluggedsystem)
+- [Create a listener](#2-create-a-listener)
+- [Write DSL extensions](#3-write-dsl-extensions)
+- [Register the listener](#4-register-the-listener)
+- [Use in tests](#5-use-in-tests)
 
 Complete working example: `recipes/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/.../setup/DbSchedulerSystem.kt`
 
@@ -14,7 +19,6 @@ class DbSchedulerSystem(
     Reports {
 
     lateinit var listener: StoveDbSchedulerListener
-
     override val reportSystemName: String = "DbScheduler"
 
     override suspend fun afterRun(context: ApplicationContext) {
@@ -23,10 +27,7 @@ class DbSchedulerSystem(
 
     override fun snapshot(): SystemSnapshot = SystemSnapshot(
         system = reportSystemName,
-        state = mapOf(
-            "completedExecutions" to listener.getCompletedExecutionsSnapshot(),
-            "failedExecutions" to listener.getFailedExecutionsSnapshot()
-        ),
+        state = mapOf("completedExecutions" to listener.getCompletedExecutionsSnapshot()),
         summary = "Completed: ${listener.getCompletedExecutionsSnapshot().size} task(s)"
     )
 
@@ -34,8 +35,8 @@ class DbSchedulerSystem(
         atLeastIn: Duration = 5.seconds,
         noinline condition: T.() -> Boolean
     ): DbSchedulerSystem = report(
-        action = "Assert task executed successfully: ${T::class.simpleName}",
-        expected = "Task with ${T::class.simpleName} payload executed successfully".some(),
+        action = "Assert task executed: ${T::class.simpleName}",
+        expected = "Task with ${T::class.simpleName} payload executed".some(),
         metadata = mapOf("timeout" to atLeastIn.toString())
     ) {
         listener.waitUntilObservedSuccessfully(atLeastIn, T::class, condition)
@@ -45,14 +46,20 @@ class DbSchedulerSystem(
 }
 ```
 
-Key interfaces:
-- `PluggedSystem` — required, marks it as a Stove system
-- `AfterRunAwareWithContext<ApplicationContext>` — optional, receives the Spring context after app starts
-- `Reports` — optional, contributes to failure reports via `snapshot()`
+### Lifecycle interfaces
 
-## 2. Create a listener (or adapter)
+| Interface | When Called | Use Case |
+|---|---|---|
+| `PluggedSystem` | Always (required) | Base interface, provides `close()` |
+| `RunAware` | Before app starts | System needs to do setup before the app |
+| `AfterRunAware<T>` | After app starts | Receives the test system instance |
+| `AfterRunAwareWithContext<T>` | After app starts | Receives app DI container (e.g., `ApplicationContext`) |
+| `ExposesConfiguration` | During setup | System exposes config to the application (like containers) |
+| `Reports` | On test failure | Contributes to failure reports via `snapshot()` |
 
-The system needs a way to observe what happens inside the application:
+## 2. Create a listener
+
+Observes what happens inside the running application:
 
 ```kotlin
 class StoveDbSchedulerListener : AbstractSchedulerListener() {
@@ -63,71 +70,75 @@ class StoveDbSchedulerListener : AbstractSchedulerListener() {
     }
 
     suspend fun <T : Any> waitUntilObservedSuccessfully(
-        atLeastIn: Duration,
-        clazz: KClass<T>,
-        condition: (T) -> Boolean
-    ): Collection<ExecutionComplete> {
-        // Poll completedExecutions until a matching entry appears or timeout
-    }
+        atLeastIn: Duration, clazz: KClass<T>, condition: (T) -> Boolean
+    ): Collection<ExecutionComplete> { /* poll until match or timeout */ }
 }
 ```
 
 ## 3. Write DSL extensions
 
 ```kotlin
-// Registration DSL — used in Stove().with { }
+// Registration — used in Stove().with { }
 @StoveDsl
 fun WithDsl.dbScheduler(): Stove =
     this.stove.getOrRegister(DbSchedulerSystem(this.stove)).let { this.stove }
 
-// Validation DSL — used in stove { }
+// Validation — used in stove { }
 @StoveDsl
 suspend fun ValidationDsl.tasks(validation: suspend DbSchedulerSystem.() -> Unit): Unit =
-    validation(this.stove.dbScheduler())
+    validation(this.stove.getOrNone<DbSchedulerSystem>().getOrElse {
+        throw SystemNotRegisteredException(DbSchedulerSystem::class)
+    })
 ```
 
-## 4. Register the listener as a test bean
+## 4. Register the listener
 
 ```kotlin
-Stove()
-    .with {
-        dbScheduler()
+Stove().with {
+    dbScheduler()
 
-        springBoot(
-            runner = { params ->
-                com.myapp.run(params) {
-                    addTestDependencies {
-                        bean<StoveDbSchedulerListener>(isPrimary = true)
-                    }
+    springBoot(
+        runner = { params ->
+            com.myapp.run(params) {
+                addTestDependencies {
+                    bean<StoveDbSchedulerListener>(isPrimary = true)
                 }
             }
-        )
-    }.run()
+        }
+    )
+}.run()
 ```
 
 ## 5. Use in tests
 
 ```kotlin
-test("should schedule and execute confirmation email task") {
-    stove {
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/api/orders",
-                body = CreateOrderRequest(userId = userId, amount = 99.99).some()
-            ) { response ->
-                response.status shouldBe 201
-            }
-        }
+stove {
+    http { postAndExpectBody<OrderResponse>("/api/orders", body = request.some()) { /* ... */ } }
 
-        tasks {
-            shouldBeExecuted<OrderEmailPayload> {
-                this.orderId == orderId && this.userId == userId
-            }
+    tasks {
+        shouldBeExecuted<OrderEmailPayload> {
+            this.orderId == orderId && this.userId == userId
         }
     }
 }
 ```
 
-## Pattern summary
+**Pattern**: listener captures events -> system exposes assertions -> DSL extensions make it ergonomic -> `report()` integrates with reporting.
 
-**Listener captures events inside the app** -> **System exposes assertion methods** -> **DSL extensions make it ergonomic** -> **`report()` integrates with Stove reporting**
+## 6. Extending built-in systems
+
+Add domain-specific helpers to existing systems without creating new ones:
+
+```kotlin
+@StoveDsl
+suspend fun KafkaSystem.publishWithCorrelationId(
+    topic: String,
+    message: Any,
+    correlationId: String = UUID.randomUUID().toString()
+) {
+    publish(topic, message, headers = mapOf("X-Correlation-ID" to correlationId))
+}
+
+// Usage
+kafka { publishWithCorrelationId("orders", event, "corr-123") }
+```

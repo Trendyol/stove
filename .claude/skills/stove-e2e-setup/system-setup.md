@@ -1,18 +1,28 @@
 # System Setup Reference
 
-All systems are configured inside the `Stove().with { }` block.
+## Contents
+- [HTTP Client](#http-client)
+- [PostgreSQL](#postgresql)
+- [Kafka](#kafka)
+- [WireMock](#wiremock)
+- [gRPC Mock](#grpc-mock)
+- [gRPC Client](#grpc-client)
+- [Bridge](#bridge)
+- [Reporting](#reporting)
+- [Application runner](#application-runner)
+- [Keep dependencies running](#keep-dependencies-running)
+
+All systems are configured inside `Stove().with { }`. The application runner goes last.
 
 ## HTTP Client
 
 ```kotlin
 httpClient {
-    HttpClientSystemOptions(
-        baseUrl = "http://localhost:8080"
-    )
+    HttpClientSystemOptions(baseUrl = "http://localhost:8080")
 }
 ```
 
-## PostgreSQL (with migrations)
+## PostgreSQL
 
 ```kotlin
 postgresql {
@@ -53,7 +63,7 @@ class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
 }
 ```
 
-For R2DBC (reactive):
+For R2DBC:
 
 ```kotlin
 configureExposedConfiguration = { cfg ->
@@ -67,25 +77,7 @@ configureExposedConfiguration = { cfg ->
 
 ## Kafka
 
-### Standalone Kafka
-
-```kotlin
-kafka {
-    KafkaSystemOptions(
-        serde = StoveSerde.jackson.anyByteArraySerde(),
-        configureExposedConfiguration = { cfg ->
-            listOf(
-                "kafka.bootstrapServers=${cfg.bootstrapServers}",
-                "kafka.interceptorClasses=${cfg.interceptorClass}"
-            )
-        }
-    )
-}
-```
-
-### Spring Kafka (recommended for Spring Boot)
-
-Use `stove-spring-kafka` for `shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`.
+Use `stove-kafka` for standalone. Use `stove-spring-kafka` for Spring Boot (adds `shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`).
 
 ```kotlin
 kafka {
@@ -106,14 +98,14 @@ kafka {
 }
 ```
 
-**Application-side**: Inject `ConsumerAwareRecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
+**Application-side requirement**: Inject `ConsumerAwareRecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
 
 ## WireMock
 
 ```kotlin
 wiremock {
     WireMockSystemOptions(
-        port = 0, // Dynamic port (recommended for CI)
+        port = 0, // Dynamic port — recommended for CI
         serde = StoveSerde.jackson.anyByteArraySerde(),
         configureExposedConfiguration = { cfg ->
             listOf(
@@ -125,14 +117,14 @@ wiremock {
 }
 ```
 
-All external service URLs in your application must be configurable so they can be pointed to WireMock.
+All external service URLs must be configurable so they can be pointed to WireMock.
 
 ## gRPC Mock
 
 ```kotlin
 grpcMock {
     GrpcMockSystemOptions(
-        port = GRPC_MOCK_PORT, // or 0 for dynamic
+        port = 0, // Dynamic port
         configureExposedConfiguration = { cfg ->
             listOf(
                 "grpcService.host=${cfg.host}",
@@ -145,39 +137,46 @@ grpcMock {
 
 ## gRPC Client
 
-For testing your own gRPC server (not mocked external services):
+For testing your own gRPC server (not external mocks):
 
 ```kotlin
 grpc {
-    GrpcSystemOptions(
-        host = "localhost",
-        port = 50051
-    )
+    GrpcSystemOptions(host = "localhost", port = 50051)
 }
 ```
 
 ## Bridge
 
-Direct access to your DI container from tests. Built into `stove-spring` / `stove-ktor`.
+Direct access to DI container from tests. Built into `stove-spring` / `stove-ktor`.
 
 ```kotlin
-bridge()
+bridge()  // Auto-detects DI framework
+```
+
+### Ktor DI support
+
+Bridge auto-detects your DI framework:
+
+```kotlin
+// Koin — add io.insert-koin:koin-ktor to classpath
+bridge()  // auto-detects Koin
+
+// Ktor-DI — add io.ktor:ktor-server-di to classpath
+bridge()  // auto-detects Ktor-DI
+
+// Custom resolver (Kodein, Dagger, etc.)
+bridge { application, type ->
+    myDiContainer.resolve(type)
+}
 ```
 
 ## Reporting
 
-Enabled by default via `StoveKotestExtension()` or `StoveJUnitExtension`. To configure:
+Enabled by default via `StoveKotestExtension()` or `StoveJUnitExtension`.
 
-```kotlin
-Stove {
-    reporting {
-        enabled()
-        dumpOnFailure()
-    }
-}.with { /* systems */ }.run()
-```
+## Application runner
 
-## Application runner (goes last)
+Goes last, after all systems. Systems inject configuration via `configureExposedConfiguration`.
 
 ### Spring Boot
 
@@ -192,14 +191,12 @@ springBoot(
     },
     withParameters = listOf(
         "server.port=8080",
-        "grpc.server.port=$GRPC_SERVER_PORT",
-        "external-apis.fraud-detection.host=localhost",
-        "external-apis.fraud-detection.port=$GRPC_MOCK_PORT"
+        "grpc.server.port=$GRPC_SERVER_PORT"
     )
 )
 ```
 
-For Spring Boot 4.x, use `addTestDependencies4x` with `registerBean<>()` syntax.
+For Spring Boot 4.x, use `addTestDependencies4x` with `registerBean<>()`.
 
 ### Ktor
 
@@ -212,12 +209,12 @@ ktor(
 )
 ```
 
-## Keep dependencies running (local dev)
+## Keep dependencies running
+
+Keeps containers alive between test runs for faster local iteration. Disable in CI.
 
 ```kotlin
 Stove {
     keepDependenciesRunning()
 }.with { /* systems */ }.run()
 ```
-
-Keeps containers alive between test runs for faster iteration. Disable in CI.

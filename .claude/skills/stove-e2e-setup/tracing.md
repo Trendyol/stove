@@ -1,25 +1,21 @@
 # Tracing Configuration
 
-Tracing gives you the full execution call chain inside your application when a test fails.
+Tracing captures the full execution call chain inside your application, shown on test failure.
 
-## 1. Enable span receiver in Stove config
+## 1. Enable span receiver
 
 Add inside `Stove().with { }`:
 
 ```kotlin
-tracing {
-    enableSpanReceiver()
-}
+tracing { enableSpanReceiver() }
 ```
 
 ## 2. Attach the OpenTelemetry agent
 
-### Gradle Plugin (recommended)
+### Gradle Plugin (default)
 
 ```kotlin
-plugins {
-    id("com.trendyol.stove.tracing") version "$stoveVersion"
-}
+plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
 
 stoveTracing {
     serviceName.set("my-service")
@@ -29,7 +25,7 @@ stoveTracing {
 
 ### buildSrc alternative
 
-Copy `StoveTracingConfiguration.kt` from the Stove repo to `buildSrc/src/main/kotlin/`, then use direct assignment syntax:
+Copy `StoveTracingConfiguration.kt` from the Stove repo to `buildSrc/src/main/kotlin/`, then use direct assignment:
 
 ```kotlin
 import com.trendyol.stove.gradle.stoveTracing
@@ -37,36 +33,69 @@ import com.trendyol.stove.gradle.stoveTracing
 stoveTracing {
     serviceName = "my-service"
     testTaskNames = listOf("e2eTest")
-    otelAgentVersion = libs.opentelemetry.instrumentation.annotations.get().version!!
 }
 ```
 
 ## 3. Plugin options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `serviceName` | `Property<String>` | `"stove-traced-app"` | Service name in traces |
-| `enabled` | `Property<Boolean>` | `true` | Toggle tracing on/off |
-| `testTaskNames` | `ListProperty<String>` | `[]` | Apply to specific test tasks (empty = all) |
-| `otelAgentVersion` | `Property<String>` | `"2.24.0"` | OpenTelemetry Java Agent version |
-| `disabledInstrumentations` | `ListProperty<String>` | `[]` | Instrumentations to disable |
-| `additionalInstrumentations` | `ListProperty<String>` | `[]` | Extra instrumentations to enable |
-| `customAnnotations` | `ListProperty<String>` | `[]` | Custom annotation classes to instrument |
-| `protocol` | `Property<String>` | `"grpc"` | OTLP protocol |
-| `bspScheduleDelay` | `Property<Int>` | (default) | Batch span processor schedule delay (ms) |
-| `bspMaxBatchSize` | `Property<Int>` | (default) | Max batch size (1 = immediate export) |
-| `captureHttpHeaders` | `Property<Boolean>` | `true` | Capture HTTP headers in spans |
-| `captureExperimentalTelemetry` | `Property<Boolean>` | `true` | Enable experimental HTTP telemetry |
+| Option | Default | Description |
+|---|---|---|
+| `serviceName` | `"stove-traced-app"` | Service name in traces |
+| `enabled` | `true` | Toggle tracing |
+| `testTaskNames` | `[]` | Apply to specific tasks (empty = all) |
+| `otelAgentVersion` | `"2.24.0"` | OTel Java Agent version |
+| `disabledInstrumentations` | `[]` | Instrumentations to disable (e.g., `jdbc`, `hibernate`) |
+| `additionalInstrumentations` | `[]` | Extra instrumentations |
+| `customAnnotations` | `[]` | Custom annotation classes to instrument |
+| `protocol` | `"grpc"` | OTLP protocol |
+| `captureHttpHeaders` | `true` | Capture HTTP headers in spans |
+| `captureExperimentalTelemetry` | `true` | Enable experimental HTTP telemetry |
+| `bspScheduleDelay` | `100` | Batch span processor delay in ms (lower = faster export) |
+| `bspMaxBatchSize` | `1` | Batch size for span export (1 = immediate) |
 
-## 4. Trace validation DSL
+## 4. Runtime tracing config
 
-Assert on traces in tests:
+Configure inside `Stove().with { }`:
 
 ```kotlin
 tracing {
+    enableSpanReceiver()              // Required
+    spanCollectionTimeout(10.seconds) // Wait time for spans (default: 5s)
+    maxSpansPerTrace(2000)            // Cap per trace (default: 1000)
+    spanFilter { span ->              // Filter collected spans
+        !span.operationName.contains("health-check")
+    }
+}
+```
+
+## 5. Trace validation DSL
+
+```kotlin
+tracing {
+    // Span assertions
     shouldContainSpan("OrderService.processOrder")
-    shouldContainSpan("PaymentClient.charge")
+    shouldContainSpanMatching { it.operationName.contains("Repository") }
+    shouldNotContainSpan("AdminService.delete")
     shouldNotHaveFailedSpans()
+    shouldHaveFailedSpan("PaymentGateway.charge")
+    shouldHaveSpanWithAttribute("http.method", "GET")
+    shouldHaveSpanWithAttributeContaining("http.url", "/api/users")
+
+    // Performance
     executionTimeShouldBeLessThan(500.milliseconds)
+    executionTimeShouldBeGreaterThan(10.milliseconds)
+    spanCountShouldBe(10)
+    spanCountShouldBeAtLeast(5)
+    spanCountShouldBeAtMost(20)
+
+    // Debugging helpers
+    println(renderTree())     // Hierarchical tree view
+    println(renderSummary())  // Compact summary
+    val failed = getFailedSpans()
+    val duration = getTotalDuration()
+    val span = findSpanByName("OrderService.process")
+
+    // Wait for async spans
+    waitForSpans(expectedCount = 5, timeoutMs = 3000)
 }
 ```

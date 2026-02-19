@@ -101,7 +101,7 @@ dependencies {
 **2. Configure Stove** (runs once before all tests)
 
 ```kotlin
-class TestConfig : AbstractProjectConfig() {
+class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() = Stove()
     .with {
       httpClient {
@@ -318,7 +318,7 @@ Use the provided extensions to automatically enrich failures:
 
 ```kotlin
 // Kotest - register in project config
-class TestConfig : AbstractProjectConfig() {
+class StoveConfig : AbstractProjectConfig() {
   override val extensions = listOf(StoveKotestExtension())
 }
 
@@ -338,6 +338,51 @@ Stove(
   )
 ).with { ... }
 ```
+
+### Tracing
+
+When a test fails, see the **entire execution call chain** inside your application — every controller, service, database query, and Kafka message — powered by OpenTelemetry:
+
+```
+EXECUTION TRACE (Call Chain)
+═══════════════════════════════════════════════════════════════════
+✓ POST (377ms)
+  ✓ POST /api/product/create (361ms)
+    ✓ ProductController.create (141ms)
+      ✓ ProductCreator.create (0ms)
+      ✓ KafkaProducer.send (137ms)
+        ✓ orders.created publish (81ms)
+          ✗ orders.created process (82ms)  ← FAILURE POINT
+```
+
+**Setup** (two steps):
+
+```kotlin
+// 1. In your Stove config
+tracing { enableSpanReceiver() }
+
+// 2. In build.gradle.kts
+plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
+stoveTracing { serviceName.set("my-service") }
+```
+
+**Validate traces in tests:**
+
+```kotlin
+tracing {
+    shouldContainSpan("OrderService.processOrder")
+    shouldNotHaveFailedSpans()
+    executionTimeShouldBeLessThan(500.milliseconds)
+}
+```
+
+No code changes to your application required. The OpenTelemetry agent instruments 100+ libraries automatically.
+
+### AI Agent Integration
+
+Stove's execution reports and tracing data are structured and deterministic, making them ideal for **AI agent workflows**. When an AI agent runs e2e tests during implementation, it can parse the failure reports — including the full execution trace, system snapshots, and timeline — to understand exactly what went wrong inside the application. This enables agents to iterate on fixes with precise feedback rather than guessing from opaque test failures.
+
+**Agent Skills:** Stove ships with a ready-to-use [Claude Code skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove-e2e-setup) that teaches AI agents how to set up and write Stove e2e tests. Copy the `.claude/skills/stove-e2e-setup/` directory into your project's `.claude/skills/` folder, and your AI coding agent will know how to configure systems, write tests, enable tracing, and build custom systems — following all Stove conventions automatically.
 
 ## Configuration
 
@@ -544,6 +589,7 @@ See [provided instances docs](https://trendyol.github.io/stove/Components/11-pro
 
 - **[Documentation](https://trendyol.github.io/stove/)**: Full guides and API reference
 - **[Examples](https://github.com/Trendyol/stove/tree/main/examples)**: Working sample projects
+- **[AI Agent Skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove-e2e-setup)**: Drop into `.claude/skills/` to teach AI agents Stove conventions
 - **[Blog Post](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)**:
   Motivation and design decisions
 - **[Video Walkthrough](https://youtu.be/DJ0CI5cBanc?t=669)**: Live demo (Turkish)

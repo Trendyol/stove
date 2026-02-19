@@ -1,58 +1,53 @@
 ---
 name: stove-e2e-setup
-description: Sets up a complete end-to-end testing suite using the Stove framework for Spring Boot or Ktor applications. Configures test-e2e source set, Gradle dependencies, Stove systems (HTTP, PostgreSQL, Kafka, WireMock, gRPC), tracing, and test DSL. Use when creating e2e tests, adding Stove to a project, configuring Stove systems, or writing integration tests with Stove.
+description: Use when adding Stove e2e tests to a project, creating a test-e2e source set, configuring Stove systems (HTTP, PostgreSQL, Kafka, WireMock, gRPC), setting up the stove {} test DSL, enabling OpenTelemetry tracing for tests, writing AbstractProjectConfig, or extending Stove with custom systems.
 ---
 
-# Stove E2E Testing Suite Setup
+# Setting Up Stove E2E Tests
 
-Step-by-step guide for setting up end-to-end tests with [Stove](https://github.com/Trendyol/stove). Defaults to **Spring Boot + Kotest**; Ktor and JUnit variants noted where they differ.
-
-## Prerequisites
-
-- JDK 17+, Docker running, Kotlin 1.8+, Gradle (Kotlin DSL)
-
-## Setup checklist
+Copy this checklist and track progress:
 
 ```
-- [ ] Create test-e2e source set directory layout
-- [ ] Configure Gradle (BOM, dependencies, source set, e2eTest task)
-- [ ] Extract run() function from application entry point
-- [ ] Create AbstractProjectConfig (Kotest) or base test class (JUnit)
-- [ ] Create kotest.properties
-- [ ] Configure systems (HTTP, PostgreSQL, Kafka, WireMock, gRPC, Bridge)
-- [ ] Configure tracing (Gradle plugin + enableSpanReceiver())
-- [ ] Write tests using stove {} DSL
+Setup Progress:
+- [ ] Step 1: Create test-e2e source set layout
+- [ ] Step 2: Configure Gradle (BOM, source set, e2eTest task)
+- [ ] Step 3: Extract run() function from application entry point
+- [ ] Step 4: Create StoveConfig (AbstractProjectConfig)
+- [ ] Step 5: Create kotest.properties
+- [ ] Step 6: Configure systems inside Stove().with { }
+- [ ] Step 7: Configure tracing (optional)
+- [ ] Step 8: Write tests using stove {} DSL
 ```
 
-## 1. Project structure
+## Step 1: Project structure
 
 ```
 your-module/src/
-  main/kotlin/                     # Application code
-  test/kotlin/                     # Unit tests
+  main/kotlin/
+  test/kotlin/
   test-e2e/
     kotlin/com/yourcompany/yourapp/e2e/
       setup/
-        TestConfig.kt              # AbstractProjectConfig
-        InitialMigration.kt        # DB migrations (if PostgreSQL)
+        StoveConfig.kt
+        InitialMigration.kt
       tests/
-        OrderE2ETest.kt            # Test files
+        OrderE2ETest.kt
     resources/
-      kotest.properties            # Points to TestConfig
+      kotest.properties
 ```
 
-## 2. Gradle configuration
+## Step 2: Gradle configuration
 
-For detailed Gradle setup including source set registration, e2eTest task, and IDE integration, see [gradle-config.md](gradle-config.md).
+For source set registration, e2eTest task, and IDE integration details, see [gradle-config.md](gradle-config.md).
 
-### Dependencies (BOM)
+Add dependencies using the BOM:
 
 ```kotlin
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
     testImplementation("com.trendyol:stove")
-    testImplementation("com.trendyol:stove-spring")             // or stove-ktor
-    testImplementation("com.trendyol:stove-extensions-kotest")  // or stove-extensions-junit
+    testImplementation("com.trendyol:stove-spring")
+    testImplementation("com.trendyol:stove-extensions-kotest")
 
     // Add only what you need:
     testImplementation("com.trendyol:stove-http")
@@ -65,13 +60,14 @@ dependencies {
 }
 ```
 
-## 3. Prepare the application
+For Ktor, replace `stove-spring` with `stove-ktor`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit`.
 
-Extract the entry point into a `run()` function so Stove can start your app from tests.
+## Step 3: Extract run()
 
-### Spring Boot
+Stove starts your application from tests. Extract the entry point:
 
 ```kotlin
+// src/main/kotlin/.../MyApp.kt
 @SpringBootApplication
 class MyApp
 
@@ -84,29 +80,16 @@ fun run(
     runApplication<MyApp>(*args) { init() }
 ```
 
-### Ktor (Koin)
+## Step 4: StoveConfig
 
 ```kotlin
-fun run(args: Array<String>, wait: Boolean = true, testModules: List<Module> = emptyList()): Application {
-    return embeddedServer(Netty, port = args.getPort()) {
-        install(Koin) { modules(appModule, *testModules.toTypedArray()) }
-        configureRouting()
-    }.start(wait = wait).application
-}
-```
-
-## 4. Stove configuration
-
-### Kotest: AbstractProjectConfig
-
-```kotlin
-class TestConfig : AbstractProjectConfig() {
+class StoveConfig : AbstractProjectConfig() {
     override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
     override suspend fun beforeProject() {
         Stove()
             .with {
-                // Systems configured here — see Section 5
+                // Systems go here — see Step 6
             }.run()
     }
 
@@ -116,33 +99,19 @@ class TestConfig : AbstractProjectConfig() {
 }
 ```
 
-### kotest.properties
+For JUnit, see [gradle-config.md](gradle-config.md) for the `BaseE2ETest` pattern.
+
+## Step 5: kotest.properties
 
 Create `src/test-e2e/resources/kotest.properties`:
 
 ```properties
-kotest.framework.config.fqn=com.yourcompany.yourapp.e2e.setup.TestConfig
+kotest.framework.config.fqn=com.yourcompany.yourapp.e2e.setup.StoveConfig
 ```
 
-### JUnit alternative
+## Step 6: Configure systems
 
-```kotlin
-@ExtendWith(StoveJUnitExtension::class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class BaseE2ETest {
-    companion object {
-        @JvmStatic @BeforeAll
-        fun setup() = runBlocking { Stove().with { /* systems */ }.run() }
-
-        @JvmStatic @AfterAll
-        fun teardown() = runBlocking { Stove.stop() }
-    }
-}
-```
-
-## 5. System setup
-
-Configure systems inside `Stove().with { }`. For full configuration options and examples for each system, see [system-setup.md](system-setup.md).
+Configure inside `Stove().with { }`. For all options per system, see [system-setup.md](system-setup.md).
 
 ```kotlin
 Stove()
@@ -158,7 +127,7 @@ Stove()
         wiremock {
             WireMockSystemOptions(
                 configureExposedConfiguration = { cfg ->
-                    listOf("payment.url=${cfg.baseUrl}", "inventory.url=${cfg.baseUrl}")
+                    listOf("payment.url=${cfg.baseUrl}")
                 }
             )
         }
@@ -189,10 +158,13 @@ Stove()
             )
         }
 
+        // Application runner goes last
         springBoot(
             runner = { params ->
                 com.yourcompany.yourapp.run(params) {
-                    addTestDependencies { bean<TestSystemInterceptor>(isPrimary = true) }
+                    addTestDependencies {
+                        bean<TestSystemInterceptor>(isPrimary = true)
+                    }
                 }
             },
             withParameters = listOf("server.port=8080")
@@ -200,17 +172,9 @@ Stove()
     }.run()
 ```
 
-## 6. Tracing
+## Step 7: Tracing (optional)
 
-For full tracing configuration (Gradle plugin options, buildSrc approach, trace validation DSL), see [tracing.md](tracing.md).
-
-Add inside `Stove().with { }`:
-
-```kotlin
-tracing { enableSpanReceiver() }
-```
-
-Attach the OpenTelemetry agent via the Gradle plugin:
+For full plugin options, buildSrc alternative, and trace validation DSL, see [tracing.md](tracing.md).
 
 ```kotlin
 plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
@@ -221,16 +185,16 @@ stoveTracing {
 }
 ```
 
-## 7. Writing tests
+## Step 8: Write tests
 
-For comprehensive DSL examples (HTTP, PostgreSQL, Kafka, WireMock, gRPC, Bridge, multi-system), see [writing-tests.md](writing-tests.md).
-
-### Basic pattern
+For the complete DSL reference (HTTP, PostgreSQL, Kafka, WireMock, gRPC Mock, gRPC Client, Bridge, multi-system examples), see [writing-tests.md](writing-tests.md).
 
 ```kotlin
 class OrderE2ETest : FunSpec({
     test("should create order and publish event") {
         stove {
+            val userId = "user-${UUID.randomUUID()}"
+
             wiremock {
                 mockGet("/inventory/item-1", 200, InventoryResponse(true).some())
             }
@@ -238,10 +202,9 @@ class OrderE2ETest : FunSpec({
             http {
                 postAndExpectBody<OrderResponse>(
                     uri = "/orders",
-                    body = CreateOrderRequest("user-${UUID.randomUUID()}", 99.99).some()
+                    body = CreateOrderRequest(userId, 99.99).some()
                 ) { response ->
                     response.status shouldBe 201
-                    response.body().status shouldBe "CONFIRMED"
                 }
             }
 
@@ -249,10 +212,7 @@ class OrderE2ETest : FunSpec({
                 shouldQuery<OrderRow>(
                     query = "SELECT * FROM orders WHERE user_id = '$userId'",
                     mapper = { row -> OrderRow(row.string("id"), row.string("status")) }
-                ) { orders ->
-                    orders.size shouldBe 1
-                    orders.first().status shouldBe "CONFIRMED"
-                }
+                ) { it.size shouldBe 1 }
             }
 
             kafka {
@@ -265,34 +225,31 @@ class OrderE2ETest : FunSpec({
 })
 ```
 
-## 8. Writing your own Stove system
+## Writing custom Stove systems
 
-Stove is extensible. For the complete pattern with a working example (db-scheduler), see [custom-systems.md](custom-systems.md).
+Stove is extensible. For the complete pattern with a working db-scheduler example, see [custom-systems.md](custom-systems.md).
 
-The pattern: implement `PluggedSystem` → create a listener/adapter → write `@StoveDsl` extensions for `WithDsl` (registration) and `ValidationDsl` (assertions) → register via `addTestDependencies`.
+## Best practices
 
-## 9. Best practices
-
-- **Unique test data**: `UUID.randomUUID()` for every test, never hardcoded IDs
-- **Single config**: Configure Stove once in `AbstractProjectConfig`, never per-test
-- **Dynamic ports**: Use `port = 0` for WireMock/gRPC Mock (CI compatibility)
-- **Test through APIs**: Call HTTP endpoints, verify DB state and events as side effects
-- **No sleep**: Use `shouldBePublished<Event>(atLeastIn = 10.seconds) { ... }` instead of `Thread.sleep`
-- **Local dev speed**: Use `Stove { keepDependenciesRunning() }.with { }.run()` to keep containers alive between runs
+- Generate unique IDs per test: `UUID.randomUUID()`
+- Configure Stove once in `AbstractProjectConfig`, never per-test
+- Use `port = 0` for WireMock and gRPC Mock (dynamic ports, CI-safe)
+- Test through HTTP endpoints; verify DB state and events as side effects
+- Use `shouldBePublished<Event>(atLeastIn = 10.seconds) { ... }` — never `Thread.sleep`
+- Use `Stove { keepDependenciesRunning() }` locally for faster iteration; disable in CI
+- **AI agent feedback loop**: Enable tracing + reporting. When tests fail, the execution report contains the full call chain, system snapshots, and timeline. AI agents can parse this structured output to understand exactly what went wrong inside the application and iterate on fixes with precise feedback.
 
 ## Running tests
 
 ```bash
-./gradlew e2eTest                                              # Run e2e tests
-./gradlew e2eTest --tests "com.myapp.e2e.OrderE2ETest"        # Specific test
-./gradlew test e2eTest                                         # Unit + e2e
+./gradlew e2eTest
+./gradlew e2eTest --tests "com.myapp.e2e.OrderE2ETest"
 ```
 
-## Reference
+## Additional resources
 
-- [gradle-config.md](gradle-config.md) — Source set, e2eTest task, IDE integration
+- [gradle-config.md](gradle-config.md) — Source set, e2eTest task, IDE integration, artifact list
 - [system-setup.md](system-setup.md) — All system configuration options
-- [writing-tests.md](writing-tests.md) — Complete test DSL reference
-- [tracing.md](tracing.md) — Tracing plugin and validation DSL
+- [writing-tests.md](writing-tests.md) — Complete test DSL reference with examples
+- [tracing.md](tracing.md) — Tracing plugin options and validation DSL
 - [custom-systems.md](custom-systems.md) — Writing your own Stove system
-- [Spring Showcase Recipe](../../../../recipes/kotlin-recipes/spring-showcase/) — Complete working example
