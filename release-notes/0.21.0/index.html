@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../assets/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -2110,14 +2110,18 @@
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">}</span>
 </span></code></pre></div>
 <ol>
-<li>Attach the OpenTelemetry agent in <code>build.gradle.kts</code>:</li>
+<li>Attach the OpenTelemetry agent in your build. Copy <a href="https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt"><code>StoveTracingConfiguration.kt</code></a> to your project's <code>buildSrc/src/main/kotlin/</code> directory, then add to your <code>build.gradle.kts</code>:</li>
 </ol>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.gradle.configureStoveTracing</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.gradle.stoveTracing</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="hll"><span class="n">configureStoveTracing</span><span class="w"> </span><span class="p">{</span>
-</span></span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="hll"><span class="w">    </span><span class="n">serviceName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my-service&quot;</span>
-</span></span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">serviceName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my-service&quot;</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">}</span>
 </span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Gradle Plugin available since 0.21.2</p>
+<p>Starting with <a href="../0.21.2/">0.21.2</a>, a standalone Gradle plugin is available that eliminates the need to copy this file. See the <a href="../0.21.2/">0.21.2 release notes</a> for details.</p>
+</div>
 <p><span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Everything else is automatic.</span> Trace headers are injected into HTTP, Kafka, and gRPC calls, spans are collected and correlated, and failure reports are enriched with the trace tree.</p>
 <p>A validation DSL is also available for asserting on the execution flow:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">tracing</span><span class="w"> </span><span class="p">{</span>
@@ -2273,7 +2277,7 @@
 <li>Kafka report entries now include all relevant state</li>
 </ul>
 <h3 id="tracing-configuration-cache-compatibility">Tracing Configuration Cache Compatibility<a class="headerlink" href="#tracing-configuration-cache-compatibility" title="Permanent link">&para;</a></h3>
-<p>The <code>configureStoveTracing</code> Gradle helper is now fully compatible with Gradle configuration cache, so builds with <code>--configuration-cache</code> work correctly.</p>
+<p>The Stove Tracing Gradle plugin and the <code>stoveTracing</code> buildSrc helper are both fully compatible with Gradle configuration cache, so builds with <code>--configuration-cache</code> work correctly.</p>
 <h3 id="non-ascii-test-id-support">Non-ASCII Test ID Support<a class="headerlink" href="#non-ascii-test-id-support" title="Permanent link">&para;</a></h3>
 <p>Trace context test IDs now handle non-ASCII characters (e.g., Japanese, Korean) correctly by normalizing to ASCII with hash suffixes for uniqueness. This ensures consistent behavior when test names use non-Latin scripts.</p>
 <h3 id="bridgesystem-suspended">BridgeSystem Suspended<a class="headerlink" href="#bridgesystem-suspended" title="Permanent link">&para;</a></h3>
@@ -2283,7 +2287,7 @@
 <ul>
 <li><strong>HTTP streaming</strong>: Fixed a flow collection issue that could cause streaming responses to hang</li>
 <li><strong>Kafka tests</strong>: Fixed flaky test behavior in Kafka system tests</li>
-<li><strong>Tracing configuration cache</strong>: Fixed serialization issues when using Gradle configuration cache with <code>configureStoveTracing</code></li>
+<li><strong>Tracing configuration cache</strong>: Fixed serialization issues when using Gradle configuration cache with the Stove Tracing plugin</li>
 <li><strong>ASCII character handling</strong>: Fixed edge cases in test ID sanitization for non-ASCII characters</li>
 </ul>
 <hr />
@@ -2318,7 +2322,7 @@
 <h4 id="recommended-updates">Recommended Updates<a class="headerlink" href="#recommended-updates" title="Permanent link">&para;</a></h4>
 <ul>
 <li>If using Elasticsearch, verify compatibility with Elasticsearch 9.x</li>
-<li>If using <code>configureStoveTracing</code>, no changes needed. Configuration cache compatibility is automatic</li>
+<li>If using the Stove Tracing plugin or <code>stoveTracing</code>, no changes needed. Configuration cache compatibility is automatic</li>
 <li>Consider switching <code>GrpcMockSystemOptions</code> to <code>port = 0</code> for CI-friendly dynamic port allocation</li>
 </ul>
 <hr />
