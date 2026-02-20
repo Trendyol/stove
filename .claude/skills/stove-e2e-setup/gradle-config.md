@@ -10,6 +10,8 @@
 
 ## Dependencies (BOM)
 
+Stove e2e tests are Kotlin-first. Even for Java/Scala projects, keep e2e test sources in `src/test-e2e/kotlin`.
+
 ```kotlin
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
@@ -20,7 +22,8 @@ dependencies {
     // Add only what you need:
     testImplementation("com.trendyol:stove-http")
     testImplementation("com.trendyol:stove-postgres")
-    testImplementation("com.trendyol:stove-kafka")
+    testImplementation("com.trendyol:stove-kafka")              // standalone Kafka assertions
+    testImplementation("com.trendyol:stove-spring-kafka")       // Spring Kafka assertions + interceptor
     testImplementation("com.trendyol:stove-wiremock")
     testImplementation("com.trendyol:stove-grpc")
     testImplementation("com.trendyol:stove-grpc-mock")

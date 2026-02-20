@@ -13,18 +13,20 @@ Setup Progress:
 - [ ] Step 2: Configure Gradle (BOM, source set, e2eTest task)
 - [ ] Step 3: Extract run() function from application entry point
 - [ ] Step 4: Create StoveConfig (AbstractProjectConfig)
-- [ ] Step 5: Create kotest.properties
+- [ ] Step 5: Create kotest.properties (Kotest only)
 - [ ] Step 6: Configure systems inside Stove().with { }
 - [ ] Step 7: Configure tracing (optional)
 - [ ] Step 8: Write tests using stove {} DSL
 ```
 
+Important: Stove e2e tests are Kotlin-first. Even if your application is Java/Scala, keep e2e tests under `src/test-e2e/kotlin` and write Stove setup/tests in Kotlin.
+
 ## Step 1: Project structure
 
 ```
 your-module/src/
-  main/kotlin/
-  test/kotlin/
+  main/(kotlin|java)/
+  test/(kotlin|java)/
   test-e2e/
     kotlin/com/yourcompany/yourapp/e2e/
       setup/
@@ -53,6 +55,7 @@ dependencies {
     testImplementation("com.trendyol:stove-http")
     testImplementation("com.trendyol:stove-postgres")
     testImplementation("com.trendyol:stove-kafka")
+    testImplementation("com.trendyol:stove-spring-kafka")
     testImplementation("com.trendyol:stove-wiremock")
     testImplementation("com.trendyol:stove-grpc")
     testImplementation("com.trendyol:stove-grpc-mock")
@@ -60,7 +63,7 @@ dependencies {
 }
 ```
 
-For Ktor, replace `stove-spring` with `stove-ktor`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit`.
+For Ktor, replace `stove-spring` with `stove-ktor`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit` and skip Step 5.
 
 ## Step 3: Extract run()
 
@@ -101,7 +104,7 @@ class StoveConfig : AbstractProjectConfig() {
 
 For JUnit, see [gradle-config.md](gradle-config.md) for the `BaseE2ETest` pattern.
 
-## Step 5: kotest.properties
+## Step 5: kotest.properties (Kotest only)
 
 Create `src/test-e2e/resources/kotest.properties`:
 
@@ -122,6 +125,7 @@ Stove()
 
         bridge()
 
+        // Optional (requires com.trendyol:stove-tracing)
         tracing { enableSpanReceiver() }
 
         wiremock {
@@ -163,13 +167,23 @@ Stove()
             runner = { params ->
                 com.yourcompany.yourapp.run(params) {
                     addTestDependencies {
-                        bean<TestSystemInterceptor>(isPrimary = true)
+                        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+                        bean { StoveSerde.jackson.anyByteArraySerde() }
                     }
                 }
             },
             withParameters = listOf("server.port=8080")
         )
     }.run()
+```
+
+For Spring Boot 4.x, use:
+
+```kotlin
+addTestDependencies4x {
+    registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+    registerBean { StoveSerde.jackson.anyByteArraySerde() }
+}
 ```
 
 ## Step 7: Tracing (optional)
@@ -233,6 +247,7 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 
 - Generate unique IDs per test: `UUID.randomUUID()`
 - Configure Stove once in `AbstractProjectConfig`, never per-test
+- Keep e2e tests in `src/test-e2e/kotlin` (also for Java/Scala applications)
 - Use `port = 0` for WireMock and gRPC Mock (dynamic ports, CI-safe)
 - Test through HTTP endpoints; verify DB state and events as side effects
 - Use `shouldBePublished<Event>(atLeastIn = 10.seconds) { ... }` — never `Thread.sleep`

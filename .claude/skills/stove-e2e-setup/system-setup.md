@@ -77,7 +77,7 @@ configureExposedConfiguration = { cfg ->
 
 ## Kafka
 
-Use `stove-kafka` for standalone. Use `stove-spring-kafka` for Spring Boot (adds `shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`).
+Use `stove-kafka` for standalone. Use `stove-spring-kafka` for Spring Boot Kafka listeners (`shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`).
 
 ```kotlin
 kafka {
@@ -98,7 +98,9 @@ kafka {
 }
 ```
 
-**Application-side requirement**: Inject `ConsumerAwareRecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
+**Application-side requirements (Spring Boot Kafka)**:
+- Inject `RecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
+- Register `TestSystemKafkaInterceptor<*, *>` and a `StoveSerde` bean in test dependencies.
 
 ## WireMock
 
@@ -185,7 +187,8 @@ springBoot(
     runner = { params ->
         com.yourcompany.yourapp.run(params) {
             addTestDependencies {
-                bean<TestSystemInterceptor>(isPrimary = true)
+                bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+                bean { StoveSerde.jackson.anyByteArraySerde() }
             }
         }
     },
@@ -196,7 +199,14 @@ springBoot(
 )
 ```
 
-For Spring Boot 4.x, use `addTestDependencies4x` with `registerBean<>()`.
+For Spring Boot 4.x, use `addTestDependencies4x` with `registerBean<>()`:
+
+```kotlin
+addTestDependencies4x {
+    registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+    registerBean { StoveSerde.jackson.anyByteArraySerde() }
+}
+```
 
 ### Ktor
 
