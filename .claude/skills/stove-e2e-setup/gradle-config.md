@@ -76,6 +76,27 @@ idea {
 }
 ```
 
+## Resolve API ambiguity from local artifacts
+
+When API names/signatures are unclear, inspect locally downloaded Stove artifacts instead of guessing.
+
+```bash
+# Find Stove artifacts in Gradle cache
+find ~/.gradle/caches/modules-2/files-2.1 -path "*com.trendyol/stove-*/*/*.jar" | head -n 20
+
+# Find Stove artifacts in Maven local repo
+find ~/.m2/repository/com/trendyol -name "stove-*.jar" | head -n 20
+
+# List classes to locate exact type names
+jar tf ~/.m2/repository/com/trendyol/stove-spring-kafka/<version>/stove-spring-kafka-<version>.jar | rg "TestSystem|Kafka"
+
+# Inspect method signatures quickly
+javap -classpath ~/.m2/repository/com/trendyol/stove-spring-kafka/<version>/stove-spring-kafka-<version>.jar \
+  com.trendyol.stove.kafka.TestSystemKafkaInterceptor
+```
+
+Prefer `*-sources.jar` when available for more accurate reading of function names, generic types, and usage patterns.
+
 ## JUnit base test class
 
 Use this instead of `AbstractProjectConfig` when using JUnit:

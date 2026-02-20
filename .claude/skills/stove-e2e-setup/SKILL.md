@@ -65,6 +65,8 @@ dependencies {
 
 For Ktor, replace `stove-spring` with `stove-ktor`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit` and skip Step 5.
 
+If you are unsure about Stove API names/signatures, verify from local downloaded artifacts (Gradle cache or Maven local repo) before writing code. See [gradle-config.md](gradle-config.md#resolve-api-ambiguity-from-local-artifacts).
+
 ## Step 3: Extract run()
 
 Stove starts your application from tests. Extract the entry point:
@@ -248,6 +250,7 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 - Generate unique IDs per test: `UUID.randomUUID()`
 - Configure Stove once in `AbstractProjectConfig`, never per-test
 - Keep e2e tests in `src/test-e2e/kotlin` (also for Java/Scala applications)
+- If API is ambiguous, inspect local `stove-*.jar` / `stove-*-sources.jar` in Gradle/Maven caches and confirm class/method names before coding
 - Use `port = 0` for WireMock and gRPC Mock (dynamic ports, CI-safe)
 - Test through HTTP endpoints; verify DB state and events as side effects
 - Use `shouldBePublished<Event>(atLeastIn = 10.seconds) { ... }` — never `Thread.sleep`
