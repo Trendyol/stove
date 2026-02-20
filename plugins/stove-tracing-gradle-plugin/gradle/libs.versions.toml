@@ -8,4 +8,3 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 
 [plugins]
 maven-publish = { id = "com.vanniktech.maven.publish", version = "0.36.0" }
-plugin-publish = { id = "com.gradle.plugin-publish", version = "2.0.0" }

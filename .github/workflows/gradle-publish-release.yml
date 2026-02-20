@@ -2,12 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      plugin_only:
-        description: 'Publish only Gradle plugin to Plugin Portal (skip Maven Central & GitHub Release)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   release:
@@ -42,7 +36,6 @@ jobs:
           echo "Releasing version: $VERSION"
 
       - name: Publish to Maven Central
-        if: ${{ !inputs.plugin_only }}
         run: gradle --no-configuration-cache publish
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.gpg_private_key }}
@@ -51,14 +44,7 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ossrh_pass }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to Gradle Plugin Portal
-        run: gradle --no-configuration-cache :plugins:stove-tracing-gradle-plugin:publishPlugins
-        env:
-          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
-          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
-
       - name: Create GitHub Release
-        if: ${{ !inputs.plugin_only }}
         uses: jreleaser/release-action@v2
         with:
           arguments: full-release

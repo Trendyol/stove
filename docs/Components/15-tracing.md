@@ -117,7 +117,7 @@ Stove()
     }
     ```
 
-    The plugin is published to both the [Gradle Plugin Portal](https://plugins.gradle.org/) and Maven Central.
+    The plugin is published to [Maven Central](https://central.sonatype.com/artifact/com.trendyol/stove-tracing-gradle-plugin). Add `mavenCentral()` to your `pluginManagement` repositories if not already present.
 
 === "buildSrc (Copy-Paste)"
 
@@ -346,38 +346,40 @@ tracing {
 
 ### Gradle Plugin
 
-The Stove Tracing Gradle plugin configures the OpenTelemetry Java Agent for your test tasks. It is published to both the **Gradle Plugin Portal** and **Maven Central**.
+The Stove Tracing Gradle plugin configures the OpenTelemetry Java Agent for your test tasks. It is published to **Maven Central**.
 
-=== "Gradle Plugin Portal"
+Add `mavenCentral()` to your `pluginManagement` repositories:
 
-    ```kotlin
-    plugins {
-        id("com.trendyol.stove.tracing") version "<stove-version>"
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
     }
-    ```
+}
+```
 
-=== "Maven Central"
+Then apply the plugin:
 
-    If your project resolves plugins from Maven Central (e.g., for snapshot versions), add the Maven Central snapshot repository to your `pluginManagement` block:
+```kotlin
+plugins {
+    id("com.trendyol.stove.tracing") version "<stove-version>"
+}
+```
 
-    ```kotlin
-    // settings.gradle.kts
-    pluginManagement {
-        repositories {
-            gradlePluginPortal()
-            mavenCentral()
-            maven("https://central.sonatype.com/repository/maven-snapshots")
-        }
+For snapshot versions, also add the Maven Central snapshot repository:
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        maven("https://central.sonatype.com/repository/maven-snapshots")
+        gradlePluginPortal()
     }
-    ```
-
-    Then apply normally:
-
-    ```kotlin
-    plugins {
-        id("com.trendyol.stove.tracing") version "<stove-snapshot-version>"
-    }
-    ```
+}
+```
 
 Configure the plugin in your `build.gradle.kts`:
 

@@ -22,12 +22,9 @@ import java.net.ServerSocket
  *       serviceName.set("my-service")
  *   }
  *
- * The plugin is available on:
- *   - Gradle Plugin Portal: id("com.trendyol.stove.tracing")
- *   - Maven Central: com.trendyol:stove-tracing-gradle-plugin
+ * The plugin is available on Maven Central: com.trendyol:stove-tracing-gradle-plugin
  *
- * Release versions are published to both locations.
- * Snapshot versions are available from Maven Central snapshots only.
+ * Add mavenCentral() to your pluginManagement repositories.
  * See: https://github.com/Trendyol/stove
  *
  * ────────────────────────────────────────────────────────────────────────
