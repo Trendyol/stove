@@ -18,6 +18,7 @@ private val logger = KotlinLogging.logger {}
 @Configuration
 class GrpcServerConfig(
   private val orderQueryGrpcService: OrderQueryGrpcService,
+  private val grpcErrorSpanInterceptor: GrpcErrorSpanInterceptor,
   @param:Value("\${grpc.server.port:50051}") private val port: Int
 ) {
   private lateinit var server: Server
@@ -26,6 +27,7 @@ class GrpcServerConfig(
   fun start() {
     server = ServerBuilder
       .forPort(port)
+      .intercept(grpcErrorSpanInterceptor)
       .addService(orderQueryGrpcService)
       .build()
       .start()
