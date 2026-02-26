@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component
  */
 @Component
 class GrpcErrorSpanInterceptor : ServerInterceptor {
-
   override fun <ReqT, RespT> interceptCall(
     call: ServerCall<ReqT, RespT>,
     headers: Metadata,
