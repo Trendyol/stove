@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.3.10"
 kotlinx = "1.10.2"
-exposed = "1.0.0"
+exposed = "1.1.1"
 hikari = "7.0.2"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.5.11"
@@ -25,12 +25,12 @@ kover = "0.9.7"
 ktor = "3.4.0"
 koin = "4.1.1"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "9.3.1"
+elastic = "9.3.2"
 mongodb = "5.6.3"
 wiremock = "3.13.2"
 testcontainers = "2.0.3"
 mysql = "9.6.0"
-spotless = "8.2.1"
+spotless = "8.3.0"
 detekt = "1.23.8"
 wire = "5.5.0"
 io-grpc = "1.79.0"
@@ -38,11 +38,11 @@ io-grpc-kotlin = "1.5.0"
 google-protobuf = "4.33.5"
 hoplite = "2.9.0"
 junit-jupiter = "6.0.3"
-kotest = "6.1.3"
+kotest = "6.1.4"
 mockito = "6.2.3"
 kotlinx-serialization = "1.10.0"
 kotlinBinaryCompatibilityValidator = "0.18.1"
-snakeyaml = "2.5"
+snakeyaml = "2.6"
 micronaut = "4.10.17"
 micronaut-platform = "4.10.9"
 micronaut-micrometer = "1.3.1"
@@ -50,7 +50,7 @@ ktlint = "1.8.0"
 opentelemetry = "1.59.0"
 opentelemetry-semconv = "1.40.0"
 opentelemetry-instrumentation = "2.25.0"
-bytebuddy = "1.18.5"
+bytebuddy = "1.18.7-jdk5"
 
 [libraries]
 # exposed
@@ -141,13 +141,13 @@ mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
-elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.3.0" }
+elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.3.1" }
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.4.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.5.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.32" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.2.1.jre11" }
 
