@@ -50,7 +50,7 @@ ktlint = "1.8.0"
 opentelemetry = "1.59.0"
 opentelemetry-semconv = "1.40.0"
 opentelemetry-instrumentation = "2.25.0"
-bytebuddy = "1.18.7-jdk5"
+bytebuddy = "1.18.7"
 
 [libraries]
 # exposed
