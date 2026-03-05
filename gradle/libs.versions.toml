@@ -43,8 +43,8 @@ mockito = "6.2.3"
 kotlinx-serialization = "1.10.0"
 kotlinBinaryCompatibilityValidator = "0.18.1"
 snakeyaml = "2.5"
-micronaut = "4.10.15"
-micronaut-platform = "4.10.8"
+micronaut = "4.10.17"
+micronaut-platform = "4.10.9"
 micronaut-micrometer = "1.3.1"
 ktlint = "1.8.0"
 opentelemetry = "1.59.0"
@@ -81,7 +81,7 @@ micronaut-http-server-netty = { module = "io.micronaut:micronaut-http-server-net
 micronaut-inject = { module = "io.micronaut:micronaut-inject", version.ref = "micronaut" }
 micronaut-inject-kotlin = { module = "io.micronaut:micronaut-inject-kotlin", version.ref = "micronaut" }
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
-micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.10.2" }
+micronaut-test-kotest = { module = "io.micronaut.test:micronaut-test-kotest5", version = "4.10.3" }
 micronaut-micrometer-core = { module = "io.micronaut.configuration:micronaut-micrometer-core", version.ref = "micronaut-micrometer" }
 micronaut-data-r2dbc = { module = "io.micronaut.data:micronaut-data-r2dbc", version = "4.14.3" }
 
