@@ -40,13 +40,13 @@ class ExampleTest :
         }
 
         kafka {
-          shouldBePublished<ProductCreatedEvent>(10.seconds) {
+          shouldBePublished<ProductCreatedEvent>(5.seconds) {
             actual.id == productCreateRequest.id &&
               actual.name == productCreateRequest.name &&
               actual.supplierId == productCreateRequest.supplierId
           }
 
-          shouldBeConsumed<ProductCreatedEvent>(10.seconds) {
+          shouldBeConsumed<ProductCreatedEvent>(5.seconds) {
             actual.id == productCreateRequest.id &&
               actual.name == productCreateRequest.name &&
               actual.supplierId == productCreateRequest.supplierId

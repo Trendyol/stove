@@ -15,6 +15,7 @@ dependencies {
       require(libs.testcontainers.asProvider().get().version!!)
     }
   }
+  implementation(libs.mordant)
   // OTel API for setting trace context and baggage so the Java Agent
   // creates child spans with Stove's trace ID and propagates test metadata.
   // No-op when agent is not present.

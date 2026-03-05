@@ -2,537 +2,522 @@ package com.trendyol.stove.reporting
 
 import arrow.core.Option
 import arrow.core.getOrElse
+import com.github.ajalt.mordant.rendering.AnsiLevel
+import com.github.ajalt.mordant.rendering.BorderType.Companion.ROUNDED
+import com.github.ajalt.mordant.rendering.BorderType.Companion.SQUARE
+import com.github.ajalt.mordant.rendering.TextColors.brightBlue
+import com.github.ajalt.mordant.rendering.TextColors.brightCyan
+import com.github.ajalt.mordant.rendering.TextColors.brightGreen
+import com.github.ajalt.mordant.rendering.TextColors.brightMagenta
+import com.github.ajalt.mordant.rendering.TextColors.brightRed
+import com.github.ajalt.mordant.rendering.TextColors.brightWhite
+import com.github.ajalt.mordant.rendering.TextColors.brightYellow
+import com.github.ajalt.mordant.rendering.TextColors.cyan
+import com.github.ajalt.mordant.rendering.TextColors.green
+import com.github.ajalt.mordant.rendering.TextColors.magenta
+import com.github.ajalt.mordant.rendering.TextColors.red
+import com.github.ajalt.mordant.rendering.TextColors.white
+import com.github.ajalt.mordant.rendering.TextColors.yellow
+import com.github.ajalt.mordant.rendering.TextStyle
+import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.rendering.TextStyles.dim
+import com.github.ajalt.mordant.rendering.Whitespace
+import com.github.ajalt.mordant.rendering.Widget
+import com.github.ajalt.mordant.table.verticalLayout
+import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.widgets.Panel
+import com.github.ajalt.mordant.widgets.Text
 import com.trendyol.stove.tracing.TraceVisualization
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Pretty console renderer for human-readable test reports.
- *
- * Features:
- * - Dynamic box width that adapts to content (60-200 chars)
- * - Smart word wrapping at spaces only (never breaks mid-word)
- * - No truncation - all content is fully preserved
- * - Color-coded output for easy reading
- * - Box drawing characters for clean visual structure
- *
- * Implemented with pure functional programming - no mutation, no vars, no side effects.
+ * Mordant-based renderer for rich, terminal-friendly Stove test reports.
  */
-@Suppress("MagicNumber", "TooManyFunctions")
+@Suppress("TooManyFunctions")
 object PrettyConsoleRenderer : ReportRenderer {
-  // ══════════════════════════════════════════════════════════════════════════════
-  // CONSTANTS
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private const val MIN_BOX_WIDTH = 60
-  private const val MAX_BOX_WIDTH = 200
-  private const val BORDER_PADDING = 2 // Leading + trailing space (no side borders)
-  private const val INDENT_PADDING = 8 // Extra padding for indented content
+  private const val MIN_RENDER_WIDTH = 72
+  private const val MAX_RENDER_WIDTH = 160
+  private const val PANEL_CHROME_WIDTH = 6
+  private const val SNAPSHOT_INDENT_STEP = 4
+  private const val DETAIL_INDENT_STEP = 2
+  private const val VALUE_PREVIEW_LIMIT = 6
 
   private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // ANSI COLORS
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private object Colors {
-    const val RESET = "\u001B[0m"
-    const val BOLD = "\u001B[1m"
-    const val DIM = "\u001B[2m"
-    const val RED = "\u001B[31m"
-    const val GREEN = "\u001B[32m"
-    const val YELLOW = "\u001B[33m"
-    const val MAGENTA = "\u001B[35m"
-    const val CYAN = "\u001B[36m"
-    const val WHITE = "\u001B[37m"
-    const val BRIGHT_RED = "\u001B[91m"
-    const val BRIGHT_GREEN = "\u001B[92m"
-    const val BRIGHT_YELLOW = "\u001B[93m"
-    const val BRIGHT_BLUE = "\u001B[94m"
-    const val BRIGHT_CYAN = "\u001B[96m"
+  private data class SummaryStats(
+    val passed: Int,
+    val failed: Int,
+    val total: Int
+  ) {
+    val hasFailures: Boolean = failed > 0
+    val statusLabel: String = if (hasFailures) "FAILED" else "IN PROGRESS"
+    val statusColor: TextStyle = if (hasFailures) brightRed else brightBlue
+    val borderColor: TextStyle = if (hasFailures) brightMagenta else brightCyan
   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // BOX DIMENSIONS
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Holds the calculated box dimensions for consistent rendering.
-   */
-  private data class BoxDimensions(
-    val boxWidth: Int,
-    val contentWidth: Int
+  private data class PreparedSnapshot(
+    val snapshot: SystemSnapshot,
+    val text: String
   )
 
-  /**
-   * Calculate optimal box dimensions based on content.
-   * Ensures the box is wide enough to fit:
-   * 1. The longest content line
-   * 2. The longest word (to avoid breaking words mid-word)
-   */
-  private fun calculateBoxDimensions(report: TestReport, snapshots: List<SystemSnapshot>): BoxDimensions {
-    val contentLines = collectAllContentLines(report, snapshots)
+  private data class PreparedReport(
+    val report: TestReport,
+    val entries: List<ReportEntry>,
+    val summary: SummaryStats,
+    val summaryText: String,
+    val timelineText: String,
+    val snapshots: List<PreparedSnapshot>
+  )
 
-    val longestWord = findLongestWord(contentLines)
-    val longestLine = contentLines.maxOfOrNull { stripAnsi(it).length } ?: 0
+  override fun render(report: TestReport, snapshots: List<SystemSnapshot>): String {
+    val prepared = prepareReport(report, snapshots)
+    val renderWidth = calculateRenderWidth(prepared)
+    val terminal = createTerminal(renderWidth)
 
-    // Ensure we can fit the longest word with indent padding
-    val requiredContentWidth = maxOf(longestLine, longestWord + INDENT_PADDING)
-    val calculatedBoxWidth = (requiredContentWidth + BORDER_PADDING).coerceIn(MIN_BOX_WIDTH, MAX_BOX_WIDTH)
+    val widgets = buildList {
+      add(buildSummaryPanel(prepared))
+      add(buildTimelinePanel(prepared))
+      if (prepared.snapshots.isNotEmpty()) add(buildSnapshotsPanel(prepared.snapshots))
+    }
 
-    return BoxDimensions(
-      boxWidth = calculatedBoxWidth,
-      contentWidth = calculatedBoxWidth - BORDER_PADDING
+    return widgets.joinToString(separator = "\n\n") { terminal.render(it) }
+  }
+
+  private fun prepareReport(report: TestReport, snapshots: List<SystemSnapshot>): PreparedReport {
+    val entries = report.entries()
+    val summary = buildSummaryStats(entries)
+    return PreparedReport(
+      report = report,
+      entries = entries,
+      summary = summary,
+      summaryText = buildSummaryText(report, summary),
+      timelineText = buildTimelineText(entries),
+      snapshots = snapshots.map { PreparedSnapshot(it, buildSnapshotText(it)) }
     )
   }
 
-  /**
-   * Collect all content lines for width calculation.
-   */
-  private fun collectAllContentLines(report: TestReport, snapshots: List<SystemSnapshot>): List<String> =
-    buildList {
-      // Header
-      add("Test: ${report.testName}")
-      add("ID: ${report.testId}")
-      add("Status: FAILED")
+  private fun buildSummaryStats(entries: List<ReportEntry>): SummaryStats = SummaryStats(
+    passed = entries.count { it.isPassed },
+    failed = entries.count { it.isFailed },
+    total = entries.size
+  )
 
-      // Entries
-      report.entries().forEach { entry ->
-        add("00:00:00.000 ✓ PASSED [${entry.system}] ${entry.action}")
-        entry.input.onSome { add("    Input: ${formatValuePlain(it)}") }
-        entry.output.onSome { add("    Output: ${formatValuePlain(it)}") }
-        entry.expected.onSome { add("    Expected: ${formatValuePlain(it)}") }
-        entry.actual.onSome { add("    Actual: ${formatValuePlain(it)}") }
-        entry.error.onSome { add("    Error: $it") }
-        if (entry.metadata.isNotEmpty()) {
-          add("    Metadata: ${formatValuePlain(entry.metadata)}")
+  private fun createTerminal(width: Int): Terminal = Terminal(
+    ansiLevel = AnsiLevel.TRUECOLOR,
+    width = width,
+    nonInteractiveWidth = width,
+    interactive = true
+  )
+
+  private fun buildSummaryPanel(prepared: PreparedReport): Widget = Panel(
+    title = Text((bold + brightWhite)("STOVE TEST EXECUTION REPORT")),
+    bottomTitle = Text((bold + prepared.summary.statusColor)(prepared.summary.statusLabel)),
+    borderType = ROUNDED,
+    borderStyle = prepared.summary.borderColor,
+    expand = true,
+    content = Text(prepared.summaryText, whitespace = Whitespace.PRE)
+  )
+
+  private fun buildSummaryText(report: TestReport, summary: SummaryStats): String = buildString {
+    appendLine("${bold("Test")}: ${brightYellow(report.testName)}")
+    appendLine("${bold("ID")}: ${dim(report.testId)}")
+    appendLine("${bold("Status")}: ${(bold + summary.statusColor)(summary.statusLabel)}")
+    appendLine()
+    appendLine(
+      "${bold("Summary")}: " +
+        brightGreen("${summary.passed} passed") +
+        "  ·  " +
+        (if (summary.failed > 0) brightRed("${summary.failed} failed") else brightGreen("0 failed")) +
+        "  ·  " +
+        brightCyan("${summary.total} total")
+    )
+  }.trimEnd()
+
+  private fun buildTimelinePanel(prepared: PreparedReport): Widget {
+    val content =
+      if (prepared.entries.isEmpty()) {
+        Text(dim("No actions recorded yet."), whitespace = Whitespace.PRE)
+      } else {
+        Text(prepared.timelineText, whitespace = Whitespace.PRE)
+      }
+
+    return Panel(
+      title = Text((bold + brightCyan)("TIMELINE")),
+      bottomTitle = Text(dim("${prepared.entries.size} step(s)")),
+      borderType = ROUNDED,
+      borderStyle = cyan,
+      expand = true,
+      content = content
+    )
+  }
+
+  private fun calculateRenderWidth(prepared: PreparedReport): Int {
+    val candidateLines = buildList {
+      add("STOVE TEST EXECUTION REPORT")
+      add(prepared.report.testName)
+      add(prepared.report.testId)
+      add(prepared.summary.statusLabel)
+      addAll(prepared.summaryText.lines())
+      add("TIMELINE")
+      addAll(prepared.timelineText.lines())
+      if (prepared.snapshots.isNotEmpty()) {
+        add("SYSTEM SNAPSHOTS")
+        prepared.snapshots.forEach { preparedSnapshot ->
+          add(preparedSnapshot.snapshot.system.uppercase())
+          addAll(preparedSnapshot.text.lines())
         }
-        entry.executionTrace.onSome { trace ->
-          trace.tree.lines().forEach { line -> add("    $line") }
+      }
+    }
+
+    val longestLine = candidateLines.maxOfOrNull { visibleLength(it) } ?: MIN_RENDER_WIDTH
+    return (longestLine + PANEL_CHROME_WIDTH).coerceIn(MIN_RENDER_WIDTH, MAX_RENDER_WIDTH)
+  }
+
+  private fun groupSequentialBySystem(entries: List<ReportEntry>): List<List<IndexedValue<ReportEntry>>> {
+    val groups = mutableListOf<MutableList<IndexedValue<ReportEntry>>>()
+
+    entries.withIndex().forEach { indexedEntry ->
+      val lastGroup = groups.lastOrNull()
+      if (lastGroup != null && lastGroup.first().value.system == indexedEntry.value.system) {
+        lastGroup += indexedEntry
+      } else {
+        groups += mutableListOf(indexedEntry)
+      }
+    }
+
+    return groups.map { it.toList() }
+  }
+
+  private fun buildTimelineText(entries: List<ReportEntry>): String =
+    groupSequentialBySystem(entries)
+      .flatMapIndexed { groupIndex, group ->
+        val groupHeader = buildTimelineGroupHeader(group)
+        val renderedEntries = group.flatMap { indexedEntry -> buildTimelineEntryLines(indexedEntry.index + 1, indexedEntry.value) }
+        if (groupIndex == 0) listOf(groupHeader) + renderedEntries else listOf("", groupHeader) + renderedEntries
+      }.joinToString("\n")
+
+  private fun buildTimelineGroupHeader(group: List<IndexedValue<ReportEntry>>): String {
+    val system = group.first().value.system
+    val style = bold + styleForSystem(system)
+    val failedCount = group.count { it.value.isFailed }
+    val passedCount = group.size - failedCount
+    val summary =
+      if (failedCount > 0) {
+        "${brightGreen("$passedCount passed")} · ${brightRed("$failedCount failed")}"
+      } else {
+        brightGreen("${group.size} passed")
+      }
+
+    return "${style("${system.uppercase()} · ${group.size} step(s)")}${dim("  $summary")}"
+  }
+
+  private fun buildTimelineEntryLines(index: Int, entry: ReportEntry): List<String> {
+    val statusColor = if (entry.isFailed) brightRed else brightGreen
+    val statusText = if (entry.isFailed) "✗ FAILED" else "✓ PASSED"
+    val header = "  ${(bold + statusColor)(
+      "#$index $statusText"
+    )} ${brightWhite(sanitize(entry.action))} ${dim("(${formatTimestamp(entry)})")}"
+    val details = buildEntryDetails(entry).lines().map { "      $it" }
+    return listOf(header) + details
+  }
+
+  private fun buildEntryDetails(entry: ReportEntry): String = buildList {
+    add("${brightCyan("Action")}: ${sanitize(entry.action)}")
+
+    entry.input.fold({ }, { addAll(renderDetailBlock(yellow("Input"), it)) })
+    entry.output.fold({ }, { addAll(renderDetailBlock(brightBlue("Output"), it)) })
+
+    if (entry.metadata.isNotEmpty()) {
+      addAll(renderDetailBlock(dim("Metadata"), entry.metadata))
+    }
+
+    if (entry.isFailed) {
+      entry.expected.fold({ }, { addAll(renderDetailBlock(green("Expected"), it)) })
+      entry.actual.fold({ }, { addAll(renderDetailBlock(red("Actual"), it)) })
+      entry.error.fold({ }, { add("${brightRed("Error")}: ${sanitize(it)}") })
+    }
+
+    entry.executionTrace.fold({ }, { addAll(renderTraceDetails(it)) })
+  }.joinToString("\n")
+
+  private fun renderTraceDetails(trace: TraceVisualization): List<String> {
+    val spanSummary =
+      if (trace.failedSpans > 0) {
+        "${trace.totalSpans} total / ${brightRed("${trace.failedSpans} failed")}"
+      } else {
+        "${trace.totalSpans} total / ${brightGreen("0 failed")}"
+      }
+
+    val styledTreeLines = trace.tree
+      .lines()
+      .map { line ->
+        when {
+          line.contains("✗") -> brightRed(line)
+          line.contains("✓") -> brightGreen(line)
+          line.startsWith("POST") || line.startsWith("GET") || line.startsWith("PUT") || line.startsWith("DELETE") -> brightCyan(line)
+          line.trimStart().startsWith("|") -> magenta(line)
+          else -> dim(line)
         }
       }
 
-      // Snapshots
-      snapshots.forEach { snapshot ->
-        add("┌─ ${snapshot.system.uppercase()} ${"─".repeat(40)}")
-        snapshot.summary.lines().forEach { add("  $it") }
-        snapshot.state.forEach { (key, value) ->
-          add("    $key: ${formatValuePlain(value)}")
-          if (value is Collection<*>) {
-            value.forEachIndexed { index, item ->
-              when (item) {
-                is Map<*, *> -> item.forEach { (k, v) -> add("        $k: $v") }
-                else -> add("      [$index] ${formatValuePlain(item)}")
-              }
+    return listOf(
+      "",
+      (bold + brightMagenta)("Execution Trace"),
+      "${dim("TraceId")}: ${trace.traceId}",
+      "${dim("Spans")}: $spanSummary"
+    ) + styledTreeLines
+  }
+
+  private fun buildSnapshotsPanel(snapshots: List<PreparedSnapshot>): Widget = Panel(
+    title = Text((bold + brightMagenta)("SYSTEM SNAPSHOTS")),
+    bottomTitle = Text(dim("${snapshots.size} snapshot(s)")),
+    borderType = ROUNDED,
+    borderStyle = brightMagenta,
+    expand = true,
+    content = verticalLayout {
+      spacing = 1
+      snapshots.forEach { preparedSnapshot ->
+        cell(buildSnapshotPanel(preparedSnapshot))
+      }
+    }
+  )
+
+  private fun buildSnapshotPanel(preparedSnapshot: PreparedSnapshot): Widget = Panel(
+    title = Text((bold + brightWhite)(preparedSnapshot.snapshot.system.uppercase())),
+    borderType = SQUARE,
+    borderStyle = styleForSystem(preparedSnapshot.snapshot.system),
+    expand = true,
+    content = Text(preparedSnapshot.text, whitespace = Whitespace.PRE)
+  )
+
+  private fun buildSnapshotText(snapshot: SystemSnapshot): String {
+    val summaryLines = snapshot.summary
+      .lines()
+      .map(::sanitize)
+      .filter { it.isNotBlank() }
+
+    val stateLines = renderSnapshotState(snapshot.state)
+
+    return buildString {
+      appendLine((bold + brightCyan)("Summary"))
+      if (summaryLines.isEmpty()) {
+        appendLine("  ${dim("No summary available")}")
+      } else {
+        summaryLines.forEach { appendLine("  ${styleSummaryLine(it)}") }
+      }
+
+      if (stateLines.isNotEmpty()) {
+        appendLine()
+        appendLine((bold + brightCyan)("State"))
+        stateLines.forEach(::appendLine)
+      }
+    }.trimEnd()
+  }
+
+  private fun renderSnapshotState(state: Map<String, Any>, indent: Int = 4): List<String> =
+    state.flatMap { (key, value) -> renderSnapshotEntry(key, value, indent) }
+
+  private fun renderSnapshotEntry(key: String, value: Any?, indent: Int): List<String> {
+    val prefix = " ".repeat(indent)
+    val keyLabel = yellow(key)
+
+    return when (value) {
+      is Collection<*> -> {
+        val count = "$prefix$keyLabel: ${styleCollectionCount(key, value.size)}"
+        val items = value.flatMapIndexed { index, item -> renderSnapshotItem(index, item, indent + SNAPSHOT_INDENT_STEP) }
+        listOf(count) + items
+      }
+
+      is Map<*, *> -> {
+        val header = "$prefix$keyLabel:"
+        val lines = value.entries.flatMap { (nestedKey, nestedValue) ->
+          renderSnapshotEntry(nestedKey.toString(), nestedValue, indent + SNAPSHOT_INDENT_STEP)
+        }
+        listOf(header) + lines
+      }
+
+      else -> {
+        listOf("$prefix$keyLabel: ${styleSnapshotValue(key, value)}")
+      }
+    }
+  }
+
+  private fun renderSnapshotItem(index: Int, item: Any?, indent: Int): List<String> {
+    val prefix = " ".repeat(indent)
+    val indexLabel = dim("[$index]")
+
+    return when (item) {
+      is Map<*, *> -> {
+        val nested = item.entries.flatMap { (key, value) ->
+          renderSnapshotEntry(key.toString(), value, indent + SNAPSHOT_INDENT_STEP)
+        }
+        listOf("$prefix$indexLabel") + nested
+      }
+
+      is Collection<*> -> {
+        listOf("$prefix$indexLabel ${brightCyan("${item.size} item(s)")}")
+      }
+
+      else -> {
+        listOf("$prefix$indexLabel ${formatValuePlain(item)}")
+      }
+    }
+  }
+
+  private fun renderDetailBlock(label: String, value: Any?): List<String> {
+    val renderedValue = renderNestedValue(value)
+    return if (renderedValue.size == 1) {
+      listOf("$label: ${renderedValue.first().trimStart()}")
+    } else {
+      listOf("$label:") + renderedValue.map { "  $it" }
+    }
+  }
+
+  private fun renderNestedValue(value: Any?, indent: Int = 0): List<String> {
+    val prefix = " ".repeat(indent)
+    return when (value) {
+      null -> {
+        listOf("${prefix}none")
+      }
+
+      is Option<*> -> {
+        renderNestedValue(value.getOrElse { null }, indent)
+      }
+
+      is String -> {
+        sanitize(value).lines().map { "$prefix$it" }
+      }
+
+      is Number, is Boolean -> {
+        listOf("$prefix$value")
+      }
+
+      is Map<*, *> -> {
+        if (value.isEmpty()) {
+          listOf("$prefix{}")
+        } else {
+          value.entries.flatMap { (key, nestedValue) ->
+            when (nestedValue) {
+              is Map<*, *>, is Collection<*> -> listOf("$prefix$key:") + renderNestedValue(nestedValue, indent + DETAIL_INDENT_STEP)
+              else -> listOf("$prefix$key: ${formatValuePlain(nestedValue)}")
             }
           }
         }
       }
-    }
 
-  /**
-   * Find the longest word across all content lines.
-   */
-  private fun findLongestWord(lines: List<String>): Int =
-    lines
-      .flatMap { stripAnsi(it).split(Regex("\\s+")) }
-      .maxOfOrNull { it.length } ?: 0
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // MAIN RENDER
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  override fun render(report: TestReport, snapshots: List<SystemSnapshot>): String {
-    val hasFailures = report.hasFailures()
-    val borderColor = if (hasFailures) Colors.RED else Colors.CYAN
-    val dimensions = calculateBoxDimensions(report, snapshots)
-
-    return buildReport(report, snapshots, dimensions, borderColor, hasFailures)
-  }
-
-  private fun buildReport(
-    report: TestReport,
-    snapshots: List<SystemSnapshot>,
-    dim: BoxDimensions,
-    borderColor: String,
-    hasFailures: Boolean
-  ): String = listOf(
-    renderHeader(report, dim, borderColor, hasFailures),
-    renderTimeline(report, dim),
-    renderSnapshots(snapshots, dim),
-    emptyLine(dim.boxWidth),
-    bottomBorder(borderColor, dim.boxWidth)
-  ).joinToString("\n")
-
-  private fun renderHeader(report: TestReport, dim: BoxDimensions, borderColor: String, hasFailures: Boolean): String {
-    val statusText = if (hasFailures) {
-      colorize("FAILED", Colors.BOLD + Colors.BRIGHT_RED)
-    } else {
-      colorize("IN PROGRESS", Colors.BRIGHT_BLUE)
-    }
-
-    return listOf(
-      topBorder(borderColor, dim.boxWidth),
-      centeredLine("STOVE TEST EXECUTION REPORT", Colors.BOLD + Colors.WHITE, dim),
-      emptyLine(dim.boxWidth),
-      contentLine("Test: ${colorize(report.testName, Colors.BRIGHT_YELLOW)}", dim),
-      contentLine("ID: ${colorize(report.testId, Colors.DIM)}", dim),
-      contentLine("Status: $statusText", dim)
-    ).joinToString("\n")
-  }
-
-  private fun renderTimeline(report: TestReport, dim: BoxDimensions): String = listOf(
-    divider(Colors.CYAN, dim.boxWidth),
-    emptyLine(dim.boxWidth),
-    contentLine(colorize("TIMELINE", Colors.BOLD + Colors.WHITE), dim),
-    contentLine(colorize("─".repeat(8), Colors.DIM), dim),
-    emptyLine(dim.boxWidth),
-    report.entries().flatMap { renderEntry(it, dim) }.joinToString("\n")
-  ).joinToString("\n")
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // BOX STRUCTURE
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private fun topBorder(color: String, boxWidth: Int): String =
-    "$color╔${"═".repeat(boxWidth - 1)}${Colors.RESET}"
-
-  private fun bottomBorder(color: String, boxWidth: Int): String =
-    "$color╚${"═".repeat(boxWidth - 1)}${Colors.RESET}"
-
-  private fun divider(color: String, boxWidth: Int): String =
-    "$color╠${"═".repeat(boxWidth - 1)}${Colors.RESET}"
-
-  private fun emptyLine(boxWidth: Int): String =
-    " ".repeat(boxWidth)
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // CONTENT LINES
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private fun centeredLine(text: String, color: String, dim: BoxDimensions): String {
-    val plainText = stripAnsi(text)
-    val leftPadding = ((dim.contentWidth - plainText.length) / 2).coerceAtLeast(0)
-    val rightPadding = (dim.contentWidth - leftPadding - plainText.length).coerceAtLeast(0)
-    val coloredText = if (color.isNotEmpty()) colorize(plainText, color) else text
-    return " ${" ".repeat(leftPadding)}$coloredText${" ".repeat(rightPadding)} "
-  }
-
-  private fun contentLine(text: String, dim: BoxDimensions, indent: Int = 0): String {
-    val indentStr = " ".repeat(indent)
-    val availableWidth = dim.contentWidth - indent
-
-    return text
-      .split('\n')
-      .flatMap { wrapText(it.replace("\r", ""), availableWidth) }
-      .joinToString("\n") { formatContentLine(it, indentStr, availableWidth) }
-  }
-
-  private fun formatContentLine(line: String, indentStr: String, availableWidth: Int): String {
-    val padding = (availableWidth - stripAnsi(line).length).coerceAtLeast(0)
-    return " $indentStr$line${" ".repeat(padding)} "
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // ENTRY RENDERING
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private fun renderEntry(entry: ReportEntry, dim: BoxDimensions): List<String> {
-    val headerLine = renderEntryHeader(entry, dim)
-    val detailLines = renderEntryDetails(entry, dim)
-    val failureLines = if (entry.isFailed) renderFailureDetails(entry, dim) else emptyList()
-    val traceLines = entry.executionTrace.fold({ emptyList() }) { renderTraceVisualization(it, dim) }
-
-    return listOf(headerLine) + detailLines + failureLines + traceLines + emptyLine(dim.boxWidth)
-  }
-
-  private fun renderEntryHeader(entry: ReportEntry, dim: BoxDimensions): String {
-    val time = colorize(entry.timestamp.atZone(ZoneId.systemDefault()).format(timeFormatter), Colors.DIM)
-    val (icon, status) = when (entry.result) {
-      AssertionResult.PASSED -> colorize("✓", Colors.BRIGHT_GREEN) to colorize("PASSED", Colors.BRIGHT_GREEN)
-      AssertionResult.FAILED -> colorize("✗", Colors.BRIGHT_RED) to colorize("FAILED", Colors.BRIGHT_RED)
-    }
-    val system = colorize("[${entry.system}]", Colors.BRIGHT_CYAN)
-    return contentLine("$time $icon $status $system ${entry.action}", dim)
-  }
-
-  private fun renderEntryDetails(entry: ReportEntry, dim: BoxDimensions): List<String> = buildList {
-    entry.input.onSome { add(contentLine("${colorize("Input:", Colors.YELLOW)} ${formatValue(it)}", dim, indent = 4)) }
-    entry.output.onSome { add(contentLine("${colorize("Output:", Colors.YELLOW)} ${formatValue(it)}", dim, indent = 4)) }
-    if (entry.metadata.isNotEmpty()) {
-      add(contentLine("${colorize("Metadata:", Colors.DIM)} ${formatValue(entry.metadata)}", dim, indent = 4))
-    }
-  }
-
-  private fun renderFailureDetails(entry: ReportEntry, dim: BoxDimensions): List<String> = buildList {
-    entry.expected.onSome { addAll(renderLabeledContent("Expected:", formatValue(it), Colors.GREEN, dim, indent = 4)) }
-    entry.actual.onSome { addAll(renderLabeledContent("Actual:", formatValue(it), Colors.RED, dim, indent = 4)) }
-    entry.error.onSome { addAll(renderLabeledContent("Error:", it, Colors.BRIGHT_RED, dim, indent = 4)) }
-  }
-
-  private fun renderLabeledContent(
-    label: String,
-    content: String,
-    labelColor: String,
-    dim: BoxDimensions,
-    indent: Int
-  ): List<String> {
-    val coloredLabel = colorize(label, labelColor)
-    val lines = content.split('\n').map { it.replace("\r", "").trim() }.filter { it.isNotEmpty() }
-
-    return if (lines.size == 1 && stripAnsi("$label $content").length <= dim.contentWidth - indent) {
-      listOf(contentLine("$coloredLabel $content", dim, indent = indent))
-    } else {
-      listOf(contentLine(coloredLabel, dim, indent = indent)) +
-        lines.map { contentLine(it, dim, indent = indent + 2) }
-    }
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // TRACE VISUALIZATION
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private fun renderTraceVisualization(trace: TraceVisualization, dim: BoxDimensions): List<String> {
-    if (trace.totalSpans == 0) return emptyList()
-
-    val header = colorize("Execution Trace:", Colors.BOLD + Colors.CYAN)
-    val traceIdInfo = colorize("TraceId: ${trace.traceId}", Colors.DIM)
-    val failedInfo = if (trace.failedSpans > 0) ", ${colorize("Failed: ${trace.failedSpans}", Colors.BRIGHT_RED)}" else ""
-    val summary = colorize("Total spans: ${trace.totalSpans}$failedInfo", Colors.YELLOW)
-
-    val treeLines = trace.tree.lines().map { line ->
-      val coloredLine = when {
-        line.contains("✗") -> colorize(line, Colors.BRIGHT_RED)
-        line.contains("✓") -> colorize(line, Colors.GREEN)
-        else -> colorize(line, Colors.WHITE)
-      }
-      contentLine(coloredLine, dim, indent = 4)
-    }
-
-    return listOf(
-      emptyLine(dim.boxWidth),
-      contentLine(header, dim, indent = 4),
-      contentLine(traceIdInfo, dim, indent = 6),
-      contentLine(summary, dim, indent = 6),
-      emptyLine(dim.boxWidth)
-    ) + treeLines
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // SNAPSHOT RENDERING
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  private fun renderSnapshots(snapshots: List<SystemSnapshot>, dim: BoxDimensions): String =
-    if (snapshots.isEmpty()) {
-      ""
-    } else {
-      listOf(
-        divider(Colors.CYAN, dim.boxWidth),
-        emptyLine(dim.boxWidth),
-        contentLine(colorize("SYSTEM SNAPSHOTS", Colors.BOLD + Colors.WHITE), dim),
-        contentLine(colorize("─".repeat(16), Colors.DIM), dim),
-        emptyLine(dim.boxWidth),
-        snapshots.flatMap { renderSnapshot(it, dim) }.joinToString("\n")
-      ).joinToString("\n")
-    }
-
-  private fun renderSnapshot(snapshot: SystemSnapshot, dim: BoxDimensions): List<String> {
-    val header = "┌─ ${snapshot.system.uppercase()} "
-    val headerLine = header + "─".repeat((dim.contentWidth - header.length).coerceAtLeast(0))
-
-    val summaryLines = snapshot.summary
-      .lines()
-      .filter { it.isNotBlank() }
-      .map { contentLine(colorize(it, Colors.WHITE), dim, indent = 2) }
-
-    val stateLines = if (snapshot.state.isNotEmpty()) {
-      listOf(
-        emptyLine(dim.boxWidth),
-        contentLine(colorize("State Details:", Colors.BOLD + Colors.WHITE), dim, indent = 2)
-      ) + renderSnapshotState(snapshot.state, dim, indent = 4)
-    } else {
-      emptyList()
-    }
-
-    return listOf(
-      contentLine(colorize(headerLine, Colors.MAGENTA), dim),
-      emptyLine(dim.boxWidth)
-    ) + summaryLines + stateLines + emptyLine(dim.boxWidth)
-  }
-
-  private fun renderSnapshotState(state: Map<String, Any>, dim: BoxDimensions, indent: Int): List<String> =
-    state.flatMap { (key, value) ->
-      val coloredKey = colorize(key, Colors.YELLOW)
-      when (value) {
-        is Collection<*> -> {
-          listOf(contentLine("$coloredKey: ${colorize("${value.size} item(s)", Colors.DIM)}", dim, indent = indent)) +
-            value.flatMapIndexed { index, item -> renderSnapshotItem(index, item, dim, indent + 2) }
+      is Collection<*> -> {
+        if (value.isEmpty()) {
+          listOf("$prefix[]")
+        } else {
+          value.flatMapIndexed { index, item ->
+            when (item) {
+              is Map<*, *>, is Collection<*> -> listOf("$prefix[$index]") + renderNestedValue(item, indent + DETAIL_INDENT_STEP)
+              else -> listOf("$prefix[$index] ${formatValuePlain(item)}")
+            }
+          }
         }
-
-        else -> {
-          listOf(contentLine("$coloredKey: ${formatValue(value)}", dim, indent = indent))
-        }
-      }
-    }
-
-  private fun renderSnapshotItem(index: Int, item: Any?, dim: BoxDimensions, indent: Int): List<String> {
-    val indexLabel = colorize("[$index]", Colors.DIM)
-    return when (item) {
-      is Map<*, *> -> {
-        listOf(contentLine(indexLabel, dim, indent = indent)) +
-          item.map { (k, v) -> contentLine("${colorize(k.toString(), Colors.CYAN)}: $v", dim, indent = indent + 2) }
       }
 
       else -> {
-        listOf(contentLine("$indexLabel ${formatValue(item)}", dim, indent = indent))
+        listOf("${prefix}${sanitize(value.toString())}")
       }
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // TEXT WRAPPING (Smart word-boundary wrapping)
-  // ══════════════════════════════════════════════════════════════════════════════
+  private fun styleForSystem(system: String): TextStyle {
+    val palette = listOf(brightBlue, brightMagenta, brightCyan, brightGreen, brightYellow)
+    val index = (system.lowercase().hashCode() and Int.MAX_VALUE) % palette.size
+    return palette[index]
+  }
 
-  /**
-   * Wrap text at word boundaries. Never breaks mid-word.
-   * If text fits within maxWidth, returns it as-is.
-   * If text needs wrapping, breaks only at spaces.
-   */
-  private fun wrapText(text: String, maxWidth: Int): List<String> {
-    val plainText = stripAnsi(text)
+  private fun styleSummaryLine(line: String): String {
+    val lower = line.lowercase()
+    val number = extractLastNumber(lower)
+
     return when {
-      maxWidth <= 0 -> listOf(text)
-      plainText.length <= maxWidth -> listOf(text)
-      else -> wrapTextRecursive(text, plainText, maxWidth, emptyList(), 0)
+      "failed" in lower -> if ((number ?: 0) == 0) brightGreen(line) else brightRed(line)
+      "passed" in lower || "success" in lower -> brightGreen(line)
+      "consumed" in lower || "produced" in lower || "published" in lower || "registered" in lower || "served" in lower -> brightCyan(line)
+      else -> white(line)
     }
   }
 
-  /**
-   * Recursive word wrapping that preserves ANSI codes.
-   * Breaks only at spaces - never mid-word.
-   */
-  private tailrec fun wrapTextRecursive(
-    remaining: String,
-    plainRemaining: String,
-    maxWidth: Int,
-    accumulated: List<String>,
-    iterations: Int
-  ): List<String> = when {
-    // Safety limit to prevent infinite loops
-    iterations >= 100 -> {
-      accumulated.ifEmpty { listOf(remaining) }
+  private fun styleCollectionCount(key: String, size: Int): String {
+    val lower = key.lowercase()
+    return when {
+      "fail" in lower -> if (size == 0) brightGreen("0 item(s)") else brightRed("$size item(s)")
+      "pass" in lower || "success" in lower -> brightGreen("$size item(s)")
+      else -> brightCyan("$size item(s)")
     }
+  }
 
-    // No more text to process
-    plainRemaining.isEmpty() -> {
-      accumulated.ifEmpty { listOf(remaining) }
-    }
+  private fun styleSnapshotValue(key: String, value: Any?): String {
+    val lower = key.lowercase()
 
-    // Remaining text fits - we're done
-    plainRemaining.length <= maxWidth -> {
-      accumulated + remaining
-    }
-
-    else -> {
-      val breakPoint = findSpaceBreakPoint(plainRemaining, maxWidth)
-
-      when (breakPoint) {
-        // No space found - keep entire text on one line (single long word)
-        null -> {
-          accumulated + remaining
+    return when (value) {
+      is Number -> {
+        val intValue = value.toInt()
+        when {
+          "fail" in lower -> if (intValue == 0) brightGreen(value.toString()) else brightRed(value.toString())
+          "pass" in lower || "success" in lower -> brightGreen(value.toString())
+          else -> brightYellow(value.toString())
         }
+      }
 
-        // Found a space - break there
-        else -> {
-          val originalBreakPoint = findOriginalPosition(remaining, breakPoint)
-          val line = remaining.substring(0, originalBreakPoint).trimEnd()
-          val rest = remaining.substring(originalBreakPoint).trimStart()
-          wrapTextRecursive(rest, stripAnsi(rest), maxWidth, accumulated + line, iterations + 1)
-        }
+      is Boolean -> {
+        if (value) brightGreen("true") else brightRed("false")
+      }
+
+      else -> {
+        formatValuePlain(value)
       }
     }
   }
 
-  /**
-   * Find a space character to break at, searching backwards from maxWidth.
-   * Returns null if no space is found (never break mid-word).
-   */
-  private fun findSpaceBreakPoint(plainText: String, maxWidth: Int): Int? =
-    (maxWidth downTo 1).firstOrNull { plainText.getOrNull(it) == ' ' }
+  private fun formatTimestamp(entry: ReportEntry): String =
+    entry.timestamp
+      .atZone(ZoneId.systemDefault())
+      .format(timeFormatter)
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // ANSI CODE HANDLING
-  // ══════════════════════════════════════════════════════════════════════════════
+  private fun extractLastNumber(value: String): Int? =
+    Regex("(\\d+)(?!.*\\d)")
+      .find(value)
+      ?.groupValues
+      ?.getOrNull(1)
+      ?.toIntOrNull()
 
-  /**
-   * Find the position in the original string (with ANSI codes) that corresponds
-   * to a position in the plain text (without ANSI codes).
-   */
-  private fun findOriginalPosition(original: String, plainPosition: Int): Int =
-    findOriginalPositionRecursive(original, plainPosition, 0, 0, false)
-
-  private tailrec fun findOriginalPositionRecursive(
-    original: String,
-    plainPosition: Int,
-    originalIndex: Int,
-    plainIndex: Int,
-    inEscape: Boolean
-  ): Int = when {
-    originalIndex >= original.length || plainIndex >= plainPosition -> skipTrailingEscapes(original, originalIndex)
-    original[originalIndex] == '\u001B' -> findOriginalPositionRecursive(original, plainPosition, originalIndex + 1, plainIndex, true)
-    inEscape -> findOriginalPositionRecursive(original, plainPosition, originalIndex + 1, plainIndex, original[originalIndex] != 'm')
-    else -> findOriginalPositionRecursive(original, plainPosition, originalIndex + 1, plainIndex + 1, false)
-  }
-
-  private tailrec fun skipTrailingEscapes(text: String, index: Int): Int = when {
-    index >= text.length -> index
-    text[index] != '\u001B' -> index
-    else -> skipTrailingEscapes(text, skipToEndOfEscape(text, index))
-  }
-
-  private tailrec fun skipToEndOfEscape(text: String, index: Int): Int = when {
-    index >= text.length -> index
-    text[index] == 'm' -> index + 1
-    else -> skipToEndOfEscape(text, index + 1)
-  }
-
-  /** Remove all ANSI escape codes from text. */
-  private fun stripAnsi(text: String): String = text.replace(Regex("\u001B\\[[0-9;]*m"), "")
-
-  /** Apply ANSI color codes to text. */
-  private fun colorize(text: String, color: String): String = "$color$text${Colors.RESET}"
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // VALUE FORMATTING
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  /** Format a value with ANSI colors for display. */
-  private fun formatValue(obj: Any?): String = when (obj) {
-    null -> colorize("none", Colors.DIM)
-    is Option<*> -> obj.getOrElse { null }?.let { formatValue(it) } ?: colorize("none", Colors.DIM)
-    is String -> obj
-    is Number -> colorize(obj.toString(), Colors.BRIGHT_YELLOW)
-    is Boolean -> colorize(obj.toString(), if (obj) Colors.GREEN else Colors.RED)
-    is Collection<*> -> if (obj.isEmpty()) colorize("[]", Colors.DIM) else colorize("[${obj.size} items]", Colors.DIM)
-    is Map<*, *> -> formatMapValue(obj)
-    else -> obj.toString()
-  }.replace("\n", " ").replace("\r", "")
-
-  private fun formatMapValue(map: Map<*, *>): String =
-    if (map.isEmpty()) {
-      colorize("{}", Colors.DIM)
-    } else {
-      map.entries.joinToString(", ", "{", "}") { "${colorize(it.key.toString(), Colors.CYAN)}=${it.value}" }
-    }
-
-  /** Format a value without ANSI codes (for width calculation). */
-  private fun formatValuePlain(obj: Any?): String = when (obj) {
+  private fun formatValuePlain(value: Any?): String = when (value) {
     null -> "none"
-    is Option<*> -> obj.getOrElse { null }?.let { formatValuePlain(it) } ?: "none"
-    is String -> obj
-    is Number, is Boolean -> obj.toString()
-    is Collection<*> -> if (obj.isEmpty()) "[]" else "[${obj.size} items]"
-    is Map<*, *> -> if (obj.isEmpty()) "{}" else obj.entries.joinToString(", ", "{", "}") { "${it.key}=${it.value}" }
-    else -> obj.toString()
-  }.replace("\n", " ").replace("\r", "")
+    is Option<*> -> value.getOrElse { null }?.let(::formatValuePlain) ?: "none"
+    is String -> sanitize(value)
+    is Number, is Boolean -> value.toString()
+    is Collection<*> -> renderCollection(value)
+    is Map<*, *> -> renderMap(value)
+    else -> sanitize(value.toString())
+  }
+
+  private fun renderCollection(value: Collection<*>): String {
+    if (value.isEmpty()) return "[]"
+
+    val printable = value.take(VALUE_PREVIEW_LIMIT)
+    return printable.joinToString(", ", prefix = "[", postfix = if (value.size > VALUE_PREVIEW_LIMIT) ", ...]" else "]") {
+      formatValuePlain(it)
+    }
+  }
+
+  private fun renderMap(value: Map<*, *>): String {
+    if (value.isEmpty()) return "{}"
+
+    val printable = value.entries.take(VALUE_PREVIEW_LIMIT)
+    return printable.joinToString(", ", prefix = "{", postfix = if (value.size > VALUE_PREVIEW_LIMIT) ", ...}" else "}") {
+      "${it.key}=${formatValuePlain(it.value)}"
+    }
+  }
+
+  private fun sanitize(value: String): String = value.replace("\r", "")
+
+  private fun visibleLength(value: String): Int = stripAnsi(value).length
+
+  private fun stripAnsi(value: String): String = value.replace(Regex("\u001B\\[[0-9;]*m"), "")
 }

@@ -1,585 +1,544 @@
 package com.trendyol.stove.reporting
 
 import arrow.core.Some
-import com.trendyol.stove.ConsoleSpec
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
-import io.kotest.matchers.ints.shouldBeLessThanOrEqual
+import com.trendyol.stove.tracing.TraceVisualization
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 
 class PrettyConsoleRendererTest :
-  ConsoleSpec({ output ->
-
+  FunSpec({
     fun String.stripAnsi(): String = replace(Regex("\u001B\\[[0-9;]*m"), "")
 
-    fun String.boxLines(): List<String> = lines().filter { it.isNotEmpty() }
-
-    // Dynamic width constants (from PrettyConsoleRenderer)
-    val minBoxWidth = 60
-    val maxBoxWidth = 200
-
-    test("renders timeline with box drawing") {
+    test("renders summary and timeline for successful entries") {
       val report = TestReport("test-1", "should process order")
-      report.record(ReportEntry.success("HTTP", "test-1", "POST /api/orders"))
-
-      val rendered = PrettyConsoleRenderer.render(report, emptyList())
-      println(rendered)
-
-      val plainOutput = output.out.stripAnsi()
-      plainOutput shouldContain "STOVE TEST EXECUTION REPORT"
-      plainOutput shouldContain "should process order"
-      plainOutput shouldContain "[HTTP] POST /api/orders"
-      output.out shouldContain "╔"
-      output.out shouldContain "╚"
-    }
-
-    test("highlights failed assertions") {
-      val report = TestReport("test-1", "should fail")
       report.record(
-        ReportEntry.failure(
-          system = "Kafka",
+        ReportEntry.success(
+          system = "HTTP",
           testId = "test-1",
-          action = "shouldBePublished<OrderEvent>",
-          error = "Timed out"
+          action = "POST /api/orders",
+          input = Some("{" + "\"id\":123}"),
+          output = Some("201 Created")
         )
       )
 
-      val rendered = PrettyConsoleRenderer.render(report, emptyList())
-      println(rendered)
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
 
-      val plainOutput = output.out.stripAnsi()
-      plainOutput shouldContain "✗"
-      plainOutput shouldContain "FAILED"
-      plainOutput shouldContain "Timed out"
+      rendered shouldContain "STOVE TEST EXECUTION REPORT"
+      rendered shouldContain "should process order"
+      rendered shouldContain "IN PROGRESS"
+      rendered shouldContain "TIMELINE"
+      rendered shouldContain "✓ PASSED"
+      rendered shouldContain "POST /api/orders"
+      rendered shouldContain "Input: {\"id\":123}"
+      rendered shouldContain "Output: 201 Created"
     }
 
-    test("renders system snapshots") {
-      val report = TestReport("test-1", "test")
-      val snapshot = SystemSnapshot(
-        system = "Kafka",
-        state = mapOf("consumed" to listOf(mapOf("topic" to "orders"))),
-        summary = "Consumed: 1\nPublished: 0"
+    test("renders failed assertions with expected actual and error details") {
+      val report = TestReport("test-2", "should fail")
+      report.record(
+        ReportEntry.failure(
+          system = "Kafka",
+          testId = "test-2",
+          action = "shouldBePublished<OrderEvent>",
+          error = "expected:<2> but was:<1>",
+          expected = Some(2),
+          actual = Some(1)
+        )
       )
 
-      val rendered = PrettyConsoleRenderer.render(report, listOf(snapshot))
-      println(rendered)
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
 
-      val plainOutput = output.out.stripAnsi()
-      plainOutput shouldContain "KAFKA"
-      plainOutput shouldContain "Consumed: 1"
+      rendered shouldContain "FAILED"
+      rendered shouldContain "Expected: 2"
+      rendered shouldContain "Actual: 1"
+      rendered shouldContain "Error: expected:<2> but was:<1>"
     }
 
-    test("maintains frame integrity with long text") {
-      val report = TestReport("test-long", "long test name")
-      val longInput = "This is a very long input that exceeds the box width and should be wrapped properly"
+    test("groups sequential timeline entries by system") {
+      val report = TestReport("test-2b", "grouped timeline")
+      report.record(ReportEntry.success(system = "WireMock", testId = "test-2b", action = "Register stub A"))
+      report.record(ReportEntry.success(system = "WireMock", testId = "test-2b", action = "Register stub B"))
+      report.record(ReportEntry.success(system = "HTTP", testId = "test-2b", action = "GET /api/a"))
+      report.record(ReportEntry.success(system = "HTTP", testId = "test-2b", action = "POST /api/b"))
+      report.record(ReportEntry.success(system = "Kafka", testId = "test-2b", action = "Produce event"))
+
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "WIREMOCK · 2 step(s)"
+      rendered shouldContain "HTTP · 2 step(s)"
+      rendered shouldContain "KAFKA · 1 step(s)"
+      rendered shouldContain "#1 ✓ PASSED Register stub A"
+      rendered shouldContain "#5 ✓ PASSED Produce event"
+    }
+
+    test("renders snapshots section with summary and state details") {
+      val report = TestReport("test-3", "snapshot test")
+      val snapshots = listOf(
+        SystemSnapshot(
+          system = "Kafka",
+          summary = "Consumed: 1\nPublished: 0",
+          state = mapOf(
+            "consumed" to listOf(mapOf("topic" to "orders", "offset" to 42)),
+            "failed" to emptyList<Any>()
+          )
+        )
+      )
+
+      val rendered = PrettyConsoleRenderer.render(report, snapshots).stripAnsi()
+
+      rendered shouldContain "SYSTEM SNAPSHOTS"
+      rendered shouldContain "KAFKA"
+      rendered shouldContain "Summary"
+      rendered shouldContain "Consumed: 1"
+      rendered shouldContain "State"
+      rendered shouldContain "consumed: 1 item(s)"
+      rendered shouldContain "topic: orders"
+      rendered shouldContain "offset: 42"
+    }
+
+    test("renders execution trace details when trace data exists") {
+      val report = TestReport("test-4", "trace test")
+      val trace = TraceVisualization(
+        traceId = "trace-123",
+        testId = "test-4",
+        totalSpans = 2,
+        failedSpans = 1,
+        spans = emptyList(),
+        tree = "root span\n└─ child span ✗",
+        coloredTree = ""
+      )
+
+      report.record(
+        ReportEntry.action(
+          system = "HTTP",
+          testId = "test-4",
+          action = "POST /api/orders",
+          passed = false,
+          error = Some("500 Internal Server Error"),
+          executionTrace = Some(trace)
+        )
+      )
+
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "Execution Trace"
+      rendered shouldContain "TraceId: trace-123"
+      rendered shouldContain "Spans: 2 total / 1 failed"
+      rendered shouldContain "root span"
+      rendered shouldContain "child span"
+    }
+
+    test("renders empty timeline message for reports without entries") {
+      val report = TestReport("test-5", "empty report")
+
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "No actions recorded yet."
+      rendered shouldNotContain "SYSTEM SNAPSHOTS"
+    }
+
+    test("does not truncate very long values") {
+      val report = TestReport("test-6", "long value")
+      val longWord = "x".repeat(220)
 
       report.record(
         ReportEntry.success(
           system = "HTTP",
-          testId = "test-long",
-          action = "POST /api/endpoint",
-          input = Some(longInput)
+          testId = "test-6",
+          action = "POST /api/long",
+          input = Some(longWord)
         )
       )
 
-      val rendered = PrettyConsoleRenderer.render(report, emptyList())
-      println(rendered)
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
 
-      // Verify frame width consistency and no side borders
-      val plainRendered = rendered.stripAnsi()
-      plainRendered shouldNotContain "║"
-      plainRendered.boxLines().map { it.length }.distinct() shouldHaveSize 1
+      rendered shouldContain "Input:"
+      rendered shouldContain longWord.take(40)
+      rendered shouldContain longWord.takeLast(40)
+      rendered shouldNotContain "..."
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════
-    // FRAME ALIGNMENT TESTS
-    // ══════════════════════════════════════════════════════════════════════════════
+    test("uses a compact width for small reports") {
+      val report = TestReport("test-6b", "small report")
+      report.record(ReportEntry.success(system = "HTTP", testId = "test-6b", action = "GET /health"))
 
-    context("Frame Alignment") {
-      test("all content lines should have consistent width") {
-        val report = TestReport("test-align", "Alignment Test")
-        report.record(ReportEntry.success("HTTP", "test-align", "GET /api/test"))
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
+      val widths = rendered
+        .lines()
+        .filter { it.isNotBlank() }
+        .map { it.length }
+        .toSet()
+      val width = widths.first()
 
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        val lines = plainRendered.boxLines()
-
-        // All rendered lines should have the same width (dynamic)
-        lines.map { it.length }.distinct() shouldHaveSize 1
-
-        // Width should be within bounds
-        val actualWidth = lines.first().length
-        actualWidth shouldBeGreaterThanOrEqual minBoxWidth
-        actualWidth shouldBeLessThanOrEqual maxBoxWidth
-      }
-
-      test("top and bottom borders should have matching width") {
-        val report = TestReport("test-borders", "Border Test")
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        val lines = plainRendered.lines()
-
-        val topBorder = lines.first { it.startsWith("╔") }
-        val bottomBorder = lines.last { it.startsWith("╚") }
-
-        topBorder.length shouldBe bottomBorder.length
-        // Width should be dynamic but within bounds
-        topBorder.length shouldBeGreaterThanOrEqual minBoxWidth
-      }
-
-      test("content lines should start and end with proper borders") {
-        val report = TestReport("test-content", "Content Test")
-        report.record(ReportEntry.success("Database", "test-content", "INSERT INTO users"))
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-
-        plainRendered
-          .lines()
-          .filter { it.isNotEmpty() && !it.startsWith("╔") && !it.startsWith("╚") && !it.startsWith("╠") }
-          .forEach { line ->
-            line.first() shouldBe ' '
-            line.last() shouldBe ' '
-          }
-      }
+      widths.size shouldBe 1
+      (width < 120) shouldBe true
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════
-    // WORD WRAPPING TESTS
-    // ══════════════════════════════════════════════════════════════════════════════
-
-    context("Word Wrapping") {
-      test("wraps long text at word boundaries when possible") {
-        val report = TestReport("test-wrap", "Wrap Test")
-        val longInput = "This is a sentence with multiple words that should wrap at spaces to maintain readability"
-
-        report.record(
-          ReportEntry.success("HTTP", "test-wrap", "POST /api", input = Some(longInput))
+    test("caps width for large reports") {
+      val report = TestReport("test-6c", "large report")
+      report.record(
+        ReportEntry.failure(
+          system = "HTTP",
+          testId = "test-6c",
+          action = "GET /very/long/endpoint/that/should/not/make/the/report/unreasonably/wide",
+          error = "x".repeat(300)
         )
+      )
 
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
+      val width = rendered.lines().first { it.isNotBlank() }.length
 
-        // Verify all box-framed lines have consistent width (dynamic)
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-
-        // Content should be fully present (no truncation)
-        plainRendered shouldContain "This is"
-        plainRendered shouldContain "readability"
-      }
-
-      test("handles extremely long words without spaces - expands to fit") {
-        val report = TestReport("test-long-word", "Long Word Test")
-        val longWord = "a".repeat(150) // 150 character word without spaces
-
-        report.record(
-          ReportEntry.success("HTTP", "test-long-word", "POST /api", input = Some(longWord))
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        println(rendered)
-
-        // Frame should still be intact - all lines same width
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-
-        // Full content should be present (no "..." truncation)
-        plainRendered shouldNotContain "..."
-        // Word should be fully present
-        plainRendered shouldContain "aaaaaa" // Part of the long word
-      }
-
-      test("wraps multiline content preserving line breaks") {
-        val report = TestReport("test-multiline", "Multiline Test")
-        val multilineContent = "Line 1\nLine 2\nLine 3"
-
-        report.record(
-          ReportEntry.failure(
-            system = "Kafka",
-            testId = "test-multiline",
-            action = "shouldBePublished",
-            error = multilineContent
-          )
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        println(rendered)
-
-        // All three lines should be present
-        plainRendered shouldContain "Line 1"
-        plainRendered shouldContain "Line 2"
-        plainRendered shouldContain "Line 3"
-
-        // Frame should remain intact - consistent width
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
+      (width <= 160) shouldBe true
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════
-    // ANSI COLOR CODE HANDLING TESTS
-    // ══════════════════════════════════════════════════════════════════════════════
+    test("renders real-world like report fixture for visual iteration") {
+      val testId = "ExampleTest::should create new product when send product create request from api"
+      val report = TestReport(testId, "should create new product when send product create request from api")
 
-    context("ANSI Color Code Handling") {
-      test("colored content should not affect frame alignment") {
-        val report = TestReport("test-color", "Color Test")
-        report.record(ReportEntry.success("HTTP", "test-color", "GET /api/test"))
-        report.record(ReportEntry.failure("Database", "test-color", "INSERT failed", error = "Constraint violation"))
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-
-        // Even with colors, all lines should have consistent width (dynamic)
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-
-      test("long content expands box - no truncation") {
-        val report = TestReport("test-expand", "Expand Test")
-        val longAction = "A".repeat(150) + " with more text"
-
-        report.record(ReportEntry.success("HTTP", "test-expand", longAction))
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-
-        // Should contain RESET code
-        rendered shouldContain "\u001B[0m"
-
-        // Plain output should be aligned and NOT truncated
-        val plainRendered = rendered.stripAnsi()
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-
-        // Full content should be present (no "..." truncation)
-        plainRendered shouldContain "with more text"
-        plainRendered shouldNotContain "..."
-      }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════════
-    // EDGE CASE TESTS
-    // ══════════════════════════════════════════════════════════════════════════════
-
-    context("Edge Cases") {
-      test("empty report should maintain frame integrity") {
-        val report = TestReport("test-empty", "Empty Report")
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-
-        plainRendered shouldContain "╔"
-        plainRendered shouldContain "╚"
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-        boxLines.first().length shouldBeGreaterThanOrEqual minBoxWidth
-      }
-
-      test("special characters should not break frame") {
-        val report = TestReport("test-special", "Special Chars")
-        val specialContent = "Tab:\there End\nNewline above\rCarriage return\u0000Null char"
-
-        report.record(
-          ReportEntry.success("HTTP", "test-special", "POST", input = Some(specialContent))
+      report.record(
+        ReportEntry.success(
+          system = "WireMock",
+          testId = testId,
+          action = "Register stub: GET /api/suppliers/99",
+          metadata = mapOf("priority" to 1, "responseStatus" to 200)
         )
+      )
 
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        println(rendered)
-
-        // Frame should still be valid
-        plainRendered shouldNotContain "║"
-      }
-
-      test("Unicode characters should be handled correctly") {
-        val report = TestReport("test-unicode", "Unicode Test")
-        val unicodeContent = "日本語テスト 🎉 emoji ✓ checkmark → arrow"
-
-        report.record(
-          ReportEntry.success("HTTP", "test-unicode", "POST /api/unicode", input = Some(unicodeContent))
+      report.record(
+        ReportEntry.success(
+          system = "WireMock",
+          testId = testId,
+          action = "Register stub: GET /inventory/products/1",
+          metadata = mapOf("priority" to 1, "responseStatus" to 200)
         )
+      )
 
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        println(rendered)
+      report.record(
+        ReportEntry.success(
+          system = "WireMock",
+          testId = testId,
+          action = "Register stub: POST /payments/charge",
+          metadata = mapOf("priority" to 2, "responseStatus" to 200)
+        )
+      )
 
-        // Should contain the unicode content
-        rendered shouldContain "emoji"
+      report.record(
+        ReportEntry.success(
+          system = "WireMock",
+          testId = testId,
+          action = "Register stub: POST /inventory/sync",
+          metadata = mapOf("priority" to 1, "responseStatus" to 200)
+        )
+      )
 
-        // Note: Unicode width calculation is complex, so we just verify the frame structure
-        rendered shouldContain "╔"
-        rendered shouldContain "╚"
-      }
+      report.record(
+        ReportEntry.success(
+          system = "HTTP",
+          testId = testId,
+          action = "GET /api/suppliers/99",
+          output = Some("""{"status":200,"response":{"id":99,"name":"supplier name"}}""")
+        )
+      )
 
-      test("deeply indented content should still fit in frame") {
-        val report = TestReport("test-indent", "Indent Test")
-        val snapshot = SystemSnapshot(
+      report.record(
+        ReportEntry.success(
           system = "Kafka",
+          testId = testId,
+          action = "KafkaProducer.send product command",
+          output = Some("topic=trendyol.stove.service.productCommand.1 offset=41")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "PostgreSQL",
+          testId = testId,
+          action = "INSERT INTO outbox(product_id, status)",
+          metadata = mapOf("rowsAffected" to 1, "table" to "outbox")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "Kafka",
+          testId = testId,
+          action = "KafkaConsumer.consume product command",
+          output = Some("topic=trendyol.stove.service.productCommand.1 offset=41")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "HTTP",
+          testId = testId,
+          action = "POST /api/product/create",
+          input = Some("ProductCreateRequest(id=1, name=product name, supplierId=99)"),
+          output = Some("""{"status":201,"response":{"id":1,"status":"DRAFT"}}""")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "Kafka",
+          testId = testId,
+          action = "KafkaProducer.send product created event",
+          output = Some("topic=trendyol.stove.service.productCreated.1 offset=0")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "PostgreSQL",
+          testId = testId,
+          action = "UPDATE outbox SET sent=true WHERE id=91",
+          metadata = mapOf("rowsAffected" to 1, "table" to "outbox")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "WireMock",
+          testId = testId,
+          action = "Verify downstream call: POST /inventory/sync",
+          metadata = mapOf("called" to true, "times" to 1)
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "PostgreSQL",
+          testId = testId,
+          action = "SELECT status FROM products WHERE id=1",
+          metadata = mapOf("rowsReturned" to 1, "table" to "products")
+        )
+      )
+
+      val trace = TraceVisualization(
+        traceId = "00-49242638d15b4e29ba49750d2089633f-87ab5cab1dd5b41d-01",
+        testId = testId,
+        totalSpans = 15,
+        failedSpans = 1,
+        spans = emptyList(),
+        tree = """
+        GET /api/products/1 [412ms] ✗
+        | http.response.status_code: 200
+        | http.route: /api/products/{id}
+        | http.request.method: GET
+        ProductQueryController.get [109ms] ✓
+        ProductQueryService.findById [78ms] ✓
+        PostgreSQL.queryProductById [44ms] ✓
+        WireMock.inventory.getById [31ms] ✓
+        KafkaProducer.send inventory-check [27ms] ✓
+        HTTP.inventory.sync [29ms] ✓
+        PostgreSQL.updateInventoryProjection [41ms] ✓
+        InventorySyncHandler.handle [34ms] ✗
+        | messaging.kafka.topic: trendyol.stove.service.inventorySync.1
+        | error.type: INVENTORY_STATE_MISMATCH
+        """.trimIndent(),
+        coloredTree = ""
+      )
+
+      report.record(
+        ReportEntry.action(
+          system = "HTTP",
+          testId = testId,
+          action = "GET /api/products/1",
+          passed = false,
+          input = Some("ProductQueryRequest(id=1)"),
+          output = Some("""{"status":200,"response":{"id":1,"status":"DRAFT"}}"""),
+          metadata = mapOf("status" to 200, "headers" to emptyMap<String, String>()),
+          expected = Some("Product status ACTIVE"),
+          actual = Some("Product status DRAFT"),
+          error = Some("expected:<ACTIVE> but was:<DRAFT>"),
+          executionTrace = Some(trace)
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "Kafka",
+          testId = testId,
+          action = "KafkaProducer.send compensation event",
+          output = Some("topic=trendyol.stove.service.productCompensation.1 offset=2")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "HTTP",
+          testId = testId,
+          action = "POST /api/product/compensate",
+          input = Some("""{"id":1,"reason":"STATUS_MISMATCH"}"""),
+          output = Some("""{"status":202,"response":{"queued":true}}""")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "Kafka",
+          testId = testId,
+          action = "KafkaConsumer.consume compensation event",
+          output = Some("topic=trendyol.stove.service.productCompensation.1 offset=2")
+        )
+      )
+
+      report.record(
+        ReportEntry.success(
+          system = "WireMock",
+          testId = testId,
+          action = "Verify downstream call: GET /inventory/products/1",
+          metadata = mapOf("called" to true, "times" to 2)
+        )
+      )
+
+      val snapshots = listOf(
+        SystemSnapshot(
+          system = "HTTP",
           state = mapOf(
-            "nested" to listOf(
+            "requests" to listOf(
+              mapOf("method" to "GET", "path" to "/api/suppliers/99", "status" to 200),
+              mapOf("method" to "POST", "path" to "/api/product/create", "status" to 201),
+              mapOf("method" to "GET", "path" to "/api/products/1", "status" to 200),
+              mapOf("method" to "POST", "path" to "/api/product/compensate", "status" to 202)
+            ),
+            "lastRequest" to mapOf("method" to "GET", "path" to "/api/products/1"),
+            "lastResponse" to mapOf("status" to 200, "body" to mapOf("id" to 1, "status" to "DRAFT"))
+          ),
+          summary = "Requests (this test): 4\nLast response status: 200"
+        ),
+        SystemSnapshot(
+          system = "Kafka",
+          summary = """
+            Consumed (this test): 3
+            Produced (this test): 4
+            Failed (this test): 1
+          """.trimIndent(),
+          state = mapOf(
+            "consumed" to listOf(
               mapOf(
-                "level1" to mapOf(
-                  "level2" to mapOf(
-                    "level3" to "deeply nested value that might be quite long and need wrapping"
-                  )
-                )
+                "messageId" to "consumed-1",
+                "topic" to "trendyol.stove.service.productCreated.1",
+                "key" to 1,
+                "offset" to 0,
+                "headers" to mapOf(
+                  "traceparent" to "00-49242638d15b4e29ba49750d2089633f-87ab5cab1dd5b41d-01",
+                  "baggage" to "stove.test.id=$testId",
+                  "__TypeId__" to "stove.spring.example4x.application.handlers.ProductCreatedEvent"
+                ),
+                "value" to mapOf("id" to 1, "name" to "product name", "status" to "DRAFT")
+              ),
+              mapOf(
+                "messageId" to "consumed-2",
+                "topic" to "trendyol.stove.service.productCommand.1",
+                "key" to 1,
+                "offset" to 41,
+                "value" to mapOf("id" to 1, "command" to "CREATE", "tags" to listOf("new", "campaign"))
+              ),
+              mapOf(
+                "messageId" to "consumed-3",
+                "topic" to "trendyol.stove.service.productCompensation.1",
+                "key" to 1,
+                "offset" to 2,
+                "value" to mapOf("id" to 1, "reason" to "STATUS_MISMATCH")
+              )
+            ),
+            "produced" to listOf(
+              mapOf(
+                "topic" to "trendyol.stove.service.productCommand.1",
+                "key" to 1,
+                "value" to mapOf("id" to 1, "command" to "CREATE")
+              ),
+              mapOf(
+                "topic" to "trendyol.stove.service.productCreated.1",
+                "key" to 1,
+                "value" to mapOf("id" to 1, "name" to "product name", "status" to "DRAFT")
+              ),
+              mapOf(
+                "topic" to "trendyol.stove.service.productCompensation.1",
+                "key" to 1,
+                "value" to mapOf("id" to 1, "reason" to "STATUS_MISMATCH")
+              ),
+              mapOf(
+                "topic" to "trendyol.stove.service.inventorySync.1",
+                "key" to 1,
+                "value" to mapOf("id" to 1, "expectedStatus" to "ACTIVE", "actualStatus" to "DRAFT")
+              )
+            ),
+            "failed" to listOf(
+              mapOf(
+                "topic" to "trendyol.stove.service.inventorySync.1",
+                "key" to 1,
+                "reason" to "INVENTORY_STATE_MISMATCH",
+                "payload" to mapOf("id" to 1, "expectedStatus" to "ACTIVE", "actualStatus" to "DRAFT")
               )
             )
-          ),
-          summary = "Test summary"
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, listOf(snapshot))
-        val plainRendered = rendered.stripAnsi()
-        println(rendered)
-
-        // Frame should remain intact despite nesting - all lines consistent width
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════════
-    // CONTENT LENGTH ADAPTATION TESTS
-    // ══════════════════════════════════════════════════════════════════════════════
-
-    context("Content Length Adaptation") {
-      test("short content should be padded to fit minimum frame width") {
-        val report = TestReport("test-short", "Short")
-        report.record(ReportEntry.success("HTTP", "test-short", "GET"))
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-
-        // Even with short content, all lines should be padded and consistent
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-        boxLines.first().length shouldBeGreaterThanOrEqual minBoxWidth
-      }
-
-      test("content adapts to frame width dynamically") {
-        val report = TestReport("test-dynamic", "Dynamic Width Test")
-        val moderateContent = "X".repeat(80) // Moderate length
-
-        report.record(
-          ReportEntry.success("HTTP", "test-dynamic", "POST", input = Some(moderateContent))
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-
-        // All lines should be consistent
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-
-      test("box expands for long content without wrapping") {
-        val report = TestReport("test-expand", "Expand Width")
-        // Content that would need wrapping with fixed width, but expands box instead
-        val longContent = "Word ".repeat(30) // ~150 chars
-
-        report.record(
-          ReportEntry.success("HTTP", "test-expand", "POST", input = Some(longContent))
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        println(rendered)
-
-        // All content should be present without truncation
-        plainRendered shouldNotContain "..."
-        plainRendered shouldContain "Word Word Word"
-
-        // All lines should maintain consistent frame width
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-
-      test("demonstrates smart word-boundary wrapping") {
-        val report = TestReport("test-smart-wrap", "Smart Wrapping")
-        val sentence = "The quick brown fox jumps over the lazy dog and keeps running until it reaches the end of the line"
-
-        report.record(
-          ReportEntry.failure(
-            system = "HTTP",
-            testId = "test-smart-wrap",
-            action = "POST /api/test",
-            error = sentence
           )
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        println("\n--- Smart Word Wrapping Demo ---")
-        println(rendered)
-
-        // Full error message should be present
-        val plainRendered = rendered.stripAnsi()
-        plainRendered shouldContain "The quick brown fox"
-        plainRendered shouldContain "end of the line"
-
-        // Frame should be intact - all lines consistent
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-
-      test("very long content with spaces wraps at word boundaries") {
-        val report = TestReport("test-long-wrap", "Long Content Wrap Demo")
-        // Long content WITH spaces - will wrap at word boundaries
-        val veryLongLine = "word ".repeat(100) // 500 chars with spaces
-
-        report.record(
-          ReportEntry.success("HTTP", "test-long-wrap", "POST /api", input = Some(veryLongLine))
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        println("\n--- Long Content Wrap Demo ---")
-        println(rendered)
-
-        // Content should be wrapped across multiple lines at word boundaries
-        val contentLines = plainRendered.lines().filter { it.contains("word") }
-        contentLines.size shouldBeGreaterThan 1
-
-        // Frame should still be intact - capped at max width
-        val boxLines = plainRendered.boxLines()
-        boxLines.forEach { line ->
-          line.length shouldBeLessThanOrEqual maxBoxWidth
-        }
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-
-        // Words should NOT be broken mid-word
-        plainRendered
-          .lines()
-          .filter { it.contains("wor") && !it.contains("word") }
-          .shouldHaveSize(0) // No partial "wor" without "d"
-      }
-
-      test("single long word without spaces stays on one line") {
-        val report = TestReport("test-single-word", "Single Word Demo")
-        // Single long word without spaces - should NOT be broken
-        val longWord = "A".repeat(180)
-
-        report.record(
-          ReportEntry.success("HTTP", "test-single-word", longWord)
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-        println("\n--- Single Long Word Demo ---")
-        println(rendered)
-
-        // The long word should be on a single line (not split)
-        val contentLines = plainRendered.lines().filter { it.contains("AAAA") }
-        // Should be exactly 1 line containing the AAAs (word not broken)
-        contentLines.size shouldBe 1
-
-        // Frame should expand to fit the word
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-
-      test("no truncation - all content is preserved") {
-        val report = TestReport("test-no-truncate", "No Truncation Demo")
-        val longWord = "X".repeat(180) // Long single word
-
-        report.record(
-          ReportEntry.success("HTTP", "test-no-truncate", "Action", input = Some(longWord))
-        )
-
-        val rendered = PrettyConsoleRenderer.render(report, emptyList())
-        val plainRendered = rendered.stripAnsi()
-
-        // No truncation indicator
-        plainRendered shouldNotContain "..."
-
-        // Frame should still be intact regardless of content
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
-      }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════════
-    // VISUAL SIMULATION TEST
-    // ══════════════════════════════════════════════════════════════════════════════
-
-    context("Visual Output Simulation") {
-      test("simulates complete failure report with all elements") {
-        val report = TestReport("showcase-test", "The Complete Order Flow - Every Feature in One Test")
-
-        // Simulate a realistic failure scenario
-        report.record(
-          ReportEntry.success(
-            "gRPC Mock",
-            "showcase-test",
-            "Register unary stub: frauddetection.FraudDetectionService/CheckFraud"
-          )
-        )
-        report.record(ReportEntry.success("WireMock", "showcase-test", "Register stub: GET /inventory/macbook-pro-16"))
-        report.record(ReportEntry.success("WireMock", "showcase-test", "Register stub: POST /payments/charge"))
-        report.record(
-          ReportEntry.failure(
-            system = "HTTP",
-            testId = "showcase-test",
-            action = "POST /api/orders",
-            input = Some("CreateOrderRequest(userId=user-123, productId=macbook-pro-16, amount=2499.99)"),
-            output = Some("""{"message":"Internal server error","errorCode":"INTERNAL_ERROR"}"""),
-            error = "expected:<201> but was:<500>",
-            expected = Some("Response<OrderResponse> matching expectation"),
-            actual = Some("Status: 500"),
-            metadata = mapOf("status" to 500, "headers" to emptyMap<String, String>())
-          )
-        )
-
-        val snapshots = listOf(
-          SystemSnapshot(
-            system = "WireMock",
-            state = mapOf(
-              "registeredStubs" to listOf(
-                mapOf("id" to "stub-1", "method" to "GET", "url" to "/inventory/macbook-pro-16", "status" to 200),
-                mapOf("id" to "stub-2", "method" to "POST", "url" to "/payments/charge", "status" to 200)
+        ),
+        SystemSnapshot(
+          system = "PostgreSQL",
+          summary = """
+            Select queries: 4
+            Insert queries: 2
+            Update queries: 2
+            Errors: 0
+          """.trimIndent(),
+          state = mapOf(
+            "tables" to mapOf(
+              "products" to listOf(
+                mapOf("id" to 1, "name" to "product name", "status" to "DRAFT")
               ),
-              "servedRequests" to listOf(
-                mapOf("method" to "POST", "url" to "/payments/charge", "matched" to true),
-                mapOf("method" to "GET", "url" to "/inventory/macbook-pro-16", "matched" to true)
+              "outbox" to listOf(
+                mapOf("id" to 91, "type" to "ProductCreatedEvent", "sent" to true),
+                mapOf("id" to 92, "type" to "ProductCompensationEvent", "sent" to false)
               )
+            )
+          )
+        ),
+        SystemSnapshot(
+          system = "WireMock",
+          summary = """
+            Registered stubs (this test): 5
+            Served requests (this test): 4 (matched: 4)
+            Unmatched requests: 0
+          """.trimIndent(),
+          state = mapOf(
+            "registeredStubs" to listOf(
+              mapOf("method" to "GET", "url" to "/api/suppliers/99", "status" to 200),
+              mapOf("method" to "POST", "url" to "/api/product/create", "status" to 201),
+              mapOf("method" to "GET", "url" to "/inventory/products/1", "status" to 200),
+              mapOf("method" to "POST", "url" to "/payments/charge", "status" to 200),
+              mapOf("method" to "POST", "url" to "/inventory/sync", "status" to 200)
             ),
-            summary = "Registered: 2\nServed: 2\nUnmatched: 0"
-          ),
-          SystemSnapshot(
-            system = "Kafka",
-            state = mapOf(
-              "consumed" to emptyList<Any>(),
-              "published" to emptyList<Any>()
+            "servedRequests" to listOf(
+              mapOf("method" to "GET", "url" to "/api/suppliers/99", "matched" to true),
+              mapOf("method" to "POST", "url" to "/api/product/create", "matched" to true),
+              mapOf("method" to "GET", "url" to "/inventory/products/1", "matched" to true),
+              mapOf("method" to "POST", "url" to "/inventory/sync", "matched" to true)
             ),
-            summary = "Consumed: 0\nPublished: 0\nCommitted: 0\nFailed: 0"
+            "unmatchedRequests" to emptyList<Any>()
           )
         )
+      )
 
-        val rendered = PrettyConsoleRenderer.render(report, snapshots)
-        println("\n" + "=".repeat(120))
-        println("VISUAL OUTPUT SIMULATION:")
-        println("=".repeat(120) + "\n")
-        println(rendered)
-        println("\n" + "=".repeat(120))
+      val rendered = PrettyConsoleRenderer.render(report, snapshots)
+      val plainRendered = rendered.stripAnsi()
 
-        // Verify frame integrity - all box lines should have consistent width
-        val plainRendered = rendered.stripAnsi()
-        val boxLines = plainRendered.boxLines()
-        boxLines.map { it.length }.distinct() shouldHaveSize 1
+      println("\n" + "=".repeat(140))
+      println("VISUAL ITERATION FIXTURE - REAL WORLD REPORT")
+      println("=".repeat(140))
+      println(rendered)
+      println("=".repeat(140))
 
-        // Verify all sections are present
-        plainRendered shouldContain "STOVE TEST EXECUTION REPORT"
-        plainRendered shouldContain "TIMELINE"
-        plainRendered shouldContain "SYSTEM SNAPSHOTS"
-        plainRendered shouldContain "WIREMOCK"
-        plainRendered shouldContain "KAFKA"
-        plainRendered shouldContain "FAILED"
-        plainRendered shouldContain "expected:<201> but was:<500>"
-      }
+      plainRendered shouldContain "STOVE TEST EXECUTION REPORT"
+      plainRendered shouldContain "TIMELINE"
+      plainRendered shouldContain "SYSTEM SNAPSHOTS"
+      plainRendered shouldContain "Execution Trace"
+      plainRendered shouldContain "InventorySyncHandler.handle [34ms] ✗"
+      plainRendered shouldContain "Failed (this test): 1"
+      plainRendered shouldContain "expected:<ACTIVE> but was:<DRAFT>"
+      plainRendered shouldContain "PostgreSQL"
+      plainRendered shouldContain "KafkaProducer.send compensation event"
     }
   })
