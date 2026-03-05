@@ -5,7 +5,6 @@ import io.kotest.assertions.print.Printed
 import io.kotest.common.reflection.bestName
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.engine.concurrency.SpecExecutionMode
-import io.kotest.matchers.errorCollector
 
 /**
  * Shared Kafka test configuration - runs tests sequentially.
