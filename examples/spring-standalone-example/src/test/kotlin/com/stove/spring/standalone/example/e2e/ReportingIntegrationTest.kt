@@ -209,8 +209,10 @@ class ReportingIntegrationTest :
       val pretty = PrettyConsoleRenderer.render(report, emptyList())
 
       pretty shouldContain "STOVE TEST EXECUTION REPORT"
-      pretty shouldContain "[HTTP]"
-      pretty shouldContain "╔"
-      pretty shouldContain "╚"
+      pretty shouldContain "TIMELINE"
+      pretty shouldContain "HTTP"
+      pretty shouldContain "GET /api/index"
+      pretty shouldContain "╭"
+      pretty shouldContain "╰"
     }
   })
