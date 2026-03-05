@@ -47,7 +47,7 @@ opentelemetry-instrumentation = "2.25.0"
 # gRPC
 grpc = "1.79.0"
 grpc-kotlin = "1.5.0"
-protobuf = "4.33.5"
+protobuf = "4.34.0"
 protobuf-plugin = "0.9.6"
 
 # db-scheduler
