@@ -15,7 +15,12 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Quarkus: quarkus.md
+  - Supported Frameworks:
+    - Overview: frameworks/index.md
+    - Spring Boot: frameworks/spring-boot.md
+    - Ktor: frameworks/ktor.md
+    - Micronaut: frameworks/micronaut.md
+    - Quarkus: frameworks/quarkus.md
   - Components:
     - Overview: Components/index.md
     - Couchbase: Components/01-couchbase.md

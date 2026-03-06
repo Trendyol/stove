@@ -2,6 +2,8 @@
 
 Get Stove running in your project in just a few minutes. Stove helps you write end-to-end tests by spinning up your application and all its dependencies (databases, message queues, etc.) together, so you can <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test the real thing instead of mocks</span>.
 
+If you already know your application framework, the quickest route is [Supported Frameworks](frameworks/index.md). This guide focuses on the shared setup that applies across all starters.
+
 ## What You'll Need
 
 Make sure you have these installed:
@@ -18,7 +20,7 @@ Make sure you have these installed:
 
 Add Stove to your `build.gradle.kts`:
 
-```kotlin hl_lines="7 10 14 16"
+```kotlin hl_lines="7 10 14 16 18"
 repositories {
     mavenCentral()
 }
@@ -40,6 +42,8 @@ dependencies {
     testImplementation("com.trendyol:stove-spring")
     // OR
     testImplementation("com.trendyol:stove-ktor")
+    // OR
+    testImplementation("com.trendyol:stove-micronaut")
     // OR
     testImplementation("com.trendyol:stove-quarkus")
     // For Ktor, also add your preferred DI framework:
@@ -152,38 +156,37 @@ Stove needs to start your application from tests, which means we need to tweak y
 
 === "Quarkus"
 
-    ```java
-    package com.example;
+    ```kotlin
+    package com.example
 
-    import io.quarkus.runtime.Quarkus;
-    import io.quarkus.runtime.ShutdownEvent;
-    import io.quarkus.runtime.StartupEvent;
-    import io.quarkus.runtime.annotations.QuarkusMain;
-    import jakarta.enterprise.context.ApplicationScoped;
-    import jakarta.enterprise.event.Observes;
+    import io.quarkus.runtime.Quarkus
+    import io.quarkus.runtime.ShutdownEvent
+    import io.quarkus.runtime.StartupEvent
+    import io.quarkus.runtime.annotations.QuarkusMain
+    import jakarta.enterprise.context.ApplicationScoped
+    import jakarta.enterprise.event.Observes
 
     @QuarkusMain
-    public class QuarkusMainApp {
-
-        public static void main(String[] args) {
-            Quarkus.run(args);
+    object QuarkusMainApp {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            Quarkus.run(*args)
         }
     }
 
     @ApplicationScoped
-    public class StoveStartupSignal {
-
-        void onStart(@Observes StartupEvent event) {
-            System.setProperty("stove.quarkus.ready", "true");
+    class StoveStartupSignal {
+        fun onStart(@Observes event: StartupEvent) {
+            System.setProperty("stove.quarkus.ready", "true")
         }
 
-        void onStop(@Observes ShutdownEvent event) {
-            System.clearProperty("stove.quarkus.ready");
+        fun onStop(@Observes event: ShutdownEvent) {
+            System.clearProperty("stove.quarkus.ready")
         }
     }
     ```
 
-    Stove calls your Quarkus `main` function directly. If your app has no HTTP endpoint, publish a startup signal like the one above so Stove can detect readiness. See the [Quarkus guide](quarkus.md) for the full setup, including Kafka and tracing notes.
+    Stove calls your Quarkus `main` function directly. If your app has no HTTP endpoint, publish a startup signal like the one above so Stove can detect readiness. See the [Quarkus guide](frameworks/quarkus.md) for the full setup, including Kafka and tracing notes.
 
 ## Step 3: Create Test Configuration
 
@@ -208,7 +211,7 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
 
     Set the value to the fully qualified name of your `AbstractProjectConfig` class.
 
-    If you are testing a Quarkus application, see the [Quarkus guide](quarkus.md) for the starter-specific setup and limitations.
+    If you are testing a Quarkus application, see the [Quarkus guide](frameworks/quarkus.md) for the starter-specific setup and limitations.
 
 === "Kotest"
 
@@ -511,7 +514,7 @@ If you're using the `test-e2e` source set, you might have a separate task:
 Now that you're up and running, here's what to explore next:
 
 - **Components** - Check out the [Components documentation](Components/index.md) to see what's available
-- **Quarkus** - If your application uses Quarkus, follow the [Quarkus guide](quarkus.md)
+- **Quarkus** - If your application uses Quarkus, follow the [Quarkus guide](frameworks/quarkus.md)
 - **Tracing** - Enable [Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
 - **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics
 - **gRPC Mocking** - Mock external gRPC services with [gRPC Mocking](Components/14-grpc-mock.md)
