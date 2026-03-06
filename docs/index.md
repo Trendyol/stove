@@ -21,15 +21,11 @@ The JVM ecosystem has great frameworks for building applications, but when it co
 
 We built Stove to solve this. We wanted to boost developer productivity while keeping code quality high, and we needed it to work across different tech stacks:
 
-- <span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Spring Boot</span>
-- <span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Ktor</span>
-- <span data-rn="underline" data-rn-color="#ff9800">Java apps with Spring Boot</span>
-- Java apps with Micronaut
-- Java apps with Quarkus
-- Scala apps with Spring Boot
-- Java apps with Micronaut
-- Java apps with Quarkus
-- Scala apps with Spring Boot
+- <span data-rn="underline" data-rn-color="#ff9800">Spring Boot applications</span>
+- <span data-rn="underline" data-rn-color="#ff9800">Ktor applications</span>
+- Micronaut applications
+- Quarkus applications
+- JVM codebases mixing Java, Kotlin, and Scala
 
 Every time someone wants to write e2e tests, they end up writing the same boilerplate: starting physical components, figuring out how to start the application from tests, accessing application beans, and so on. Stove eliminates all that by providing a single API that works across all these stacks.
 
@@ -121,6 +117,11 @@ Stove supports these components:
 
       // Ktor
       testImplementation("com.trendyol:stove-ktor")
+
+      // or
+
+      // Quarkus
+      testImplementation("com.trendyol:stove-quarkus")
       
       // Components
       testImplementation("com.trendyol:stove")
@@ -174,6 +175,7 @@ Stove()
 
     - [Examples](https://github.com/Trendyol/stove/tree/main/examples)
         - [Ktor Example](https://github.com/Trendyol/stove/tree/main/examples/ktor-example)
+        - [Quarkus Example](https://github.com/Trendyol/stove/tree/main/examples/quarkus-example)
         - [Spring Boot Example](https://github.com/Trendyol/stove/tree/main/examples/spring-example)
         - [Spring Boot with Standalone Kafka](https://github.com/Trendyol/stove/tree/main/examples/spring-standalone-example)
         
@@ -189,7 +191,7 @@ Application that is being tested is a Spring Boot, Ktor, Micronaut, Quarkus, etc
 "Application Under Test (AUT)".
 
 The tests are agnostic to the application's framework.
-Right now Stove supports Spring Boot, Ktor. But it is easy to add new frameworks.
+Right now Stove ships starters for Spring Boot, Ktor, Micronaut, and Quarkus. It is still easy to add new frameworks on top of `ApplicationUnderTest`.
 
 !!! Note
 

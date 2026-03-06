@@ -36,6 +36,7 @@ include(
   "starters:ktor:tests:ktor-test-fixtures",
   "starters:ktor:tests:ktor-koin-tests",
   "starters:ktor:tests:ktor-di-tests",
+  "starters:quarkus:stove-quarkus",
   "starters:spring:stove-spring",
   "starters:spring:stove-spring-kafka",
   "starters:spring:tests:spring-test-fixtures",
@@ -52,6 +53,7 @@ include(
   "examples:spring-standalone-example",
   "examples:spring-4x-example",
   "examples:ktor-example",
+  "examples:quarkus-example",
   "examples:spring-streams-example",
   "examples:micronaut-example"
 )

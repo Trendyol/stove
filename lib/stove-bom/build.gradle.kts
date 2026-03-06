@@ -32,6 +32,7 @@ dependencies {
     api(projects.starters.spring.stoveSpring)
     api(projects.starters.spring.stoveSpringKafka)
     api(projects.starters.ktor.stoveKtor)
+    api(projects.starters.quarkus.stoveQuarkus)
     api(projects.starters.micronaut.stoveMicronaut)
 
     // Extensions

@@ -1,0 +1,20 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %white([%t]) %highlight(%-5level) %magenta(%c{1}) %cyan(trace.id:%X{traceId} version:%X{version}) -
+                %yellow(%m) %n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+    <logger name="org.testcontainers" level="WARN"/>
+    <logger name="tc" level="OFF"/>
+    <logger name="com.github.dockerjava" level="OFF"/>
+    <logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.wire" level="OFF"/>
+    <logger name="org.apache" level="OFF"/>
+</configuration>

@@ -16,7 +16,10 @@ Bridge gives you a type-safe way to access any component from your application's
 
 ## Configuration
 
-Bridge is built into the framework starters, so no extra dependency is needed.
+Bridge is built into the supported framework starters, so no extra dependency is needed.
+
+!!! warning "Quarkus"
+    `stove-quarkus` does not provide `bridge()` support yet. Quarkus application beans live under the Quarkus runtime classloader, so use HTTP, Kafka, database, gRPC, and tracing assertions instead.
 
 === "Spring Boot"
 
@@ -31,6 +34,14 @@ Bridge is built into the framework starters, so no extra dependency is needed.
     ```kotlin
     dependencies {
         testImplementation("com.trendyol:stove-ktor:$version")
+    }
+    ```
+
+=== "Micronaut"
+
+    ```kotlin
+    dependencies {
+        testImplementation("com.trendyol:stove-micronaut:$version")
     }
     ```
 

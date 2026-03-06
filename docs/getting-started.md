@@ -40,6 +40,8 @@ dependencies {
     testImplementation("com.trendyol:stove-spring")
     // OR
     testImplementation("com.trendyol:stove-ktor")
+    // OR
+    testImplementation("com.trendyol:stove-quarkus")
     // For Ktor, also add your preferred DI framework:
     testImplementation("io.insert-koin:koin-ktor:$koinVersion")  // Koin
     // OR testImplementation("io.ktor:ktor-server-di:$ktorVersion")  // Ktor-DI
@@ -148,6 +150,41 @@ Stove needs to start your application from tests, which means we need to tweak y
     }
     ```
 
+=== "Quarkus"
+
+    ```java
+    package com.example;
+
+    import io.quarkus.runtime.Quarkus;
+    import io.quarkus.runtime.ShutdownEvent;
+    import io.quarkus.runtime.StartupEvent;
+    import io.quarkus.runtime.annotations.QuarkusMain;
+    import jakarta.enterprise.context.ApplicationScoped;
+    import jakarta.enterprise.event.Observes;
+
+    @QuarkusMain
+    public class QuarkusMainApp {
+
+        public static void main(String[] args) {
+            Quarkus.run(args);
+        }
+    }
+
+    @ApplicationScoped
+    public class StoveStartupSignal {
+
+        void onStart(@Observes StartupEvent event) {
+            System.setProperty("stove.quarkus.ready", "true");
+        }
+
+        void onStop(@Observes ShutdownEvent event) {
+            System.clearProperty("stove.quarkus.ready");
+        }
+    }
+    ```
+
+    Stove calls your Quarkus `main` function directly. If your app has no HTTP endpoint, publish a startup signal like the one above so Stove can detect readiness. See the [Quarkus guide](quarkus.md) for the full setup, including Kafka and tracing notes.
+
 ## Step 3: Create Test Configuration
 
 <span data-rn="underline" data-rn-color="#009688">Set up Stove once for your entire test suite.</span> This configuration runs before all your tests and shuts down after they're done. Use <span data-rn="underline" data-rn-color="#ff9800">Stove()</span> and <span data-rn="underline" data-rn-color="#ff9800">.with { }</span> to configure your test environment. 
@@ -170,6 +207,8 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
     ```
 
     Set the value to the fully qualified name of your `AbstractProjectConfig` class.
+
+    If you are testing a Quarkus application, see the [Quarkus guide](quarkus.md) for the starter-specific setup and limitations.
 
 === "Kotest"
 
@@ -472,6 +511,7 @@ If you're using the `test-e2e` source set, you might have a separate task:
 Now that you're up and running, here's what to explore next:
 
 - **Components** - Check out the [Components documentation](Components/index.md) to see what's available
+- **Quarkus** - If your application uses Quarkus, follow the [Quarkus guide](quarkus.md)
 - **Tracing** - Enable [Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
 - **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics
 - **gRPC Mocking** - Mock external gRPC services with [gRPC Mocking](Components/14-grpc-mock.md)
