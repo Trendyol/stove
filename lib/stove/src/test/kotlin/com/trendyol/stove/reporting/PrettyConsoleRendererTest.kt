@@ -160,6 +160,36 @@ class PrettyConsoleRendererTest :
       rendered shouldNotContain "..."
     }
 
+    test("wraps long detail lines with hanging indentation") {
+      val report = TestReport("test-6a", "wrapped value")
+      val longInput = buildString {
+        append("CreateProductRequest(")
+        append("storefrontId=1, brandId=1092122801123744494, businessUnitId=2496482862758973002, ")
+        append("categoryId=3583527936634204334, code=TEST_03eacf0a-6c1d-4f34-a, ")
+        append("requestedBarcode=BARCODE_12345678901234567890, supplierId=99)")
+      }
+      val longOutput =
+        """{"productId":3,"code":"TEST_03eacf0a-6c1d-4f34-a","contents":[{"id":5,"variants":[{"id":5,"barcode":"TYBC4ZRD0TK70YBI05","requestedBarcode":"BARCODE_12345678901234567890"}]}]}"""
+
+      report.record(
+        ReportEntry.success(
+          system = "HTTP",
+          testId = "test-6a",
+          action = "POST /products",
+          input = Some(longInput),
+          output = Some(longOutput)
+        )
+      )
+
+      val rendered = PrettyConsoleRenderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "Input: CreateProductRequest("
+      rendered shouldContain "Output: {\"productId\":3"
+      (rendered.lines().maxOf { it.length } <= 160) shouldBe true
+      rendered shouldContain "\n│             ST_03eacf0a-6c1d-4f34-a, requestedBarcode=BARCODE_12345678901234567890, supplierId=99)"
+      rendered shouldContain "\n│              \"BARCODE_12345678901234567890\"}]}]}"
+    }
+
     test("uses a compact width for small reports") {
       val report = TestReport("test-6b", "small report")
       report.record(ReportEntry.success(system = "HTTP", testId = "test-6b", action = "GET /health"))

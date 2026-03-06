@@ -39,9 +39,12 @@ object PrettyConsoleRenderer : ReportRenderer {
   private const val MIN_RENDER_WIDTH = 72
   private const val MAX_RENDER_WIDTH = 160
   private const val PANEL_CHROME_WIDTH = 6
+  private const val NESTED_PANEL_CHROME_WIDTH = 12
   private const val SNAPSHOT_INDENT_STEP = 4
   private const val DETAIL_INDENT_STEP = 2
   private const val VALUE_PREVIEW_LIMIT = 6
+  private const val LABEL_WRAP_INDENT_LIMIT = 32
+  private const val MIN_BREAK_SEARCH_WINDOW = 12
 
   private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
 
@@ -74,11 +77,13 @@ object PrettyConsoleRenderer : ReportRenderer {
     val prepared = prepareReport(report, snapshots)
     val renderWidth = calculateRenderWidth(prepared)
     val terminal = createTerminal(renderWidth)
+    val panelContentWidth = renderWidth - PANEL_CHROME_WIDTH
+    val snapshotContentWidth = (renderWidth - NESTED_PANEL_CHROME_WIDTH).coerceAtLeast(MIN_RENDER_WIDTH - PANEL_CHROME_WIDTH)
 
     val widgets = buildList {
-      add(buildSummaryPanel(prepared))
-      add(buildTimelinePanel(prepared))
-      if (prepared.snapshots.isNotEmpty()) add(buildSnapshotsPanel(prepared.snapshots))
+      add(buildSummaryPanel(prepared, panelContentWidth))
+      add(buildTimelinePanel(prepared, panelContentWidth))
+      if (prepared.snapshots.isNotEmpty()) add(buildSnapshotsPanel(prepared.snapshots, snapshotContentWidth))
     }
 
     return widgets.joinToString(separator = "\n\n") { terminal.render(it) }
@@ -110,13 +115,13 @@ object PrettyConsoleRenderer : ReportRenderer {
     interactive = true
   )
 
-  private fun buildSummaryPanel(prepared: PreparedReport): Widget = Panel(
+  private fun buildSummaryPanel(prepared: PreparedReport, contentWidth: Int): Widget = Panel(
     title = Text((bold + brightWhite)("STOVE TEST EXECUTION REPORT")),
     bottomTitle = Text((bold + prepared.summary.statusColor)(prepared.summary.statusLabel)),
     borderType = ROUNDED,
     borderStyle = prepared.summary.borderColor,
     expand = true,
-    content = Text(prepared.summaryText, whitespace = Whitespace.PRE)
+    content = Text(wrapTextBlock(prepared.summaryText, contentWidth), whitespace = Whitespace.PRE)
   )
 
   private fun buildSummaryText(report: TestReport, summary: SummaryStats): String = buildString {
@@ -134,12 +139,12 @@ object PrettyConsoleRenderer : ReportRenderer {
     )
   }.trimEnd()
 
-  private fun buildTimelinePanel(prepared: PreparedReport): Widget {
+  private fun buildTimelinePanel(prepared: PreparedReport, contentWidth: Int): Widget {
     val content =
       if (prepared.entries.isEmpty()) {
         Text(dim("No actions recorded yet."), whitespace = Whitespace.PRE)
       } else {
-        Text(prepared.timelineText, whitespace = Whitespace.PRE)
+        Text(wrapTextBlock(prepared.timelineText, contentWidth), whitespace = Whitespace.PRE)
       }
 
     return Panel(
@@ -269,7 +274,7 @@ object PrettyConsoleRenderer : ReportRenderer {
     ) + styledTreeLines
   }
 
-  private fun buildSnapshotsPanel(snapshots: List<PreparedSnapshot>): Widget = Panel(
+  private fun buildSnapshotsPanel(snapshots: List<PreparedSnapshot>, contentWidth: Int): Widget = Panel(
     title = Text((bold + brightMagenta)("SYSTEM SNAPSHOTS")),
     bottomTitle = Text(dim("${snapshots.size} snapshot(s)")),
     borderType = ROUNDED,
@@ -278,17 +283,17 @@ object PrettyConsoleRenderer : ReportRenderer {
     content = verticalLayout {
       spacing = 1
       snapshots.forEach { preparedSnapshot ->
-        cell(buildSnapshotPanel(preparedSnapshot))
+        cell(buildSnapshotPanel(preparedSnapshot, contentWidth))
       }
     }
   )
 
-  private fun buildSnapshotPanel(preparedSnapshot: PreparedSnapshot): Widget = Panel(
+  private fun buildSnapshotPanel(preparedSnapshot: PreparedSnapshot, contentWidth: Int): Widget = Panel(
     title = Text((bold + brightWhite)(preparedSnapshot.snapshot.system.uppercase())),
     borderType = SQUARE,
     borderStyle = styleForSystem(preparedSnapshot.snapshot.system),
     expand = true,
-    content = Text(preparedSnapshot.text, whitespace = Whitespace.PRE)
+    content = Text(wrapTextBlock(preparedSnapshot.text, contentWidth), whitespace = Whitespace.PRE)
   )
 
   private fun buildSnapshotText(snapshot: SystemSnapshot): String {
@@ -520,4 +525,102 @@ object PrettyConsoleRenderer : ReportRenderer {
   private fun visibleLength(value: String): Int = stripAnsi(value).length
 
   private fun stripAnsi(value: String): String = value.replace(Regex("\u001B\\[[0-9;]*m"), "")
+
+  private fun wrapTextBlock(text: String, width: Int): String =
+    text.lines().flatMap { wrapLine(it, width) }.joinToString("\n")
+
+  private fun wrapLine(line: String, width: Int): List<String> {
+    if (line.isEmpty() || visibleLength(line) <= width) return listOf(line)
+
+    val plain = stripAnsi(line)
+    val continuationIndent = buildContinuationIndent(plain)
+    val wrapped = mutableListOf<String>()
+    var remaining = line
+    var remainingWidth = width
+    var firstLine = true
+
+    while (visibleLength(remaining) > remainingWidth) {
+      val plainRemaining = stripAnsi(remaining)
+      val breakAt = findWrapPosition(plainRemaining, remainingWidth)
+      val rawBreakAt = rawIndexForVisibleIndex(remaining, breakAt)
+      wrapped += remaining.substring(0, rawBreakAt).trimEnd()
+
+      val nextRawStart = rawIndexAfterLeadingWhitespace(remaining, rawBreakAt)
+      remaining = " ".repeat(continuationIndent) + remaining.substring(nextRawStart)
+      remainingWidth = (width - continuationIndent).coerceAtLeast(MIN_BREAK_SEARCH_WINDOW)
+      firstLine = false
+
+      if (!firstLine && visibleLength(remaining) <= width) {
+        remainingWidth = width
+      }
+    }
+
+    wrapped += remaining
+    return wrapped
+  }
+
+  private fun buildContinuationIndent(line: String): Int {
+    val leadingSpaces = line.takeWhile { it == ' ' }.length
+    val content = line.drop(leadingSpaces)
+    val labelIndex = content.indexOf(": ")
+
+    return when {
+      labelIndex in 1..LABEL_WRAP_INDENT_LIMIT -> leadingSpaces + labelIndex + 2
+      content.startsWith("[") -> leadingSpaces + DETAIL_INDENT_STEP
+      else -> leadingSpaces + DETAIL_INDENT_STEP
+    }
+  }
+
+  private fun findWrapPosition(line: String, width: Int): Int {
+    val softBreakStart = width.coerceAtLeast(MIN_BREAK_SEARCH_WINDOW)
+
+    for (index in width downTo softBreakStart) {
+      val previous = line.getOrNull(index - 1)
+      val current = line.getOrNull(index)
+
+      if (previous != null && isWrapDelimiter(previous)) return index
+      if (current != null && current.isWhitespace()) return index
+    }
+
+    return width.coerceAtMost(line.length)
+  }
+
+  private fun isWrapDelimiter(char: Char): Boolean =
+    char.isWhitespace() || char in charArrayOf(',', ';', ')', ']', '}', '/', '_')
+
+  private fun rawIndexForVisibleIndex(line: String, visibleIndex: Int): Int {
+    var rawIndex = 0
+    var visibleCount = 0
+
+    while (rawIndex < line.length && visibleCount < visibleIndex) {
+      if (line[rawIndex] == '\u001B') {
+        rawIndex = advancePastAnsi(line, rawIndex)
+      } else {
+        rawIndex++
+        visibleCount++
+      }
+    }
+
+    return rawIndex
+  }
+
+  private fun rawIndexAfterLeadingWhitespace(line: String, startIndex: Int): Int {
+    var rawIndex = startIndex
+    while (rawIndex < line.length) {
+      if (line[rawIndex] == '\u001B') {
+        rawIndex = advancePastAnsi(line, rawIndex)
+      } else if (line[rawIndex].isWhitespace()) {
+        rawIndex++
+      } else {
+        break
+      }
+    }
+    return rawIndex
+  }
+
+  private fun advancePastAnsi(line: String, startIndex: Int): Int {
+    var rawIndex = startIndex + 1
+    while (rawIndex < line.length && line[rawIndex] != 'm') rawIndex++
+    return (rawIndex + 1).coerceAtMost(line.length)
+  }
 }
