@@ -517,6 +517,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#see-it-quickly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See It Quickly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#choose-your-path" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -572,10 +583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-first-steps" class="md-nav__link">
+  <a href="#start-here" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended First Steps
+        Start Here
       
     </span>
   </a>
@@ -1786,6 +1797,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#see-it-quickly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See It Quickly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#choose-your-path" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1841,10 +1863,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-first-steps" class="md-nav__link">
+  <a href="#start-here" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended First Steps
+        Start Here
       
     </span>
   </a>
@@ -1891,13 +1913,46 @@
 
 
 <h1 id="stove">Stove<a class="headerlink" href="#stove" title="Permanent link">&para;</a></h1>
-<p>Stove is an end-to-end testing framework for JVM applications. It starts your real application together with its physical dependencies, so your tests exercise the actual runtime flow instead of a hand-built test harness.</p>
-<p>Since JVM languages can interoperate, your application and tests do not need to use the same language. Write your app in Java and your tests in Kotlin, or mix Scala and Kotlin. Stove keeps the test side consistent.</p>
+<p>Stove is an end-to-end testing framework for JVM applications. It boots your real application together with the dependencies it actually uses, so your tests exercise the real runtime flow instead of a hand-built harness full of mocks.</p>
+<p>If your service talks to HTTP APIs, Kafka, databases, Redis, gRPC services, or external providers, Stove lets you bring those pieces into one test setup and assert the full behavior in one place.</p>
+<p>Since JVM languages interoperate, your application and tests do not need to use the same language. Write the app in Java, Kotlin, or Scala, and keep the tests consistent on the Stove side.</p>
 <p>The only hard requirement is <span data-rn="underline" data-rn-color="#ff9800">Docker</span>, because Stove uses <a href="https://github.com/testcontainers/testcontainers-java">Testcontainers</a> under the hood.</p>
 <div class="admonition note">
 <p class="admonition-title">Not a Replacement for Unit Tests</p>
 <p>Stove is for end-to-end and component tests, not unit tests. Keep unit tests for fast feedback on isolated logic.</p>
 </div>
+<h2 id="see-it-quickly">See It Quickly<a class="headerlink" href="#see-it-quickly" title="Permanent link">&para;</a></h2>
+<p>The core idea is small:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Stove</span><span class="p">()</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8080&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="n">KafkaSystemOptions</span><span class="p">(...)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">springBoot</span><span class="p">(</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">      </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;server.port=8080&quot;</span><span class="p">)</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="k">get</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;/hello&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">      </span><span class="n">body</span><span class="w"> </span><span class="n">shouldContain</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="n">shouldBePublished</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">it</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;created&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>You start the real app, bring up only the dependencies you need, and assert through the surfaces that matter.</p>
 <h2 id="choose-your-path">Choose Your Path<a class="headerlink" href="#choose-your-path" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
@@ -1954,7 +2009,7 @@
 </ul>
 <h2 id="high-level-architecture">High Level Architecture<a class="headerlink" href="#high-level-architecture" title="Permanent link">&para;</a></h2>
 <p><img alt="Stove architecture" src="assets/stove_architecture.svg" /></p>
-<h2 id="recommended-first-steps">Recommended First Steps<a class="headerlink" href="#recommended-first-steps" title="Permanent link">&para;</a></h2>
+<h2 id="start-here">Start Here<a class="headerlink" href="#start-here" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Read <a href="getting-started/">Getting Started</a> for the shared setup.</li>
 <li>Open your starter guide under <a href="frameworks/">Supported Frameworks</a>.</li>
@@ -1968,7 +2023,7 @@
 <li>Docker</li>
 </ul>
 <p>Then run:</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./gradlew<span class="w"> </span>build
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>./gradlew<span class="w"> </span>build
 </span></code></pre></div>
 <p>Want the background and motivation? Read the original <a href="https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5">Medium article</a>.</p>
 

@@ -1669,6 +1669,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#start-from-the-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start From The Workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-starting-sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Starting Sets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#available-components" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1936,8 +1958,61 @@
 
 
 <h1 id="components">Components<a class="headerlink" href="#components" title="Permanent link">&para;</a></h1>
-<p>Stove uses a pluggable architecture—each physical dependency is a separate module you can add based on what you need. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood. All components work together seamlessly, so you can build your test environment to match your production setup.</p>
+<p>Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, so you can compose a realistic environment without building everything yourself.</p>
 <p>If you have not picked an application starter yet, start with <a href="../frameworks/">Supported Frameworks</a> first and then come back here for the physical dependencies.</p>
+<p>Most teams start with 2 to 4 components, not the whole catalog.</p>
+<h2 id="start-from-the-workflow">Start From The Workflow<a class="headerlink" href="#start-from-the-workflow" title="Permanent link">&para;</a></h2>
+<div class="grid cards">
+<ul>
+<li>
+<p><strong>REST service with a database</strong></p>
+<p>Start with <a href="05-http/">HTTP Client</a>, one database such as <a href="06-postgresql/">PostgreSQL</a>, and optionally <a href="04-wiremock/">WireMock</a> for external calls.</p>
+</li>
+<li>
+<p><strong>Kafka-driven workflow</strong></p>
+<p>Start with <a href="02-kafka/">Kafka</a>, your main database, and <a href="15-tracing/">Tracing</a> for better failure diagnosis.</p>
+</li>
+<li>
+<p><strong>Service calling external dependencies</strong></p>
+<p>Start with <a href="05-http/">HTTP Client</a>, <a href="04-wiremock/">WireMock</a>, or <a href="14-grpc-mock/">gRPC Mock</a> depending on the remote protocol.</p>
+</li>
+<li>
+<p><strong>Hard-to-debug end-to-end failures</strong></p>
+<p>Add <a href="15-tracing/">Tracing</a> and <a href="13-reporting/">Reporting</a> early so failures show execution context instead of only raw assertions.</p>
+</li>
+</ul>
+</div>
+<h2 id="common-starting-sets">Common Starting Sets<a class="headerlink" href="#common-starting-sets" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>You are testing</th>
+<th>Start with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP API backed by SQL</td>
+<td><code>stove-http</code> + <code>stove-postgres</code> or <code>stove-mysql</code></td>
+</tr>
+<tr>
+<td>Event-driven service</td>
+<td><code>stove-kafka</code> + your database + <code>stove-tracing</code></td>
+</tr>
+<tr>
+<td>External provider integration</td>
+<td><code>stove-http</code> + <code>stove-wiremock</code></td>
+</tr>
+<tr>
+<td>gRPC service</td>
+<td><code>stove-grpc</code> + <code>stove-grpc-mock</code></td>
+</tr>
+<tr>
+<td>Stateful service with caching</td>
+<td>your database + <code>stove-redis</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="available-components">Available Components<a class="headerlink" href="#available-components" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2018,39 +2093,36 @@
 <td><code>stove-tracing</code></td>
 <td>Execution tracing with OpenTelemetry for failure diagnostics</td>
 </tr>
+<tr>
+<td><a href="13-reporting/">Reporting</a></td>
+<td><code>stove-extensions-kotest</code> or <code>stove-extensions-junit</code></td>
+<td>Rich failure reports with execution context</td>
+</tr>
 </tbody>
 </table>
 <h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<p>Add the components you need to your <code>build.gradle.kts</code>:</p>
+<p>Add one starter, then only the components your scenario needs:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:1"><input checked="checked" id="gradle" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="gradle">Gradle</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="c1">// Import BOM for version management</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">))</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">))</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="c1">// Core testing framework</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="c1">// Pick one application starter</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="c1">// Application framework support</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-spring&quot;</span><span class="p">)</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="c1">// or</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-ktor&quot;</span><span class="p">)</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="c1">// or</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-quarkus&quot;</span><span class="p">)</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="c1">// Add components based on your needs</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-kafka&quot;</span><span class="p">)</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-couchbase&quot;</span><span class="p">)</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-elasticsearch&quot;</span><span class="p">)</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-http&quot;</span><span class="p">)</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-wiremock&quot;</span><span class="p">)</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">    </span><span class="c1">// ... add more as needed</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">}</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="c1">// Add only what the test touches</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-http&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-postgres&quot;</span><span class="p">)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-wiremock&quot;</span><span class="p">)</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">}</span>
 </span></code></pre></div>
 </div>
 </div>
 </div>
+<p>Swap in <code>stove-kafka</code>, <code>stove-redis</code>, <code>stove-grpc</code>, <code>stove-mongodb</code>, or other modules as your flow requires.</p>
 <h2 id="architecture-overview">Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permanent link">&para;</a></h2>
 <p>Each component follows a consistent pattern:</p>
 <ol>
