@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="assets/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
     
     
       
@@ -255,6 +255,25 @@
     
   
   Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="quarkus/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quarkus
 
       </a>
     </li>
@@ -908,6 +927,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="quarkus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quarkus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
       
@@ -960,7 +1006,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -982,14 +1028,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1561,10 +1607,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -1582,8 +1628,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1660,10 +1706,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -1681,8 +1727,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2281,15 +2327,11 @@
 <p>The JVM ecosystem has great frameworks for building applications, but when it comes to integration, component, or e2e testing, there's no single framework that works across all tech stacks. Testcontainers exists, but you still end up writing a lot of boilerplate to wire it up with your specific stack.</p>
 <p>We built Stove to solve this. We wanted to boost developer productivity while keeping code quality high, and we needed it to work across different tech stacks:</p>
 <ul>
-<li><span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Spring Boot</span></li>
-<li><span data-rn="underline" data-rn-color="#ff9800">Kotlin apps with Ktor</span></li>
-<li><span data-rn="underline" data-rn-color="#ff9800">Java apps with Spring Boot</span></li>
-<li>Java apps with Micronaut</li>
-<li>Java apps with Quarkus</li>
-<li>Scala apps with Spring Boot</li>
-<li>Java apps with Micronaut</li>
-<li>Java apps with Quarkus</li>
-<li>Scala apps with Spring Boot</li>
+<li><span data-rn="underline" data-rn-color="#ff9800">Spring Boot applications</span></li>
+<li><span data-rn="underline" data-rn-color="#ff9800">Ktor applications</span></li>
+<li>Micronaut applications</li>
+<li>Quarkus applications</li>
+<li>JVM codebases mixing Java, Kotlin, and Scala</li>
 </ul>
 <p>Every time someone wants to write e2e tests, they end up writing the same boilerplate: starting physical components, figuring out how to start the application from tests, accessing application beans, and so on. Stove eliminates all that by providing a single API that works across all these stacks.</p>
 <p><span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Stove unifies the testing experience, no matter what you're using.</span></p>
@@ -2369,18 +2411,23 @@ SNAPSHOT versions are released with the <code>1.0.0.{buildNumber}-SNAPSHOT</code
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="c1">// Ktor</span>
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-ktor&quot;</span><span class="p">)</span>
 </span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">  </span><span class="c1">// Components</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="hll"><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-kafka&quot;</span><span class="p">)</span>
-</span></span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-mongodb&quot;</span><span class="p">)</span>
-</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-mssql&quot;</span><span class="p">)</span>
-</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-postgres&quot;</span><span class="p">)</span>
-</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-redis&quot;</span><span class="p">)</span>
-</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-elasticsearch&quot;</span><span class="p">)</span>
-</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-couchbase&quot;</span><span class="p">)</span>
-</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-wiremock&quot;</span><span class="p">)</span>
-</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-http&quot;</span><span class="p">)</span>
-</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="p">}</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">  </span><span class="c1">// or</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="hll"><span class="w">  </span><span class="c1">// Quarkus</span>
+</span></span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-quarkus&quot;</span><span class="p">)</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">  </span><span class="c1">// Components</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove&quot;</span><span class="p">)</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-kafka&quot;</span><span class="p">)</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-mongodb&quot;</span><span class="p">)</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-mssql&quot;</span><span class="p">)</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-postgres&quot;</span><span class="p">)</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-redis&quot;</span><span class="p">)</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-elasticsearch&quot;</span><span class="p">)</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-couchbase&quot;</span><span class="p">)</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-wiremock&quot;</span><span class="p">)</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-http&quot;</span><span class="p">)</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="p">}</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -2416,6 +2463,7 @@ application's <code>main</code> is the entrance point for the applications in ge
 <p><a href="https://github.com/Trendyol/stove/tree/main/examples">Examples</a></p>
 <ul>
 <li><a href="https://github.com/Trendyol/stove/tree/main/examples/ktor-example">Ktor Example</a></li>
+<li><a href="https://github.com/Trendyol/stove/tree/main/examples/quarkus-example">Quarkus Example</a></li>
 <li><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-example">Spring Boot Example</a></li>
 <li><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-standalone-example">Spring Boot with Standalone Kafka</a></li>
 </ul>
@@ -2435,7 +2483,7 @@ and that is the only information it needs to start the application.</p>
 <p>Application that is being tested is a Spring Boot, Ktor, Micronaut, Quarkus, etc. and is called
 "Application Under Test (AUT)".</p>
 <p>The tests are agnostic to the application's framework.
-Right now Stove supports Spring Boot, Ktor. But it is easy to add new frameworks.</p>
+Right now Stove ships starters for Spring Boot, Ktor, Micronaut, and Quarkus. It is still easy to add new frameworks on top of <code>ApplicationUnderTest</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If you want to add a new framework, you can check the
