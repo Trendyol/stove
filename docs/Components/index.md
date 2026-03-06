@@ -1,8 +1,42 @@
 # Components
 
-Stove uses a pluggable architecture—each physical dependency is a separate module you can add based on what you need. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood. All components work together seamlessly, so you can build your test environment to match your production setup.
+Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, so you can compose a realistic environment without building everything yourself.
 
 If you have not picked an application starter yet, start with [Supported Frameworks](../frameworks/index.md) first and then come back here for the physical dependencies.
+
+Most teams start with 2 to 4 components, not the whole catalog.
+
+## Start From The Workflow
+
+<div class="grid cards" markdown>
+
+-   **REST service with a database**
+
+    Start with [HTTP Client](05-http.md), one database such as [PostgreSQL](06-postgresql.md), and optionally [WireMock](04-wiremock.md) for external calls.
+
+-   **Kafka-driven workflow**
+
+    Start with [Kafka](02-kafka.md), your main database, and [Tracing](15-tracing.md) for better failure diagnosis.
+
+-   **Service calling external dependencies**
+
+    Start with [HTTP Client](05-http.md), [WireMock](04-wiremock.md), or [gRPC Mock](14-grpc-mock.md) depending on the remote protocol.
+
+-   **Hard-to-debug end-to-end failures**
+
+    Add [Tracing](15-tracing.md) and [Reporting](13-reporting.md) early so failures show execution context instead of only raw assertions.
+
+</div>
+
+## Common Starting Sets
+
+| You are testing | Start with |
+|-----------------|------------|
+| HTTP API backed by SQL | `stove-http` + `stove-postgres` or `stove-mysql` |
+| Event-driven service | `stove-kafka` + your database + `stove-tracing` |
+| External provider integration | `stove-http` + `stove-wiremock` |
+| gRPC service | `stove-grpc` + `stove-grpc-mock` |
+| Stateful service with caching | your database + `stove-redis` |
 
 ## Available Components
 
@@ -22,37 +56,31 @@ If you have not picked an application starter yet, start with [Supported Framewo
 | [gRPC](12-grpc.md) | `stove-grpc` | gRPC client for testing gRPC services |
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
 | [Tracing](15-tracing.md) | `stove-tracing` | Execution tracing with OpenTelemetry for failure diagnostics |
+| [Reporting](13-reporting.md) | `stove-extensions-kotest` or `stove-extensions-junit` | Rich failure reports with execution context |
 
 ## Quick Start
 
-Add the components you need to your `build.gradle.kts`:
+Add one starter, then only the components your scenario needs:
 
 === "Gradle"
 
     ```kotlin
     dependencies {
-        // Import BOM for version management
         testImplementation(platform("com.trendyol:stove-bom:$version"))
-        
-        // Core testing framework
         testImplementation("com.trendyol:stove")
-        
-        // Application framework support
+
+        // Pick one application starter
         testImplementation("com.trendyol:stove-spring")
-        // or
-        testImplementation("com.trendyol:stove-ktor")
-        // or
-        testImplementation("com.trendyol:stove-quarkus")
-        
-        // Add components based on your needs
-        testImplementation("com.trendyol:stove-kafka")
-        testImplementation("com.trendyol:stove-couchbase")
-        testImplementation("com.trendyol:stove-elasticsearch")
+
+        // Add only what the test touches
         testImplementation("com.trendyol:stove-http")
+        testImplementation("com.trendyol:stove-postgres")
         testImplementation("com.trendyol:stove-wiremock")
-        // ... add more as needed
+        testImplementation("com.trendyol:stove-tracing")
     }
     ```
+
+Swap in `stove-kafka`, `stove-redis`, `stove-grpc`, `stove-mongodb`, or other modules as your flow requires.
 
 ## Architecture Overview
 

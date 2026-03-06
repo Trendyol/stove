@@ -16,53 +16,70 @@ Make sure you have these installed:
 !!! tip "IDE Setup"
     If you're using IntelliJ IDEA, grab the Kotest plugin. It adds run buttons and makes test discovery much smoother.
 
-## Step 1: Add Dependencies
+## Fastest Path
 
-Add Stove to your `build.gradle.kts`:
+If you want the smallest useful Stove setup, do this first:
 
-```kotlin hl_lines="7 10 14 16 18"
+1. Add `stove`, one starter, one test extension, and `stove-http`.
+2. Expose a reusable application entrypoint that Stove can call.
+3. Start Stove once for the suite.
+4. Make one real HTTP request and assert the result.
+
+Everything else can be added incrementally.
+
+## Step 1: Add The Minimum Dependencies
+
+Start with the smallest set that proves the flow works:
+
+```kotlin
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    // Import BOM for version management
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
-    
-    // Core framework
     testImplementation("com.trendyol:stove")
-    
-    // Optional: Test framework extension for better failure reporting
-    // Choose the one that matches your test framework
-    testImplementation("com.trendyol:stove-extensions-kotest")  // For Kotest
-    // OR
-    testImplementation("com.trendyol:stove-extensions-junit")   // For JUnit 5/6
-    
-    // Choose your application framework
+
+    // Pick one starter
     testImplementation("com.trendyol:stove-spring")
-    // OR
-    testImplementation("com.trendyol:stove-ktor")
-    // OR
-    testImplementation("com.trendyol:stove-micronaut")
-    // OR
-    testImplementation("com.trendyol:stove-quarkus")
-    // For Ktor, also add your preferred DI framework:
-    testImplementation("io.insert-koin:koin-ktor:$koinVersion")  // Koin
-    // OR testImplementation("io.ktor:ktor-server-di:$ktorVersion")  // Ktor-DI
-    
-    // Add components you need
+
+    // Pick one test framework extension
+    testImplementation("com.trendyol:stove-extensions-kotest")
+
+    // Start with one public surface
     testImplementation("com.trendyol:stove-http")
-    testImplementation("com.trendyol:stove-kafka")
-    // ... add more as needed
 }
 ```
 
 !!! info "Latest Version"
     Check the [Releases](https://github.com/Trendyol/stove/releases) page for the latest version.
 
+Replace `stove-spring` with the starter that matches your runtime:
+
+- Spring Boot: `stove-spring`
+- Ktor: `stove-ktor`
+- Micronaut: `stove-micronaut`
+- Quarkus: `stove-quarkus`
+
+Then add only the components you actually need:
+
+- `stove-http` for REST APIs
+- `stove-kafka` for event flows
+- `stove-postgres`, `stove-mysql`, `stove-mongodb`, or `stove-redis` for persistence
+- `stove-wiremock` or `stove-grpc-mock` for external dependencies
+- `stove-tracing` for richer diagnostics
+
+If you are using Ktor, also add your preferred DI support. See the [Ktor guide](frameworks/ktor.md) for the exact setup.
+
 ## Step 2: Prepare Your Application
 
-Stove needs to start your application from tests, which means we need to tweak your main function slightly. Instead of calling `runApplication` or `embeddedServer` directly, we'll extract that logic into a separate `run` function that Stove can call with test-specific parameters.
+Stove needs to start your application from tests, which means your app needs a reusable entrypoint. The shared pattern is:
+
+1. keep the normal `main`
+2. move the actual startup logic into a reusable `run(args)` style function
+3. pass that function to Stove as the `runner`
+
+You only need the version for your framework:
 
 === "Spring Boot"
 
@@ -154,6 +171,34 @@ Stove needs to start your application from tests, which means we need to tweak y
     }
     ```
 
+=== "Micronaut"
+
+    ```kotlin
+    fun main(args: Array<String>) {
+        run(args)
+    }
+
+    fun run(
+        args: Array<String>,
+        init: ApplicationContext.() -> Unit = {}
+    ): ApplicationContext {
+        val context = ApplicationContext
+            .builder()
+            .args(*args)
+            .build()
+            .also(init)
+            .start()
+
+        context.findBean(EmbeddedApplication::class.java).ifPresent { app ->
+            if (!app.isRunning) {
+                app.start()
+            }
+        }
+
+        return context
+    }
+    ```
+
 === "Quarkus"
 
     ```kotlin
@@ -191,6 +236,8 @@ Stove needs to start your application from tests, which means we need to tweak y
 ## Step 3: Create Test Configuration
 
 <span data-rn="underline" data-rn-color="#009688">Set up Stove once for your entire test suite.</span> This configuration runs before all your tests and shuts down after they're done. Use <span data-rn="underline" data-rn-color="#ff9800">Stove()</span> and <span data-rn="underline" data-rn-color="#ff9800">.with { }</span> to configure your test environment. 
+
+If you are aiming for the fastest first success, start with one starter plus `stove-http`, confirm the app boots and responds, and only then add Kafka, databases, tracing, or mocks.
 
 We recommend putting e2e tests in a separate `src/test-e2e` source set to keep them separate from unit tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for the Gradle setup).
 
@@ -236,6 +283,7 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
                         )
                     }
                     
+                    // Replace `springBoot` with `ktor`, `micronaut`, or `quarkus` as needed
                     springBoot(
                         runner = { params -> 
                             com.myapp.run(params)
@@ -282,6 +330,7 @@ We recommend putting e2e tests in a separate `src/test-e2e` source set to keep t
                             )
                         }
                         
+                        // Replace `springBoot` with `ktor`, `micronaut`, or `quarkus` as needed
                         springBoot(
                             runner = { params -> 
                                 com.myapp.run(params)

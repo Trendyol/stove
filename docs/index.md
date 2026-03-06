@@ -1,13 +1,52 @@
 # Stove
 
-Stove is an end-to-end testing framework for JVM applications. It starts your real application together with its physical dependencies, so your tests exercise the actual runtime flow instead of a hand-built test harness.
+Stove is an end-to-end testing framework for JVM applications. It boots your real application together with the dependencies it actually uses, so your tests exercise the real runtime flow instead of a hand-built harness full of mocks.
 
-Since JVM languages can interoperate, your application and tests do not need to use the same language. Write your app in Java and your tests in Kotlin, or mix Scala and Kotlin. Stove keeps the test side consistent.
+If your service talks to HTTP APIs, Kafka, databases, Redis, gRPC services, or external providers, Stove lets you bring those pieces into one test setup and assert the full behavior in one place.
+
+Since JVM languages interoperate, your application and tests do not need to use the same language. Write the app in Java, Kotlin, or Scala, and keep the tests consistent on the Stove side.
 
 The only hard requirement is <span data-rn="underline" data-rn-color="#ff9800">Docker</span>, because Stove uses [Testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
 
 !!! note "Not a Replacement for Unit Tests"
     Stove is for end-to-end and component tests, not unit tests. Keep unit tests for fast feedback on isolated logic.
+
+## See It Quickly
+
+The core idea is small:
+
+```kotlin
+Stove()
+  .with {
+    httpClient {
+      HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+    }
+
+    kafka {
+      KafkaSystemOptions(...)
+    }
+
+    springBoot(
+      runner = { params -> run(params) },
+      withParameters = listOf("server.port=8080")
+    )
+  }
+  .run()
+
+stove {
+  http {
+    get<String>("/hello") { body ->
+      body shouldContain "hello"
+    }
+  }
+
+  kafka {
+    shouldBePublished<String> { it.contains("created") }
+  }
+}
+```
+
+You start the real app, bring up only the dependencies you need, and assert through the surfaces that matter.
 
 ## Choose Your Path
 
@@ -78,7 +117,7 @@ Stove composes framework starters with pluggable components, so you can match yo
 
 ![Stove architecture](./assets/stove_architecture.svg)
 
-## Recommended First Steps
+## Start Here
 
 1. Read [Getting Started](getting-started.md) for the shared setup.
 2. Open your starter guide under [Supported Frameworks](frameworks/index.md).
