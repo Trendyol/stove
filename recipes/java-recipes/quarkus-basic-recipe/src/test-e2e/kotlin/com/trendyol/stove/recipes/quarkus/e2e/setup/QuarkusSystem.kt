@@ -1,9 +1,19 @@
 package com.trendyol.stove.recipes.quarkus.e2e.setup
 
-import com.trendyol.stove.system.*
-import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.recipes.quarkus.StoveStartupSignal
+import com.trendyol.stove.system.Runner
+import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.WithDsl
+import com.trendyol.stove.system.abstractions.AfterRunAwareWithContext
+import com.trendyol.stove.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.system.abstractions.ReadyStove
 import com.trendyol.stove.system.annotations.StoveDsl
-import kotlinx.coroutines.*
+import io.quarkus.runtime.Quarkus
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import java.io.Closeable
+import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * DSL function to configure Quarkus as the application under test.
@@ -29,70 +39,62 @@ internal fun Stove.systemUnderTest(
 /**
  * Application under test implementation for Quarkus.
  *
- * Handles starting the Quarkus application, waiting for the Arc container to be ready,
- * and capturing the Quarkus classloader for bridge operations.
+ * Keeps the public `quarkus(runner, withParameters)` DSL intact and starts
+ * Quarkus by invoking the provided `main` runner on a background thread.
  */
 class QuarkusAppUnderTest(
   private val stove: Stove,
   private val runner: Runner<Unit>,
   private val parameters: List<String>
 ) : ApplicationUnderTest<Unit> {
+  private var launcher: DirectQuarkusLauncher? = null
+
   override suspend fun start(configurations: List<String>): Unit = coroutineScope {
-    configureQuarkusForTesting()
+    val directLauncher = DirectQuarkusLauncher(runner, configurations + parameters)
+    launcher = directLauncher
+    directLauncher.start()
 
-    val allConfigurations = (configurations + parameters).map { "-D$it" }.toTypedArray()
-
-    // Start Quarkus in a background coroutine
-    launch(Dispatchers.IO) {
-      runner(allConfigurations)
+    try {
+      waitForStartupSignal(directLauncher)
+      notifySystemsAfterRun()
+    } catch (error: Throwable) {
+      directLauncher.stop()
+      launcher = null
+      throw error
     }
-
-    // Wait for Arc container to be ready
-    waitForArcContainer()
-
-    // Notify other systems that the app is running
-    notifySystemsAfterRun()
   }
 
   override suspend fun stop() {
-    QuarkusContext.reset()
+    launcher?.stop()
+    launcher = null
   }
 
   /**
-   * Configures system properties for running Quarkus in test mode.
+   * Waits for the Quarkus application to publish its startup signal.
    */
-  private fun configureQuarkusForTesting() {
-    System.setProperty("quarkus.launch.dev-mode", "false")
-    System.setProperty("quarkus.test.continuous-testing", "disabled")
-  }
-
-  /**
-   * Waits for the Quarkus Arc container to become ready.
-   * Polls the thread pool for a thread with the Quarkus classloader.
-   */
-  private suspend fun waitForArcContainer() {
+  private suspend fun waitForStartupSignal(directLauncher: DirectQuarkusLauncher) {
     val startTime = System.currentTimeMillis()
-    val timeout = 30_000L
-    val pollInterval = 500L
+    val timeout = STARTUP_TIMEOUT_MS
 
     while (true) {
-      try {
-        if (ArcContainerAccessor.isContainerReady()) {
-          println("[QuarkusAppUnderTest] Arc container is ready")
-          return
-        }
-      } catch (e: Exception) {
-        // Log progress after initial delay
-        if (System.currentTimeMillis() - startTime > 5000) {
-          println("[QuarkusAppUnderTest] Still waiting... ${e.message}")
-        }
+      directLauncher.failureOrNull()?.let { failure ->
+        throw IllegalStateException("Quarkus startup failed", failure)
+      }
+
+      if (directLauncher.isReady()) {
+        println("[QuarkusAppUnderTest] Quarkus startup signal received")
+        return
+      }
+
+      if (!directLauncher.isAlive()) {
+        error("Quarkus launcher thread exited before the startup signal was received")
       }
 
       if (System.currentTimeMillis() - startTime > timeout) {
-        error("Timeout waiting for Quarkus Arc container to start")
+        error("Timeout waiting for Quarkus startup signal")
       }
 
-      delay(pollInterval)
+      delay(POLL_INTERVAL_MS)
     }
   }
 
@@ -106,3 +108,131 @@ class QuarkusAppUnderTest(
       .forEach { it.afterRun(Unit) }
   }
 }
+
+private class DirectQuarkusLauncher(
+  private val runner: Runner<Unit>,
+  configurations: List<String>
+) : Closeable {
+  private val configurationProperties = parseConfigurations(configurations)
+  private val runnerArguments = emptyArray<String>()
+  private val previousSystemProperties = mutableMapOf<String, String?>()
+  private val startupFailure = AtomicReference<Throwable?>(null)
+  private var launcherThread: Thread? = null
+
+  fun start() {
+    check(launcherThread == null) { "Quarkus launcher already started" }
+
+    clearStartupSignal()
+    applyConfigurationProperties()
+
+    try {
+      val thread = Thread(
+        {
+          try {
+            runner(runnerArguments)
+          } catch (error: Throwable) {
+            startupFailure.set(unwrap(error))
+          }
+        },
+        "quarkus-main-launcher"
+      )
+
+      thread.isDaemon = false
+      thread.setUncaughtExceptionHandler { _, error ->
+        startupFailure.compareAndSet(null, unwrap(error))
+      }
+
+      launcherThread = thread
+      thread.start()
+    } catch (error: Throwable) {
+      restoreConfigurationProperties()
+      throw error
+    }
+  }
+
+  fun isAlive(): Boolean = launcherThread?.isAlive == true
+
+  fun failureOrNull(): Throwable? = startupFailure.get()
+
+  fun isReady(): Boolean = System.getProperty(StoveStartupSignal.READY_PROPERTY) == READY_VALUE
+
+  fun stop() {
+    val thread = launcherThread
+    var stopFailure: Throwable? = null
+
+    try {
+      if (thread != null && thread.isAlive) {
+        try {
+          requestShutdown()
+        } catch (error: Throwable) {
+          stopFailure = error
+        }
+
+        thread.join(SHUTDOWN_TIMEOUT_MS)
+        if (thread.isAlive) {
+          throw IllegalStateException("Timeout waiting for Quarkus to shut down")
+        }
+      }
+    } finally {
+      clearStartupSignal()
+      restoreConfigurationProperties()
+      launcherThread = null
+    }
+
+    stopFailure?.let { throw it }
+  }
+
+  override fun close() {
+    stop()
+  }
+
+  private fun requestShutdown() {
+    Quarkus.asyncExit()
+  }
+
+  private fun applyConfigurationProperties() {
+    configurationProperties.forEach { (key, value) ->
+      previousSystemProperties[key] = System.getProperty(key)
+      System.setProperty(key, value)
+    }
+  }
+
+  private fun clearStartupSignal() {
+    System.clearProperty(StoveStartupSignal.READY_PROPERTY)
+  }
+
+  private fun restoreConfigurationProperties() {
+    previousSystemProperties.forEach { (key, previousValue) ->
+      if (previousValue == null) {
+        System.clearProperty(key)
+      } else {
+        System.setProperty(key, previousValue)
+      }
+    }
+    previousSystemProperties.clear()
+  }
+}
+
+private fun parseConfigurations(configurations: List<String>): Map<String, String> {
+  val properties = linkedMapOf<String, String>()
+  configurations.forEach { configuration ->
+    val separatorIndex = configuration.indexOf('=')
+    require(separatorIndex > 0) {
+      "Invalid Quarkus configuration '$configuration'. Expected key=value."
+    }
+    val key = configuration.substring(0, separatorIndex)
+    val value = configuration.substring(separatorIndex + 1)
+    properties[key] = value
+  }
+  return properties
+}
+
+private fun unwrap(error: Throwable): Throwable = when (error) {
+  is InvocationTargetException -> error.targetException ?: error
+  else -> error.cause?.takeIf { error is RuntimeException && error.message == null } ?: error
+}
+
+private const val STARTUP_TIMEOUT_MS = 30_000L
+private const val SHUTDOWN_TIMEOUT_MS = 10_000L
+private const val POLL_INTERVAL_MS = 250L
+private const val READY_VALUE = "true"

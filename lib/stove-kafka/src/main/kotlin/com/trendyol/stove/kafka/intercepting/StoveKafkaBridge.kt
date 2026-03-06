@@ -142,7 +142,9 @@ class StoveKafkaBridge<K, V> :
   }
 
   private fun startGrpcClient(): StoveKafkaObserverServiceClient {
-    val onPort = System.getenv(STOVE_KAFKA_BRIDGE_PORT) ?: stoveKafkaBridgePortDefault
+    val onPort = System.getenv(STOVE_KAFKA_BRIDGE_PORT)
+      ?: System.getProperty(STOVE_KAFKA_BRIDGE_PORT)
+      ?: stoveKafkaBridgePortDefault
     logger.info("Connecting to Stove Kafka Bridge on port $onPort")
     return Try { GrpcUtils.createClient(onPort, StoveKafkaCoroutineScope) }
       .map {

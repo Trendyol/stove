@@ -24,6 +24,7 @@ kafka-streams-registry = "8.2.0"
 kover = "0.9.7"
 ktor = "3.4.1"
 koin = "4.1.1"
+quarkus = "3.32.2"
 r2dbc-postgresql = "0.8.13.RELEASE"
 elastic = "9.3.2"
 mongodb = "5.6.4"
@@ -130,6 +131,18 @@ ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.re
 # koin
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+
+# Quarkus
+quarkus = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }
+quarkus-core = { module = "io.quarkus:quarkus-core", version.ref = "quarkus" }
+quarkus-rest = { module = "io.quarkus:quarkus-rest", version.ref = "quarkus" }
+quarkus-rest-jackson = { module = "io.quarkus:quarkus-rest-jackson", version.ref = "quarkus" }
+quarkus-arc = { module = "io.quarkus:quarkus-arc", version.ref = "quarkus" }
+quarkus-kotlin = { module = "io.quarkus:quarkus-kotlin", version.ref = "quarkus" }
+quarkus-agroal = { module = "io.quarkus:quarkus-agroal", version.ref = "quarkus" }
+quarkus-jdbc-postgresql = { module = "io.quarkus:quarkus-jdbc-postgresql", version.ref = "quarkus" }
+quarkus-flyway = { module = "io.quarkus:quarkus-flyway", version.ref = "quarkus" }
+quarkus-messaging-kafka = { module = "io.quarkus:quarkus-messaging-kafka", version.ref = "quarkus" }
 
 # r2dbc
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
@@ -248,6 +261,7 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.6" }
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
 google-ksp = { id = "com.google.devtools.ksp", version = "2.3.6" }

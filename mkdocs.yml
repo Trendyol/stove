@@ -15,6 +15,7 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Quarkus: quarkus.md
   - Components:
     - Overview: Components/index.md
     - Couchbase: Components/01-couchbase.md

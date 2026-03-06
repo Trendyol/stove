@@ -39,6 +39,8 @@ Add the components you need to your `build.gradle.kts`:
         testImplementation("com.trendyol:stove-spring")
         // or
         testImplementation("com.trendyol:stove-ktor")
+        // or
+        testImplementation("com.trendyol:stove-quarkus")
         
         // Add components based on your needs
         testImplementation("com.trendyol:stove-kafka")
@@ -111,7 +113,7 @@ stove {
 
 | Component | Use Case |
 |-----------|----------|
-| [Bridge](10-bridge.md) | Access application beans and services directly |
+| [Bridge](10-bridge.md) | Access application beans and services directly (supported by Spring, Ktor, and Micronaut starters) |
 | [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
 | [Tracing](15-tracing.md) | <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span> |
 

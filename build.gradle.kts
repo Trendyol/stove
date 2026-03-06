@@ -32,6 +32,7 @@ apiValidation {
     "spring-4x-tests",
     "spring-3x-tests",
     "spring-2x-tests",
+    "quarkus-example",
     "ktor-di-tests",
     "ktor-koin-tests",
     "ktor-test-fixtures",
@@ -51,16 +52,17 @@ kover {
           "stove.spring.standalone.example.*",
           "stove.spring.streams.example.*",
           "stove.ktor.example.*",
+          "stove.quarkus.example.*",
           "stove.micronaut.example.*",
         )
       }
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests", "test-extensions", except = listOf("stove-bom"))
+val related = subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "tests", "test-extensions", except = listOf("stove-bom"))
 dependencies { related.forEach { kover(it) } }
 
-subprojects.of("lib", "spring", "examples", "ktor", "micronaut", "tests", "test-extensions", except = listOf("stove-bom")) {
+subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "tests", "test-extensions", except = listOf("stove-bom")) {
   apply {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
@@ -145,6 +147,7 @@ val publishedProjects = listOf(
   projects.lib.stoveWiremock.name,
   projects.lib.stoveRedis.name,
   projects.starters.ktor.stoveKtor.name,
+  projects.starters.quarkus.stoveQuarkus.name,
   projects.starters.spring.stoveSpring.name,
   projects.starters.spring.stoveSpringKafka.name,
   projects.starters.micronaut.stoveMicronaut.name,
@@ -153,7 +156,7 @@ val publishedProjects = listOf(
   projects.plugins.stoveTracingGradlePlugin.name,
 )
 
-subprojects.of("lib", "spring", "ktor", "micronaut", "test-extensions", "plugins", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
+subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "test-extensions", "plugins", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
   apply {
     plugin("java")
     plugin(rootProject.libs.plugins.maven.publish.pluginId)
