@@ -8,36 +8,35 @@ Stove keeps the testing model consistent across frameworks, but application star
 
 -   :material-sprout: **Spring Boot**
 
-    The most established Stove path. Good default if you want strong `bridge()` support and familiar Spring startup.
+    For applications built on Spring Boot. Supports `bridge()` for direct bean access.
 
     [Open the Spring Boot guide](spring-boot.md)
 
 -   :material-lightning-bolt: **Ktor**
 
-    Best when you want explicit server bootstrap and full control over DI and wiring.
+    For applications built on Ktor. Supports `bridge()` for direct bean access.
 
     [Open the Ktor guide](ktor.md)
 
 -   :material-hexagon-outline: **Micronaut**
 
-    Close to the Spring-style experience, but with Micronaut's application context and startup model.
+    For applications built on Micronaut. Supports `bridge()` for direct bean access.
 
     [Open the Micronaut guide](micronaut.md)
 
 -   :material-fire: **Quarkus**
 
-    Use this when you want same-JVM tracing and reporting with a Quarkus app. `bridge()` is not available yet.
+    For applications built on Quarkus. `bridge()` is not available yet.
 
     [Open the Quarkus guide](quarkus.md)
 
 </div>
 
-## Quick Decisions
+## How to Choose
 
-- Need `bridge()` bean access in tests: choose Spring Boot, Ktor, or Micronaut.
-- Need Quarkus startup plus same-JVM tracing/reporting: choose Quarkus.
-- Want the most familiar path for a typical enterprise JVM service: start with Spring Boot.
-- Want the most explicit application bootstrap: start with Ktor.
+Pick the starter that matches your application's framework — that's it. The test DSL, components, and assertions work the same way regardless of which starter you use.
+
+- **`bridge()` support**: available in Spring Boot, Ktor, and Micronaut starters. Not yet available in Quarkus.
 
 ## At A Glance
 

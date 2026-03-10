@@ -11,7 +11,7 @@
 
 ## Configure
 
-After getting the library from the maven source, while configuring TestSystem you will have access to `mssql` function.
+Once you've added the dependency, you'll have access to the `mssql` function when configuring Stove.
 This function configures the MSSQL Docker container that is going to be started.
 
 ```kotlin hl_lines="4 9-12"

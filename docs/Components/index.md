@@ -211,7 +211,7 @@ See [Provided Instances](11-provided-instances.md) for detailed documentation.
 Database components support migrations:
 
 ```kotlin
-class CreateTableseMigration : DatabaseMigration<PostgresSqlMigrationContext> {
+class CreateTablesMigration : DatabaseMigration<PostgresSqlMigrationContext> {
   override val order: Int = 1
   
   override suspend fun execute(connection: PostgresSqlMigrationContext) {

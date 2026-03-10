@@ -10,7 +10,7 @@
 
 ## Configure
 
-After getting the library from the maven source, while configuring TestSystem you will have access to `mongodb` function.
+Once you've added the dependency, you'll have access to the `mongodb` function when configuring Stove.
 This function configures the MongoDB Docker container that is going to be started.
 
 ```kotlin hl_lines="4 6-9"

@@ -1,6 +1,6 @@
 # Spring Boot
 
-`stove-spring` is the most familiar starting point for teams already using Spring Boot. It works especially well if you want to combine HTTP assertions with direct bean access through `bridge()`.
+`stove-spring` is the starter for applications built on Spring Boot. It supports `bridge()` for direct bean access in tests.
 
 ## Dependency
 

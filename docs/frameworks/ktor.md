@@ -1,6 +1,6 @@
 # Ktor
 
-`stove-ktor` fits teams that want a small surface area and full control over how the server is assembled. Stove starts the real Ktor application and still lets you keep the test setup in one place.
+`stove-ktor` is the starter for applications built on Ktor. Stove starts the real Ktor application and keeps the test setup in one place.
 
 ## Dependency
 

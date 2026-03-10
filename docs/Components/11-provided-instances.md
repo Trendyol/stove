@@ -396,7 +396,7 @@ The `cleanup` parameter is available for both container-based and provided insta
 The cleanup function is especially useful when using containers with `keepDependenciesRunning`:
 
 ```kotlin
-TestSystem {
+Stove {
   keepDependenciesRunning()
 }.with {
   couchbase {

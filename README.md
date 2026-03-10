@@ -53,7 +53,7 @@ each framework.
 Stove explores how the testing experience on the JVM can be improved by unifying assertions and the supporting
 infrastructure. It creates a concise and expressive testing DSL by leveraging Kotlin's unique language features.
 
-Stove works with Java, Kotlin, and Scala applications across Spring Boot, Ktor, and Micronaut. Because tests are
+Stove works with Java, Kotlin, and Scala applications across Spring Boot, Ktor, Micronaut, and Quarkus. Because tests are
 framework-agnostic, teams can migrate between stacks without rewriting test code. It empowers developers to write clear
 assertions even for code that is traditionally hard to test (async flows, message consumers, database side effects).
 
@@ -65,11 +65,11 @@ assertions even for code that is traditionally hard to test (async flows, messag
 - Provides access to your DI container from tests
 - Debug your entire use case with one click (breakpoints work everywhere)
 - Get code coverage from e2e test execution
-- Supports Spring Boot, Ktor, Micronaut
+- Supports Spring Boot, Ktor, Micronaut, Quarkus
 - Extensible architecture for adding new components and
   frameworks ([Writing Custom Systems](https://trendyol.github.io/stove/writing-custom-systems/))
 
-<p align="center"><img src="./docs/assets/stove_architecture.svg" with="600" /></p>
+<p align="center"><img src="./docs/assets/stove_architecture.svg" width="600" /></p>
 
 ## Getting Started
 
@@ -549,7 +549,7 @@ test("should create order with payment processing") {
 | Messaging  | Kafka                                                       |
 | HTTP       | Built-in client, WebSockets, WireMock                       |
 | gRPC       | Client (grpc-kotlin), Mock Server (native)                  |
-| Frameworks | Spring Boot, Ktor, Micronaut, Quarkus (experimental)        |
+| Frameworks | Spring Boot, Ktor, Micronaut, Quarkus                       |
 
 ### Feature Matrix
 

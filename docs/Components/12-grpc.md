@@ -10,7 +10,7 @@
 
 ## Configure
 
-After getting the library from the maven source, while configuring TestSystem you will have access to `grpc`:
+Once you've added the dependency, you'll have access to the `grpc` function when configuring Stove:
 
 ```kotlin hl_lines="3 5-6"
 Stove()

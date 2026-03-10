@@ -1,6 +1,6 @@
 # Micronaut
 
-`stove-micronaut` is a good fit if you want Micronaut startup to stay close to production while still using the same Stove DSL as the other starters.
+`stove-micronaut` is the starter for applications built on Micronaut. It uses the same Stove DSL as the other starters.
 
 ## Dependency
 
