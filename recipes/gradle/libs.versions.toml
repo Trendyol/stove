@@ -34,7 +34,7 @@ mongodb = "5.6.4"
 # Tooling
 spotless = "8.3.0"
 detekt = "1.23.8"
-lombok = "1.18.42"
+lombok = "1.18.44"
 
 # Misc
 hoplite = "2.9.0"
