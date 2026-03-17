@@ -6,7 +6,6 @@ import com.trendyol.stove.system.annotations.StoveDsl
 import io.micronaut.context.*
 import kotlinx.coroutines.*
 
-@StoveDsl
 internal fun Stove.systemUnderTest(
   runner: Runner<ApplicationContext>,
   withParameters: List<String> = listOf()
@@ -15,7 +14,6 @@ internal fun Stove.systemUnderTest(
   return this
 }
 
-@StoveDsl
 fun WithDsl.micronaut(
   runner: Runner<ApplicationContext>,
   withParameters: List<String> = listOf()

@@ -74,7 +74,6 @@ abstract class BridgeSystem<T : Any>(
    * @param D the type of bean to resolve.
    * @param block the block to execute with the resolved bean as receiver.
    */
-  @StoveDsl
   @Suppress("TooGenericExceptionCaught")
   suspend inline fun <reified D : Any> using(block: suspend D.() -> Unit) {
     val beanName = D::class.simpleName ?: "Unknown"
@@ -133,7 +132,6 @@ internal fun Stove.bridge(): BridgeSystem<*> = getOrNone<BridgeSystem<*>>().getO
  * @return the bridge system.
  * @throws SystemNotRegisteredException if the bridge system is not registered.
  */
-@StoveDsl
 fun <T : Any> WithDsl.bridge(of: BridgeSystem<T>): Stove = this.stove.withBridgeSystem(of)
 
 /**
@@ -164,7 +162,6 @@ fun <T : Any> WithDsl.bridge(of: BridgeSystem<T>): Stove = this.stove.withBridge
  * @param T the type of bean to resolve.
  * @param block the block to execute with the resolved bean as receiver.
  */
-@StoveDsl
 suspend inline fun <reified T : Any> ValidationDsl.using(
   block: @StoveDsl suspend T.() -> Unit
 ): Unit = this.stove.bridge().using(block)
@@ -176,7 +173,6 @@ suspend inline fun <reified T : Any> ValidationDsl.using(
  * @param T2 the type of the second bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@StoveDsl
 @Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
@@ -225,7 +221,6 @@ suspend inline fun <
  * @param T3 the type of the third bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@StoveDsl
 @Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
@@ -278,7 +273,6 @@ suspend inline fun <
  * @param T4 the type of the fourth bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@StoveDsl
 @Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
@@ -335,7 +329,6 @@ suspend inline fun <
  * @param T5 the type of the fifth bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@StoveDsl
 @Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,

@@ -47,7 +47,6 @@ open class CouchbaseSystemOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       connectionString: String,
       username: String,
@@ -181,7 +180,6 @@ internal fun Stove.couchbase(): CouchbaseSystem =
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.couchbase(
   configure: @StoveDsl () -> CouchbaseSystemOptions
 ): Stove {
@@ -208,7 +206,6 @@ fun WithDsl.couchbase(
   return stove.withCouchbase(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.couchbase(
   validation: @CouchbaseDsl suspend CouchbaseSystem.() -> Unit
 ): Unit = validation(this.stove.couchbase())

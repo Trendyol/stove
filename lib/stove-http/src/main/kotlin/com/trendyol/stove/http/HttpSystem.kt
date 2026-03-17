@@ -128,7 +128,6 @@ internal fun Stove.http(): HttpSystem = getOrNone<HttpSystem>().getOrElse {
  * @param configure Configuration block returning [HttpClientSystemOptions].
  * @return The test system for fluent chaining.
  */
-@StoveDsl
 fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): Stove =
   this.stove.withHttpClient(configure())
 
@@ -147,7 +146,6 @@ fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): Stov
  *
  * @param validation The HTTP assertion block.
  */
-@StoveDsl
 suspend fun ValidationDsl.http(
   validation: @HttpDsl suspend HttpSystem.() -> Unit
 ): Unit = validation(this.stove.http())
@@ -305,7 +303,6 @@ class HttpSystem(
   /**
    * Performs a GET request and asserts on the bodiless response.
    */
-  @HttpDsl
   suspend fun getBodilessResponse(
     uri: String,
     queryParams: Map<String, String> = mapOf(),
@@ -333,7 +330,6 @@ class HttpSystem(
   /**
    * Performs a GET request and asserts on the typed response body.
    */
-  @HttpDsl
   suspend inline fun <reified T : Any> getResponse(
     uri: String,
     queryParams: Map<String, String> = mapOf(),
@@ -357,7 +353,6 @@ class HttpSystem(
   /**
    * Performs a GET request and asserts on the deserialized response body.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> get(
     uri: String,
     queryParams: Map<String, String> = mapOf(),
@@ -381,7 +376,6 @@ class HttpSystem(
   /**
    * Performs a GET request and asserts on a list response.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> getMany(
     uri: String,
     queryParams: Map<String, String> = mapOf(),
@@ -405,7 +399,6 @@ class HttpSystem(
   /**
    * Performs a GET request for a JSON stream (NDJSON) and asserts on the flow.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> readJsonStream(
     uri: String,
     queryParams: Map<String, String> = mapOf(),
@@ -437,7 +430,6 @@ class HttpSystem(
   /**
    * Performs a POST request and asserts on the bodiless response.
    */
-  @HttpDsl
   suspend fun postAndExpectBodilessResponse(
     uri: String,
     body: Option<Any>,
@@ -464,7 +456,6 @@ class HttpSystem(
   /**
    * Performs a POST request and asserts on the deserialized response body.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> postAndExpectJson(
     uri: String,
     body: Option<Any> = None,
@@ -488,7 +479,6 @@ class HttpSystem(
   /**
    * Performs a POST request and asserts on the typed response with body access.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> postAndExpectBody(
     uri: String,
     body: Option<Any> = None,
@@ -512,7 +502,6 @@ class HttpSystem(
   /**
    * Performs a PUT request and asserts on the bodiless response.
    */
-  @HttpDsl
   suspend fun putAndExpectBodilessResponse(
     uri: String,
     body: Option<Any>,
@@ -539,7 +528,6 @@ class HttpSystem(
   /**
    * Performs a PUT request and asserts on the deserialized response body.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> putAndExpectJson(
     uri: String,
     body: Option<Any> = None,
@@ -563,7 +551,6 @@ class HttpSystem(
   /**
    * Performs a PUT request and asserts on the typed response with body access.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> putAndExpectBody(
     uri: String,
     body: Option<Any> = None,
@@ -587,7 +574,6 @@ class HttpSystem(
   /**
    * Performs a PATCH request and asserts on the bodiless response.
    */
-  @HttpDsl
   suspend fun patchAndExpectBodilessResponse(
     uri: String,
     body: Option<Any>,
@@ -614,7 +600,6 @@ class HttpSystem(
   /**
    * Performs a PATCH request and asserts on the deserialized response body.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> patchAndExpectJson(
     uri: String,
     body: Option<Any> = None,
@@ -638,7 +623,6 @@ class HttpSystem(
   /**
    * Performs a PATCH request and asserts on the typed response with body access.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> patchAndExpectBody(
     uri: String,
     body: Option<Any> = None,
@@ -662,7 +646,6 @@ class HttpSystem(
   /**
    * Performs a DELETE request and asserts on the bodiless response.
    */
-  @HttpDsl
   suspend fun deleteAndExpectBodilessResponse(
     uri: String,
     token: Option<String> = None,
@@ -689,7 +672,6 @@ class HttpSystem(
   /**
    * Performs a DELETE request and asserts on the deserialized response body.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> deleteAndExpectJson(
     uri: String,
     headers: Map<String, String> = mapOf(),
@@ -713,7 +695,6 @@ class HttpSystem(
   /**
    * Performs a HEAD request and asserts on the bodiless response.
    */
-  @HttpDsl
   suspend fun headAndExpectBodilessResponse(
     uri: String,
     token: Option<String> = None,
@@ -740,7 +721,6 @@ class HttpSystem(
   /**
    * Performs a multipart POST request and asserts on the typed response.
    */
-  @HttpDsl
   suspend inline fun <reified TExpected : Any> postMultipartAndExpectResponse(
     uri: String,
     body: List<StoveMultiPartContent>,
@@ -764,7 +744,6 @@ class HttpSystem(
     return this
   }
 
-  @HttpDsl
   override fun then(): Stove = stove
 
   @PublishedApi
@@ -889,7 +868,6 @@ class HttpSystem(
    * @param block The test block to execute with the WebSocket session.
    * @return The [HttpSystem] for fluent chaining.
    */
-  @HttpDsl
   suspend fun webSocket(
     uri: String,
     headers: Map<String, String> = mapOf(),
@@ -923,7 +901,6 @@ class HttpSystem(
    * @param expect The assertion block to execute.
    * @return The [HttpSystem] for fluent chaining.
    */
-  @HttpDsl
   suspend fun webSocketExpect(
     uri: String,
     headers: Map<String, String> = mapOf(),
@@ -943,7 +920,6 @@ class HttpSystem(
    * @param block The block to execute with the raw Ktor WebSocket session.
    * @return The [HttpSystem] for fluent chaining.
    */
-  @HttpDsl
   suspend fun webSocketRaw(
     uri: String,
     headers: Map<String, String> = mapOf(),
@@ -1003,7 +979,6 @@ class HttpSystem(
      * Use this for advanced HTTP operations not covered by the DSL.
      */
     @Suppress("unused")
-    @HttpDsl
     fun HttpSystem.client(): io.ktor.client.HttpClient = this.ktorHttpClient
 
     /**
@@ -1011,7 +986,6 @@ class HttpSystem(
      * Use this for advanced HTTP operations not covered by the DSL.
      */
     @Suppress("unused")
-    @HttpDsl
     suspend fun HttpSystem.client(
       block: suspend io.ktor.client.HttpClient.(baseUrl: URLBuilder) -> Unit
     ) {

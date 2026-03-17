@@ -121,7 +121,6 @@ open class KafkaSystemOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       bootstrapServers: String,
       registry: String = DEFAULT_REGISTRY,
@@ -225,7 +224,6 @@ internal fun Stove.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse {
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.kafka(
   configure: () -> KafkaSystemOptions
 ): Stove {
@@ -252,5 +250,4 @@ fun WithDsl.kafka(
   return stove.withKafka(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.kafka(validation: suspend KafkaSystem.() -> Unit): Unit = validation(this.stove.kafka())

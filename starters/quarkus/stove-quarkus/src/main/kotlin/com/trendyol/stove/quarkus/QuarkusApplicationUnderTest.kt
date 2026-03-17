@@ -24,7 +24,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
 
-@StoveDsl
 internal fun Stove.systemUnderTest(
   runner: Runner<Unit>,
   withParameters: List<String> = listOf()
@@ -33,7 +32,6 @@ internal fun Stove.systemUnderTest(
   return this
 }
 
-@StoveDsl
 fun WithDsl.quarkus(
   runner: Runner<Unit>,
   withParameters: List<String> = listOf()

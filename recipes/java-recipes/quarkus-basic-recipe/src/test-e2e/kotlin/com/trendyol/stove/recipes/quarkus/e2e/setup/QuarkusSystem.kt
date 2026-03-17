@@ -21,13 +21,11 @@ import java.util.concurrent.atomic.AtomicReference
  * @param runner The function that starts the Quarkus application (typically `QuarkusMainApp.main`)
  * @param withParameters Additional configuration parameters to pass to Quarkus
  */
-@StoveDsl
 fun WithDsl.quarkus(
   runner: Runner<Unit>,
   withParameters: List<String> = listOf()
 ): ReadyStove = this.stove.systemUnderTest(runner, withParameters)
 
-@StoveDsl
 internal fun Stove.systemUnderTest(
   runner: Runner<Unit>,
   withParameters: List<String> = listOf()

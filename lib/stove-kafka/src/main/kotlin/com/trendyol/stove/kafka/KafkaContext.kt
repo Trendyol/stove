@@ -23,7 +23,6 @@ internal fun Stove.withKafka(
   return this
 }
 
-@StoveDsl
 suspend fun ValidationDsl.kafka(
   validation: @StoveDsl suspend KafkaSystem.() -> Unit
 ): Unit = validation(this.stove.kafka())
@@ -63,7 +62,6 @@ suspend fun ValidationDsl.kafka(
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.kafka(
   configure: () -> KafkaSystemOptions
 ): Stove {

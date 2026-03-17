@@ -191,7 +191,6 @@ class CouchbaseSystem internal constructor(
     }
   }
 
-  @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     crossinline assertion: (List<T>) -> Unit
@@ -216,7 +215,6 @@ class CouchbaseSystem internal constructor(
     return this
   }
 
-  @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldGet(
     key: String,
     crossinline assertion: (T) -> Unit
@@ -232,7 +230,6 @@ class CouchbaseSystem internal constructor(
     return this
   }
 
-  @CouchbaseDsl
   suspend inline fun <reified T : Any> shouldGet(
     collection: String,
     key: String,
@@ -253,7 +250,6 @@ class CouchbaseSystem internal constructor(
     return this
   }
 
-  @CouchbaseDsl
   suspend fun shouldNotExist(key: String): CouchbaseSystem {
     report(
       action = "Document should not exist",
@@ -266,7 +262,6 @@ class CouchbaseSystem internal constructor(
     return this
   }
 
-  @CouchbaseDsl
   suspend fun shouldNotExist(
     collection: String,
     key: String
@@ -285,7 +280,6 @@ class CouchbaseSystem internal constructor(
     return this
   }
 
-  @CouchbaseDsl
   suspend fun shouldDelete(key: String): CouchbaseSystem {
     report(
       action = "Delete document",
@@ -296,7 +290,6 @@ class CouchbaseSystem internal constructor(
     return this
   }
 
-  @CouchbaseDsl
   suspend fun shouldDelete(
     collection: String,
     key: String
@@ -317,7 +310,6 @@ class CouchbaseSystem internal constructor(
    * Saves the [instance] with given [id] to the [collection]
    * To save to the default collection use [saveToDefaultCollection]
    */
-  @CouchbaseDsl
   suspend inline fun <reified T : Any> save(
     collection: String,
     id: String,
@@ -337,7 +329,6 @@ class CouchbaseSystem internal constructor(
    * Saves the [instance] with given [id] to the default collection
    * In couchbase the default collection is `_default`
    */
-  @CouchbaseDsl
   suspend inline fun <reified T : Any> saveToDefaultCollection(
     id: String,
     instance: T
@@ -348,7 +339,6 @@ class CouchbaseSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return CouchbaseSystem
    */
-  @CouchbaseDsl
   suspend fun pause(): CouchbaseSystem {
     report(
       action = "Pause container",
@@ -364,7 +354,6 @@ class CouchbaseSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return CouchbaseSystem
    */
-  @CouchbaseDsl
   suspend fun unpause(): CouchbaseSystem {
     report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
@@ -441,14 +430,12 @@ class CouchbaseSystem internal constructor(
      * Exposes the [Cluster] to the [CouchbaseSystem].
      * Use this for advanced Couchbase operations not covered by the DSL.
      */
-    @CouchbaseDsl
     fun CouchbaseSystem.cluster(): Cluster = this.cluster
 
     /**
      * Exposes the [Bucket] to the [CouchbaseSystem].
      * Use this for advanced Couchbase operations not covered by the DSL.
      */
-    @CouchbaseDsl
     fun CouchbaseSystem.bucket(): Bucket = this.cluster.bucket(this.context.bucket.name)
   }
 }

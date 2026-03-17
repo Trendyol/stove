@@ -93,7 +93,6 @@ class StoveWebSocketSession(
    *
    * @param message The text message to send.
    */
-  @HttpDsl
   suspend fun send(message: String) {
     session.send(Frame.Text(message))
   }
@@ -103,7 +102,6 @@ class StoveWebSocketSession(
    *
    * @param data The binary data to send.
    */
-  @HttpDsl
   suspend fun send(data: ByteArray) {
     session.send(Frame.Binary(true, data))
   }
@@ -113,7 +111,6 @@ class StoveWebSocketSession(
    *
    * @param message The message to send (either Text or Binary).
    */
-  @HttpDsl
   suspend fun send(message: StoveWebSocketMessage) {
     when (message) {
       is StoveWebSocketMessage.Text -> send(message.content)
@@ -127,7 +124,6 @@ class StoveWebSocketSession(
    * @return The received text message, or null if the connection is closed
    *         or a non-text frame is received.
    */
-  @HttpDsl
   suspend fun receiveText(): String? = session.incoming.receive().let { frame ->
     when (frame) {
       is Frame.Text -> frame.readText()
@@ -141,7 +137,6 @@ class StoveWebSocketSession(
    * @return The received binary data, or null if the connection is closed
    *         or a non-binary frame is received.
    */
-  @HttpDsl
   suspend fun receiveBinary(): ByteArray? = session.incoming.receive().let { frame ->
     when (frame) {
       is Frame.Binary -> frame.readBytes()
@@ -155,7 +150,6 @@ class StoveWebSocketSession(
    * @return The received message (Text or Binary), or null if the connection is closed
    *         or an unsupported frame type is received.
    */
-  @HttpDsl
   suspend fun receive(): StoveWebSocketMessage? = session.incoming.receive().let { frame ->
     when (frame) {
       is Frame.Text -> StoveWebSocketMessage.Text(frame.readText())
@@ -171,7 +165,6 @@ class StoveWebSocketSession(
    * @return An [Option] containing the received text message, or [None] if the timeout
    *         is reached or the connection is closed.
    */
-  @HttpDsl
   suspend fun receiveTextWithTimeout(timeout: Duration = 5.seconds): Option<String> = try {
     withTimeout(timeout) {
       receiveText().toOption()
@@ -187,7 +180,6 @@ class StoveWebSocketSession(
    * @return An [Option] containing the received binary data, or [None] if the timeout
    *         is reached or the connection is closed.
    */
-  @HttpDsl
   suspend fun receiveBinaryWithTimeout(timeout: Duration = 5.seconds): Option<ByteArray> = try {
     withTimeout(timeout) {
       receiveBinary().toOption()
@@ -203,7 +195,6 @@ class StoveWebSocketSession(
    * @param timeout The maximum duration to wait for all messages.
    * @return A list of received text messages.
    */
-  @HttpDsl
   suspend fun collectTexts(
     count: Int,
     timeout: Duration = 30.seconds
@@ -222,7 +213,6 @@ class StoveWebSocketSession(
    * @param timeout The maximum duration to wait for all messages.
    * @return A list of received binary data.
    */
-  @HttpDsl
   suspend fun collectBinaries(
     count: Int,
     timeout: Duration = 30.seconds
@@ -241,7 +231,6 @@ class StoveWebSocketSession(
    *
    * @return A [Flow] of text messages.
    */
-  @HttpDsl
   fun incomingTexts(): Flow<String> = session.incoming
     .receiveAsFlow()
     .filterIsInstance<Frame.Text>()
@@ -254,7 +243,6 @@ class StoveWebSocketSession(
    *
    * @return A [Flow] of binary data.
    */
-  @HttpDsl
   fun incomingBinaries(): Flow<ByteArray> = session.incoming
     .receiveAsFlow()
     .filterIsInstance<Frame.Binary>()
@@ -267,7 +255,6 @@ class StoveWebSocketSession(
    *
    * @return A [Flow] of [StoveWebSocketMessage].
    */
-  @HttpDsl
   fun incoming(): Flow<StoveWebSocketMessage> = session.incoming
     .receiveAsFlow()
     .mapNotNull { frame ->
@@ -283,7 +270,6 @@ class StoveWebSocketSession(
    *
    * @param reason Optional close reason message.
    */
-  @HttpDsl
   suspend fun close(reason: String = "Test completed") {
     session.close(CloseReason(CloseReason.Codes.NORMAL, reason))
   }
@@ -294,7 +280,6 @@ class StoveWebSocketSession(
    * @param block The block to execute with the underlying session.
    * @return The result of the block.
    */
-  @HttpDsl
   suspend fun <T> underlyingSession(
     block: suspend DefaultClientWebSocketSession.() -> T
   ): T = block(session)

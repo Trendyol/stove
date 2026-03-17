@@ -36,28 +36,22 @@ class TracingSystem(
     return createVisualizationOrFallback(ctx.traceId, ctx.testId, spans)
   }
 
-  @StoveDsl
   suspend fun ensureTraceStarted(): TraceContext =
     TraceContext.current() ?: startNewTrace()
 
-  @StoveDsl
   fun endTrace() {
     TraceContext.clear()
   }
 
-  @StoveDsl
   fun currentContext(): Option<TraceContext> =
     TraceContext.current().toOption()
 
-  @StoveDsl
   fun validation(): Option<TraceValidationDsl> =
     currentContext().map { createValidation(it.traceId) }
 
-  @StoveDsl
   fun validation(traceId: String): TraceValidationDsl =
     createValidation(traceId)
 
-  @StoveDsl
   override fun then(): Stove = stove
 
   override fun close() {
@@ -295,7 +289,6 @@ internal fun Stove.tracingSystem(): TracingSystem = getOrNone<TracingSystem>().g
   throw SystemNotRegisteredException(TracingSystem::class)
 }
 
-@StoveDsl
 fun WithDsl.tracing(configure: @StoveDsl TracingOptions.() -> Unit = {}): Stove =
   this.stove.withTracing(createTracingOptions(configure))
 
@@ -394,7 +387,6 @@ class TracingValidationScope(
   }
 }
 
-@StoveDsl
 suspend fun ValidationDsl.tracing(
   validation: @StoveDsl suspend TracingValidationScope.() -> Unit
 ) {
@@ -414,5 +406,4 @@ private fun createTracingValidationScope(
   return TracingValidationScope(ctx, traceValidation, system.collector)
 }
 
-@StoveDsl
 fun ValidationDsl.tracingSystem(): TracingSystem = this.stove.tracingSystem()

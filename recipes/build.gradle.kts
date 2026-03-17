@@ -35,6 +35,7 @@ subprojects {
 
   spotless {
     java {
+      target("src/**/*.java")
       palantirJavaFormat("2.86.0").style("GOOGLE").formatJavadoc(true)
       targetExcludeIfContentContains("generated")
       targetExclude("build/**", "**/build/**", "**/generated/**")
@@ -46,6 +47,7 @@ subprojects {
     }
 
     kotlin {
+      target("src/**/*.kt")
       ktlint(libs.versions.ktlint.get())
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
       targetExclude("build/**", "**/build/**", "**/generated/**")

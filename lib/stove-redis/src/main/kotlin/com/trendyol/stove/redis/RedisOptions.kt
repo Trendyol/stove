@@ -81,7 +81,6 @@ open class RedisOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       host: String,
       port: Int,
@@ -181,7 +180,6 @@ data class RedisContext(
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.redis(
   configure: () -> RedisOptions
 ): Stove {
@@ -206,7 +204,6 @@ fun WithDsl.redis(
   return stove.withRedis(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis())
 
 internal fun Stove.redis(): RedisSystem =

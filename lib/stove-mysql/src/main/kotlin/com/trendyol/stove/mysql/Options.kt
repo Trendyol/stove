@@ -62,7 +62,6 @@ open class MySqlOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       jdbcUrl: String,
       host: String,
@@ -191,7 +190,6 @@ internal fun Stove.mysql(): MySqlSystem =
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.mysql(
   configure: () -> MySqlOptions
 ): Stove {
@@ -218,6 +216,5 @@ fun WithDsl.mysql(
   return stove.withMySql(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.mysql(validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
   validation(this.stove.mysql())

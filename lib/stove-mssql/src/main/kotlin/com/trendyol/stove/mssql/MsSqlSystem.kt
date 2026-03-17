@@ -53,7 +53,6 @@ class MsSqlSystem internal constructor(
   override fun configuration(): List<String> =
     mssqlContext.options.configureExposedConfiguration(exposedConfiguration)
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     parameters: List<Parameter<*>> = emptyList(),
@@ -72,7 +71,6 @@ class MsSqlSystem internal constructor(
     return this
   }
 
-  @StoveDsl
   suspend fun shouldExecute(sql: String, parameters: List<Parameter<*>> = emptyList()): MsSqlSystem {
     report(
       action = "Execute SQL",
@@ -86,7 +84,6 @@ class MsSqlSystem internal constructor(
     return this
   }
 
-  @StoveDsl
   suspend fun ops(operations: suspend NativeSqlOperations.() -> Unit) {
     operations(sqlOperations)
   }
@@ -96,7 +93,6 @@ class MsSqlSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return MsSqlSystem
    */
-  @StoveDsl
   suspend fun pause(): MsSqlSystem {
     report(
       action = "Pause container",
@@ -112,7 +108,6 @@ class MsSqlSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return MsSqlSystem
    */
-  @StoveDsl
   suspend fun unpause(): MsSqlSystem {
     report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
@@ -233,7 +228,6 @@ class MsSqlSystem internal constructor(
      * Exposes the [NativeSqlOperations] to the [MsSqlSystem].
      * Use this for advanced SQL operations not covered by the DSL.
      */
-    @StoveDsl
     fun MsSqlSystem.operations(): NativeSqlOperations = sqlOperations
   }
 }

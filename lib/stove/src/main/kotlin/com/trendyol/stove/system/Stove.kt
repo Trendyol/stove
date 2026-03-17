@@ -213,7 +213,6 @@ class Stove(
    *  }
    * ```
    */
-  @StoveDsl
   fun with(withDsl: WithDsl.() -> Unit): Stove {
     withDsl(WithDsl(this))
     return this
@@ -302,7 +301,6 @@ class Stove(
  * @throws IllegalStateException if Stove has not been initialized via [Stove.run].
  * @see ValidationDsl
  */
-@StoveDsl
 suspend fun stove(
   validation: @StoveDsl suspend ValidationDsl.() -> Unit
 ) {

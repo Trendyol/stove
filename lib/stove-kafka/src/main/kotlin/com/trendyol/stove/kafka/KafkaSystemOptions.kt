@@ -80,7 +80,6 @@ open class KafkaSystemOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       bootstrapServers: String,
       topicSuffixes: TopicSuffixes = TopicSuffixes(),

@@ -2,7 +2,6 @@
 
 package com.trendyol.stove.spring
 
-import com.trendyol.stove.system.annotations.StoveDsl
 import org.springframework.beans.factory.BeanRegistrarDsl
 import org.springframework.boot.SpringApplication
 import org.springframework.context.ApplicationContextInitializer
@@ -32,7 +31,6 @@ import org.springframework.context.support.*
  * @param registration A lambda with [BeanDefinitionDsl] receiver to define beans.
  * @return An [ApplicationContextInitializer] that can be added to a [SpringApplication].
  */
-@StoveDsl
 fun stoveSpringRegistrar(
   registration: BeanDefinitionDsl.() -> Unit
 ): ApplicationContextInitializer<GenericApplicationContext> = ApplicationContextInitializer { context ->
@@ -57,7 +55,6 @@ fun stoveSpringRegistrar(
  *
  * @param registration A lambda with [BeanDefinitionDsl] receiver to define beans.
  */
-@StoveDsl
 fun SpringApplication.addTestDependencies(
   registration: BeanDefinitionDsl.() -> Unit
 ): Unit = this.addInitializers(stoveSpringRegistrar(registration))
@@ -86,7 +83,6 @@ fun SpringApplication.addTestDependencies(
  * @param registration A lambda with [BeanRegistrarDsl] receiver to define beans.
  * @return An [ApplicationContextInitializer] that can be added to a [SpringApplication].
  */
-@StoveDsl
 fun stoveSpring4xRegistrar(
   registration: BeanRegistrarDsl.() -> Unit
 ): ApplicationContextInitializer<*> = ApplicationContextInitializer<GenericApplicationContext> { context ->
@@ -110,7 +106,6 @@ fun stoveSpring4xRegistrar(
  *
  * @param registration A lambda with [BeanRegistrarDsl] receiver to define beans.
  */
-@StoveDsl
 fun SpringApplication.addTestDependencies4x(
   registration: BeanRegistrarDsl.() -> Unit
 ): Unit = this.addInitializers(stoveSpring4xRegistrar(registration))

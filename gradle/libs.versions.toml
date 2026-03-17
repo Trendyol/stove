@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.3.10"
+kotlin = "2.3.20"
 kotlinx = "1.10.2"
 exposed = "1.1.1"
 hikari = "7.0.2"

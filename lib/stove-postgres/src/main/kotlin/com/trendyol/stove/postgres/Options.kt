@@ -59,7 +59,6 @@ open class PostgresqlOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       jdbcUrl: String,
       host: String,
@@ -188,7 +187,6 @@ internal fun Stove.postgresql(): PostgresqlSystem =
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.postgresql(
   configure: () -> PostgresqlOptions
 ): Stove {
@@ -215,6 +213,5 @@ fun WithDsl.postgresql(
   return stove.withPostgresql(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
   validation(this.stove.postgresql())

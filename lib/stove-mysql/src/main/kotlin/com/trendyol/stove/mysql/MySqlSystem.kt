@@ -54,7 +54,6 @@ class MySqlSystem internal constructor(
   override fun configuration(): List<String> =
     mysqlContext.options.configureExposedConfiguration(exposedConfiguration)
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     parameters: List<Parameter<*>> = emptyList(),
@@ -73,7 +72,6 @@ class MySqlSystem internal constructor(
     return this
   }
 
-  @StoveDsl
   suspend fun shouldExecute(sql: String, parameters: List<Parameter<*>> = emptyList()): MySqlSystem {
     report(
       action = "Execute SQL",
@@ -92,7 +90,6 @@ class MySqlSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return MySqlSystem
    */
-  @StoveDsl
   suspend fun pause(): MySqlSystem {
     report(
       action = "Pause container",
@@ -108,7 +105,6 @@ class MySqlSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return MySqlSystem
    */
-  @StoveDsl
   suspend fun unpause(): MySqlSystem {
     report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
@@ -206,7 +202,6 @@ class MySqlSystem internal constructor(
      * Exposes the [NativeSqlOperations] to the [MySqlSystem].
      * Use this for advanced SQL operations not covered by the DSL.
      */
-    @StoveDsl
     fun MySqlSystem.operations(): NativeSqlOperations = sqlOperations
   }
 }

@@ -287,7 +287,6 @@ class WireMockSystem(
    * @param responseHeaders Optional response headers.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockGet(
     url: String,
     statusCode: Int,
@@ -323,7 +322,6 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    * @see mockPostContaining
    */
-  @WiremockDsl
   suspend fun mockPost(
     url: String,
     statusCode: Int,
@@ -361,7 +359,6 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    * @see mockPutContaining
    */
-  @WiremockDsl
   suspend fun mockPut(
     url: String,
     statusCode: Int,
@@ -399,7 +396,6 @@ class WireMockSystem(
    * @return This [WireMockSystem] for chaining.
    * @see mockPatchContaining
    */
-  @WiremockDsl
   suspend fun mockPatch(
     url: String,
     statusCode: Int,
@@ -430,7 +426,6 @@ class WireMockSystem(
    * @param metadata Optional metadata to attach to the stub.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockDelete(
     url: String,
     statusCode: Int,
@@ -457,7 +452,6 @@ class WireMockSystem(
    * @param metadata Optional metadata to attach to the stub.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockHead(
     url: String,
     statusCode: Int,
@@ -488,7 +482,6 @@ class WireMockSystem(
    * @param configure Lambda to configure the request and response using WireMock's API.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockPutConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
@@ -516,7 +509,6 @@ class WireMockSystem(
    * @param configure Lambda to configure the request and response using WireMock's API.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockPatchConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
@@ -544,7 +536,6 @@ class WireMockSystem(
    * @param configure Lambda to configure the request and response using WireMock's API.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockGetConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
@@ -572,7 +563,6 @@ class WireMockSystem(
    * @param configure Lambda to configure the request and response using WireMock's API.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockHeadConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
@@ -600,7 +590,6 @@ class WireMockSystem(
    * @param configure Lambda to configure the request and response using WireMock's API.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockDeleteConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
@@ -628,7 +617,6 @@ class WireMockSystem(
    * @param configure Lambda to configure the request and response using WireMock's API.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockPostConfigure(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
@@ -669,7 +657,6 @@ class WireMockSystem(
    * @param method Function to create the HTTP method matcher (e.g., `::post`, `::get`).
    * @param block Lambda to define the sequence of responses.
    */
-  @WiremockDsl
   suspend fun behaviourFor(
     url: String,
     method: (String) -> MappingBuilder,
@@ -737,7 +724,6 @@ class WireMockSystem(
    * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockPostContaining(
     url: String,
     requestContaining: Map<String, Any>,
@@ -802,7 +788,6 @@ class WireMockSystem(
    * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockPutContaining(
     url: String,
     requestContaining: Map<String, Any>,
@@ -867,7 +852,6 @@ class WireMockSystem(
    * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
    * @return This [WireMockSystem] for chaining.
    */
-  @WiremockDsl
   suspend fun mockPatchContaining(
     url: String,
     requestContaining: Map<String, Any>,
@@ -970,7 +954,6 @@ class WireMockSystem(
    *
    * @throws AssertionError if there are unmatched requests.
    */
-  @WiremockDsl
   override suspend fun validate() {
     data class ValidationResult(
       val url: String,
@@ -1085,7 +1068,6 @@ class WireMockSystem(
      * Use this for advanced WireMock operations not covered by the DSL.
      */
     @Suppress("unused")
-    @WiremockDsl
     fun WireMockSystem.server(): WireMockServer = wireMock
   }
 }

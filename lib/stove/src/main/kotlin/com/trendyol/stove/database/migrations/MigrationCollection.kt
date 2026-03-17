@@ -82,7 +82,6 @@ class MigrationCollection<TConnection> {
    * @param clazz The migration class to register.
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   fun <T : DatabaseMigration<TConnection>> register(clazz: KClass<T>): MigrationCollection<TConnection> =
     types
       .putIfAbsent(clazz, clazz.createInstance() as DatabaseMigration<TConnection>)
@@ -98,7 +97,6 @@ class MigrationCollection<TConnection> {
    * @param migrator The migration instance to register.
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   fun <T : DatabaseMigration<TConnection>> register(
     clazz: KClass<T>,
     migrator: DatabaseMigration<TConnection>
@@ -119,7 +117,6 @@ class MigrationCollection<TConnection> {
    * @param instance Factory function that creates the migration instance.
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   inline fun <reified T : DatabaseMigration<TConnection>> register(
     instance: () -> DatabaseMigration<TConnection>
   ): MigrationCollection<TConnection> = this.register(T::class, instance()).let { this }
@@ -131,7 +128,6 @@ class MigrationCollection<TConnection> {
    * @param migrator The new migration instance.
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   fun <T : DatabaseMigration<TConnection>> replace(
     clazz: KClass<T>,
     migrator: DatabaseMigration<TConnection>
@@ -154,7 +150,6 @@ class MigrationCollection<TConnection> {
    *
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   inline fun <reified T : DatabaseMigration<TConnection>> register(): MigrationCollection<TConnection> =
     this.register(T::class).let { this }
 
@@ -170,7 +165,6 @@ class MigrationCollection<TConnection> {
    * @param instance Factory function that creates the replacement migration.
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   inline fun <reified T : DatabaseMigration<TConnection>> replace(
     instance: () -> DatabaseMigration<TConnection>
   ): MigrationCollection<TConnection> = this.replace(T::class, instance()).let { this }
@@ -189,7 +183,6 @@ class MigrationCollection<TConnection> {
    * @param TNew The new migration type.
    * @return This collection for fluent chaining.
    */
-  @StoveDsl
   inline fun <
     reified TOld : DatabaseMigration<TConnection>,
     reified TNew : DatabaseMigration<TConnection>
@@ -204,7 +197,6 @@ class MigrationCollection<TConnection> {
    *
    * @param connection The active database connection for executing migrations.
    */
-  @StoveDsl
   suspend fun run(connection: TConnection): Unit = types
     .map {
       it.value

@@ -88,7 +88,6 @@ value class WithDsl(
    *
    * @param applicationUnderTest The application to be tested.
    */
-  @StoveDsl
   fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>) {
     this.stove.applicationUnderTest(applicationUnderTest)
   }

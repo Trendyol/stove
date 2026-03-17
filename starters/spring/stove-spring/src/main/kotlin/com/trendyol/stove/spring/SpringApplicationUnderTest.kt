@@ -10,7 +10,6 @@ import com.trendyol.stove.system.annotations.StoveDsl
 import kotlinx.coroutines.*
 import org.springframework.context.ConfigurableApplicationContext
 
-@StoveDsl
 internal fun Stove.systemUnderTest(
   runner: Runner<ConfigurableApplicationContext>,
   withParameters: List<String> = listOf()
@@ -19,7 +18,6 @@ internal fun Stove.systemUnderTest(
   return this
 }
 
-@StoveDsl
 fun WithDsl.springBoot(
   runner: Runner<ConfigurableApplicationContext>,
   withParameters: List<String> = listOf()

@@ -12,13 +12,11 @@ import kotlinx.coroutines.*
 /**
  *  Definition for Application Under Test for Ktor enabled application
  */
-@StoveDsl
 internal fun Stove.systemUnderTest(
   runner: Runner<Application>,
   withParameters: List<String> = listOf()
 ): ReadyStove = applicationUnderTest(KtorApplicationUnderTest(this, runner, withParameters))
 
-@StoveDsl
 fun WithDsl.ktor(
   runner: Runner<Application>,
   withParameters: List<String> = listOf()

@@ -113,7 +113,6 @@ class KafkaSystem(
    * @param testCase The test case of the message.
    * @return KafkaSystem
    */
-  @KafkaDsl
   suspend fun publish(
     topic: String,
     message: Any,
@@ -151,13 +150,11 @@ class KafkaSystem(
   /**
    * Admin operations for Kafka.
    */
-  @KafkaDsl
   suspend fun adminOperations(block: suspend Admin.() -> Unit) = block(admin)
 
   /**
    * Asserts that a message is consumed.
    */
-  @KafkaDsl
   suspend inline fun <reified T : Any> shouldBeConsumed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
@@ -179,7 +176,6 @@ class KafkaSystem(
   /**
    * Asserts that a message is failed.
    */
-  @KafkaDsl
   suspend inline fun <reified T : Any> shouldBeFailed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: FailedObservedMessage<T>.() -> Boolean
@@ -202,7 +198,6 @@ class KafkaSystem(
   /**
    * Asserts that a message is published.
    */
-  @KafkaDsl
   suspend inline fun <reified T : Any> shouldBePublished(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
@@ -303,7 +298,6 @@ class KafkaSystem(
    * This operation is not supported when using a provided instance.
    * @return KafkaSystem
    */
-  @KafkaDsl
   fun pause(): KafkaSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
@@ -311,7 +305,6 @@ class KafkaSystem(
    * This operation is not supported when using a provided instance.
    * @return KafkaSystem
    */
-  @KafkaDsl
   fun unpause(): KafkaSystem = withContainerOrWarn("unpause") { it.unpause() }
 
   override suspend fun stop(): Unit = whenContainer { it.stop() }

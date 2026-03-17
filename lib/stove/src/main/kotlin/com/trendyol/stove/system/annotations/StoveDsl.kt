@@ -38,7 +38,7 @@ package com.trendyol.stove.system.annotations
  * ## When to Use
  *
  * Apply this annotation when creating:
- * - Custom [PluggedSystem] implementations
+ * - Custom [com.trendyol.stove.system.abstractions.PluggedSystem] implementations
  * - DSL extension functions for systems
  * - Options classes used in configuration DSL
  * - Any class that participates in Stove's builder pattern

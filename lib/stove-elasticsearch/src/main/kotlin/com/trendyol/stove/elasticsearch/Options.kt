@@ -50,7 +50,6 @@ open class ElasticsearchSystemOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       host: String,
       port: Int,

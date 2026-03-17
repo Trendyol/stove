@@ -158,7 +158,6 @@ class GrpcMockSystem internal constructor(
    * }
    * ```
    */
-  @GrpcMockDsl
   suspend fun mockUnary(
     serviceName: String,
     methodName: String,
@@ -199,7 +198,6 @@ class GrpcMockSystem internal constructor(
    * }
    * ```
    */
-  @GrpcMockDsl
   suspend fun mockServerStream(
     serviceName: String,
     methodName: String,
@@ -245,7 +243,6 @@ class GrpcMockSystem internal constructor(
    * }
    * ```
    */
-  @GrpcMockDsl
   suspend fun mockClientStream(
     serviceName: String,
     methodName: String,
@@ -290,7 +287,6 @@ class GrpcMockSystem internal constructor(
    * }
    * ```
    */
-  @GrpcMockDsl
   suspend fun mockBidiStream(
     serviceName: String,
     methodName: String,
@@ -329,7 +325,6 @@ class GrpcMockSystem internal constructor(
    * }
    * ```
    */
-  @GrpcMockDsl
   suspend fun mockError(
     serviceName: String,
     methodName: String,
@@ -347,7 +342,6 @@ class GrpcMockSystem internal constructor(
 
   // ==================== Validation & Reporting ====================
 
-  @GrpcMockDsl
   override suspend fun validate() {
     val unmatched = requestLog.asMap().values.filter { !it.matched }
 
@@ -378,7 +372,6 @@ class GrpcMockSystem internal constructor(
     )
   }
 
-  @GrpcMockDsl
   override fun then(): Stove = stove
 
   override fun snapshot(): SystemSnapshot {
@@ -701,7 +694,6 @@ class GrpcMockSystem internal constructor(
   }
 
   companion object {
-    @GrpcMockDsl
     fun GrpcMockSystem.server(): Server = server
   }
 }
