@@ -27,5 +27,4 @@ class SpringBridgeSystem(
  * @return the bridge system.
  * @throws SystemNotRegisteredException if the bridge system is not registered.
  */
-@StoveDsl
 fun WithDsl.bridge(): Stove = this.stove.withBridgeSystem(SpringBridgeSystem(this.stove))

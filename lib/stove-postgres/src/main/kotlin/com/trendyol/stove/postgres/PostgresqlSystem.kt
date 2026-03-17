@@ -187,7 +187,6 @@ class PostgresqlSystem internal constructor(
   override fun configuration(): List<String> =
     postgresContext.options.configureExposedConfiguration(exposedConfiguration)
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     parameters: List<Parameter<*>> = emptyList(),
@@ -206,7 +205,6 @@ class PostgresqlSystem internal constructor(
     return this
   }
 
-  @StoveDsl
   suspend fun shouldExecute(sql: String, parameters: List<Parameter<*>> = emptyList()): PostgresqlSystem {
     report(
       action = "Execute SQL",
@@ -225,7 +223,6 @@ class PostgresqlSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return PostgresqlSystem
    */
-  @StoveDsl
   suspend fun pause(): PostgresqlSystem {
     report(
       action = "Pause container",
@@ -241,7 +238,6 @@ class PostgresqlSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return PostgresqlSystem
    */
-  @StoveDsl
   suspend fun unpause(): PostgresqlSystem {
     report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
@@ -339,7 +335,6 @@ class PostgresqlSystem internal constructor(
      * Exposes the [NativeSqlOperations] to the [PostgresqlSystem].
      * Use this for advanced SQL operations not covered by the DSL.
      */
-    @StoveDsl
     fun PostgresqlSystem.operations(): NativeSqlOperations = sqlOperations
   }
 }

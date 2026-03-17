@@ -195,7 +195,6 @@ class ElasticsearchSystem internal constructor(
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
-  @ElasticDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     index: String,
@@ -221,7 +220,6 @@ class ElasticsearchSystem internal constructor(
     return this
   }
 
-  @ElasticDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: Query,
     crossinline assertion: (List<T>) -> Unit
@@ -240,7 +238,6 @@ class ElasticsearchSystem internal constructor(
     return this
   }
 
-  @ElasticDsl
   suspend inline fun <reified T : Any> shouldGet(
     index: String,
     key: String,
@@ -263,7 +260,6 @@ class ElasticsearchSystem internal constructor(
     return this
   }
 
-  @ElasticDsl
   suspend fun shouldNotExist(
     key: String,
     index: String
@@ -282,7 +278,6 @@ class ElasticsearchSystem internal constructor(
     return this
   }
 
-  @ElasticDsl
   suspend fun shouldDelete(
     key: String,
     index: String
@@ -299,7 +294,6 @@ class ElasticsearchSystem internal constructor(
     return this
   }
 
-  @ElasticDsl
   suspend fun <T : Any> save(
     id: String,
     instance: T,
@@ -330,7 +324,6 @@ class ElasticsearchSystem internal constructor(
    * @return ElasticsearchSystem
    */
   @Suppress("unused")
-  @ElasticDsl
   suspend fun pause(): ElasticsearchSystem {
     report(
       action = "Pause container",
@@ -347,7 +340,6 @@ class ElasticsearchSystem internal constructor(
    * @return ElasticsearchSystem
    */
   @Suppress("unused")
-  @ElasticDsl
   suspend fun unpause(): ElasticsearchSystem {
     report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
@@ -489,7 +481,6 @@ class ElasticsearchSystem internal constructor(
      * Use this for advanced Elasticsearch operations not covered by the DSL.
      */
     @Suppress("unused")
-    @ElasticDsl
     fun ElasticsearchSystem.client(): ElasticsearchClient = this.esClient
   }
 }

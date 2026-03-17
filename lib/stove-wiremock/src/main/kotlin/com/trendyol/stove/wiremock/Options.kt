@@ -104,11 +104,9 @@ internal fun Stove.wiremock(): WireMockSystem =
     throw SystemNotRegisteredException(WireMockSystem::class)
   }
 
-@StoveDsl
 fun WithDsl.wiremock(
   configure: @StoveDsl () -> WireMockSystemOptions
 ): Stove = this.stove.withWireMock(configure())
 
-@StoveDsl
 suspend fun ValidationDsl.wiremock(validation: @WiremockDsl suspend WireMockSystem.() -> Unit): Unit =
   validation(this.stove.wiremock())

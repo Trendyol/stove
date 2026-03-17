@@ -46,7 +46,6 @@ internal fun Stove.elasticsearch(): ElasticsearchSystem =
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.elasticsearch(
   configure: @StoveDsl () -> ElasticsearchSystemOptions
 ): Stove {
@@ -73,6 +72,5 @@ fun WithDsl.elasticsearch(
   return stove.withElasticsearch(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.elasticsearch(validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =
   validation(this.stove.elasticsearch())

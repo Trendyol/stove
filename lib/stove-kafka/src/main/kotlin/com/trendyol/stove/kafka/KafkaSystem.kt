@@ -296,7 +296,6 @@ class KafkaSystem(
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
-  @StoveDsl
   suspend fun publish(
     topic: String,
     message: Any,
@@ -330,7 +329,6 @@ class KafkaSystem(
     }
   }
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldBeConsumed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
@@ -349,7 +347,6 @@ class KafkaSystem(
     }
   }
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldBePublished(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
@@ -368,7 +365,6 @@ class KafkaSystem(
     }
   }
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldBeFailed(
     atLeastIn: Duration = 5.seconds,
     crossinline condition: ObservedMessage<T>.() -> Boolean
@@ -441,7 +437,6 @@ class KafkaSystem(
     return this
   }
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldBeRetried(
     atLeastIn: Duration = 5.seconds,
     times: Int = 1,
@@ -455,7 +450,6 @@ class KafkaSystem(
   /**
    * Waits until the consumed message is seen. This does not mean committed.
    */
-  @StoveDsl
   @Suppress("MagicNumber")
   suspend inline fun peekConsumedMessages(
     atLeastIn: Duration = 5.seconds,
@@ -478,7 +472,6 @@ class KafkaSystem(
   /**
    * Waits until the committed message is seen with the given condition.
    */
-  @StoveDsl
   @Suppress("MagicNumber")
   suspend inline fun peekCommittedMessages(
     atLeastIn: Duration = 5.seconds,
@@ -501,7 +494,6 @@ class KafkaSystem(
   /**
    * Waits until the published message is seen with the given condition.
    */
-  @StoveDsl
   @Suppress("MagicNumber")
   suspend inline fun peekPublishedMessages(
     atLeastIn: Duration = 5.seconds,
@@ -524,7 +516,6 @@ class KafkaSystem(
   /**
    * Creates an inflight consumer that consumes messages from the given topic.
    */
-  @StoveDsl
   suspend fun <K : Any, V : Any> consumer(
     topic: String,
     readOnly: Boolean = true,
@@ -555,23 +546,19 @@ class KafkaSystem(
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
    * This operation is not supported when using a provided instance or embedded Kafka.
    */
-  @StoveDsl
   fun pause(): KafkaSystem = withContainerOrWarn("pause") { it.pause() }
 
   /**
    * Unpauses the container. Use with care, as it will unpause the container which might affect other tests.
    * This operation is not supported when using a provided instance or embedded Kafka.
    */
-  @StoveDsl
   fun unpause(): KafkaSystem = withContainerOrWarn("unpause") { it.unpause() }
 
   /**
    * Provides access to the message store of the KafkaSystem.
    */
-  @StoveDsl
   fun messageStore(): MessageStore = this.sink.store
 
-  @StoveDsl
   suspend fun adminOperations(block: suspend Admin.() -> Unit) = block(adminClient)
 
   @PublishedApi

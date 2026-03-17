@@ -55,7 +55,6 @@ class KtorBridgeSystem(
  *                 Defaults to auto-detecting Koin or Ktor-DI.
  * @throws IllegalStateException if no DI framework is available and no custom resolver is provided.
  */
-@StoveDsl
 fun WithDsl.bridge(
   resolver: DependencyResolver = DependencyResolvers.autoDetect()
 ): Stove = this.stove.withBridgeSystem(KtorBridgeSystem(this.stove, resolver))

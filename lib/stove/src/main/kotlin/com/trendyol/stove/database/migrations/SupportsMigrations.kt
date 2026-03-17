@@ -54,9 +54,8 @@ interface SupportsMigrations<TContext, TSelf : SupportsMigrations<TContext, TSel
    * @return This options instance for fluent chaining
    */
   @Suppress("UNCHECKED_CAST")
-  @StoveDsl
   fun migrations(
-    migration: MigrationCollection<TContext>.() -> Unit
+    migration: @StoveDsl MigrationCollection<TContext>.() -> Unit
   ): TSelf {
     migration(migrationCollection)
     return this as TSelf

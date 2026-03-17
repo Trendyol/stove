@@ -68,7 +68,6 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
 
   override fun configuration(): List<String> = context.configureExposedConfiguration(exposedConfiguration)
 
-  @StoveDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     crossinline mapper: (Row) -> T,
@@ -86,7 +85,6 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     return this as SELF
   }
 
-  @StoveDsl
   suspend fun shouldExecute(sql: String): SELF {
     report(
       action = "Execute SQL",

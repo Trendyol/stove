@@ -211,25 +211,21 @@ class DbSchedulerSystem(
 /**
  * Registers the DbSchedulerSystem with Stove.
  */
-@StoveDsl
 fun Stove.withDbSchedulerListener(): Stove = getOrRegister(DbSchedulerSystem(this)).let { this }
 
 /**
  * Gets the registered DbSchedulerSystem.
  */
-@StoveDsl
 fun Stove.dbScheduler(): DbSchedulerSystem =
   getOrNone<DbSchedulerSystem>().getOrElse { throw SystemNotRegisteredException(DbSchedulerSystem::class) }
 
 /**
  * DSL extension for registering DbSchedulerSystem during Stove setup.
  */
-@StoveDsl
 fun WithDsl.dbScheduler(): Stove = this.stove.withDbSchedulerListener()
 
 /**
  * DSL extension for asserting on scheduled tasks during validation.
  */
-@StoveDsl
 suspend fun ValidationDsl.tasks(validation: suspend DbSchedulerSystem.() -> Unit): Unit =
   validation(this.stove.dbScheduler())

@@ -184,7 +184,6 @@ class MongodbSystem internal constructor(
     }
   }
 
-  @MongoDsl
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,
     collection: String = context.options.databaseOptions.default.collection,
@@ -206,7 +205,6 @@ class MongodbSystem internal constructor(
     return this
   }
 
-  @MongoDsl
   suspend inline fun <reified T : Any> shouldGet(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection,
@@ -231,7 +229,6 @@ class MongodbSystem internal constructor(
   /**
    * Saves the [instance] with given [objectId] to the [collection]
    */
-  @MongoDsl
   suspend inline fun <reified T : Any> save(
     instance: T,
     objectId: String = ObjectId().toHexString(),
@@ -257,7 +254,6 @@ class MongodbSystem internal constructor(
     return this
   }
 
-  @MongoDsl
   suspend fun shouldNotExist(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
@@ -277,7 +273,6 @@ class MongodbSystem internal constructor(
     return this
   }
 
-  @MongoDsl
   suspend fun shouldDelete(
     objectId: String,
     collection: String = context.options.databaseOptions.default.collection
@@ -299,7 +294,6 @@ class MongodbSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return MongodbSystem
    */
-  @MongoDsl
   suspend fun pause(): MongodbSystem {
     report(
       action = "Pause container",
@@ -315,7 +309,6 @@ class MongodbSystem internal constructor(
    * This operation is not supported when using a provided instance.
    * @return MongodbSystem
    */
-  @MongoDsl
   suspend fun unpause(): MongodbSystem {
     report(action = "Unpause container") {
       withContainerOrWarn("unpause") { it.unpause() }
@@ -326,7 +319,6 @@ class MongodbSystem internal constructor(
   /**
    * Inspects the container. This operation is not supported when using a provided instance.
    */
-  @MongoDsl
   fun inspect(): StoveContainerInspectInformation? = when (val runtime = context.runtime) {
     is StoveMongoContainer -> {
       runtime.inspect()
@@ -418,7 +410,6 @@ class MongodbSystem internal constructor(
      * Exposes the [MongoClient] to the [MongodbSystem].
      * Use this for advanced MongoDB operations not covered by the DSL.
      */
-    @MongoDsl
     @Suppress("unused")
     fun MongodbSystem.client(): MongoClient = mongoClient
   }

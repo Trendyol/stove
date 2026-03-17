@@ -132,7 +132,6 @@ class GrpcSystem(
    * @param T The Wire service client type.
    * @param block The block to execute with the client as receiver.
    */
-  @GrpcDsl
   suspend inline fun <reified T : Service> wireClient(
     crossinline block: @GrpcDsl suspend T.() -> Unit
   ): GrpcSystem {
@@ -165,7 +164,6 @@ class GrpcSystem(
    * @param factory Factory function that creates the client from host and port.
    * @param block The block to execute with the client as receiver.
    */
-  @GrpcDsl
   inline fun <T> withEndpoint(
     factory: (host: String, port: Int) -> T,
     block: @GrpcDsl T.() -> Unit
@@ -195,7 +193,6 @@ class GrpcSystem(
    * @param metadata Optional per-call metadata to add to all requests in this block.
    * @param block The block to execute with the stub as receiver.
    */
-  @GrpcDsl
   suspend inline fun <reified T : Any> channel(
     metadata: Map<String, String> = emptyMap(),
     crossinline block: @GrpcDsl suspend T.() -> Unit
@@ -229,7 +226,6 @@ class GrpcSystem(
    *
    * @param block The block to execute with the channel.
    */
-  @GrpcDsl
   inline fun rawChannel(
     block: @GrpcDsl (ManagedChannel) -> Unit
   ): GrpcSystem {
@@ -253,7 +249,6 @@ class GrpcSystem(
    *
    * @param block The block to execute with the Wire GrpcClient.
    */
-  @GrpcDsl
   inline fun rawWireClient(
     block: @GrpcDsl (GrpcClient) -> Unit
   ): GrpcSystem {
@@ -273,7 +268,6 @@ class GrpcSystem(
   @Suppress("unused")
   fun grpcClient(): GrpcClient = wireClientResources.grpcClient
 
-  @GrpcDsl
   override fun then(): Stove = stove
 
   override fun close() {
@@ -372,7 +366,6 @@ internal fun Stove.grpc(): GrpcSystem = getOrNone<GrpcSystem>().getOrElse {
  * @param configure Configuration block returning [GrpcSystemOptions].
  * @return The test system for fluent chaining.
  */
-@StoveDsl
 fun WithDsl.grpc(configure: @StoveDsl () -> GrpcSystemOptions): Stove =
   this.stove.withGrpc(configure())
 
@@ -391,7 +384,6 @@ fun WithDsl.grpc(configure: @StoveDsl () -> GrpcSystemOptions): Stove =
  *
  * @param validation The gRPC assertion block.
  */
-@StoveDsl
 suspend fun ValidationDsl.grpc(
   validation: @GrpcDsl suspend GrpcSystem.() -> Unit
 ): Unit = validation(this.stove.grpc())

@@ -77,7 +77,6 @@ open class MsSqlOptions(
      * @param cleanup A suspend function to clean up data after tests complete
      * @param configureExposedConfiguration Function to map exposed config to application properties
      */
-    @StoveDsl
     fun provided(
       jdbcUrl: String,
       host: String,
@@ -216,7 +215,6 @@ internal fun Stove.mssql(): MsSqlSystem =
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.mssql(
   configure: () -> MsSqlOptions
 ): Stove {
@@ -245,7 +243,6 @@ fun WithDsl.mssql(
   return stove.withMsSql(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.mssql(
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
 ): Unit = validation(this.stove.mssql())

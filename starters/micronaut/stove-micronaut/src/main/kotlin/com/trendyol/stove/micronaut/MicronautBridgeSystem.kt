@@ -15,5 +15,4 @@ class MicronautBridgeSystem(
   override fun <D : Any> get(klass: KClass<D>): D = ctx.getBean(klass.java)
 }
 
-@StoveDsl
 fun WithDsl.bridge(): Stove = this.stove.withBridgeSystem(MicronautBridgeSystem(this.stove))

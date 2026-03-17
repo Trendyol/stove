@@ -86,7 +86,6 @@ internal fun Stove.mongodb(): MongodbSystem =
  * }
  * ```
  */
-@StoveDsl
 fun WithDsl.mongodb(
   configure: () -> MongodbSystemOptions
 ): Stove {
@@ -110,7 +109,6 @@ fun WithDsl.mongodb(
   return stove.withMongodb(options, runtime)
 }
 
-@StoveDsl
 suspend fun ValidationDsl.mongodb(
   validation: @MongoDsl suspend MongodbSystem.() -> Unit
 ): Unit = validation(this.stove.mongodb())

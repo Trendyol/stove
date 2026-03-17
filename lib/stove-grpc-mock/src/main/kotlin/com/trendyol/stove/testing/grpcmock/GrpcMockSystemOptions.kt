@@ -94,7 +94,6 @@ internal fun Stove.grpcMock(): GrpcMockSystem = getOrNone<GrpcMockSystem>().getO
  *   }
  * ```
  */
-@StoveDsl
 fun WithDsl.grpcMock(configure: @StoveDsl () -> GrpcMockSystemOptions): Stove =
   this.stove.withGrpcMock(configure())
 
@@ -113,7 +112,6 @@ fun WithDsl.grpcMock(configure: @StoveDsl () -> GrpcMockSystemOptions): Stove =
  * }
  * ```
  */
-@StoveDsl
 suspend fun ValidationDsl.grpcMock(
   validation: @GrpcMockDsl suspend GrpcMockSystem.() -> Unit
 ): Stove {
