@@ -45,7 +45,7 @@ opentelemetry = "1.60.1"
 opentelemetry-instrumentation = "2.26.0"
 
 # gRPC
-grpc = "1.79.0"
+grpc = "1.80.0"
 grpc-kotlin = "1.5.0"
 protobuf = "4.34.0"
 protobuf-plugin = "0.9.6"
