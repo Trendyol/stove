@@ -42,21 +42,37 @@ object DependencyResolvers {
 
   /**
    * Auto-detects and returns the appropriate resolver based on available DI frameworks.
-   * Prefers Ktor-DI over Koin if both are available.
-   * Detection is deferred to runtime to ensure classpath is fully resolved.
+   * Prefers Ktor-DI over Koin if both are active in runtime.
+   * Detection is deferred to runtime to ensure Ktor application plugins are fully initialized.
    */
   fun autoDetect(): DependencyResolver = { application, type ->
     val resolver = when {
-      KtorDiCheck.isKtorDiAvailable() -> ktorDi
-
-      KtorDiCheck.isKoinAvailable() -> koin
-
-      else -> error(
-        "No supported DI framework found. " +
-          "Add either Koin (io.insert-koin:koin-ktor) or Ktor-DI (io.ktor:ktor-server-di) to your classpath, " +
-          "or provide a custom resolver via bridge(resolver = { app, type -> ... })"
-      )
+      isKtorDiActive(application) -> ktorDi
+      isKoinActive(application) -> koin
+      else -> error(buildNoActiveDiFrameworkMessage())
     }
     resolver(application, type)
+  }
+
+  private fun isKtorDiActive(application: Application): Boolean =
+    application.attributes.contains(DependencyRegistryKey)
+
+  private fun isKoinActive(application: Application): Boolean =
+    runCatching { application.getKoin() }.isSuccess
+
+  private fun buildNoActiveDiFrameworkMessage(): String {
+    val koinOnClasspath = KtorDiCheck.isKoinAvailable()
+    val ktorDiOnClasspath = KtorDiCheck.isKtorDiAvailable()
+
+    if (!koinOnClasspath && !ktorDiOnClasspath) {
+      return "No supported DI framework found. " +
+        "Add either Koin (io.insert-koin:koin-ktor) or Ktor-DI (io.ktor:ktor-server-di) to your classpath, " +
+        "or provide a custom resolver via bridge(resolver = { app, type -> ... })"
+    }
+
+    return "No active DI framework detected in the Ktor application runtime. " +
+      "Classpath availability: Koin=$koinOnClasspath, Ktor-DI=$ktorDiOnClasspath. " +
+      "Install Koin via install(Koin) { ... } and/or install Ktor-DI via dependencies { ... }, " +
+      "or provide a custom resolver via bridge(resolver = { app, type -> ... })"
   }
 }

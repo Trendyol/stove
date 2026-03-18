@@ -2,6 +2,7 @@ dependencies {
   api(projects.starters.ktor.stoveKtor)
   implementation(libs.ktor.server.netty)
   implementation(libs.ktor.server.di)
+  implementation(libs.koin.ktor)
   testImplementation(testFixtures(projects.starters.ktor.tests.ktorTestFixtures))
 }
 

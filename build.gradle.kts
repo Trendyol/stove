@@ -89,7 +89,14 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "tes
 
   spotless {
     kotlin {
-      ktlint(libs.ktlint.cli.get().version).setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+      ktlint(libs.ktlint.cli.get().version)
+        .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+        .editorConfigOverride(
+          mapOf(
+//            "ktlint_standard_kdoc" to "disabled",
+//            "ktlint_standard_class-signature" to "disabled"
+          )
+        )
       targetExclude("build/", "generated/", "out/")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
