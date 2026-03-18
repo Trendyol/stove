@@ -94,6 +94,13 @@ Ktor Bridge supports multiple dependency injection frameworks with automatic det
 - **Ktor-DI** - Ktor's native DI plugin
 - **Custom** - Any DI framework via custom resolver
 
+Auto-detection is based on **runtime installation state** in the Ktor `Application` (not classpath presence only):
+
+- If `dependencies { ... }` is active, Bridge uses **Ktor-DI**
+- Otherwise, if Koin is active (for example `install(Koin) { ... }`), Bridge uses **Koin**
+- If both are active, Bridge prefers **Ktor-DI**
+- If neither is active, Bridge throws a setup error with guidance
+
 ```kotlin
 // Bridge resolves beans from your DI container
 using<UserRepository> {
@@ -111,7 +118,7 @@ dependencies {
     testImplementation("io.insert-koin:koin-ktor:$koinVersion")
 }
 
-// In your test setup - bridge() auto-detects Koin
+// In your test setup - bridge() uses Koin when Ktor-DI is not active at runtime
 Stove()
     .with {
         bridge()
@@ -127,7 +134,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-di:$ktorVersion")
 }
 
-// In your test setup - bridge() auto-detects Ktor-DI
+// In your test setup - bridge() uses Ktor-DI when dependencies { ... } is active
 Stove()
     .with {
         bridge()

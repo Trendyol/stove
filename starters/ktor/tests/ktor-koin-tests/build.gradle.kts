@@ -2,6 +2,8 @@ dependencies {
   api(projects.starters.ktor.stoveKtor)
   implementation(libs.ktor.server.netty)
   implementation(libs.koin.ktor)
+  // Explicitly keep Ktor-DI on classpath to cover koin-ktor 4.2 bridge scenario
+  implementation(libs.ktor.server.di)
   testImplementation(testFixtures(projects.starters.ktor.tests.ktorTestFixtures))
 }
 
