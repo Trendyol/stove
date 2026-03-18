@@ -54,11 +54,26 @@ object DependencyResolvers {
     resolver(application, type)
   }
 
-  private fun isKtorDiActive(application: Application): Boolean =
-    application.attributes.contains(DependencyRegistryKey)
+  /**
+   * Uses reflection-based availability check first, then typed runtime check.
+   * This avoids hard-loading optional Ktor-DI classes in Koin-only apps.
+   */
+  private fun isKtorDiActive(application: Application): Boolean {
+    if (!KtorDiCheck.isKtorDiAvailable()) return false
+    return runCatching { application.attributes.contains(DependencyRegistryKey) }.getOrDefault(false)
+  }
 
-  private fun isKoinActive(application: Application): Boolean =
-    runCatching { application.getKoin() }.isSuccess
+  /**
+   * Uses reflection-based availability check first, then typed runtime check.
+   * This avoids hard-loading optional Koin classes when Koin is not present.
+   */
+  private fun isKoinActive(application: Application): Boolean {
+    if (!KtorDiCheck.isKoinAvailable()) return false
+    return runCatching {
+      application.getKoin()
+      true
+    }.getOrDefault(false)
+  }
 
   private fun buildNoActiveDiFrameworkMessage(): String {
     val koinOnClasspath = KtorDiCheck.isKoinAvailable()
