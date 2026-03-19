@@ -394,7 +394,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../release-notes/0.21.2/" class="md-tabs__link">
+        <a href="../../release-notes/0.22.2/" class="md-tabs__link">
           
   
   
@@ -690,6 +690,17 @@
     <span class="md-ellipsis">
       
         What You Get
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spring-boot-4x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spring Boot 4.x
       
     </span>
   </a>
@@ -1552,6 +1563,8 @@
       
         
       
+        
+      
     
     
     
@@ -1596,6 +1609,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.22.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.22.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1815,6 +1856,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#spring-boot-4x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spring Boot 4.x
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1932,10 +1984,27 @@
 <li><code>bridge()</code> support for bean access</li>
 <li>full access to Stove components such as PostgreSQL, Kafka, WireMock, HTTP, and tracing</li>
 </ul>
+<h2 id="spring-boot-4x">Spring Boot 4.x<a class="headerlink" href="#spring-boot-4x" title="Permanent link">&para;</a></h2>
+<p>If your application uses Spring Boot 4.x, use <code>addTestDependencies4x</code> instead of <code>addTestDependencies</code> when registering test beans:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.addTestDependencies4x</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">springBoot</span><span class="p">(</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="n">runApplication</span><span class="o">&lt;</span><span class="n">MyApp</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="n">addTestDependencies4x</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="n">registerBean</span><span class="o">&lt;</span><span class="n">TestSystemKafkaInterceptor</span><span class="o">&lt;*</span><span class="p">,</span><span class="w"> </span><span class="o">*&gt;&gt;</span><span class="p">(</span><span class="n">primary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="n">registerBean</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">StoveSerde</span><span class="p">.</span><span class="na">jackson</span><span class="p">.</span><span class="na">anyByteArraySerde</span><span class="p">(</span><span class="n">yourObjectMapper</span><span class="p">())</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>See the <a href="../../Components/02-kafka/">Kafka</a> and <a href="../../Components/10-bridge/">Bridge</a> docs for full Spring Boot 4.x bean registration details.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-example">spring-example</a></li>
 <li><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-standalone-example">spring-standalone-example</a></li>
+<li><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-streams-example">spring-streams-example</a></li>
 <li><a href="https://github.com/Trendyol/stove/tree/main/examples/spring-4x-example">spring-4x-example</a></li>
 </ul>
 

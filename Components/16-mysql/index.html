@@ -394,7 +394,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../release-notes/0.21.2/" class="md-tabs__link">
+        <a href="../../release-notes/0.22.2/" class="md-tabs__link">
           
   
   
@@ -1373,6 +1373,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#provided-instance-external-mysql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provided Instance (External MySQL)
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1580,6 +1591,8 @@
       
         
       
+        
+      
     
     
     
@@ -1624,6 +1637,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.22.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.22.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1881,6 +1922,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#provided-instance-external-mysql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provided Instance (External MySQL)
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2128,6 +2180,35 @@
 </span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="p">}</span>
 </span></code></pre></div>
+<h2 id="provided-instance-external-mysql">Provided Instance (External MySQL)<a class="headerlink" href="#provided-instance-external-mysql" title="Permanent link">&para;</a></h2>
+<p><span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">For CI/CD pipelines or shared infrastructure</span>, connect to an existing MySQL instance instead of starting a container:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">Stove</span><span class="p">()</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">mysql</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="n">MySqlOptions</span><span class="p">.</span><span class="na">provided</span><span class="p">(</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="n">jdbcUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;jdbc:mysql://localhost:3306/testdb&quot;</span><span class="p">,</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">        </span><span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="p">,</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3306</span><span class="p">,</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">        </span><span class="n">databaseName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;testdb&quot;</span><span class="p">,</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">        </span><span class="n">username</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;root&quot;</span><span class="p">,</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">        </span><span class="n">password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;password&quot;</span><span class="p">,</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">        </span><span class="n">runMigrations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">        </span><span class="n">cleanup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">operations</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">          </span><span class="n">operations</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="s">&quot;DELETE FROM users WHERE email LIKE &#39;%@test.com&#39;&quot;</span><span class="p">)</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">        </span><span class="p">},</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">        </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">          </span><span class="n">listOf</span><span class="p">(</span>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">            </span><span class="s">&quot;spring.datasource.url=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">jdbcUrl</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">            </span><span class="s">&quot;spring.datasource.username=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">username</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">            </span><span class="s">&quot;spring.datasource.password=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">password</span><span class="si">}</span><span class="s">&quot;</span>
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">          </span><span class="p">)</span>
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">      </span><span class="p">)</span>
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">  </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
+</span></code></pre></div>
+<p>See <a href="../11-provided-instances/">Provided Instances</a> for detailed documentation on all supported systems and test isolation strategies.</p>
 
 
 

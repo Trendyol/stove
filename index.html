@@ -392,7 +392,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="release-notes/0.21.2/" class="md-tabs__link">
+        <a href="release-notes/0.22.2/" class="md-tabs__link">
           
   
   
@@ -1578,6 +1578,8 @@
       
         
       
+        
+      
     
     
     
@@ -1622,6 +1624,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="release-notes/0.22.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.22.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1916,7 +1946,7 @@
 <p>Stove is an end-to-end testing framework for JVM applications. It boots your real application together with the dependencies it actually uses, so your tests exercise the real runtime flow instead of a hand-built harness full of mocks.</p>
 <p>If your service talks to HTTP APIs, Kafka, databases, Redis, gRPC services, or external providers, Stove lets you bring those pieces into one test setup and assert the full behavior in one place.</p>
 <p>Since JVM languages interoperate, your application and tests do not need to use the same language. Write the app in Java, Kotlin, or Scala, and keep the tests consistent on the Stove side.</p>
-<p>The only hard requirement is <span data-rn="underline" data-rn-color="#ff9800">Docker</span>, because Stove uses <a href="https://github.com/testcontainers/testcontainers-java">Testcontainers</a> under the hood.</p>
+<p>When running in container mode (the default), Stove uses <a href="https://github.com/testcontainers/testcontainers-java">Testcontainers</a> under the hood, so <span data-rn="underline" data-rn-color="#ff9800">Docker</span> must be installed. If you use <a href="Components/11-provided-instances/">provided instances</a> to connect to existing infrastructure, Docker is not required.</p>
 <div class="admonition note">
 <p class="admonition-title">Not a Replacement for Unit Tests</p>
 <p>Stove is for end-to-end and component tests, not unit tests. Keep unit tests for fast feedback on isolated logic.</p>
@@ -1976,13 +2006,18 @@
 <p>Open a complete example and adapt it instead of starting from scratch.</p>
 <p><a href="https://github.com/Trendyol/stove/tree/main/examples">Examples on GitHub</a></p>
 </li>
+<li>
+<p><strong>Running without Docker or in CI/CD</strong></p>
+<p>Use provided instances to connect to existing infrastructure instead of spinning up containers.</p>
+<p><a href="Components/11-provided-instances/">Provided Instances</a></p>
+</li>
 </ul>
 </div>
 <h2 id="why-stove">Why Stove<a class="headerlink" href="#why-stove" title="Permanent link">&para;</a></h2>
 <p>The JVM ecosystem has strong application frameworks, but e2e setup is usually framework-specific and repetitive. Teams end up rebuilding the same boilerplate around containers, startup wiring, ports, config injection, test cleanup, and diagnostics.</p>
 <p>Stove standardizes that workflow:</p>
 <ul>
-<li>start physical dependencies first</li>
+<li>start physical dependencies first (via containers or <a href="Components/11-provided-instances/">provided instances</a>)</li>
 <li>boot the real application through its actual entrypoint</li>
 <li>inject container/runtime configuration into the app</li>
 <li>assert through HTTP, Kafka, gRPC, databases, and tracing</li>

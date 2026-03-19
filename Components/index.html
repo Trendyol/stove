@@ -394,7 +394,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../release-notes/0.21.2/" class="md-tabs__link">
+        <a href="../release-notes/0.22.2/" class="md-tabs__link">
           
   
   
@@ -1450,6 +1450,8 @@
       
         
       
+        
+      
     
     
     
@@ -1494,6 +1496,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/0.22.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.22.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1958,7 +1988,7 @@
 
 
 <h1 id="components">Components<a class="headerlink" href="#components" title="Permanent link">&para;</a></h1>
-<p>Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, so you can compose a realistic environment without building everything yourself.</p>
+<p>Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. By default, components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, but they can also connect to <a href="11-provided-instances/">provided instances</a> (existing infrastructure) when Docker is unavailable or undesirable.</p>
 <p>If you have not picked an application starter yet, start with <a href="../frameworks/">Supported Frameworks</a> first and then come back here for the physical dependencies.</p>
 <p>Most teams start with 2 to 4 components, not the whole catalog.</p>
 <h2 id="start-from-the-workflow">Start From The Workflow<a class="headerlink" href="#start-from-the-workflow" title="Permanent link">&para;</a></h2>
@@ -2092,6 +2122,11 @@
 <td><a href="15-tracing/">Tracing</a></td>
 <td><code>stove-tracing</code></td>
 <td>Execution tracing with OpenTelemetry for failure diagnostics</td>
+</tr>
+<tr>
+<td><a href="11-provided-instances/">Provided Instances</a></td>
+<td>Built-in</td>
+<td>Connect to existing infrastructure instead of containers</td>
 </tr>
 <tr>
 <td><a href="13-reporting/">Reporting</a></td>
@@ -2307,13 +2342,21 @@
 </span></code></pre></div>
 <h2 id="cleanup-support">Cleanup Support<a class="headerlink" href="#cleanup-support" title="Permanent link">&para;</a></h2>
 <p>All components support cleanup functions for data isolation:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">couchbase</span><span class="p">(</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">cleanup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="o">-&gt;</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">cluster</span><span class="p">.</span><span class="na">query</span><span class="p">(</span><span class="s">&quot;DELETE FROM `bucket` WHERE type = &#39;test&#39;&quot;</span><span class="p">)</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="n">CouchbaseSystemOptions</span><span class="p">(...)</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">}</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">CouchbaseSystemOptions</span><span class="p">(</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">defaultBucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;bucket&quot;</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">cleanup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="n">cluster</span><span class="p">.</span><span class="na">query</span><span class="p">(</span><span class="s">&quot;DELETE FROM `bucket` WHERE type = &#39;test&#39;&quot;</span><span class="p">)</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="n">listOf</span><span class="p">(</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="s">&quot;couchbase.hosts=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">hostsWithPort</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="s">&quot;couchbase.username=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">username</span><span class="si">}</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">        </span><span class="s">&quot;couchbase.password=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">password</span><span class="si">}</span><span class="s">&quot;</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">      </span><span class="p">)</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="p">)</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <ol>
