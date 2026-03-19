@@ -250,11 +250,10 @@ class CassandraSystem internal constructor(
       )
     }
 
+  @Suppress("TooGenericExceptionCaught")
   private suspend fun createSession(config: CassandraExposedConfiguration): CqlSession {
-    val maxAttempts = 10
-    val retryDelayMs = 3_000L
     var lastException: Exception? = null
-    repeat(maxAttempts) { attempt ->
+    repeat(SESSION_CREATE_MAX_ATTEMPTS) { attempt ->
       try {
         return CqlSession
           .builder()
@@ -264,14 +263,18 @@ class CassandraSystem internal constructor(
       } catch (e: Exception) {
         lastException = e
         logger.warn(
-          "Failed to create CQL session (attempt ${attempt + 1}/$maxAttempts): ${e.message}. Retrying in ${retryDelayMs}ms..."
+          "Failed to create CQL session (attempt ${attempt + 1}/$SESSION_CREATE_MAX_ATTEMPTS): " +
+            "${e.message}. Retrying in ${SESSION_CREATE_RETRY_DELAY_MS}ms..."
         )
-        if (attempt < maxAttempts - 1) {
-          delay(retryDelayMs)
+        if (attempt < SESSION_CREATE_MAX_ATTEMPTS - 1) {
+          delay(SESSION_CREATE_RETRY_DELAY_MS)
         }
       }
     }
-    throw IllegalStateException("Failed to create CQL session after $maxAttempts attempts", lastException)
+    throw IllegalStateException(
+      "Failed to create CQL session after $SESSION_CREATE_MAX_ATTEMPTS attempts",
+      lastException
+    )
   }
 
   private inline fun withContainerOrWarn(
@@ -313,6 +316,8 @@ class CassandraSystem internal constructor(
 
   companion object {
     const val CASSANDRA_PORT = 9042
+    private const val SESSION_CREATE_MAX_ATTEMPTS = 10
+    private const val SESSION_CREATE_RETRY_DELAY_MS = 3_000L
 
     /**
      * Exposes the [CqlSession] to the [CassandraSystem].
