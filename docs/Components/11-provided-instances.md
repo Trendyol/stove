@@ -233,6 +233,58 @@ Stove()
   .run()
 ```
 
+### MySQL
+
+```kotlin
+// Container-based
+Stove()
+  .with {
+    mysql {
+      MySqlOptions(
+        databaseName = "testdb",
+        cleanup = { operations ->
+          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
+        },
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "spring.datasource.url=${cfg.jdbcUrl}",
+            "spring.datasource.username=${cfg.username}",
+            "spring.datasource.password=${cfg.password}"
+          )
+        }
+      )
+    }
+  }
+  .run()
+
+// Provided instance
+Stove()
+  .with {
+    mysql {
+      MySqlOptions.provided(
+        jdbcUrl = "jdbc:mysql://localhost:3306/testdb",
+        host = "localhost",
+        port = 3306,
+        databaseName = "testdb",
+        username = "root",
+        password = "password",
+        runMigrations = true,
+        cleanup = { operations ->
+          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
+        },
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "spring.datasource.url=${cfg.jdbcUrl}",
+            "spring.datasource.username=${cfg.username}",
+            "spring.datasource.password=${cfg.password}"
+          )
+        }
+      )
+    }
+  }
+  .run()
+```
+
 ### MSSQL
 
 ```kotlin

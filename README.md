@@ -82,7 +82,7 @@ dependencies {
   
   // Core and framework starter
   testImplementation("com.trendyol:stove")
-  testImplementation("com.trendyol:stove-spring")  // or stove-ktor, stove-micronaut
+  testImplementation("com.trendyol:stove-spring")  // or stove-ktor, stove-micronaut, stove-quarkus
   
   // Component modules
   testImplementation("com.trendyol:stove-postgres")
@@ -389,7 +389,7 @@ Stove's execution reports and tracing data are structured and deterministic, mak
 ### Framework Setup
 
 <table>
-<tr><th>Spring Boot</th><th>Ktor</th><th>Micronaut</th></tr>
+<tr><th>Spring Boot</th><th>Ktor</th></tr>
 <tr>
 <td>
 
@@ -409,9 +409,21 @@ springBoot(
 ```kotlin
 ktor(
   runner = { params ->
-    myApp.run(params) {
-      addTestDependencies()
-    }
+    run(params, shouldWait = false)
+  }
+)
+```
+
+</td>
+</tr>
+<tr><th>Micronaut</th><th>Quarkus</th></tr>
+<tr>
+<td>
+
+```kotlin
+micronaut(
+  runner = { params ->
+    myApp.run(params)
   }
 )
 ```
@@ -420,11 +432,9 @@ ktor(
 <td>
 
 ```kotlin
-micronaut(
+quarkus(
   runner = { params ->
-    myApp.run(params) {
-      addTestDependencies()
-    }
+    MyApp.main(params)
   }
 )
 ```

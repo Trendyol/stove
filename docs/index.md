@@ -6,7 +6,7 @@ If your service talks to HTTP APIs, Kafka, databases, Redis, gRPC services, or e
 
 Since JVM languages interoperate, your application and tests do not need to use the same language. Write the app in Java, Kotlin, or Scala, and keep the tests consistent on the Stove side.
 
-The only hard requirement is <span data-rn="underline" data-rn-color="#ff9800">Docker</span>, because Stove uses [Testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood.
+When running in container mode (the default), Stove uses [Testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood, so <span data-rn="underline" data-rn-color="#ff9800">Docker</span> must be installed. If you use [provided instances](Components/11-provided-instances.md) to connect to existing infrastructure, Docker is not required.
 
 !!! note "Not a Replacement for Unit Tests"
     Stove is for end-to-end and component tests, not unit tests. Keep unit tests for fast feedback on isolated logic.
@@ -76,6 +76,12 @@ You start the real app, bring up only the dependencies you need, and assert thro
 
     [Examples on GitHub](https://github.com/Trendyol/stove/tree/main/examples)
 
+-   **Running without Docker or in CI/CD**
+
+    Use provided instances to connect to existing infrastructure instead of spinning up containers.
+
+    [Provided Instances](Components/11-provided-instances.md)
+
 </div>
 
 ## Why Stove
@@ -84,7 +90,7 @@ The JVM ecosystem has strong application frameworks, but e2e setup is usually fr
 
 Stove standardizes that workflow:
 
-- start physical dependencies first
+- start physical dependencies first (via containers or [provided instances](Components/11-provided-instances.md))
 - boot the real application through its actual entrypoint
 - inject container/runtime configuration into the app
 - assert through HTTP, Kafka, gRPC, databases, and tracing

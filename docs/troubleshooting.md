@@ -6,6 +6,9 @@ Having issues? This guide covers the most common problems and how to fix them. I
 
 ### Docker Issues
 
+!!! tip "Docker Not Available?"
+    If Docker is not available in your environment (e.g., some CI/CD pipelines), consider using [provided instances](Components/11-provided-instances.md) to connect to existing infrastructure instead of spinning up containers.
+
 #### Docker Not Found / Not Running
 
 **Symptoms:**
@@ -732,6 +735,23 @@ Solutions:
 - `StoveSerde` replaces direct `ObjectMapper` usage
 - Configure serde for each component that needs it
 
+#### Q: How do I migrate from 0.21.x to 0.21.2?
+
+**A:** See [Migration Notes](release-notes/0.21.2.md) for detailed instructions. Key changes:
+
+- `configureStoveTracing` renamed to `stoveTracing` in buildSrc
+- New Stove Tracing Gradle Plugin available as an alternative to the buildSrc approach
+- If using the plugin, properties use Gradle's `Property<T>` API (e.g., `serviceName.set("...")` instead of `serviceName = "..."`)
+
+#### Q: How do I migrate from 0.21.2 to 0.22.x?
+
+**A:** See [Migration Notes](release-notes/0.22.0.md) for detailed instructions. Key changes:
+
+- New `stove-quarkus` module available for Quarkus applications
+- Console reporting rewritten with Mordant for better output
+- No breaking changes — all existing APIs remain compatible
+
+
 ## Getting Help
 
 If you can't find a solution:
@@ -749,7 +769,7 @@ If you can't find a solution:
 
 When troubleshooting, check these items:
 
-- [ ] Docker is running and accessible
+- [ ] Docker is running and accessible (not needed if using [provided instances](Components/11-provided-instances.md))
 - [ ] Correct Stove version in dependencies
 - [ ] Application main function is properly modified
 - [ ] Configuration is passed to application

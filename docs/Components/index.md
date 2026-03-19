@@ -1,6 +1,6 @@
 # Components
 
-Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. Components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, so you can compose a realistic environment without building everything yourself.
+Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. By default, components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, but they can also connect to [provided instances](11-provided-instances.md) (existing infrastructure) when Docker is unavailable or undesirable.
 
 If you have not picked an application starter yet, start with [Supported Frameworks](../frameworks/index.md) first and then come back here for the physical dependencies.
 
@@ -56,6 +56,7 @@ Most teams start with 2 to 4 components, not the whole catalog.
 | [gRPC](12-grpc.md) | `stove-grpc` | gRPC client for testing gRPC services |
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
 | [Tracing](15-tracing.md) | `stove-tracing` | Execution tracing with OpenTelemetry for failure diagnostics |
+| [Provided Instances](11-provided-instances.md) | Built-in | Connect to existing infrastructure instead of containers |
 | [Reporting](13-reporting.md) | `stove-extensions-kotest` or `stove-extensions-junit` | Rich failure reports with execution context |
 
 ## Quick Start
@@ -231,12 +232,20 @@ postgresql {
 All components support cleanup functions for data isolation:
 
 ```kotlin
-couchbase(
-  cleanup = { cluster ->
-    cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
-  }
-) {
-  CouchbaseSystemOptions(...)
+couchbase {
+  CouchbaseSystemOptions(
+    defaultBucket = "bucket",
+    cleanup = { cluster ->
+      cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
+    },
+    configureExposedConfiguration = { cfg ->
+      listOf(
+        "couchbase.hosts=${cfg.hostsWithPort}",
+        "couchbase.username=${cfg.username}",
+        "couchbase.password=${cfg.password}"
+      )
+    }
+  )
 }
 ```
 

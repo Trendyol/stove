@@ -49,8 +49,30 @@ Stove()
 - `bridge()` support for bean access
 - full access to Stove components such as PostgreSQL, Kafka, WireMock, HTTP, and tracing
 
+## Spring Boot 4.x
+
+If your application uses Spring Boot 4.x, use `addTestDependencies4x` instead of `addTestDependencies` when registering test beans:
+
+```kotlin
+import com.trendyol.stove.addTestDependencies4x
+
+springBoot(
+  runner = { params ->
+    runApplication<MyApp>(*params) {
+      addTestDependencies4x {
+        registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+        registerBean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
+      }
+    }
+  }
+)
+```
+
+See the [Kafka](../Components/02-kafka.md) and [Bridge](../Components/10-bridge.md) docs for full Spring Boot 4.x bean registration details.
+
 ## Examples
 
 - [spring-example](https://github.com/Trendyol/stove/tree/main/examples/spring-example)
 - [spring-standalone-example](https://github.com/Trendyol/stove/tree/main/examples/spring-standalone-example)
+- [spring-streams-example](https://github.com/Trendyol/stove/tree/main/examples/spring-streams-example)
 - [spring-4x-example](https://github.com/Trendyol/stove/tree/main/examples/spring-4x-example)

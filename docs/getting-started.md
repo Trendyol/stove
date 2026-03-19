@@ -9,7 +9,7 @@ If you already know your application framework, the quickest route is [Supported
 Make sure you have these installed:
 
 - **JDK 17+** - Stove needs Java 17 or higher
-- **Docker** - Get the latest version (Stove uses testcontainers, so Docker is required)
+- **Docker** - Required when using container mode (the default). Not needed if you use [provided instances](Components/11-provided-instances.md) to connect to existing infrastructure
 - **Kotlin 1.8+** - For writing your tests
 - **Gradle or Maven** - We use Gradle in all examples, but Maven works too
 

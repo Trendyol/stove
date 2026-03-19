@@ -229,7 +229,7 @@ messages.
 When all the configuration is done, it is time to tell to application to use our `TestSystemInterceptor` and
 configuration values.
 
-#### TestSystemInterceptor and Bean Registration
+#### TestSystemKafkaInterceptor and Bean Registration
 
 Register the interceptor and serde using `addTestDependencies`:
 
@@ -242,7 +242,7 @@ springBoot(
   runner = { parameters ->
     runApplication<MyApp>(*parameters) {
       addTestDependencies {
-        bean<TestSystemInterceptor>(isPrimary = true)
+        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
         bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
       }
     }
@@ -258,7 +258,7 @@ springBoot(
   runner = { parameters ->
     runApplication<MyApp>(*parameters) {
       addTestDependencies4x {
-        registerBean<TestSystemInterceptor>(primary = true)
+        registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
         registerBean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
       }
     }
@@ -272,7 +272,7 @@ springBoot(
   runner = { parameters ->
     runApplication<MyApp>(*parameters) {
       addTestDependencies {
-        bean<TestSystemInterceptor>(isPrimary = true)
+        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
         bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
       }
     }

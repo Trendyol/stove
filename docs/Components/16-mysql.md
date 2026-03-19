@@ -204,3 +204,37 @@ stove {
   }
 }
 ```
+
+## Provided Instance (External MySQL)
+
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">For CI/CD pipelines or shared infrastructure</span>, connect to an existing MySQL instance instead of starting a container:
+
+```kotlin
+Stove()
+  .with {
+    mysql {
+      MySqlOptions.provided(
+        jdbcUrl = "jdbc:mysql://localhost:3306/testdb",
+        host = "localhost",
+        port = 3306,
+        databaseName = "testdb",
+        username = "root",
+        password = "password",
+        runMigrations = true,
+        cleanup = { operations ->
+          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
+        },
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "spring.datasource.url=${cfg.jdbcUrl}",
+            "spring.datasource.username=${cfg.username}",
+            "spring.datasource.password=${cfg.password}"
+          )
+        }
+      )
+    }
+  }
+  .run()
+```
+
+See [Provided Instances](11-provided-instances.md) for detailed documentation on all supported systems and test isolation strategies.
