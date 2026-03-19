@@ -129,16 +129,16 @@ class ProvidedKafkaSystemOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 ) : KafkaSystemOptions(
-    useEmbeddedKafka = false,
-    topicSuffixes = topicSuffixes,
-    listenPublishedMessagesFromStove = listenPublishedMessagesFromStove,
-    bridgeGrpcServerPort = bridgeGrpcServerPort,
-    serde = serde,
-    valueSerializer = valueSerializer,
-    containerOptions = KafkaContainerOptions(),
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  useEmbeddedKafka = false,
+  topicSuffixes = topicSuffixes,
+  listenPublishedMessagesFromStove = listenPublishedMessagesFromStove,
+  bridgeGrpcServerPort = bridgeGrpcServerPort,
+  serde = serde,
+  valueSerializer = valueSerializer,
+  containerOptions = KafkaContainerOptions(),
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<KafkaExposedConfiguration> {
   override val providedConfig: KafkaExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

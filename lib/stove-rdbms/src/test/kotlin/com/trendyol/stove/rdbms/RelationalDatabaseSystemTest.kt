@@ -56,14 +56,14 @@ class RelationalDatabaseSystemTest :
 private class TestRelationalDatabaseSystem(
   stove: Stove
 ) : RelationalDatabaseSystem<TestRelationalDatabaseSystem>(
-    stove = stove,
-    context = object : RelationalDatabaseContext(
-      runtime = ProvidedRuntime,
-      configureExposedConfiguration = { cfg ->
-        listOf("jdbcUrl=${cfg.jdbcUrl}")
-      }
-    ) {}
-  ) {
+  stove = stove,
+  context = object : RelationalDatabaseContext(
+    runtime = ProvidedRuntime,
+    configureExposedConfiguration = { cfg ->
+      listOf("jdbcUrl=${cfg.jdbcUrl}")
+    }
+  ) {}
+) {
   private val config = RelationalDatabaseExposedConfiguration(
     jdbcUrl = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
     host = "localhost",

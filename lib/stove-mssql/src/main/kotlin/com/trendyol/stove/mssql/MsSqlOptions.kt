@@ -128,14 +128,14 @@ class ProvidedMsSqlOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : MsSqlOptions(
-    applicationName = applicationName,
-    databaseName = databaseName,
-    userName = userName,
-    password = password,
-    container = MssqlContainerOptions(),
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  applicationName = applicationName,
+  databaseName = databaseName,
+  userName = userName,
+  password = password,
+  container = MssqlContainerOptions(),
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<RelationalDatabaseExposedConfiguration> {
   override val providedConfig: RelationalDatabaseExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

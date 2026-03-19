@@ -24,6 +24,7 @@ dependencies {
     api(projects.lib.stoveMysql)
     api(projects.lib.stoveMssql)
     api(projects.lib.stoveRedis)
+    api(projects.lib.stoveCassandra)
     api(projects.lib.stoveWiremock)
     api(projects.lib.stoveGrpcMock)
     api(projects.lib.stoveTracing)

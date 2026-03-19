@@ -47,5 +47,5 @@ class MessageStore {
     |Committed: ${pprint(committedMessages())}
     |Retried: ${pprint(retriedMessages())}
     |Failed: ${pprint(failedMessages())}
-    """.trimIndent().trimMargin()
+  """.trimIndent().trimMargin()
 }

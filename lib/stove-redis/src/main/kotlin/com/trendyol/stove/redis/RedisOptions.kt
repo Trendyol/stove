@@ -125,12 +125,12 @@ class ProvidedRedisOptions(
   cleanup: suspend (RedisClient) -> Unit = {},
   configureExposedConfiguration: (RedisExposedConfiguration) -> List<String>
 ) : RedisOptions(
-    database = database,
-    password = password,
-    container = RedisContainerOptions(),
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  database = database,
+  password = password,
+  container = RedisContainerOptions(),
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<RedisExposedConfiguration> {
   override val providedConfig: RedisExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

@@ -164,14 +164,14 @@ class ProvidedKafkaSystemOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
 ) : KafkaSystemOptions(
-    registry = registry,
-    ports = ports,
-    fallbackSerde = fallbackSerde,
-    containerOptions = KafkaContainerOptions(),
-    ops = ops,
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  registry = registry,
+  ports = ports,
+  fallbackSerde = fallbackSerde,
+  containerOptions = KafkaContainerOptions(),
+  ops = ops,
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<KafkaExposedConfiguration> {
   override val providedConfig: KafkaExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

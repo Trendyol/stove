@@ -39,12 +39,14 @@ nav:
     - gRPC Mocking: Components/14-grpc-mock.md
     - Tracing: Components/15-tracing.md
     - MySQL: Components/16-mysql.md
+    - Cassandra: Components/17-cassandra.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
   - Blog:
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
+      - "0.23.0 (upcoming)": release-notes/0.23.0.md
       - 0.22.2: release-notes/0.22.2.md
       - 0.21.2: release-notes/0.21.2.md
       - 0.21.0: release-notes/0.21.0.md

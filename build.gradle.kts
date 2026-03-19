@@ -93,8 +93,8 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "tes
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
         .editorConfigOverride(
           mapOf(
-//            "ktlint_standard_kdoc" to "disabled",
-//            "ktlint_standard_class-signature" to "disabled"
+            "ktlint_standard_kdoc" to "disabled",
+            "ktlint_standard_class-signature" to "disabled"
           )
         )
       targetExclude("build/", "generated/", "out/")
@@ -153,6 +153,7 @@ val publishedProjects = listOf(
   projects.lib.stoveMssql.name,
   projects.lib.stoveWiremock.name,
   projects.lib.stoveRedis.name,
+  projects.lib.stoveCassandra.name,
   projects.starters.ktor.stoveKtor.name,
   projects.starters.quarkus.stoveQuarkus.name,
   projects.starters.spring.stoveSpring.name,

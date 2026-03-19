@@ -35,5 +35,5 @@ internal class MessageStore {
     |Consumed: ${pprint(consumedRecords().map { it.copy(value = ByteArray(0)) })}
     |Published: ${pprint(producedRecords().map { it.copy(value = ByteArray(0)) })}
     |Failed: ${pprint(failedRecords().map { it.copy(value = ByteArray(0)) })}
-    """.trimIndent().trimMargin()
+  """.trimIndent().trimMargin()
 }

@@ -177,7 +177,7 @@ suspend inline fun <reified T : Any> ValidationDsl.using(
 suspend inline fun <
   reified T1 : Any,
   reified T2 : Any
-> ValidationDsl.using(
+  > ValidationDsl.using(
   crossinline validation: suspend (T1, T2) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
@@ -226,7 +226,7 @@ suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
   reified T3 : Any
-> ValidationDsl.using(
+  > ValidationDsl.using(
   crossinline validation: suspend (T1, T2, T3) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
@@ -279,7 +279,7 @@ suspend inline fun <
   reified T2 : Any,
   reified T3 : Any,
   reified T4 : Any
-> ValidationDsl.using(
+  > ValidationDsl.using(
   crossinline validation: suspend (T1, T2, T3, T4) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"
@@ -336,7 +336,7 @@ suspend inline fun <
   reified T3 : Any,
   reified T4 : Any,
   reified T5 : Any
-> ValidationDsl.using(
+  > ValidationDsl.using(
   crossinline validation: suspend (T1, T2, T3, T4, T5) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   val name1 = T1::class.simpleName ?: "Unknown"

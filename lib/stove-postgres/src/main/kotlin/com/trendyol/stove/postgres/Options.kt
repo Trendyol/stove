@@ -107,13 +107,13 @@ class ProvidedPostgresqlOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : PostgresqlOptions(
-    databaseName = databaseName,
-    username = username,
-    password = password,
-    container = PostgresqlContainerOptions(),
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  databaseName = databaseName,
+  username = username,
+  password = password,
+  container = PostgresqlContainerOptions(),
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<RelationalDatabaseExposedConfiguration> {
   override val providedConfig: RelationalDatabaseExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

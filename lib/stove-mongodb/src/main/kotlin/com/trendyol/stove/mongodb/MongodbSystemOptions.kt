@@ -142,14 +142,14 @@ class ProvidedMongodbSystemOptions(
   cleanup: suspend (MongoClient) -> Unit = {},
   configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>
 ) : MongodbSystemOptions(
-    databaseOptions = databaseOptions,
-    container = MongoContainerOptions(),
-    configureClient = configureClient,
-    serde = serde,
-    jsonWriterSettings = jsonWriterSettings,
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  databaseOptions = databaseOptions,
+  container = MongoContainerOptions(),
+  configureClient = configureClient,
+  serde = serde,
+  jsonWriterSettings = jsonWriterSettings,
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<MongodbExposedConfiguration> {
   override val providedConfig: MongodbExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

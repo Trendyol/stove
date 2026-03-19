@@ -44,9 +44,9 @@ abstract class BridgeSystemTests :
         }
 
         using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot> {
-          getUtcNow: GetUtcNow,
-          testAppInitializers: TestAppInitializers,
-          parameterCollectorOfSpringBoot: ParameterCollectorOfSpringBoot
+            getUtcNow: GetUtcNow,
+            testAppInitializers: TestAppInitializers,
+            parameterCollectorOfSpringBoot: ParameterCollectorOfSpringBoot
           ->
           getUtcNow() shouldBe GetUtcNow.frozenTime
           testAppInitializers.appReady shouldBe true
@@ -58,10 +58,10 @@ abstract class BridgeSystemTests :
         }
 
         using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot, ExampleService> {
-          getUtcNow: GetUtcNow,
-          testAppInitializers: TestAppInitializers,
-          parameterCollectorOfSpringBoot: ParameterCollectorOfSpringBoot,
-          exampleService: ExampleService
+            getUtcNow: GetUtcNow,
+            testAppInitializers: TestAppInitializers,
+            parameterCollectorOfSpringBoot: ParameterCollectorOfSpringBoot,
+            exampleService: ExampleService
           ->
           getUtcNow() shouldBe GetUtcNow.frozenTime
           testAppInitializers.appReady shouldBe true
@@ -74,11 +74,11 @@ abstract class BridgeSystemTests :
         }
 
         using<GetUtcNow, TestAppInitializers, ParameterCollectorOfSpringBoot, ExampleService, ObjectMapper> {
-          getUtcNow: GetUtcNow,
-          testAppInitializers: TestAppInitializers,
-          parameterCollectorOfSpringBoot: ParameterCollectorOfSpringBoot,
-          exampleService: ExampleService,
-          objectMapper: ObjectMapper
+            getUtcNow: GetUtcNow,
+            testAppInitializers: TestAppInitializers,
+            parameterCollectorOfSpringBoot: ParameterCollectorOfSpringBoot,
+            exampleService: ExampleService,
+            objectMapper: ObjectMapper
           ->
           getUtcNow() shouldBe GetUtcNow.frozenTime
           testAppInitializers.appReady shouldBe true

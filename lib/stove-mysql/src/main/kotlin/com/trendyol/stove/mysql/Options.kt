@@ -110,13 +110,13 @@ class ProvidedMySqlOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : MySqlOptions(
-    databaseName = databaseName,
-    username = username,
-    password = password,
-    container = MySqlContainerOptions(),
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  databaseName = databaseName,
+  username = username,
+  password = password,
+  container = MySqlContainerOptions(),
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<RelationalDatabaseExposedConfiguration> {
   override val providedConfig: RelationalDatabaseExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

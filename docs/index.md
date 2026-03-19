@@ -115,7 +115,7 @@ Stove composes framework starters with pluggable components, so you can match yo
 
 - APIs through [HTTP](Components/05-http.md) or [gRPC](Components/12-grpc.md)
 - event flows through [Kafka](Components/02-kafka.md)
-- persistence through [PostgreSQL](Components/06-postgresql.md), [MySQL](Components/16-mysql.md), [MongoDB](Components/07-mongodb.md), [Redis](Components/09-redis.md), and more
+- persistence through [PostgreSQL](Components/06-postgresql.md), [MySQL](Components/16-mysql.md), [MongoDB](Components/07-mongodb.md), [Cassandra](Components/17-cassandra.md), [Redis](Components/09-redis.md), and more
 - external integrations through [WireMock](Components/04-wiremock.md) and [gRPC Mock](Components/14-grpc-mock.md)
 - execution diagnostics through [Reporting](Components/13-reporting.md) and [Tracing](Components/15-tracing.md)
 
