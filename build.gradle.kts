@@ -153,6 +153,7 @@ val publishedProjects = listOf(
   projects.lib.stoveMssql.name,
   projects.lib.stoveWiremock.name,
   projects.lib.stoveRedis.name,
+  projects.lib.stoveCassandra.name,
   projects.starters.ktor.stoveKtor.name,
   projects.starters.quarkus.stoveQuarkus.name,
   projects.starters.spring.stoveSpring.name,
