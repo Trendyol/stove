@@ -39,6 +39,7 @@ nav:
     - gRPC Mocking: Components/14-grpc-mock.md
     - Tracing: Components/15-tracing.md
     - MySQL: Components/16-mysql.md
+    - Cassandra: Components/17-cassandra.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
