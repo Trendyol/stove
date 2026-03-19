@@ -8,7 +8,7 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.slf4j.*
 import java.net.InetSocketAddress
 
@@ -250,11 +250,29 @@ class CassandraSystem internal constructor(
       )
     }
 
-  private fun createSession(config: CassandraExposedConfiguration): CqlSession = CqlSession
-    .builder()
-    .addContactPoint(InetSocketAddress(config.host, config.port))
-    .withLocalDatacenter(config.datacenter)
-    .build()
+  private suspend fun createSession(config: CassandraExposedConfiguration): CqlSession {
+    val maxAttempts = 10
+    val retryDelayMs = 3_000L
+    var lastException: Exception? = null
+    repeat(maxAttempts) { attempt ->
+      try {
+        return CqlSession
+          .builder()
+          .addContactPoint(InetSocketAddress(config.host, config.port))
+          .withLocalDatacenter(config.datacenter)
+          .build()
+      } catch (e: Exception) {
+        lastException = e
+        logger.warn(
+          "Failed to create CQL session (attempt ${attempt + 1}/$maxAttempts): ${e.message}. Retrying in ${retryDelayMs}ms..."
+        )
+        if (attempt < maxAttempts - 1) {
+          delay(retryDelayMs)
+        }
+      }
+    }
+    throw IllegalStateException("Failed to create CQL session after $maxAttempts attempts", lastException)
+  }
 
   private inline fun withContainerOrWarn(
     operation: String,

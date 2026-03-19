@@ -118,9 +118,15 @@ class ProvidedCassandraStrategy : CassandraTestStrategy {
   }
 
   override suspend fun stop() {
-    com.trendyol.stove.system.Stove
-      .stop()
-    externalContainer.stop()
+    try {
+      com.trendyol.stove.system.Stove
+        .stop()
+    } catch (e: IllegalStateException) {
+      logger.warn("Stove.stop() failed (may not have been initialized): ${e.message}")
+    }
+    if (::externalContainer.isInitialized) {
+      externalContainer.stop()
+    }
     logger.info("Cassandra provided tests completed")
   }
 }
