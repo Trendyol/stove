@@ -5,7 +5,7 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.testExtensions.stoveExtensionsKotest)
   testImplementation(libs.logback.classic)
 }
 

@@ -191,6 +191,20 @@ class CassandraSystemTests :
       }
     }
 
+    should("use the configured keyspace as the default session keyspace") {
+      stove {
+        cassandra {
+          shouldExecute("CREATE TABLE IF NOT EXISTS default_keyspace_test (id uuid PRIMARY KEY, name text)")
+          shouldExecute("INSERT INTO default_keyspace_test (id, name) VALUES (uuid(), 'default-keyspace')")
+          shouldQuery("SELECT * FROM default_keyspace_test") { resultSet ->
+            val rows = resultSet.all()
+            rows.isNotEmpty() shouldBe true
+            rows.first().getString("name") shouldBe "default-keyspace"
+          }
+        }
+      }
+    }
+
     should("provide access to the raw CQL session") {
       stove {
         cassandra {

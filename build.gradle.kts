@@ -93,8 +93,8 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "tes
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
         .editorConfigOverride(
           mapOf(
-//            "ktlint_standard_kdoc" to "disabled",
-//            "ktlint_standard_class-signature" to "disabled"
+            "ktlint_standard_kdoc" to "disabled",
+            "ktlint_standard_class-signature" to "disabled"
           )
         )
       targetExclude("build/", "generated/", "out/")

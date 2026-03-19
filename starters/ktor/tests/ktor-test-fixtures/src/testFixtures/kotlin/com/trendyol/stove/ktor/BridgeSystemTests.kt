@@ -15,48 +15,48 @@ import java.math.BigDecimal
 abstract class BridgeSystemTests(
   private val stoveSetup: AbstractProjectConfig
 ) : ShouldSpec({
-    beforeSpec {
-      stoveSetup.beforeProject()
-    }
+  beforeSpec {
+    stoveSetup.beforeProject()
+  }
 
-    afterSpec {
-      stoveSetup.afterProject()
-    }
+  afterSpec {
+    stoveSetup.afterProject()
+  }
 
-    should("resolve service from DI container") {
-      stove {
-        using<ExampleService> {
-          whatIsTheTime() shouldBe GetUtcNow.frozenTime
-        }
+  should("resolve service from DI container") {
+    stove {
+      using<ExampleService> {
+        whatIsTheTime() shouldBe GetUtcNow.frozenTime
       }
     }
+  }
 
-    should("resolve multiple dependencies") {
-      stove {
-        using<GetUtcNow, ExampleService> { getUtcNow, exampleService ->
-          getUtcNow() shouldBe GetUtcNow.frozenTime
-          exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
-        }
+  should("resolve multiple dependencies") {
+    stove {
+      using<GetUtcNow, ExampleService> { getUtcNow, exampleService ->
+        getUtcNow() shouldBe GetUtcNow.frozenTime
+        exampleService.whatIsTheTime() shouldBe GetUtcNow.frozenTime
       }
     }
+  }
 
-    should("resolve config from DI container") {
-      stove {
-        using<TestConfig> {
-          message shouldBe "Hello from Stove!"
-        }
+  should("resolve config from DI container") {
+    stove {
+      using<TestConfig> {
+        message shouldBe "Hello from Stove!"
       }
     }
+  }
 
-    should("resolve multiple instances of same interface") {
-      stove {
-        using<List<PaymentService>> {
-          val order = Order("order-123", BigDecimal("99.99"))
-          val results = map { it.pay(order) }
+  should("resolve multiple instances of same interface") {
+    stove {
+      using<List<PaymentService>> {
+        val order = Order("order-123", BigDecimal("99.99"))
+        val results = map { it.pay(order) }
 
-          results.map { it.provider } shouldContainExactlyInAnyOrder listOf("Stripe", "PayPal", "Square")
-          results.all { it.success } shouldBe true
-        }
+        results.map { it.provider } shouldContainExactlyInAnyOrder listOf("Stripe", "PayPal", "Square")
+        results.all { it.success } shouldBe true
       }
     }
-  })
+  }
+})

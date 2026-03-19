@@ -465,7 +465,7 @@ kafka {
 }
 ```
 
-Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis.
+Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, Elasticsearch, Redis.
 
 ### Migrations
 
@@ -481,7 +481,7 @@ postgresql {
 }
 ```
 
-Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis.
+Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, Elasticsearch, Redis.
 
 ### Provided Instances
 
@@ -555,7 +555,7 @@ test("should create order with payment processing") {
 
 | Category   | Components                                                  |
 |------------|-------------------------------------------------------------|
-| Databases  | PostgreSQL, MySQL, MongoDB, Couchbase, MSSQL, Elasticsearch, Redis |
+| Databases  | PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, Elasticsearch, Redis |
 | Messaging  | Kafka                                                       |
 | HTTP       | Built-in client, WebSockets, WireMock                       |
 | gRPC       | Client (grpc-kotlin), Mock Server (native)                  |
@@ -570,6 +570,7 @@ test("should create order with payment processing") {
 | MSSQL         |     ✅      |    ✅    |         ✅         |       ✅       |
 | MongoDB       |     ✅      |    ✅    |         ✅         |       ✅       |
 | Couchbase     |     ✅      |    ✅    |         ✅         |       ✅       |
+| Cassandra     |     ✅      |    ✅    |         ✅         |       ✅       |
 | Elasticsearch |     ✅      |    ✅    |         ✅         |       ✅       |
 | Redis         |     ✅      |    ✅    |         ✅         |       ✅       |
 | Kafka         |     ✅      |    ✅    |         ✅         |       ✅       |

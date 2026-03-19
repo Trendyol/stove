@@ -119,7 +119,6 @@ public final class com/trendyol/stove/cassandra/CassandraSystemOptions$Companion
 public final class com/trendyol/stove/cassandra/OptionsKt {
 	public static final fun cassandra-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun cassandra-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
-	public static final fun createSession (Lcom/trendyol/stove/cassandra/CassandraExposedConfiguration;)Lcom/datastax/oss/driver/api/core/CqlSession;
 }
 
 public final class com/trendyol/stove/cassandra/ProvidedCassandraSystemOptions : com/trendyol/stove/cassandra/CassandraSystemOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {

@@ -20,7 +20,7 @@ class StoveOptionsDslTest :
         System.getenv("CI") != "true" &&
           System.getenv("GITLAB_CI") != "true" &&
           System.getenv("GITHUB_ACTIONS") != "true"
-      )
+        )
     }
 
     test("should enable reuse for test containers") {

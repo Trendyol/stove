@@ -95,12 +95,12 @@ class ProvidedElasticsearchSystemOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : ElasticsearchSystemOptions(
-    clientConfigurer = clientConfigurer,
-    container = ElasticContainerOptions(),
-    jsonpMapper = jsonpMapper,
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  clientConfigurer = clientConfigurer,
+  container = ElasticContainerOptions(),
+  jsonpMapper = jsonpMapper,
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<ElasticSearchExposedConfiguration> {
   override val providedConfig: ElasticSearchExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

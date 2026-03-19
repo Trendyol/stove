@@ -96,6 +96,53 @@ Stove()
   .run()
 ```
 
+### Cassandra
+
+```kotlin
+// Container-based
+Stove()
+  .with {
+    cassandra {
+      CassandraSystemOptions(
+        keyspace = "my_keyspace",
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "spring.cassandra.contact-points=${cfg.host}:${cfg.port}",
+            "spring.cassandra.local-datacenter=${cfg.datacenter}",
+            "spring.cassandra.keyspace-name=${cfg.keyspace}"
+          )
+        }
+      )
+    }
+  }
+  .run()
+
+// Provided instance
+Stove()
+  .with {
+    cassandra {
+      CassandraSystemOptions.provided(
+        host = "cassandra-host",
+        port = 9042,
+        datacenter = "datacenter1",
+        keyspace = "my_keyspace",
+        runMigrations = true,
+        cleanup = { session ->
+          session.execute("TRUNCATE my_keyspace.users")
+        },
+        configureExposedConfiguration = { cfg ->
+          listOf(
+            "spring.cassandra.contact-points=${cfg.host}:${cfg.port}",
+            "spring.cassandra.local-datacenter=${cfg.datacenter}",
+            "spring.cassandra.keyspace-name=${cfg.keyspace}"
+          )
+        }
+      )
+    }
+  }
+  .run()
+```
+
 ### Kafka
 
 ```kotlin

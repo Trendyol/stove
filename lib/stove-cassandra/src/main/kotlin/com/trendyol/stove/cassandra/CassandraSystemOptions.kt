@@ -102,12 +102,12 @@ class ProvidedCassandraSystemOptions(
   cleanup: suspend (CqlSession) -> Unit = {},
   configureExposedConfiguration: (CassandraExposedConfiguration) -> List<String>
 ) : CassandraSystemOptions(
-    keyspace = keyspace,
-    datacenter = datacenter,
-    container = CassandraContainerOptions(),
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  keyspace = keyspace,
+  datacenter = datacenter,
+  container = CassandraContainerOptions(),
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<CassandraExposedConfiguration> {
   override val providedConfig: CassandraExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations

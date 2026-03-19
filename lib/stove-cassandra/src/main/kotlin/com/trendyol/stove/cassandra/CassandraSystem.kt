@@ -2,7 +2,7 @@
 
 package com.trendyol.stove.cassandra
 
-import com.datastax.oss.driver.api.core.*
+import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
@@ -119,6 +119,7 @@ class CassandraSystem internal constructor(
     exposedConfiguration = obtainExposedConfiguration()
     cqlSession = createSession(exposedConfiguration)
     runMigrationsIfNeeded()
+    rebindSessionToDefaultKeyspaceIfAvailable(exposedConfiguration)
   }
 
   override suspend fun stop(): Unit = whenContainer { it.stop() }
@@ -131,8 +132,10 @@ class CassandraSystem internal constructor(
         context.options.cleanup(cqlSession)
         cqlSession.close()
       }
+    }.recover { logger.warn("Cassandra cleanup failed", it) }
+    Try {
       executeWithReuseCheck { stop() }
-    }.recover { logger.warn("Cassandra session close failed", it) }
+    }.recover { logger.warn("Cassandra stop failed", it) }
   }
 
   /**
@@ -251,7 +254,15 @@ class CassandraSystem internal constructor(
     }
 
   @Suppress("TooGenericExceptionCaught")
-  private suspend fun createSession(config: CassandraExposedConfiguration): CqlSession {
+  private suspend fun createSession(
+    config: CassandraExposedConfiguration
+  ): CqlSession = createSession(config, useKeyspace = false)
+
+  @Suppress("TooGenericExceptionCaught")
+  private suspend fun createSession(
+    config: CassandraExposedConfiguration,
+    useKeyspace: Boolean
+  ): CqlSession {
     var lastException: Exception? = null
     repeat(SESSION_CREATE_MAX_ATTEMPTS) { attempt ->
       try {
@@ -259,7 +270,13 @@ class CassandraSystem internal constructor(
           .builder()
           .addContactPoint(InetSocketAddress(config.host, config.port))
           .withLocalDatacenter(config.datacenter)
-          .build()
+          .apply {
+            if (useKeyspace) {
+              withKeyspace(config.keyspace)
+            }
+          }.build()
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         lastException = e
         logger.warn(
@@ -275,6 +292,34 @@ class CassandraSystem internal constructor(
       "Failed to create CQL session after $SESSION_CREATE_MAX_ATTEMPTS attempts",
       lastException
     )
+  }
+
+  @Suppress("TooGenericExceptionCaught")
+  private suspend fun rebindSessionToDefaultKeyspaceIfAvailable(config: CassandraExposedConfiguration) {
+    if (!configuredKeyspaceExists(config.keyspace)) {
+      logger.info(
+        "Configured Cassandra keyspace '{}' is not available yet; continuing without a default keyspace",
+        config.keyspace
+      )
+      return
+    }
+
+    val currentSession = cqlSession
+    try {
+      cqlSession = createSession(config, useKeyspace = true)
+      currentSession.close()
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      logger.warn("Failed to rebind session to keyspace '${config.keyspace}', continuing with keyspace-less session", e)
+    }
+  }
+
+  private fun configuredKeyspaceExists(keyspace: String): Boolean {
+    val statement = cqlSession
+      .prepare("SELECT keyspace_name FROM system_schema.keyspaces WHERE keyspace_name = ?")
+      .bind(keyspace)
+    return cqlSession.execute(statement).one() != null
   }
 
   private inline fun withContainerOrWarn(

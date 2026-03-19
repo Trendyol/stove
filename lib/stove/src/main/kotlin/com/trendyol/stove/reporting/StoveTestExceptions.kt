@@ -41,7 +41,7 @@ private fun buildStoveReportMessage(
   |$originalMessage
   |
   |${formatStoveReport(stoveReport)}
-  """.trimMargin()
+""".trimMargin()
 
 private fun formatStoveReport(stoveReport: String): String {
   if (stoveReport.isBlank()) return ""

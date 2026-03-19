@@ -3,15 +3,12 @@
 package com.trendyol.stove.cassandra
 
 import arrow.core.getOrElse
-import com.datastax.oss.driver.api.core.CqlSession
 import com.trendyol.stove.containers.*
-import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
 import org.testcontainers.cassandra.CassandraContainer
 import org.testcontainers.utility.DockerImageName
-import java.net.InetSocketAddress
 
 @StoveDsl
 data class CassandraExposedConfiguration(
@@ -109,13 +106,3 @@ fun WithDsl.cassandra(
 suspend fun ValidationDsl.cassandra(
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
 ): Unit = validation(this.stove.cassandra())
-
-/**
- * Creates a [CqlSession] from the given [CassandraExposedConfiguration].
- */
-fun CassandraExposedConfiguration.createSession(): CqlSession = CqlSession
-  .builder()
-  .addContactPoint(InetSocketAddress(host, port))
-  .withLocalDatacenter(datacenter)
-  .withKeyspace(keyspace)
-  .build()

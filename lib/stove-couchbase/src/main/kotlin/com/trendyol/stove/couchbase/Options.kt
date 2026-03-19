@@ -93,13 +93,13 @@ class ProvidedCouchbaseSystemOptions(
   val runMigrations: Boolean = true,
   configureExposedConfiguration: (CouchbaseExposedConfiguration) -> List<String>
 ) : CouchbaseSystemOptions(
-    defaultBucket = defaultBucket,
-    containerOptions = CouchbaseContainerOptions(),
-    clusterSerDe = clusterSerDe,
-    clusterTranscoder = clusterTranscoder,
-    cleanup = cleanup,
-    configureExposedConfiguration = configureExposedConfiguration
-  ),
+  defaultBucket = defaultBucket,
+  containerOptions = CouchbaseContainerOptions(),
+  clusterSerDe = clusterSerDe,
+  clusterTranscoder = clusterTranscoder,
+  cleanup = cleanup,
+  configureExposedConfiguration = configureExposedConfiguration
+),
   ProvidedSystemOptions<CouchbaseExposedConfiguration> {
   override val providedConfig: CouchbaseExposedConfiguration = config
   override val runMigrationsForProvided: Boolean = runMigrations
