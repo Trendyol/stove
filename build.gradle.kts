@@ -37,6 +37,8 @@ apiValidation {
     "ktor-koin-tests",
     "ktor-test-fixtures",
     "stove-tracing-gradle-plugin",
+    "stove-portal-api",
+    "stove-portal",
   )
 }
 kover {

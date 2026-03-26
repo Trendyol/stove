@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme variables ─────────────────────────────────────────────── */
+
+:root {
+  --stove-base: #f8f9fa;
+  --stove-surface: #ffffff;
+  --stove-card: #f1f3f5;
+  --stove-border: #dee2e6;
+  --stove-text: #1f2937;
+  --stove-text-secondary: #6b7280;
+  --stove-text-muted: #9ca3af;
+  --stove-text-heading: #111827;
+  --stove-hover: rgba(0, 0, 0, 0.04);
+  --stove-blue: #2563eb;
+  --stove-green: #16a34a;
+  --stove-red: #dc2626;
+  --stove-amber: #d97706;
+  --stove-red-bg: rgba(220, 38, 38, 0.1);
+  --stove-amber-bg: rgba(217, 119, 6, 0.1);
+}
+
+:root.dark {
+  --stove-base: #080b12;
+  --stove-surface: #0a0e17;
+  --stove-card: #0d1117;
+  --stove-border: #1e293b;
+  --stove-text: #d1d5db;
+  --stove-text-secondary: #6b7280;
+  --stove-text-muted: #4b5563;
+  --stove-text-heading: #e5e7eb;
+  --stove-hover: rgba(255, 255, 255, 0.02);
+  --stove-blue: #60a5fa;
+  --stove-green: #4ade80;
+  --stove-red: #f87171;
+  --stove-amber: #fbbf24;
+  --stove-red-bg: rgba(127, 29, 29, 0.3);
+  --stove-amber-bg: rgba(120, 53, 15, 0.2);
+}
+
+/* ── Animations ──────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}

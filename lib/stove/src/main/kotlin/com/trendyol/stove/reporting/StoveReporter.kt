@@ -1,7 +1,7 @@
 package com.trendyol.stove.reporting
 
 import com.trendyol.stove.system.Stove
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.*
 
 /**
  * Central reporter that manages test reports and context.
@@ -15,22 +15,56 @@ import java.util.concurrent.ConcurrentHashMap
 class StoveReporter(
   val isEnabled: Boolean = true
 ) {
+  private val logger = org.slf4j.LoggerFactory.getLogger(StoveReporter::class.java)
   private val reports = ConcurrentHashMap<String, TestReport>()
   private val contextThreadLocal = ThreadLocal<String>()
+  private val listeners = CopyOnWriteArrayList<ReportEventListener>()
+
+  /** Register a listener to receive report events */
+  fun addListener(listener: ReportEventListener) {
+    listeners.add(listener)
+  }
+
+  /** Remove a previously registered listener */
+  fun removeListener(listener: ReportEventListener) {
+    listeners.remove(listener)
+  }
 
   /** Start tracking a new test */
   fun startTest(ctx: StoveTestContext) {
     contextThreadLocal.set(ctx.testId)
     reports.computeIfAbsent(ctx.testId) { TestReport(ctx.testId, ctx.testName) }
+    listeners.forEach {
+      runCatching { it.onTestStarted(ctx) }.onFailure { e -> logger.warn("Listener failed on onTestStarted", e) }
+    }
+  }
+
+  /** Mark the current test as failed */
+  fun reportFailure(error: String) {
+    val testId = resolveTestId() ?: return
+    listeners.forEach {
+      runCatching { it.onTestFailed(testId, error) }.onFailure { e -> logger.warn("Listener failed on onTestFailed", e) }
+    }
   }
 
   /** End tracking the current test */
-  fun endTest(): Unit = contextThreadLocal.remove()
+  fun endTest() {
+    val testId = contextThreadLocal.get()
+    contextThreadLocal.remove()
+    if (testId != null) {
+      listeners.forEach {
+        runCatching { it.onTestEnded(testId) }.onFailure { e -> logger.warn("Listener failed on onTestEnded", e) }
+      }
+    }
+  }
 
   /** Record an entry in the current test's report */
   fun record(entry: ReportEntry) {
     if (!isEnabled) return
     currentTest().record(entry)
+    listeners.forEach {
+      runCatching { it.onEntryRecorded(entry) }.onFailure { e -> logger.warn("Listener failed on onEntryRecorded", e) }
+    }
   }
 
   /** Get report for current test, creating if needed */

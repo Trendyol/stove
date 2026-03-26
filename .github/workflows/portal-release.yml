@@ -1,0 +1,166 @@
+name: Portal CLI Release
+
+on:
+  push:
+    tags:
+      - 'portal-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-14
+            label: darwin-arm64
+          - target: x86_64-apple-darwin
+            runner: macos-13
+            label: darwin-amd64
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            label: linux-amd64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: tools/stove-cli
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#portal-v}" >> "$GITHUB_OUTPUT"
+        working-directory: .
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: tools/stove-cli/spa/package-lock.json
+
+      - name: Build SPA
+        run: cd spa && npm ci && npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install protoc (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - name: Install protoc (macOS)
+        if: runner.os == 'macOS'
+        run: brew install protobuf
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/stove-cli/target
+          key: cargo-release-${{ matrix.target }}-${{ hashFiles('tools/stove-cli/Cargo.lock') }}
+          restore-keys: cargo-release-${{ matrix.target }}-
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          SKIP_SPA_BUILD: "1"
+
+      - name: Package tarball
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ARCHIVE="stove-${VERSION}-${{ matrix.label }}.tar.gz"
+          mkdir -p staging
+          cp "target/${{ matrix.target }}/release/stove" staging/
+          cp "${GITHUB_WORKSPACE}/LICENSE" staging/
+          tar czf "${ARCHIVE}" -C staging .
+          shasum -a 256 "${ARCHIVE}" > "${ARCHIVE}.sha256"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: binaries-${{ matrix.label }}
+          path: |
+            tools/stove-cli/stove-*.tar.gz
+            tools/stove-cli/stove-*.sha256
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#portal-v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Stove CLI v${{ steps.version.outputs.version }}"
+          files: |
+            stove-*.tar.gz
+            stove-*.sha256
+          body: |
+            ## Stove CLI v${{ steps.version.outputs.version }}
+
+            Local observability dashboard for Stove e2e test runs.
+
+            ### Install
+
+            **Homebrew (macOS):**
+            ```
+            brew install Trendyol/trendyol-tap/stove
+            ```
+
+            **Shell script (macOS & Linux):**
+            ```
+            curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh
+            ```
+
+            **Manual:** Download the archive for your platform below, extract, and place `stove` in your PATH.
+
+  update-homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate and push Homebrew formula
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          BASE_URL="https://github.com/Trendyol/stove/releases/download/portal-v${VERSION}"
+
+          SHA_DARWIN_ARM64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-arm64.tar.gz.sha256" | awk '{print $1}')
+          SHA_DARWIN_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-amd64.tar.gz.sha256" | awk '{print $1}')
+          SHA_LINUX_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-linux-amd64.tar.gz.sha256" | awk '{print $1}')
+
+          cp tools/stove-cli/Formula/stove.rb stove.rb
+          sed -i "s/__VERSION__/${VERSION}/" stove.rb
+          sed -i "s/__SHA256_DARWIN_ARM64__/${SHA_DARWIN_ARM64}/" stove.rb
+          sed -i "s/__SHA256_DARWIN_AMD64__/${SHA_DARWIN_AMD64}/" stove.rb
+          sed -i "s/__SHA256_LINUX_AMD64__/${SHA_LINUX_AMD64}/" stove.rb
+
+          WORKDIR="$(mktemp -d)"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/Trendyol/homebrew-trendyol-tap.git" "${WORKDIR}"
+          cp stove.rb "${WORKDIR}/stove.rb"
+          cd "${WORKDIR}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add stove.rb
+          git commit -m "stove ${VERSION}"
+          git push

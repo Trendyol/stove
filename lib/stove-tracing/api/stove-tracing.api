@@ -27,6 +27,7 @@ public final class com/trendyol/stove/tracing/OTLPSpanReceiver {
 
 public final class com/trendyol/stove/tracing/StoveTraceCollector {
 	public fun <init> ()V
+	public final fun addSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
 	public final fun clear (Ljava/lang/String;)V
 	public final fun clearAll ()V
 	public final fun clearForTest (Ljava/lang/String;)V
@@ -40,6 +41,7 @@ public final class com/trendyol/stove/tracing/StoveTraceCollector {
 	public final fun record (Lcom/trendyol/stove/tracing/SpanInfo;)V
 	public final fun recordAll (Ljava/util/Collection;)V
 	public final fun registerTrace (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun removeSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
 	public final fun spanCount (Ljava/lang/String;)I
 	public final fun totalSpanCount ()I
 	public final fun traceCount ()I
@@ -121,8 +123,9 @@ public final class com/trendyol/stove/tracing/TracingOptions {
 	public final fun spanFilter (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/tracing/TracingOptions;
 }
 
-public final class com/trendyol/stove/tracing/TracingSystem : com/trendyol/stove/reporting/TraceProvider, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+public final class com/trendyol/stove/tracing/TracingSystem : com/trendyol/stove/reporting/SpanListenerRegistry, com/trendyol/stove/reporting/TraceProvider, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
 	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/tracing/TracingSystemOptions;)V
+	public fun addSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
 	public fun close ()V
 	public final fun currentContext ()Larrow/core/Option;
 	public final fun endTrace ()V

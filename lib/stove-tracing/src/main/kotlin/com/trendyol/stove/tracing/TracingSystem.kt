@@ -14,7 +14,8 @@ class TracingSystem(
   private val options: TracingSystemOptions
 ) : PluggedSystem,
   RunAware,
-  TraceProvider {
+  TraceProvider,
+  SpanListenerRegistry {
   private val logger = org.slf4j.LoggerFactory.getLogger(TracingSystem::class.java)
   internal val collector: StoveTraceCollector = StoveTraceCollector()
   private var spanReceiver: OTLPSpanReceiver? = null
@@ -51,6 +52,10 @@ class TracingSystem(
 
   fun validation(traceId: String): TraceValidationDsl =
     createValidation(traceId)
+
+  override fun addSpanListener(listener: SpanEventListener) {
+    collector.addSpanListener(listener)
+  }
 
   override fun then(): Stove = stove
 

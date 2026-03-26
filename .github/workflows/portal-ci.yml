@@ -1,0 +1,71 @@
+name: Portal CLI CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/stove-cli/**'
+      - 'lib/stove-portal-api/src/main/proto/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stove-cli/**'
+      - 'lib/stove-portal-api/src/main/proto/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/stove-cli
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: tools/stove-cli/spa/package-lock.json
+
+      - name: Install SPA dependencies
+        run: cd spa && npm ci
+
+      - name: SPA lint and format check
+        run: cd spa && npx biome check src
+
+      - name: Build SPA
+        run: cd spa && npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/stove-cli/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('tools/stove-cli/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+        env:
+          SKIP_SPA_BUILD: "1"
+
+      - name: Run tests
+        run: cargo test
+        env:
+          SKIP_SPA_BUILD: "1"

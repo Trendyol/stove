@@ -454,6 +454,20 @@ public final class com/trendyol/stove/reporting/ReportEntry$Companion {
 	public static synthetic fun success$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
 }
 
+public abstract interface class com/trendyol/stove/reporting/ReportEventListener {
+	public fun onEntryRecorded (Lcom/trendyol/stove/reporting/ReportEntry;)V
+	public fun onTestEnded (Ljava/lang/String;)V
+	public fun onTestFailed (Ljava/lang/String;Ljava/lang/String;)V
+	public fun onTestStarted (Lcom/trendyol/stove/reporting/StoveTestContext;)V
+}
+
+public final class com/trendyol/stove/reporting/ReportEventListener$DefaultImpls {
+	public static fun onEntryRecorded (Lcom/trendyol/stove/reporting/ReportEventListener;Lcom/trendyol/stove/reporting/ReportEntry;)V
+	public static fun onTestEnded (Lcom/trendyol/stove/reporting/ReportEventListener;Ljava/lang/String;)V
+	public static fun onTestFailed (Lcom/trendyol/stove/reporting/ReportEventListener;Ljava/lang/String;Ljava/lang/String;)V
+	public static fun onTestStarted (Lcom/trendyol/stove/reporting/ReportEventListener;Lcom/trendyol/stove/reporting/StoveTestContext;)V
+}
+
 public abstract interface class com/trendyol/stove/reporting/ReportRenderer {
 	public abstract fun render (Lcom/trendyol/stove/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
 }
@@ -474,11 +488,24 @@ public final class com/trendyol/stove/reporting/Reports$DefaultImpls {
 	public static fun snapshot (Lcom/trendyol/stove/reporting/Reports;)Lcom/trendyol/stove/reporting/SystemSnapshot;
 }
 
+public abstract interface class com/trendyol/stove/reporting/SpanEventListener {
+	public fun onSpanRecorded (Lcom/trendyol/stove/tracing/SpanInfo;)V
+}
+
+public final class com/trendyol/stove/reporting/SpanEventListener$DefaultImpls {
+	public static fun onSpanRecorded (Lcom/trendyol/stove/reporting/SpanEventListener;Lcom/trendyol/stove/tracing/SpanInfo;)V
+}
+
+public abstract interface class com/trendyol/stove/reporting/SpanListenerRegistry {
+	public abstract fun addSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
+}
+
 public final class com/trendyol/stove/reporting/StoveReporter {
 	public static final field Companion Lcom/trendyol/stove/reporting/StoveReporter$Companion;
 	public fun <init> ()V
 	public fun <init> (Z)V
 	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun addListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public final fun clear ()V
 	public final fun collectSnapshots ()Ljava/util/List;
 	public final fun currentTest ()Lcom/trendyol/stove/reporting/TestReport;
@@ -493,6 +520,8 @@ public final class com/trendyol/stove/reporting/StoveReporter {
 	public final fun printIfFailed (Lcom/trendyol/stove/reporting/ReportRenderer;)V
 	public static synthetic fun printIfFailed$default (Lcom/trendyol/stove/reporting/StoveReporter;Lcom/trendyol/stove/reporting/ReportRenderer;ILjava/lang/Object;)V
 	public final fun record (Lcom/trendyol/stove/reporting/ReportEntry;)V
+	public final fun removeListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
+	public final fun reportFailure (Ljava/lang/String;)V
 	public final fun startTest (Lcom/trendyol/stove/reporting/StoveTestContext;)V
 }
 

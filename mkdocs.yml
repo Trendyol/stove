@@ -40,6 +40,7 @@ nav:
     - Tracing: Components/15-tracing.md
     - MySQL: Components/16-mysql.md
     - Cassandra: Components/17-cassandra.md
+    - Portal: Components/18-portal.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
