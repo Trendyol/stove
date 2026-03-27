@@ -4,12 +4,45 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (leave empty to read from gradle.properties)'
+        required: false
 
 permissions:
   contents: write
 
 jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve version
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT_VERSION="${{ github.event.inputs.version }}"
+            if [ -n "$INPUT_VERSION" ]; then
+              VERSION="$INPUT_VERSION"
+            else
+              VERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
+            fi
+            TAG="v${VERSION}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${VERSION} (tag: ${TAG})"
+
   build:
+    needs: resolve-version
     strategy:
       matrix:
         include:
@@ -29,11 +62,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-        working-directory: .
 
       - uses: actions/setup-node@v6
         with:
@@ -72,7 +100,7 @@ jobs:
 
       - name: Package tarball
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ needs.resolve-version.outputs.version }}"
           ARCHIVE="stove-${VERSION}-${{ matrix.label }}.tar.gz"
           mkdir -p staging
           cp "target/${{ matrix.target }}/release/stove" staging/
@@ -87,32 +115,48 @@ jobs:
             tools/stove-cli/stove-*.tar.gz
             tools/stove-cli/stove-*.sha256
 
-  upload:
-    needs: build
+  release:
+    needs: [resolve-version, build]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ needs.resolve-version.outputs.version }}
 
     steps:
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
       - uses: actions/download-artifact@v8
         with:
           pattern: binaries-*
           merge-multiple: true
 
-      - name: Upload CLI binaries to existing release
+      - name: Upload CLI binaries to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.resolve-version.outputs.tag }}
+          name: "Stove CLI v${{ needs.resolve-version.outputs.version }}"
           files: |
             stove-*.tar.gz
             stove-*.sha256
           fail_on_unmatched_files: false
+          body: |
+            ## Stove CLI v${{ needs.resolve-version.outputs.version }}
+
+            Local observability dashboard for Stove e2e test runs.
+
+            ### Install
+
+            **Homebrew (macOS):**
+            ```
+            brew install Trendyol/trendyol-tap/stove
+            ```
+
+            **Shell script (macOS & Linux):**
+            ```
+            curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh
+            ```
+
+            **Manual:** Download the archive for your platform below, extract, and place `stove` in your PATH.
 
   update-homebrew:
-    needs: upload
+    needs: release
     runs-on: ubuntu-latest
 
     steps:
@@ -120,7 +164,7 @@ jobs:
 
       - name: Generate and push Homebrew formula
         env:
-          VERSION: ${{ needs.upload.outputs.version }}
+          VERSION: ${{ needs.release.outputs.version }}
           TAP_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
         run: |
           BASE_URL="https://github.com/Trendyol/stove/releases/download/v${VERSION}"
