@@ -97,7 +97,7 @@ jobs:
       # Upload coverage to Codecov
       - name: Upload coverage to Codecov
         if: github.repository == 'Trendyol/stove'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: false
         env:
