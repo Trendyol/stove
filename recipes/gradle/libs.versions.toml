@@ -6,7 +6,7 @@ quarkus = "3.34.1"
 ktlint = "1.8.0"
 
 # Spring-Boot
-spring-boot = "3.5.12"
+spring-boot = "3.5.13"
 spring-dependency-management = "1.1.7"
 spring-kafka = "3.3.14"
 
