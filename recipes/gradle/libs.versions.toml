@@ -42,7 +42,7 @@ kediatr = "4.3.0"
 
 # OpenTelemetry
 opentelemetry = "1.60.1"
-opentelemetry-instrumentation = "2.26.0"
+opentelemetry-instrumentation = "2.26.1"
 
 # gRPC
 grpc = "1.80.0"
@@ -55,10 +55,10 @@ db-scheduler = "16.7.1"
 
 # Testing
 stove = "1.0.0.514-SNAPSHOT"
-kotest = "6.1.7"
+kotest = "6.1.9"
 exposed = "1.1.1"
 postgresql = "42.7.10"
-flyway = "12.1.1"
+flyway = "12.2.0"
 
 [libraries]
 # Kotlin
