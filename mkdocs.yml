@@ -47,7 +47,7 @@ nav:
   - Blog:
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
-      - "0.23.0 (upcoming)": release-notes/0.23.0.md
+      - "0.23.0": release-notes/0.23.0.md
       - 0.22.2: release-notes/0.22.2.md
       - 0.21.2: release-notes/0.21.2.md
       - 0.21.0: release-notes/0.21.0.md
