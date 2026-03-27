@@ -1,6 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-stove-base: var(--stove-base);
+  --color-stove-surface: var(--stove-surface);
+  --color-stove-card: var(--stove-card);
+  --color-stove-border: var(--stove-border);
+
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+
+  --animate-fade-in: fade-in 0.2s ease;
+  --animate-pulse-dot: pulse-dot 1.5s ease-in-out infinite;
+}
 
 /* ── Theme variables ─────────────────────────────────────────────── */
 
@@ -42,7 +53,7 @@
 
 /* ── Animations ──────────────────────────────────────────────────── */
 
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
     transform: translateY(4px);
@@ -53,10 +64,6 @@
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.2s ease;
-}
-
 @keyframes pulse-dot {
   0%,
   100% {
@@ -65,8 +72,4 @@
   50% {
     opacity: 0.3;
   }
-}
-
-.animate-pulse-dot {
-  animation: pulse-dot 1.5s ease-in-out infinite;
 }
