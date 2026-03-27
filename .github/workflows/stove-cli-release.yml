@@ -1,4 +1,4 @@
-name: Portal CLI Release
+name: Stove CLI Release
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Portal CLI CI
+name: Stove CLI CI
 
 on:
   push:
