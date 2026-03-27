@@ -1,5 +1,5 @@
 [versions]
-kotest = "6.1.7"
+kotest = "6.1.9"
 
 [libraries]
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
