@@ -131,6 +131,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.resolve-version.outputs.tag }}
+          name: "Stove v${{ needs.resolve-version.outputs.version }}"
           files: |
             stove-*.tar.gz
             stove-*.sha256
