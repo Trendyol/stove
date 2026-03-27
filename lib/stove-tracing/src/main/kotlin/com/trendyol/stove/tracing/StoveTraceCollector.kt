@@ -1,11 +1,24 @@
 package com.trendyol.stove.tracing
 
+import com.trendyol.stove.reporting.SpanEventListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 class StoveTraceCollector {
+  private val logger = org.slf4j.LoggerFactory.getLogger(StoveTraceCollector::class.java)
   private val spans = ConcurrentHashMap<String, CopyOnWriteArrayList<SpanInfo>>()
   private val traceToTest = ConcurrentHashMap<String, String>()
+  private val spanListeners = CopyOnWriteArrayList<SpanEventListener>()
+
+  /** Register a listener to receive span events */
+  fun addSpanListener(listener: SpanEventListener) {
+    spanListeners.add(listener)
+  }
+
+  /** Remove a previously registered span listener */
+  fun removeSpanListener(listener: SpanEventListener) {
+    spanListeners.remove(listener)
+  }
 
   fun registerTrace(traceId: String, testId: String) {
     traceToTest[traceId] = testId
@@ -14,6 +27,9 @@ class StoveTraceCollector {
 
   fun record(span: SpanInfo) {
     spans.computeIfAbsent(span.traceId) { CopyOnWriteArrayList() }.add(span)
+    spanListeners.forEach {
+      runCatching { it.onSpanRecorded(span) }.onFailure { e -> logger.warn("Span listener failed on onSpanRecorded", e) }
+    }
   }
 
   fun recordAll(spansToRecord: Collection<SpanInfo>) {

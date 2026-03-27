@@ -26,6 +26,10 @@ Most teams start with 2 to 4 components, not the whole catalog.
 
     Add [Tracing](15-tracing.md) and [Reporting](13-reporting.md) early so failures show execution context instead of only raw assertions.
 
+-   **Visual test observability**
+
+    Add [Portal](18-portal.md) for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs.
+
 </div>
 
 ## Common Starting Sets
@@ -59,6 +63,7 @@ Most teams start with 2 to 4 components, not the whole catalog.
 | [Tracing](15-tracing.md) | `stove-tracing` | Execution tracing with OpenTelemetry for failure diagnostics |
 | [Provided Instances](11-provided-instances.md) | Built-in | Connect to existing infrastructure instead of containers |
 | [Reporting](13-reporting.md) | `stove-extensions-kotest` or `stove-extensions-junit` | Rich failure reports with execution context |
+| [Portal](18-portal.md) | `stove-portal` + [CLI](https://github.com/Trendyol/stove/tree/main/tools/stove-cli) | Real-time web dashboard for test observability |
 
 ## Quick Start
 
@@ -149,6 +154,7 @@ stove {
 | [Bridge](10-bridge.md) | Access application beans and services directly (supported by Spring, Ktor, and Micronaut starters) |
 | [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
 | [Tracing](15-tracing.md) | <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span> |
+| [Portal](18-portal.md) | Real-time web dashboard for browsing test runs, traces, and system snapshots |
 
 ## Common Configuration Pattern
 
@@ -320,3 +326,4 @@ test("should process order end-to-end") {
 - [Provided Instances](11-provided-instances.md) - Use external infrastructure
 - [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
 - [Tracing](15-tracing.md) - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span>
+- [Portal](18-portal.md) - Real-time web dashboard for browsing test runs, traces, and snapshots

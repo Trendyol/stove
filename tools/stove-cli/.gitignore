@@ -1,0 +1,6 @@
+# Rust
+/target/
+
+# SPA
+/spa/node_modules/
+/spa/dist/

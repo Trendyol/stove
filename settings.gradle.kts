@@ -26,7 +26,9 @@ include(
   "lib:stove-elasticsearch",
   "lib:stove-redis",
   "lib:stove-mongodb",
-  "lib:stove-cassandra"
+  "lib:stove-cassandra",
+  "lib:stove-portal-api",
+  "lib:stove-portal"
 )
 include(
   "test-extensions:stove-extensions-kotest",

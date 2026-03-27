@@ -1,8 +1,14 @@
+import com.trendyol.stove.gradle.stoveTracing
+
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.three)
   idea
   application
+}
+
+stoveTracing {
+  serviceName = "spring-example"
 }
 
 dependencies {
@@ -36,6 +42,8 @@ dependencies {
   testImplementation(projects.stove.lib.stoveElasticsearch)
   testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(projects.stove.starters.spring.stoveSpringKafka)
+  testImplementation(projects.stove.lib.stovePortal)
+  testImplementation(projects.stove.lib.stoveTracing)
 }
 
 application { mainClass.set("stove.spring.example.ExampleAppKt") }

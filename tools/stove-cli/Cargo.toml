@@ -1,0 +1,65 @@
+[package]
+name = "stove-cli"
+version = "0.0.0"
+edition = "2024"
+description = "CLI for Stove — local observability dashboard for e2e test runs"
+
+[lib]
+name = "stove"
+path = "src/lib.rs"
+
+[[bin]]
+name = "stove"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# gRPC server (receives events from Stove test process)
+tonic = "0.14"
+tonic-prost = "0.14"
+prost = "0.14"
+prost-types = "0.14"
+
+# HTTP server (serves REST API + SPA to browser)
+axum = { version = "0.8", features = ["json"] }
+tower-http = { version = "0.6", features = ["cors"] }
+
+# SSE (live updates to browser)
+tokio-stream = { version = "0.1", features = ["sync"] }
+
+# Database
+rusqlite = { version = "0.39", features = ["bundled"] }
+
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# CLI argument parsing
+clap = { version = "4", features = ["derive"] }
+
+# Embed SPA static files into binary
+rust-embed = "8"
+mime_guess = "2"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json"] }
+tempfile = "3"
+
+[build-dependencies]
+tonic-build = "0.14"
+tonic-prost-build = "0.14"

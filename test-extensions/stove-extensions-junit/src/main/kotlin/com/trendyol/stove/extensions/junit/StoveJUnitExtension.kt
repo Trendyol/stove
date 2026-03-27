@@ -52,6 +52,8 @@ class StoveJUnitExtension :
   override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
     if (!Stove.instanceInitialized()) throw throwable
 
+    Stove.reporter().reportFailure(throwable.message ?: throwable::class.simpleName ?: "Test failed")
+
     val options = Stove.options()
     if (!options.shouldEnrichFailures()) throw throwable
 

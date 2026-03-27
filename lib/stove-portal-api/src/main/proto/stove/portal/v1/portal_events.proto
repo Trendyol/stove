@@ -1,0 +1,94 @@
+syntax = "proto3";
+package stove.portal.v1;
+
+option java_package = "com.trendyol.stove.portal.api";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+message PortalEvent {
+  string run_id = 1;
+  oneof event {
+    RunStartedEvent run_started = 10;
+    RunEndedEvent run_ended = 11;
+    TestStartedEvent test_started = 12;
+    TestEndedEvent test_ended = 13;
+    EntryRecordedEvent entry_recorded = 14;
+    SpanRecordedEvent span_recorded = 15;
+    SnapshotEvent snapshot = 16;
+  }
+}
+
+message RunStartedEvent {
+  google.protobuf.Timestamp timestamp = 1;
+  string app_name = 2;
+  repeated string systems = 3;
+}
+
+message RunEndedEvent {
+  google.protobuf.Timestamp timestamp = 1;
+  int32 total_tests = 2;
+  int32 passed = 3;
+  int32 failed = 4;
+  int64 duration_ms = 5;
+}
+
+message TestStartedEvent {
+  string test_id = 1;
+  string test_name = 2;
+  string spec_name = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message TestEndedEvent {
+  string test_id = 1;
+  string status = 2;
+  int64 duration_ms = 3;
+  string error = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message EntryRecordedEvent {
+  string test_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string system = 3;
+  string action = 4;
+  string result = 5;
+  string input = 6;
+  string output = 7;
+  map<string, string> metadata = 8;
+  string expected = 9;
+  string actual = 10;
+  string error = 11;
+  string trace_id = 12;
+}
+
+message SpanRecordedEvent {
+  string trace_id = 1;
+  string span_id = 2;
+  string parent_span_id = 3;
+  string operation_name = 4;
+  string service_name = 5;
+  int64 start_time_nanos = 6;
+  int64 end_time_nanos = 7;
+  string status = 8;
+  map<string, string> attributes = 9;
+  ExceptionInfo exception = 10;
+}
+
+message ExceptionInfo {
+  string type = 1;
+  string message = 2;
+  repeated string stack_trace = 3;
+}
+
+message SnapshotEvent {
+  string test_id = 1;
+  string system = 2;
+  string state_json = 3;
+  string summary = 4;
+}
+
+message EventAck {
+  bool accepted = 1;
+}
