@@ -49,7 +49,7 @@ jobs:
         with:
           arguments: full-release
         env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ env.JRELEASER_PROJECT_VERSION }}
 
       - name: Upload JReleaser output
