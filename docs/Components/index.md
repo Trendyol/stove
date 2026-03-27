@@ -54,7 +54,7 @@ Most teams start with 2 to 4 components, not the whole catalog.
 | [MongoDB](07-mongodb.md) | `stove-mongodb` | NoSQL document database |
 | [MSSQL](08-mssql.md) | `stove-mssql` | Microsoft SQL Server |
 | [Redis](09-redis.md) | `stove-redis` | In-memory data store |
-| Cassandra | `stove-cassandra` | Wide-column NoSQL database |
+| [Cassandra](17-cassandra.md) | `stove-cassandra` | Wide-column NoSQL database |
 | [WireMock](04-wiremock.md) | `stove-wiremock` | HTTP mock server for external services |
 | [gRPC Mock](14-grpc-mock.md) | `stove-grpc-mock` | gRPC mock server for external gRPC services |
 | [HTTP Client](05-http.md) | `stove-http` | HTTP client for testing your API |
@@ -130,7 +130,7 @@ stove {
 | Document | [Couchbase](01-couchbase.md), [MongoDB](07-mongodb.md), [Elasticsearch](03-elasticsearch.md) | JSON document storage, search |
 | Relational | [PostgreSQL](06-postgresql.md), [MySQL](16-mysql.md), [MSSQL](08-mssql.md) | Structured data, transactions |
 | Key-Value | [Redis](09-redis.md) | Caching, sessions, pub/sub |
-| Wide-Column | Cassandra (`stove-cassandra`) | Time-series, IoT, large-scale writes |
+| Wide-Column | [Cassandra](17-cassandra.md) (`stove-cassandra`) | Time-series, IoT, large-scale writes |
 
 ### Messaging
 
@@ -322,6 +322,7 @@ test("should process order end-to-end") {
 - [MongoDB](07-mongodb.md) - Document database with aggregation support
 - [MSSQL](08-mssql.md) - Microsoft SQL Server support
 - [Redis](09-redis.md) - In-memory data store for caching
+- [Cassandra](17-cassandra.md) - Wide-column NoSQL database with CQL support
 - [Bridge](10-bridge.md) - Direct access to application beans
 - [Provided Instances](11-provided-instances.md) - Use external infrastructure
 - [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
