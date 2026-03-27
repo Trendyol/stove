@@ -65,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
   });
 
   println!(
-    "\n  Stove Portal v{} running\n  UI:   http://localhost:{}\n  gRPC: localhost:{}\n",
+    "\n  Stove CLI v{} running\n  UI:   http://localhost:{}\n  gRPC: localhost:{}\n",
     env!("STOVE_VERSION"),
     config.port,
     config.grpc_port

@@ -6,7 +6,7 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(
   name = "stove",
-  about = "Stove Portal \u{2014} local e2e test observability",
+  about = "Stove CLI \u{2014} local e2e test observability",
   version = env!("STOVE_VERSION")
 )]
 pub struct Config {

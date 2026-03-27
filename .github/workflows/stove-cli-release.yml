@@ -1,9 +1,9 @@
-name: Stove CLI Release
+name: Stove CLI Build
 
 on:
   push:
     tags:
-      - 'portal-v*'
+      - 'v*'
 
 permissions:
   contents: write
@@ -32,7 +32,7 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#portal-v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
         working-directory: .
 
       - uses: actions/setup-node@v6
@@ -87,52 +87,32 @@ jobs:
             tools/stove-cli/stove-*.tar.gz
             tools/stove-cli/stove-*.sha256
 
-  release:
+  upload:
     needs: build
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v6
-
       - name: Extract version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#portal-v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v8
         with:
           pattern: binaries-*
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: Upload CLI binaries to existing release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Stove CLI v${{ steps.version.outputs.version }}"
           files: |
             stove-*.tar.gz
             stove-*.sha256
-          body: |
-            ## Stove CLI v${{ steps.version.outputs.version }}
-
-            Local observability dashboard for Stove e2e test runs.
-
-            ### Install
-
-            **Homebrew (macOS):**
-            ```
-            brew install Trendyol/trendyol-tap/stove
-            ```
-
-            **Shell script (macOS & Linux):**
-            ```
-            curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh
-            ```
-
-            **Manual:** Download the archive for your platform below, extract, and place `stove` in your PATH.
+          fail_on_unmatched_files: false
 
   update-homebrew:
-    needs: release
+    needs: upload
     runs-on: ubuntu-latest
 
     steps:
@@ -140,10 +120,10 @@ jobs:
 
       - name: Generate and push Homebrew formula
         env:
-          VERSION: ${{ needs.release.outputs.version }}
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ needs.upload.outputs.version }}
+          TAP_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
         run: |
-          BASE_URL="https://github.com/Trendyol/stove/releases/download/portal-v${VERSION}"
+          BASE_URL="https://github.com/Trendyol/stove/releases/download/v${VERSION}"
 
           SHA_DARWIN_ARM64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-arm64.tar.gz.sha256" | awk '{print $1}')
           SHA_DARWIN_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-amd64.tar.gz.sha256" | awk '{print $1}')

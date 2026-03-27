@@ -37,7 +37,7 @@ Unlike [Reporting](13-reporting.md) (console output on failure) and [Tracing](15
 
 === "Manual Download"
 
-    Download the binary for your platform from [GitHub Releases](https://github.com/Trendyol/stove/releases?q=portal-v):
+    Download the binary for your platform from [GitHub Releases](https://github.com/Trendyol/stove/releases):
 
     | Platform    | Archive                                      |
     |-------------|----------------------------------------------|
@@ -60,7 +60,7 @@ stove
 You'll see:
 
 ```
-Stove Portal CLI v0.23.0
+Stove CLI v0.23.0
   HTTP server: http://localhost:4040
   gRPC server: http://localhost:4041
   Database: ~/.stove-portal.db

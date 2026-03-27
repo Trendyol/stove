@@ -61,9 +61,9 @@ resolve_version() {
   echo "Fetching latest release..."
   VERSION=$(
     curl -fsSL "https://api.github.com/repos/${REPO}/releases" \
-      | grep -o '"tag_name":\s*"portal-v[^"]*"' \
+      | grep -o '"tag_name":\s*"v[^"]*"' \
       | head -1 \
-      | sed 's/.*"portal-v\([^"]*\)".*/\1/'
+      | sed 's/.*"v\([^"]*\)".*/\1/'
   )
 
   if [ -z "$VERSION" ]; then
@@ -93,7 +93,7 @@ resolve_install_dir() {
 
 install() {
   ARCHIVE="stove-${VERSION}-${PLATFORM}.tar.gz"
-  DOWNLOAD_URL="https://github.com/${REPO}/releases/download/portal-v${VERSION}/${ARCHIVE}"
+  DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${ARCHIVE}"
   CHECKSUM_URL="${DOWNLOAD_URL}.sha256"
 
   TMPDIR="$(mktemp -d)"

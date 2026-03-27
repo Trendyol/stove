@@ -11,18 +11,18 @@ class Stove < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/Trendyol/stove/releases/download/portal-v#{version}/stove-#{version}-darwin-arm64.tar.gz"
+      url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-darwin-arm64.tar.gz"
       sha256 "__SHA256_DARWIN_ARM64__"
     end
     if Hardware::CPU.intel?
-      url "https://github.com/Trendyol/stove/releases/download/portal-v#{version}/stove-#{version}-darwin-amd64.tar.gz"
+      url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-darwin-amd64.tar.gz"
       sha256 "__SHA256_DARWIN_AMD64__"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/Trendyol/stove/releases/download/portal-v#{version}/stove-#{version}-linux-amd64.tar.gz"
+      url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-linux-amd64.tar.gz"
       sha256 "__SHA256_LINUX_AMD64__"
     end
   end

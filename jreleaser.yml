@@ -14,8 +14,8 @@ release:
   github:
     owner: Trendyol
     name: stove
-    tagName: "{{projectVersion}}"
-    releaseName: "{{projectVersion}}"
+    tagName: "v{{projectVersion}}"
+    releaseName: "Stove v{{projectVersion}}"
     overwrite: false
     skipTag: false
     changelog:

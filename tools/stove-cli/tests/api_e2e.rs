@@ -1,4 +1,4 @@
-//! End-to-end tests for the Stove Portal REST API.
+//! End-to-end tests for the Stove CLI REST API.
 //!
 //! Each test spins up a real axum server on an OS-assigned port backed by an
 //! in-memory SQLite database, then exercises the HTTP endpoints with `reqwest`.
