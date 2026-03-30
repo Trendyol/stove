@@ -202,7 +202,7 @@ impl EventIngestor {
     self
       .sender
       .send(IngestCommand::Persist {
-        event,
+        event: Box::new(event),
         flush_immediately,
       })
       .map_err(|_| AppError::Startup("persistence worker is not running".to_string()))
@@ -222,7 +222,7 @@ impl EventIngestor {
 
 enum IngestCommand {
   Persist {
-    event: PersistedPortalEvent,
+    event: Box<PersistedPortalEvent>,
     flush_immediately: bool,
   },
   Flush {
@@ -257,19 +257,18 @@ async fn run_ingest_loop(
 
     tokio::select! {
       maybe_command = receiver.recv() => {
-        match maybe_command {
-          Some(command) => handle_command(
+        if let Some(command) = maybe_command {
+          handle_command(
             command,
             repository.as_ref(),
             &mut pending,
             max_batch_size.max(1),
-          ),
-          None => {
-            if let Err(error) = persist_pending(repository.as_ref(), &mut pending) {
-              warn!(%error, "Failed to flush pending portal events during shutdown");
-            }
-            break;
+          );
+        } else {
+          if let Err(error) = persist_pending(repository.as_ref(), &mut pending) {
+            warn!(%error, "Failed to flush pending portal events during shutdown");
           }
+          break;
         }
       }
       () = &mut delay => {
@@ -292,11 +291,11 @@ fn handle_command(
       event,
       flush_immediately,
     } => {
-      pending.push(event);
-      if flush_immediately || pending.len() >= max_batch_size {
-        if let Err(error) = persist_pending(repository, pending) {
-          warn!(%error, "Failed to persist portal events after batch threshold");
-        }
+      pending.push(*event);
+      if (flush_immediately || pending.len() >= max_batch_size)
+        && let Err(error) = persist_pending(repository, pending)
+      {
+        warn!(%error, "Failed to persist portal events after batch threshold");
       }
     }
     IngestCommand::Flush { reply } => {
@@ -341,5 +340,5 @@ fn persist_pending(repository: &Repository, pending: &mut Vec<PersistedPortalEve
 
 fn live_record_id(seq: u64) -> i64 {
   let bounded = seq.min(i64::MAX as u64);
-  -(bounded as i64)
+  -bounded.cast_signed()
 }

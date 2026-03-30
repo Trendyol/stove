@@ -30,8 +30,7 @@ impl axum::response::IntoResponse for AppError {
   fn into_response(self) -> axum::response::Response {
     let status = match &self {
       AppError::GrpcTransport(_) => axum::http::StatusCode::BAD_GATEWAY,
-      AppError::Serialization(_) => axum::http::StatusCode::BAD_REQUEST,
-      AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,
+      AppError::Serialization(_) | AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,
       AppError::Database(_) | AppError::Startup(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     let body = axum::Json(serde_json::json!({ "error": self.to_string() }));

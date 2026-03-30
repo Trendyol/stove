@@ -9,7 +9,7 @@ use crate::storage::models::{
 
 /// Thread-safe repository for CRUD operations on the `SQLite` database.
 ///
-/// Writes and reads use separate SQLite connections so the UI can keep polling
+/// Writes and reads use separate `SQLite` connections so the UI can keep polling
 /// while ingestion is busy. Each side is still serialized through its own mutex
 /// because a single `rusqlite::Connection` is not `Sync`.
 pub struct Repository {
