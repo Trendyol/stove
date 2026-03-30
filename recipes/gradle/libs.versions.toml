@@ -25,7 +25,7 @@ slf4j = "2.0.17"
 kotlinLogging = "8.0.01"
 
 # Ktor
-ktor = "3.4.1"
+ktor = "3.4.2"
 koin = "4.2.0"
 
 # mongo
