@@ -1,0 +1,83 @@
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { api } from "../api/client";
+import type { Entry } from "../api/types";
+import { EntryDetails } from "./EntryDetails";
+import { ResultIcon } from "./ResultIcon";
+import { SpanTree } from "./SpanTree";
+
+interface NodePopupProps {
+  entries: Entry[];
+  traceId: string | null;
+  onClose: () => void;
+}
+
+export function NodePopup({ entries, traceId, onClose }: NodePopupProps) {
+  const { data: spans } = useQuery({
+    queryKey: ["trace", traceId],
+    queryFn: () => api.getTrace(traceId!),
+    enabled: !!traceId,
+  });
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      role="dialog"
+    >
+      <div className="bg-stove-surface border border-stove-border rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-stove-border">
+          <span className="text-sm font-medium text-[var(--stove-text-heading)]">
+            Entry Details
+          </span>
+          <button
+            type="button"
+            className="text-[var(--stove-text-secondary)] hover:text-[var(--stove-text)] text-lg cursor-pointer bg-transparent border-0"
+            onClick={onClose}
+          >
+            {"\u2715"}
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {entries.length > 0 && (
+            <div className="space-y-3">
+              {entries.map((entry) => (
+                <div key={entry.id} className="text-xs font-mono space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <ResultIcon result={entry.result} />
+                    <span className="text-[var(--stove-text)]">{entry.action}</span>
+                  </div>
+                  <EntryDetails entry={entry} />
+                  {entries.length > 1 && <hr className="border-stove-border" />}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {traceId && spans && spans.length > 0 && (
+            <div>
+              <div className="text-xs text-[var(--stove-text-secondary)] mb-2 border-t border-stove-border pt-3">
+                Linked Trace
+              </div>
+              <SpanTree spans={spans} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

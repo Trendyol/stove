@@ -7,6 +7,7 @@ import arrow.core.Option
 import arrow.core.Some
 import arrow.core.toOption
 import com.trendyol.stove.system.abstractions.PluggedSystem
+import com.trendyol.stove.tracing.TraceContext
 import com.trendyol.stove.tracing.TraceVisualization
 
 /**
@@ -94,7 +95,8 @@ interface Reports {
           output = finalOutput,
           metadata = metadata,
           expected = expected,
-          actual = actual
+          actual = actual,
+          traceId = TraceContext.current()?.traceId.toOption()
         )
       )
       result
@@ -114,7 +116,7 @@ interface Reports {
           expected = expected,
           actual = actual,
           error = e.message.toOption(),
-          traceId = None,
+          traceId = TraceContext.current()?.traceId.toOption(),
           executionTrace = executionTrace
         )
       )

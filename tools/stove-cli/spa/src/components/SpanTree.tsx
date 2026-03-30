@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Span } from "../api/types";
 import { formatNanosDuration } from "../utils/format";
+import { parseAttrs } from "../utils/json";
 
 interface SpanTreeProps {
   spans: Span[];
@@ -122,13 +123,4 @@ function buildTree(spans: Span[]): SpanNode[] {
   }
 
   return roots;
-}
-
-function parseAttrs(json: string | null): Record<string, string> {
-  if (!json) return {};
-  try {
-    return JSON.parse(json);
-  } catch {
-    return {};
-  }
 }

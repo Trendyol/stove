@@ -448,10 +448,10 @@ public final class com/trendyol/stove/reporting/ReportEntry {
 public final class com/trendyol/stove/reporting/ReportEntry$Companion {
 	public final fun action (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
 	public static synthetic fun action$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
-	public final fun failure (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
-	public static synthetic fun failure$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
-	public final fun success (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;)Lcom/trendyol/stove/reporting/ReportEntry;
-	public static synthetic fun success$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public final fun failure (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public static synthetic fun failure$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public final fun success (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;)Lcom/trendyol/stove/reporting/ReportEntry;
+	public static synthetic fun success$default (Lcom/trendyol/stove/reporting/ReportEntry$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportEntry;
 }
 
 public abstract interface class com/trendyol/stove/reporting/ReportEventListener {

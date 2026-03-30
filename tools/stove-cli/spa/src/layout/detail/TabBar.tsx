@@ -1,8 +1,9 @@
-export type Tab = "timeline" | "trace" | "snapshots" | "kafka";
+export type Tab = "timeline" | "trace" | "snapshots" | "kafka" | "flow";
 
 interface TabDef {
   id: Tab;
   label: string;
+  icon: string;
 }
 
 interface TabBarProps {
@@ -27,7 +28,7 @@ export function TabBar({ tabs, active, onSelect }: TabBarProps) {
           }`}
           onClick={() => onSelect(t.id)}
         >
-          {t.label}
+          {t.icon} {t.label}
         </button>
       ))}
     </div>
