@@ -11,6 +11,11 @@ dependencies {
   api(libs.kotlinx.core)
 }
 
+tasks.withType<Javadoc> {
+  // All Java sources in this module are protobuf-generated; suppress missing-comment warnings
+  (options as StandardJavadocDocletOptions).addBooleanOption("Xdoclint:none", true)
+}
+
 protobuf {
   protoc {
     artifact = libs.protoc.get().toString()

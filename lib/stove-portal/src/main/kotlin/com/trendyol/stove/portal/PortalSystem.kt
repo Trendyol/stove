@@ -1,6 +1,7 @@
 package com.trendyol.stove.portal
 
 import arrow.core.getOrElse
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.protobuf.Timestamp
 import com.trendyol.stove.portal.api.EntryRecordedEvent
 import com.trendyol.stove.portal.api.PortalEvent
@@ -42,6 +43,8 @@ class PortalSystem(
   ReportEventListener,
   SpanEventListener {
 
+  private val logger = org.slf4j.LoggerFactory.getLogger(PortalSystem::class.java)
+  private val jsonMapper = ObjectMapper()
   private val runId = UUID.randomUUID().toString()
   private lateinit var emitter: PortalEmitter
   private var startTime: Instant = Instant.now()
@@ -187,18 +190,25 @@ class PortalSystem(
   private fun emitSnapshots(testId: String) {
     stove.activeSystems.values
       .filterIsInstance<Reports>()
-      .map { it.snapshot() }
-      .forEach { snap ->
-        emitter.tryEmit(
-          portalEvent {
-            snapshot = com.trendyol.stove.portal.api.SnapshotEvent.newBuilder()
-              .setTestId(testId)
-              .setSystem(snap.system)
-              .setStateJson(snap.state.toString())
-              .setSummary(snap.summary)
-              .build()
+      .forEach { system ->
+        runCatching { system.snapshot() }
+          .onFailure { e ->
+            logger.warn("Failed to collect snapshot from ${system.reportSystemName}: ${e.message}")
           }
-        )
+          .onSuccess { snap ->
+            val stateJson = runCatching { jsonMapper.writeValueAsString(snap.state) }
+              .getOrDefault("{}")
+            emitter.tryEmit(
+              portalEvent {
+                snapshot = com.trendyol.stove.portal.api.SnapshotEvent.newBuilder()
+                  .setTestId(testId)
+                  .setSystem(snap.system)
+                  .setStateJson(stateJson)
+                  .setSummary(snap.summary)
+                  .build()
+              }
+            )
+          }
       }
   }
 
