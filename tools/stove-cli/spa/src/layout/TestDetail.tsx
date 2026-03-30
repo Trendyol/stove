@@ -18,20 +18,24 @@ interface TestDetailProps {
 
 export function TestDetail({ runId, test }: TestDetailProps) {
   const [tab, setTab] = useState<Tab>("timeline");
+  const liveRefetchInterval = test.status === "RUNNING" ? 2000 : false;
 
   const { data: entries = [] } = useQuery({
     queryKey: ["entries", runId, test.id],
     queryFn: () => api.getEntries(runId, test.id),
+    refetchInterval: liveRefetchInterval,
   });
 
   const { data: spans = [], isLoading: spansLoading } = useQuery({
     queryKey: ["spans", runId, test.id],
     queryFn: () => api.getSpans(runId, test.id),
+    refetchInterval: liveRefetchInterval,
   });
 
   const { data: snapshots = [], isLoading: snapshotsLoading } = useQuery({
     queryKey: ["snapshots", runId, test.id],
     queryFn: () => api.getSnapshots(runId, test.id),
+    refetchInterval: liveRefetchInterval,
   });
 
   const kafkaCount = entries.filter((e) => e.system === "Kafka").length;

@@ -16,6 +16,7 @@ use stove::storage::repository::Repository;
 pub struct TestServer {
   pub base_url: String,
   pub repo: Arc<Repository>,
+  pub sse: Arc<SseManager>,
   pub client: reqwest::Client,
 }
 
@@ -25,7 +26,7 @@ impl TestServer {
     let db = Database::open(":memory:").expect("in-memory database should open");
     let repo = Arc::new(Repository::new(db));
     let sse_manager = Arc::new(SseManager::new());
-    let router = create_router(repo.clone(), sse_manager);
+    let router = create_router(repo.clone(), sse_manager.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
       .await
@@ -40,6 +41,7 @@ impl TestServer {
     Self {
       base_url,
       repo,
+      sse: sse_manager,
       client: reqwest::Client::new(),
     }
   }

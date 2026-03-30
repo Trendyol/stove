@@ -90,7 +90,6 @@ export function spansToTraceDag(spans: Span[]): { nodes: Node[]; edges: Edge[] }
 
   const nodes: Node[] = spans.map((s) => {
     const system = detectSystemFromSpan(s);
-    const isError = s.status === "ERROR";
 
     return {
       id: s.span_id,
@@ -99,7 +98,7 @@ export function spansToTraceDag(spans: Span[]): { nodes: Node[]; edges: Edge[] }
       data: {
         system,
         action: s.operation_name,
-        result: isError ? "FAILED" : "PASSED",
+        result: s.status,
         count: 1,
         error: s.exception_message ?? null,
         entries: [],

@@ -507,6 +507,7 @@ public final class com/trendyol/stove/reporting/StoveReporter {
 	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun addListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public final fun clear ()V
+	public final fun clear (Ljava/lang/String;)V
 	public final fun collectSnapshots ()Ljava/util/List;
 	public final fun currentTest ()Lcom/trendyol/stove/reporting/TestReport;
 	public final fun currentTestId ()Ljava/lang/String;

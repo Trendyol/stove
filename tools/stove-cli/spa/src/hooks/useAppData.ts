@@ -36,15 +36,12 @@ export function useAppData() {
   useSSE((event) => {
     queryClient.invalidateQueries({ queryKey: ["apps"] });
     queryClient.invalidateQueries({ queryKey: ["runs"] });
+    // Use event.run_id for prefix-based invalidation — avoids stale closure
+    // issues and ensures all queries for this run are refreshed
     queryClient.invalidateQueries({ queryKey: ["tests", event.run_id] });
-    if (latestRun) {
-      queryClient.invalidateQueries({ queryKey: ["tests", latestRun.id] });
-    }
-    if (selectedTest && latestRun) {
-      queryClient.invalidateQueries({ queryKey: ["entries", latestRun.id, selectedTest.id] });
-      queryClient.invalidateQueries({ queryKey: ["spans", latestRun.id, selectedTest.id] });
-      queryClient.invalidateQueries({ queryKey: ["snapshots", latestRun.id, selectedTest.id] });
-    }
+    queryClient.invalidateQueries({ queryKey: ["entries", event.run_id] });
+    queryClient.invalidateQueries({ queryKey: ["spans", event.run_id] });
+    queryClient.invalidateQueries({ queryKey: ["snapshots", event.run_id] });
   });
 
   return {

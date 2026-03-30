@@ -10,6 +10,212 @@ mod common;
 use common::TestServer;
 use reqwest::StatusCode;
 use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
+use stove::grpc::service::PortalEventServiceImpl;
+use stove::proto;
+use stove::proto::portal_event_service_server::PortalEventService;
+use tonic::Request;
+
+fn ts(seconds: i64, nanos: i32) -> Option<prost_types::Timestamp> {
+  Some(prost_types::Timestamp { seconds, nanos })
+}
+
+fn run_started_event(run_id: &str, app_name: &str, seconds: i64, nanos: i32) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::RunStarted(
+      proto::RunStartedEvent {
+        timestamp: ts(seconds, nanos),
+        app_name: app_name.to_string(),
+        systems: vec!["HTTP".to_string(), "Kafka".to_string()],
+      },
+    )),
+  }
+}
+
+fn run_ended_event(
+  run_id: &str,
+  total_tests: i32,
+  passed: i32,
+  failed: i32,
+  duration_ms: i64,
+  seconds: i64,
+  nanos: i32,
+) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::RunEnded(proto::RunEndedEvent {
+      timestamp: ts(seconds, nanos),
+      total_tests,
+      passed,
+      failed,
+      duration_ms,
+    })),
+  }
+}
+
+fn test_started_event(
+  run_id: &str,
+  test_id: &str,
+  test_name: &str,
+  spec_name: &str,
+  seconds: i64,
+  nanos: i32,
+) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::TestStarted(
+      proto::TestStartedEvent {
+        test_id: test_id.to_string(),
+        test_name: test_name.to_string(),
+        spec_name: spec_name.to_string(),
+        timestamp: ts(seconds, nanos),
+      },
+    )),
+  }
+}
+
+fn test_ended_event(
+  run_id: &str,
+  test_id: &str,
+  status: &str,
+  duration_ms: i64,
+  error: &str,
+  seconds: i64,
+  nanos: i32,
+) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::TestEnded(
+      proto::TestEndedEvent {
+        test_id: test_id.to_string(),
+        status: status.to_string(),
+        duration_ms,
+        error: error.to_string(),
+        timestamp: ts(seconds, nanos),
+      },
+    )),
+  }
+}
+
+fn entry_recorded_event(
+  run_id: &str,
+  test_id: &str,
+  action: &str,
+  result: &str,
+  trace_id: &str,
+  seconds: i64,
+  nanos: i32,
+) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::EntryRecorded(
+      proto::EntryRecordedEvent {
+        test_id: test_id.to_string(),
+        timestamp: ts(seconds, nanos),
+        system: "HTTP".to_string(),
+        action: action.to_string(),
+        result: result.to_string(),
+        input: String::new(),
+        output: String::new(),
+        metadata: HashMap::default(),
+        expected: String::new(),
+        actual: String::new(),
+        error: String::new(),
+        trace_id: trace_id.to_string(),
+      },
+    )),
+  }
+}
+
+fn span_recorded_event(
+  run_id: &str,
+  trace_id: &str,
+  span_id: &str,
+  parent_span_id: &str,
+  operation_name: &str,
+  service_name: &str,
+  start_time_nanos: i64,
+  end_time_nanos: i64,
+) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::SpanRecorded(
+      proto::SpanRecordedEvent {
+        trace_id: trace_id.to_string(),
+        span_id: span_id.to_string(),
+        parent_span_id: parent_span_id.to_string(),
+        operation_name: operation_name.to_string(),
+        service_name: service_name.to_string(),
+        start_time_nanos,
+        end_time_nanos,
+        status: "OK".to_string(),
+        attributes: HashMap::default(),
+        exception: None,
+      },
+    )),
+  }
+}
+
+fn snapshot_event(
+  run_id: &str,
+  test_id: &str,
+  system: &str,
+  state_json: &str,
+  summary: &str,
+) -> proto::PortalEvent {
+  proto::PortalEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::portal_event::Event::Snapshot(proto::SnapshotEvent {
+      test_id: test_id.to_string(),
+      system: system.to_string(),
+      state_json: state_json.to_string(),
+      summary: summary.to_string(),
+    })),
+  }
+}
+
+async fn send_event(
+  service: &PortalEventServiceImpl,
+  event: proto::PortalEvent,
+) -> Result<(), tonic::Status> {
+  PortalEventService::send_event(service, Request::new(event))
+    .await
+    .map(|_| ())
+}
+
+fn extract_sse_data_frame(frame: &str) -> Option<String> {
+  let data_lines: Vec<&str> = frame
+    .lines()
+    .filter_map(|line| line.strip_prefix("data:").map(str::trim_start))
+    .collect();
+
+  if data_lines.is_empty() {
+    None
+  } else {
+    Some(data_lines.join("\n"))
+  }
+}
+
+async fn next_sse_data(
+  resp: &mut reqwest::Response,
+  buffer: &mut String,
+) -> Result<String, Box<dyn std::error::Error>> {
+  loop {
+    if let Some(frame_end) = buffer.find("\n\n") {
+      let frame = buffer[..frame_end].to_string();
+      buffer.drain(..frame_end + 2);
+      if let Some(data) = extract_sse_data_frame(&frame) {
+        return Ok(data);
+      }
+    }
+
+    let chunk = tokio::time::timeout(std::time::Duration::from_secs(5), resp.chunk()).await??;
+    let chunk = chunk.ok_or("SSE stream ended before the next event")?;
+    buffer.push_str(std::str::from_utf8(&chunk)?);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/apps
@@ -158,6 +364,366 @@ async fn get_tests_returns_empty_for_unknown_run() {
   assert_eq!(body, Value::Array(vec![]));
 }
 
+#[tokio::test]
+async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress() {
+  let server = TestServer::start().await;
+  let service = Arc::new(PortalEventServiceImpl::new(
+    server.repo.clone(),
+    server.sse.clone(),
+  ));
+
+  send_event(
+    service.as_ref(),
+    run_started_event("run-concurrent", "concurrent-app", 1_704_067_200, 0),
+  )
+  .await
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        test_started_event(
+          "run-concurrent",
+          "test-a",
+          "handles checkout",
+          "ConcurrentSpec",
+          1_704_067_201,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        test_started_event(
+          "run-concurrent",
+          "test-b",
+          "handles payment",
+          "ConcurrentSpec",
+          1_704_067_201,
+          0,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        entry_recorded_event(
+          "run-concurrent",
+          "test-a",
+          "GET /checkout",
+          "PASSED",
+          "trace-a",
+          1_704_067_202,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        entry_recorded_event(
+          "run-concurrent",
+          "test-b",
+          "POST /payment",
+          "PASSED",
+          "trace-b",
+          1_704_067_202,
+          0,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let run = server.get_json("/runs/run-concurrent").await;
+  assert_eq!(run["status"], "RUNNING");
+
+  let tests = server.get_json("/runs/run-concurrent/tests").await;
+  let tests = tests.as_array().unwrap();
+  assert_eq!(tests.len(), 2);
+
+  let test_a = tests.iter().find(|test| test["id"] == "test-a").unwrap();
+  assert_eq!(test_a["status"], "RUNNING");
+  assert!(test_a["ended_at"].is_null());
+
+  let test_b = tests.iter().find(|test| test["id"] == "test-b").unwrap();
+  assert_eq!(test_b["status"], "RUNNING");
+  assert!(test_b["ended_at"].is_null());
+
+  let entries_a = server
+    .get_json("/runs/run-concurrent/tests/test-a/entries")
+    .await;
+  let entries_a = entries_a.as_array().unwrap();
+  assert_eq!(entries_a.len(), 1);
+  assert_eq!(entries_a[0]["action"], "GET /checkout");
+
+  let entries_b = server
+    .get_json("/runs/run-concurrent/tests/test-b/entries")
+    .await;
+  let entries_b = entries_b.as_array().unwrap();
+  assert_eq!(entries_b.len(), 1);
+  assert_eq!(entries_b[0]["action"], "POST /payment");
+}
+
+#[tokio::test]
+async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views() {
+  let server = TestServer::start().await;
+  let service = Arc::new(PortalEventServiceImpl::new(
+    server.repo.clone(),
+    server.sse.clone(),
+  ));
+
+  send_event(
+    service.as_ref(),
+    run_started_event("run-interleaved", "concurrent-app", 1_704_067_300, 0),
+  )
+  .await
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        test_started_event(
+          "run-interleaved",
+          "test-a",
+          "handles checkout",
+          "ConcurrentSpec",
+          1_704_067_301,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        test_started_event(
+          "run-interleaved",
+          "test-b",
+          "handles payment",
+          "ConcurrentSpec",
+          1_704_067_301,
+          0,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        entry_recorded_event(
+          "run-interleaved",
+          "test-a",
+          "GET /checkout",
+          "PASSED",
+          "trace-a",
+          1_704_067_302,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        entry_recorded_event(
+          "run-interleaved",
+          "test-b",
+          "POST /payment",
+          "FAILED",
+          "trace-b",
+          1_704_067_302,
+          0,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        span_recorded_event(
+          "run-interleaved",
+          "trace-a",
+          "span-a",
+          "",
+          "GET /checkout",
+          "checkout-api",
+          1_000_000_000,
+          1_100_000_000,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        span_recorded_event(
+          "run-interleaved",
+          "trace-b",
+          "span-b",
+          "",
+          "POST /payment",
+          "payment-api",
+          1_200_000_000,
+          1_350_000_000,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        snapshot_event(
+          "run-interleaved",
+          "test-a",
+          "Kafka",
+          r#"{"published":1}"#,
+          "1 published",
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        snapshot_event(
+          "run-interleaved",
+          "test-b",
+          "Redis",
+          r#"{"keys":2}"#,
+          "2 keys",
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        test_ended_event(
+          "run-interleaved",
+          "test-a",
+          "PASSED",
+          1_200,
+          "",
+          1_704_067_303,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        test_ended_event(
+          "run-interleaved",
+          "test-b",
+          "FAILED",
+          1_500,
+          "payment timeout",
+          1_704_067_303,
+          0,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  send_event(
+    service.as_ref(),
+    run_ended_event("run-interleaved", 2, 1, 1, 3_000, 1_704_067_304, 0),
+  )
+  .await
+  .unwrap();
+
+  let run = server.get_json("/runs/run-interleaved").await;
+  assert_eq!(run["status"], "FAILED");
+  assert_eq!(run["total_tests"], 2);
+  assert_eq!(run["passed"], 1);
+  assert_eq!(run["failed"], 1);
+
+  let tests = server.get_json("/runs/run-interleaved/tests").await;
+  let tests = tests.as_array().unwrap();
+  assert_eq!(tests.len(), 2);
+
+  let test_a = tests.iter().find(|test| test["id"] == "test-a").unwrap();
+  assert_eq!(test_a["status"], "PASSED");
+  assert!(test_a["error"].is_null());
+
+  let test_b = tests.iter().find(|test| test["id"] == "test-b").unwrap();
+  assert_eq!(test_b["status"], "FAILED");
+  assert_eq!(test_b["error"], "payment timeout");
+
+  let spans_a = server
+    .get_json("/runs/run-interleaved/tests/test-a/spans")
+    .await;
+  let spans_a = spans_a.as_array().unwrap();
+  assert_eq!(spans_a.len(), 1);
+  assert_eq!(spans_a[0]["span_id"], "span-a");
+
+  let spans_b = server
+    .get_json("/runs/run-interleaved/tests/test-b/spans")
+    .await;
+  let spans_b = spans_b.as_array().unwrap();
+  assert_eq!(spans_b.len(), 1);
+  assert_eq!(spans_b[0]["span_id"], "span-b");
+
+  let snapshots_a = server
+    .get_json("/runs/run-interleaved/tests/test-a/snapshots")
+    .await;
+  let snapshots_a = snapshots_a.as_array().unwrap();
+  assert_eq!(snapshots_a.len(), 1);
+  assert_eq!(snapshots_a[0]["system"], "Kafka");
+
+  let snapshots_b = server
+    .get_json("/runs/run-interleaved/tests/test-b/snapshots")
+    .await;
+  let snapshots_b = snapshots_b.as_array().unwrap();
+  assert_eq!(snapshots_b.len(), 1);
+  assert_eq!(snapshots_b[0]["system"], "Redis");
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/v1/runs/:run_id/tests/:test_id/entries
 // ---------------------------------------------------------------------------
@@ -268,6 +834,34 @@ async fn get_test_spans_returns_spans_linked_via_attribute() {
   assert_eq!(spans.len(), 2, "both spans in the trace should appear");
   assert_eq!(spans[0]["span_id"], "s1");
   assert_eq!(spans[1]["span_id"], "s2");
+}
+
+#[tokio::test]
+async fn get_test_spans_does_not_cross_match_similar_test_ids_in_attributes() {
+  let server = TestServer::start().await;
+  server.seed_run("run-1", "my-app");
+  server.seed_test("run-1", "test-1", "first test", "TracingSpec");
+  server.seed_test("run-1", "test-10", "tenth test", "TracingSpec");
+  server.seed_span_timed(
+    "run-1",
+    "trace-10",
+    "span-10",
+    "",
+    "GET /ten",
+    "my-app",
+    1_000_000_000,
+    1_100_000_000,
+    r#"{"x-stove-test-id":"test-10","http.method":"GET"}"#,
+  );
+
+  let body = server.get_json("/runs/run-1/tests/test-1/spans").await;
+  let spans = body.as_array().unwrap();
+
+  assert_eq!(
+    spans.len(),
+    0,
+    "test-1 should not receive spans from test-10"
+  );
 }
 
 #[tokio::test]
@@ -675,6 +1269,248 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
   );
 }
 
+#[tokio::test]
+async fn sse_broadcast_data_is_readable_after_notification() {
+  // Simulates the real-world SSE flow: when the frontend receives an SSE
+  // event and immediately refetches, the data must already be in the DB.
+  //
+  // The broadcast must fire AFTER the DB write, not before.
+  let server = TestServer::start().await;
+  let mut rx = server.sse.subscribe();
+
+  // Seed a run via the repo so the FK is satisfied
+  server.seed_run("run-sse", "sse-app");
+
+  // Seed a test via the repo (bypasses gRPC, but simulates the write)
+  server.seed_test("run-sse", "t-1", "my test", "Spec");
+
+  // Broadcast an SSE event (simulates what process_event does after writing)
+  server
+    .sse
+    .broadcast(r#"{"run_id":"run-sse","event_type":"test_started"}"#);
+
+  // Subscriber receives the notification
+  let msg = rx.try_recv().expect("should receive broadcast");
+  assert!(msg.contains("run-sse"));
+
+  // Immediately refetch — data must be present (this is what the browser does)
+  let body = server.get_json("/runs/run-sse/tests").await;
+  let tests = body.as_array().unwrap();
+  assert_eq!(
+    tests.len(),
+    1,
+    "Data must be readable when SSE notification arrives"
+  );
+}
+
+#[tokio::test]
+async fn sse_stream_sends_keep_alive() {
+  // Without keep-alive, browsers and proxies close idle SSE connections
+  // after 30-90 seconds, causing the UI to stop updating during long tests.
+  //
+  // With keep-alive enabled, the server sends a comment (`: keep-alive`)
+  // periodically. We verify by reading the first chunk with a timeout.
+  let server = TestServer::start().await;
+
+  let mut resp = server.get("/events/stream").await;
+  assert_eq!(resp.status(), StatusCode::OK);
+
+  // Read the first chunk — with keep-alive, the server should send a
+  // comment within the interval (15s). Without it, this times out.
+  let result = tokio::time::timeout(std::time::Duration::from_secs(20), resp.chunk()).await;
+
+  assert!(
+    result.is_ok(),
+    "SSE stream should send a keep-alive comment within 20 seconds"
+  );
+  let chunk = result.unwrap().unwrap();
+  assert!(chunk.is_some(), "Keep-alive chunk should not be empty");
+}
+
+#[tokio::test]
+async fn sse_stream_delivers_interleaved_notifications_for_concurrent_test_load() {
+  let server = TestServer::start().await;
+  let service = Arc::new(PortalEventServiceImpl::new(
+    server.repo.clone(),
+    server.sse.clone(),
+  ));
+  let mut resp = server.get("/events/stream").await;
+  let mut buffer = String::new();
+  let entry_count_per_test = 80usize;
+
+  assert_eq!(resp.status(), StatusCode::OK);
+
+  send_event(
+    service.as_ref(),
+    run_started_event("run-sse-load", "sse-load-app", 1_704_067_400, 0),
+  )
+  .await
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        test_started_event(
+          "run-sse-load",
+          "test-a",
+          "handles checkout",
+          "ConcurrentSpec",
+          1_704_067_401,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        test_started_event(
+          "run-sse-load",
+          "test-b",
+          "handles payment",
+          "ConcurrentSpec",
+          1_704_067_401,
+          1,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      for index in 0..entry_count_per_test {
+        send_event(
+          service_a.as_ref(),
+          entry_recorded_event(
+            "run-sse-load",
+            "test-a",
+            &format!("GET /checkout/{index}"),
+            "PASSED",
+            "trace-a",
+            1_704_067_402 + index as i64,
+            0,
+          ),
+        )
+        .await?;
+      }
+      Ok::<(), tonic::Status>(())
+    },
+    async move {
+      for index in 0..entry_count_per_test {
+        send_event(
+          service_b.as_ref(),
+          entry_recorded_event(
+            "run-sse-load",
+            "test-b",
+            &format!("POST /payment/{index}"),
+            "FAILED",
+            "trace-b",
+            1_704_067_402 + index as i64,
+            1,
+          ),
+        )
+        .await?;
+      }
+      Ok::<(), tonic::Status>(())
+    },
+  )
+  .unwrap();
+
+  let service_a = service.clone();
+  let service_b = service.clone();
+  tokio::try_join!(
+    async move {
+      send_event(
+        service_a.as_ref(),
+        test_ended_event(
+          "run-sse-load",
+          "test-a",
+          "PASSED",
+          2_000,
+          "",
+          1_704_067_500,
+          0,
+        ),
+      )
+      .await
+    },
+    async move {
+      send_event(
+        service_b.as_ref(),
+        test_ended_event(
+          "run-sse-load",
+          "test-b",
+          "FAILED",
+          2_200,
+          "payment timeout",
+          1_704_067_500,
+          1,
+        ),
+      )
+      .await
+    },
+  )
+  .unwrap();
+
+  send_event(
+    service.as_ref(),
+    run_ended_event("run-sse-load", 2, 1, 1, 4_200, 1_704_067_501, 0),
+  )
+  .await
+  .unwrap();
+
+  let expected_events = 1 + 2 + (entry_count_per_test * 2) + 2 + 1;
+  let mut event_counts: HashMap<String, usize> = HashMap::new();
+
+  for _ in 0..expected_events {
+    let payload = next_sse_data(&mut resp, &mut buffer).await.unwrap();
+    let event: Value = serde_json::from_str(&payload).unwrap();
+    assert_eq!(event["run_id"], "run-sse-load");
+
+    let event_type = event["event_type"]
+      .as_str()
+      .expect("event_type should be present")
+      .to_string();
+    *event_counts.entry(event_type).or_default() += 1;
+  }
+
+  assert_eq!(event_counts.get("run_started"), Some(&1));
+  assert_eq!(event_counts.get("test_started"), Some(&2));
+  assert_eq!(
+    event_counts.get("entry_recorded"),
+    Some(&(entry_count_per_test * 2))
+  );
+  assert_eq!(event_counts.get("test_ended"), Some(&2));
+  assert_eq!(event_counts.get("run_ended"), Some(&1));
+
+  let tests = server.get_json("/runs/run-sse-load/tests").await;
+  let tests = tests.as_array().unwrap();
+  assert_eq!(tests.len(), 2);
+
+  let test_a = tests.iter().find(|test| test["id"] == "test-a").unwrap();
+  assert_eq!(test_a["status"], "PASSED");
+
+  let test_b = tests.iter().find(|test| test["id"] == "test-b").unwrap();
+  assert_eq!(test_b["status"], "FAILED");
+
+  let entries_a = server
+    .get_json("/runs/run-sse-load/tests/test-a/entries")
+    .await;
+  assert_eq!(entries_a.as_array().unwrap().len(), entry_count_per_test);
+
+  let entries_b = server
+    .get_json("/runs/run-sse-load/tests/test-b/entries")
+    .await;
+  assert_eq!(entries_b.as_array().unwrap().len(), entry_count_per_test);
+}
+
 // ---------------------------------------------------------------------------
 // CORS headers
 // ---------------------------------------------------------------------------
@@ -730,6 +1566,15 @@ async fn spa_fallback_serves_index_html_for_unknown_paths() {
   );
 }
 
+#[tokio::test]
+async fn missing_spa_assets_return_404_instead_of_index_html() {
+  let server = TestServer::start().await;
+
+  let resp = server.get("/assets/does-not-exist.js").await;
+
+  assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+}
+
 // ---------------------------------------------------------------------------
 // Multiple runs (ordering and latest-run logic)
 // ---------------------------------------------------------------------------
@@ -748,6 +1593,20 @@ async fn runs_are_ordered_by_started_at_desc() {
 }
 
 #[tokio::test]
+async fn runs_with_same_started_at_use_latest_inserted_as_tie_breaker() {
+  let server = TestServer::start().await;
+  server.seed_run_at("run-1", "my-app", "2024-06-01T00:00:00Z", &[]);
+  server.seed_run_at("run-2", "my-app", "2024-06-01T00:00:00Z", &[]);
+
+  let body = server.get_json("/runs?app=my-app").await;
+  let runs = body.as_array().unwrap();
+
+  assert_eq!(runs.len(), 2);
+  assert_eq!(runs[0]["id"], "run-2");
+  assert_eq!(runs[1]["id"], "run-1");
+}
+
+#[tokio::test]
 async fn apps_returns_latest_run_id_for_multi_run_app() {
   let server = TestServer::start().await;
   server.seed_run_at("run-1", "my-app", "2024-01-01T00:00:00Z", &[]);
@@ -756,6 +1615,24 @@ async fn apps_returns_latest_run_id_for_multi_run_app() {
   let body = server.get_json("/apps").await;
   let apps = body.as_array().unwrap();
   assert_eq!(apps.len(), 1);
+  assert_eq!(apps[0]["latest_run_id"], "run-2");
+  assert_eq!(apps[0]["total_runs"], 2);
+}
+
+#[tokio::test]
+async fn apps_does_not_duplicate_app_when_latest_runs_share_same_timestamp() {
+  let server = TestServer::start().await;
+  server.seed_run_at("run-1", "my-app", "2024-06-01T00:00:00Z", &[]);
+  server.seed_run_at("run-2", "my-app", "2024-06-01T00:00:00Z", &[]);
+
+  let body = server.get_json("/apps").await;
+  let apps = body.as_array().unwrap();
+
+  assert_eq!(
+    apps.len(),
+    1,
+    "same app should appear only once in the sidebar"
+  );
   assert_eq!(apps[0]["latest_run_id"], "run-2");
   assert_eq!(apps[0]["total_runs"], 2);
 }

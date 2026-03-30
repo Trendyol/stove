@@ -36,7 +36,9 @@ class StoveKotestExtension : TestCaseExtension {
     }
 
     return Stove.reporter().withTestContext(testCase.toStoveContext()) {
-      execute(testCase).enrichIfFailed()
+      execute(testCase)
+        .reportFailureIfNeeded()
+        .enrichIfFailed()
     }
   }
 
@@ -56,12 +58,21 @@ class StoveKotestExtension : TestCaseExtension {
     }
   }
 
+  private fun TestResult.reportFailureIfNeeded(): TestResult {
+    when (this) {
+      is TestResult.Failure -> Stove.reporter().reportFailure(cause.toFailureMessage())
+      is TestResult.Error -> Stove.reporter().reportFailure(cause.toFailureMessage())
+      else -> Unit
+    }
+    return this
+  }
+
   private fun TestResult.Failure.enrichFailure(): TestResult {
     val fullReport = TraceReportBuilder.buildFullReport()
     return if (fullReport.isNotEmpty()) {
       TestResult.Failure(
         duration,
-        StoveTestFailureException(cause.message ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE, fullReport, cause)
+        StoveTestFailureException(cause.toFailureMessage(), fullReport, cause)
       )
     } else {
       this
@@ -73,12 +84,15 @@ class StoveKotestExtension : TestCaseExtension {
     return if (fullReport.isNotEmpty()) {
       TestResult.Error(
         duration,
-        StoveTestErrorException(cause.message ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE, fullReport, cause)
+        StoveTestErrorException(cause.toFailureMessage(), fullReport, cause)
       )
     } else {
       this
     }
   }
+
+  private fun Throwable.toFailureMessage(): String =
+    message ?: this::class.simpleName ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE
 }
 
 /**
@@ -98,6 +112,6 @@ private suspend fun <T> StoveReporter.withTestContext(
   } finally {
     TraceContext.clear()
     endTest()
-    clear()
+    clear(ctx.testId)
   }
 }

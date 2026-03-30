@@ -53,7 +53,7 @@ export function Sidebar({
   return (
     <aside className="w-80 shrink-0 border-r border-stove-border bg-stove-surface flex flex-col overflow-hidden">
       <AppPicker apps={apps} selectedApp={selectedApp} onSelectApp={onSelectApp} />
-      {run && <RunSummary run={run} />}
+      {run && <RunSummary run={run} tests={tests} />}
       <TestFilters
         filter={filter}
         onFilterChange={setFilter}

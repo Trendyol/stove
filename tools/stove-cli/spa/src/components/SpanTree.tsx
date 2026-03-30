@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { Span } from "../api/types";
 import { formatNanosDuration } from "../utils/format";
 import { parseAttrs } from "../utils/json";
+import { getResultTone, isFailed } from "../utils/result";
 
 interface SpanTreeProps {
   spans: Span[];
@@ -14,7 +15,8 @@ interface SpanNode {
 
 export function SpanTree({ spans }: SpanTreeProps) {
   const tree = useMemo(() => buildTree(spans), [spans]);
-  const totalFailed = spans.filter((s) => s.status === "ERROR").length;
+  const totalFailed = spans.filter((s) => isFailed(s.status)).length;
+  const totalNeutral = spans.filter((s) => getResultTone(s.status) === "neutral").length;
 
   if (spans.length === 0) {
     return <div className="text-[var(--stove-text-secondary)] text-sm p-4">No spans recorded</div>;
@@ -28,6 +30,7 @@ export function SpanTree({ spans }: SpanTreeProps) {
       <div className="mt-3 pt-2 border-t border-stove-border text-xs text-[var(--stove-text-secondary)] flex gap-4">
         <span>{spans.length} spans</span>
         {totalFailed > 0 && <span className="text-[var(--stove-red)]">{totalFailed} failed</span>}
+        {totalNeutral > 0 && <span>{totalNeutral} unset</span>}
         {tree[0] && <span>root: {tree[0].span.operation_name}</span>}
       </div>
     </div>
@@ -37,12 +40,20 @@ export function SpanTree({ spans }: SpanTreeProps) {
 function SpanNodeView({ node, depth }: { node: SpanNode; depth: number }) {
   const [collapsed, setCollapsed] = useState(false);
   const s = node.span;
-  const isError = s.status === "ERROR";
+  const tone = getResultTone(s.status);
+  const isError = tone === "failed";
   const duration = formatNanosDuration(s.start_time_nanos, s.end_time_nanos);
   const attrs = parseAttrs(s.attributes);
   const relevantAttrs = Object.entries(attrs).filter(([k]) =>
     ["db.", "http.", "rpc.", "messaging."].some((p) => k.startsWith(p)),
   );
+  const statusColor =
+    tone === "failed"
+      ? "var(--stove-red)"
+      : tone === "success"
+        ? "var(--stove-green)"
+        : "var(--stove-text-secondary)";
+  const statusIcon = tone === "failed" ? "\u2717" : tone === "success" ? "\u2713" : "\u2022";
 
   return (
     <div style={{ marginLeft: depth * 20 }}>
@@ -62,12 +73,15 @@ function SpanNodeView({ node, depth }: { node: SpanNode; depth: number }) {
             {"\u25bc"}
           </span>
         )}
-        <span style={{ color: isError ? "var(--stove-red)" : "var(--stove-green)" }}>
-          {isError ? "\u2717" : "\u2713"}
-        </span>
+        <span style={{ color: statusColor }}>{statusIcon}</span>
         <span className="text-[var(--stove-text)]">{s.operation_name}</span>
         <span className="text-[var(--stove-text-secondary)] font-mono text-xs">[{duration}]</span>
         <span className="text-[var(--stove-text-muted)] text-xs">{s.service_name}</span>
+        {tone === "neutral" && (
+          <span className="text-[var(--stove-text-secondary)] text-[10px] font-mono uppercase">
+            {s.status}
+          </span>
+        )}
       </button>
 
       {!collapsed && (

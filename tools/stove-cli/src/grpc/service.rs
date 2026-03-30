@@ -25,11 +25,10 @@ impl PortalEventServiceImpl {
 
   /// Process a single portal event by dispatching to the appropriate repository method
   /// and broadcasting to SSE clients.
+  ///
+  /// Broadcast fires AFTER the DB write succeeds so that frontend refetches
+  /// always see committed data. If the write fails, no SSE notification is sent.
   fn process_event(&self, event: &proto::PortalEvent) -> Result<(), Status> {
-    if let Ok(json) = serde_json::to_string(&EventJson::from(event)) {
-      self.sse_manager.broadcast(&json);
-    }
-
     let run_id = &event.run_id;
     match &event.event {
       Some(proto::portal_event::Event::RunStarted(e)) => {
@@ -73,7 +72,14 @@ impl PortalEventServiceImpl {
         return Ok(());
       }
     }
-    .map_err(to_status)
+    .map_err(to_status)?;
+
+    // Broadcast SSE only after the DB write succeeds
+    if let Ok(json) = serde_json::to_string(&EventJson::from(event)) {
+      self.sse_manager.broadcast(&json);
+    }
+
+    Ok(())
   }
 
   fn save_entry(&self, run_id: &str, e: &proto::EntryRecordedEvent) -> crate::error::Result<()> {
@@ -200,6 +206,68 @@ mod tests {
     let sse = Arc::new(SseManager::new());
     PortalEventServiceImpl::new(repo, sse)
   }
+
+  fn ts(seconds: i64) -> Option<prost_types::Timestamp> {
+    Some(prost_types::Timestamp { seconds, nanos: 0 })
+  }
+
+  // ── Broadcast ordering tests ────────────────────────────────────────
+
+  #[test]
+  fn no_broadcast_on_failed_db_write() {
+    // FK constraint: inserting a test for a non-existent run must fail.
+    // If broadcast fires before the write, the subscriber gets a phantom
+    // notification for data that was never committed.
+    let svc = test_service();
+    let mut rx = svc.sse_manager.subscribe();
+
+    let result = svc.process_event(&proto::PortalEvent {
+      run_id: "nonexistent-run".to_string(),
+      event: Some(proto::portal_event::Event::TestStarted(
+        proto::TestStartedEvent {
+          test_id: "t-1".to_string(),
+          test_name: "orphan test".to_string(),
+          spec_name: "Spec".to_string(),
+          timestamp: ts(1_704_067_200),
+        },
+      )),
+    });
+
+    assert!(result.is_err(), "DB write should fail (FK violation)");
+    assert!(
+      rx.try_recv().is_err(),
+      "No SSE broadcast should be sent when the DB write fails"
+    );
+  }
+
+  #[test]
+  fn broadcast_fires_on_successful_write() {
+    let svc = test_service();
+    let mut rx = svc.sse_manager.subscribe();
+
+    svc
+      .process_event(&proto::PortalEvent {
+        run_id: "run-1".to_string(),
+        event: Some(proto::portal_event::Event::RunStarted(
+          proto::RunStartedEvent {
+            timestamp: ts(1_704_067_200),
+            app_name: "my-api".to_string(),
+            systems: vec!["HTTP".to_string()],
+          },
+        )),
+      })
+      .unwrap();
+
+    // After a successful write, the subscriber must have the notification
+    let msg = rx.try_recv().expect("broadcast should be sent on success");
+    assert!(msg.contains("run_started"));
+
+    // And the data must be in the DB
+    let runs = svc.repository.get_runs(None).unwrap();
+    assert_eq!(runs.len(), 1);
+  }
+
+  // ── Original tests ──────────────────────────────────────────────────
 
   #[test]
   fn process_run_started_event() {

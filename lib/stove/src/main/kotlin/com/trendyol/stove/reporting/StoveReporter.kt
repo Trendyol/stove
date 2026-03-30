@@ -49,7 +49,7 @@ class StoveReporter(
 
   /** End tracking the current test */
   fun endTest() {
-    val testId = contextThreadLocal.get()
+    val testId = resolveTestId()
     contextThreadLocal.remove()
     if (testId != null) {
       listeners.forEach {
@@ -84,7 +84,10 @@ class StoveReporter(
     currentTestOrNull()?.hasFailures() == true
 
   /** Clear current test report */
-  fun clear(): Unit = currentTestOrNull()?.clear() ?: Unit
+  fun clear(): Unit = resolveTestId()?.let(::clear) ?: Unit
+
+  /** Clear report for the specified test ID */
+  fun clear(testId: String): Unit = reports.remove(testId)?.clear() ?: Unit
 
   /** Render report using specified renderer */
   fun dump(renderer: ReportRenderer): String =

@@ -24,6 +24,8 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Portal system that streams test events to the stove CLI via gRPC.
@@ -51,6 +53,7 @@ class PortalSystem(
   private var totalTests = 0
   private var passedTests = 0
   private var failedTests = 0
+  private val lifecycleLock = ReentrantLock()
   private val testStartTimes = ConcurrentHashMap<String, Instant>()
   private val testFailures = ConcurrentHashMap<String, String>()
 
@@ -94,27 +97,8 @@ class PortalSystem(
   }
 
   override fun onTestEnded(testId: String) {
-    emitSnapshots(testId)
-    val durationMs = testStartTimes.remove(testId)?.let {
-      Duration.between(it, Instant.now()).toMillis()
-    } ?: 0L
-    val failure = testFailures.remove(testId)
-    val status = if (failure != null) "FAILED" else "PASSED"
-    emitter.tryEmit(
-      portalEvent {
-        testEnded = TestEndedEvent.newBuilder()
-          .setTestId(testId)
-          .setStatus(status)
-          .setDurationMs(durationMs)
-          .setError(failure ?: "")
-          .setTimestamp(now())
-          .build()
-      }
-    )
-    if (failure != null) {
-      failedTests++
-    } else {
-      passedTests++
+    lifecycleLock.withLock {
+      finishTestIfOpen(testId)
     }
   }
 
@@ -170,21 +154,60 @@ class PortalSystem(
   }
 
   override fun close() {
-    if (!::emitter.isInitialized) return
-    val duration = Duration.between(startTime, Instant.now()).toMillis()
+    lifecycleLock.withLock {
+      if (!::emitter.isInitialized) return
+      finalizeOpenTests()
+      val duration = Duration.between(startTime, Instant.now()).toMillis()
+      emitter.tryEmit(
+        portalEvent {
+          runEnded = RunEndedEvent.newBuilder()
+            .setTimestamp(now())
+            .setTotalTests(totalTests)
+            .setPassed(passedTests)
+            .setFailed(failedTests)
+            .setDurationMs(duration)
+            .build()
+        }
+      )
+      stove.reporter.removeListener(this)
+      emitter.close()
+    }
+  }
+
+  private fun finalizeOpenTests() {
+    val stillRunning = testStartTimes.keys.toList()
+    stillRunning.forEach { testId ->
+      logger.debug("Finalizing still-running test {} during portal shutdown", testId)
+      finishTestIfOpen(testId)
+    }
+  }
+
+  private fun finishTestIfOpen(testId: String) {
+    val startedAt = testStartTimes.remove(testId) ?: run {
+      logger.debug("Ignoring duplicate or late test end for {}", testId)
+      return
+    }
+
+    emitSnapshots(testId)
+    val durationMs = Duration.between(startedAt, Instant.now()).toMillis()
+    val failure = testFailures.remove(testId)
+    val status = if (failure != null) "FAILED" else "PASSED"
     emitter.tryEmit(
       portalEvent {
-        runEnded = RunEndedEvent.newBuilder()
+        testEnded = TestEndedEvent.newBuilder()
+          .setTestId(testId)
+          .setStatus(status)
+          .setDurationMs(durationMs)
+          .setError(failure ?: "")
           .setTimestamp(now())
-          .setTotalTests(totalTests)
-          .setPassed(passedTests)
-          .setFailed(failedTests)
-          .setDurationMs(duration)
           .build()
       }
     )
-    stove.reporter.removeListener(this)
-    emitter.close()
+    if (failure != null) {
+      failedTests++
+    } else {
+      passedTests++
+    }
   }
 
   private fun emitSnapshots(testId: String) {

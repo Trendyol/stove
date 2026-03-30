@@ -152,9 +152,15 @@ impl Repository {
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
     let db = self.lock_db();
     let mut stmt = db.conn().prepare(
-      "SELECT app_name, id, status, (SELECT COUNT(*) FROM runs r2 WHERE r2.app_name = r.app_name)
+      "SELECT r.app_name, r.id, r.status, (SELECT COUNT(*) FROM runs r2 WHERE r2.app_name = r.app_name)
              FROM runs r
-             WHERE started_at = (SELECT MAX(started_at) FROM runs r3 WHERE r3.app_name = r.app_name)
+             WHERE r.id = (
+               SELECT r3.id
+               FROM runs r3
+               WHERE r3.app_name = r.app_name
+               ORDER BY r3.started_at DESC, r3.rowid DESC
+               LIMIT 1
+             )
              ORDER BY app_name",
     )?;
     let rows = stmt
@@ -177,7 +183,8 @@ impl Repository {
       Some(_) => " WHERE app_name = ?1",
       None => "",
     };
-    let sql = format!("SELECT {RUN_COLUMNS} FROM runs{filter} ORDER BY started_at DESC");
+    let sql =
+      format!("SELECT {RUN_COLUMNS} FROM runs{filter} ORDER BY started_at DESC, rowid DESC");
     let mut stmt = db.conn().prepare(&sql)?;
     let rows = match app_name {
       Some(name) => stmt.query_map(rusqlite::params![name], run_from_row)?,
@@ -225,14 +232,18 @@ impl Repository {
              WHERE run_id = ?1 AND trace_id IN ( \
                SELECT trace_id FROM entries WHERE run_id = ?1 AND test_id = ?2 AND trace_id != '' \
                UNION \
-               SELECT DISTINCT trace_id FROM spans WHERE run_id = ?1 AND attributes LIKE ?3 \
+               SELECT DISTINCT trace_id FROM spans WHERE run_id = ?1 AND ( \
+                 json_extract(attributes, '$.\"x-stove-test-id\"') = ?2 OR \
+                 json_extract(attributes, '$.\"X-Stove-Test-Id\"') = ?2 OR \
+                 json_extract(attributes, '$.\"stove.test.id\"') = ?2 OR \
+                 json_extract(attributes, '$.\"stove_test_id\"') = ?2 \
+               ) \
              ) \
              ORDER BY start_time_nanos"
     );
-    let pattern = format!("%{test_id}%");
     let mut stmt = db.conn().prepare(&sql)?;
     let rows = stmt
-      .query_map(rusqlite::params![run_id, test_id, pattern], span_from_row)?
+      .query_map(rusqlite::params![run_id, test_id], span_from_row)?
       .filter_map(|r| r.ok())
       .collect();
     Ok(rows)
@@ -522,5 +533,84 @@ mod tests {
 
     assert!(repo.get_runs(None).unwrap().is_empty());
     assert!(repo.get_tests_for_run("run-1").unwrap().is_empty());
+  }
+
+  #[test]
+  fn get_apps_returns_single_latest_run_when_started_at_ties() {
+    let repo = test_repo();
+    repo
+      .save_run_start("run-1", "my-app", "2024-06-01T00:00:00Z", &[])
+      .unwrap();
+    repo
+      .save_run_start("run-2", "my-app", "2024-06-01T00:00:00Z", &[])
+      .unwrap();
+
+    let apps = repo.get_apps().unwrap();
+
+    assert_eq!(apps.len(), 1);
+    assert_eq!(apps[0].app_name, "my-app");
+    assert_eq!(apps[0].latest_run_id, "run-2");
+    assert_eq!(apps[0].total_runs, 2);
+  }
+
+  #[test]
+  fn get_runs_orders_same_timestamp_runs_by_latest_inserted_first() {
+    let repo = test_repo();
+    repo
+      .save_run_start("run-1", "my-app", "2024-06-01T00:00:00Z", &[])
+      .unwrap();
+    repo
+      .save_run_start("run-2", "my-app", "2024-06-01T00:00:00Z", &[])
+      .unwrap();
+
+    let runs = repo.get_runs(Some("my-app")).unwrap();
+
+    assert_eq!(runs.len(), 2);
+    assert_eq!(runs[0].id, "run-2");
+    assert_eq!(runs[1].id, "run-1");
+  }
+
+  #[test]
+  fn get_spans_for_test_does_not_cross_match_similar_test_ids() {
+    let repo = test_repo();
+    repo
+      .save_run_start("run-1", "my-app", "2024-06-01T00:00:00Z", &[])
+      .unwrap();
+    repo
+      .save_test_start(
+        "run-1",
+        "test-1",
+        "first test",
+        "Spec",
+        "2024-06-01T00:00:01Z",
+      )
+      .unwrap();
+    repo
+      .save_test_start(
+        "run-1",
+        "test-10",
+        "tenth test",
+        "Spec",
+        "2024-06-01T00:00:02Z",
+      )
+      .unwrap();
+    repo
+      .save_span(&NewSpan {
+        run_id: "run-1".into(),
+        trace_id: "trace-10".into(),
+        span_id: "span-10".into(),
+        operation_name: "GET /ten".into(),
+        service_name: "my-app".into(),
+        start_time_nanos: 1_000_000_000,
+        end_time_nanos: 1_100_000_000,
+        status: "OK".into(),
+        attributes: r#"{"x-stove-test-id":"test-10"}"#.into(),
+        ..Default::default()
+      })
+      .unwrap();
+
+    let spans = repo.get_spans_for_test("run-1", "test-1").unwrap();
+
+    assert!(spans.is_empty());
   }
 }

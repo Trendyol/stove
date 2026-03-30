@@ -3,6 +3,7 @@ package com.trendyol.stove.extensions.kotest
 import arrow.core.some
 import com.trendyol.stove.http.*
 import com.trendyol.stove.reporting.ReportEntry
+import com.trendyol.stove.reporting.ReportEventListener
 import com.trendyol.stove.reporting.StoveTestErrorException
 import com.trendyol.stove.reporting.StoveTestFailureException
 import com.trendyol.stove.system.*
@@ -13,6 +14,7 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.engine.test.TestResult
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -226,6 +228,30 @@ class StoveKotestExtensionTest :
       result.shouldBeInstanceOf<TestResult.Success>()
     }
 
+    test("intercept should notify reporter listeners for failed test results") {
+      val extension = StoveKotestExtension()
+      val reporter = Stove.reporter()
+      val failures = mutableListOf<Pair<String, String>>()
+      val listener = object : ReportEventListener {
+        override fun onTestFailed(testId: String, error: String) {
+          failures += testId to error
+        }
+      }
+
+      reporter.addListener(listener)
+      try {
+        extension.intercept(testCase) {
+          TestResult.Failure(1.milliseconds, AssertionError("Original assertion failure"))
+        }.shouldBeInstanceOf<TestResult.Failure>()
+      } finally {
+        reporter.removeListener(listener)
+      }
+
+      failures shouldHaveSize 1
+      failures.single().first shouldContain "StoveKotestExtensionTest"
+      failures.single().second shouldBe "Original assertion failure"
+    }
+
     test("intercept should pass through when Stove is not initialized") {
       // This test verifies the early return path when Stove IS initialized
       // (since we can't easily uninitialize Stove in this test context,
@@ -237,5 +263,28 @@ class StoveKotestExtensionTest :
       }
 
       result.shouldBeInstanceOf<TestResult.Success>()
+    }
+
+    test("withTestContext should clear report state between repeated executions") {
+      val extension = StoveKotestExtension()
+      val reporter = Stove.reporter()
+
+      reporter.clear()
+
+      extension.intercept(testCase) {
+        reporter.record(
+          ReportEntry.success(
+            system = "TestSystem",
+            testId = reporter.currentTestId(),
+            action = "first execution"
+          )
+        )
+        TestResult.Success(1.milliseconds)
+      }
+
+      extension.intercept(testCase) {
+        reporter.currentTest().entries() shouldHaveSize 0
+        TestResult.Success(1.milliseconds)
+      }.shouldBeInstanceOf<TestResult.Success>()
     }
   })

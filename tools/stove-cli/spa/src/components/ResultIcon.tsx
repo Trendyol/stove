@@ -1,10 +1,14 @@
-import { isFailed } from "../utils/result";
+import { getResultTone } from "../utils/result";
 
 export function ResultIcon({ result }: { result: string }) {
-  const failed = isFailed(result);
-  return (
-    <span style={{ color: failed ? "var(--stove-red)" : "var(--stove-green)" }}>
-      {failed ? "\u2717" : "\u2713"}
-    </span>
-  );
+  const tone = getResultTone(result);
+  const color =
+    tone === "failed"
+      ? "var(--stove-red)"
+      : tone === "success"
+        ? "var(--stove-green)"
+        : "var(--stove-text-secondary)";
+  const icon = tone === "failed" ? "\u2717" : tone === "success" ? "\u2713" : "\u2022";
+
+  return <span style={{ color }}>{icon}</span>;
 }

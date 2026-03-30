@@ -55,6 +55,27 @@ class StoveReporterTest :
       reporter.currentTestId() shouldBe "default"
     }
 
+    test("endTest emits lifecycle event when only StoveTestContextHolder is set") {
+      val reporter = StoveReporter()
+      val ended = mutableListOf<String>()
+      val ctx = StoveTestContext("test-holder", "holder test")
+      val listener = object : ReportEventListener {
+        override fun onTestEnded(testId: String) {
+          ended.add(testId)
+        }
+      }
+
+      reporter.addListener(listener)
+      StoveTestContextHolder.set(ctx)
+      try {
+        reporter.endTest()
+      } finally {
+        StoveTestContextHolder.clear()
+      }
+
+      ended shouldBe listOf("test-holder")
+    }
+
     test("detects failures correctly") {
       val reporter = StoveReporter()
       reporter.startTest(StoveTestContext("test-1", "test1"))
