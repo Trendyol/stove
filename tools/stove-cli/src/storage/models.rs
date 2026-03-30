@@ -165,6 +165,7 @@ pub struct Snapshot {
 // --- Input structs for write operations ---
 
 /// Data required to save a new report entry.
+#[derive(Clone, Debug)]
 pub struct NewEntry {
   pub run_id: String,
   pub test_id: String,
@@ -182,7 +183,7 @@ pub struct NewEntry {
 }
 
 /// Data required to save a new span.
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct NewSpan {
   pub run_id: String,
   pub trace_id: String,

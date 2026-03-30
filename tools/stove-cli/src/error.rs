@@ -15,6 +15,9 @@ pub enum AppError {
   #[error("Serialization error: {0}")]
   Serialization(#[from] serde_json::Error),
 
+  #[error("Invalid portal event: {0}")]
+  InvalidEvent(String),
+
   #[error("Server startup failed: {0}")]
   #[allow(dead_code)]
   Startup(String),
@@ -28,6 +31,7 @@ impl axum::response::IntoResponse for AppError {
     let status = match &self {
       AppError::GrpcTransport(_) => axum::http::StatusCode::BAD_GATEWAY,
       AppError::Serialization(_) => axum::http::StatusCode::BAD_REQUEST,
+      AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,
       AppError::Database(_) | AppError::Startup(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     let body = axum::Json(serde_json::json!({ "error": self.to_string() }));

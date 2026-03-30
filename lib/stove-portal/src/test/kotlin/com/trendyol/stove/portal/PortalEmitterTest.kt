@@ -8,6 +8,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class PortalEmitterTest :
   FunSpec({
@@ -62,11 +64,71 @@ class PortalEmitterTest :
 
       // If we get here without exception, the test passes
     }
+
+    test("does not drop burst events while receiver is temporarily blocked") {
+      val received = CopyOnWriteArrayList<PortalEvent>()
+      val firstRequestStarted = CountDownLatch(1)
+      val releaseFirstRequest = CountDownLatch(1)
+      val server = startMockServer(received, port = 0) {
+        if (firstRequestStarted.count > 0) {
+          firstRequestStarted.countDown()
+          releaseFirstRequest.await(5, TimeUnit.SECONDS)
+        }
+      }
+      val port = server.port
+
+      try {
+        val emitter = PortalEmitter("localhost", port)
+        val totalEvents = 700
+
+        repeat(totalEvents) { index ->
+          emitter.tryEmit(runStartedEvent(index))
+        }
+
+        firstRequestStarted.await(2, TimeUnit.SECONDS) shouldBe true
+        releaseFirstRequest.countDown()
+
+        delay(500)
+        emitter.close()
+
+        received.size shouldBe totalEvents
+      } finally {
+        server.shutdownNow()
+      }
+    }
+
+    test("close drains queued events before shutting down") {
+      val received = CopyOnWriteArrayList<PortalEvent>()
+      val server = startMockServer(received, port = 0) {
+        delay(12)
+      }
+      val port = server.port
+
+      try {
+        val emitter = PortalEmitter("localhost", port)
+        val totalEvents = 350
+
+        repeat(totalEvents) { index ->
+          emitter.tryEmit(runStartedEvent(index))
+        }
+
+        emitter.close()
+
+        received.size shouldBe totalEvents
+      } finally {
+        server.shutdownNow()
+      }
+    }
   })
 
-private fun startMockServer(received: MutableList<PortalEvent>, port: Int): Server {
+private fun startMockServer(
+  received: MutableList<PortalEvent>,
+  port: Int,
+  beforeAck: suspend (PortalEvent) -> Unit = {}
+): Server {
   val service = object : PortalEventServiceCoroutineImplBase() {
     override suspend fun sendEvent(request: PortalEvent): EventAck {
+      beforeAck(request)
       received.add(request)
       return EventAck.newBuilder().setAccepted(true).build()
     }
@@ -82,3 +144,13 @@ private fun startMockServer(received: MutableList<PortalEvent>, port: Int): Serv
     .build()
     .start()
 }
+
+private fun runStartedEvent(index: Int): PortalEvent =
+  PortalEvent.newBuilder()
+    .setRunId("run-$index")
+    .setRunStarted(
+      RunStartedEvent.newBuilder()
+        .setAppName("test-app")
+        .build()
+    )
+    .build()

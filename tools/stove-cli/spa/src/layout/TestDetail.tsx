@@ -14,11 +14,12 @@ import { TestHeader } from "./detail/TestHeader";
 interface TestDetailProps {
   runId: string;
   test: Test;
+  liveConnected: boolean;
 }
 
-export function TestDetail({ runId, test }: TestDetailProps) {
+export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
   const [tab, setTab] = useState<Tab>("timeline");
-  const liveRefetchInterval = test.status === "RUNNING" ? 2000 : false;
+  const liveRefetchInterval = test.status === "RUNNING" && !liveConnected ? 5000 : false;
 
   const { data: entries = [] } = useQuery({
     queryKey: ["entries", runId, test.id],

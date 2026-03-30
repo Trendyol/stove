@@ -1,5 +1,6 @@
 use crate::error::Result;
-use rusqlite::Connection;
+use rusqlite::{Connection, OpenFlags};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tracing::info;
 
 /// Versioned SQL migrations, embedded at compile time.
@@ -12,6 +13,8 @@ const MIGRATIONS: &[(&str, &str)] = &[(
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.
 pub struct Database {
+  path: String,
+  use_uri: bool,
   conn: Connection,
 }
 
@@ -20,21 +23,41 @@ impl Database {
   ///
   /// Uses WAL mode for concurrent reads and runs versioned migrations on startup.
   pub fn open(path: &str) -> Result<Self> {
-    let conn = if path == ":memory:" {
-      Connection::open_in_memory()?
-    } else {
-      Connection::open(path)?
-    };
-    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+    let (path, use_uri) = normalize_db_path(path);
+    let conn = open_connection(&path, use_uri)?;
+    apply_pragmas(&conn, &path)?;
 
     run_migrations(&conn)?;
 
-    Ok(Self { conn })
+    Ok(Self {
+      path,
+      use_uri,
+      conn,
+    })
   }
 
   /// Returns a reference to the underlying connection.
   pub fn conn(&self) -> &Connection {
     &self.conn
+  }
+
+  /// Returns a mutable reference to the underlying connection.
+  pub fn conn_mut(&mut self) -> &mut Connection {
+    &mut self.conn
+  }
+
+  /// Open another connection to the same database.
+  ///
+  /// The CLI uses this to isolate read traffic from the write path so the UI can
+  /// keep polling while gRPC ingestion is busy.
+  pub fn open_peer(&self) -> Result<Self> {
+    let conn = open_connection(&self.path, self.use_uri)?;
+    apply_pragmas(&conn, &self.path)?;
+    Ok(Self {
+      path: self.path.clone(),
+      use_uri: self.use_uri,
+      conn,
+    })
   }
 }
 
@@ -77,6 +100,40 @@ fn run_migrations(conn: &Connection) -> Result<()> {
 
   Ok(())
 }
+
+fn normalize_db_path(path: &str) -> (String, bool) {
+  if path == ":memory:" {
+    let id = IN_MEMORY_DB_COUNTER.fetch_add(1, Ordering::Relaxed);
+    (format!("file:stove-test-{id}?mode=memory&cache=shared"), true)
+  } else {
+    (path.to_string(), false)
+  }
+}
+
+fn open_connection(path: &str, use_uri: bool) -> Result<Connection> {
+  let conn = if use_uri {
+    Connection::open_with_flags(
+      path,
+      OpenFlags::SQLITE_OPEN_READ_WRITE
+        | OpenFlags::SQLITE_OPEN_CREATE
+        | OpenFlags::SQLITE_OPEN_URI,
+    )?
+  } else {
+    Connection::open(path)?
+  };
+  Ok(conn)
+}
+
+fn apply_pragmas(conn: &Connection, path: &str) -> Result<()> {
+  if path.starts_with("file:stove-test-") {
+    conn.execute_batch("PRAGMA foreign_keys=ON;")?;
+  } else {
+    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+  }
+  Ok(())
+}
+
+static IN_MEMORY_DB_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(test)]
 mod tests {

@@ -31,7 +31,10 @@ class PortalEmitter(
     .usePlaintext()
     .build()
   private val stub = PortalEventServiceCoroutineStub(channel)
-  private val eventQueue = Channel<PortalEvent>(QUEUE_CAPACITY)
+
+  // Test runs can emit thousands of spans/entries in a short burst.
+  // A bounded queue silently drops lifecycle events and leaves the CLI in a stale state.
+  private val eventQueue = Channel<PortalEvent>(Channel.UNLIMITED)
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
   private val disabled = AtomicBoolean(false)
   private val consecutiveFailures = AtomicInteger(0)
@@ -42,11 +45,16 @@ class PortalEmitter(
   }
 
   /**
-   * Non-blocking emit. Drops the event if the queue is full or emitter is disabled.
+   * Non-blocking emit. Drops the event only if the emitter is disabled or already closed.
    */
   fun tryEmit(event: PortalEvent) {
     if (disabled.get()) return
-    eventQueue.trySend(event)
+    val result = eventQueue.trySend(event)
+    if (result.isFailure) {
+      if (!disabled.get()) {
+        logger.debug("Dropping portal event because emitter queue is closed")
+      }
+    }
   }
 
   /**
@@ -106,9 +114,8 @@ class PortalEmitter(
   }
 
   companion object {
-    private const val QUEUE_CAPACITY = 512
     private const val MAX_FAILURES = 5
-    private const val DRAIN_TIMEOUT_MS = 3000L
+    private const val DRAIN_TIMEOUT_MS = 30000L
     private const val SHUTDOWN_TIMEOUT_SECONDS = 5L
   }
 }

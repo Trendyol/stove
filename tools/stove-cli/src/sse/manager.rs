@@ -11,7 +11,7 @@ pub struct SseManager {
 impl SseManager {
   #[must_use]
   pub fn new() -> Self {
-    let (sender, _) = broadcast::channel(256);
+    let (sender, _) = broadcast::channel(4096);
     Self { sender }
   }
 

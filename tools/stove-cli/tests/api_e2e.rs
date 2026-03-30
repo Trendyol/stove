@@ -12,6 +12,7 @@ use reqwest::StatusCode;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use stove::grpc::service::PortalEventServiceImpl;
 use stove::proto;
 use stove::proto::portal_event_service_server::PortalEventService;
@@ -183,6 +184,13 @@ async fn send_event(
   PortalEventService::send_event(service, Request::new(event))
     .await
     .map(|_| ())
+}
+
+async fn flush_events(service: &PortalEventServiceImpl) {
+  service
+    .flush_pending()
+    .await
+    .expect("queued portal events should flush");
 }
 
 fn extract_sse_data_frame(frame: &str) -> Option<String> {
@@ -449,6 +457,8 @@ async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress()
   )
   .unwrap();
 
+  flush_events(service.as_ref()).await;
+
   let run = server.get_json("/runs/run-concurrent").await;
   assert_eq!(run["status"], "RUNNING");
 
@@ -676,6 +686,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   )
   .await
   .unwrap();
+
+  flush_events(service.as_ref()).await;
 
   let run = server.get_json("/runs/run-interleaved").await;
   assert_eq!(run["status"], "FAILED");
@@ -1270,6 +1282,70 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
 }
 
 #[tokio::test]
+async fn sse_stream_pushes_full_events_before_database_flush() {
+  let server = TestServer::start().await;
+  let service = Arc::new(PortalEventServiceImpl::new_with_ingest_config(
+    server.repo.clone(),
+    server.sse.clone(),
+    50,
+    Duration::from_secs(60),
+  ));
+  let mut resp = server.get("/events/stream").await;
+  let mut buffer = String::new();
+
+  assert_eq!(resp.status(), StatusCode::OK);
+
+  send_event(
+    service.as_ref(),
+    run_started_event("run-live-sse", "live-sse-app", 1_704_067_200, 0),
+  )
+  .await
+  .unwrap();
+  send_event(
+    service.as_ref(),
+    test_started_event(
+      "run-live-sse",
+      "test-live",
+      "streams before sqlite",
+      "LiveSpec",
+      1_704_067_201,
+      0,
+    ),
+  )
+  .await
+  .unwrap();
+
+  let first_event: Value = serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();
+  assert_eq!(first_event["seq"], 1);
+  assert_eq!(first_event["run_id"], "run-live-sse");
+  assert_eq!(first_event["event_type"], "run_started");
+  assert_eq!(first_event["payload"]["app_name"], "live-sse-app");
+
+  let second_event: Value = serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();
+  assert_eq!(second_event["seq"], 2);
+  assert_eq!(second_event["event_type"], "test_started");
+  assert_eq!(second_event["payload"]["test_id"], "test-live");
+  assert_eq!(second_event["payload"]["status"], "RUNNING");
+
+  let run_before_flush = server.get_json("/runs/run-live-sse").await;
+  assert_eq!(run_before_flush, Value::Null);
+
+  let tests_before_flush = server.get_json("/runs/run-live-sse/tests").await;
+  assert_eq!(tests_before_flush, Value::Array(vec![]));
+
+  flush_events(service.as_ref()).await;
+
+  let run_after_flush = server.get_json("/runs/run-live-sse").await;
+  assert_eq!(run_after_flush["status"], "RUNNING");
+
+  let tests_after_flush = server.get_json("/runs/run-live-sse/tests").await;
+  let tests_after_flush = tests_after_flush.as_array().unwrap();
+  assert_eq!(tests_after_flush.len(), 1);
+  assert_eq!(tests_after_flush[0]["id"], "test-live");
+  assert_eq!(tests_after_flush[0]["status"], "RUNNING");
+}
+
+#[tokio::test]
 async fn sse_broadcast_data_is_readable_after_notification() {
   // Simulates the real-world SSE flow: when the frontend receives an SSE
   // event and immediately refetches, the data must already be in the DB.
@@ -1489,6 +1565,8 @@ async fn sse_stream_delivers_interleaved_notifications_for_concurrent_test_load(
   );
   assert_eq!(event_counts.get("test_ended"), Some(&2));
   assert_eq!(event_counts.get("run_ended"), Some(&1));
+
+  flush_events(service.as_ref()).await;
 
   let tests = server.get_json("/runs/run-sse-load/tests").await;
   let tests = tests.as_array().unwrap();
