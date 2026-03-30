@@ -104,7 +104,10 @@ fn run_migrations(conn: &Connection) -> Result<()> {
 fn normalize_db_path(path: &str) -> (String, bool) {
   if path == ":memory:" {
     let id = IN_MEMORY_DB_COUNTER.fetch_add(1, Ordering::Relaxed);
-    (format!("file:stove-test-{id}?mode=memory&cache=shared"), true)
+    (
+      format!("file:stove-test-{id}?mode=memory&cache=shared"),
+      true,
+    )
   } else {
     (path.to_string(), false)
   }

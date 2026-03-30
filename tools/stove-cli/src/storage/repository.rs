@@ -95,7 +95,15 @@ impl Repository {
     ended_at: &str,
   ) -> Result<()> {
     let db = self.lock_write_db();
-    save_test_end_on(db.conn(), run_id, test_id, status, duration_ms, error, ended_at)?;
+    save_test_end_on(
+      db.conn(),
+      run_id,
+      test_id,
+      status,
+      duration_ms,
+      error,
+      ended_at,
+    )?;
     Ok(())
   }
 
@@ -269,10 +277,7 @@ impl Repository {
   }
 }
 
-fn apply_persisted_event(
-  conn: &rusqlite::Connection,
-  event: &PersistedPortalEvent,
-) -> Result<()> {
+fn apply_persisted_event(conn: &rusqlite::Connection, event: &PersistedPortalEvent) -> Result<()> {
   match event {
     PersistedPortalEvent::RunStarted {
       run_id,

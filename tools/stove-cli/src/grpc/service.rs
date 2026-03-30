@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use tonic::{Request, Response, Status, Streaming};
@@ -382,8 +382,12 @@ struct LiveState {
 impl LiveState {
   fn clear_run(&mut self, run_id: &str) {
     self.runs.remove(run_id);
-    self.tests.retain(|(known_run_id, _)| known_run_id != run_id);
-    self.traces.retain(|(known_run_id, _), _| known_run_id != run_id);
+    self
+      .tests
+      .retain(|(known_run_id, _)| known_run_id != run_id);
+    self
+      .traces
+      .retain(|(known_run_id, _), _| known_run_id != run_id);
   }
 }
 
@@ -399,7 +403,10 @@ fn ensure_run_known(state: &LiveState, run_id: &str) -> AppResult<()> {
 
 fn ensure_test_known(state: &LiveState, run_id: &str, test_id: &str) -> AppResult<()> {
   ensure_run_known(state, run_id)?;
-  if state.tests.contains(&(run_id.to_string(), test_id.to_string())) {
+  if state
+    .tests
+    .contains(&(run_id.to_string(), test_id.to_string()))
+  {
     Ok(())
   } else {
     Err(AppError::InvalidEvent(format!(
@@ -484,7 +491,10 @@ mod tests {
     });
 
     assert!(result.is_err(), "invalid event ordering should be rejected");
-    assert!(rx.try_recv().is_err(), "invalid events must not be broadcast");
+    assert!(
+      rx.try_recv().is_err(),
+      "invalid events must not be broadcast"
+    );
     assert!(svc.repository.get_runs(None).unwrap().is_empty());
     svc.flush_pending().await.unwrap();
     assert!(svc.repository.get_runs(None).unwrap().is_empty());

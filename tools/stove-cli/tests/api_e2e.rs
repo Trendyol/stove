@@ -1315,13 +1315,15 @@ async fn sse_stream_pushes_full_events_before_database_flush() {
   .await
   .unwrap();
 
-  let first_event: Value = serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();
+  let first_event: Value =
+    serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();
   assert_eq!(first_event["seq"], 1);
   assert_eq!(first_event["run_id"], "run-live-sse");
   assert_eq!(first_event["event_type"], "run_started");
   assert_eq!(first_event["payload"]["app_name"], "live-sse-app");
 
-  let second_event: Value = serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();
+  let second_event: Value =
+    serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();
   assert_eq!(second_event["seq"], 2);
   assert_eq!(second_event["event_type"], "test_started");
   assert_eq!(second_event["payload"]["test_id"], "test-live");
