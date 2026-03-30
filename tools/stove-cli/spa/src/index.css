@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 @theme {
   --color-stove-base: var(--stove-base);
@@ -49,6 +50,19 @@
   --stove-amber: #fbbf24;
   --stove-red-bg: rgba(127, 29, 29, 0.3);
   --stove-amber-bg: rgba(120, 53, 15, 0.2);
+}
+
+/* ── React Flow theme ────────────────────────────────────────────── */
+
+.react-flow {
+  --xy-background-color: var(--stove-base);
+  --xy-node-border-radius: 8px;
+  --xy-edge-stroke: var(--stove-border);
+  --xy-edge-stroke-selected: var(--stove-blue);
+  --xy-controls-button-background-color: var(--stove-card);
+  --xy-controls-button-border-color: var(--stove-border);
+  --xy-controls-button-color: var(--stove-text);
+  --xy-minimap-background-color: var(--stove-surface);
 }
 
 /* ── Animations ──────────────────────────────────────────────────── */

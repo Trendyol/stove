@@ -16,6 +16,11 @@
 
 set -e
 
+# Ensure cargo is in PATH (not always inherited by subshells)
+if [ -d "$HOME/.cargo/bin" ]; then
+  export PATH="$HOME/.cargo/bin:$PATH"
+fi
+
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 CLI_DIR="$REPO_ROOT/tools/stove-cli"
 SPA_DIR="$CLI_DIR/spa"
@@ -143,17 +148,29 @@ lint_recipes() {
   fi
 }
 
-# ── Run selected projects ────────────────────────────────────────────
+# ── Run selected projects concurrently ────────────────────────────────
 
 echo "Mode: $MODE"
 
+PIDS=""
 for proj in $PROJECTS; do
-  case "$proj" in
-    jvm)     lint_jvm ;;
-    rust)    lint_rust ;;
-    spa)     lint_spa ;;
-    recipes) lint_recipes ;;
-  esac
+  (
+    case "$proj" in
+      jvm)     lint_jvm ;;
+      rust)    lint_rust ;;
+      spa)     lint_spa ;;
+      recipes) lint_recipes ;;
+    esac
+    exit $EXIT_CODE
+  ) &
+  PIDS="$PIDS $!"
+done
+
+EXIT_CODE=0
+for pid in $PIDS; do
+  if ! wait "$pid"; then
+    EXIT_CODE=1
+  fi
 done
 
 echo ""

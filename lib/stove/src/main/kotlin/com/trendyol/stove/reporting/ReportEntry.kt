@@ -3,6 +3,8 @@ package com.trendyol.stove.reporting
 import arrow.core.None
 import arrow.core.Option
 import arrow.core.Some
+import arrow.core.toOption
+import com.trendyol.stove.tracing.TraceContext
 import com.trendyol.stove.tracing.TraceVisualization
 import java.time.Instant
 
@@ -47,7 +49,8 @@ data class ReportEntry(
       action: String,
       input: Option<Any> = None,
       output: Option<Any> = None,
-      metadata: Map<String, Any> = emptyMap()
+      metadata: Map<String, Any> = emptyMap(),
+      traceId: Option<String> = TraceContext.current()?.traceId.toOption()
     ): ReportEntry = ReportEntry(
       timestamp = now(),
       system = system,
@@ -56,7 +59,8 @@ data class ReportEntry(
       result = AssertionResult.PASSED,
       input = input,
       output = output,
-      metadata = metadata
+      metadata = metadata,
+      traceId = traceId
     )
 
     /**
@@ -73,7 +77,7 @@ data class ReportEntry(
       expected: Option<Any> = None,
       actual: Option<Any> = None,
       error: Option<String> = None,
-      traceId: Option<String> = None,
+      traceId: Option<String> = TraceContext.current()?.traceId.toOption(),
       executionTrace: Option<TraceVisualization> = None
     ): ReportEntry = ReportEntry(
       timestamp = now(),
@@ -103,7 +107,8 @@ data class ReportEntry(
       output: Option<Any> = None,
       metadata: Map<String, Any> = emptyMap(),
       expected: Option<Any> = None,
-      actual: Option<Any> = None
+      actual: Option<Any> = None,
+      traceId: Option<String> = TraceContext.current()?.traceId.toOption()
     ): ReportEntry = ReportEntry(
       timestamp = now(),
       system = system,
@@ -115,7 +120,8 @@ data class ReportEntry(
       metadata = metadata,
       expected = expected,
       actual = actual,
-      error = Some(error)
+      error = Some(error),
+      traceId = traceId
     )
   }
 }

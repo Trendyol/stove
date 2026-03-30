@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api } from "../api/client";
 import type { Test } from "../api/types";
 import { EntryRow } from "../components/EntryRow";
+import { FlowTab } from "../components/FlowTab";
 import { KafkaExplorer } from "../components/KafkaExplorer";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
@@ -35,10 +36,15 @@ export function TestDetail({ runId, test }: TestDetailProps) {
 
   const kafkaCount = entries.filter((e) => e.system === "Kafka").length;
   const tabs = [
-    { id: "timeline" as Tab, label: `Timeline (${entries.length})` },
-    { id: "trace" as Tab, label: `Trace (${spans.length})` },
-    { id: "snapshots" as Tab, label: `Snapshots (${snapshots.length})` },
-    { id: "kafka" as Tab, label: `Kafka${kafkaCount > 0 ? ` (${kafkaCount})` : ""}` },
+    { id: "timeline" as Tab, label: `Timeline (${entries.length})`, icon: "\u{1f4cb}" },
+    { id: "trace" as Tab, label: `Trace (${spans.length})`, icon: "\u{1f50d}" },
+    { id: "snapshots" as Tab, label: `Snapshots (${snapshots.length})`, icon: "\u{1f4f8}" },
+    {
+      id: "kafka" as Tab,
+      label: `Kafka${kafkaCount > 0 ? ` (${kafkaCount})` : ""}`,
+      icon: "\u{1f4e8}",
+    },
+    { id: "flow" as Tab, label: "Flow", icon: "\u{1f310}" },
   ];
 
   return (
@@ -53,7 +59,7 @@ export function TestDetail({ runId, test }: TestDetailProps) {
         <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 ${tab === "flow" ? "overflow-hidden" : "overflow-y-auto"}`}>
         {tab === "timeline" && (
           <div className="p-3 space-y-0.5">
             {entries.map((entry) => (
@@ -81,6 +87,7 @@ export function TestDetail({ runId, test }: TestDetailProps) {
             <SnapshotCards snapshots={snapshots} />
           ))}
         {tab === "kafka" && <KafkaExplorer entries={entries} />}
+        {tab === "flow" && <FlowTab entries={entries} spans={spans} />}
       </div>
     </div>
   );
