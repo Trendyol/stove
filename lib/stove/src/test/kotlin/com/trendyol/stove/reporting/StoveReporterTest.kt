@@ -76,6 +76,25 @@ class StoveReporterTest :
       ended shouldBe listOf("test-holder")
     }
 
+    test("endTest keeps current test context visible while listeners run") {
+      val reporter = StoveReporter()
+      val observedTestIds = mutableListOf<String>()
+      val ctx = StoveTestContext("test-listener", "listener test")
+      val listener = object : ReportEventListener {
+        override fun onTestEnded(testId: String) {
+          observedTestIds.add(reporter.currentTestId())
+        }
+      }
+
+      reporter.addListener(listener)
+      reporter.startTest(ctx)
+
+      reporter.endTest()
+
+      observedTestIds shouldBe listOf("test-listener")
+      reporter.currentTestId() shouldBe "default"
+    }
+
     test("detects failures correctly") {
       val reporter = StoveReporter()
       reporter.startTest(StoveTestContext("test-1", "test1"))

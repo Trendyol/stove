@@ -1,13 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type {
-  AppSummary,
-  Entry,
-  LivePortalEvent,
-  Run,
-  Snapshot,
-  Span,
-  Test,
-} from "./types";
+import type { AppSummary, Entry, LivePortalEvent, Run, Snapshot, Span, Test } from "./types";
 
 export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortalEvent) {
   switch (event.event_type) {
@@ -33,7 +25,9 @@ export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortal
           total_runs: nextRunCount(apps, event.payload.app_name, event.run_id),
         }),
       );
-      queryClient.setQueryData<Run[]>(["runs", event.payload.app_name], (runs) => upsertRun(runs, run));
+      queryClient.setQueryData<Run[]>(["runs", event.payload.app_name], (runs) =>
+        upsertRun(runs, run),
+      );
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
       break;
     }
@@ -47,12 +41,14 @@ export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortal
         failed: event.payload.failed,
         duration_ms: event.payload.duration_ms,
       }));
-      queryClient.setQueryData<AppSummary[]>(["apps"], (apps) =>
-        apps?.map((app) =>
-          app.latest_run_id === event.run_id
-            ? { ...app, latest_status: event.payload.status }
-            : app,
-        ) ?? apps,
+      queryClient.setQueryData<AppSummary[]>(
+        ["apps"],
+        (apps) =>
+          apps?.map((app) =>
+            app.latest_run_id === event.run_id
+              ? { ...app, latest_status: event.payload.status }
+              : app,
+          ) ?? apps,
       );
       break;
     }
@@ -70,8 +66,14 @@ export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortal
       };
 
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => upsertTest(tests, test));
-      queryClient.setQueryData<Entry[]>(["entries", event.run_id, event.payload.test_id], (entries) => entries ?? []);
-      queryClient.setQueryData<Span[]>(["spans", event.run_id, event.payload.test_id], (spans) => spans ?? []);
+      queryClient.setQueryData<Entry[]>(
+        ["entries", event.run_id, event.payload.test_id],
+        (entries) => entries ?? [],
+      );
+      queryClient.setQueryData<Span[]>(
+        ["spans", event.run_id, event.payload.test_id],
+        (spans) => spans ?? [],
+      );
       queryClient.setQueryData<Snapshot[]>(
         ["snapshots", event.run_id, event.payload.test_id],
         (snapshots) => snapshots ?? [],
@@ -140,12 +142,17 @@ export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortal
         exception_stack_trace: event.payload.exception_stack_trace,
       };
 
-      queryClient.setQueryData<Span[]>(["trace", event.payload.trace_id], (trace) => appendSpan(trace, span));
+      queryClient.setQueryData<Span[]>(["trace", event.payload.trace_id], (trace) =>
+        appendSpan(trace, span),
+      );
 
       const testId =
-        event.payload.test_id ?? findTestIdForTrace(queryClient, event.run_id, event.payload.trace_id);
+        event.payload.test_id ??
+        findTestIdForTrace(queryClient, event.run_id, event.payload.trace_id);
       if (testId) {
-        queryClient.setQueryData<Span[]>(["spans", event.run_id, testId], (spans) => appendSpan(spans, span));
+        queryClient.setQueryData<Span[]>(["spans", event.run_id, testId], (spans) =>
+          appendSpan(spans, span),
+        );
       }
       break;
     }
@@ -188,11 +195,7 @@ function upsertAppSummary(apps: AppSummary[] | undefined, incoming: AppSummary):
   return next.sort((left, right) => left.app_name.localeCompare(right.app_name));
 }
 
-function nextRunCount(
-  apps: AppSummary[] | undefined,
-  appName: string,
-  runId: string,
-): number {
+function nextRunCount(apps: AppSummary[] | undefined, appName: string, runId: string): number {
   const existing = apps?.find((app) => app.app_name === appName);
   if (!existing) {
     return 1;
@@ -212,11 +215,7 @@ function upsertTest(tests: Test[] | undefined, incoming: Test): Test[] {
   return next.sort(compareTests);
 }
 
-function updateCachedRuns(
-  queryClient: QueryClient,
-  runId: string,
-  updater: (run: Run) => Run,
-) {
+function updateCachedRuns(queryClient: QueryClient, runId: string, updater: (run: Run) => Run) {
   for (const [queryKey, runs] of queryClient.getQueriesData<Run[]>({ queryKey: ["runs"] })) {
     if (!runs) {
       continue;
@@ -242,8 +241,10 @@ function updateCachedTests(
   updater: (test: Test) => Test,
 ) {
   const queryKey = ["tests", runId];
-  queryClient.setQueryData<Test[]>(queryKey, (tests) =>
-    tests?.map((test) => (test.id === testId ? updater(test) : test)).sort(compareTests) ?? tests,
+  queryClient.setQueryData<Test[]>(
+    queryKey,
+    (tests) =>
+      tests?.map((test) => (test.id === testId ? updater(test) : test)).sort(compareTests) ?? tests,
   );
 }
 
@@ -307,8 +308,14 @@ function isSameSpan(left: Span, right: Span): boolean {
   return left.trace_id === right.trace_id && left.span_id === right.span_id;
 }
 
-function findTestIdForTrace(queryClient: QueryClient, runId: string, traceId: string): string | null {
-  for (const [queryKey, entries] of queryClient.getQueriesData<Entry[]>({ queryKey: ["entries", runId] })) {
+function findTestIdForTrace(
+  queryClient: QueryClient,
+  runId: string,
+  traceId: string,
+): string | null {
+  for (const [queryKey, entries] of queryClient.getQueriesData<Entry[]>({
+    queryKey: ["entries", runId],
+  })) {
     if (!entries?.some((entry) => entry.trace_id === traceId)) {
       continue;
     }

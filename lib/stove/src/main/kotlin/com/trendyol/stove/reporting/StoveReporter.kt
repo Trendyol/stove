@@ -50,11 +50,14 @@ class StoveReporter(
   /** End tracking the current test */
   fun endTest() {
     val testId = resolveTestId()
-    contextThreadLocal.remove()
-    if (testId != null) {
-      listeners.forEach {
-        runCatching { it.onTestEnded(testId) }.onFailure { e -> logger.warn("Listener failed on onTestEnded", e) }
+    try {
+      if (testId != null) {
+        listeners.forEach {
+          runCatching { it.onTestEnded(testId) }.onFailure { e -> logger.warn("Listener failed on onTestEnded", e) }
+        }
       }
+    } finally {
+      contextThreadLocal.remove()
     }
   }
 

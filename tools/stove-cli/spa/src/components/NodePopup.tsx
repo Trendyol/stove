@@ -1,24 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { api } from "../api/client";
 import type { Entry } from "../api/types";
 import { EntryDetails } from "./EntryDetails";
 import { ResultIcon } from "./ResultIcon";
-import { SpanTree } from "./SpanTree";
 
 interface NodePopupProps {
   entries: Entry[];
   traceId: string | null;
   onClose: () => void;
+  onOpenTrace?: (() => void) | undefined;
 }
 
-export function NodePopup({ entries, traceId, onClose }: NodePopupProps) {
-  const { data: spans } = useQuery({
-    queryKey: ["trace", traceId],
-    queryFn: () => api.getTrace(traceId!),
-    enabled: !!traceId,
-  });
-
+export function NodePopup({ entries, traceId, onClose, onOpenTrace }: NodePopupProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -68,12 +60,29 @@ export function NodePopup({ entries, traceId, onClose }: NodePopupProps) {
             </div>
           )}
 
-          {traceId && spans && spans.length > 0 && (
-            <div>
-              <div className="text-xs text-[var(--stove-text-secondary)] mb-2 border-t border-stove-border pt-3">
-                Linked Trace
+          {traceId && (
+            <div className="border-t border-stove-border pt-3">
+              <div className="mb-2 text-xs text-[var(--stove-text-secondary)]">Trace Context</div>
+              <div className="rounded-lg border border-stove-border bg-stove-base px-3 py-2">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--stove-text-muted)]">
+                  Trace Id
+                </div>
+                <div className="mt-1 break-all font-mono text-xs text-[var(--stove-text)]">
+                  {traceId}
+                </div>
+                <div className="mt-2 text-xs text-[var(--stove-text-secondary)]">
+                  Full trace inspection lives in the Trace tab.
+                </div>
+                {onOpenTrace && (
+                  <button
+                    type="button"
+                    className="mt-3 cursor-pointer rounded border border-stove-border bg-stove-card px-2.5 py-1.5 text-xs text-[var(--stove-text)] hover:bg-[var(--stove-hover)]"
+                    onClick={onOpenTrace}
+                  >
+                    Open Trace Tab
+                  </button>
+                )}
               </div>
-              <SpanTree spans={spans} />
             </div>
           )}
         </div>

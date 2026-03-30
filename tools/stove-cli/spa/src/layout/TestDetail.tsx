@@ -21,22 +21,33 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
   const [tab, setTab] = useState<Tab>("timeline");
   const liveRefetchInterval = test.status === "RUNNING" && !liveConnected ? 5000 : false;
 
-  const { data: entries = [] } = useQuery({
+  const { data: entries = [], error: entriesError } = useQuery({
     queryKey: ["entries", runId, test.id],
     queryFn: () => api.getEntries(runId, test.id),
     refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
-  const { data: spans = [], isLoading: spansLoading } = useQuery({
+  const {
+    data: spans = [],
+    isLoading: spansLoading,
+    error: spansError,
+  } = useQuery({
     queryKey: ["spans", runId, test.id],
     queryFn: () => api.getSpans(runId, test.id),
     refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
-  const { data: snapshots = [], isLoading: snapshotsLoading } = useQuery({
+  const {
+    data: snapshots = [],
+    isLoading: snapshotsLoading,
+    error: snapshotsError,
+  } = useQuery({
     queryKey: ["snapshots", runId, test.id],
     queryFn: () => api.getSnapshots(runId, test.id),
     refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const kafkaCount = entries.filter((e) => e.system === "Kafka").length;
@@ -64,9 +75,12 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
         <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       </div>
 
-      <div className={`flex-1 ${tab === "flow" ? "overflow-hidden" : "overflow-y-auto"}`}>
+      <div className={`min-h-0 flex-1 ${tab === "flow" ? "overflow-hidden" : "overflow-y-auto"}`}>
         {tab === "timeline" && (
           <div className="p-3 space-y-0.5">
+            {entriesError && (
+              <QueryErrorMessage error={entriesError} fallback="Failed to load entries" />
+            )}
             {entries.map((entry) => (
               <EntryRow key={entry.id} entry={entry} />
             ))}
@@ -80,6 +94,8 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
         {tab === "trace" &&
           (spansLoading ? (
             <div className="text-[var(--stove-text-secondary)] text-sm p-4">Loading traces...</div>
+          ) : spansError ? (
+            <QueryErrorMessage error={spansError} fallback="Failed to load traces" />
           ) : (
             <SpanTree spans={spans} />
           ))}
@@ -88,12 +104,26 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
             <div className="text-[var(--stove-text-secondary)] text-sm p-4">
               Loading snapshots...
             </div>
+          ) : snapshotsError ? (
+            <QueryErrorMessage error={snapshotsError} fallback="Failed to load snapshots" />
           ) : (
             <SnapshotCards snapshots={snapshots} />
           ))}
         {tab === "kafka" && <KafkaExplorer entries={entries} />}
-        {tab === "flow" && <FlowTab entries={entries} spans={spans} />}
+        {tab === "flow" && (
+          <FlowTab
+            entries={entries}
+            spans={spans}
+            snapshots={snapshots}
+            onOpenTraceTab={() => setTab("trace")}
+          />
+        )}
       </div>
     </div>
   );
+}
+
+function QueryErrorMessage({ error, fallback }: { error: unknown; fallback: string }) {
+  const message = error instanceof Error ? error.message : fallback;
+  return <div className="text-red-400 text-sm p-4">{message}</div>;
 }

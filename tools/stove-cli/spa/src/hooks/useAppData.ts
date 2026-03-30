@@ -19,6 +19,7 @@ export function useAppData() {
     queryKey: ["apps"],
     queryFn: api.getApps,
     refetchInterval: liveConnected ? false : 5000,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const activeApp = selectedApp ?? apps[0]?.app_name ?? null;
@@ -28,6 +29,7 @@ export function useAppData() {
     queryFn: () => api.getRuns(activeApp!),
     enabled: !!activeApp,
     refetchInterval: !!activeApp && !liveConnected ? 5000 : false,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const latestRun = runs[0] ?? null;
@@ -37,6 +39,7 @@ export function useAppData() {
     queryFn: () => api.getTests(latestRun!.id),
     enabled: !!latestRun,
     refetchInterval: latestRun?.status === "RUNNING" && !liveConnected ? 5000 : false,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   useEffect(() => {
