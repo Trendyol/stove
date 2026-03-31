@@ -12,12 +12,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove"><img src="https://img.shields.io/ossf-scorecard/github.com/Trendyol/stove?label=openssf%20scorecard&style=flat" alt="OpenSSF Scorecard"/></a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/Trendyol/stove/blob/main/docs/assets/stove_portal.webm">
-    <img src="./docs/assets/stove_portal.gif" width="760" alt="Stove Portal demo (click to open full WebM video)" />
-  </a>
-</p>
-
 ```kotlin
 stove {
   // Call API and verify response
@@ -49,6 +43,12 @@ stove {
   }
 }
 ```
+
+<p align="center">
+  <a href="https://github.com/Trendyol/stove/blob/main/docs/assets/stove_portal.webm">
+    <img src="./docs/assets/stove_portal.gif" width="760" alt="Stove Portal demo (click to open full WebM video)" />
+  </a>
+</p>
 
 ## Why Stove?
 
