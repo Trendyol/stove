@@ -42,7 +42,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveElasticsearch)
   testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(projects.stove.starters.spring.stoveSpringKafka)
-  testImplementation(projects.stove.lib.stovePortal)
+  testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.lib.stoveTracing)
 }
 

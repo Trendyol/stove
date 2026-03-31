@@ -147,7 +147,7 @@ export interface LiveSnapshotPayload {
   summary: string;
 }
 
-export type LivePortalEvent =
+export type LiveDashboardEvent =
   | {
       seq: number;
       run_id: string;

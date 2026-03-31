@@ -46,11 +46,13 @@ async fn main() -> anyhow::Result<()> {
   // Start gRPC server
   let grpc_addr: SocketAddr = format!("0.0.0.0:{}", config.grpc_port).parse()?;
   let grpc_service =
-    grpc::service::PortalEventServiceImpl::new(repository.clone(), sse_manager.clone());
+    grpc::service::DashboardEventServiceImpl::new(repository.clone(), sse_manager.clone());
   let grpc_handle = tokio::spawn(async move {
     info!("gRPC server listening on {}", grpc_addr);
     tonic::transport::Server::builder()
-      .add_service(proto::portal_event_service_server::PortalEventServiceServer::new(grpc_service))
+      .add_service(
+        proto::dashboard_event_service_server::DashboardEventServiceServer::new(grpc_service),
+      )
       .serve(grpc_addr)
       .await
   });

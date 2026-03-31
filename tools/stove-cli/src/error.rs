@@ -15,7 +15,7 @@ pub enum AppError {
   #[error("Serialization error: {0}")]
   Serialization(#[from] serde_json::Error),
 
-  #[error("Invalid portal event: {0}")]
+  #[error("Invalid dashboard event: {0}")]
   InvalidEvent(String),
 
   #[error("Server startup failed: {0}")]

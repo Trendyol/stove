@@ -3,7 +3,7 @@ use tokio::sync::broadcast;
 /// Manages SSE (Server-Sent Events) broadcasting to connected browser clients.
 ///
 /// Uses `tokio::sync::broadcast` so multiple SSE clients each get their own receiver.
-/// Events are JSON-serialized portal events.
+/// Events are JSON-serialized dashboard events.
 pub struct SseManager {
   sender: broadcast::Sender<String>,
 }

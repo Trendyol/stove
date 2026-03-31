@@ -8,10 +8,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .build_client(false)
     .compile_protos(
       &[
-        "../../lib/stove-portal-api/src/main/proto/stove/portal/v1/portal_events.proto",
-        "../../lib/stove-portal-api/src/main/proto/stove/portal/v1/portal_service.proto",
+        "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_events.proto",
+        "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_service.proto",
       ],
-      &["../../lib/stove-portal-api/src/main/proto/"],
+      &["../../lib/stove-dashboard-api/src/main/proto/"],
     )?;
 
   // ── Version from gradle.properties ─────────────────────────────

@@ -8,7 +8,7 @@ use tokio_stream::wrappers::BroadcastStream;
 
 use crate::http::server::AppState;
 
-/// SSE endpoint that streams portal events to connected browser clients.
+/// SSE endpoint that streams dashboard events to connected browser clients.
 ///
 /// Sends a keep-alive comment every 15 seconds to prevent proxies and browsers
 /// from closing the connection during long-running tests.

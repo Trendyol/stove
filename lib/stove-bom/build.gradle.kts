@@ -28,8 +28,8 @@ dependencies {
     api(projects.lib.stoveWiremock)
     api(projects.lib.stoveGrpcMock)
     api(projects.lib.stoveTracing)
-    api(projects.lib.stovePortal)
-    api(projects.lib.stovePortalApi)
+    api(projects.lib.stoveDashboard)
+    api(projects.lib.stoveDashboardApi)
 
     // Starters
     api(projects.starters.spring.stoveSpring)

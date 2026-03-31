@@ -5,12 +5,12 @@ on:
     branches: [main]
     paths:
       - 'tools/stove-cli/**'
-      - 'lib/stove-portal-api/src/main/proto/**'
+      - 'lib/stove-dashboard-api/src/main/proto/**'
   pull_request:
     branches: [main]
     paths:
       - 'tools/stove-cli/**'
-      - 'lib/stove-portal-api/src/main/proto/**'
+      - 'lib/stove-dashboard-api/src/main/proto/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

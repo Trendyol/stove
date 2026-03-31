@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { applyLivePortalEvent, invalidatePortalQueries } from "../api/live-cache";
+import { applyLiveDashboardEvent, invalidateDashboardQueries } from "../api/live-cache";
 import { useSSE } from "../api/sse";
 
 export function useAppData() {
@@ -10,9 +10,9 @@ export function useAppData() {
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
 
   const { connected: liveConnected } = useSSE({
-    onEvent: (event) => applyLivePortalEvent(queryClient, event),
-    onGap: (event) => invalidatePortalQueries(queryClient, event.run_id),
-    onReconnect: () => invalidatePortalQueries(queryClient),
+    onEvent: (event) => applyLiveDashboardEvent(queryClient, event),
+    onGap: (event) => invalidateDashboardQueries(queryClient, event.run_id),
+    onReconnect: () => invalidateDashboardQueries(queryClient),
   });
 
   const { data: apps = [] } = useQuery({

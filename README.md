@@ -71,15 +71,15 @@ assertions even for code that is traditionally hard to test (async flows, messag
 - Extensible architecture for adding new components and
   frameworks ([Writing Custom Systems](https://trendyol.github.io/stove/writing-custom-systems/))
 
-## Portal (New in 0.23.0)
+## Dashboard (New in 0.23.0)
 
-Stove Portal introduces a local real-time dashboard for end-to-end test runs. It captures HTTP calls, Kafka activity,
+Stove Dashboard introduces a local real-time dashboard for end-to-end test runs. It captures HTTP calls, Kafka activity,
 database assertions, and traces in one place so you can inspect successful and failed runs with full context.
 
 **Quick start**
 
 ```bash
-# 1) Install and start the Portal CLI
+# 1) Install and start the Dashboard CLI
 brew install Trendyol/trendyol-tap/stove
 stove
 
@@ -91,18 +91,18 @@ stove
 ```kotlin
 dependencies {
   testImplementation(platform("com.trendyol:stove-bom:$version"))
-  testImplementation("com.trendyol:stove-portal")
+  testImplementation("com.trendyol:stove-dashboard")
   testImplementation("com.trendyol:stove-tracing")
 }
 
 Stove()
   .with {
-    portal { PortalSystemOptions(appName = "product-api") }
+    dashboard { DashboardSystemOptions(appName = "product-api") }
     tracing { enableSpanReceiver() } // recommended
   }.run()
 ```
 
-See [Portal docs](https://trendyol.github.io/stove/Components/18-portal/) and
+See [Dashboard docs](https://trendyol.github.io/stove/Components/18-dashboard/) and
 [0.23.0 release notes](https://trendyol.github.io/stove/release-notes/0.23.0/) for full details.
 
 ## Getting Started

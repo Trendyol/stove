@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { AppSummary, Entry, LivePortalEvent, Run, Snapshot, Span, Test } from "./types";
+import type { AppSummary, Entry, LiveDashboardEvent, Run, Snapshot, Span, Test } from "./types";
 
-export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortalEvent) {
+export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDashboardEvent) {
   switch (event.event_type) {
     case "run_started": {
       const run: Run = {
@@ -175,7 +175,7 @@ export function applyLivePortalEvent(queryClient: QueryClient, event: LivePortal
   }
 }
 
-export function invalidatePortalQueries(queryClient: QueryClient, runId?: string) {
+export function invalidateDashboardQueries(queryClient: QueryClient, runId?: string) {
   queryClient.invalidateQueries({ queryKey: ["apps"] });
   queryClient.invalidateQueries({ queryKey: ["runs"] });
   if (runId) {
