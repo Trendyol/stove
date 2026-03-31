@@ -46,7 +46,7 @@ stove {
 
 <p align="center">
   <a href="https://github.com/Trendyol/stove/blob/main/docs/assets/stove_portal.gif">
-    <img src="./docs/assets/stove_portal.gif" width="760" alt="Stove Portal demo (click to open full GIF video)" />
+    <img src="./docs/assets/stove_portal.gif" alt="Stove Portal demo (click to open full GIF video)" />
   </a>
 </p>
 
