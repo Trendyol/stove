@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/Trendyol/stove/blob/main/docs/assets/stove_portal.webm">
-    Watch the Stove Portal demo video (WebM)
+    <img src="./docs/assets/stove_portal.gif" width="760" alt="Stove Portal demo (click to open full WebM video)" />
   </a>
 </p>
 
@@ -108,8 +108,6 @@ Stove()
 
 See [Portal docs](https://trendyol.github.io/stove/Components/18-portal/) and
 [0.23.0 release notes](https://trendyol.github.io/stove/release-notes/0.23.0/) for full details.
-
-<p align="center"><img src="./docs/assets/stove_architecture.svg" width="600" /></p>
 
 ## Getting Started
 
