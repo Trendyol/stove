@@ -370,7 +370,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/portal-0.23.0/" class="md-tabs__link">
+        <a href="../../blog/dashboard-0.23.0/" class="md-tabs__link">
           
   
   
@@ -1286,14 +1286,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/18-portal/" class="md-nav__link">
+      <a href="../../Components/18-dashboard/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Portal
+    Dashboard
   
 
     
@@ -1460,14 +1460,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blog/portal-0.23.0/" class="md-nav__link">
+      <a href="../../blog/dashboard-0.23.0/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Stove Portal in 0.23.0
+    Stove Dashboard in 0.23.0
   
 
     
@@ -1679,10 +1679,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#portal-local-observability-dashboard" class="md-nav__link">
+  <a href="#dashboard-local-observability-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Portal — Local Observability Dashboard
+        Dashboard — Local Observability Dashboard
       
     </span>
   </a>
@@ -1995,10 +1995,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#portal-local-observability-dashboard" class="md-nav__link">
+  <a href="#dashboard-local-observability-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Portal — Local Observability Dashboard
+        Dashboard — Local Observability Dashboard
       
     </span>
   </a>
@@ -2185,12 +2185,12 @@
 <li>Cleanup hooks</li>
 </ul>
 <p>See the <a href="../../Components/17-cassandra/">Cassandra documentation</a> for full details.</p>
-<h3 id="portal-local-observability-dashboard">Portal — Local Observability Dashboard<a class="headerlink" href="#portal-local-observability-dashboard" title="Permanent link">&para;</a></h3>
-<p>New <code>stove-portal</code> module and a companion CLI (<code>stove</code>) that gives you a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">real-time web dashboard</span> for your e2e test runs.</p>
+<h3 id="dashboard-local-observability-dashboard">Dashboard — Local Observability Dashboard<a class="headerlink" href="#dashboard-local-observability-dashboard" title="Permanent link">&para;</a></h3>
+<p>New <code>stove-dashboard</code> module and a companion CLI (<code>stove</code>) that gives you a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">real-time web dashboard</span> for your e2e test runs.</p>
 <p>Add one line to your Stove config:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="hll"><span class="w">    </span><span class="n">portal</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PortalSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-api&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="hll"><span class="w">    </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-api&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span></span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="c1">// ... other systems</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
@@ -2202,11 +2202,11 @@
 <li><strong>Snapshots</strong> — system state cards captured at test boundaries</li>
 <li><strong>Kafka Explorer</strong> — dedicated view with consumed/published/failed counts and expandable JSON payloads</li>
 </ul>
-<p>The portal emitter is fault-tolerant: non-blocking queue, auto-disables after 5 consecutive gRPC failures, never breaks your tests. If the CLI isn't running, nothing happens.</p>
+<p>The dashboard emitter is fault-tolerant: non-blocking queue, auto-disables after 5 consecutive gRPC failures, never breaks your tests. If the CLI isn't running, nothing happens.</p>
 <p>Install the CLI:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>brew<span class="w"> </span>install<span class="w"> </span>Trendyol/trendyol-tap/stove
 </span></code></pre></div>
-<p>See the <a href="../../Components/18-portal/">Portal documentation</a> for full details.</p>
+<p>See the <a href="../../Components/18-dashboard/">Dashboard documentation</a> for full details.</p>
 <hr />
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2218,7 +2218,7 @@
 <li>Added Spring Boot 4.x <code>addTestDependencies4x</code> section</li>
 <li>Added missing MySQL section to provided instances docs</li>
 <li>Added 0.21.2 → 0.22.x migration notes to troubleshooting</li>
-<li>Added Portal documentation with architecture, installation, configuration, and REST API reference</li>
+<li>Added Dashboard documentation with architecture, installation, configuration, and REST API reference</li>
 </ul>
 <hr />
 <h2 id="dependency-updates">Dependency Updates<a class="headerlink" href="#dependency-updates" title="Permanent link">&para;</a></h2>
@@ -2232,7 +2232,7 @@
 <p>This is a non-breaking release. All existing APIs remain compatible.</p>
 <h4 id="new-features-to-opt-into">New Features to Opt Into<a class="headerlink" href="#new-features-to-opt-into" title="Permanent link">&para;</a></h4>
 <p><strong>Cassandra</strong>: Add <code>stove-cassandra</code> to your dependencies if you're testing against Cassandra. See the <a href="../../Components/17-cassandra/">Cassandra documentation</a>.</p>
-<p><strong>Portal</strong>: Add <code>stove-portal</code> to your dependencies and install the CLI via Homebrew (<code>brew install Trendyol/trendyol-tap/stove</code>) or the shell script. See the <a href="../../Components/18-portal/">Portal documentation</a>.</p>
+<p><strong>Dashboard</strong>: Add <code>stove-dashboard</code> to your dependencies and install the CLI via Homebrew (<code>brew install Trendyol/trendyol-tap/stove</code>) or the shell script. See the <a href="../../Components/18-dashboard/">Dashboard documentation</a>.</p>
 
 
 

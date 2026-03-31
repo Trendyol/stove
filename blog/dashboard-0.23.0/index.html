@@ -25,7 +25,7 @@
     
     
       
-        <title>Stove Portal in 0.23.0 - Stove</title>
+        <title>Stove Dashboard in 0.23.0 - Stove</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#stove-portal-in-0230-see-your-e2e-runs-live" class="md-skip">
+        <a href="#stove-dashboard-in-0230-see-your-e2e-runs-live" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Stove Portal in 0.23.0
+              Stove Dashboard in 0.23.0
             
           </span>
         </div>
@@ -1286,14 +1286,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Components/18-portal/" class="md-nav__link">
+      <a href="../../Components/18-dashboard/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Portal
+    Dashboard
   
 
     
@@ -1481,7 +1481,7 @@
   <span class="md-ellipsis">
     
   
-    Stove Portal in 0.23.0
+    Stove Dashboard in 0.23.0
   
 
     
@@ -1499,7 +1499,7 @@
   <span class="md-ellipsis">
     
   
-    Stove Portal in 0.23.0
+    Stove Dashboard in 0.23.0
   
 
     
@@ -1559,10 +1559,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-register-portal-in-stove-config" class="md-nav__link">
+  <a href="#3-register-dashboard-in-stove-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3) Register Portal in Stove config
+        3) Register Dashboard in Stove config
       
     </span>
   </a>
@@ -1586,10 +1586,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-use-portal-during-debugging" class="md-nav__link">
+  <a href="#how-to-use-dashboard-during-debugging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How to Use Portal During Debugging
+        How to Use Dashboard During Debugging
       
     </span>
   </a>
@@ -2016,10 +2016,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-register-portal-in-stove-config" class="md-nav__link">
+  <a href="#3-register-dashboard-in-stove-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3) Register Portal in Stove config
+        3) Register Dashboard in Stove config
       
     </span>
   </a>
@@ -2043,10 +2043,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-use-portal-during-debugging" class="md-nav__link">
+  <a href="#how-to-use-dashboard-during-debugging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How to Use Portal During Debugging
+        How to Use Dashboard During Debugging
       
     </span>
   </a>
@@ -2165,10 +2165,10 @@
   
 
 
-<h1 id="stove-portal-in-0230-see-your-e2e-runs-live">Stove Portal in 0.23.0: See Your E2E Runs Live<a class="headerlink" href="#stove-portal-in-0230-see-your-e2e-runs-live" title="Permanent link">&para;</a></h1>
+<h1 id="stove-dashboard-in-0230-see-your-e2e-runs-live">Stove Dashboard in 0.23.0: See Your E2E Runs Live<a class="headerlink" href="#stove-dashboard-in-0230-see-your-e2e-runs-live" title="Permanent link">&para;</a></h1>
 <p>End-to-end tests usually answer one question: pass or fail. When they fail, you jump between logs, traces, and broker/db tools to understand what happened.</p>
-<p>As of <strong>Stove 0.23.0</strong>, you can use <strong>Stove Portal</strong> and the <strong><code>stove</code> CLI</strong> to watch test execution in a local dashboard while tests are running.</p>
-<p>Portal gives you:</p>
+<p>As of <strong>Stove 0.23.0</strong>, you can use <strong>Stove Dashboard</strong> and the <strong><code>stove</code> CLI</strong> to watch test execution in a local dashboard while tests are running.</p>
+<p>Dashboard gives you:</p>
 <ul>
 <li>a real-time timeline of test actions</li>
 <li>distributed trace trees linked to tests</li>
@@ -2178,9 +2178,9 @@
 <p>Instead of treating failures as black boxes, you can inspect the full story in one place.</p>
 <p align="center">
   <video width="900" controls>
-    <source src="../../assets/stove_portal.webm" type="video/webm" />
-    Your browser does not support embedded videos. You can download the Stove Portal demo from
-    ../../assets/stove_portal.webm.
+    <source src="../../assets/stove_dashboard.webm" type="video/webm" />
+    Your browser does not support embedded videos. You can download the Stove Dashboard demo from
+    ../../assets/stove_dashboard.webm.
   </video>
 </p>
 
@@ -2193,14 +2193,14 @@
 <h3 id="2-add-the-test-dependency">2) Add the test dependency<a class="headerlink" href="#2-add-the-test-dependency" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">version</span><span class="s">&quot;</span><span class="p">))</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-portal&quot;</span><span class="p">)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-dashboard&quot;</span><span class="p">)</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">}</span>
 </span></code></pre></div>
-<h3 id="3-register-portal-in-stove-config">3) Register Portal in Stove config<a class="headerlink" href="#3-register-portal-in-stove-config" title="Permanent link">&para;</a></h3>
+<h3 id="3-register-dashboard-in-stove-config">3) Register Dashboard in Stove config<a class="headerlink" href="#3-register-dashboard-in-stove-config" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">portal</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PortalSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-api&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-api&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// recommended for trace view</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="c1">// other systems: http, kafka, postgresql, wiremock...</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
@@ -2209,7 +2209,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./gradlew<span class="w"> </span><span class="nb">test</span>
 </span></code></pre></div>
 <p>Open <code>http://localhost:4040</code> and inspect runs as they stream in.</p>
-<h2 id="how-to-use-portal-during-debugging">How to Use Portal During Debugging<a class="headerlink" href="#how-to-use-portal-during-debugging" title="Permanent link">&para;</a></h2>
+<h2 id="how-to-use-dashboard-during-debugging">How to Use Dashboard During Debugging<a class="headerlink" href="#how-to-use-dashboard-during-debugging" title="Permanent link">&para;</a></h2>
 <p>When a test fails (or behaves unexpectedly), this sequence is usually the fastest:</p>
 <ol>
 <li><strong>Timeline:</strong> find the first failed action and inspect its input/output and expected/actual values.</li>
@@ -2219,21 +2219,21 @@
 </ol>
 <p>This gives you both sides of the picture: test-level assertions and application-level execution details.</p>
 <h2 id="daily-workflow-that-works-well">Daily Workflow That Works Well<a class="headerlink" href="#daily-workflow-that-works-well" title="Permanent link">&para;</a></h2>
-<p>Use Portal as a local companion while iterating:</p>
+<p>Use Dashboard as a local companion while iterating:</p>
 <ol>
 <li>Start CLI once: <code>stove</code></li>
 <li>Keep it running in a separate terminal</li>
 <li>Run focused tests repeatedly (class or test-level)</li>
 <li>Inspect changes immediately in Timeline/Trace views</li>
-<li>Use Reporting + Tracing in CI; use Portal primarily for local debugging speed</li>
+<li>Use Reporting + Tracing in CI; use Dashboard primarily for local debugging speed</li>
 </ol>
-<p>Portal is fault-tolerant by design. If CLI is not running, tests continue normally and Portal emission auto-degrades without breaking test execution.</p>
+<p>Dashboard is fault-tolerant by design. If CLI is not running, tests continue normally and Dashboard emission auto-degrades without breaking test execution.</p>
 <h2 id="minimal-end-to-end-example">Minimal End-to-End Example<a class="headerlink" href="#minimal-end-to-end-example" title="Permanent link">&para;</a></h2>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">StoveConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="n">portal</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PortalSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;spring-example&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;spring-example&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="c1">// other systems...</span>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
@@ -2241,17 +2241,17 @@
 </span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
 </span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>You keep writing tests exactly as before; Portal captures entries/spans/snapshots automatically.</p>
+<p>You keep writing tests exactly as before; Dashboard captures entries/spans/snapshots automatically.</p>
 <h2 id="troubleshooting-quick-checks">Troubleshooting Quick Checks<a class="headerlink" href="#troubleshooting-quick-checks" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>UI stuck at waiting state:</strong> ensure <code>stove</code> is running before tests.</li>
-<li><strong>No events appear:</strong> verify <code>stove-portal</code> dependency and <code>portal {}</code> registration.</li>
-<li><strong>Port mismatch:</strong> align <code>PortalSystemOptions(cliPort = ...)</code> with CLI <code>--grpc-port</code>.</li>
+<li><strong>No events appear:</strong> verify <code>stove-dashboard</code> dependency and <code>dashboard {}</code> registration.</li>
+<li><strong>Port mismatch:</strong> align <code>DashboardSystemOptions(cliPort = ...)</code> with CLI <code>--grpc-port</code>.</li>
 <li><strong>Too much historical data:</strong> run <code>stove --clear</code>.</li>
 </ul>
 <h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../Components/18-portal/">Portal component docs</a></li>
+<li><a href="../../Components/18-dashboard/">Dashboard component docs</a></li>
 <li><a href="../../release-notes/0.23.0/">0.23.0 release notes</a></li>
 <li><a href="../../Components/15-tracing/">Tracing component docs</a></li>
 <li><a href="../../getting-started/">Getting started</a></li>
