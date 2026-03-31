@@ -40,12 +40,12 @@ nav:
     - Tracing: Components/15-tracing.md
     - MySQL: Components/16-mysql.md
     - Cassandra: Components/17-cassandra.md
-    - Portal: Components/18-portal.md
+    - Dashboard: Components/18-dashboard.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
   - Blog:
-      - "Stove Portal in 0.23.0": blog/portal-0.23.0.md
+      - "Stove Dashboard in 0.23.0": blog/dashboard-0.23.0.md
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
       - "0.23.0": release-notes/0.23.0.md

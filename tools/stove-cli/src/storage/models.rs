@@ -75,7 +75,7 @@ impl fmt::Display for TestStatus {
   }
 }
 
-/// Summary of an application known to the portal.
+/// Summary of an application known to the dashboard.
 #[derive(Debug, Clone, Serialize)]
 pub struct AppSummary {
   pub app_name: String,

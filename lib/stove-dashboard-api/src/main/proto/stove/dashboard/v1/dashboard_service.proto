@@ -1,0 +1,12 @@
+syntax = "proto3";
+package stove.dashboard.v1;
+
+option java_package = "com.trendyol.stove.dashboard.api";
+option java_multiple_files = true;
+
+import "stove/dashboard/v1/dashboard_events.proto";
+
+service DashboardEventService {
+  rpc StreamEvents(stream DashboardEvent) returns (EventAck);
+  rpc SendEvent(DashboardEvent) returns (EventAck);
+}

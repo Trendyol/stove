@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::error::Result;
-use crate::ingest::PersistedPortalEvent;
+use crate::ingest::PersistedDashboardEvent;
 use crate::storage::database::Database;
 use crate::storage::models::{
   AppSummary, Entry, NewEntry, NewSpan, Run, RunStatus, Snapshot, Span, Test, TestStatus,
@@ -140,7 +140,7 @@ impl Repository {
     Ok(())
   }
 
-  pub fn apply_persisted_events(&self, events: &[PersistedPortalEvent]) -> Result<()> {
+  pub fn apply_persisted_events(&self, events: &[PersistedDashboardEvent]) -> Result<()> {
     let mut db = self.lock_write_db();
     let tx = db.conn_mut().unchecked_transaction()?;
     for event in events {
@@ -277,15 +277,18 @@ impl Repository {
   }
 }
 
-fn apply_persisted_event(conn: &rusqlite::Connection, event: &PersistedPortalEvent) -> Result<()> {
+fn apply_persisted_event(
+  conn: &rusqlite::Connection,
+  event: &PersistedDashboardEvent,
+) -> Result<()> {
   match event {
-    PersistedPortalEvent::RunStarted {
+    PersistedDashboardEvent::RunStarted {
       run_id,
       app_name,
       started_at,
       systems,
     } => save_run_start_on(conn, run_id, app_name, started_at, systems),
-    PersistedPortalEvent::RunEnded {
+    PersistedDashboardEvent::RunEnded {
       run_id,
       ended_at,
       total_tests,
@@ -301,14 +304,14 @@ fn apply_persisted_event(conn: &rusqlite::Connection, event: &PersistedPortalEve
       *failed,
       *duration_ms,
     ),
-    PersistedPortalEvent::TestStarted {
+    PersistedDashboardEvent::TestStarted {
       run_id,
       test_id,
       test_name,
       spec_name,
       started_at,
     } => save_test_start_on(conn, run_id, test_id, test_name, spec_name, started_at),
-    PersistedPortalEvent::TestEnded {
+    PersistedDashboardEvent::TestEnded {
       run_id,
       test_id,
       status,
@@ -324,9 +327,9 @@ fn apply_persisted_event(conn: &rusqlite::Connection, event: &PersistedPortalEve
       error.as_deref().unwrap_or_default(),
       ended_at,
     ),
-    PersistedPortalEvent::EntryRecorded(entry) => save_entry_on(conn, entry),
-    PersistedPortalEvent::SpanRecorded(span) => save_span_on(conn, span),
-    PersistedPortalEvent::Snapshot {
+    PersistedDashboardEvent::EntryRecorded(entry) => save_entry_on(conn, entry),
+    PersistedDashboardEvent::SpanRecorded(span) => save_span_on(conn, span),
+    PersistedDashboardEvent::Snapshot {
       run_id,
       test_id,
       system,

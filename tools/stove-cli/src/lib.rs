@@ -17,5 +17,5 @@ pub mod storage;
 /// Generated protobuf types from shared `.proto` contract.
 #[allow(clippy::pedantic)]
 pub mod proto {
-  tonic::include_proto!("stove.portal.v1");
+  tonic::include_proto!("stove.dashboard.v1");
 }

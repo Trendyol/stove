@@ -4,12 +4,12 @@ import createJiti from "jiti";
 import { QueryClient } from "@tanstack/react-query";
 
 const jiti = createJiti(import.meta.url);
-const { applyLivePortalEvent } = await jiti.import("../src/api/live-cache.ts");
+const { applyLiveDashboardEvent } = await jiti.import("../src/api/live-cache.ts");
 
-test("applyLivePortalEvent updates run, test, and detail caches from live SSE payloads", () => {
+test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE payloads", () => {
   const queryClient = new QueryClient();
 
-  applyLivePortalEvent(queryClient, {
+  applyLiveDashboardEvent(queryClient, {
     seq: 1,
     run_id: "run-live",
     event_type: "run_started",
@@ -20,7 +20,7 @@ test("applyLivePortalEvent updates run, test, and detail caches from live SSE pa
     },
   });
 
-  applyLivePortalEvent(queryClient, {
+  applyLiveDashboardEvent(queryClient, {
     seq: 2,
     run_id: "run-live",
     event_type: "test_started",
@@ -33,7 +33,7 @@ test("applyLivePortalEvent updates run, test, and detail caches from live SSE pa
     },
   });
 
-  applyLivePortalEvent(queryClient, {
+  applyLiveDashboardEvent(queryClient, {
     seq: 3,
     run_id: "run-live",
     event_type: "entry_recorded",
@@ -54,7 +54,7 @@ test("applyLivePortalEvent updates run, test, and detail caches from live SSE pa
     },
   });
 
-  applyLivePortalEvent(queryClient, {
+  applyLiveDashboardEvent(queryClient, {
     seq: 4,
     run_id: "run-live",
     event_type: "span_recorded",
@@ -76,7 +76,7 @@ test("applyLivePortalEvent updates run, test, and detail caches from live SSE pa
     },
   });
 
-  applyLivePortalEvent(queryClient, {
+  applyLiveDashboardEvent(queryClient, {
     seq: 5,
     run_id: "run-live",
     event_type: "test_ended",

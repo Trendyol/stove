@@ -13,7 +13,7 @@ pub const DEFAULT_MAX_BATCH_SIZE: usize = 20;
 pub const DEFAULT_MAX_BATCH_DELAY: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Debug)]
-pub enum PersistedPortalEvent {
+pub enum PersistedDashboardEvent {
   RunStarted {
     run_id: String,
     app_name: String,
@@ -55,26 +55,26 @@ pub enum PersistedPortalEvent {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct LivePortalEvent {
+pub struct LiveDashboardEvent {
   pub seq: u64,
   pub run_id: String,
   pub event_type: String,
-  pub payload: LivePortalPayload,
+  pub payload: LiveDashboardPayload,
 }
 
-impl LivePortalEvent {
+impl LiveDashboardEvent {
   #[must_use]
   pub fn with_seq(mut self, seq: u64) -> Self {
     self.seq = seq;
     let temp_id = live_record_id(seq);
     match &mut self.payload {
-      LivePortalPayload::EntryRecorded(payload) => payload.id = temp_id,
-      LivePortalPayload::SpanRecorded(payload) => payload.id = temp_id,
-      LivePortalPayload::Snapshot(payload) => payload.id = temp_id,
-      LivePortalPayload::RunStarted(_)
-      | LivePortalPayload::RunEnded(_)
-      | LivePortalPayload::TestStarted(_)
-      | LivePortalPayload::TestEnded(_) => {}
+      LiveDashboardPayload::EntryRecorded(payload) => payload.id = temp_id,
+      LiveDashboardPayload::SpanRecorded(payload) => payload.id = temp_id,
+      LiveDashboardPayload::Snapshot(payload) => payload.id = temp_id,
+      LiveDashboardPayload::RunStarted(_)
+      | LiveDashboardPayload::RunEnded(_)
+      | LiveDashboardPayload::TestStarted(_)
+      | LiveDashboardPayload::TestEnded(_) => {}
     }
     self
   }
@@ -82,7 +82,7 @@ impl LivePortalEvent {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
-pub enum LivePortalPayload {
+pub enum LiveDashboardPayload {
   RunStarted(LiveRunStartedPayload),
   RunEnded(LiveRunEndedPayload),
   TestStarted(LiveTestStartedPayload),
@@ -198,7 +198,7 @@ impl EventIngestor {
     Self { sender }
   }
 
-  pub fn enqueue(&self, event: PersistedPortalEvent, flush_immediately: bool) -> Result<()> {
+  pub fn enqueue(&self, event: PersistedDashboardEvent, flush_immediately: bool) -> Result<()> {
     self
       .sender
       .send(IngestCommand::Persist {
@@ -222,7 +222,7 @@ impl EventIngestor {
 
 enum IngestCommand {
   Persist {
-    event: Box<PersistedPortalEvent>,
+    event: Box<PersistedDashboardEvent>,
     flush_immediately: bool,
   },
   Flush {
@@ -266,14 +266,14 @@ async fn run_ingest_loop(
           );
         } else {
           if let Err(error) = persist_pending(repository.as_ref(), &mut pending) {
-            warn!(%error, "Failed to flush pending portal events during shutdown");
+            warn!(%error, "Failed to flush pending dashboard events during shutdown");
           }
           break;
         }
       }
       () = &mut delay => {
         if let Err(error) = persist_pending(repository.as_ref(), &mut pending) {
-          warn!(%error, "Failed to persist a batched portal event flush");
+          warn!(%error, "Failed to persist a batched dashboard event flush");
         }
       }
     }
@@ -283,7 +283,7 @@ async fn run_ingest_loop(
 fn handle_command(
   command: IngestCommand,
   repository: &Repository,
-  pending: &mut Vec<PersistedPortalEvent>,
+  pending: &mut Vec<PersistedDashboardEvent>,
   max_batch_size: usize,
 ) {
   match command {
@@ -295,7 +295,7 @@ fn handle_command(
       if (flush_immediately || pending.len() >= max_batch_size)
         && let Err(error) = persist_pending(repository, pending)
       {
-        warn!(%error, "Failed to persist portal events after batch threshold");
+        warn!(%error, "Failed to persist dashboard events after batch threshold");
       }
     }
     IngestCommand::Flush { reply } => {
@@ -304,7 +304,10 @@ fn handle_command(
   }
 }
 
-fn persist_pending(repository: &Repository, pending: &mut Vec<PersistedPortalEvent>) -> Result<()> {
+fn persist_pending(
+  repository: &Repository,
+  pending: &mut Vec<PersistedDashboardEvent>,
+) -> Result<()> {
   if pending.is_empty() {
     return Ok(());
   }
@@ -322,7 +325,7 @@ fn persist_pending(repository: &Repository, pending: &mut Vec<PersistedPortalEve
       let mut first_individual_error = None;
       for event in &batch {
         if let Err(error) = repository.apply_persisted_events(std::slice::from_ref(event)) {
-          warn!(%error, "Failed to persist portal event after individual retry");
+          warn!(%error, "Failed to persist dashboard event after individual retry");
           if first_individual_error.is_none() {
             first_individual_error = Some(error);
           }

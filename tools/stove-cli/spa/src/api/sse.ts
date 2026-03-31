@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { LivePortalEvent } from "./types";
+import type { LiveDashboardEvent } from "./types";
 
 interface UseSSEOptions {
-  onEvent: (event: LivePortalEvent) => void;
-  onGap?: (event: LivePortalEvent) => void;
+  onEvent: (event: LiveDashboardEvent) => void;
+  onGap?: (event: LiveDashboardEvent) => void;
   onReconnect?: () => void;
   onDisconnect?: () => void;
 }
@@ -42,7 +42,7 @@ export function useSSE({ onEvent, onGap, onReconnect, onDisconnect }: UseSSEOpti
 
       source.onmessage = (message) => {
         try {
-          const event: LivePortalEvent = JSON.parse(message.data);
+          const event: LiveDashboardEvent = JSON.parse(message.data);
           if (
             typeof event.seq !== "number" ||
             typeof event.run_id !== "string" ||

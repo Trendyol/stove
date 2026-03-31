@@ -37,8 +37,8 @@ apiValidation {
     "ktor-koin-tests",
     "ktor-test-fixtures",
     "stove-tracing-gradle-plugin",
-    "stove-portal-api",
-    "stove-portal",
+    "stove-dashboard-api",
+    "stove-dashboard",
   )
 }
 kover {
@@ -156,8 +156,8 @@ val publishedProjects = listOf(
   projects.lib.stoveWiremock.name,
   projects.lib.stoveRedis.name,
   projects.lib.stoveCassandra.name,
-  projects.lib.stovePortal.name,
-  projects.lib.stovePortalApi.name,
+  projects.lib.stoveDashboard.name,
+  projects.lib.stoveDashboardApi.name,
   projects.starters.ktor.stoveKtor.name,
   projects.starters.quarkus.stoveQuarkus.name,
   projects.starters.spring.stoveSpring.name,

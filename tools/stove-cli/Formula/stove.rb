@@ -1,5 +1,5 @@
 # Homebrew formula for Stove CLI.
-# Managed by the portal-release workflow — do not edit checksums manually.
+# Managed by the stove-cli-release workflow — do not edit checksums manually.
 #
 # Install:
 #   brew install Trendyol/trendyol-tap/stove

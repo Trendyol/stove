@@ -54,7 +54,7 @@ pub fn handle_fresh_start(db_path: &str) -> std::io::Result<Option<String>> {
 /// Returns the default database path in the user's home directory.
 fn default_db_path() -> String {
   dirs_fallback()
-    .join(".stove-portal.db")
+    .join(".stove-dashboard.db")
     .to_string_lossy()
     .to_string()
 }

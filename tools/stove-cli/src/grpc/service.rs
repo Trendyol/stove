@@ -9,10 +9,10 @@ use tracing::warn;
 
 use crate::error::{AppError, Result as AppResult};
 use crate::ingest::{
-  DEFAULT_MAX_BATCH_DELAY, DEFAULT_MAX_BATCH_SIZE, EventIngestor, LiveEntryRecordedPayload,
-  LivePortalEvent, LivePortalPayload, LiveRunEndedPayload, LiveRunStartedPayload,
+  DEFAULT_MAX_BATCH_DELAY, DEFAULT_MAX_BATCH_SIZE, EventIngestor, LiveDashboardEvent,
+  LiveDashboardPayload, LiveEntryRecordedPayload, LiveRunEndedPayload, LiveRunStartedPayload,
   LiveSnapshotPayload, LiveSpanRecordedPayload, LiveTestEndedPayload, LiveTestStartedPayload,
-  PersistedPortalEvent,
+  PersistedDashboardEvent,
 };
 use crate::proto;
 use crate::sse::manager::SseManager;
@@ -20,7 +20,7 @@ use crate::storage::models::{NewEntry, NewSpan};
 use crate::storage::repository::Repository;
 
 /// gRPC service implementation that receives events from Stove test processes.
-pub struct PortalEventServiceImpl {
+pub struct DashboardEventServiceImpl {
   #[allow(dead_code)]
   repository: Arc<Repository>,
   ingestor: EventIngestor,
@@ -29,7 +29,7 @@ pub struct PortalEventServiceImpl {
   state: Mutex<LiveState>,
 }
 
-impl PortalEventServiceImpl {
+impl DashboardEventServiceImpl {
   #[must_use]
   pub fn new(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Self {
     Self::new_with_ingest_config(
@@ -61,7 +61,7 @@ impl PortalEventServiceImpl {
   }
 
   /// Queue persistence work and immediately broadcast the full event to SSE.
-  fn process_event(&self, event: &proto::PortalEvent) -> std::result::Result<(), Status> {
+  fn process_event(&self, event: &proto::DashboardEvent) -> std::result::Result<(), Status> {
     let Some(prepared) = self.prepare_event(event).map_err(to_status)? else {
       return Ok(());
     };
@@ -81,33 +81,39 @@ impl PortalEventServiceImpl {
     Ok(())
   }
 
-  fn prepare_event(&self, event: &proto::PortalEvent) -> AppResult<Option<PreparedPortalEvent>> {
+  fn prepare_event(
+    &self,
+    event: &proto::DashboardEvent,
+  ) -> AppResult<Option<PreparedDashboardEvent>> {
     let Some(inner_event) = &event.event else {
-      warn!("Received PortalEvent with no event payload");
+      warn!("Received DashboardEvent with no event payload");
       return Ok(None);
     };
 
-    let mut state = self.state.lock().expect("portal live state lock poisoned");
+    let mut state = self
+      .state
+      .lock()
+      .expect("dashboard live state lock poisoned");
     let prepared = match inner_event {
-      proto::portal_event::Event::RunStarted(inner) => {
+      proto::dashboard_event::Event::RunStarted(inner) => {
         Ok(Self::prepare_run_started(&mut state, &event.run_id, inner))
       }
-      proto::portal_event::Event::RunEnded(inner) => {
+      proto::dashboard_event::Event::RunEnded(inner) => {
         Self::prepare_run_ended(&mut state, &event.run_id, inner)
       }
-      proto::portal_event::Event::TestStarted(inner) => {
+      proto::dashboard_event::Event::TestStarted(inner) => {
         Self::prepare_test_started(&mut state, &event.run_id, inner)
       }
-      proto::portal_event::Event::TestEnded(inner) => {
+      proto::dashboard_event::Event::TestEnded(inner) => {
         Self::prepare_test_ended(&mut state, &event.run_id, inner)
       }
-      proto::portal_event::Event::EntryRecorded(inner) => {
+      proto::dashboard_event::Event::EntryRecorded(inner) => {
         Self::prepare_entry_recorded(&mut state, &event.run_id, inner)
       }
-      proto::portal_event::Event::SpanRecorded(inner) => {
+      proto::dashboard_event::Event::SpanRecorded(inner) => {
         Self::prepare_span_recorded(&mut state, &event.run_id, inner)
       }
-      proto::portal_event::Event::Snapshot(inner) => {
+      proto::dashboard_event::Event::Snapshot(inner) => {
         Self::prepare_snapshot(&mut state, &event.run_id, inner)
       }
     }?;
@@ -119,20 +125,20 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::RunStartedEvent,
-  ) -> PreparedPortalEvent {
+  ) -> PreparedDashboardEvent {
     let started_at = format_timestamp(event.timestamp.as_ref());
     state.runs.insert(run_id.to_string());
-    PreparedPortalEvent {
+    PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "run_started",
-        LivePortalPayload::RunStarted(LiveRunStartedPayload {
+        LiveDashboardPayload::RunStarted(LiveRunStartedPayload {
           app_name: event.app_name.clone(),
           started_at: started_at.clone(),
           systems: event.systems.clone(),
         }),
       ),
-      persisted: PersistedPortalEvent::RunStarted {
+      persisted: PersistedDashboardEvent::RunStarted {
         run_id: run_id.to_string(),
         app_name: event.app_name.clone(),
         started_at,
@@ -146,16 +152,16 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::RunEndedEvent,
-  ) -> AppResult<PreparedPortalEvent> {
+  ) -> AppResult<PreparedDashboardEvent> {
     ensure_run_known(state, run_id)?;
     let ended_at = format_timestamp(event.timestamp.as_ref());
     let status = run_status(event.failed).to_string();
     state.clear_run(run_id);
-    Ok(PreparedPortalEvent {
+    Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "run_ended",
-        LivePortalPayload::RunEnded(LiveRunEndedPayload {
+        LiveDashboardPayload::RunEnded(LiveRunEndedPayload {
           ended_at: ended_at.clone(),
           status,
           total_tests: event.total_tests,
@@ -164,7 +170,7 @@ impl PortalEventServiceImpl {
           duration_ms: event.duration_ms,
         }),
       ),
-      persisted: PersistedPortalEvent::RunEnded {
+      persisted: PersistedDashboardEvent::RunEnded {
         run_id: run_id.to_string(),
         ended_at,
         total_tests: event.total_tests,
@@ -180,17 +186,17 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::TestStartedEvent,
-  ) -> AppResult<PreparedPortalEvent> {
+  ) -> AppResult<PreparedDashboardEvent> {
     ensure_run_known(state, run_id)?;
     let started_at = format_timestamp(event.timestamp.as_ref());
     state
       .tests
       .insert((run_id.to_string(), event.test_id.clone()));
-    Ok(PreparedPortalEvent {
+    Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "test_started",
-        LivePortalPayload::TestStarted(LiveTestStartedPayload {
+        LiveDashboardPayload::TestStarted(LiveTestStartedPayload {
           test_id: event.test_id.clone(),
           test_name: event.test_name.clone(),
           spec_name: event.spec_name.clone(),
@@ -198,7 +204,7 @@ impl PortalEventServiceImpl {
           status: "RUNNING".to_string(),
         }),
       ),
-      persisted: PersistedPortalEvent::TestStarted {
+      persisted: PersistedDashboardEvent::TestStarted {
         run_id: run_id.to_string(),
         test_id: event.test_id.clone(),
         test_name: event.test_name.clone(),
@@ -213,14 +219,14 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::TestEndedEvent,
-  ) -> AppResult<PreparedPortalEvent> {
+  ) -> AppResult<PreparedDashboardEvent> {
     ensure_test_known(state, run_id, &event.test_id)?;
     let ended_at = format_timestamp(event.timestamp.as_ref());
-    Ok(PreparedPortalEvent {
+    Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "test_ended",
-        LivePortalPayload::TestEnded(LiveTestEndedPayload {
+        LiveDashboardPayload::TestEnded(LiveTestEndedPayload {
           test_id: event.test_id.clone(),
           status: event.status.clone(),
           duration_ms: event.duration_ms,
@@ -228,7 +234,7 @@ impl PortalEventServiceImpl {
           ended_at: ended_at.clone(),
         }),
       ),
-      persisted: PersistedPortalEvent::TestEnded {
+      persisted: PersistedDashboardEvent::TestEnded {
         run_id: run_id.to_string(),
         test_id: event.test_id.clone(),
         status: event.status.clone(),
@@ -244,7 +250,7 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::EntryRecordedEvent,
-  ) -> AppResult<PreparedPortalEvent> {
+  ) -> AppResult<PreparedDashboardEvent> {
     ensure_test_known(state, run_id, &event.test_id)?;
     if !event.trace_id.is_empty() {
       state.traces.insert(
@@ -271,11 +277,11 @@ impl PortalEventServiceImpl {
       trace_id: event.trace_id.clone(),
     };
 
-    Ok(PreparedPortalEvent {
+    Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "entry_recorded",
-        LivePortalPayload::EntryRecorded(LiveEntryRecordedPayload {
+        LiveDashboardPayload::EntryRecorded(LiveEntryRecordedPayload {
           id: 0,
           test_id: event.test_id.clone(),
           timestamp,
@@ -291,7 +297,7 @@ impl PortalEventServiceImpl {
           trace_id: non_empty(&event.trace_id),
         }),
       ),
-      persisted: PersistedPortalEvent::EntryRecorded(entry),
+      persisted: PersistedDashboardEvent::EntryRecorded(entry),
       flush_immediately: false,
     })
   }
@@ -300,7 +306,7 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::SpanRecordedEvent,
-  ) -> AppResult<PreparedPortalEvent> {
+  ) -> AppResult<PreparedDashboardEvent> {
     ensure_run_known(state, run_id)?;
     let test_id = extract_test_id(&event.attributes).or_else(|| {
       state
@@ -338,11 +344,11 @@ impl PortalEventServiceImpl {
       exception_stack_trace: exception_stack_trace.clone(),
     };
 
-    Ok(PreparedPortalEvent {
+    Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "span_recorded",
-        LivePortalPayload::SpanRecorded(LiveSpanRecordedPayload {
+        LiveDashboardPayload::SpanRecorded(LiveSpanRecordedPayload {
           id: 0,
           test_id,
           trace_id: event.trace_id.clone(),
@@ -359,7 +365,7 @@ impl PortalEventServiceImpl {
           exception_stack_trace: non_empty(&exception_stack_trace),
         }),
       ),
-      persisted: PersistedPortalEvent::SpanRecorded(span),
+      persisted: PersistedDashboardEvent::SpanRecorded(span),
       flush_immediately: false,
     })
   }
@@ -368,13 +374,13 @@ impl PortalEventServiceImpl {
     state: &mut LiveState,
     run_id: &str,
     event: &proto::SnapshotEvent,
-  ) -> AppResult<PreparedPortalEvent> {
+  ) -> AppResult<PreparedDashboardEvent> {
     ensure_test_known(state, run_id, &event.test_id)?;
-    Ok(PreparedPortalEvent {
+    Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
         "snapshot",
-        LivePortalPayload::Snapshot(LiveSnapshotPayload {
+        LiveDashboardPayload::Snapshot(LiveSnapshotPayload {
           id: 0,
           test_id: event.test_id.clone(),
           system: event.system.clone(),
@@ -382,7 +388,7 @@ impl PortalEventServiceImpl {
           summary: event.summary.clone(),
         }),
       ),
-      persisted: PersistedPortalEvent::Snapshot {
+      persisted: PersistedDashboardEvent::Snapshot {
         run_id: run_id.to_string(),
         test_id: event.test_id.clone(),
         system: event.system.clone(),
@@ -393,8 +399,12 @@ impl PortalEventServiceImpl {
     })
   }
 
-  fn live_event(run_id: &str, event_type: &str, payload: LivePortalPayload) -> LivePortalEvent {
-    LivePortalEvent {
+  fn live_event(
+    run_id: &str,
+    event_type: &str,
+    payload: LiveDashboardPayload,
+  ) -> LiveDashboardEvent {
+    LiveDashboardEvent {
       seq: 0,
       run_id: run_id.to_string(),
       event_type: event_type.to_string(),
@@ -404,10 +414,10 @@ impl PortalEventServiceImpl {
 }
 
 #[tonic::async_trait]
-impl proto::portal_event_service_server::PortalEventService for PortalEventServiceImpl {
+impl proto::dashboard_event_service_server::DashboardEventService for DashboardEventServiceImpl {
   async fn stream_events(
     &self,
-    request: Request<Streaming<proto::PortalEvent>>,
+    request: Request<Streaming<proto::DashboardEvent>>,
   ) -> std::result::Result<Response<proto::EventAck>, Status> {
     let mut stream = request.into_inner();
     while let Some(event) = stream.message().await? {
@@ -418,16 +428,16 @@ impl proto::portal_event_service_server::PortalEventService for PortalEventServi
 
   async fn send_event(
     &self,
-    request: Request<proto::PortalEvent>,
+    request: Request<proto::DashboardEvent>,
   ) -> std::result::Result<Response<proto::EventAck>, Status> {
     self.process_event(&request.into_inner())?;
     Ok(Response::new(proto::EventAck { accepted: true }))
   }
 }
 
-struct PreparedPortalEvent {
-  live: LivePortalEvent,
-  persisted: PersistedPortalEvent,
+struct PreparedDashboardEvent {
+  live: LiveDashboardEvent,
+  persisted: PersistedDashboardEvent,
   flush_immediately: bool,
 }
 
@@ -521,11 +531,11 @@ mod tests {
   use super::*;
   use crate::storage::database::Database;
 
-  fn test_service() -> PortalEventServiceImpl {
+  fn test_service() -> DashboardEventServiceImpl {
     let db = Database::open(":memory:").unwrap();
     let repo = Arc::new(Repository::new(db));
     let sse = Arc::new(SseManager::new());
-    PortalEventServiceImpl::new_with_ingest_config(repo, sse, 50, Duration::from_secs(60))
+    DashboardEventServiceImpl::new_with_ingest_config(repo, sse, 50, Duration::from_secs(60))
   }
 
   fn ts(seconds: i64) -> Option<prost_types::Timestamp> {
@@ -537,9 +547,9 @@ mod tests {
     let svc = test_service();
     let mut rx = svc.sse_manager.subscribe();
 
-    let result = svc.process_event(&proto::PortalEvent {
+    let result = svc.process_event(&proto::DashboardEvent {
       run_id: "nonexistent-run".to_string(),
-      event: Some(proto::portal_event::Event::TestStarted(
+      event: Some(proto::dashboard_event::Event::TestStarted(
         proto::TestStartedEvent {
           test_id: "t-1".to_string(),
           test_name: "orphan test".to_string(),
@@ -565,9 +575,9 @@ mod tests {
     let mut rx = svc.sse_manager.subscribe();
 
     svc
-      .process_event(&proto::PortalEvent {
+      .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
-        event: Some(proto::portal_event::Event::RunStarted(
+        event: Some(proto::dashboard_event::Event::RunStarted(
           proto::RunStartedEvent {
             timestamp: ts(1_704_067_200),
             app_name: "my-api".to_string(),
@@ -593,9 +603,9 @@ mod tests {
   #[tokio::test]
   async fn process_run_started_event() {
     let svc = test_service();
-    let event = proto::PortalEvent {
+    let event = proto::DashboardEvent {
       run_id: "run-1".to_string(),
-      event: Some(proto::portal_event::Event::RunStarted(
+      event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
           timestamp: Some(prost_types::Timestamp {
             seconds: 1_704_067_200,
@@ -620,9 +630,9 @@ mod tests {
     let svc = test_service();
 
     svc
-      .process_event(&proto::PortalEvent {
+      .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
-        event: Some(proto::portal_event::Event::RunStarted(
+        event: Some(proto::dashboard_event::Event::RunStarted(
           proto::RunStartedEvent {
             timestamp: Some(prost_types::Timestamp {
               seconds: 1_704_067_200,
@@ -636,9 +646,9 @@ mod tests {
       .unwrap();
 
     svc
-      .process_event(&proto::PortalEvent {
+      .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
-        event: Some(proto::portal_event::Event::TestStarted(
+        event: Some(proto::dashboard_event::Event::TestStarted(
           proto::TestStartedEvent {
             test_id: "test-1".to_string(),
             test_name: "my test".to_string(),
@@ -653,9 +663,9 @@ mod tests {
       .unwrap();
 
     svc
-      .process_event(&proto::PortalEvent {
+      .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
-        event: Some(proto::portal_event::Event::EntryRecorded(
+        event: Some(proto::dashboard_event::Event::EntryRecorded(
           proto::EntryRecordedEvent {
             test_id: "test-1".to_string(),
             timestamp: Some(prost_types::Timestamp {
@@ -678,9 +688,9 @@ mod tests {
       .unwrap();
 
     svc
-      .process_event(&proto::PortalEvent {
+      .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
-        event: Some(proto::portal_event::Event::TestEnded(
+        event: Some(proto::dashboard_event::Event::TestEnded(
           proto::TestEndedEvent {
             test_id: "test-1".to_string(),
             status: "PASSED".to_string(),
@@ -696,18 +706,20 @@ mod tests {
       .unwrap();
 
     svc
-      .process_event(&proto::PortalEvent {
+      .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
-        event: Some(proto::portal_event::Event::RunEnded(proto::RunEndedEvent {
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_210,
-            nanos: 0,
-          }),
-          total_tests: 1,
-          passed: 1,
-          failed: 0,
-          duration_ms: 10000,
-        })),
+        event: Some(proto::dashboard_event::Event::RunEnded(
+          proto::RunEndedEvent {
+            timestamp: Some(prost_types::Timestamp {
+              seconds: 1_704_067_210,
+              nanos: 0,
+            }),
+            total_tests: 1,
+            passed: 1,
+            failed: 0,
+            duration_ms: 10000,
+          },
+        )),
       })
       .unwrap();
 

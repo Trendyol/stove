@@ -1,10 +1,10 @@
 package com.stove.spring.example.e2e
 
+import com.trendyol.stove.dashboard.DashboardSystemOptions
+import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.portal.PortalSystemOptions
-import com.trendyol.stove.portal.portal
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.spring.*
 import com.trendyol.stove.system.PortFinder
@@ -27,7 +27,7 @@ class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject(): Unit =
     Stove()
       .with {
-        portal { PortalSystemOptions(appName = "spring-example") }
+        dashboard { DashboardSystemOptions(appName = "spring-example") }
         tracing {
           enableSpanReceiver()
         }

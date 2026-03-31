@@ -2,7 +2,7 @@ package com.trendyol.stove.reporting
 
 /**
  * Interface for systems that accept span event listeners.
- * Lives in the core module so that other modules (e.g. portal) can
+ * Lives in the core module so that other modules (e.g. dashboard) can
  * register listeners without depending on the tracing module directly.
  */
 interface SpanListenerRegistry {

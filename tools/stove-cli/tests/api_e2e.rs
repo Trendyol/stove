@@ -13,19 +13,24 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use stove::grpc::service::PortalEventServiceImpl;
+use stove::grpc::service::DashboardEventServiceImpl;
 use stove::proto;
-use stove::proto::portal_event_service_server::PortalEventService;
+use stove::proto::dashboard_event_service_server::DashboardEventService;
 use tonic::Request;
 
 fn ts(seconds: i64, nanos: i32) -> Option<prost_types::Timestamp> {
   Some(prost_types::Timestamp { seconds, nanos })
 }
 
-fn run_started_event(run_id: &str, app_name: &str, seconds: i64, nanos: i32) -> proto::PortalEvent {
-  proto::PortalEvent {
+fn run_started_event(
+  run_id: &str,
+  app_name: &str,
+  seconds: i64,
+  nanos: i32,
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::RunStarted(
+    event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
         timestamp: ts(seconds, nanos),
         app_name: app_name.to_string(),
@@ -43,16 +48,18 @@ fn run_ended_event(
   duration_ms: i64,
   seconds: i64,
   nanos: i32,
-) -> proto::PortalEvent {
-  proto::PortalEvent {
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::RunEnded(proto::RunEndedEvent {
-      timestamp: ts(seconds, nanos),
-      total_tests,
-      passed,
-      failed,
-      duration_ms,
-    })),
+    event: Some(proto::dashboard_event::Event::RunEnded(
+      proto::RunEndedEvent {
+        timestamp: ts(seconds, nanos),
+        total_tests,
+        passed,
+        failed,
+        duration_ms,
+      },
+    )),
   }
 }
 
@@ -63,10 +70,10 @@ fn test_started_event(
   spec_name: &str,
   seconds: i64,
   nanos: i32,
-) -> proto::PortalEvent {
-  proto::PortalEvent {
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::TestStarted(
+    event: Some(proto::dashboard_event::Event::TestStarted(
       proto::TestStartedEvent {
         test_id: test_id.to_string(),
         test_name: test_name.to_string(),
@@ -85,10 +92,10 @@ fn test_ended_event(
   error: &str,
   seconds: i64,
   nanos: i32,
-) -> proto::PortalEvent {
-  proto::PortalEvent {
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::TestEnded(
+    event: Some(proto::dashboard_event::Event::TestEnded(
       proto::TestEndedEvent {
         test_id: test_id.to_string(),
         status: status.to_string(),
@@ -108,10 +115,10 @@ fn entry_recorded_event(
   trace_id: &str,
   seconds: i64,
   nanos: i32,
-) -> proto::PortalEvent {
-  proto::PortalEvent {
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::EntryRecorded(
+    event: Some(proto::dashboard_event::Event::EntryRecorded(
       proto::EntryRecordedEvent {
         test_id: test_id.to_string(),
         timestamp: ts(seconds, nanos),
@@ -139,10 +146,10 @@ fn span_recorded_event(
   service_name: &str,
   start_time_nanos: i64,
   end_time_nanos: i64,
-) -> proto::PortalEvent {
-  proto::PortalEvent {
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::SpanRecorded(
+    event: Some(proto::dashboard_event::Event::SpanRecorded(
       proto::SpanRecordedEvent {
         trace_id: trace_id.to_string(),
         span_id: span_id.to_string(),
@@ -165,32 +172,34 @@ fn snapshot_event(
   system: &str,
   state_json: &str,
   summary: &str,
-) -> proto::PortalEvent {
-  proto::PortalEvent {
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
     run_id: run_id.to_string(),
-    event: Some(proto::portal_event::Event::Snapshot(proto::SnapshotEvent {
-      test_id: test_id.to_string(),
-      system: system.to_string(),
-      state_json: state_json.to_string(),
-      summary: summary.to_string(),
-    })),
+    event: Some(proto::dashboard_event::Event::Snapshot(
+      proto::SnapshotEvent {
+        test_id: test_id.to_string(),
+        system: system.to_string(),
+        state_json: state_json.to_string(),
+        summary: summary.to_string(),
+      },
+    )),
   }
 }
 
 async fn send_event(
-  service: &PortalEventServiceImpl,
-  event: proto::PortalEvent,
+  service: &DashboardEventServiceImpl,
+  event: proto::DashboardEvent,
 ) -> Result<(), tonic::Status> {
-  PortalEventService::send_event(service, Request::new(event))
+  DashboardEventService::send_event(service, Request::new(event))
     .await
     .map(|_| ())
 }
 
-async fn flush_events(service: &PortalEventServiceImpl) {
+async fn flush_events(service: &DashboardEventServiceImpl) {
   service
     .flush_pending()
     .await
-    .expect("queued portal events should flush");
+    .expect("queued dashboard events should flush");
 }
 
 fn extract_sse_data_frame(frame: &str) -> Option<String> {
@@ -375,7 +384,7 @@ async fn get_tests_returns_empty_for_unknown_run() {
 #[tokio::test]
 async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress() {
   let server = TestServer::start().await;
-  let service = Arc::new(PortalEventServiceImpl::new(
+  let service = Arc::new(DashboardEventServiceImpl::new(
     server.repo.clone(),
     server.sse.clone(),
   ));
@@ -492,7 +501,7 @@ async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress()
 #[tokio::test]
 async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views() {
   let server = TestServer::start().await;
-  let service = Arc::new(PortalEventServiceImpl::new(
+  let service = Arc::new(DashboardEventServiceImpl::new(
     server.repo.clone(),
     server.sse.clone(),
   ));
@@ -1284,7 +1293,7 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
 #[tokio::test]
 async fn sse_stream_pushes_full_events_before_database_flush() {
   let server = TestServer::start().await;
-  let service = Arc::new(PortalEventServiceImpl::new_with_ingest_config(
+  let service = Arc::new(DashboardEventServiceImpl::new_with_ingest_config(
     server.repo.clone(),
     server.sse.clone(),
     50,
@@ -1408,7 +1417,7 @@ async fn sse_stream_sends_keep_alive() {
 #[tokio::test]
 async fn sse_stream_delivers_interleaved_notifications_for_concurrent_test_load() {
   let server = TestServer::start().await;
-  let service = Arc::new(PortalEventServiceImpl::new(
+  let service = Arc::new(DashboardEventServiceImpl::new(
     server.repo.clone(),
     server.sse.clone(),
   ));
