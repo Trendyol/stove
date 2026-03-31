@@ -44,12 +44,9 @@ stove {
 }
 ```
 
-<p align="center">
-  <a href="https://github.com/Trendyol/stove/blob/main/docs/assets/stove_portal.gif">
-    <img src="./docs/assets/stove_portal.gif" alt="Stove Portal demo (click to open full GIF video)" />
-  </a>
-</p>
+https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 
+ 
 ## Why Stove?
 
 The JVM ecosystem has excellent frameworks for building applications, but e2e testing remains fragmented. Testcontainers
