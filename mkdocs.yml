@@ -45,6 +45,7 @@ nav:
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
   - Blog:
+      - "Stove Portal in 0.23.0": blog/portal-0.23.0.md
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
       - "0.23.0": release-notes/0.23.0.md

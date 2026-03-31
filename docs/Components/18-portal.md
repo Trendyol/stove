@@ -70,10 +70,11 @@ Stove CLI v0.23.0
 
 === "Gradle"
 
-    ```kotlin hl_lines="3"
+    ```kotlin hl_lines="3-4"
     dependencies {
         testImplementation(platform("com.trendyol:stove-bom:$version"))
         testImplementation("com.trendyol:stove-portal")
+        testImplementation("com.trendyol:stove-tracing")
     }
     ```
 
