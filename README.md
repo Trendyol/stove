@@ -46,7 +46,6 @@ stove {
 
 https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 
- 
 ## Why Stove?
 
 The JVM ecosystem has excellent frameworks for building applications, but e2e testing remains fragmented. Testcontainers
