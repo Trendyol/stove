@@ -15,9 +15,9 @@ Instead of treating failures as black boxes, you can inspect the full story in o
 
 <p align="center">
   <video width="900" controls>
-    <source src="/assets/stove_portal.webm" type="video/webm" />
+    <source src="../../assets/stove_portal.webm" type="video/webm" />
     Your browser does not support embedded videos. You can download the Stove Portal demo from
-    /assets/stove_portal.webm.
+    ../../assets/stove_portal.webm.
   </video>
 </p>
 
