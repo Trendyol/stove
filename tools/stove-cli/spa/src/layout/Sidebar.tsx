@@ -10,6 +10,7 @@ import { TestListItem } from "./sidebar/TestListItem";
 
 interface SidebarProps {
   apps: AppSummary[];
+  mismatchedApps: string[];
   selectedApp: string | null;
   onSelectApp: (name: string) => void;
   run: Run | null;
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 export function Sidebar({
   apps,
+  mismatchedApps,
   selectedApp,
   onSelectApp,
   run,
@@ -52,7 +54,12 @@ export function Sidebar({
 
   return (
     <aside className="w-80 shrink-0 border-r border-stove-border bg-stove-surface flex flex-col overflow-hidden">
-      <AppPicker apps={apps} selectedApp={selectedApp} onSelectApp={onSelectApp} />
+      <AppPicker
+        apps={apps}
+        mismatchedApps={mismatchedApps}
+        selectedApp={selectedApp}
+        onSelectApp={onSelectApp}
+      />
       {run && <RunSummary run={run} tests={tests} />}
       <TestFilters
         filter={filter}

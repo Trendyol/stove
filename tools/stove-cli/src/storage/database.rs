@@ -6,10 +6,16 @@ use tracing::info;
 /// Versioned SQL migrations, embedded at compile time.
 /// Add new migrations by creating `V{N}__description.sql` in `src/storage/migrations/`.
 /// Once deployed, never modify an existing migration — append a new one instead.
-const MIGRATIONS: &[(&str, &str)] = &[(
-  "V1__initial_schema",
-  include_str!("migrations/V1__initial_schema.sql"),
-)];
+const MIGRATIONS: &[(&str, &str)] = &[
+  (
+    "V1__initial_schema",
+    include_str!("migrations/V1__initial_schema.sql"),
+  ),
+  (
+    "V2__run_stove_version",
+    include_str!("migrations/V2__run_stove_version.sql"),
+  ),
+];
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.
 pub struct Database {
@@ -141,6 +147,7 @@ static IN_MEMORY_DB_COUNTER: AtomicUsize = AtomicUsize::new(0);
 #[cfg(test)]
 mod tests {
   use super::*;
+  use tempfile::TempDir;
 
   #[test]
   fn open_in_memory_succeeds_and_creates_tables() {
@@ -175,6 +182,50 @@ mod tests {
         row.get(0)
       })
       .unwrap();
-    assert_eq!(version, 1);
+    assert_eq!(version, MIGRATIONS.len() as i64);
+  }
+
+  #[test]
+  fn open_upgrades_v1_database_with_run_stove_version_column() {
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("stove-v1.db");
+    let conn = Connection::open(&path).unwrap();
+
+    conn.execute_batch(MIGRATIONS[0].1).unwrap();
+    conn
+      .execute_batch(
+        "CREATE TABLE IF NOT EXISTS schema_migrations (
+          version INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );",
+      )
+      .unwrap();
+    conn
+      .execute(
+        "INSERT INTO schema_migrations (version, name) VALUES (?1, ?2)",
+        rusqlite::params![1_i64, "V1__initial_schema"],
+      )
+      .unwrap();
+    drop(conn);
+
+    let db = Database::open(path.to_str().unwrap()).unwrap();
+    let stove_version_columns: i64 = db
+      .conn()
+      .query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('runs') WHERE name = 'stove_version'",
+        [],
+        |row| row.get(0),
+      )
+      .unwrap();
+    let schema_version: i64 = db
+      .conn()
+      .query_row("SELECT MAX(version) FROM schema_migrations", [], |row| {
+        row.get(0)
+      })
+      .unwrap();
+
+    assert_eq!(stove_version_columns, 1);
+    assert_eq!(schema_version, MIGRATIONS.len() as i64);
   }
 }

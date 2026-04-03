@@ -135,6 +135,7 @@ impl DashboardEventServiceImpl {
         LiveDashboardPayload::RunStarted(LiveRunStartedPayload {
           app_name: event.app_name.clone(),
           started_at: started_at.clone(),
+          stove_version: non_empty(&event.stove_version),
           systems: event.systems.clone(),
         }),
       ),
@@ -142,6 +143,7 @@ impl DashboardEventServiceImpl {
         run_id: run_id.to_string(),
         app_name: event.app_name.clone(),
         started_at,
+        stove_version: non_empty(&event.stove_version),
         systems: event.systems.clone(),
       },
       flush_immediately: false,
@@ -582,6 +584,7 @@ mod tests {
             timestamp: ts(1_704_067_200),
             app_name: "my-api".to_string(),
             systems: vec!["HTTP".to_string()],
+            stove_version: "0.23.1".to_string(),
           },
         )),
       })
@@ -613,6 +616,7 @@ mod tests {
           }),
           app_name: "product-api".to_string(),
           systems: vec!["HTTP".to_string(), "Kafka".to_string()],
+          stove_version: "0.23.2".to_string(),
         },
       )),
     };
@@ -623,6 +627,7 @@ mod tests {
     let runs = svc.repository.get_runs(None).unwrap();
     assert_eq!(runs.len(), 1);
     assert_eq!(runs[0].app_name, "product-api");
+    assert_eq!(runs[0].stove_version.as_deref(), Some("0.23.2"));
   }
 
   #[tokio::test]
@@ -639,6 +644,7 @@ mod tests {
               nanos: 0,
             }),
             app_name: "test-app".to_string(),
+            stove_version: String::new(),
             systems: vec![],
           },
         )),

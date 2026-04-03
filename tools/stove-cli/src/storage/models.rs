@@ -81,6 +81,7 @@ pub struct AppSummary {
   pub app_name: String,
   pub latest_run_id: String,
   pub latest_status: RunStatus,
+  pub stove_version: Option<String>,
   pub total_runs: i32,
 }
 
@@ -96,6 +97,7 @@ pub struct Run {
   pub passed: i32,
   pub failed: i32,
   pub duration_ms: Option<i64>,
+  pub stove_version: Option<String>,
   pub systems: Vec<String>,
 }
 

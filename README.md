@@ -103,6 +103,8 @@ Stove()
   }.run()
 ```
 
+Keep `stove-cli`, the Stove BOM, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
+
 See [Dashboard docs](https://trendyol.github.io/stove/Components/18-dashboard/) and
 [0.23.0 release notes](https://trendyol.github.io/stove/release-notes/0.23.0/) for full details.
 

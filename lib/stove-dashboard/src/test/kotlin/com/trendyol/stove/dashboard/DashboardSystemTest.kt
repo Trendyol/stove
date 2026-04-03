@@ -61,6 +61,7 @@ class DashboardSystemTest : FunSpec({
       }
       types.contains("RunStarted") shouldBe true
       received.first { it.hasRunStarted() }.runStarted.appName shouldBe "test-api"
+      received.first { it.hasRunStarted() }.runStarted.stoveVersion shouldBe StoveCompatibilityVersion.VALUE
       types.contains("TestStarted") shouldBe true
       types.contains("EntryRecorded") shouldBe true
     } finally {

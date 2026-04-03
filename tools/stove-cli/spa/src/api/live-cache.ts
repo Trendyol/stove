@@ -14,6 +14,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         passed: 0,
         failed: 0,
         duration_ms: null,
+        stove_version: event.payload.stove_version,
         systems: event.payload.systems,
       };
 
@@ -22,6 +23,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
           app_name: event.payload.app_name,
           latest_run_id: event.run_id,
           latest_status: "RUNNING",
+          stove_version: event.payload.stove_version,
           total_runs: nextRunCount(apps, event.payload.app_name, event.run_id),
         }),
       );

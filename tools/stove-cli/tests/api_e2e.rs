@@ -28,6 +28,16 @@ fn run_started_event(
   seconds: i64,
   nanos: i32,
 ) -> proto::DashboardEvent {
+  run_started_event_with_version(run_id, app_name, "", seconds, nanos)
+}
+
+fn run_started_event_with_version(
+  run_id: &str,
+  app_name: &str,
+  stove_version: &str,
+  seconds: i64,
+  nanos: i32,
+) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
     event: Some(proto::dashboard_event::Event::RunStarted(
@@ -35,6 +45,7 @@ fn run_started_event(
         timestamp: ts(seconds, nanos),
         app_name: app_name.to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
+        stove_version: stove_version.to_string(),
       },
     )),
   }
@@ -235,6 +246,19 @@ async fn next_sse_data(
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/v1/meta
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn meta_returns_cli_version() {
+  let server = TestServer::start().await;
+
+  let body = server.get_json("/meta").await;
+
+  assert_eq!(body["stove_cli_version"], stove::STOVE_CLI_VERSION);
+}
+
+// ---------------------------------------------------------------------------
 // GET /api/v1/apps
 // ---------------------------------------------------------------------------
 
@@ -257,6 +281,7 @@ async fn apps_returns_app_summaries() {
   assert_eq!(apps[0]["app_name"], "product-api");
   assert_eq!(apps[0]["latest_run_id"], "run-1");
   assert_eq!(apps[0]["latest_status"], "FAILED");
+  assert!(apps[0]["stove_version"].is_null());
   assert_eq!(apps[0]["total_runs"], 1);
 }
 
@@ -278,6 +303,31 @@ async fn apps_returns_multiple_apps() {
   assert!(names.contains(&"beta-api"));
 }
 
+#[tokio::test]
+async fn apps_return_latest_run_stove_version() {
+  let server = TestServer::start().await;
+  server.seed_run_at_with_version(
+    "run-old",
+    "product-api",
+    "2024-01-01T00:00:00Z",
+    Some("0.23.0"),
+    &[],
+  );
+  server.seed_run_at_with_version(
+    "run-new",
+    "product-api",
+    "2024-06-01T00:00:00Z",
+    Some("0.23.2"),
+    &[],
+  );
+
+  let body = server.get_json("/apps").await;
+  let apps = body.as_array().unwrap();
+
+  assert_eq!(apps[0]["latest_run_id"], "run-new");
+  assert_eq!(apps[0]["stove_version"], "0.23.2");
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/v1/runs
 // ---------------------------------------------------------------------------
@@ -297,11 +347,23 @@ async fn runs_returns_all_runs() {
   assert_eq!(runs[0]["passed"], 1);
   assert_eq!(runs[0]["failed"], 1);
   assert_eq!(runs[0]["duration_ms"], 10000);
+  assert!(runs[0]["stove_version"].is_null());
 
   let systems = runs[0]["systems"].as_array().unwrap();
   assert_eq!(systems.len(), 3);
   assert!(systems.contains(&Value::String("HTTP".into())));
   assert!(systems.contains(&Value::String("Kafka".into())));
+}
+
+#[tokio::test]
+async fn runs_return_stove_version() {
+  let server = TestServer::start().await;
+  server.seed_run_with_version("run-1", "product-api", "0.23.1");
+
+  let body = server.get_json("/runs").await;
+  let runs = body.as_array().unwrap();
+
+  assert_eq!(runs[0]["stove_version"], "0.23.1");
 }
 
 #[tokio::test]
@@ -1306,7 +1368,7 @@ async fn sse_stream_pushes_full_events_before_database_flush() {
 
   send_event(
     service.as_ref(),
-    run_started_event("run-live-sse", "live-sse-app", 1_704_067_200, 0),
+    run_started_event_with_version("run-live-sse", "live-sse-app", "0.23.2", 1_704_067_200, 0),
   )
   .await
   .unwrap();
@@ -1330,6 +1392,7 @@ async fn sse_stream_pushes_full_events_before_database_flush() {
   assert_eq!(first_event["run_id"], "run-live-sse");
   assert_eq!(first_event["event_type"], "run_started");
   assert_eq!(first_event["payload"]["app_name"], "live-sse-app");
+  assert_eq!(first_event["payload"]["stove_version"], "0.23.2");
 
   let second_event: Value =
     serde_json::from_str(&next_sse_data(&mut resp, &mut buffer).await.unwrap()).unwrap();

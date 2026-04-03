@@ -23,6 +23,7 @@ message RunStartedEvent {
   google.protobuf.Timestamp timestamp = 1;
   string app_name = 2;
   repeated string systems = 3;
+  string stove_version = 4;
 }
 
 message RunEndedEvent {
