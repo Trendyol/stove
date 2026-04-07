@@ -2522,6 +2522,10 @@
 </div>
 </div>
 <p>The CLI is a single binary with no runtime dependencies. It embeds the web UI, so there's nothing else to install.</p>
+<div class="admonition info">
+<p class="admonition-title">Keep Versions Aligned</p>
+<p>Keep <code>stove-cli</code>, the Stove BOM, and your Stove test dependencies on the same Stove version. The dashboard shows a warning when the runtime libraries and CLI drift apart, but matching versions avoids inconsistent dashboard data.</p>
+</div>
 <h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <p><strong>1. Start the dashboard</strong></p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>stove
@@ -2565,6 +2569,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./gradlew<span class="w"> </span><span class="nb">test</span>
 </span></code></pre></div>
 <p>Navigate to <a href="http://localhost:4040">http://localhost:4040</a>. The UI updates in real time as tests execute.</p>
+<p>If the dashboard shows a version mismatch warning, align your Stove BOM and test dependencies with the <code>stove-cli</code> version, or upgrade <code>stove-cli</code> to the runtime version reported by the selected app.</p>
 <h2 id="what-gets-captured">What Gets Captured<a class="headerlink" href="#what-gets-captured" title="Permanent link">&para;</a></h2>
 <p>Once <code>dashboard {}</code> is registered, Stove <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">automatically captures everything</span> — no code changes to your tests:</p>
 <table>
