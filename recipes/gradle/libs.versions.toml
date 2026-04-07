@@ -55,10 +55,10 @@ db-scheduler = "16.7.1"
 
 # Testing
 stove = "1.0.0.517-SNAPSHOT"
-kotest = "6.1.10"
-exposed = "1.1.1"
+kotest = "6.1.11"
+exposed = "1.2.0"
 postgresql = "42.7.10"
-flyway = "12.2.0"
+flyway = "12.3.0"
 
 [libraries]
 # Kotlin
