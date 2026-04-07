@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { applyLiveDashboardEvent, invalidateDashboardQueries } from "../api/live-cache";
 import { useSSE } from "../api/sse";
+import { summarizeVersionMismatches } from "../utils/version-mismatch";
 
 export function useAppData() {
   const queryClient = useQueryClient();
@@ -22,7 +23,14 @@ export function useAppData() {
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
+  const { data: meta } = useQuery({
+    queryKey: ["meta"],
+    queryFn: api.getMeta,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
   const activeApp = selectedApp ?? apps[0]?.app_name ?? null;
+  const cliVersion = meta?.stove_cli_version ?? null;
 
   const { data: runs = [] } = useQuery({
     queryKey: ["runs", activeApp],
@@ -56,14 +64,19 @@ export function useAppData() {
   }, [selectedTestId, tests]);
 
   const selectedTest = tests.find((test) => test.id === selectedTestId) ?? tests[0] ?? null;
+  const versionMismatchSummary = summarizeVersionMismatches(apps, cliVersion, activeApp);
+  const mismatchedApps = versionMismatchSummary?.affectedAppNames ?? [];
 
   return {
     apps,
     activeApp,
+    cliVersion,
     latestRun,
     tests,
     selectedTest,
     liveConnected,
+    mismatchedApps,
+    versionMismatchSummary,
     selectApp: (name: string) => {
       setSelectedApp(name);
       setSelectedTestId(null);

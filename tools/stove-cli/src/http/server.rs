@@ -22,6 +22,7 @@ pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) 
   };
 
   let api = Router::new()
+    .route("/meta", get(super::routes::get_meta))
     .route("/apps", get(super::routes::get_apps))
     .route("/runs", get(super::routes::get_runs))
     .route("/runs/{run_id}", get(super::routes::get_run))

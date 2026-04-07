@@ -1,18 +1,31 @@
+import { VersionMismatchBanner } from "./components/VersionMismatchBanner";
 import { useAppData } from "./hooks/useAppData";
 import { Header } from "./layout/Header";
 import { Sidebar } from "./layout/Sidebar";
 import { TestDetail } from "./layout/TestDetail";
 
 export default function App() {
-  const { apps, activeApp, latestRun, tests, selectedTest, liveConnected, selectApp, selectTest } =
-    useAppData();
+  const {
+    apps,
+    activeApp,
+    latestRun,
+    tests,
+    selectedTest,
+    liveConnected,
+    mismatchedApps,
+    versionMismatchSummary,
+    selectApp,
+    selectTest,
+  } = useAppData();
 
   return (
     <div className="flex flex-col h-screen bg-stove-base text-[var(--stove-text)] font-sans">
       <Header />
+      {versionMismatchSummary ? <VersionMismatchBanner summary={versionMismatchSummary} /> : null}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           apps={apps}
+          mismatchedApps={mismatchedApps}
           selectedApp={activeApp}
           onSelectApp={selectApp}
           run={latestRun}

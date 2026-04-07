@@ -1,4 +1,4 @@
-import type { AppSummary, Entry, Run, Snapshot, Span, Test } from "./types";
+import type { AppSummary, Entry, MetaResponse, Run, Snapshot, Span, Test } from "./types";
 
 const BASE = "/api/v1";
 const encodePath = (value: string) => encodeURIComponent(value);
@@ -15,6 +15,7 @@ async function del(url: string): Promise<void> {
 }
 
 export const api = {
+  getMeta: () => get<MetaResponse>("/meta"),
   getApps: () => get<AppSummary[]>("/apps"),
   getRuns: (app?: string) => get<Run[]>(app ? `/runs?app=${encodeURIComponent(app)}` : "/runs"),
   getRun: (runId: string) => get<Run | null>(`/runs/${encodePath(runId)}`),

@@ -2,7 +2,12 @@ export interface AppSummary {
   app_name: string;
   latest_run_id: string;
   latest_status: string;
+  stove_version: string | null;
   total_runs: number;
+}
+
+export interface MetaResponse {
+  stove_cli_version: string;
 }
 
 export type LiveRecordId = number | string;
@@ -17,6 +22,7 @@ export interface Run {
   passed: number;
   failed: number;
   duration_ms: number | null;
+  stove_version: string | null;
   systems: string[];
 }
 
@@ -78,6 +84,7 @@ export interface Snapshot {
 export interface LiveRunStartedPayload {
   app_name: string;
   started_at: string;
+  stove_version: string | null;
   systems: string[];
 }
 

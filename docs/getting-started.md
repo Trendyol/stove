@@ -54,6 +54,9 @@ dependencies {
 !!! info "Latest Version"
     Check the [Releases](https://github.com/Trendyol/stove/releases) page for the latest version.
 
+!!! tip "Version Alignment"
+    Keep the Stove BOM and all Stove test dependencies on the same version. If you use the dashboard, keep `stove-cli` on that same version too.
+
 Replace `stove-spring` with the starter that matches your runtime:
 
 - Spring Boot: `stove-spring`

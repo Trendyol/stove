@@ -16,6 +16,7 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
     payload: {
       app_name: "live-app",
       started_at: "2024-06-01T10:00:00Z",
+      stove_version: "0.23.2",
       systems: ["HTTP"],
     },
   });
@@ -97,9 +98,11 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
 
   assert.equal(apps.length, 1);
   assert.equal(apps[0].latest_run_id, "run-live");
+  assert.equal(apps[0].stove_version, "0.23.2");
 
   assert.equal(runs.length, 1);
   assert.equal(runs[0].status, "RUNNING");
+  assert.equal(runs[0].stove_version, "0.23.2");
 
   assert.equal(tests.length, 1);
   assert.equal(tests[0].status, "PASSED");

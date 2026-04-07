@@ -80,12 +80,33 @@ impl TestServer {
     self.seed_run_at(run_id, app_name, "2024-06-01T10:00:00Z", &[]);
   }
 
+  pub fn seed_run_with_version(&self, run_id: &str, app_name: &str, stove_version: &str) {
+    self.seed_run_at_with_version(
+      run_id,
+      app_name,
+      "2024-06-01T10:00:00Z",
+      Some(stove_version),
+      &[],
+    );
+  }
+
   /// Start a run with explicit timestamp and systems.
   pub fn seed_run_at(&self, run_id: &str, app_name: &str, started_at: &str, systems: &[&str]) {
+    self.seed_run_at_with_version(run_id, app_name, started_at, None, systems);
+  }
+
+  pub fn seed_run_at_with_version(
+    &self,
+    run_id: &str,
+    app_name: &str,
+    started_at: &str,
+    stove_version: Option<&str>,
+    systems: &[&str],
+  ) {
     let systems: Vec<String> = systems.iter().map(|s| (*s).to_string()).collect();
     self
       .repo
-      .save_run_start(run_id, app_name, started_at, &systems)
+      .save_run_start_with_version(run_id, app_name, started_at, stove_version, &systems)
       .unwrap();
   }
 

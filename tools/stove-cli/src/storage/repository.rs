@@ -45,8 +45,26 @@ impl Repository {
     started_at: &str,
     systems: &[String],
   ) -> Result<()> {
+    self.save_run_start_with_version(run_id, app_name, started_at, None, systems)
+  }
+
+  pub fn save_run_start_with_version(
+    &self,
+    run_id: &str,
+    app_name: &str,
+    started_at: &str,
+    stove_version: Option<&str>,
+    systems: &[String],
+  ) -> Result<()> {
     let db = self.lock_write_db();
-    save_run_start_on(db.conn(), run_id, app_name, started_at, systems)?;
+    save_run_start_on(
+      db.conn(),
+      run_id,
+      app_name,
+      started_at,
+      stove_version,
+      systems,
+    )?;
     Ok(())
   }
 
@@ -155,7 +173,7 @@ impl Repository {
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
     let db = self.lock_read_db();
     let mut stmt = db.conn().prepare(
-      "SELECT r.app_name, r.id, r.status, (SELECT COUNT(*) FROM runs r2 WHERE r2.app_name = r.app_name)
+      "SELECT r.app_name, r.id, r.status, r.stove_version, (SELECT COUNT(*) FROM runs r2 WHERE r2.app_name = r.app_name)
              FROM runs r
              WHERE r.id = (
                SELECT r3.id
@@ -172,7 +190,8 @@ impl Repository {
           app_name: row.get(0)?,
           latest_run_id: row.get(1)?,
           latest_status: parse_run_status(&row.get::<_, String>(2)?),
-          total_runs: row.get(3)?,
+          stove_version: row.get(3)?,
+          total_runs: row.get(4)?,
         })
       })?
       .filter_map(|r| r.ok())
@@ -286,8 +305,16 @@ fn apply_persisted_event(
       run_id,
       app_name,
       started_at,
+      stove_version,
       systems,
-    } => save_run_start_on(conn, run_id, app_name, started_at, systems),
+    } => save_run_start_on(
+      conn,
+      run_id,
+      app_name,
+      started_at,
+      stove_version.as_deref(),
+      systems,
+    ),
     PersistedDashboardEvent::RunEnded {
       run_id,
       ended_at,
@@ -344,12 +371,13 @@ fn save_run_start_on(
   run_id: &str,
   app_name: &str,
   started_at: &str,
+  stove_version: Option<&str>,
   systems: &[String],
 ) -> Result<()> {
   let systems_json = serde_json::to_string(systems)?;
   conn.execute(
-    "INSERT OR REPLACE INTO runs (id, app_name, started_at, systems) VALUES (?1, ?2, ?3, ?4)",
-    rusqlite::params![run_id, app_name, started_at, systems_json],
+    "INSERT OR REPLACE INTO runs (id, app_name, started_at, stove_version, systems) VALUES (?1, ?2, ?3, ?4, ?5)",
+    rusqlite::params![run_id, app_name, started_at, stove_version, systems_json],
   )?;
   Ok(())
 }
@@ -463,8 +491,7 @@ fn save_snapshot_on(
 
 // --- SQL column constants ---
 
-const RUN_COLUMNS: &str =
-  "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, systems";
+const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, stove_version, systems";
 const SPAN_COLUMNS: &str = "id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace";
 
 // --- Row-mapping helpers ---
@@ -485,7 +512,7 @@ fn parse_test_status(s: &str) -> TestStatus {
 }
 
 fn run_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
-  let systems_json: String = row.get(9)?;
+  let systems_json: String = row.get(10)?;
   let systems: Vec<String> = serde_json::from_str(&systems_json).unwrap_or_default();
   Ok(Run {
     id: row.get(0)?,
@@ -497,6 +524,7 @@ fn run_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
     passed: row.get(6)?,
     failed: row.get(7)?,
     duration_ms: row.get(8)?,
+    stove_version: row.get(9)?,
     systems,
   })
 }
@@ -578,10 +606,11 @@ mod tests {
     let repo = test_repo();
 
     repo
-      .save_run_start(
+      .save_run_start_with_version(
         "run-1",
         "product-api",
         "2024-01-01T00:00:00Z",
+        Some("0.23.2"),
         &["HTTP".into(), "Kafka".into()],
       )
       .unwrap();
@@ -658,6 +687,7 @@ mod tests {
     assert_eq!(runs.len(), 1);
     assert_eq!(runs[0].app_name, "product-api");
     assert_eq!(runs[0].status, RunStatus::Passed);
+    assert_eq!(runs[0].stove_version.as_deref(), Some("0.23.2"));
     assert_eq!(runs[0].systems, vec!["HTTP", "Kafka"]);
 
     let run = repo.get_run("run-1").unwrap().unwrap();
@@ -685,7 +715,37 @@ mod tests {
     let apps = repo.get_apps().unwrap();
     assert_eq!(apps.len(), 1);
     assert_eq!(apps[0].app_name, "product-api");
+    assert_eq!(apps[0].stove_version.as_deref(), Some("0.23.2"));
     assert_eq!(apps[0].total_runs, 1);
+  }
+
+  #[test]
+  fn latest_app_version_comes_from_latest_run() {
+    let repo = test_repo();
+    repo
+      .save_run_start_with_version(
+        "run-1",
+        "product-api",
+        "2024-01-01T00:00:00Z",
+        Some("0.23.0"),
+        &[],
+      )
+      .unwrap();
+    repo
+      .save_run_start_with_version(
+        "run-2",
+        "product-api",
+        "2024-01-02T00:00:00Z",
+        Some("0.23.2"),
+        &[],
+      )
+      .unwrap();
+
+    let apps = repo.get_apps().unwrap();
+
+    assert_eq!(apps.len(), 1);
+    assert_eq!(apps[0].latest_run_id, "run-2");
+    assert_eq!(apps[0].stove_version.as_deref(), Some("0.23.2"));
   }
 
   #[test]

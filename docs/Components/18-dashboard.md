@@ -49,6 +49,9 @@ Unlike [Reporting](13-reporting.md) (console output on failure) and [Tracing](15
 
 The CLI is a single binary with no runtime dependencies. It embeds the web UI, so there's nothing else to install.
 
+!!! info "Keep Versions Aligned"
+    Keep `stove-cli`, the Stove BOM, and your Stove test dependencies on the same Stove version. The dashboard shows a warning when the runtime libraries and CLI drift apart, but matching versions avoids inconsistent dashboard data.
+
 ## Quick Start
 
 **1. Start the dashboard**
@@ -106,6 +109,8 @@ Stove()
 ```
 
 Navigate to [http://localhost:4040](http://localhost:4040). The UI updates in real time as tests execute.
+
+If the dashboard shows a version mismatch warning, align your Stove BOM and test dependencies with the `stove-cli` version, or upgrade `stove-cli` to the runtime version reported by the selected app.
 
 ## What Gets Captured
 

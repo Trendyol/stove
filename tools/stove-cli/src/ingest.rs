@@ -18,6 +18,7 @@ pub enum PersistedDashboardEvent {
     run_id: String,
     app_name: String,
     started_at: String,
+    stove_version: Option<String>,
     systems: Vec<String>,
   },
   RunEnded {
@@ -96,6 +97,7 @@ pub enum LiveDashboardPayload {
 pub struct LiveRunStartedPayload {
   pub app_name: String,
   pub started_at: String,
+  pub stove_version: Option<String>,
   pub systems: Vec<String>,
 }
 

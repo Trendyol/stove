@@ -68,6 +68,11 @@ class DashboardSystem(
           .setTimestamp(now())
           .setAppName(options.appName)
           .addAllSystems(stove.activeSystems.values.filterIsInstance<Reports>().map { it.reportSystemName })
+          .apply {
+            StoveCompatibilityVersion.VALUE
+              .takeIf(String::isNotBlank)
+              ?.let(::setStoveVersion)
+          }
           .build()
       }
     )
