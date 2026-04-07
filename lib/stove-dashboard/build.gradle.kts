@@ -26,6 +26,10 @@ tasks.named("compileKotlin") {
   dependsOn(generateDashboardVersionSource)
 }
 
+tasks.named("sourcesJar") {
+  dependsOn(generateDashboardVersionSource)
+}
+
 dependencies {
   api(projects.lib.stove)
   api(projects.lib.stoveDashboardApi)
