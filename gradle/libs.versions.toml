@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.3.20"
 kotlinx = "1.10.2"
-exposed = "1.1.1"
+exposed = "1.2.0"
 hikari = "7.0.2"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.5.13"
@@ -40,7 +40,7 @@ io-grpc-kotlin = "1.5.0"
 google-protobuf = "4.34.1"
 hoplite = "2.9.0"
 junit-jupiter = "6.0.3"
-kotest = "6.1.10"
+kotest = "6.1.11"
 mockito = "6.3.0"
 kotlinx-serialization = "1.10.0"
 kotlinBinaryCompatibilityValidator = "0.18.1"
@@ -52,7 +52,7 @@ ktlint = "1.8.0"
 opentelemetry = "1.60.1"
 opentelemetry-semconv = "1.40.0"
 opentelemetry-instrumentation = "2.26.1"
-bytebuddy = "1.18.7"
+bytebuddy = "1.18.8"
 mordant = "3.0.2"
 
 [libraries]
@@ -162,7 +162,7 @@ elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-cl
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.5.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.5.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.32" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.4.0.jre11" }
 
