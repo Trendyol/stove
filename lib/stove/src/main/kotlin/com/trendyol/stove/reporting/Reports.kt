@@ -135,8 +135,7 @@ interface Reports {
     val stove = (this as? PluggedSystem)?.stove ?: return None
 
     // Find any system that implements TraceProvider
-    val traceProvider = stove.activeSystems.values
-      .filterIsInstance<TraceProvider>()
+    val traceProvider = stove.systemsOf<TraceProvider>()
       .firstOrNull() ?: return None
 
     // Wait longer for failures (2s) since exceptions might interrupt span export

@@ -95,7 +95,7 @@ fun WithDsl.cassandra(
     ) { dockerImageName ->
       options.container
         .useContainerFn(dockerImageName)
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveCassandraContainer }
         .apply(options.container.containerFn)
     }

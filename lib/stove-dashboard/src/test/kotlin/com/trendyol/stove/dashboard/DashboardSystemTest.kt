@@ -35,9 +35,9 @@ class DashboardSystemTest : FunSpec({
 
       // Simulate test lifecycle via reporter
       val ctx = StoveTestContext("test-1", "my test", "MySpec")
-      stove.reporter.startTest(ctx)
-      stove.reporter.record(ReportEntry.success("HTTP", "test-1", "GET /api"))
-      stove.reporter.endTest()
+      stove.startTest(ctx)
+      stove.recordReport(ReportEntry.success("HTTP", "test-1", "GET /api"))
+      stove.endTest()
 
       // Wait for async events to be processed before stopping
       delay(1000.milliseconds)
@@ -82,8 +82,8 @@ class DashboardSystemTest : FunSpec({
       system.run()
       delay(200.milliseconds)
 
-      stove.reporter.startTest(StoveTestContext("test-still-running", "still running", "MySpec"))
-      stove.reporter.record(ReportEntry.success("HTTP", "test-still-running", "GET /health"))
+      stove.startTest(StoveTestContext("test-still-running", "still running", "MySpec"))
+      stove.recordReport(ReportEntry.success("HTTP", "test-still-running", "GET /health"))
 
       delay(300.milliseconds)
       system.stop()
@@ -104,7 +104,7 @@ class DashboardSystemTest : FunSpec({
     try {
       val stove = Stove()
       val snapshotSystem = BlockingSnapshotSystem(stove)
-      stove.activeSystems[BlockingSnapshotSystem::class] = snapshotSystem
+      stove.getOrRegister(snapshotSystem)
 
       val options = DashboardSystemOptions(appName = "test-api", cliPort = port)
       val system = DashboardSystem(stove, options)
@@ -112,7 +112,7 @@ class DashboardSystemTest : FunSpec({
       system.run()
       delay(200.milliseconds)
 
-      stove.reporter.startTest(StoveTestContext("test-race", "race", "MySpec"))
+      stove.startTest(StoveTestContext("test-race", "race", "MySpec"))
 
       val endJob = async(Dispatchers.Default) {
         system.onTestEnded("test-race")

@@ -46,10 +46,7 @@ class SpringApplicationUnderTest(
         delay(DELAY)
         continue
       }
-      stove.activeSystems
-        .map { it.value }
-        .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-        .map { it as AfterRunAwareWithContext<ConfigurableApplicationContext> }
+      stove.systemsOf<AfterRunAwareWithContext<ConfigurableApplicationContext>>()
         .map { async(context = Dispatchers.IO) { it.afterRun(application) } }
         .awaitAll()
       application

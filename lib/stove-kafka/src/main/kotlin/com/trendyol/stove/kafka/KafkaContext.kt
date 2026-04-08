@@ -80,7 +80,7 @@ fun WithDsl.kafka(
       options.containerOptions
         .useContainerFn(dockerImageName)
         .withExposedPorts(*options.containerOptions.ports.toTypedArray())
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveKafkaContainer }
         .apply(options.containerOptions.containerFn)
     }

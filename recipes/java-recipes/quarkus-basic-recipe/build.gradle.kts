@@ -32,12 +32,11 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.kotlinx.reactor)
   implementation(libs.kotlinx.core)
-  // Removed shared.application to avoid IDE launcher classpath issues
-  // implementation(projects.shared.application)
 }
 
 dependencies {
   testImplementation(stoveLibs.stove)
+  testImplementation(stoveLibs.stoveQuarkus)
   testImplementation(stoveLibs.stoveCouchbase)
   testImplementation(stoveLibs.stoveExtensionsKotest)
   testImplementation(stoveLibs.stoveHttp)

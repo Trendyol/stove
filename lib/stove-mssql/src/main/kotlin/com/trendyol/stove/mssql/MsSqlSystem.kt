@@ -28,7 +28,7 @@ class MsSqlSystem internal constructor(
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.options.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -147,7 +147,7 @@ class MsSqlSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     mssqlContext.options is ProvidedMsSqlOptions -> mssqlContext.options.runMigrations
-    mssqlContext.runtime is StoveMsSqlContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    mssqlContext.runtime is StoveMsSqlContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${mssqlContext.runtime::class}")
   }
 

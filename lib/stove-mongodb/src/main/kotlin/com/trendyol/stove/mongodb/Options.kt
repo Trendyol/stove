@@ -101,7 +101,7 @@ fun WithDsl.mongodb(
     ) { dockerImageName ->
       options.container
         .useContainerFn(dockerImageName)
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveMongoContainer }
         .apply(options.container.containerFn)
     }

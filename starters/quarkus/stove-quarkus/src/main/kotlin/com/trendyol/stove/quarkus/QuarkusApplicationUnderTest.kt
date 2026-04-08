@@ -84,9 +84,7 @@ class QuarkusApplicationUnderTest(
 
   private suspend fun notifySystemsAfterRun() {
     coroutineScope {
-      stove.activeSystems
-        .map { it.value }
-        .filterIsInstance<AfterRunAwareWithContext<Unit>>()
+      stove.systemsOf<AfterRunAwareWithContext<Unit>>()
         .map { async { it.afterRun(Unit) } }
         .awaitAll()
     }

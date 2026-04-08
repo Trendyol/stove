@@ -31,7 +31,7 @@ class MySqlSystem internal constructor(
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.options.createStateStorage<RelationalDatabaseExposedConfiguration, MySqlSystem>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, MySqlSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -142,7 +142,7 @@ class MySqlSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     mysqlContext.options is ProvidedMySqlOptions -> mysqlContext.options.runMigrations
-    mysqlContext.runtime is StoveMySqlContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    mysqlContext.runtime is StoveMySqlContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${mysqlContext.runtime::class}")
   }
 

@@ -59,7 +59,7 @@ class DashboardSystem(
 
   override suspend fun run() {
     emitter = DashboardEmitter(options.cliHost, options.cliPort)
-    stove.reporter.addListener(this)
+    stove.addReportListener(this)
     registerSpanListener()
     startTime = Instant.now()
     emitter.tryEmit(
@@ -67,7 +67,7 @@ class DashboardSystem(
         runStarted = RunStartedEvent.newBuilder()
           .setTimestamp(now())
           .setAppName(options.appName)
-          .addAllSystems(stove.activeSystems.values.filterIsInstance<Reports>().map { it.reportSystemName })
+          .addAllSystems(stove.systemsOf<Reports>().map { it.reportSystemName })
           .apply {
             StoveCompatibilityVersion.VALUE
               .takeIf(String::isNotBlank)
@@ -174,7 +174,7 @@ class DashboardSystem(
             .build()
         }
       )
-      stove.reporter.removeListener(this)
+      stove.removeReportListener(this)
       emitter.close()
     }
   }
@@ -216,8 +216,7 @@ class DashboardSystem(
   }
 
   private fun emitSnapshots(testId: String) {
-    stove.activeSystems.values
-      .filterIsInstance<Reports>()
+    stove.systemsOf<Reports>()
       .forEach { system ->
         runCatching { system.snapshot() }
           .onFailure { e ->
@@ -241,8 +240,7 @@ class DashboardSystem(
   }
 
   private fun registerSpanListener() {
-    stove.activeSystems.values
-      .filterIsInstance<SpanListenerRegistry>()
+    stove.systemsOf<SpanListenerRegistry>()
       .firstOrNull()
       ?.addSpanListener(this)
   }

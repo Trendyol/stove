@@ -162,7 +162,7 @@ class MongodbSystem internal constructor(
   private lateinit var exposedConfiguration: MongodbExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<MongodbExposedConfiguration> =
-    stove.options.createStateStorage<MongodbExposedConfiguration, MongodbSystem>()
+    stove.createStateStorage<MongodbExposedConfiguration, MongodbSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -396,7 +396,7 @@ class MongodbSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedMongodbSystemOptions -> context.options.runMigrations
-    context.runtime is StoveMongoContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveMongoContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

@@ -196,7 +196,7 @@ fun WithDsl.redis(
       options.container
         .useContainerFn(dockerImageName)
         .withCommand("redis-server", "--requirepass", options.password)
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveRedisContainer }
         .apply(options.container.containerFn)
     }

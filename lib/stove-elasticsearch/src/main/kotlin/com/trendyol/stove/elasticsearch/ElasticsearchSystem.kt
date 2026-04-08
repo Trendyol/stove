@@ -172,7 +172,7 @@ class ElasticsearchSystem internal constructor(
   private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<ElasticSearchExposedConfiguration> =
-    stove.options.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>()
+    stove.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -382,7 +382,7 @@ class ElasticsearchSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedElasticsearchSystemOptions -> context.options.runMigrations
-    context.runtime is StoveElasticSearchContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveElasticSearchContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

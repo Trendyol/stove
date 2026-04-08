@@ -2,7 +2,7 @@ package com.trendyol.stove.system
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
-import com.trendyol.stove.reporting.StoveReporter
+import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove.Companion.instance
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
@@ -87,12 +87,78 @@ class Stove(
   }
 
   private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
-  val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
+
+  @PublishedApi
+  internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
+
   private lateinit var applicationUnderTest: ApplicationUnderTest<*>
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-  val options: StoveOptions = optionsDsl.options
-  val reporter: StoveReporter = StoveReporter(isEnabled = options.reportingEnabled)
+  @PublishedApi
+  internal val options: StoveOptions = optionsDsl.options
+
+  internal val reporter: StoveReporter = StoveReporter(isEnabled = options.reportingEnabled)
+
+  /**
+   * Returns all registered systems that implement the given type.
+   * Use this instead of accessing [activeSystems] directly.
+   */
+  inline fun <reified T> systemsOf(): List<T> =
+    activeSystems.values.filterIsInstance<T>()
+
+  /**
+   * Returns a read-only snapshot of all registered systems.
+   */
+  fun allSystems(): Collection<PluggedSystem> =
+    activeSystems.values.toList()
+
+  /**
+   * Whether dependencies (containers) should be kept running after tests complete.
+   */
+  val keepDependenciesRunning: Boolean
+    get() = options.keepDependenciesRunning
+
+  /**
+   * Whether migrations should always run, even when reusing containers.
+   */
+  val runMigrationsAlways: Boolean
+    get() = options.runMigrationsAlways
+
+  /**
+   * Creates a state storage for the given system and configuration types.
+   */
+  inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(): StateStorage<TState> =
+    options.createStateStorage<TState, TSystem>()
+
+  /**
+   * Registers a listener to receive report events.
+   */
+  fun addReportListener(listener: ReportEventListener) =
+    reporter.addListener(listener)
+
+  /**
+   * Removes a previously registered report event listener.
+   */
+  fun removeReportListener(listener: ReportEventListener) =
+    reporter.removeListener(listener)
+
+  /**
+   * Starts tracking a new test in the reporter.
+   */
+  fun startTest(ctx: StoveTestContext) =
+    reporter.startTest(ctx)
+
+  /**
+   * Records a report entry in the current test.
+   */
+  fun recordReport(entry: ReportEntry) =
+    reporter.record(entry)
+
+  /**
+   * Ends tracking the current test in the reporter.
+   */
+  fun endTest() =
+    reporter.endTest()
 
   companion object {
     /**

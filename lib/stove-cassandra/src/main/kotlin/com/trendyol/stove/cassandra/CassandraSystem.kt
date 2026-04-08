@@ -113,7 +113,7 @@ class CassandraSystem internal constructor(
   private lateinit var exposedConfiguration: CassandraExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<CassandraExposedConfiguration> =
-    stove.options.createStateStorage<CassandraExposedConfiguration, CassandraSystem>()
+    stove.createStateStorage<CassandraExposedConfiguration, CassandraSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -355,7 +355,7 @@ class CassandraSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedCassandraSystemOptions -> context.options.runMigrations
-    context.runtime is StoveCassandraContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveCassandraContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

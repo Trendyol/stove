@@ -68,7 +68,7 @@ interface ThenSystemContinuation {
    * @param action The suspend action to conditionally execute.
    */
   suspend fun executeWithReuseCheck(action: suspend () -> Unit) {
-    if (stove.options.keepDependenciesRunning) {
+    if (stove.keepDependenciesRunning) {
       return
     }
     action()

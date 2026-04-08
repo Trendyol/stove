@@ -135,7 +135,7 @@ class RedisSystem(
   private lateinit var exposedConfiguration: RedisExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RedisExposedConfiguration> =
-    stove.options.createStateStorage<RedisExposedConfiguration, RedisSystem>()
+    stove.createStateStorage<RedisExposedConfiguration, RedisSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -245,7 +245,7 @@ class RedisSystem(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedRedisOptions -> context.options.runMigrations
-    context.runtime is StoveRedisContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveRedisContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

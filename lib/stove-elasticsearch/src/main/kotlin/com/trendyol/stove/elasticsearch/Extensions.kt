@@ -65,7 +65,7 @@ fun WithDsl.elasticsearch(
         if (options.container.disableSecurity) {
           withEnv("xpack.security.enabled", "false")
         }
-        withReuse(stove.options.keepDependenciesRunning)
+        withReuse(stove.keepDependenciesRunning)
         options.container.containerFn(this)
       }
   }

@@ -241,7 +241,7 @@ fun WithDsl.kafka(
       options.containerOptions
         .useContainerFn(it)
         .withExposedPorts(*options.ports.toTypedArray())
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveKafkaContainer }
         .apply(options.containerOptions.containerFn)
     }
