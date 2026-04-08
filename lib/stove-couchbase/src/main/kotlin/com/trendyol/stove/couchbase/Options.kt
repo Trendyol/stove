@@ -197,7 +197,7 @@ fun WithDsl.couchbase(
       options.containerOptions
         .useContainerFn(dockerImageName)
         .withBucket(bucketDefinition)
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveCouchbaseContainer }
         .apply(options.containerOptions.containerFn)
     }

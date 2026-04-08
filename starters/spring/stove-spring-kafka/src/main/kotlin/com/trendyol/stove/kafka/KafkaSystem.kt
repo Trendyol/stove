@@ -88,7 +88,7 @@ class KafkaSystem(
   }
 
   private val state: StateStorage<KafkaExposedConfiguration> =
-    stove.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
+    stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
 
   /**
    * Publishes a message to the given topic.
@@ -354,7 +354,7 @@ class KafkaSystem(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedKafkaSystemOptions -> context.options.runMigrations
-    context.runtime is StoveKafkaContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveKafkaContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

@@ -235,7 +235,7 @@ fun WithDsl.mssql(
         .withEnv("MSSQL_SA_PASSWORD", options.password)
         .withEnv("MSSQL_DB", options.databaseName)
         .withPassword(options.password)
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveMsSqlContainer }
         .apply(options.container.containerFn)
     }

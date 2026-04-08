@@ -164,7 +164,7 @@ class PostgresqlSystem internal constructor(
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.options.createStateStorage<RelationalDatabaseExposedConfiguration, PostgresqlSystem>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, PostgresqlSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -275,7 +275,7 @@ class PostgresqlSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     postgresContext.options is ProvidedPostgresqlOptions -> postgresContext.options.runMigrations
-    postgresContext.runtime is StovePostgresqlContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    postgresContext.runtime is StovePostgresqlContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${postgresContext.runtime::class}")
   }
 

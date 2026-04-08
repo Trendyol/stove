@@ -36,10 +36,7 @@ class KtorApplicationUnderTest(
       .distinct()
       .toTypedArray()
     application = runner(allConfigurations)
-    stove.activeSystems
-      .map { it.value }
-      .filter { it is RunnableSystemWithContext<*> || it is AfterRunAwareWithContext<*> }
-      .map { it as AfterRunAwareWithContext<Application> }
+    stove.systemsOf<AfterRunAwareWithContext<Application>>()
       .map { async { it.afterRun(application) } }
       .awaitAll()
 

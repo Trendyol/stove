@@ -110,8 +110,7 @@ class StoveReporter(
   /** Collect snapshots from all reporting systems */
   fun collectSnapshots(): List<SystemSnapshot> = runCatching {
     if (Stove.instanceInitialized()) {
-      Stove.instance.activeSystems.values
-        .filterIsInstance<Reports>()
+      Stove.instance.systemsOf<Reports>()
         .map { it.snapshot() }
     } else {
       emptyList()

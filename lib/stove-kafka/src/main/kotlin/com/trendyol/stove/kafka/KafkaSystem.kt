@@ -245,7 +245,7 @@ class KafkaSystem(
   internal lateinit var sink: StoveMessageSink
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<KafkaExposedConfiguration> =
-    stove.options.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
+    stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
 
   override suspend fun beforeRun() {
     stoveSerdeRef = context.options.serde
@@ -270,8 +270,8 @@ class KafkaSystem(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedKafkaSystemOptions -> context.options.runMigrations
-    context.runtime is StoveKafkaContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
-    context.runtime is EmbeddedKafkaRuntime -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveKafkaContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
+    context.runtime is EmbeddedKafkaRuntime -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

@@ -168,7 +168,7 @@ class CouchbaseSystem internal constructor(
   private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<CouchbaseExposedConfiguration> =
-    stove.options.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>()
+    stove.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>()
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
@@ -387,7 +387,7 @@ class CouchbaseSystem internal constructor(
 
   private fun shouldRunMigrations(): Boolean = when {
     context.options is ProvidedCouchbaseSystemOptions -> context.options.runMigrations
-    context.runtime is StoveCouchbaseContainer -> !state.isSubsequentRun() || stove.options.runMigrationsAlways
+    context.runtime is StoveCouchbaseContainer -> !state.isSubsequentRun() || stove.runMigrationsAlways
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 

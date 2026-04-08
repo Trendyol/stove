@@ -817,14 +817,21 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public fun <init> ()V
 	public fun <init> (Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun addReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
+	public final fun allSystems ()Ljava/util/Collection;
 	public final fun applicationUnderTest (Lcom/trendyol/stove/system/abstractions/ApplicationUnderTest;)Lcom/trendyol/stove/system/Stove;
 	public final fun applicationUnderTestContext ()Ljava/lang/Object;
 	public fun close ()V
+	public final fun endTest ()V
 	public final fun getActiveSystems ()Ljava/util/Map;
+	public final fun getKeepDependenciesRunning ()Z
 	public final fun getOptions ()Lcom/trendyol/stove/system/StoveOptions;
-	public final fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
+	public final fun getRunMigrationsAlways ()Z
+	public final fun recordReport (Lcom/trendyol/stove/reporting/ReportEntry;)V
 	public final fun registerForDispose (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
+	public final fun removeReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun startTest (Lcom/trendyol/stove/reporting/StoveTestContext;)V
 	public final fun with (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
 }
 

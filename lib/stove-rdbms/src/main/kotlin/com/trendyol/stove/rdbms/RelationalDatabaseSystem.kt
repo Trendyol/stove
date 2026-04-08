@@ -29,7 +29,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
 
   protected lateinit var sqlOperations: NativeSqlOperations
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.options.createStateStorage<RelationalDatabaseExposedConfiguration, RelationalDatabaseSystem<SELF>>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, RelationalDatabaseSystem<SELF>>()
 
   protected abstract fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Session
 

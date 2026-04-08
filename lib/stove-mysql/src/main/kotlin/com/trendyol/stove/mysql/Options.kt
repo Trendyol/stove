@@ -208,7 +208,7 @@ fun WithDsl.mysql(
         .withDatabaseName(options.databaseName)
         .withUsername(options.username)
         .withPassword(options.password)
-        .withReuse(stove.options.keepDependenciesRunning)
+        .withReuse(stove.keepDependenciesRunning)
         .let { c -> c as StoveMySqlContainer }
         .apply(options.container.containerFn)
     }
