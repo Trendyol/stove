@@ -45,8 +45,6 @@ stove {
 }
 ```
 
-https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
-
 ## Why Stove?
 
 The JVM ecosystem has excellent frameworks for building applications, but e2e testing remains fragmented. Testcontainers
@@ -76,6 +74,8 @@ assertions even for code that is traditionally hard to test (async flows, messag
 
 Stove Dashboard introduces a local real-time dashboard for end-to-end test runs. It captures HTTP calls, Kafka activity,
 database assertions, and traces in one place so you can inspect successful and failed runs with full context.
+
+https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 
 **Quick start**
 
