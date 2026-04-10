@@ -6,8 +6,10 @@ import {
   parseJsonDeep,
   tryFormatJsonDeep,
 } from "../utils/json";
+import { getKafkaSnapshotMetrics, hasDetailedSnapshotState } from "../utils/snapshot-state";
 import { getSystemInfo } from "../utils/systems";
 import { JsonTree } from "./JsonTree";
+import { SnapshotMetricTiles } from "./SnapshotMetricTiles";
 
 interface SnapshotStateDialogProps {
   snapshot: Snapshot;
@@ -17,6 +19,9 @@ interface SnapshotStateDialogProps {
 export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogProps) {
   const info = getSystemInfo(snapshot.system);
   const parsedState = parseJsonDeep(snapshot.state_json);
+  const hasDetailedState = hasDetailedSnapshotState(snapshot, parsedState);
+  const kafkaMetrics =
+    snapshot.system === "Kafka" ? getKafkaSnapshotMetrics(snapshot, parsedState) : [];
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedSearchQuery = searchQuery.trim();
   const searchResult = useMemo(() => {
@@ -56,8 +61,30 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
             <div className="mt-1 text-xs text-[var(--stove-text-secondary)]">
               {snapshot.summary}
             </div>
-            <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--stove-text-muted)]">
-              {parsedState ? describeJsonValue(parsedState) : "raw text"}
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--stove-text-muted)]">
+                {hasDetailedState
+                  ? parsedState
+                    ? describeJsonValue(parsedState)
+                    : "raw text"
+                  : "no details"}
+              </span>
+              <span
+                className="rounded-full border px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em]"
+                style={
+                  hasDetailedState
+                    ? {
+                        borderColor: info.color,
+                        color: info.color,
+                      }
+                    : {
+                        borderColor: "var(--stove-border)",
+                        color: "var(--stove-text-secondary)",
+                      }
+                }
+              >
+                {hasDetailedState ? "Detailed state" : "Summary only"}
+              </span>
             </div>
           </div>
           <button
@@ -70,7 +97,9 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {parsedState ? (
+          {kafkaMetrics.length > 0 && <SnapshotMetricTiles metrics={kafkaMetrics} />}
+
+          {hasDetailedState && parsedState ? (
             <>
               <div className="rounded-lg border border-stove-border bg-stove-base p-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -110,20 +139,27 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
                 </div>
               )}
             </>
-          ) : (
+          ) : hasDetailedState ? (
             <pre className="overflow-x-auto rounded-lg border border-stove-border bg-stove-base p-3 text-xs whitespace-pre-wrap break-words text-[var(--stove-text)]">
               {tryFormatJsonDeep(snapshot.state_json)}
             </pre>
+          ) : (
+            <div className="rounded-lg border border-dashed border-stove-border bg-stove-base p-4 text-sm text-[var(--stove-text-secondary)]">
+              This snapshot only recorded the summary. There is no detailed state payload to
+              inspect.
+            </div>
           )}
 
-          <details className="rounded-lg border border-stove-border bg-stove-base">
-            <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-[var(--stove-text-secondary)]">
-              Raw JSON
-            </summary>
-            <pre className="max-h-72 overflow-auto border-t border-stove-border p-3 text-xs whitespace-pre-wrap break-words text-[var(--stove-text)]">
-              {tryFormatJsonDeep(snapshot.state_json)}
-            </pre>
-          </details>
+          {hasDetailedState && (
+            <details className="rounded-lg border border-stove-border bg-stove-base">
+              <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-[var(--stove-text-secondary)]">
+                Raw JSON
+              </summary>
+              <pre className="max-h-72 overflow-auto border-t border-stove-border p-3 text-xs whitespace-pre-wrap break-words text-[var(--stove-text)]">
+                {tryFormatJsonDeep(snapshot.state_json)}
+              </pre>
+            </details>
+          )}
         </div>
       </div>
     </div>

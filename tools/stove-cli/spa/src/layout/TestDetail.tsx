@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { Test } from "../api/types";
 import { EntryRow } from "../components/EntryRow";
 import { FlowTab } from "../components/FlowTab";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
+import { partitionSnapshotsByDetail } from "../utils/snapshot-state";
 import type { Tab } from "./detail/TabBar";
 import { TabBar } from "./detail/TabBar";
 import { TestHeader } from "./detail/TestHeader";
@@ -49,10 +50,19 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
+  const { detailedSnapshots, hiddenCount: hiddenSnapshotCount } = useMemo(
+    () => partitionSnapshotsByDetail(snapshots),
+    [snapshots],
+  );
+
   const tabs = [
     { id: "timeline" as Tab, label: `Timeline (${entries.length})`, icon: "\u{1f4cb}" },
     { id: "trace" as Tab, label: `Trace (${spans.length})`, icon: "\u{1f50d}" },
-    { id: "snapshots" as Tab, label: `Snapshots (${snapshots.length})`, icon: "\u{1f4f8}" },
+    {
+      id: "snapshots" as Tab,
+      label: `Snapshots (${detailedSnapshots.length})`,
+      icon: "\u{1f4f8}",
+    },
     { id: "flow" as Tab, label: "Flow", icon: "\u{1f310}" },
   ];
 
@@ -100,13 +110,13 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
           ) : snapshotsError ? (
             <QueryErrorMessage error={snapshotsError} fallback="Failed to load snapshots" />
           ) : (
-            <SnapshotCards snapshots={snapshots} />
+            <SnapshotCards snapshots={detailedSnapshots} hiddenCount={hiddenSnapshotCount} />
           ))}
         {tab === "flow" && (
           <FlowTab
             entries={entries}
             spans={spans}
-            snapshots={snapshots}
+            snapshots={detailedSnapshots}
             onOpenTraceTab={() => setTab("trace")}
           />
         )}

@@ -41,7 +41,6 @@ function SnapshotLaneCard({
   const info = getSystemInfo(snapshot.system);
   const parsedState = parseJsonDeep(snapshot.state_json);
   const previewKeys = getJsonPreviewKeys(parsedState, 3);
-
   return (
     <button
       type="button"
@@ -52,9 +51,6 @@ function SnapshotLaneCard({
       <div className="mb-1 flex items-center gap-2">
         <span style={{ color: info.color }}>{info.icon}</span>
         <span className="text-sm font-medium text-[var(--stove-text)]">{snapshot.system}</span>
-        <span className="ml-auto text-[10px] uppercase tracking-[0.16em] text-[var(--stove-text-muted)]">
-          state
-        </span>
       </div>
 
       <div className="line-clamp-2 text-xs text-[var(--stove-text)]" title={snapshot.summary}>
