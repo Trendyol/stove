@@ -1,4 +1,4 @@
-export type Tab = "timeline" | "trace" | "snapshots" | "kafka" | "flow";
+export type Tab = "timeline" | "trace" | "snapshots" | "flow";
 
 interface TabDef {
   id: Tab;
