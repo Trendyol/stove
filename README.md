@@ -90,12 +90,23 @@ stove
 ```
 
 ```kotlin
+// build.gradle.kts
+plugins {
+  id("com.trendyol.stove.tracing") version "$stoveVersion"
+}
+
 dependencies {
   testImplementation(platform("com.trendyol:stove-bom:$version"))
   testImplementation("com.trendyol:stove-dashboard")
   testImplementation("com.trendyol:stove-tracing")
 }
 
+stoveTracing {
+  serviceName.set("product-api")
+}
+```
+
+```kotlin
 Stove()
   .with {
     dashboard { DashboardSystemOptions(appName = "product-api") }
@@ -103,7 +114,7 @@ Stove()
   }.run()
 ```
 
-Keep `stove-cli`, the Stove BOM, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
+Keep `stove-cli`, the Stove BOM, the tracing Gradle plugin, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
 
 See [Dashboard docs](https://trendyol.github.io/stove/Components/18-dashboard/) and
 [0.23.0 release notes](https://trendyol.github.io/stove/release-notes/0.23.0/) for full details.

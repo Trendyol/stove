@@ -32,15 +32,26 @@ stove
 
 By default, the dashboard is at `http://localhost:4040` and gRPC receiver is at `localhost:4041`.
 
-### 2) Add the test dependency
+### 2) Add the test dependency and tracing plugin
 
 ```kotlin
+// build.gradle.kts
+plugins {
+  id("com.trendyol.stove.tracing") version "$stoveVersion"
+}
+
 dependencies {
   testImplementation(platform("com.trendyol:stove-bom:$version"))
   testImplementation("com.trendyol:stove-dashboard")
   testImplementation("com.trendyol:stove-tracing")
 }
+
+stoveTracing {
+  serviceName.set("product-api")
+}
 ```
+
+The tracing Gradle plugin attaches the OpenTelemetry agent to your test tasks, which is required for the dashboard's trace view.
 
 ### 3) Register Dashboard in Stove config
 

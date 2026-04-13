@@ -91,7 +91,24 @@ Stove CLI v0.23.0
     </dependency>
     ```
 
-**3. Register in your Stove config**
+**3. Apply the tracing Gradle plugin**
+
+The tracing Gradle plugin attaches the OpenTelemetry agent to your test tasks, which is required for the dashboard's trace view to receive spans.
+
+```kotlin
+// build.gradle.kts
+plugins {
+    id("com.trendyol.stove.tracing") version "<stove-version>"
+}
+
+stoveTracing {
+    serviceName.set("product-api")
+}
+```
+
+See [Tracing](15-tracing.md) for the full plugin configuration reference.
+
+**4. Register in your Stove config**
 
 ```kotlin hl_lines="3-4"
 Stove()
@@ -102,7 +119,7 @@ Stove()
   }.run()
 ```
 
-**4. Run your tests and open the dashboard**
+**5. Run your tests and open the dashboard**
 
 ```bash
 ./gradlew test
