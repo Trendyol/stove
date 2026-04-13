@@ -26,7 +26,7 @@ kotlinLogging = "8.0.01"
 
 # Ktor
 ktor = "3.4.2"
-koin = "4.2.0"
+koin = "4.2.1"
 
 # mongo
 mongodb = "5.6.4"
