@@ -430,7 +430,7 @@ No code changes to your application required. The OpenTelemetry agent instrument
 
 Stove's execution reports and tracing data are structured and deterministic, making them ideal for **AI agent workflows**. When an AI agent runs e2e tests during implementation, it can parse the failure reports — including the full execution trace, system snapshots, and timeline — to understand exactly what went wrong inside the application. This enables agents to iterate on fixes with precise feedback rather than guessing from opaque test failures.
 
-**Agent Skills:** Stove ships with a ready-to-use [Claude Code skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove-e2e-setup) that teaches AI agents how to set up and write Stove e2e tests. Copy the `.claude/skills/stove-e2e-setup/` directory into your project's `.claude/skills/` folder, and your AI coding agent will know how to configure systems, write tests, enable tracing, and build custom systems — following all Stove conventions automatically.
+**Agent Skills:** Stove ships with a ready-to-use [Claude Code skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove) that teaches AI agents how to set up and write Stove e2e tests. Copy the `.claude/skills/stove/` directory into your project's `.claude/skills/` folder, and your AI coding agent will know how to configure systems, write tests, enable tracing, and build custom systems — following all Stove conventions automatically.
 
 ## Configuration
 
@@ -648,7 +648,7 @@ See [provided instances docs](https://trendyol.github.io/stove/Components/11-pro
 
 - **[Documentation](https://trendyol.github.io/stove/)**: Full guides and API reference
 - **[Examples](https://github.com/Trendyol/stove/tree/main/examples)**: Working sample projects
-- **[AI Agent Skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove-e2e-setup)**: Drop into `.claude/skills/` to teach AI agents Stove conventions
+- **[AI Agent Skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove)**: Drop into `.claude/skills/` to teach AI agents Stove conventions
 - **[Blog Post](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)**:
   Motivation and design decisions
 - **[Video Walkthrough](https://youtu.be/DJ0CI5cBanc?t=669)**: Live demo (Turkish)

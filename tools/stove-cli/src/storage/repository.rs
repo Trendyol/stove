@@ -96,10 +96,19 @@ impl Repository {
     test_id: &str,
     test_name: &str,
     spec_name: &str,
+    test_path: &[String],
     started_at: &str,
   ) -> Result<()> {
     let db = self.lock_write_db();
-    save_test_start_on(db.conn(), run_id, test_id, test_name, spec_name, started_at)?;
+    save_test_start_on(
+      db.conn(),
+      run_id,
+      test_id,
+      test_name,
+      spec_name,
+      test_path,
+      started_at,
+    )?;
     Ok(())
   }
 
@@ -226,7 +235,7 @@ impl Repository {
   pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
     let db = self.lock_read_db();
     let mut stmt = db.conn().prepare(
-            "SELECT id, run_id, test_name, spec_name, started_at, ended_at, status, duration_ms, error FROM tests WHERE run_id = ?1 ORDER BY started_at",
+            "SELECT id, run_id, test_name, spec_name, test_path, started_at, ended_at, status, duration_ms, error FROM tests WHERE run_id = ?1 ORDER BY started_at",
         )?;
     let rows = stmt
       .query_map(rusqlite::params![run_id], test_from_row)?
@@ -336,8 +345,11 @@ fn apply_persisted_event(
       test_id,
       test_name,
       spec_name,
+      test_path,
       started_at,
-    } => save_test_start_on(conn, run_id, test_id, test_name, spec_name, started_at),
+    } => save_test_start_on(
+      conn, run_id, test_id, test_name, spec_name, test_path, started_at,
+    ),
     PersistedDashboardEvent::TestEnded {
       run_id,
       test_id,
@@ -391,10 +403,14 @@ fn save_run_end_on(
   failed: i32,
   duration_ms: i64,
 ) -> Result<()> {
-  let status = if failed > 0 { "FAILED" } else { "PASSED" };
+  let status = if failed > 0 {
+    RunStatus::Failed
+  } else {
+    RunStatus::Passed
+  };
   conn.execute(
     "UPDATE runs SET ended_at = ?1, status = ?2, total_tests = ?3, passed = ?4, failed = ?5, duration_ms = ?6 WHERE id = ?7",
-    rusqlite::params![ended_at, status, total_tests, passed, failed, duration_ms, run_id],
+    rusqlite::params![ended_at, status.to_string(), total_tests, passed, failed, duration_ms, run_id],
   )?;
   Ok(())
 }
@@ -405,11 +421,13 @@ fn save_test_start_on(
   test_id: &str,
   test_name: &str,
   spec_name: &str,
+  test_path: &[String],
   started_at: &str,
 ) -> Result<()> {
+  let test_path_json = serde_json::to_string(test_path)?;
   conn.execute(
-    "INSERT OR REPLACE INTO tests (id, run_id, test_name, spec_name, started_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-    rusqlite::params![test_id, run_id, test_name, spec_name, started_at],
+    "INSERT OR REPLACE INTO tests (id, run_id, test_name, spec_name, test_path, started_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+    rusqlite::params![test_id, run_id, test_name, spec_name, test_path_json, started_at],
   )?;
   Ok(())
 }
@@ -530,16 +548,19 @@ fn run_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
 }
 
 fn test_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Test> {
+  let test_path_json: String = row.get(4)?;
+  let test_path: Vec<String> = serde_json::from_str(&test_path_json).unwrap_or_default();
   Ok(Test {
     id: row.get(0)?,
     run_id: row.get(1)?,
     test_name: row.get(2)?,
     spec_name: row.get(3)?,
-    started_at: row.get(4)?,
-    ended_at: row.get(5)?,
-    status: parse_test_status(&row.get::<_, String>(6)?),
-    duration_ms: row.get(7)?,
-    error: row.get(8)?,
+    test_path,
+    started_at: row.get(5)?,
+    ended_at: row.get(6)?,
+    status: parse_test_status(&row.get::<_, String>(7)?),
+    duration_ms: row.get(8)?,
+    error: row.get(9)?,
   })
 }
 
@@ -621,6 +642,7 @@ mod tests {
         "test-1",
         "should create product",
         "ProductSpec",
+        &[],
         "2024-01-01T00:00:01Z",
       )
       .unwrap();
@@ -773,7 +795,7 @@ mod tests {
       .save_run_start("run-1", "app", "2024-01-01T00:00:00Z", &[])
       .unwrap();
     repo
-      .save_test_start("run-1", "test-1", "test", "", "2024-01-01T00:00:01Z")
+      .save_test_start("run-1", "test-1", "test", "", &[], "2024-01-01T00:00:01Z")
       .unwrap();
 
     repo.clear_all().unwrap();
@@ -829,6 +851,7 @@ mod tests {
         "test-1",
         "first test",
         "Spec",
+        &[],
         "2024-06-01T00:00:01Z",
       )
       .unwrap();
@@ -838,6 +861,7 @@ mod tests {
         "test-10",
         "tenth test",
         "Spec",
+        &[],
         "2024-06-01T00:00:02Z",
       )
       .unwrap();

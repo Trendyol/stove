@@ -6,9 +6,10 @@ interface TestListItemProps {
   test: Test;
   selected: boolean;
   onSelect: () => void;
+  hideSpec?: boolean;
 }
 
-export function TestListItem({ test, selected, onSelect }: TestListItemProps) {
+export function TestListItem({ test, selected, onSelect, hideSpec }: TestListItemProps) {
   return (
     <button
       type="button"
@@ -19,9 +20,11 @@ export function TestListItem({ test, selected, onSelect }: TestListItemProps) {
       onClick={onSelect}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs text-[var(--stove-text-secondary)] truncate">
-          {test.spec_name}
-        </span>
+        {!hideSpec && (
+          <span className="text-xs text-[var(--stove-text-secondary)] truncate">
+            {test.spec_name}
+          </span>
+        )}
         <Badge status={test.status} />
       </div>
       <div className="text-sm text-[var(--stove-text)] truncate mt-0.5">{test.test_name}</div>

@@ -16,18 +16,26 @@ Stove e2e tests are Kotlin-first. Even for Java/Scala projects, keep e2e test so
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
     testImplementation("com.trendyol:stove")
-    testImplementation("com.trendyol:stove-spring")             // or stove-ktor
+    testImplementation("com.trendyol:stove-spring")             // or stove-ktor / stove-quarkus / stove-micronaut
     testImplementation("com.trendyol:stove-extensions-kotest")  // or stove-extensions-junit
 
     // Add only what you need:
     testImplementation("com.trendyol:stove-http")
     testImplementation("com.trendyol:stove-postgres")
+    testImplementation("com.trendyol:stove-mysql")
+    testImplementation("com.trendyol:stove-mssql")
+    testImplementation("com.trendyol:stove-cassandra")
+    testImplementation("com.trendyol:stove-mongodb")
+    testImplementation("com.trendyol:stove-redis")
+    testImplementation("com.trendyol:stove-elasticsearch")
+    testImplementation("com.trendyol:stove-couchbase")
     testImplementation("com.trendyol:stove-kafka")              // standalone Kafka assertions
     testImplementation("com.trendyol:stove-spring-kafka")       // Spring Kafka assertions + interceptor
     testImplementation("com.trendyol:stove-wiremock")
     testImplementation("com.trendyol:stove-grpc")
     testImplementation("com.trendyol:stove-grpc-mock")
     testImplementation("com.trendyol:stove-tracing")
+    testImplementation("com.trendyol:stove-dashboard")
 }
 ```
 
@@ -124,19 +132,23 @@ abstract class BaseE2ETest {
 | `stove` | Core framework |
 | `stove-spring` | Spring Boot starter |
 | `stove-ktor` | Ktor starter |
+| `stove-quarkus` | Quarkus starter |
+| `stove-micronaut` | Micronaut starter |
 | `stove-http` | HTTP client system |
 | `stove-postgres` | PostgreSQL system |
+| `stove-mysql` | MySQL system |
+| `stove-mssql` | MSSQL system |
+| `stove-cassandra` | Cassandra system |
+| `stove-mongodb` | MongoDB system |
+| `stove-redis` | Redis system |
+| `stove-elasticsearch` | Elasticsearch system |
+| `stove-couchbase` | Couchbase system |
 | `stove-kafka` | Standalone Kafka system |
 | `stove-spring-kafka` | Spring Kafka (adds `shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`) |
 | `stove-wiremock` | WireMock system |
 | `stove-grpc` | gRPC client system |
 | `stove-grpc-mock` | gRPC mock server system |
 | `stove-tracing` | Tracing system |
+| `stove-dashboard` | Dashboard system (streams events to stove CLI) |
 | `stove-extensions-kotest` | Kotest reporting integration |
 | `stove-extensions-junit` | JUnit reporting integration |
-| `stove-couchbase` | Couchbase system |
-| `stove-elasticsearch` | Elasticsearch system |
-| `stove-redis` | Redis system |
-| `stove-mongodb` | MongoDB system |
-| `stove-mysql` | MySQL system |
-| `stove-mssql` | MSSQL system |

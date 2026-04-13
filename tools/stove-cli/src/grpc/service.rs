@@ -16,8 +16,18 @@ use crate::ingest::{
 };
 use crate::proto;
 use crate::sse::manager::SseManager;
-use crate::storage::models::{NewEntry, NewSpan};
+use crate::storage::models::{NewEntry, NewSpan, RunStatus};
 use crate::storage::repository::Repository;
+
+mod event_type {
+  pub const RUN_STARTED: &str = "run_started";
+  pub const RUN_ENDED: &str = "run_ended";
+  pub const TEST_STARTED: &str = "test_started";
+  pub const TEST_ENDED: &str = "test_ended";
+  pub const ENTRY_RECORDED: &str = "entry_recorded";
+  pub const SPAN_RECORDED: &str = "span_recorded";
+  pub const SNAPSHOT: &str = "snapshot";
+}
 
 /// gRPC service implementation that receives events from Stove test processes.
 pub struct DashboardEventServiceImpl {
@@ -131,7 +141,7 @@ impl DashboardEventServiceImpl {
     PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "run_started",
+        event_type::RUN_STARTED,
         LiveDashboardPayload::RunStarted(LiveRunStartedPayload {
           app_name: event.app_name.clone(),
           started_at: started_at.clone(),
@@ -162,7 +172,7 @@ impl DashboardEventServiceImpl {
     Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "run_ended",
+        event_type::RUN_ENDED,
         LiveDashboardPayload::RunEnded(LiveRunEndedPayload {
           ended_at: ended_at.clone(),
           status,
@@ -197,11 +207,12 @@ impl DashboardEventServiceImpl {
     Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "test_started",
+        event_type::TEST_STARTED,
         LiveDashboardPayload::TestStarted(LiveTestStartedPayload {
           test_id: event.test_id.clone(),
           test_name: event.test_name.clone(),
           spec_name: event.spec_name.clone(),
+          test_path: event.test_path.clone(),
           started_at: started_at.clone(),
           status: "RUNNING".to_string(),
         }),
@@ -211,6 +222,7 @@ impl DashboardEventServiceImpl {
         test_id: event.test_id.clone(),
         test_name: event.test_name.clone(),
         spec_name: event.spec_name.clone(),
+        test_path: event.test_path.clone(),
         started_at,
       },
       flush_immediately: false,
@@ -227,7 +239,7 @@ impl DashboardEventServiceImpl {
     Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "test_ended",
+        event_type::TEST_ENDED,
         LiveDashboardPayload::TestEnded(LiveTestEndedPayload {
           test_id: event.test_id.clone(),
           status: event.status.clone(),
@@ -282,7 +294,7 @@ impl DashboardEventServiceImpl {
     Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "entry_recorded",
+        event_type::ENTRY_RECORDED,
         LiveDashboardPayload::EntryRecorded(LiveEntryRecordedPayload {
           id: 0,
           test_id: event.test_id.clone(),
@@ -349,7 +361,7 @@ impl DashboardEventServiceImpl {
     Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "span_recorded",
+        event_type::SPAN_RECORDED,
         LiveDashboardPayload::SpanRecorded(LiveSpanRecordedPayload {
           id: 0,
           test_id,
@@ -381,7 +393,7 @@ impl DashboardEventServiceImpl {
     Ok(PreparedDashboardEvent {
       live: Self::live_event(
         run_id,
-        "snapshot",
+        event_type::SNAPSHOT,
         LiveDashboardPayload::Snapshot(LiveSnapshotPayload {
           id: 0,
           test_id: event.test_id.clone(),
@@ -498,8 +510,12 @@ fn extract_test_id(attributes: &HashMap<String, String>) -> Option<String> {
   .cloned()
 }
 
-fn run_status(failed: i32) -> &'static str {
-  if failed > 0 { "FAILED" } else { "PASSED" }
+fn run_status(failed: i32) -> RunStatus {
+  if failed > 0 {
+    RunStatus::Failed
+  } else {
+    RunStatus::Passed
+  }
 }
 
 fn format_timestamp(ts: Option<&prost_types::Timestamp>) -> String {
@@ -557,6 +573,7 @@ mod tests {
           test_name: "orphan test".to_string(),
           spec_name: "Spec".to_string(),
           timestamp: ts(1_704_067_200),
+          test_path: vec![],
         },
       )),
     });
@@ -663,6 +680,7 @@ mod tests {
               seconds: 1_704_067_201,
               nanos: 0,
             }),
+            test_path: vec![],
           },
         )),
       })

@@ -129,7 +129,7 @@ impl TestServer {
   pub fn seed_test(&self, run_id: &str, test_id: &str, name: &str, spec: &str) {
     self
       .repo
-      .save_test_start(run_id, test_id, name, spec, "2024-06-01T10:00:01Z")
+      .save_test_start(run_id, test_id, name, spec, &[], "2024-06-01T10:00:01Z")
       .unwrap();
   }
 

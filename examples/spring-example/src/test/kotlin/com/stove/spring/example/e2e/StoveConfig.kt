@@ -94,5 +94,9 @@ class StoveConfig : AbstractProjectConfig() {
         )
       }.run()
 
-  override suspend fun afterProject(): Unit = Stove.stop()
+  override suspend fun afterProject() {
+    // Stove.stop() is intentionally not called here to allow JUnit tests
+    // (which run via a separate test engine in the same JVM) to use the
+    // same Stove instance. Cleanup happens via JVM shutdown hooks.
+  }
 }

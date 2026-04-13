@@ -92,6 +92,7 @@ class DashboardSystem(
           .setTestName(ctx.testName)
           .setSpecName(ctx.specName ?: "")
           .setTimestamp(now())
+          .addAllTestPath(ctx.testPath)
           .build()
       }
     )

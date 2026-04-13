@@ -7,6 +7,7 @@ import { FlowTab } from "../components/FlowTab";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
 import { partitionSnapshotsByDetail } from "../utils/snapshot-state";
+import { isRunning } from "../utils/status";
 import type { Tab } from "./detail/TabBar";
 import { TabBar } from "./detail/TabBar";
 import { TestHeader } from "./detail/TestHeader";
@@ -19,7 +20,7 @@ interface TestDetailProps {
 
 export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
   const [tab, setTab] = useState<Tab>("timeline");
-  const liveRefetchInterval = test.status === "RUNNING" && !liveConnected ? 5000 : false;
+  const liveRefetchInterval = isRunning(test.status) && !liveConnected ? 5000 : false;
 
   const { data: entries = [], error: entriesError } = useQuery({
     queryKey: ["entries", runId, test.id],

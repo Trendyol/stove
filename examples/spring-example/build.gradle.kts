@@ -36,6 +36,7 @@ dependencies {
 
 dependencies {
   testImplementation(projects.stove.testExtensions.stoveExtensionsKotest)
+  testImplementation(projects.stove.testExtensions.stoveExtensionsJunit)
   testImplementation(projects.stove.lib.stoveHttp)
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stovePostgres)
