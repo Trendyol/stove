@@ -11,7 +11,8 @@ import kotlin.coroutines.CoroutineContext
 data class StoveTestContext(
     val testId: String,
     val testName: String,
-    val specName: String? = null
+    val specName: String? = null,
+    val testPath: List<String> = emptyList()
 ) : AbstractCoroutineContextElement(Key) {
     companion object Key : CoroutineContext.Key<StoveTestContext>
 }

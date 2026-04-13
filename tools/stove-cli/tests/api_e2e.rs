@@ -90,6 +90,7 @@ fn test_started_event(
         test_name: test_name.to_string(),
         spec_name: spec_name.to_string(),
         timestamp: ts(seconds, nanos),
+        test_path: vec![],
       },
     )),
   }

@@ -108,6 +108,7 @@ pub struct Test {
   pub run_id: String,
   pub test_name: String,
   pub spec_name: String,
+  pub test_path: Vec<String>,
   pub started_at: String,
   pub ended_at: Option<String>,
   pub status: TestStatus,

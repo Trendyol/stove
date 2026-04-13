@@ -1,12 +1,27 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import type { AppSummary, Run, Test } from "../api/types";
+import { filterTests } from "../utils/filters";
 import { AppPicker } from "./sidebar/AppPicker";
 import { RunSummary } from "./sidebar/RunSummary";
 import type { FilterValue } from "./sidebar/TestFilters";
 import { TestFilters } from "./sidebar/TestFilters";
-import { TestListItem } from "./sidebar/TestListItem";
+import { TestTree } from "./sidebar/TestTree";
+
+const SIDEBAR_MIN_WIDTH = 240;
+const SIDEBAR_MAX_WIDTH = 600;
+const SIDEBAR_DEFAULT_WIDTH = 320;
+const SIDEBAR_STORAGE_KEY = "stove-sidebar-width";
+
+function loadSidebarWidth(): number {
+  const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+  if (!stored) return SIDEBAR_DEFAULT_WIDTH;
+  const parsed = Number(stored);
+  return Number.isFinite(parsed)
+    ? Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, parsed))
+    : SIDEBAR_DEFAULT_WIDTH;
+}
 
 interface SidebarProps {
   apps: AppSummary[];
@@ -33,6 +48,8 @@ export function Sidebar({
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
   const [clearing, setClearing] = useState(false);
+  const [width, setWidth] = useState(loadSidebarWidth);
+  const draggingRef = useRef(false);
 
   const handleClear = async () => {
     if (!confirm("Clear all stored data? This cannot be undone.")) return;
@@ -45,15 +62,46 @@ export function Sidebar({
     }
   };
 
-  const filteredTests = tests.filter((t) => {
-    if (filter === "pass" && t.status !== "PASSED") return false;
-    if (filter === "fail" && t.status !== "FAILED" && t.status !== "ERROR") return false;
-    if (search && !t.test_name.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const filteredTests = filterTests(tests, filter, search);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    draggingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      const clamped = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, e.clientX));
+      setWidth(clamped);
+    };
+
+    const handleMouseUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      setWidth((w) => {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(w));
+        return w;
+      });
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
 
   return (
-    <aside className="w-80 shrink-0 border-r border-stove-border bg-stove-surface flex flex-col overflow-hidden">
+    <aside
+      className="shrink-0 border-r border-stove-border bg-stove-surface flex flex-col overflow-hidden relative"
+      style={{ width }}
+    >
       <AppPicker
         apps={apps}
         mismatchedApps={mismatchedApps}
@@ -68,14 +116,11 @@ export function Sidebar({
         onSearchChange={setSearch}
       />
       <div className="flex-1 overflow-y-auto">
-        {filteredTests.map((test) => (
-          <TestListItem
-            key={test.id}
-            test={test}
-            selected={selectedTestId === test.id}
-            onSelect={() => onSelectTest(test.id)}
-          />
-        ))}
+        <TestTree
+          tests={filteredTests}
+          selectedTestId={selectedTestId}
+          onSelectTest={onSelectTest}
+        />
       </div>
       <div className="border-t border-stove-border px-3 py-2">
         <button
@@ -94,6 +139,11 @@ export function Sidebar({
           {clearing ? "Clearing..." : "Clear data"}
         </button>
       </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: resize drag handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500/40 transition-colors"
+        onMouseDown={handleMouseDown}
+      />
     </aside>
   );
 }

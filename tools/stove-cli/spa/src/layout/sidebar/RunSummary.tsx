@@ -1,6 +1,7 @@
 import type { Run, Test } from "../../api/types";
 import { Badge } from "../../components/Badge";
 import { formatDuration } from "../../utils/format";
+import { isFailed, isPassed, isRunning } from "../../utils/status";
 
 interface RunSummaryProps {
   run: Run;
@@ -10,13 +11,9 @@ interface RunSummaryProps {
 export function RunSummary({ run, tests }: RunSummaryProps) {
   const hasLiveTests = tests.length > 0;
   const total = hasLiveTests ? tests.length : run.total_tests;
-  const passed = hasLiveTests
-    ? tests.filter((test) => test.status === "PASSED").length
-    : run.passed;
-  const failed = hasLiveTests
-    ? tests.filter((test) => test.status === "FAILED" || test.status === "ERROR").length
-    : run.failed;
-  const running = hasLiveTests ? tests.filter((test) => test.status === "RUNNING").length : 0;
+  const passed = hasLiveTests ? tests.filter((t) => isPassed(t.status)).length : run.passed;
+  const failed = hasLiveTests ? tests.filter((t) => isFailed(t.status)).length : run.failed;
+  const running = hasLiveTests ? tests.filter((t) => isRunning(t.status)).length : 0;
 
   return (
     <div className="p-3 border-b border-stove-border">

@@ -34,6 +34,7 @@ pub enum PersistedDashboardEvent {
     test_id: String,
     test_name: String,
     spec_name: String,
+    test_path: Vec<String>,
     started_at: String,
   },
   TestEnded {
@@ -116,6 +117,7 @@ pub struct LiveTestStartedPayload {
   pub test_id: String,
   pub test_name: String,
   pub spec_name: String,
+  pub test_path: Vec<String>,
   pub started_at: String,
   pub status: String,
 }

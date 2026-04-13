@@ -1,0 +1,1 @@
+ALTER TABLE tests ADD COLUMN test_path TEXT NOT NULL DEFAULT '[]';

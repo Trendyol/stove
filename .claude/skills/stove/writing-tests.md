@@ -3,6 +3,13 @@
 ## Contents
 - [HTTP requests](#http-requests)
 - [PostgreSQL queries](#postgresql-queries)
+- [MySQL queries](#mysql-queries)
+- [MSSQL queries](#mssql-queries)
+- [Cassandra assertions](#cassandra-assertions)
+- [MongoDB assertions](#mongodb-assertions)
+- [Redis assertions](#redis-assertions)
+- [Elasticsearch assertions](#elasticsearch-assertions)
+- [Couchbase assertions](#couchbase-assertions)
 - [Kafka assertions](#kafka-assertions)
 - [WireMock mocking](#wiremock-mocking)
 - [gRPC Mock](#grpc-mock)
@@ -138,6 +145,227 @@ postgresql {
         orders.size shouldBe 1
         orders.first().status shouldBe "CONFIRMED"
     }
+}
+```
+
+## MySQL queries
+
+Same API as PostgreSQL — uses `shouldExecute` and `shouldQuery` with a row mapper:
+
+```kotlin
+mysql {
+    shouldExecute("INSERT INTO products (name, price) VALUES ('Laptop', 999.99)")
+
+    shouldQuery<ProductRow>(
+        query = "SELECT * FROM products WHERE name = 'Laptop'",
+        mapper = { row -> ProductRow(row.string("name"), row.double("price")) }
+    ) { products ->
+        products.size shouldBe 1
+    }
+}
+```
+
+## MSSQL queries
+
+Same API as PostgreSQL/MySQL:
+
+```kotlin
+mssql {
+    shouldExecute("INSERT INTO orders (id, status) VALUES ('o1', 'NEW')")
+
+    shouldQuery<OrderRow>(
+        query = "SELECT * FROM orders WHERE id = 'o1'",
+        mapper = { row -> OrderRow(row.string("id"), row.string("status")) }
+    ) { orders ->
+        orders.first().status shouldBe "NEW"
+    }
+}
+```
+
+## Cassandra assertions
+
+```kotlin
+cassandra {
+    // Execute CQL
+    shouldExecute("INSERT INTO orders (id, user_id, status) VALUES ('o1', 'u1', 'NEW')")
+
+    // Query with ResultSet assertion
+    shouldQuery("SELECT * FROM orders WHERE id = 'o1'") { resultSet ->
+        val row = resultSet.one()!!
+        row.getString("status") shouldBe "NEW"
+    }
+
+    // Execute with BoundStatement
+    shouldExecute(session().prepare("DELETE FROM orders WHERE id = ?").bind("o1"))
+
+    // Query with BoundStatement
+    shouldQuery(session().prepare("SELECT * FROM orders WHERE id = ?").bind("o1")) { rs ->
+        rs.one() shouldBe null
+    }
+
+    // Simulate downtime
+    pause()
+    // ... test resilience ...
+    unpause()
+}
+
+// Direct session access
+cassandra {
+    session().execute("TRUNCATE orders")
+}
+```
+
+## MongoDB assertions
+
+```kotlin
+mongodb {
+    // Save a document
+    save(Order(id = "o1", userId = "u1", amount = 99.99))
+
+    // Save to specific collection
+    save(Order(id = "o2", userId = "u2", amount = 50.0), collection = "archived_orders")
+
+    // Get by ObjectId
+    shouldGet<Order>(objectId = "o1") { order ->
+        order.amount shouldBe 99.99
+    }
+
+    // Query with filter string
+    shouldQuery<Order>(query = """{ "userId": "u1" }""") { orders ->
+        orders.size shouldBe 1
+        orders.first().status shouldBe "NEW"
+    }
+
+    // Delete
+    shouldDelete(objectId = "o1")
+
+    // Verify deletion
+    shouldNotExist(objectId = "o1")
+
+    // Simulate downtime
+    pause()
+    unpause()
+}
+
+// Direct client access
+mongodb {
+    client().getDatabase("testdb").getCollection("orders").drop()
+}
+```
+
+## Redis assertions
+
+Redis uses the Lettuce client directly via `client()`:
+
+```kotlin
+redis {
+    // All operations via the Lettuce RedisClient
+    val connection = client().connect()
+    val commands = connection.sync()
+
+    commands.set("order:o1", """{"status":"NEW"}""")
+    commands.get("order:o1") shouldNotBe null
+    commands.del("order:o1")
+
+    connection.close()
+}
+
+// Simulate downtime
+redis {
+    pause()
+    // ... test resilience ...
+    unpause()
+}
+```
+
+## Elasticsearch assertions
+
+```kotlin
+elasticsearch {
+    // Save a document
+    save(id = "p1", instance = Product("p1", "Laptop", 999.99), index = "products")
+
+    // Get by key
+    shouldGet<Product>(index = "products", key = "p1") { product ->
+        product.name shouldBe "Laptop"
+    }
+
+    // Query with JSON string
+    shouldQuery<Product>(
+        query = """{ "match": { "name": "Laptop" } }""",
+        index = "products"
+    ) { products ->
+        products.size shouldBe 1
+    }
+
+    // Query with Elasticsearch Query DSL object
+    shouldQuery<Product>(
+        query = Query.of { q -> q.match { m -> m.field("name").query("Laptop") } }
+    ) { products ->
+        products.shouldNotBeEmpty()
+    }
+
+    // Delete
+    shouldDelete(key = "p1", index = "products")
+
+    // Verify deletion
+    shouldNotExist(key = "p1", index = "products")
+
+    // Simulate downtime
+    pause()
+    unpause()
+}
+
+// Direct client access
+elasticsearch {
+    client().indices().create { it.index("new-index") }
+}
+```
+
+## Couchbase assertions
+
+```kotlin
+couchbase {
+    // Save to default collection
+    saveToDefaultCollection(id = "o1", instance = Order("o1", "u1", 99.99))
+
+    // Save to specific collection
+    save(collection = "archived", id = "o2", instance = Order("o2", "u2", 50.0))
+
+    // Get by key (default collection)
+    shouldGet<Order>(key = "o1") { order ->
+        order.amount shouldBe 99.99
+    }
+
+    // Get from specific collection
+    shouldGet<Order>(collection = "archived", key = "o2") { order ->
+        order.userId shouldBe "u2"
+    }
+
+    // N1QL query
+    shouldQuery<Order>(query = "SELECT * FROM `test-bucket` WHERE userId = 'u1'") { orders ->
+        orders.size shouldBe 1
+    }
+
+    // Delete (default collection)
+    shouldDelete(key = "o1")
+
+    // Delete from specific collection
+    shouldDelete(collection = "archived", key = "o2")
+
+    // Verify deletion
+    shouldNotExist(key = "o1")
+    shouldNotExist(collection = "archived", key = "o2")
+
+    // Simulate downtime
+    pause()
+    unpause()
+}
+
+// Direct cluster/bucket access
+couchbase {
+    cluster().queryIndexes().createPrimaryIndex("test-bucket")
+    bucket().defaultCollection().upsert("doc1", JsonObject.create())
 }
 ```
 

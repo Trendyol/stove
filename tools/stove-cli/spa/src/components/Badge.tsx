@@ -1,12 +1,14 @@
+import type { Status } from "../api/types";
 import { useTheme } from "../hooks/useTheme";
+import { isRunning } from "../utils/status";
 
 interface BadgeProps {
-  status: string;
+  status: Status;
 }
 
 export function Badge({ status }: BadgeProps) {
   const { theme } = useTheme();
-  const upper = status.toUpperCase();
+  const upper = status.toUpperCase() as Status;
   const configs = theme === "dark" ? DARK : LIGHT;
   const config = configs[upper] ?? configs.DEFAULT;
 
@@ -18,13 +20,13 @@ export function Badge({ status }: BadgeProps) {
       style={{ backgroundColor: config.bg, color: config.text }}
     >
       {config.icon}
-      {upper === "RUNNING" && (
+      {isRunning(upper) && (
         <span
           className="w-1.5 h-1.5 rounded-full animate-pulse-dot"
           style={{ backgroundColor: config.text }}
         />
       )}
-      {upper !== "RUNNING" && upper}
+      {!isRunning(upper) && upper}
     </span>
   );
 }
@@ -35,7 +37,7 @@ interface BadgeStyle {
   icon: string;
 }
 
-const DARK: Record<string, BadgeStyle> = {
+const DARK: Record<Status | "DEFAULT", BadgeStyle> = {
   PASSED: { bg: "#06291e", text: "#34d399", icon: "\u2713 " },
   FAILED: { bg: "#2d0a0a", text: "#f87171", icon: "\u2717 " },
   ERROR: { bg: "#2d0a0a", text: "#f87171", icon: "\u2717 " },
@@ -43,7 +45,7 @@ const DARK: Record<string, BadgeStyle> = {
   DEFAULT: { bg: "#1e293b", text: "#94a3b8", icon: "" },
 };
 
-const LIGHT: Record<string, BadgeStyle> = {
+const LIGHT: Record<Status | "DEFAULT", BadgeStyle> = {
   PASSED: { bg: "#d1fae5", text: "#065f46", icon: "\u2713 " },
   FAILED: { bg: "#fee2e2", text: "#991b1b", icon: "\u2717 " },
   ERROR: { bg: "#fee2e2", text: "#991b1b", icon: "\u2717 " },

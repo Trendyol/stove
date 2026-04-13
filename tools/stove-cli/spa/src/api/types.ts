@@ -1,7 +1,23 @@
+import type { Status } from "../utils/status";
+
+export type { Status };
+
+export const EVENT_TYPE = {
+  RUN_STARTED: "run_started",
+  RUN_ENDED: "run_ended",
+  TEST_STARTED: "test_started",
+  TEST_ENDED: "test_ended",
+  ENTRY_RECORDED: "entry_recorded",
+  SPAN_RECORDED: "span_recorded",
+  SNAPSHOT: "snapshot",
+} as const;
+
+export type EventType = (typeof EVENT_TYPE)[keyof typeof EVENT_TYPE];
+
 export interface AppSummary {
   app_name: string;
   latest_run_id: string;
-  latest_status: string;
+  latest_status: Status;
   stove_version: string | null;
   total_runs: number;
 }
@@ -17,7 +33,7 @@ export interface Run {
   app_name: string;
   started_at: string;
   ended_at: string | null;
-  status: string;
+  status: Status;
   total_tests: number;
   passed: number;
   failed: number;
@@ -31,9 +47,10 @@ export interface Test {
   run_id: string;
   test_name: string;
   spec_name: string;
+  test_path: string[];
   started_at: string;
   ended_at: string | null;
-  status: string;
+  status: Status;
   duration_ms: number | null;
   error: string | null;
 }
@@ -65,7 +82,7 @@ export interface Span {
   service_name: string;
   start_time_nanos: number;
   end_time_nanos: number;
-  status: string;
+  status: Status;
   attributes: string | null;
   exception_type: string | null;
   exception_message: string | null;
@@ -90,7 +107,7 @@ export interface LiveRunStartedPayload {
 
 export interface LiveRunEndedPayload {
   ended_at: string;
-  status: string;
+  status: Status;
   total_tests: number;
   passed: number;
   failed: number;
@@ -101,13 +118,14 @@ export interface LiveTestStartedPayload {
   test_id: string;
   test_name: string;
   spec_name: string;
+  test_path: string[];
   started_at: string;
-  status: string;
+  status: Status;
 }
 
 export interface LiveTestEndedPayload {
   test_id: string;
-  status: string;
+  status: Status;
   duration_ms: number;
   error: string | null;
   ended_at: string;
@@ -139,7 +157,7 @@ export interface LiveSpanRecordedPayload {
   service_name: string;
   start_time_nanos: number;
   end_time_nanos: number;
-  status: string;
+  status: Status;
   attributes: string | null;
   exception_type: string | null;
   exception_message: string | null;
@@ -154,46 +172,25 @@ export interface LiveSnapshotPayload {
   summary: string;
 }
 
+interface LiveEventBase {
+  seq: number;
+  run_id: string;
+}
+
 export type LiveDashboardEvent =
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "run_started";
-      payload: LiveRunStartedPayload;
-    }
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "run_ended";
-      payload: LiveRunEndedPayload;
-    }
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "test_started";
+  | (LiveEventBase & { event_type: typeof EVENT_TYPE.RUN_STARTED; payload: LiveRunStartedPayload })
+  | (LiveEventBase & { event_type: typeof EVENT_TYPE.RUN_ENDED; payload: LiveRunEndedPayload })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.TEST_STARTED;
       payload: LiveTestStartedPayload;
-    }
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "test_ended";
-      payload: LiveTestEndedPayload;
-    }
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "entry_recorded";
+    })
+  | (LiveEventBase & { event_type: typeof EVENT_TYPE.TEST_ENDED; payload: LiveTestEndedPayload })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.ENTRY_RECORDED;
       payload: LiveEntryRecordedPayload;
-    }
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "span_recorded";
+    })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.SPAN_RECORDED;
       payload: LiveSpanRecordedPayload;
-    }
-  | {
-      seq: number;
-      run_id: string;
-      event_type: "snapshot";
-      payload: LiveSnapshotPayload;
-    };
+    })
+  | (LiveEventBase & { event_type: typeof EVENT_TYPE.SNAPSHOT; payload: LiveSnapshotPayload });

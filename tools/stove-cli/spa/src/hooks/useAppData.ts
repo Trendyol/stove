@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { applyLiveDashboardEvent, invalidateDashboardQueries } from "../api/live-cache";
 import { useSSE } from "../api/sse";
+import { EVENT_TYPE, type LiveDashboardEvent } from "../api/types";
+import { isRunning } from "../utils/status";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 
 export function useAppData() {
@@ -10,8 +12,19 @@ export function useAppData() {
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
 
+  const handleLiveEvent = useCallback(
+    (event: LiveDashboardEvent) => {
+      applyLiveDashboardEvent(queryClient, event);
+      if (event.event_type === EVENT_TYPE.RUN_STARTED) {
+        setSelectedApp(event.payload.app_name);
+        setSelectedTestId(null);
+      }
+    },
+    [queryClient],
+  );
+
   const { connected: liveConnected } = useSSE({
-    onEvent: (event) => applyLiveDashboardEvent(queryClient, event),
+    onEvent: handleLiveEvent,
     onGap: (event) => invalidateDashboardQueries(queryClient, event.run_id),
     onReconnect: () => invalidateDashboardQueries(queryClient),
   });
@@ -46,7 +59,7 @@ export function useAppData() {
     queryKey: ["tests", latestRun?.id],
     queryFn: () => api.getTests(latestRun!.id),
     enabled: !!latestRun,
-    refetchInterval: latestRun?.status === "RUNNING" && !liveConnected ? 5000 : false,
+    refetchInterval: latestRun && isRunning(latestRun.status) && !liveConnected ? 5000 : false,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 

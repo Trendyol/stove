@@ -1,6 +1,6 @@
 ---
-name: stove-e2e-setup
-description: Use when adding Stove e2e tests to a project, creating a test-e2e source set, configuring Stove systems (HTTP, PostgreSQL, Kafka, WireMock, gRPC), setting up the stove {} test DSL, enabling OpenTelemetry tracing for tests, writing AbstractProjectConfig, or extending Stove with custom systems.
+name: stove
+description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, or extending Stove with custom systems.
 ---
 
 # Setting Up Stove E2E Tests
@@ -54,16 +54,24 @@ dependencies {
     // Add only what you need:
     testImplementation("com.trendyol:stove-http")
     testImplementation("com.trendyol:stove-postgres")
+    testImplementation("com.trendyol:stove-mysql")
+    testImplementation("com.trendyol:stove-mssql")
+    testImplementation("com.trendyol:stove-cassandra")
+    testImplementation("com.trendyol:stove-mongodb")
+    testImplementation("com.trendyol:stove-redis")
+    testImplementation("com.trendyol:stove-elasticsearch")
+    testImplementation("com.trendyol:stove-couchbase")
     testImplementation("com.trendyol:stove-kafka")
     testImplementation("com.trendyol:stove-spring-kafka")
     testImplementation("com.trendyol:stove-wiremock")
     testImplementation("com.trendyol:stove-grpc")
     testImplementation("com.trendyol:stove-grpc-mock")
     testImplementation("com.trendyol:stove-tracing")
+    testImplementation("com.trendyol:stove-dashboard")
 }
 ```
 
-For Ktor, replace `stove-spring` with `stove-ktor`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit` and skip Step 5.
+For Ktor, replace `stove-spring` with `stove-ktor`. For Quarkus, use `stove-quarkus`. For Micronaut, use `stove-micronaut`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit` and skip Step 5.
 
 If you are unsure about Stove API names/signatures, verify from local downloaded artifacts (Gradle cache or Maven local repo) before writing code. See [gradle-config.md](gradle-config.md#resolve-api-ambiguity-from-local-artifacts).
 
@@ -164,6 +172,22 @@ Stove()
             )
         }
 
+        mongodb {
+            MongodbSystemOptions(
+                databaseOptions = DatabaseOptions(
+                    default = DefaultDatabase(name = "testdb", collection = "orders")
+                ),
+                configureExposedConfiguration = { cfg ->
+                    listOf("spring.data.mongodb.uri=${cfg.connectionString}")
+                }
+            )
+        }
+
+        // Optional: streams test events to stove CLI dashboard
+        dashboard {
+            DashboardSystemOptions(appName = "my-service")
+        }
+
         // Application runner goes last
         springBoot(
             runner = { params ->
@@ -188,6 +212,33 @@ addTestDependencies4x {
 }
 ```
 
+For Ktor:
+
+```kotlin
+ktor(
+    runner = { params -> com.yourcompany.yourapp.run(params, wait = false) },
+    withParameters = listOf("server.port=8080")
+)
+```
+
+For Quarkus:
+
+```kotlin
+quarkus(
+    runner = { params -> com.yourcompany.yourapp.main(params) },
+    withParameters = listOf("quarkus.http.port=8080")
+)
+```
+
+For Micronaut:
+
+```kotlin
+micronaut(
+    runner = { params -> com.yourcompany.yourapp.run(params) },
+    withParameters = listOf("micronaut.server.port=8080")
+)
+```
+
 ## Step 7: Tracing (optional)
 
 For full plugin options, buildSrc alternative, and trace validation DSL, see [tracing.md](tracing.md).
@@ -203,7 +254,7 @@ stoveTracing {
 
 ## Step 8: Write tests
 
-For the complete DSL reference (HTTP, PostgreSQL, Kafka, WireMock, gRPC Mock, gRPC Client, Bridge, multi-system examples), see [writing-tests.md](writing-tests.md).
+For the complete DSL reference (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC Mock, gRPC Client, Bridge, multi-system examples), see [writing-tests.md](writing-tests.md).
 
 ```kotlin
 class OrderE2ETest : FunSpec({

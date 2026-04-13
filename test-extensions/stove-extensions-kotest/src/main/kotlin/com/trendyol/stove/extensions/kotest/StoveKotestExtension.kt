@@ -10,6 +10,7 @@ import com.trendyol.stove.tracing.TraceReportBuilder
 import com.trendyol.stove.tracing.TraceReportBuilder.shouldEnrichFailures
 import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
+import io.kotest.core.test.TestType
 import io.kotest.engine.test.TestResult
 
 /**
@@ -35,6 +36,12 @@ class StoveKotestExtension : TestCaseExtension {
       return execute(testCase)
     }
 
+    // Only wrap leaf tests in test context — containers (context/given/when/describe blocks)
+    // should pass through without starting/ending a test report.
+    if (testCase.type != TestType.Test) {
+      return execute(testCase)
+    }
+
     return Stove.reporter().withTestContext(testCase.toStoveContext()) {
       execute(testCase)
         .reportFailureIfNeeded()
@@ -42,11 +49,37 @@ class StoveKotestExtension : TestCaseExtension {
     }
   }
 
-  private fun TestCase.toStoveContext() = StoveTestContext(
-    testId = TraceContext.sanitizeToAscii("${spec::class.simpleName}::${name.name}"),
-    testName = name.name,
-    specName = spec::class.simpleName
-  )
+  private fun TestCase.toStoveContext(): StoveTestContext {
+    val path = buildDisplayPath()
+    val fullName = path.joinToString(" / ")
+    return StoveTestContext(
+      testId = TraceContext.sanitizeToAscii("${spec::class.simpleName}::$fullName"),
+      testName = name.name,
+      specName = spec::class.simpleName,
+      testPath = path
+    )
+  }
+
+  /**
+   * Builds a display path by traversing the parent chain and prepending
+   * each test case's prefix (if any) to its name.
+   *
+   * For BehaviourSpec: ["Given: valid request", "When: creating", "Then: should succeed"]
+   * For FunSpec with context: ["context order creation", "should create order"]
+   * For flat FunSpec: ["should create order"]
+   */
+  private fun TestCase.buildDisplayPath(): List<String> {
+    val chain = mutableListOf<TestCase>()
+    var current: TestCase? = this
+    while (current != null) {
+      chain.add(0, current)
+      current = current.parent
+    }
+    return chain.map { tc ->
+      val prefix = tc.name.prefix ?: ""
+      "$prefix${tc.name.name}"
+    }
+  }
 
   private fun TestResult.enrichIfFailed(): TestResult {
     if (!Stove.options().shouldEnrichFailures()) return this

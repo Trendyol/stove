@@ -1,15 +1,19 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { Status } from "../utils/status";
 import type { AppSummary, Entry, LiveDashboardEvent, Run, Snapshot, Span, Test } from "./types";
+import { EVENT_TYPE } from "./types";
+
+const RUNNING: Status = "RUNNING";
 
 export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDashboardEvent) {
   switch (event.event_type) {
-    case "run_started": {
+    case EVENT_TYPE.RUN_STARTED: {
       const run: Run = {
         id: event.run_id,
         app_name: event.payload.app_name,
         started_at: event.payload.started_at,
         ended_at: null,
-        status: "RUNNING",
+        status: RUNNING,
         total_tests: 0,
         passed: 0,
         failed: 0,
@@ -22,7 +26,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         upsertAppSummary(apps, {
           app_name: event.payload.app_name,
           latest_run_id: event.run_id,
-          latest_status: "RUNNING",
+          latest_status: RUNNING,
           stove_version: event.payload.stove_version,
           total_runs: nextRunCount(apps, event.payload.app_name, event.run_id),
         }),
@@ -33,7 +37,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
       break;
     }
-    case "run_ended": {
+    case EVENT_TYPE.RUN_ENDED: {
       updateCachedRuns(queryClient, event.run_id, (run) => ({
         ...run,
         ended_at: event.payload.ended_at,
@@ -54,12 +58,13 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       );
       break;
     }
-    case "test_started": {
+    case EVENT_TYPE.TEST_STARTED: {
       const test: Test = {
         id: event.payload.test_id,
         run_id: event.run_id,
         test_name: event.payload.test_name,
         spec_name: event.payload.spec_name,
+        test_path: event.payload.test_path ?? [],
         started_at: event.payload.started_at,
         ended_at: null,
         status: event.payload.status,
@@ -82,7 +87,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       );
       break;
     }
-    case "test_ended": {
+    case EVENT_TYPE.TEST_ENDED: {
       updateCachedTests(queryClient, event.run_id, event.payload.test_id, (test) => ({
         ...test,
         ended_at: event.payload.ended_at,
@@ -92,7 +97,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       }));
       break;
     }
-    case "entry_recorded": {
+    case EVENT_TYPE.ENTRY_RECORDED: {
       const entry: Entry = {
         id: event.payload.id,
         run_id: event.run_id,
@@ -126,7 +131,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       }
       break;
     }
-    case "span_recorded": {
+    case EVENT_TYPE.SPAN_RECORDED: {
       const span: Span = {
         id: event.payload.id,
         run_id: event.run_id,
@@ -158,7 +163,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       }
       break;
     }
-    case "snapshot": {
+    case EVENT_TYPE.SNAPSHOT: {
       const snapshot: Snapshot = {
         id: event.payload.id,
         run_id: event.run_id,
@@ -191,10 +196,9 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
 }
 
 function upsertAppSummary(apps: AppSummary[] | undefined, incoming: AppSummary): AppSummary[] {
-  const existing = apps ?? [];
-  const next = existing.filter((app) => app.app_name !== incoming.app_name);
-  next.push(incoming);
-  return next.sort((left, right) => left.app_name.localeCompare(right.app_name));
+  return [...(apps ?? []).filter((app) => app.app_name !== incoming.app_name), incoming].sort(
+    (left, right) => left.app_name.localeCompare(right.app_name),
+  );
 }
 
 function nextRunCount(apps: AppSummary[] | undefined, appName: string, runId: string): number {
@@ -206,33 +210,22 @@ function nextRunCount(apps: AppSummary[] | undefined, appName: string, runId: st
 }
 
 function upsertRun(runs: Run[] | undefined, incoming: Run): Run[] {
-  const next = (runs ?? []).filter((run) => run.id !== incoming.id);
-  next.push(incoming);
-  return next.sort(compareRuns);
+  return [...(runs ?? []).filter((run) => run.id !== incoming.id), incoming].sort(compareRuns);
 }
 
 function upsertTest(tests: Test[] | undefined, incoming: Test): Test[] {
-  const next = (tests ?? []).filter((test) => test.id !== incoming.id);
-  next.push(incoming);
-  return next.sort(compareTests);
+  return [...(tests ?? []).filter((test) => test.id !== incoming.id), incoming].sort(compareTests);
 }
 
 function updateCachedRuns(queryClient: QueryClient, runId: string, updater: (run: Run) => Run) {
   for (const [queryKey, runs] of queryClient.getQueriesData<Run[]>({ queryKey: ["runs"] })) {
-    if (!runs) {
+    if (!runs?.some((run) => run.id === runId)) {
       continue;
     }
-    let changed = false;
-    const next = runs.map((run) => {
-      if (run.id !== runId) {
-        return run;
-      }
-      changed = true;
-      return updater(run);
-    });
-    if (changed) {
-      queryClient.setQueryData(queryKey, next.sort(compareRuns));
-    }
+    queryClient.setQueryData(
+      queryKey,
+      runs.map((run) => (run.id === runId ? updater(run) : run)).sort(compareRuns),
+    );
   }
 }
 
@@ -242,9 +235,8 @@ function updateCachedTests(
   testId: string,
   updater: (test: Test) => Test,
 ) {
-  const queryKey = ["tests", runId];
   queryClient.setQueryData<Test[]>(
-    queryKey,
+    ["tests", runId],
     (tests) =>
       tests?.map((test) => (test.id === testId ? updater(test) : test)).sort(compareTests) ?? tests,
   );
@@ -269,11 +261,7 @@ function appendSpan(spans: Span[] | undefined, incoming: Span): Span[] {
 }
 
 function mergeSpans(existing: Span[] | undefined, incoming: Span[]): Span[] {
-  let next = existing ?? [];
-  for (const span of incoming) {
-    next = appendSpan(next, span);
-  }
-  return next;
+  return incoming.reduce<Span[]>((acc, span) => appendSpan(acc, span), existing ?? []);
 }
 
 function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot): Snapshot[] {
@@ -291,19 +279,11 @@ function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot):
 }
 
 function compareRuns(left: Run, right: Run): number {
-  const timestampDiff = right.started_at.localeCompare(left.started_at);
-  if (timestampDiff !== 0) {
-    return timestampDiff;
-  }
-  return right.id.localeCompare(left.id);
+  return right.started_at.localeCompare(left.started_at) || right.id.localeCompare(left.id);
 }
 
 function compareTests(left: Test, right: Test): number {
-  const timestampDiff = left.started_at.localeCompare(right.started_at);
-  if (timestampDiff !== 0) {
-    return timestampDiff;
-  }
-  return left.id.localeCompare(right.id);
+  return left.started_at.localeCompare(right.started_at) || left.id.localeCompare(right.id);
 }
 
 function isSameSpan(left: Span, right: Span): boolean {

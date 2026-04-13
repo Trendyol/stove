@@ -39,6 +39,7 @@ message TestStartedEvent {
   string test_name = 2;
   string spec_name = 3;
   google.protobuf.Timestamp timestamp = 4;
+  repeated string test_path = 5;
 }
 
 message TestEndedEvent {
