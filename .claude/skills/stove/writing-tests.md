@@ -2,6 +2,7 @@
 
 ## Contents
 - [HTTP requests](#http-requests)
+- [HTTP streaming](#http-streaming)
 - [PostgreSQL queries](#postgresql-queries)
 - [MySQL queries](#mysql-queries)
 - [MSSQL queries](#mssql-queries)
@@ -117,6 +118,31 @@ http {
         incomingTexts().take(10).toList().size shouldBe 10
     }
 }
+```
+
+## HTTP streaming
+
+For JSON streaming (NDJSON) endpoints, use Flow-based extensions on `HttpStatement`:
+
+```kotlin
+http {
+    // Read NDJSON stream line by line, transform each line
+    val items = client().prepareGet("/api/events/stream").readJsonTextStream { line ->
+        StoveSerde.jackson.default.readValue(line, EventResponse::class.java)
+    }.toList()
+
+    items.size shouldBeGreaterThan 0
+
+    // Read stream as ByteReadChannel for binary processing
+    client().prepareGet("/api/binary/stream").readJsonContentStream { channel ->
+        channel.readRemaining().readText()
+    }.toList().shouldNotBeEmpty()
+}
+
+// Serialize items to NDJSON for request body
+val body = StoveSerde.jackson.anyByteArraySerde().serializeToStreamJson(
+    listOf(Event("e1"), Event("e2"), Event("e3"))
+)
 ```
 
 ## PostgreSQL queries

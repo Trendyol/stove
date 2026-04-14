@@ -18,6 +18,10 @@
 - [Dashboard](#dashboard)
 - [Reporting](#reporting)
 - [Application runner](#application-runner)
+- [Migrations](#migrations)
+- [Container customization](#container-customization)
+- [Fault injection (pause/unpause)](#fault-injection-pauseunpause)
+- [Serde configuration](#serde-configuration)
 - [Cleanup](#cleanup)
 - [Keep dependencies running](#keep-dependencies-running)
 
@@ -28,6 +32,25 @@ All systems are configured inside `Stove().with { }`. The application runner goe
 ```kotlin
 httpClient {
     HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+}
+```
+
+Advanced options:
+
+```kotlin
+httpClient {
+    HttpClientSystemOptions(
+        baseUrl = "http://localhost:8080",
+        timeout = 60.seconds,                                          // Request timeout (default: 30s)
+        contentConverter = JacksonConverter(myObjectMapper),            // Custom JSON converter
+        configureClient = {                                            // Ktor HttpClient config
+            install(Logging) { level = LogLevel.ALL }
+        },
+        configureWebSocket = {                                         // WebSocket config
+            pingIntervalMillis = 10_000
+        },
+        createClient = { url -> myCustomHttpClient(url) }             // Full client factory override
+    )
 }
 ```
 
@@ -366,6 +389,19 @@ kafka {
 }
 ```
 
+For embedded Kafka (no Docker container):
+
+```kotlin
+kafka {
+    KafkaSystemOptions(
+        useEmbeddedKafka = true,
+        configureExposedConfiguration = { cfg ->
+            listOf("spring.kafka.bootstrap-servers=${cfg.bootstrapServers}")
+        }
+    )
+}
+```
+
 **Application-side requirements (Spring Boot Kafka)**:
 - Inject `RecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
 - Register `TestSystemKafkaInterceptor<*, *>` and a `StoveSerde` bean in test dependencies.
@@ -570,6 +606,212 @@ micronaut(
 ```
 
 Returns `ApplicationContext`, enabling bridge/DI access.
+
+## Migrations
+
+Database and infrastructure systems support migrations that run after the system starts and before tests execute. Use for schema creation, indexing, and seed data.
+
+```kotlin
+postgresql {
+    PostgresqlOptions(
+        configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
+    ).migrations {
+        register<CreateTablesMigration>()
+        register<SeedDataMigration>()
+    }
+}
+```
+
+Migration class:
+
+```kotlin
+class CreateTablesMigration : PostgresqlMigration {
+    override val order: Int = MigrationPriority.HIGHEST.value  // Runs first
+
+    override suspend fun execute(connection: PostgresSqlMigrationContext) {
+        connection.operations.execute("CREATE TABLE IF NOT EXISTS orders (...)")
+    }
+}
+
+class SeedDataMigration : PostgresqlMigration {
+    override val order: Int = 100  // After schema
+
+    override suspend fun execute(connection: PostgresSqlMigrationContext) {
+        connection.operations.execute("INSERT INTO orders ...")
+    }
+}
+```
+
+Ordering: migrations execute in ascending `order`. Use `MigrationPriority.HIGHEST` (schema), `MigrationPriority.LOWEST` (final setup), or custom integers.
+
+Type aliases per system (use instead of `DatabaseMigration<XyzContext>`):
+
+| Module | Type Alias | Context Type |
+|---|---|---|
+| stove-postgres | `PostgresqlMigration` | `PostgresSqlMigrationContext` |
+| stove-mysql | `MySqlMigration` | `MySqlMigrationContext` |
+| stove-mssql | `MsSqlMigration` | `SqlMigrationContext` |
+| stove-mongodb | `MongodbMigration` | `MongodbMigrationContext` |
+| stove-couchbase | `CouchbaseMigration` | `Cluster` |
+| stove-elasticsearch | `ElasticsearchMigration` | `ElasticsearchClient` |
+| stove-redis | `RedisMigration` | `RedisMigrationContext` |
+| stove-kafka | `KafkaMigration` | `KafkaMigrationContext` |
+| stove-cassandra | `CassandraMigration` | `CassandraMigrationContext` |
+
+Advanced patterns:
+
+```kotlin
+// Factory function for migrations with parameters
+.migrations {
+    register<ConfigurableMigration> {
+        ConfigurableMigration(batchSize = 1000)
+    }
+}
+
+// Replace a migration with a test-specific override
+.migrations {
+    register<ProductionSeedMigration>()
+    replace<ProductionSeedMigration, TestSeedMigration>()
+
+    // Or replace with a factory
+    replace<ProductionSeedMigration> {
+        MinimalSeedMigration()
+    }
+}
+```
+
+Notes: migrations must have no-arg constructors (unless using factory registration). Use idempotent statements (`IF NOT EXISTS`). Don't close the connection — Stove manages it.
+
+## Container customization
+
+All container-backed systems accept a `ContainerOptions` with customization hooks:
+
+```kotlin
+postgresql {
+    PostgresqlOptions(
+        container = PostgresqlContainerOptions(
+            registry = "my-registry.example.com",   // Custom Docker registry
+            image = "postgres",                       // Image name
+            tag = "16-alpine",                        // Image tag
+            compatibleSubstitute = "my-registry.example.com/postgres",  // Alternative image
+            containerFn = {                           // Customize container before startup
+                withEnv("POSTGRES_INITDB_ARGS", "--encoding=UTF-8")
+                withCommand("postgres", "-c", "max_connections=200")
+            }
+        ),
+        configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
+    )
+}
+
+kafka {
+    KafkaSystemOptions(
+        containerOptions = KafkaContainerOptions(tag = "8.0.3") {
+            withStartupAttempts(3)
+            withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
+        },
+        configureExposedConfiguration = { cfg -> listOf("kafka.bootstrap=${cfg.bootstrapServers}") }
+    )
+}
+```
+
+The `containerFn` lambda receives the container instance before startup, so you can call any Testcontainers method (env vars, commands, exposed ports, volume mounts, etc.).
+
+## Fault injection (pause/unpause)
+
+All container-backed systems support `pause()` / `unpause()` for simulating outages. Both are idempotent.
+
+```kotlin
+stove {
+    postgresql { pause() }
+
+    http {
+        getResponse<Any>("/health") { response ->
+            response.status shouldBe 503
+        }
+    }
+
+    postgresql { unpause() }
+
+    http {
+        getResponse<Any>("/health") { response ->
+            response.status shouldBe 200
+        }
+    }
+}
+```
+
+Supported: PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka.
+
+## Serde configuration
+
+Stove uses `StoveSerde` for JSON handling across systems (Kafka, MongoDB, WireMock, HTTP). Three implementations are built in:
+
+```kotlin
+// Jackson (default) — configure ObjectMapper
+val serde = StoveSerde.jackson.anyByteArraySerde()
+val stringSerde = StoveSerde.jackson.anyJsonStringSerde()
+
+// With custom ObjectMapper
+val customSerde = StoveSerde.jackson.anyByteArraySerde(
+    StoveSerde.jackson.byConfiguring {
+        disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+    }
+)
+
+// Kotlinx Serialization (requires @Serializable)
+val kotlinxSerde = StoveSerde.kotlinx.anyByteArraySerde()
+val customKotlinx = StoveSerde.kotlinx.anyByteArraySerde(
+    StoveSerde.kotlinx.byConfiguring {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+)
+
+// Gson
+val gsonSerde = StoveSerde.gson.anyByteArraySerde()
+val customGson = StoveSerde.gson.anyByteArraySerde(
+    StoveSerde.gson.byConfiguring {
+        setPrettyPrinting()
+        serializeNulls()
+    }
+)
+```
+
+**Important: align Stove's serde with your application's serialization.** If your application uses a custom ObjectMapper (e.g., with snake_case naming, custom date formats, or extra modules), Stove must use the same configuration. Otherwise, Stove will fail to deserialize responses from your HTTP endpoints, Kafka messages produced by your app, or documents written to MongoDB/Elasticsearch/Couchbase. The same applies if your application uses Kotlinx Serialization or Gson — use the matching `StoveSerde` variant.
+
+```kotlin
+// Reuse your application's ObjectMapper so ser/de behavior matches
+val appObjectMapper = MyApp.objectMapper()
+
+httpClient {
+    HttpClientSystemOptions(
+        baseUrl = "http://localhost:8080",
+        contentConverter = JacksonConverter(appObjectMapper)
+    )
+}
+
+kafka {
+    KafkaSystemOptions(
+        serde = StoveSerde.jackson.anyByteArraySerde(appObjectMapper),
+        configureExposedConfiguration = { cfg -> listOf("kafka.bootstrap=${cfg.bootstrapServers}") }
+    )
+}
+
+mongodb {
+    MongodbSystemOptions(
+        serde = StoveSerde.jackson.anyJsonStringSerde(appObjectMapper),
+        configureExposedConfiguration = { cfg -> listOf("mongodb.uri=${cfg.connectionString}") }
+    )
+}
+
+wiremock {
+    WireMockSystemOptions(
+        serde = StoveSerde.jackson.anyByteArraySerde(appObjectMapper),
+        configureExposedConfiguration = { cfg -> listOf("service.url=${cfg.baseUrl}") }
+    )
+}
+```
 
 ## Cleanup
 
