@@ -360,10 +360,13 @@ class KafkaSystem(
 
   private fun createAdminClient(
     exposedConfiguration: KafkaExposedConfiguration
-  ): Admin = mapOf<String, Any>(
-    AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
-    AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
-  ).let { Admin.create(it) }
+  ): Admin = Admin.create(
+    buildMap {
+      putAll(context.options.properties)
+      put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, exposedConfiguration.bootstrapServers)
+      put(AdminClientConfig.CLIENT_ID_CONFIG, "stove-kafka-admin-client")
+    }
+  )
 
   private fun createKafkaTemplate(
     context: ApplicationContext,
@@ -398,11 +401,12 @@ class KafkaSystem(
 
   private fun createFallbackTemplate(exposedConfiguration: KafkaExposedConfiguration): KafkaTemplate<Any, Any> {
     val producerFactory = DefaultKafkaProducerFactory<Any, Any>(
-      mapOf(
-        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to exposedConfiguration.bootstrapServers,
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to context.options.fallbackSerde.keySerializer::class.java,
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to context.options.fallbackSerde.valueSerializer::class.java
-      )
+      buildMap {
+        putAll(context.options.properties)
+        put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, exposedConfiguration.bootstrapServers)
+        put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, context.options.fallbackSerde.keySerializer::class.java)
+        put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, context.options.fallbackSerde.valueSerializer::class.java)
+      }
     )
     val fallbackTemplate = KafkaTemplate(producerFactory).also {
       it.setProducerListener(getInterceptor())

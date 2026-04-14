@@ -187,6 +187,7 @@ class WireMockSystem(
   RunAware,
   ExposesConfiguration,
   Reports {
+  override val reportSystemName: String = "WireMock" + (ctx.keyName?.let { " [$it]" } ?: "")
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private lateinit var exposedConfiguration: WireMockExposedConfiguration
 

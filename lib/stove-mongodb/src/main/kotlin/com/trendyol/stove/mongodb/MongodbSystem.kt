@@ -158,11 +158,11 @@ class MongodbSystem internal constructor(
   @PublishedApi
   internal lateinit var mongoClient: MongoClient
 
-  override val reportSystemName: String = "MongoDB"
+  override val reportSystemName: String = "MongoDB" + (context.keyName?.let { " [$it]" } ?: "")
   private lateinit var exposedConfiguration: MongodbExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<MongodbExposedConfiguration> =
-    stove.createStateStorage<MongodbExposedConfiguration, MongodbSystem>()
+    stove.createStateStorage<MongodbExposedConfiguration, MongodbSystem>(context.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

@@ -17,6 +17,8 @@
 - [gRPC Client](#grpc-client)
 - [Bridge (DI access)](#bridge-di-access)
 - [Trace validation](#trace-validation)
+- [Keyed system tests](#keyed-system-tests)
+- [Smoke testing (providedApplication)](#smoke-testing-providedapplication)
 - [Multi-system test](#multi-system-test)
 - [Anti-patterns](#anti-patterns)
 
@@ -615,6 +617,104 @@ tracing {
     // Debugging
     println(renderTree())    // Hierarchical trace view
     println(renderSummary()) // Compact summary
+}
+```
+
+## Keyed system tests
+
+Access keyed systems by passing the `SystemKey` to the validation DSL:
+
+```kotlin
+// Given keys defined in setup:
+// object AppDb : SystemKey
+// object AnalyticsDb : SystemKey
+// object PaymentService : SystemKey
+
+test("should write to both databases") {
+    stove {
+        http {
+            postAndExpectBody<OrderResponse>(
+                uri = "/orders",
+                body = CreateOrderRequest("u1", 99.99).some()
+            ) { it.status shouldBe 201 }
+        }
+
+        // Assert against the app database
+        postgresql(AppDb) {
+            shouldQuery<OrderRow>(
+                query = "SELECT * FROM orders WHERE user_id = 'u1'",
+                mapper = { row -> OrderRow(row.string("id"), row.string("status")) }
+            ) { it.size shouldBe 1 }
+        }
+
+        // Assert against the analytics database
+        postgresql(AnalyticsDb) {
+            shouldQuery<AnalyticsRow>(
+                query = "SELECT * FROM events WHERE user_id = 'u1'",
+                mapper = { row -> AnalyticsRow(row.string("event_type")) }
+            ) { it.first().eventType shouldBe "ORDER_CREATED" }
+        }
+    }
+}
+
+// Keyed WireMock and HTTP
+test("should call payment and inventory services") {
+    stove {
+        wiremock(PaymentService) {
+            mockPost("/charge", 200, PaymentResult(true).some())
+        }
+        wiremock(InventoryService) {
+            mockGet("/stock/item-1", 200, StockResponse(10).some())
+        }
+
+        http {
+            postAndExpectBody<OrderResponse>("/orders", body = order.some()) {
+                it.status shouldBe 201
+            }
+        }
+    }
+}
+```
+
+All systems support keyed access: `postgresql(key)`, `mysql(key)`, `mssql(key)`, `cassandra(key)`, `mongodb(key)`, `redis(key)`, `elasticsearch(key)`, `couchbase(key)`, `kafka(key)`, `wiremock(key)`, `grpcMock(key)`, `grpc(key)`, `http(key)`.
+
+## Smoke testing (providedApplication)
+
+With `providedApplication()`, test a remote/deployed application without starting it locally. No `Bridge`/`using<T>` — only infrastructure assertions:
+
+```kotlin
+test("staging smoke test — order flow") {
+    stove {
+        val userId = "smoke-${UUID.randomUUID()}"
+
+        // Hit the remote API
+        http {
+            postAndExpectBody<OrderResponse>(
+                uri = "/api/orders",
+                body = CreateOrderRequest(userId, 49.99).some()
+            ) { response ->
+                response.status shouldBe 201
+            }
+        }
+
+        // Verify side effects in the remote database
+        postgresql(AppDb) {
+            shouldQuery<OrderRow>(
+                query = "SELECT * FROM orders WHERE user_id = '$userId'",
+                mapper = { row -> OrderRow(row.string("id"), row.string("status")) }
+            ) { orders ->
+                orders.size shouldBe 1
+                orders.first().status shouldBe "CONFIRMED"
+            }
+        }
+
+        // Verify Kafka event on the remote cluster
+        kafka {
+            shouldBePublished<OrderCreatedEvent>(10.seconds) {
+                actual.userId == userId
+            }
+        }
+    }
 }
 ```
 

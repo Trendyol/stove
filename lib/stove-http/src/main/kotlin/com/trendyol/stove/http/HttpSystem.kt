@@ -109,8 +109,17 @@ internal fun Stove.withHttpClient(options: HttpClientSystemOptions): Stove {
   return this
 }
 
+internal fun Stove.withHttpClient(key: SystemKey, options: HttpClientSystemOptions): Stove {
+  this.getOrRegister(key, HttpSystem(this, options, keyName = keyDisplayName(key)))
+  return this
+}
+
 internal fun Stove.http(): HttpSystem = getOrNone<HttpSystem>().getOrElse {
   throw SystemNotRegisteredException(HttpSystem::class)
+}
+
+internal fun Stove.http(key: SystemKey): HttpSystem = getOrNone<HttpSystem>(key).getOrElse {
+  throw SystemNotRegisteredException(HttpSystem::class, "No HttpSystem registered with key '${keyDisplayName(key)}'")
 }
 
 /**
@@ -132,6 +141,24 @@ fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): Stov
   this.stove.withHttpClient(configure())
 
 /**
+ * Registers a keyed HTTP client system for testing multiple HTTP services.
+ *
+ * ```kotlin
+ * Stove().with {
+ *     httpClient(PaymentService) {
+ *         HttpClientSystemOptions(baseUrl = "https://payment.internal.com")
+ *     }
+ * }
+ * ```
+ *
+ * @param key The [SystemKey] identifying this HTTP client instance.
+ * @param configure Configuration block returning [HttpClientSystemOptions].
+ * @return The test system for fluent chaining.
+ */
+fun WithDsl.httpClient(key: SystemKey, configure: @StoveDsl () -> HttpClientSystemOptions): Stove =
+  this.stove.withHttpClient(key, configure())
+
+/**
  * Executes HTTP assertions within the validation DSL.
  *
  * ```kotlin
@@ -149,6 +176,27 @@ fun WithDsl.httpClient(configure: @StoveDsl () -> HttpClientSystemOptions): Stov
 suspend fun ValidationDsl.http(
   validation: @HttpDsl suspend HttpSystem.() -> Unit
 ): Unit = validation(this.stove.http())
+
+/**
+ * Executes HTTP assertions against a keyed HTTP client within the validation DSL.
+ *
+ * ```kotlin
+ * stove {
+ *     http(PaymentService) {
+ *         get<Payment>("/payments/123") { payment ->
+ *             payment.amount shouldBe 99.99
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @param key The [SystemKey] identifying the HTTP client instance.
+ * @param validation The HTTP assertion block.
+ */
+suspend fun ValidationDsl.http(
+  key: SystemKey,
+  validation: @HttpDsl suspend HttpSystem.() -> Unit
+): Unit = validation(this.stove.http(key))
 
 /**
  * HTTP client system for testing REST APIs.
@@ -292,13 +340,14 @@ suspend fun ValidationDsl.http(
 @HttpDsl
 class HttpSystem(
   override val stove: Stove,
-  @PublishedApi internal val options: HttpClientSystemOptions
+  @PublishedApi internal val options: HttpClientSystemOptions,
+  private val keyName: String? = null
 ) : PluggedSystem,
   Reports {
   @PublishedApi
   internal val ktorHttpClient: io.ktor.client.HttpClient = options.createClient(options.baseUrl)
 
-  override val reportSystemName: String = "HTTP"
+  override val reportSystemName: String = "HTTP" + (keyName?.let { " [$it]" } ?: "")
 
   /**
    * Performs a GET request and asserts on the bodiless response.

@@ -81,7 +81,8 @@ data class WireMockContext(
   val afterRequest: AfterRequestHandler,
   val serde: StoveSerde<Any, ByteArray>,
   val configure: WireMockConfiguration.() -> WireMockConfiguration,
-  val configureExposedConfiguration: (WireMockExposedConfiguration) -> List<String>
+  val configureExposedConfiguration: (WireMockExposedConfiguration) -> List<String>,
+  val keyName: String? = null
 )
 
 internal fun Stove.withWireMock(options: WireMockSystemOptions = WireMockSystemOptions()): Stove =
@@ -99,14 +100,74 @@ internal fun Stove.withWireMock(options: WireMockSystemOptions = WireMockSystemO
   ).also { getOrRegister(it) }
     .let { this }
 
+internal fun Stove.withWireMock(key: SystemKey, options: WireMockSystemOptions = WireMockSystemOptions()): Stove =
+  WireMockSystem(
+    stove = this,
+    WireMockContext(
+      options.port,
+      options.removeStubAfterRequestMatched,
+      options.afterStubRemoved,
+      options.afterRequest,
+      options.serde,
+      options.configure,
+      options.configureExposedConfiguration,
+      keyName = keyDisplayName(key)
+    )
+  ).also { getOrRegister(key, it) }
+    .let { this }
+
 internal fun Stove.wiremock(): WireMockSystem =
   getOrNone<WireMockSystem>().getOrElse {
     throw SystemNotRegisteredException(WireMockSystem::class)
+  }
+
+internal fun Stove.wiremock(key: SystemKey): WireMockSystem =
+  getOrNone<WireMockSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(WireMockSystem::class, "No WireMockSystem registered with key '${keyDisplayName(key)}'")
   }
 
 fun WithDsl.wiremock(
   configure: @StoveDsl () -> WireMockSystemOptions
 ): Stove = this.stove.withWireMock(configure())
 
+/**
+ * Registers a keyed WireMock system for testing multiple external service mocks.
+ *
+ * ```kotlin
+ * Stove().with {
+ *     wiremock(PaymentGateway) {
+ *         WireMockSystemOptions(port = 0, configureExposedConfiguration = { cfg -> listOf(...) })
+ *     }
+ * }
+ * ```
+ *
+ * @param key The [SystemKey] identifying this WireMock instance.
+ * @param configure Configuration block returning [WireMockSystemOptions].
+ * @return The test system for fluent chaining.
+ */
+fun WithDsl.wiremock(
+  key: SystemKey,
+  configure: @StoveDsl () -> WireMockSystemOptions
+): Stove = this.stove.withWireMock(key, configure())
+
 suspend fun ValidationDsl.wiremock(validation: @WiremockDsl suspend WireMockSystem.() -> Unit): Unit =
   validation(this.stove.wiremock())
+
+/**
+ * Executes WireMock assertions against a keyed WireMock instance within the validation DSL.
+ *
+ * ```kotlin
+ * stove {
+ *     wiremock(PaymentGateway) {
+ *         mockGet(url = "/status", statusCode = 200)
+ *     }
+ * }
+ * ```
+ *
+ * @param key The [SystemKey] identifying the WireMock instance.
+ * @param validation The WireMock assertion block.
+ */
+suspend fun ValidationDsl.wiremock(
+  key: SystemKey,
+  validation: @WiremockDsl suspend WireMockSystem.() -> Unit
+): Unit = validation(this.stove.wiremock(key))

@@ -61,7 +61,8 @@ internal data class GrpcMockContext(
   val afterStubMatched: AfterStubMatched,
   val onRequestReceived: OnRequestReceived,
   val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*>,
-  val configureExposedConfiguration: (GrpcMockExposedConfiguration) -> List<String>
+  val configureExposedConfiguration: (GrpcMockExposedConfiguration) -> List<String>,
+  val keyName: String? = null
 )
 
 internal fun Stove.withGrpcMock(options: GrpcMockSystemOptions): Stove =
@@ -82,6 +83,25 @@ internal fun Stove.grpcMock(): GrpcMockSystem = getOrNone<GrpcMockSystem>().getO
   throw SystemNotRegisteredException(GrpcMockSystem::class)
 }
 
+internal fun Stove.withGrpcMock(key: SystemKey, options: GrpcMockSystemOptions): Stove =
+  GrpcMockSystem(
+    stove = this,
+    GrpcMockContext(
+      options.port,
+      options.removeStubAfterRequestMatched,
+      options.afterStubMatched,
+      options.onRequestReceived,
+      options.serverBuilder,
+      options.configureExposedConfiguration,
+      keyName = keyDisplayName(key)
+    )
+  ).also { getOrRegister(key, it) }
+    .let { this }
+
+internal fun Stove.grpcMock(key: SystemKey): GrpcMockSystem = getOrNone<GrpcMockSystem>(key).getOrElse {
+  throw SystemNotRegisteredException(GrpcMockSystem::class, "No GrpcMockSystem registered with key '${keyDisplayName(key)}'")
+}
+
 /**
  * Registers the native gRPC mock system with Stove.
  *
@@ -96,6 +116,12 @@ internal fun Stove.grpcMock(): GrpcMockSystem = getOrNone<GrpcMockSystem>().getO
  */
 fun WithDsl.grpcMock(configure: @StoveDsl () -> GrpcMockSystemOptions): Stove =
   this.stove.withGrpcMock(configure())
+
+/**
+ * Registers a keyed gRPC mock system with Stove.
+ */
+fun WithDsl.grpcMock(key: SystemKey, configure: @StoveDsl () -> GrpcMockSystemOptions): Stove =
+  this.stove.withGrpcMock(key, configure())
 
 /**
  * Access the gRPC mock system for stub configuration in tests.
@@ -114,7 +140,12 @@ fun WithDsl.grpcMock(configure: @StoveDsl () -> GrpcMockSystemOptions): Stove =
  */
 suspend fun ValidationDsl.grpcMock(
   validation: @GrpcMockDsl suspend GrpcMockSystem.() -> Unit
-): Stove {
-  validation(stove.grpcMock())
-  return stove
-}
+): Unit = validation(stove.grpcMock())
+
+/**
+ * Access a keyed gRPC mock system for stub configuration in tests.
+ */
+suspend fun ValidationDsl.grpcMock(
+  key: SystemKey,
+  validation: @GrpcMockDsl suspend GrpcMockSystem.() -> Unit
+): Unit = validation(stove.grpcMock(key))

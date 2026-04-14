@@ -23,12 +23,12 @@ class MsSqlSystem internal constructor(
   @PublishedApi
   internal lateinit var sqlOperations: NativeSqlOperations
 
-  override val reportSystemName: String = "MSSQL"
+  override val reportSystemName: String = "MSSQL" + (mssqlContext.keyName?.let { " [$it]" } ?: "")
 
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>(mssqlContext.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

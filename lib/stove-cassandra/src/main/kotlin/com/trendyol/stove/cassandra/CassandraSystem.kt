@@ -109,11 +109,11 @@ class CassandraSystem internal constructor(
   @PublishedApi
   internal lateinit var cqlSession: CqlSession
 
-  override val reportSystemName: String = "Cassandra"
+  override val reportSystemName: String = "Cassandra" + (context.keyName?.let { " [$it]" } ?: "")
   private lateinit var exposedConfiguration: CassandraExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<CassandraExposedConfiguration> =
-    stove.createStateStorage<CassandraExposedConfiguration, CassandraSystem>()
+    stove.createStateStorage<CassandraExposedConfiguration, CassandraSystem>(context.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

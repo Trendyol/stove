@@ -93,7 +93,7 @@ class GrpcMockSystem internal constructor(
   ExposesConfiguration,
   Reports {
   private val logger = LoggerFactory.getLogger(javaClass)
-  override val reportSystemName: String = "gRPC Mock"
+  override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
 
   private val stubs = ConcurrentHashMap<String, MutableList<Pair<StubKey, StubDefinition>>>()
   private val requestLog: Cache<String, ReceivedRequest> = Caffeine

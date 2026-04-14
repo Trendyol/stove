@@ -129,7 +129,8 @@ data class ElasticSearchExposedConfiguration(
 @StoveDsl
 data class ElasticsearchContext(
   val runtime: SystemRuntime,
-  val options: ElasticsearchSystemOptions
+  val options: ElasticsearchSystemOptions,
+  val keyName: String? = null
 )
 
 open class StoveElasticSearchContainer(

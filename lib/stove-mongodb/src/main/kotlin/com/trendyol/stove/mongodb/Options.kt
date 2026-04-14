@@ -19,7 +19,8 @@ data class MongodbExposedConfiguration(
 @StoveDsl
 data class MongodbContext(
   val runtime: SystemRuntime,
-  val options: MongodbSystemOptions
+  val options: MongodbSystemOptions,
+  val keyName: String? = null
 )
 
 open class StoveMongoContainer(
@@ -55,9 +56,23 @@ internal fun Stove.withMongodb(
   return this
 }
 
+internal fun Stove.withMongodb(
+  key: SystemKey,
+  options: MongodbSystemOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, MongodbSystem(this, MongodbContext(runtime, options, keyName = keyDisplayName(key))))
+  return this
+}
+
 internal fun Stove.mongodb(): MongodbSystem =
   getOrNone<MongodbSystem>().getOrElse {
     throw SystemNotRegisteredException(MongodbSystem::class)
+  }
+
+internal fun Stove.mongodb(key: SystemKey): MongodbSystem =
+  getOrNone<MongodbSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(MongodbSystem::class, "No MongodbSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -109,6 +124,35 @@ fun WithDsl.mongodb(
   return stove.withMongodb(options, runtime)
 }
 
+fun WithDsl.mongodb(
+  key: SystemKey,
+  configure: () -> MongodbSystemOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedMongodbSystemOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StoveMongoContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return stove.withMongodb(key, options, runtime)
+}
+
 suspend fun ValidationDsl.mongodb(
   validation: @MongoDsl suspend MongodbSystem.() -> Unit
 ): Unit = validation(this.stove.mongodb())
+
+suspend fun ValidationDsl.mongodb(
+  key: SystemKey,
+  validation: @MongoDsl suspend MongodbSystem.() -> Unit
+): Unit = validation(this.stove.mongodb(key))

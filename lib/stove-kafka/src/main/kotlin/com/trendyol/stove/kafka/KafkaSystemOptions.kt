@@ -57,6 +57,20 @@ open class KafkaSystemOptions(
    */
   open val cleanup: suspend (Admin) -> Unit = {},
   /**
+   * Additional Kafka client properties applied to all internal clients (admin, producer, consumer).
+   * Use this to pass security configs (SASL_SSL, truststore, etc.) when connecting to a secured cluster.
+   *
+   * Example:
+   * ```kotlin
+   * properties = mapOf(
+   *   "security.protocol" to "SASL_SSL",
+   *   "sasl.mechanism" to "PLAIN",
+   *   "sasl.jaas.config" to "...PlainLoginModule required username=\"user\" password=\"pass\";"
+   * )
+   * ```
+   */
+  open val properties: Map<String, Any> = emptyMap(),
+  /**
    * The options for the Kafka system that is exposed to the application.
    */
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
@@ -87,6 +101,7 @@ open class KafkaSystemOptions(
       bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
       serde: StoveSerde<Any, ByteArray> = stoveSerdeRef,
       valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
+      properties: Map<String, Any> = emptyMap(),
       runMigrations: Boolean = true,
       cleanup: suspend (Admin) -> Unit = {},
       configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
@@ -100,6 +115,7 @@ open class KafkaSystemOptions(
       bridgeGrpcServerPort = bridgeGrpcServerPort,
       serde = serde,
       valueSerializer = valueSerializer,
+      properties = properties,
       runMigrations = runMigrations,
       cleanup = cleanup,
       configureExposedConfiguration = configureExposedConfiguration
@@ -122,6 +138,7 @@ class ProvidedKafkaSystemOptions(
   bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
   serde: StoveSerde<Any, ByteArray> = stoveSerdeRef,
   valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
+  properties: Map<String, Any> = emptyMap(),
   cleanup: suspend (Admin) -> Unit = {},
   /**
    * Whether to run migrations on the external instance.
@@ -136,6 +153,7 @@ class ProvidedKafkaSystemOptions(
   serde = serde,
   valueSerializer = valueSerializer,
   containerOptions = KafkaContainerOptions(),
+  properties = properties,
   cleanup = cleanup,
   configureExposedConfiguration = configureExposedConfiguration
 ),

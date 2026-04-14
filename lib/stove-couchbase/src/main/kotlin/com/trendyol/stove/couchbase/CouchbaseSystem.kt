@@ -165,10 +165,12 @@ class CouchbaseSystem internal constructor(
   @PublishedApi
   internal lateinit var collection: Collection
 
+  override val reportSystemName: String = "Couchbase" + (context.keyName?.let { " [$it]" } ?: "")
+
   private lateinit var exposedConfiguration: CouchbaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<CouchbaseExposedConfiguration> =
-    stove.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>()
+    stove.createStateStorage<CouchbaseExposedConfiguration, CouchbaseSystem>(context.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

@@ -6,9 +6,11 @@ import kotlin.reflect.KClass
  * @author Oguzhan Soykan
  */
 class SystemNotRegisteredException(
-  system: KClass<*>
+  system: KClass<*>,
+  detail: String? = null
 ) : Throwable(
-  "${system.simpleName} was not registered. Make sure that you registered your service on TestSystem"
+  "${system.simpleName} was not registered. " +
+    (detail ?: "Make sure that you registered your service on TestSystem")
 )
 
 /**

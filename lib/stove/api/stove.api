@@ -765,6 +765,7 @@ public abstract class com/trendyol/stove/system/BridgeSystem : com/trendyol/stov
 	public fun <init> (Lcom/trendyol/stove/system/Stove;)V
 	public fun afterRun (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
+	public final fun ensureContextInitialized ()V
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
 	public fun getByType (Lkotlin/reflect/KType;)Ljava/lang/Object;
@@ -782,6 +783,26 @@ public final class com/trendyol/stove/system/BridgeSystemKt {
 	public static final fun bridge (Lcom/trendyol/stove/system/Stove;)Lcom/trendyol/stove/system/BridgeSystem;
 	public static final fun bridge-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/BridgeSystem;)Lcom/trendyol/stove/system/Stove;
 	public static final fun withBridgeSystem (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/BridgeSystem;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/system/HealthCheckOptions {
+	public synthetic fun <init> (Ljava/lang/String;JIJLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JIJLjava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-UwyO8pc ()J
+	public final fun component3 ()I
+	public final fun component4-UwyO8pc ()J
+	public final fun component5 ()Ljava/util/Set;
+	public final fun copy-7Q0yyfQ (Ljava/lang/String;JIJLjava/util/Set;)Lcom/trendyol/stove/system/HealthCheckOptions;
+	public static synthetic fun copy-7Q0yyfQ$default (Lcom/trendyol/stove/system/HealthCheckOptions;Ljava/lang/String;JIJLjava/util/Set;ILjava/lang/Object;)Lcom/trendyol/stove/system/HealthCheckOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpectedStatusCodes ()Ljava/util/Set;
+	public final fun getRetries ()I
+	public final fun getRetryDelay-UwyO8pc ()J
+	public final fun getTimeout-UwyO8pc ()J
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/trendyol/stove/system/PortFinder {
@@ -804,6 +825,30 @@ public final class com/trendyol/stove/system/PropertiesFile {
 public final class com/trendyol/stove/system/PropertiesFile$Companion {
 }
 
+public final class com/trendyol/stove/system/ProvidedApplicationOptions {
+	public fun <init> ()V
+	public fun <init> (Lcom/trendyol/stove/system/HealthCheckOptions;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/system/HealthCheckOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/system/HealthCheckOptions;
+	public final fun copy (Lcom/trendyol/stove/system/HealthCheckOptions;)Lcom/trendyol/stove/system/ProvidedApplicationOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/system/ProvidedApplicationOptions;Lcom/trendyol/stove/system/HealthCheckOptions;ILjava/lang/Object;)Lcom/trendyol/stove/system/ProvidedApplicationOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHealthCheck ()Lcom/trendyol/stove/system/HealthCheckOptions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/system/ProvidedApplicationUnderTest : com/trendyol/stove/system/abstractions/ApplicationUnderTest {
+	public fun <init> (Lcom/trendyol/stove/system/ProvidedApplicationOptions;)V
+	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/system/ProvidedApplicationUnderTestKt {
+	public static final fun providedApplication-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+	public static synthetic fun providedApplication-ypJx7X8$default (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+}
+
 public final class com/trendyol/stove/system/ReportingDsl {
 	public fun <init> (Lcom/trendyol/stove/system/StoveOptionsDsl;)V
 	public final fun disabled ()Lcom/trendyol/stove/system/StoveOptionsDsl;
@@ -820,6 +865,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public fun <init> (Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun addReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
+	public final fun allRegisteredSystems ()Ljava/util/Collection;
 	public final fun allSystems ()Ljava/util/Collection;
 	public final fun applicationUnderTest (Lcom/trendyol/stove/system/abstractions/ApplicationUnderTest;)Lcom/trendyol/stove/system/Stove;
 	public final fun applicationUnderTestContext ()Ljava/lang/Object;
@@ -827,6 +873,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public final fun endTest ()V
 	public final fun getActiveSystems ()Ljava/util/Map;
 	public final fun getKeepDependenciesRunning ()Z
+	public final fun getKeyedSystems ()Ljava/util/Map;
 	public final fun getOptions ()Lcom/trendyol/stove/system/StoveOptions;
 	public final fun getRunMigrationsAlways ()Z
 	public final fun recordReport (Lcom/trendyol/stove/reporting/ReportEntry;)V
@@ -1006,6 +1053,7 @@ public abstract interface class com/trendyol/stove/system/abstractions/StateStor
 public abstract interface class com/trendyol/stove/system/abstractions/StateStorageFactory {
 	public static final field Companion Lcom/trendyol/stove/system/abstractions/StateStorageFactory$Companion;
 	public fun DefaultStateStorage (Lcom/trendyol/stove/system/StoveOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;)Lcom/trendyol/stove/system/abstractions/StateStorage;
+	public fun createWithKey (Lcom/trendyol/stove/system/StoveOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;)Lcom/trendyol/stove/system/abstractions/StateStorage;
 	public abstract fun invoke (Lcom/trendyol/stove/system/StoveOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;)Lcom/trendyol/stove/system/abstractions/StateStorage;
 }
 
@@ -1015,6 +1063,7 @@ public final class com/trendyol/stove/system/abstractions/StateStorageFactory$Co
 
 public final class com/trendyol/stove/system/abstractions/StateStorageFactory$DefaultImpls {
 	public static fun DefaultStateStorage (Lcom/trendyol/stove/system/abstractions/StateStorageFactory;Lcom/trendyol/stove/system/StoveOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;)Lcom/trendyol/stove/system/abstractions/StateStorage;
+	public static fun createWithKey (Lcom/trendyol/stove/system/abstractions/StateStorageFactory;Lcom/trendyol/stove/system/StoveOptions;Lkotlin/reflect/KClass;Lkotlin/reflect/KClass;Ljava/lang/String;)Lcom/trendyol/stove/system/abstractions/StateStorage;
 }
 
 public final class com/trendyol/stove/system/abstractions/StateWithProcess {
@@ -1034,12 +1083,20 @@ public final class com/trendyol/stove/system/abstractions/SystemConfigurationExc
 	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;)V
 }
 
+public abstract interface class com/trendyol/stove/system/abstractions/SystemKey {
+}
+
+public final class com/trendyol/stove/system/abstractions/SystemKeyKt {
+	public static final fun keyDisplayName (Lcom/trendyol/stove/system/abstractions/SystemKey;)Ljava/lang/String;
+}
+
 public final class com/trendyol/stove/system/abstractions/SystemNotInitializedException : java/lang/Throwable {
 	public fun <init> (Lkotlin/reflect/KClass;)V
 }
 
 public final class com/trendyol/stove/system/abstractions/SystemNotRegisteredException : java/lang/Throwable {
-	public fun <init> (Lkotlin/reflect/KClass;)V
+	public fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;)V
+	public synthetic fun <init> (Lkotlin/reflect/KClass;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public abstract interface class com/trendyol/stove/system/abstractions/SystemOptions {

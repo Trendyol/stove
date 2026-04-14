@@ -14,9 +14,23 @@ internal fun Stove.withElasticsearch(
   return this
 }
 
+internal fun Stove.withElasticsearch(
+  key: SystemKey,
+  options: ElasticsearchSystemOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, ElasticsearchSystem(this, ElasticsearchContext(runtime, options, keyName = keyDisplayName(key))))
+  return this
+}
+
 internal fun Stove.elasticsearch(): ElasticsearchSystem =
   getOrNone<ElasticsearchSystem>().getOrElse {
     throw SystemNotRegisteredException(ElasticsearchSystem::class)
+  }
+
+internal fun Stove.elasticsearch(key: SystemKey): ElasticsearchSystem =
+  getOrNone<ElasticsearchSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(ElasticsearchSystem::class, "No ElasticsearchSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -72,5 +86,35 @@ fun WithDsl.elasticsearch(
   return stove.withElasticsearch(options, runtime)
 }
 
+fun WithDsl.elasticsearch(
+  key: SystemKey,
+  configure: @StoveDsl () -> ElasticsearchSystemOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedElasticsearchSystemOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      imageName = options.container.imageWithTag,
+      registry = options.container.registry,
+      compatibleSubstitute = options.container.compatibleSubstitute
+    ) { dockerImageName -> StoveElasticSearchContainer(dockerImageName) }
+      .apply {
+        addExposedPorts(*options.container.exposedPorts.toIntArray())
+        withPassword(options.container.password)
+        if (options.container.disableSecurity) {
+          withEnv("xpack.security.enabled", "false")
+        }
+        withReuse(stove.keepDependenciesRunning)
+        options.container.containerFn(this)
+      }
+  }
+  return stove.withElasticsearch(key, options, runtime)
+}
+
 suspend fun ValidationDsl.elasticsearch(validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =
   validation(this.stove.elasticsearch())
+
+suspend fun ValidationDsl.elasticsearch(key: SystemKey, validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =
+  validation(this.stove.elasticsearch(key))

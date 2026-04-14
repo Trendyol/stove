@@ -54,12 +54,15 @@ public abstract interface annotation class com/trendyol/stove/mongodb/MongoDsl :
 }
 
 public final class com/trendyol/stove/mongodb/MongodbContext {
-	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;)V
+	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
 	public final fun component2 ()Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
-	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;)Lcom/trendyol/stove/mongodb/MongodbContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/MongodbContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/MongodbContext;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;Ljava/lang/String;)Lcom/trendyol/stove/mongodb/MongodbContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/mongodb/MongodbContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/mongodb/MongodbSystemOptions;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/mongodb/MongodbContext;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyName ()Ljava/lang/String;
 	public final fun getOptions ()Lcom/trendyol/stove/mongodb/MongodbSystemOptions;
 	public final fun getRuntime ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
 	public fun hashCode ()I
@@ -167,6 +170,8 @@ public final class com/trendyol/stove/mongodb/ObjectIdSerializer : com/fasterxml
 
 public final class com/trendyol/stove/mongodb/OptionsKt {
 	public static final fun mongodb-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun mongodb-QljV9L8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun mongodb-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 	public static final fun mongodb-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 }
 

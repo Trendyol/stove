@@ -148,7 +148,8 @@ data class RedisExposedConfiguration(
 @StoveDsl
 data class RedisContext(
   val runtime: SystemRuntime,
-  val options: RedisOptions
+  val options: RedisOptions,
+  val keyName: String? = null
 )
 
 /**
@@ -204,11 +205,43 @@ fun WithDsl.redis(
   return stove.withRedis(options, runtime)
 }
 
+fun WithDsl.redis(
+  key: SystemKey,
+  configure: () -> RedisOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedRedisOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.image,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withCommand("redis-server", "--requirepass", options.password)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StoveRedisContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return stove.withRedis(key, options, runtime)
+}
+
 suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis())
+
+suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis(key))
 
 internal fun Stove.redis(): RedisSystem =
   getOrNone<RedisSystem>().getOrElse {
     throw SystemNotRegisteredException(RedisSystem::class)
+  }
+
+internal fun Stove.redis(key: SystemKey): RedisSystem =
+  getOrNone<RedisSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(RedisSystem::class, "No RedisSystem registered with key '${keyDisplayName(key)}'")
   }
 
 internal fun Stove.withRedis(
@@ -216,5 +249,14 @@ internal fun Stove.withRedis(
   runtime: SystemRuntime
 ): Stove {
   getOrRegister(RedisSystem(this, RedisContext(runtime, options)))
+  return this
+}
+
+internal fun Stove.withRedis(
+  key: SystemKey,
+  options: RedisOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, RedisSystem(this, RedisContext(runtime, options, keyName = keyDisplayName(key))))
   return this
 }

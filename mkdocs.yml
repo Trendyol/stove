@@ -41,6 +41,8 @@ nav:
     - MySQL: Components/16-mysql.md
     - Cassandra: Components/17-cassandra.md
     - Dashboard: Components/18-dashboard.md
+    - Provided Application: Components/19-provided-application.md
+    - Multiple Systems: Components/20-multiple-systems.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md

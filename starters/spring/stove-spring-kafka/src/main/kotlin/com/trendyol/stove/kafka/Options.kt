@@ -97,6 +97,20 @@ open class KafkaSystemOptions(
    */
   open val cleanup: suspend (Admin) -> Unit = {},
   /**
+   * Additional Kafka client properties applied to all internal clients (admin, fallback producer).
+   * Use this to pass security configs (SASL_SSL, truststore, etc.) when connecting to a secured cluster.
+   *
+   * Example:
+   * ```kotlin
+   * properties = mapOf(
+   *   "security.protocol" to "SASL_SSL",
+   *   "sasl.mechanism" to "PLAIN",
+   *   "sasl.jaas.config" to "...PlainLoginModule required username=\"user\" password=\"pass\";"
+   * )
+   * ```
+   */
+  open val properties: Map<String, Any> = emptyMap(),
+  /**
    * The configuration of the Kafka settings that is exposed to the Application Under Test(AUT).
    */
   override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
@@ -127,6 +141,7 @@ open class KafkaSystemOptions(
       ports: List<Int> = DEFAULT_KAFKA_PORTS,
       fallbackSerde: FallbackTemplateSerde = FallbackTemplateSerde(),
       ops: KafkaOps = defaultKafkaOps(),
+      properties: Map<String, Any> = emptyMap(),
       runMigrations: Boolean = true,
       cleanup: suspend (Admin) -> Unit = {},
       configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
@@ -136,6 +151,7 @@ open class KafkaSystemOptions(
       ports = ports,
       fallbackSerde = fallbackSerde,
       ops = ops,
+      properties = properties,
       runMigrations = runMigrations,
       cleanup = cleanup,
       configureExposedConfiguration = configureExposedConfiguration
@@ -158,6 +174,7 @@ class ProvidedKafkaSystemOptions(
   fallbackSerde: FallbackTemplateSerde = FallbackTemplateSerde(),
   ops: KafkaOps = defaultKafkaOps(),
   cleanup: suspend (Admin) -> Unit = {},
+  properties: Map<String, Any> = emptyMap(),
   /**
    * Whether to run migrations on the external instance.
    */
@@ -170,6 +187,7 @@ class ProvidedKafkaSystemOptions(
   containerOptions = KafkaContainerOptions(),
   ops = ops,
   cleanup = cleanup,
+  properties = properties,
   configureExposedConfiguration = configureExposedConfiguration
 ),
   ProvidedSystemOptions<KafkaExposedConfiguration> {

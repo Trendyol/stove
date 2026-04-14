@@ -128,8 +128,8 @@ public final class com/trendyol/stove/kafka/KafkaSystem$Companion {
 
 public class com/trendyol/stove/kafka/KafkaSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/kafka/KafkaSystemOptions$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
 	public fun getContainerOptions ()Lcom/trendyol/stove/kafka/KafkaContainerOptions;
@@ -137,6 +137,7 @@ public class com/trendyol/stove/kafka/KafkaSystemOptions : com/trendyol/stove/da
 	public fun getMigrationCollection ()Lcom/trendyol/stove/database/migrations/MigrationCollection;
 	public fun getOps ()Lcom/trendyol/stove/kafka/KafkaOps;
 	public fun getPorts ()Ljava/util/List;
+	public fun getProperties ()Ljava/util/Map;
 	public fun getRegistry ()Ljava/lang/String;
 	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/database/migrations/SupportsMigrations;
 	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/kafka/KafkaSystemOptions;
@@ -144,8 +145,8 @@ public class com/trendyol/stove/kafka/KafkaSystemOptions : com/trendyol/stove/da
 
 public final class com/trendyol/stove/kafka/KafkaSystemOptions$Companion {
 	public final fun getDEFAULT_KAFKA_PORTS ()Ljava/util/List;
-	public final fun provided (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
-	public static synthetic fun provided$default (Lcom/trendyol/stove/kafka/KafkaSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
+	public final fun provided (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;Ljava/util/Map;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/kafka/KafkaSystemOptions$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;Ljava/util/Map;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
 }
 
 public final class com/trendyol/stove/kafka/KafkaTemplateCompatibilityKt {
@@ -169,8 +170,8 @@ public final class com/trendyol/stove/kafka/OptionsKt {
 }
 
 public final class com/trendyol/stove/kafka/ProvidedKafkaSystemOptions : com/trendyol/stove/kafka/KafkaSystemOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {
-	public fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Ljava/util/Map;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/kafka/FallbackTemplateSerde;Lcom/trendyol/stove/kafka/KafkaOps;Lkotlin/jvm/functions/Function2;Ljava/util/Map;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getConfig ()Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;
 	public fun getProvidedConfig ()Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;
 	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/system/abstractions/ExposedConfiguration;

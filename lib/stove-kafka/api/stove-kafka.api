@@ -207,12 +207,15 @@ public final class com/trendyol/stove/kafka/KafkaContainerOptions$Companion {
 }
 
 public final class com/trendyol/stove/kafka/KafkaContext {
-	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;)V
+	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
 	public final fun component2 ()Lcom/trendyol/stove/kafka/KafkaSystemOptions;
-	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;)Lcom/trendyol/stove/kafka/KafkaContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/KafkaContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/KafkaContext;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;Ljava/lang/String;)Lcom/trendyol/stove/kafka/KafkaContext;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/KafkaContext;Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lcom/trendyol/stove/kafka/KafkaSystemOptions;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/KafkaContext;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyName ()Ljava/lang/String;
 	public final fun getOptions ()Lcom/trendyol/stove/kafka/KafkaSystemOptions;
 	public final fun getRuntime ()Lcom/trendyol/stove/system/abstractions/SystemRuntime;
 	public fun hashCode ()I
@@ -221,6 +224,8 @@ public final class com/trendyol/stove/kafka/KafkaContext {
 
 public final class com/trendyol/stove/kafka/KafkaContextKt {
 	public static final fun kafka-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun kafka-QljV9L8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun kafka-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 	public static final fun kafka-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 }
 
@@ -303,14 +308,15 @@ public final class com/trendyol/stove/kafka/KafkaSystemKt {
 
 public class com/trendyol/stove/kafka/KafkaSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/kafka/KafkaSystemOptions$Companion;
-	public fun <init> (ZLcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (ZLcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function2;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (ZLcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lcom/trendyol/stove/kafka/KafkaContainerOptions;Lkotlin/jvm/functions/Function2;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getBridgeGrpcServerPort ()I
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
 	public fun getContainerOptions ()Lcom/trendyol/stove/kafka/KafkaContainerOptions;
 	public fun getListenPublishedMessagesFromStove ()Z
 	public fun getMigrationCollection ()Lcom/trendyol/stove/database/migrations/MigrationCollection;
+	public fun getProperties ()Ljava/util/Map;
 	public fun getSerde ()Lcom/trendyol/stove/serialization/StoveSerde;
 	public fun getTopicSuffixes ()Lcom/trendyol/stove/kafka/TopicSuffixes;
 	public fun getUseEmbeddedKafka ()Z
@@ -320,13 +326,13 @@ public class com/trendyol/stove/kafka/KafkaSystemOptions : com/trendyol/stove/da
 }
 
 public final class com/trendyol/stove/kafka/KafkaSystemOptions$Companion {
-	public final fun provided (Ljava/lang/String;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
-	public static synthetic fun provided$default (Lcom/trendyol/stove/kafka/KafkaSystemOptions$Companion;Ljava/lang/String;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
+	public final fun provided (Ljava/lang/String;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Ljava/util/Map;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
+	public static synthetic fun provided$default (Lcom/trendyol/stove/kafka/KafkaSystemOptions$Companion;Ljava/lang/String;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Ljava/util/Map;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/ProvidedKafkaSystemOptions;
 }
 
 public final class com/trendyol/stove/kafka/ProvidedKafkaSystemOptions : com/trendyol/stove/kafka/KafkaSystemOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {
-	public fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Ljava/util/Map;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;Lcom/trendyol/stove/kafka/TopicSuffixes;ZILcom/trendyol/stove/serialization/StoveSerde;Lorg/apache/kafka/common/serialization/Serializer;Ljava/util/Map;Lkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getConfig ()Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;
 	public fun getProvidedConfig ()Lcom/trendyol/stove/kafka/KafkaExposedConfiguration;
 	public synthetic fun getProvidedConfig ()Lcom/trendyol/stove/system/abstractions/ExposedConfiguration;

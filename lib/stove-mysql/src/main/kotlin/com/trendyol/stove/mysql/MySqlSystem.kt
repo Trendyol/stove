@@ -26,12 +26,12 @@ class MySqlSystem internal constructor(
   @PublishedApi
   internal lateinit var sqlOperations: NativeSqlOperations
 
-  override val reportSystemName: String = "MySQL"
+  override val reportSystemName: String = "MySQL" + (mysqlContext.keyName?.let { " [$it]" } ?: "")
 
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.createStateStorage<RelationalDatabaseExposedConfiguration, MySqlSystem>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, MySqlSystem>(mysqlContext.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
