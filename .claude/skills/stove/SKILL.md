@@ -305,6 +305,7 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 - Use `port = 0` for WireMock and gRPC Mock (dynamic ports, CI-safe)
 - Test through HTTP endpoints; verify DB state and events as side effects
 - Use `shouldBePublished<Event>(atLeastIn = 10.seconds) { ... }` — never `Thread.sleep`
+- Use `cleanup` lambdas in system options to wipe test data on teardown — essential for provided (external) instances
 - Use `Stove { keepDependenciesRunning() }` locally for faster iteration; disable in CI
 - **AI agent feedback loop**: Enable tracing + reporting. When tests fail, the execution report contains the full call chain, system snapshots, and timeline. AI agents can parse this structured output to understand exactly what went wrong inside the application and iterate on fixes with precise feedback.
 

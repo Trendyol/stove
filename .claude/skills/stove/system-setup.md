@@ -18,6 +18,7 @@
 - [Dashboard](#dashboard)
 - [Reporting](#reporting)
 - [Application runner](#application-runner)
+- [Cleanup](#cleanup)
 - [Keep dependencies running](#keep-dependencies-running)
 
 All systems are configured inside `Stove().with { }`. The application runner goes last.
@@ -569,6 +570,119 @@ micronaut(
 ```
 
 Returns `ApplicationContext`, enabling bridge/DI access.
+
+## Cleanup
+
+Every system accepts a `cleanup` lambda in its options. This runs during `Stove.stop()` (after all tests complete) and receives the system's native client. Use it to wipe test data — especially important for provided (external) instances that persist between runs.
+
+```kotlin
+postgresql {
+    PostgresqlOptions(
+        databaseName = "testdb",
+        cleanup = { ops -> ops.execute("TRUNCATE orders, users") },
+        configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
+    )
+}
+
+mongodb {
+    MongodbSystemOptions(
+        cleanup = { client -> client.getDatabase("testdb").drop() },
+        configureExposedConfiguration = { cfg -> listOf("mongodb.uri=${cfg.connectionString}") }
+    )
+}
+
+kafka {
+    KafkaSystemOptions(
+        cleanup = { admin ->
+            val topics = admin.listTopics().names().get().filter { it.startsWith("test-") }
+            if (topics.isNotEmpty()) admin.deleteTopics(topics).all().get()
+        },
+        configureExposedConfiguration = { cfg -> listOf("kafka.bootstrap=${cfg.bootstrapServers}") }
+    )
+}
+
+redis {
+    RedisOptions(
+        cleanup = { client -> client.connect().sync().flushdb() },
+        configureExposedConfiguration = { cfg -> listOf("redis.host=${cfg.host}") }
+    )
+}
+
+elasticsearch {
+    ElasticsearchSystemOptions(
+        cleanup = { client -> client.indices().delete { it.index("test-*") } },
+        configureExposedConfiguration = { cfg -> listOf("es.host=${cfg.host}") }
+    )
+}
+
+couchbase {
+    CouchbaseSystemOptions(
+        cleanup = { cluster -> cluster.query("DELETE FROM `test-bucket`") },
+        configureExposedConfiguration = { cfg -> listOf("cb.conn=${cfg.connectionString}") }
+    )
+}
+
+cassandra {
+    CassandraSystemOptions(
+        cleanup = { session -> session.execute("TRUNCATE my_keyspace.orders") },
+        configureExposedConfiguration = { cfg -> listOf("cassandra.host=${cfg.host}") }
+    )
+}
+
+mysql {
+    MySqlSystemOptions(
+        cleanup = { ops -> ops.execute("TRUNCATE orders") },
+        configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
+    )
+}
+
+mssql {
+    MsSqlSystemOptions(
+        cleanup = { ops -> ops.execute("TRUNCATE TABLE orders") },
+        configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
+    )
+}
+```
+
+Cleanup client types per system:
+
+| System | Cleanup parameter type |
+|---|---|
+| PostgreSQL | `NativeSqlOperations` |
+| MySQL | `NativeSqlOperations` |
+| MSSQL | `NativeSqlOperations` |
+| Cassandra | `CqlSession` |
+| MongoDB | `MongoClient` |
+| Redis | `RedisClient` |
+| Elasticsearch | `ElasticsearchClient` |
+| Couchbase | `Cluster` |
+| Kafka | `Admin` |
+
+WireMock uses event-driven cleanup instead:
+
+```kotlin
+wiremock {
+    WireMockSystemOptions(
+        removeStubAfterRequestMatched = true,  // Auto-remove stubs after match
+        afterStubRemoved = { serveEvent, stubLog -> /* optional callback */ },
+        configureExposedConfiguration = { cfg -> listOf("service.url=${cfg.baseUrl}") }
+    )
+}
+```
+
+The `cleanup` lambda also works with `.provided()` (external instances):
+
+```kotlin
+postgresql {
+    PostgresqlOptions.provided(
+        jdbcUrl = "jdbc:postgresql://localhost:5432/testdb",
+        host = "localhost",
+        port = 5432,
+        cleanup = { ops -> ops.execute("TRUNCATE orders, users") },
+        configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
+    )
+}
+```
 
 ## Keep dependencies running
 
