@@ -751,6 +751,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1299,6 +1303,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="19-provided-application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="20-multiple-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Systems
   
 
     
@@ -2134,6 +2194,10 @@
 <p><strong>Visual test observability</strong></p>
 <p>Add <a href="18-dashboard/">Dashboard</a> for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs.</p>
 </li>
+<li>
+<p><strong>Testing a deployed service (any language)</strong></p>
+<p>Use <a href="19-provided-application/">Provided Application</a> with <a href="05-http/">HTTP Client</a> and your databases. Add <a href="20-multiple-systems/">Multiple Systems</a> if you need to verify multiple dependent services.</p>
+</li>
 </ul>
 </div>
 <h2 id="common-starting-sets">Common Starting Sets<a class="headerlink" href="#common-starting-sets" title="Permanent link">&para;</a></h2>
@@ -2164,6 +2228,10 @@
 <tr>
 <td>Stateful service with caching</td>
 <td>your database + <code>stove-redis</code></td>
+</tr>
+<tr>
+<td>Deployed service (any language)</td>
+<td><code>stove-http</code> + your databases + <code>providedApplication()</code></td>
 </tr>
 </tbody>
 </table>
@@ -2256,6 +2324,16 @@
 <td><a href="11-provided-instances/">Provided Instances</a></td>
 <td>Built-in</td>
 <td>Connect to existing infrastructure instead of containers</td>
+</tr>
+<tr>
+<td><a href="19-provided-application/">Provided Application</a></td>
+<td>Built-in</td>
+<td>Test against a remote, already-deployed application (any language)</td>
+</tr>
+<tr>
+<td><a href="20-multiple-systems/">Multiple Systems</a></td>
+<td>Built-in</td>
+<td>Register multiple instances of the same system type with typed keys</td>
 </tr>
 <tr>
 <td><a href="13-reporting/">Reporting</a></td>
@@ -2408,6 +2486,14 @@
 <tr>
 <td><a href="10-bridge/">Bridge</a></td>
 <td>Access application beans and services directly (supported by Spring, Ktor, and Micronaut starters)</td>
+</tr>
+<tr>
+<td><a href="19-provided-application/">Provided Application</a></td>
+<td>Test against a remote app without starting it locally --- any language, any framework</td>
+</tr>
+<tr>
+<td><a href="20-multiple-systems/">Multiple Systems</a></td>
+<td>Register multiple named instances of the same system type (e.g., two PostgreSQL databases)</td>
 </tr>
 <tr>
 <td><a href="13-reporting/">Reporting</a></td>
@@ -2566,6 +2652,8 @@
 <li><a href="17-cassandra/">Cassandra</a> - Wide-column NoSQL database with CQL support</li>
 <li><a href="10-bridge/">Bridge</a> - Direct access to application beans</li>
 <li><a href="11-provided-instances/">Provided Instances</a> - Use external infrastructure</li>
+<li><a href="19-provided-application/">Provided Application</a> - Test against a deployed app (any language)</li>
+<li><a href="20-multiple-systems/">Multiple Systems</a> - Multiple named instances of the same system type</li>
 <li><a href="13-reporting/">Reporting</a> - Detailed execution reports and failure diagnostics</li>
 <li><a href="15-tracing/">Tracing</a> - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span></li>
 <li><a href="18-dashboard/">Dashboard</a> - Real-time web dashboard for browsing test runs, traces, and snapshots</li>
