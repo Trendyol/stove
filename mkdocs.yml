@@ -21,6 +21,9 @@ nav:
     - Ktor: frameworks/ktor.md
     - Micronaut: frameworks/micronaut.md
     - Quarkus: frameworks/quarkus.md
+  - Other Languages & Stacks:
+    - Overview: other-languages/index.md
+    - Go: other-languages/go.md
   - Components:
     - Overview: Components/index.md
     - Couchbase: Components/01-couchbase.md

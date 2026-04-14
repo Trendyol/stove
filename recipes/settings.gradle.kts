@@ -21,6 +21,8 @@ include(
   "java-recipes:quarkus-basic-recipe",
   "scala-recipes",
   "scala-recipes:spring-boot-basic-recipe",
+  "go-recipes",
+  "go-recipes:go-showcase",
   "shared",
   "shared:domain",
   "shared:application",
