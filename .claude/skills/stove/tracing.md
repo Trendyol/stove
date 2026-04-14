@@ -1,6 +1,6 @@
 # Tracing Configuration
 
-Tracing captures the full execution call chain inside your application, shown on test failure.
+Tracing captures the full execution call chain inside your application, shown on test failure. Requires `stove-tracing` and `stove-extensions-kotest` or `stove-extensions-junit`.
 
 ## 1. Enable span receiver
 

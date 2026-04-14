@@ -441,7 +441,7 @@ bridge { application, type ->
 
 ## Dashboard
 
-Streams test events to the stove CLI for real-time visualization.
+Streams test events to the stove CLI for real-time visualization. Requires `stove-dashboard` and `stove-extensions-kotest` or `stove-extensions-junit` — see [Reporting](#reporting).
 
 ```kotlin
 dashboard {

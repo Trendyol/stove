@@ -97,6 +97,7 @@ plugins {
 
 dependencies {
   testImplementation(platform("com.trendyol:stove-bom:$version"))
+  testImplementation("com.trendyol:stove-extensions-kotest")  // or stove-extensions-junit
   testImplementation("com.trendyol:stove-dashboard")
   testImplementation("com.trendyol:stove-tracing")
 }
