@@ -159,12 +159,12 @@ class PostgresqlSystem internal constructor(
   @PublishedApi
   internal lateinit var sqlOperations: NativeSqlOperations
 
-  override val reportSystemName: String = "PostgreSQL"
+  override val reportSystemName: String = "PostgreSQL" + (postgresContext.keyName?.let { " [$it]" } ?: "")
 
   private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
-    stove.createStateStorage<RelationalDatabaseExposedConfiguration, PostgresqlSystem>()
+    stove.createStateStorage<RelationalDatabaseExposedConfiguration, PostgresqlSystem>(postgresContext.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

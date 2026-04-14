@@ -86,6 +86,8 @@ public final class com/trendyol/stove/mysql/MySqlSystem$Companion {
 public final class com/trendyol/stove/mysql/OptionsKt {
 	public static final field DEFAULT_MYSQL_IMAGE_NAME Ljava/lang/String;
 	public static final fun mysql-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun mysql-QljV9L8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun mysql-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 	public static final fun mysql-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 }
 

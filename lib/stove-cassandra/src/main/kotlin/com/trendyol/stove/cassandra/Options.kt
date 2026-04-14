@@ -21,7 +21,8 @@ data class CassandraExposedConfiguration(
 @StoveDsl
 data class CassandraContext(
   val runtime: SystemRuntime,
-  val options: CassandraSystemOptions
+  val options: CassandraSystemOptions,
+  val keyName: String? = null
 )
 
 open class StoveCassandraContainer(
@@ -47,9 +48,23 @@ internal fun Stove.withCassandra(
   return this
 }
 
+internal fun Stove.withCassandra(
+  key: SystemKey,
+  options: CassandraSystemOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, CassandraSystem(this, CassandraContext(runtime, options, keyName = keyDisplayName(key))))
+  return this
+}
+
 internal fun Stove.cassandra(): CassandraSystem =
   getOrNone<CassandraSystem>().getOrElse {
     throw SystemNotRegisteredException(CassandraSystem::class)
+  }
+
+internal fun Stove.cassandra(key: SystemKey): CassandraSystem =
+  getOrNone<CassandraSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(CassandraSystem::class, "No CassandraSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -103,6 +118,35 @@ fun WithDsl.cassandra(
   return stove.withCassandra(options, runtime)
 }
 
+fun WithDsl.cassandra(
+  key: SystemKey,
+  configure: () -> CassandraSystemOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedCassandraSystemOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StoveCassandraContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return stove.withCassandra(key, options, runtime)
+}
+
 suspend fun ValidationDsl.cassandra(
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
 ): Unit = validation(this.stove.cassandra())
+
+suspend fun ValidationDsl.cassandra(
+  key: SystemKey,
+  validation: @CassandraDsl suspend CassandraSystem.() -> Unit
+): Unit = validation(this.stove.cassandra(key))

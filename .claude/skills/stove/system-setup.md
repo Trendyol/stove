@@ -1,6 +1,8 @@
 # System Setup Reference
 
 ## Contents
+- [Provided Application (smoke testing)](#provided-application-smoke-testing)
+- [Keyed systems (multiple instances)](#keyed-systems-multiple-instances)
 - [HTTP Client](#http-client)
 - [PostgreSQL](#postgresql)
 - [MySQL](#mysql)
@@ -26,6 +28,152 @@
 - [Keep dependencies running](#keep-dependencies-running)
 
 All systems are configured inside `Stove().with { }`. The application runner goes last.
+
+## Provided Application (smoke testing)
+
+Use `providedApplication()` instead of a JVM runner to test against an already-deployed application. The application can be written in **any language** — Go, Python, .NET, Rust, Node.js, etc.
+
+```kotlin
+Stove().with {
+    httpClient {
+        HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")
+    }
+    providedApplication {
+        ProvidedApplicationOptions(
+            healthCheck = HealthCheckOptions(
+                url = "https://staging.myapp.com/health",
+                retries = 10,
+                retryDelay = 1.seconds,
+                timeout = 30.seconds,
+                expectedStatusCodes = setOf(200)
+            )
+        )
+    }
+}.run()
+```
+
+Without health check (fire-and-forget):
+
+```kotlin
+providedApplication()  // No health check, no options
+```
+
+Combine with `.provided()` system options to connect to existing infrastructure:
+
+```kotlin
+Stove().with {
+    httpClient {
+        HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")
+    }
+    postgresql(AppDb) {
+        PostgresqlOptions.provided(
+            jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
+            cleanup = { ops -> ops.execute("DELETE FROM orders WHERE test_data = true") },
+            configureExposedConfiguration = { listOf() }
+        )
+    }
+    redis(CacheCluster) {
+        RedisOptions.provided(
+            host = "staging-redis", port = 6379,
+            configureExposedConfiguration = { listOf() }
+        )
+    }
+    providedApplication {
+        ProvidedApplicationOptions(
+            healthCheck = HealthCheckOptions(url = "https://staging.myapp.com/health")
+        )
+    }
+}.run()
+```
+
+**Important**: `Bridge` (DI access via `using<T>`) is **not available** with `providedApplication()` — there is no local DI container. Use `cleanup` lambdas to manage test data on external infrastructure.
+
+## Keyed systems (multiple instances)
+
+Register multiple instances of the same system type using `SystemKey`. Define keys as singleton objects:
+
+```kotlin
+object AppDb : SystemKey
+object AnalyticsDb : SystemKey
+object PaymentService : SystemKey
+object InventoryService : SystemKey
+```
+
+Use keys in registration:
+
+```kotlin
+Stove().with {
+    // Two separate PostgreSQL containers with independent configs
+    postgresql(AppDb) {
+        PostgresqlOptions(
+            databaseName = "appdb",
+            configureExposedConfiguration = { cfg ->
+                listOf("app.datasource.url=${cfg.jdbcUrl}")
+            }
+        ).migrations { register<AppSchemaMigration>() }
+    }
+    postgresql(AnalyticsDb) {
+        PostgresqlOptions(
+            databaseName = "analyticsdb",
+            configureExposedConfiguration = { cfg ->
+                listOf("analytics.datasource.url=${cfg.jdbcUrl}")
+            }
+        ).migrations { register<AnalyticsSchemaMigration>() }
+    }
+
+    // Two HTTP clients pointing to different services
+    httpClient(PaymentService) {
+        HttpClientSystemOptions(baseUrl = "https://pay.internal")
+    }
+    httpClient(InventoryService) {
+        HttpClientSystemOptions(baseUrl = "https://inventory.internal")
+    }
+
+    // Two WireMock instances for different external APIs
+    wiremock(PaymentService) {
+        WireMockSystemOptions(port = 0, configureExposedConfiguration = { cfg ->
+            listOf("payment.url=${cfg.baseUrl}")
+        })
+    }
+    wiremock(InventoryService) {
+        WireMockSystemOptions(port = 0, configureExposedConfiguration = { cfg ->
+            listOf("inventory.url=${cfg.baseUrl}")
+        })
+    }
+
+    springBoot(runner = { params -> run(params) })
+}.run()
+```
+
+All systems support keyed registration: PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka (core), WireMock, gRPC, gRPC Mock, HTTP.
+
+Each keyed instance gets:
+- Its own container with a unique dynamic port (no conflicts)
+- Independent `configureExposedConfiguration` — all configs are aggregated and passed to the AUT
+- Isolated state storage (separate lock files per key)
+- Its own `cleanup` lambda
+- Distinct reporting name (e.g., `"PostgreSQL [AppDb]"`)
+
+A single key can be shared across protocol types:
+
+```kotlin
+object PaymentService : SystemKey
+
+httpClient(PaymentService) { HttpClientSystemOptions(baseUrl = "...") }
+grpc(PaymentService) { GrpcSystemOptions(host = "...", port = 50051) }
+wiremock(PaymentService) { WireMockSystemOptions(...) }
+```
+
+Keyed systems work with both Testcontainers and `.provided()` (external) instances:
+
+```kotlin
+postgresql(AppDb) {
+    PostgresqlOptions.provided(
+        jdbcUrl = "jdbc:postgresql://staging-db:5432/app",
+        configureExposedConfiguration = { listOf() }
+    )
+}
+```
 
 ## HTTP Client
 

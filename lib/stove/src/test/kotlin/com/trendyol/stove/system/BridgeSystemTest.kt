@@ -16,6 +16,7 @@ class BridgeSystemTest :
       val serviceA = ServiceA("initial")
       val bridge = TestBridgeSystem(stove, mapOf(ServiceA::class to serviceA))
       stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
+      runBlocking { bridge.afterRun(TestContext()) }
 
       stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
 
@@ -37,6 +38,7 @@ class BridgeSystemTest :
       val serviceA = ServiceA("initial")
       val bridge = TestBridgeSystem(stove, mapOf(ServiceA::class to serviceA))
       stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
+      runBlocking { bridge.afterRun(TestContext()) }
 
       stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
 
@@ -67,6 +69,7 @@ class BridgeSystemTest :
         )
       )
       stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
+      runBlocking { bridge.afterRun(TestContext()) }
 
       stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
 

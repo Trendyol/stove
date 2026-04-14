@@ -144,7 +144,8 @@ typealias MySqlMigration = DatabaseMigration<MySqlMigrationContext>
 
 internal class MySqlContext(
   val runtime: SystemRuntime,
-  val options: MySqlOptions
+  val options: MySqlOptions,
+  val keyName: String? = null
 )
 
 internal fun Stove.withMySql(
@@ -155,9 +156,23 @@ internal fun Stove.withMySql(
   return this
 }
 
+internal fun Stove.withMySql(
+  key: SystemKey,
+  options: MySqlOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, MySqlSystem(this, MySqlContext(runtime, options, keyName = keyDisplayName(key))))
+  return this
+}
+
 internal fun Stove.mysql(): MySqlSystem =
   getOrNone<MySqlSystem>().getOrElse {
     throw SystemNotRegisteredException(MySqlSystem::class)
+  }
+
+internal fun Stove.mysql(key: SystemKey): MySqlSystem =
+  getOrNone<MySqlSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(MySqlSystem::class, "No MySqlSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -216,5 +231,35 @@ fun WithDsl.mysql(
   return stove.withMySql(options, runtime)
 }
 
+fun WithDsl.mysql(
+  key: SystemKey,
+  configure: () -> MySqlOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedMySqlOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withDatabaseName(options.databaseName)
+        .withUsername(options.username)
+        .withPassword(options.password)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StoveMySqlContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return stove.withMySql(key, options, runtime)
+}
+
 suspend fun ValidationDsl.mysql(validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
   validation(this.stove.mysql())
+
+suspend fun ValidationDsl.mysql(key: SystemKey, validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
+  validation(this.stove.mysql(key))

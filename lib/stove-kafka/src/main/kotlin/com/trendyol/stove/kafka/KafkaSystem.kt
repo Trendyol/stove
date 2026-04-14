@@ -178,6 +178,7 @@ class KafkaSystem(
   AfterRunAware,
   BeforeRunAware,
   Reports {
+  override val reportSystemName: String = "Kafka" + (context.keyName?.let { " [$it]" } ?: "")
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
     val store = sink.store
@@ -245,7 +246,7 @@ class KafkaSystem(
   internal lateinit var sink: StoveMessageSink
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<KafkaExposedConfiguration> =
-    stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>()
+    stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>(context.keyName)
 
   override suspend fun beforeRun() {
     stoveSerdeRef = context.options.serde
@@ -663,6 +664,7 @@ class KafkaSystem(
     autoCreateTopics: Boolean,
     groupId: String
   ): Properties = Properties().apply {
+    putAll(context.options.properties)
     this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = exposedConfiguration.bootstrapServers
     this[ConsumerConfig.GROUP_ID_CONFIG] = groupId
     this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = autoOffsetReset
@@ -673,6 +675,7 @@ class KafkaSystem(
 
   private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> = KafkaProducer(
     buildMap {
+      putAll(context.options.properties)
       put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers)
       put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
       put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, context.options.valueSerializer::class.java.name)
@@ -685,10 +688,11 @@ class KafkaSystem(
   )
 
   private fun createAdminClient(config: KafkaExposedConfiguration): Admin = Admin.create(
-    mapOf<String, Any>(
-      AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to config.bootstrapServers,
-      AdminClientConfig.CLIENT_ID_CONFIG to "stove-kafka-admin-client"
-    ).toProperties()
+    buildMap {
+      putAll(context.options.properties)
+      put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers)
+      put(AdminClientConfig.CLIENT_ID_CONFIG, "stove-kafka-admin-client")
+    }.toProperties()
   )
 
   private suspend fun startGrpcServer(): Server {

@@ -91,6 +91,9 @@ class Stove(
   @PublishedApi
   internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
 
+  @PublishedApi
+  internal val keyedSystems: MutableMap<Pair<KClass<*>, SystemKey>, PluggedSystem> = mutableMapOf()
+
   private lateinit var applicationUnderTest: ApplicationUnderTest<*>
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -100,17 +103,24 @@ class Stove(
   internal val reporter: StoveReporter = StoveReporter(isEnabled = options.reportingEnabled)
 
   /**
+   * Returns all registered systems from both default and keyed registrations.
+   * This is the single source of truth used by lifecycle, reporting, and cleanup.
+   */
+  fun allRegisteredSystems(): Collection<PluggedSystem> =
+    activeSystems.values + keyedSystems.values
+
+  /**
    * Returns all registered systems that implement the given type.
-   * Use this instead of accessing [activeSystems] directly.
+   * Includes both default and keyed systems.
    */
   inline fun <reified T> systemsOf(): List<T> =
-    activeSystems.values.filterIsInstance<T>()
+    allRegisteredSystems().filterIsInstance<T>()
 
   /**
    * Returns a read-only snapshot of all registered systems.
    */
   fun allSystems(): Collection<PluggedSystem> =
-    activeSystems.values.toList()
+    allRegisteredSystems()
 
   /**
    * Whether dependencies (containers) should be kept running after tests complete.
@@ -129,6 +139,28 @@ class Stove(
    */
   inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(): StateStorage<TState> =
     options.createStateStorage<TState, TSystem>()
+
+  /**
+   * Creates a keyed state storage for the given system and configuration types.
+   * The key name is included in the storage path to prevent collisions.
+   */
+  inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(
+    key: SystemKey
+  ): StateStorage<TState> =
+    options.stateStorageFactory.createWithKey(options, TSystem::class, TState::class, keyDisplayName(key))
+
+  /**
+   * Creates a state storage with an optional key name for disambiguation.
+   * When keyName is null, behaves identically to the no-arg version.
+   */
+  inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(
+    keyName: String?
+  ): StateStorage<TState> =
+    if (keyName != null) {
+      options.stateStorageFactory.createWithKey(options, TSystem::class, TState::class, keyName)
+    } else {
+      options.createStateStorage<TState, TSystem>()
+    }
 
   /**
    * Registers a listener to receive report events.
@@ -235,24 +267,25 @@ class Stove(
    */
   override suspend fun run() {
     coroutineScope {
-      val beforeRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<BeforeRunAware>()
-      val runAwareSystems = activeSystems.map { it.value }.filterIsInstance<RunAware>()
+      val allSystems = allRegisteredSystems()
 
-      beforeRunAwareSystems.map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
-      runAwareSystems.map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
+      allSystems.filterIsInstance<BeforeRunAware>()
+        .map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
+
+      allSystems.filterIsInstance<RunAware>()
+        .map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
 
       val dependencyConfigurations =
-        activeSystems
-          .map { it.value }
+        allSystems
           .filterIsInstance<ExposesConfiguration>()
           .flatMap { it.configuration() }
 
       applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
 
-      val afterRunAwareSystems = activeSystems.map { it.value }.filterIsInstance<AfterRunAware>()
-      afterRunAwareSystems.map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
+      allSystems.filterIsInstance<AfterRunAware>()
+        .map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
 
-      activeSystems.forEach { cleanup.add { it.value.close() } }
+      // Cleanup is handled by registerForDispose — no duplication here
       cleanup.add { applicationUnderTest.stop() }
     }
 
@@ -305,9 +338,28 @@ class Stove(
   } as T
 
   /**
+   * Gets or registers a keyed [PluggedSystem]. Multiple instances of the same system type
+   * can coexist when registered with different [SystemKey]s.
+   *
+   * @see SystemKey
+   */
+  inline fun <reified T : PluggedSystem> getOrRegister(
+    key: SystemKey,
+    system: T
+  ): T = keyedSystems.getOrPut(T::class to key) {
+    registerForDispose(system)
+  } as T
+
+  /**
    * Gets the registered system or returns [None]
    */
   inline fun <reified T : PluggedSystem> getOrNone(): Option<T> = activeSystems.getOrNone(T::class).map { it as T }
+
+  /**
+   * Gets the keyed registered system or returns [None]
+   */
+  inline fun <reified T : PluggedSystem> getOrNone(key: SystemKey): Option<T> =
+    keyedSystems.getOrNone(T::class to key).map { it as T }
 
   fun <T : AutoCloseable> registerForDispose(closeable: T): T {
     cleanup.add { closeable.close() }

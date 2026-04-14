@@ -132,10 +132,12 @@ class RedisSystem(
   Reports {
   private lateinit var client: RedisClient
 
+  override val reportSystemName: String = "Redis" + (context.keyName?.let { " [$it]" } ?: "")
+
   private lateinit var exposedConfiguration: RedisExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RedisExposedConfiguration> =
-    stove.createStateStorage<RedisExposedConfiguration, RedisSystem>()
+    stove.createStateStorage<RedisExposedConfiguration, RedisSystem>(context.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

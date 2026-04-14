@@ -30,6 +30,10 @@ Most teams start with 2 to 4 components, not the whole catalog.
 
     Add [Dashboard](18-dashboard.md) for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs.
 
+-   **Testing a deployed service (any language)**
+
+    Use [Provided Application](19-provided-application.md) with [HTTP Client](05-http.md) and your databases. Add [Multiple Systems](20-multiple-systems.md) if you need to verify multiple dependent services.
+
 </div>
 
 ## Common Starting Sets
@@ -41,6 +45,7 @@ Most teams start with 2 to 4 components, not the whole catalog.
 | External provider integration | `stove-http` + `stove-wiremock` |
 | gRPC service | `stove-grpc` + `stove-grpc-mock` |
 | Stateful service with caching | your database + `stove-redis` |
+| Deployed service (any language) | `stove-http` + your databases + `providedApplication()` |
 
 ## Available Components
 
@@ -62,6 +67,8 @@ Most teams start with 2 to 4 components, not the whole catalog.
 | [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
 | [Tracing](15-tracing.md) | `stove-tracing` | Execution tracing with OpenTelemetry for failure diagnostics |
 | [Provided Instances](11-provided-instances.md) | Built-in | Connect to existing infrastructure instead of containers |
+| [Provided Application](19-provided-application.md) | Built-in | Test against a remote, already-deployed application (any language) |
+| [Multiple Systems](20-multiple-systems.md) | Built-in | Register multiple instances of the same system type with typed keys |
 | [Reporting](13-reporting.md) | `stove-extensions-kotest` or `stove-extensions-junit` | Rich failure reports with execution context |
 | [Dashboard](18-dashboard.md) | `stove-dashboard` + [CLI](https://github.com/Trendyol/stove/tree/main/tools/stove-cli) | Real-time web dashboard for test observability |
 
@@ -152,6 +159,8 @@ stove {
 | Component | Use Case |
 |-----------|----------|
 | [Bridge](10-bridge.md) | Access application beans and services directly (supported by Spring, Ktor, and Micronaut starters) |
+| [Provided Application](19-provided-application.md) | Test against a remote app without starting it locally --- any language, any framework |
+| [Multiple Systems](20-multiple-systems.md) | Register multiple named instances of the same system type (e.g., two PostgreSQL databases) |
 | [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
 | [Tracing](15-tracing.md) | <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span> |
 | [Dashboard](18-dashboard.md) | Real-time web dashboard for browsing test runs, traces, and system snapshots |
@@ -325,6 +334,8 @@ test("should process order end-to-end") {
 - [Cassandra](17-cassandra.md) - Wide-column NoSQL database with CQL support
 - [Bridge](10-bridge.md) - Direct access to application beans
 - [Provided Instances](11-provided-instances.md) - Use external infrastructure
+- [Provided Application](19-provided-application.md) - Test against a deployed app (any language)
+- [Multiple Systems](20-multiple-systems.md) - Multiple named instances of the same system type
 - [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
 - [Tracing](15-tracing.md) - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span>
 - [Dashboard](18-dashboard.md) - Real-time web dashboard for browsing test runs, traces, and snapshots

@@ -98,11 +98,12 @@ import java.util.concurrent.TimeUnit
 @GrpcDsl
 class GrpcSystem(
   override val stove: Stove,
-  @PublishedApi internal val options: GrpcSystemOptions
+  @PublishedApi internal val options: GrpcSystemOptions,
+  private val keyName: String? = null
 ) : PluggedSystem, Reports {
   private val lazyGrpcChannel = lazy { options.createChannel(options.host, options.port) }
 
-  override val reportSystemName: String = "gRPC"
+  override val reportSystemName: String = "gRPC" + (keyName?.let { " [$it]" } ?: "")
 
   private val lazyWireClientResources = lazy { options.createWireClient(options.host, options.port) }
 
@@ -347,8 +348,17 @@ internal fun Stove.withGrpc(options: GrpcSystemOptions): Stove {
   return this
 }
 
+internal fun Stove.withGrpc(key: SystemKey, options: GrpcSystemOptions): Stove {
+  this.getOrRegister(key, GrpcSystem(this, options, keyName = keyDisplayName(key)))
+  return this
+}
+
 internal fun Stove.grpc(): GrpcSystem = getOrNone<GrpcSystem>().getOrElse {
   throw SystemNotRegisteredException(GrpcSystem::class)
+}
+
+internal fun Stove.grpc(key: SystemKey): GrpcSystem = getOrNone<GrpcSystem>(key).getOrElse {
+  throw SystemNotRegisteredException(GrpcSystem::class, "No GrpcSystem registered with key '${keyDisplayName(key)}'")
 }
 
 /**
@@ -370,6 +380,24 @@ fun WithDsl.grpc(configure: @StoveDsl () -> GrpcSystemOptions): Stove =
   this.stove.withGrpc(configure())
 
 /**
+ * Registers a keyed gRPC client system for testing multiple gRPC services.
+ *
+ * ```kotlin
+ * Stove().with {
+ *     grpc(PaymentService) {
+ *         GrpcSystemOptions(host = "localhost", port = 50051)
+ *     }
+ * }
+ * ```
+ *
+ * @param key The [SystemKey] identifying this gRPC client instance.
+ * @param configure Configuration block returning [GrpcSystemOptions].
+ * @return The test system for fluent chaining.
+ */
+fun WithDsl.grpc(key: SystemKey, configure: @StoveDsl () -> GrpcSystemOptions): Stove =
+  this.stove.withGrpc(key, configure())
+
+/**
  * Executes gRPC assertions within the validation DSL.
  *
  * ```kotlin
@@ -387,3 +415,24 @@ fun WithDsl.grpc(configure: @StoveDsl () -> GrpcSystemOptions): Stove =
 suspend fun ValidationDsl.grpc(
   validation: @GrpcDsl suspend GrpcSystem.() -> Unit
 ): Unit = validation(this.stove.grpc())
+
+/**
+ * Executes gRPC assertions against a keyed gRPC client within the validation DSL.
+ *
+ * ```kotlin
+ * stove {
+ *     grpc(PaymentService) {
+ *         channel<PaymentServiceStub> {
+ *             processPayment(request).status shouldBe "OK"
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @param key The [SystemKey] identifying the gRPC client instance.
+ * @param validation The gRPC assertion block.
+ */
+suspend fun ValidationDsl.grpc(
+  key: SystemKey,
+  validation: @GrpcDsl suspend GrpcSystem.() -> Unit
+): Unit = validation(this.stove.grpc(key))

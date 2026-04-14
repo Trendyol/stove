@@ -141,7 +141,8 @@ typealias PostgresqlMigration = DatabaseMigration<PostgresSqlMigrationContext>
 
 internal class PostgresqlContext(
   val runtime: SystemRuntime,
-  val options: PostgresqlOptions
+  val options: PostgresqlOptions,
+  val keyName: String? = null
 )
 
 internal fun Stove.withPostgresql(
@@ -152,9 +153,23 @@ internal fun Stove.withPostgresql(
   return this
 }
 
+internal fun Stove.withPostgresql(
+  key: SystemKey,
+  options: PostgresqlOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, PostgresqlSystem(this, PostgresqlContext(runtime, options, keyName = keyDisplayName(key))))
+  return this
+}
+
 internal fun Stove.postgresql(): PostgresqlSystem =
   getOrNone<PostgresqlSystem>().getOrElse {
     throw SystemNotRegisteredException(PostgresqlSystem::class)
+  }
+
+internal fun Stove.postgresql(key: SystemKey): PostgresqlSystem =
+  getOrNone<PostgresqlSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(PostgresqlSystem::class, "No PostgresqlSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -213,5 +228,35 @@ fun WithDsl.postgresql(
   return stove.withPostgresql(options, runtime)
 }
 
+fun WithDsl.postgresql(
+  key: SystemKey,
+  configure: () -> PostgresqlOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedPostgresqlOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .withDatabaseName(options.databaseName)
+        .withUsername(options.username)
+        .withPassword(options.password)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StovePostgresqlContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return stove.withPostgresql(key, options, runtime)
+}
+
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
   validation(this.stove.postgresql())
+
+suspend fun ValidationDsl.postgresql(key: SystemKey, validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
+  validation(this.stove.postgresql(key))

@@ -122,7 +122,8 @@ typealias CouchbaseMigration = DatabaseMigration<Cluster>
 data class CouchbaseContext(
   val bucket: BucketDefinition,
   val runtime: SystemRuntime,
-  val options: CouchbaseSystemOptions
+  val options: CouchbaseSystemOptions,
+  val keyName: String? = null
 )
 
 @StoveDsl
@@ -146,9 +147,27 @@ internal fun Stove.withCouchbase(
   return this
 }
 
+internal fun Stove.withCouchbase(
+  key: SystemKey,
+  options: CouchbaseSystemOptions,
+  runtime: SystemRuntime
+): Stove {
+  val bucketDefinition = BucketDefinition(options.defaultBucket)
+  this.getOrRegister(
+    key,
+    CouchbaseSystem(this, CouchbaseContext(bucketDefinition, runtime, options, keyName = keyDisplayName(key)))
+  )
+  return this
+}
+
 internal fun Stove.couchbase(): CouchbaseSystem =
   getOrNone<CouchbaseSystem>().getOrElse {
     throw SystemNotRegisteredException(CouchbaseSystem::class)
+  }
+
+internal fun Stove.couchbase(key: SystemKey): CouchbaseSystem =
+  getOrNone<CouchbaseSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(CouchbaseSystem::class, "No CouchbaseSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -206,6 +225,38 @@ fun WithDsl.couchbase(
   return stove.withCouchbase(options, runtime)
 }
 
+fun WithDsl.couchbase(
+  key: SystemKey,
+  configure: @StoveDsl () -> CouchbaseSystemOptions
+): Stove {
+  val options = configure()
+  val bucketDefinition = BucketDefinition(options.defaultBucket)
+
+  val runtime: SystemRuntime = if (options is ProvidedCouchbaseSystemOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      imageName = options.containerOptions.imageWithTag,
+      registry = options.containerOptions.registry,
+      compatibleSubstitute = options.containerOptions.compatibleSubstitute
+    ) { dockerImageName ->
+      options.containerOptions
+        .useContainerFn(dockerImageName)
+        .withBucket(bucketDefinition)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StoveCouchbaseContainer }
+        .apply(options.containerOptions.containerFn)
+    }
+  }
+
+  return stove.withCouchbase(key, options, runtime)
+}
+
 suspend fun ValidationDsl.couchbase(
   validation: @CouchbaseDsl suspend CouchbaseSystem.() -> Unit
 ): Unit = validation(this.stove.couchbase())
+
+suspend fun ValidationDsl.couchbase(
+  key: SystemKey,
+  validation: @CouchbaseDsl suspend CouchbaseSystem.() -> Unit
+): Unit = validation(this.stove.couchbase(key))

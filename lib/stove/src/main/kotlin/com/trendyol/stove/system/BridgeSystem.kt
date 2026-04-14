@@ -58,6 +58,19 @@ abstract class BridgeSystem<T : Any>(
   }
 
   /**
+   * Checks that the application context has been initialized.
+   * Throws with a clear error message if it hasn't (e.g., when using providedApplication()).
+   */
+  @PublishedApi
+  internal fun ensureContextInitialized() {
+    check(::ctx.isInitialized) {
+      "BridgeSystem context is not initialized. " +
+        "Ensure a JVM starter (springBoot/ktor/micronaut) is configured and Stove.run() has been called. " +
+        "Note: providedApplication() does not support Bridge because the remote application's DI container is not accessible."
+    }
+  }
+
+  /**
    * Resolves a bean of the specified type from the application context.
    * Uses KType to preserve generic type information (e.g., List<PaymentService>).
    *
@@ -76,6 +89,7 @@ abstract class BridgeSystem<T : Any>(
    */
   @Suppress("TooGenericExceptionCaught")
   suspend inline fun <reified D : Any> using(block: suspend D.() -> Unit) {
+    ensureContextInitialized()
     val beanName = D::class.simpleName ?: "Unknown"
     val metadata = mapOf("type" to (D::class.qualifiedName ?: ""))
 
@@ -180,6 +194,7 @@ suspend inline fun <
   > ValidationDsl.using(
   crossinline validation: suspend (T1, T2) -> Unit
 ): Unit = stove.bridge().let { bridge ->
+  bridge.ensureContextInitialized()
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val beanNames = "$name1, $name2"
@@ -229,6 +244,7 @@ suspend inline fun <
   > ValidationDsl.using(
   crossinline validation: suspend (T1, T2, T3) -> Unit
 ): Unit = stove.bridge().let { bridge ->
+  bridge.ensureContextInitialized()
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val name3 = T3::class.simpleName ?: "Unknown"
@@ -282,6 +298,7 @@ suspend inline fun <
   > ValidationDsl.using(
   crossinline validation: suspend (T1, T2, T3, T4) -> Unit
 ): Unit = stove.bridge().let { bridge ->
+  bridge.ensureContextInitialized()
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val name3 = T3::class.simpleName ?: "Unknown"
@@ -339,6 +356,7 @@ suspend inline fun <
   > ValidationDsl.using(
   crossinline validation: suspend (T1, T2, T3, T4, T5) -> Unit
 ): Unit = stove.bridge().let { bridge ->
+  bridge.ensureContextInitialized()
   val name1 = T1::class.simpleName ?: "Unknown"
   val name2 = T2::class.simpleName ?: "Unknown"
   val name3 = T3::class.simpleName ?: "Unknown"

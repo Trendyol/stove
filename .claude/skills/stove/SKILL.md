@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, or extending Stove with custom systems.
+description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), or registering multiple instances of the same system type (keyed systems with SystemKey).
 ---
 
 # Setting Up Stove E2E Tests
@@ -291,6 +291,66 @@ class OrderE2ETest : FunSpec({
     }
 })
 ```
+
+## Smoke testing with providedApplication
+
+Stove can test against **already-deployed** applications — any language, any framework. Use `providedApplication()` instead of a JVM runner. See [system-setup.md](system-setup.md#provided-application-smoke-testing) for full details.
+
+```kotlin
+Stove().with {
+    httpClient { HttpClientSystemOptions(baseUrl = "https://staging.myapp.com") }
+    postgresql(AppDb) {
+        PostgresqlOptions.provided(
+            jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
+            cleanup = { ops -> ops.execute("DELETE FROM orders WHERE test = true") },
+            configureExposedConfiguration = { listOf() }  // no AUT to configure
+        )
+    }
+    providedApplication {
+        ProvidedApplicationOptions(
+            healthCheck = HealthCheckOptions(url = "https://staging.myapp.com/health")
+        )
+    }
+}.run()
+```
+
+Key points:
+- No JVM runner needed — the application is already running
+- Works with any language (Go, Python, .NET, Rust, Node.js, etc.)
+- `Bridge` (DI access) is **not available** — there's no local DI container
+- Use `cleanup` lambdas to manage test data on external infrastructure
+- Optional health check waits for the app to be ready before running tests
+
+## Keyed systems (multiple instances)
+
+Register multiple instances of the same system type using `SystemKey`. See [system-setup.md](system-setup.md#keyed-systems-multiple-instances) and [writing-tests.md](writing-tests.md#keyed-system-tests) for examples.
+
+```kotlin
+// Define keys as singleton objects
+object AppDb : SystemKey
+object AnalyticsDb : SystemKey
+object PaymentService : SystemKey
+object InventoryService : SystemKey
+
+Stove().with {
+    postgresql(AppDb) {
+        PostgresqlOptions(configureExposedConfiguration = { cfg ->
+            listOf("app.datasource.url=${cfg.jdbcUrl}")
+        })
+    }
+    postgresql(AnalyticsDb) {
+        PostgresqlOptions(configureExposedConfiguration = { cfg ->
+            listOf("analytics.datasource.url=${cfg.jdbcUrl}")
+        })
+    }
+    httpClient(PaymentService) {
+        HttpClientSystemOptions(baseUrl = "https://pay.internal")
+    }
+    springBoot(runner = { params -> run(params) })
+}.run()
+```
+
+All systems support keyed registration: PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka (core), WireMock, gRPC, gRPC Mock, HTTP. Each keyed instance gets its own container, port, state storage, and configuration.
 
 ## Writing custom Stove systems
 

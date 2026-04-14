@@ -169,10 +169,12 @@ class ElasticsearchSystem internal constructor(
   @PublishedApi
   internal lateinit var esClient: ElasticsearchClient
 
+  override val reportSystemName: String = "Elasticsearch" + (context.keyName?.let { " [$it]" } ?: "")
+
   private lateinit var exposedConfiguration: ElasticSearchExposedConfiguration
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<ElasticSearchExposedConfiguration> =
-    stove.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>()
+    stove.createStateStorage<ElasticSearchExposedConfiguration, ElasticsearchSystem>(context.keyName)
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()

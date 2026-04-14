@@ -164,7 +164,8 @@ typealias MsSqlMigration = DatabaseMigration<SqlMigrationContext>
 @StoveDsl
 data class MsSqlContext(
   val runtime: SystemRuntime,
-  val options: MsSqlOptions
+  val options: MsSqlOptions,
+  val keyName: String? = null
 )
 
 internal fun Stove.withMsSql(
@@ -175,9 +176,23 @@ internal fun Stove.withMsSql(
   return this
 }
 
+internal fun Stove.withMsSql(
+  key: SystemKey,
+  options: MsSqlOptions,
+  runtime: SystemRuntime
+): Stove {
+  getOrRegister(key, MsSqlSystem(this, MsSqlContext(runtime, options, keyName = keyDisplayName(key))))
+  return this
+}
+
 internal fun Stove.mssql(): MsSqlSystem =
   getOrNone<MsSqlSystem>().getOrElse {
     throw SystemNotRegisteredException(MsSqlSystem::class)
+  }
+
+internal fun Stove.mssql(key: SystemKey): MsSqlSystem =
+  getOrNone<MsSqlSystem>(key).getOrElse {
+    throw SystemNotRegisteredException(MsSqlSystem::class, "No MsSqlSystem registered with key '${keyDisplayName(key)}'")
   }
 
 /**
@@ -243,6 +258,40 @@ fun WithDsl.mssql(
   return stove.withMsSql(options, runtime)
 }
 
+fun WithDsl.mssql(
+  key: SystemKey,
+  configure: () -> MsSqlOptions
+): Stove {
+  val options = configure()
+
+  val runtime: SystemRuntime = if (options is ProvidedMsSqlOptions) {
+    ProvidedRuntime
+  } else {
+    withProvidedRegistry(
+      options.container.imageWithTag,
+      options.container.registry,
+      options.container.compatibleSubstitute
+    ) { dockerImageName ->
+      options.container
+        .useContainerFn(dockerImageName)
+        .acceptLicense()
+        .withEnv("MSSQL_USER", options.userName)
+        .withEnv("MSSQL_SA_PASSWORD", options.password)
+        .withEnv("MSSQL_DB", options.databaseName)
+        .withPassword(options.password)
+        .withReuse(stove.keepDependenciesRunning)
+        .let { c -> c as StoveMsSqlContainer }
+        .apply(options.container.containerFn)
+    }
+  }
+  return stove.withMsSql(key, options, runtime)
+}
+
 suspend fun ValidationDsl.mssql(
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
 ): Unit = validation(this.stove.mssql())
+
+suspend fun ValidationDsl.mssql(
+  key: SystemKey,
+  validation: @StoveDsl suspend MsSqlSystem.() -> Unit
+): Unit = validation(this.stove.mssql(key))
