@@ -107,11 +107,21 @@ stoveTracing {
 ```
 
 ```kotlin
-Stove()
-  .with {
-    dashboard { DashboardSystemOptions(appName = "product-api") }
-    tracing { enableSpanReceiver() } // recommended
-  }.run()
+// Kotest
+class StoveConfig : AbstractProjectConfig() {
+  override val extensions = listOf(StoveKotestExtension())
+  override suspend fun beforeProject() {
+    Stove().with {
+      dashboard { DashboardSystemOptions(appName = "product-api") }
+      tracing { enableSpanReceiver() } // recommended
+    }.run()
+  }
+  override suspend fun afterProject() = Stove.stop()
+}
+
+// JUnit
+@ExtendWith(StoveJUnitExtension::class)
+abstract class BaseE2ETest { /* Stove().with { ... }.run() in @BeforeAll */ }
 ```
 
 Keep `stove-cli`, the Stove BOM, the tracing Gradle plugin, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
@@ -522,10 +532,10 @@ Run database migrations before tests start:
 ```kotlin
 postgresql {
   PostgresqlOptions(...)
-  .migrations {
-  register<CreateUsersTable>()
-  register<CreateOrdersTable>()
-}
+   .migrations {
+      register<CreateUsersTable>()
+      register<CreateOrdersTable>()
+  }
 }
 ```
 

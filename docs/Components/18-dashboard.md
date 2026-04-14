@@ -110,14 +110,44 @@ See [Tracing](15-tracing.md) for the full plugin configuration reference.
 
 **4. Register in your Stove config**
 
-```kotlin hl_lines="3-4"
-Stove()
-  .with {
-    dashboard { DashboardSystemOptions(appName = "product-api") }
-    tracing { enableSpanReceiver() }  // recommended: enables distributed trace capture
-    // ... other systems
-  }.run()
-```
+=== "Kotest"
+
+    ```kotlin hl_lines="2 6-7"
+    class StoveConfig : AbstractProjectConfig() {
+      override val extensions = listOf(StoveKotestExtension())
+
+      override suspend fun beforeProject() =
+        Stove().with {
+          dashboard { DashboardSystemOptions(appName = "product-api") }
+          tracing { enableSpanReceiver() }  // recommended: enables distributed trace capture
+          // ... other systems
+        }.run()
+
+      override suspend fun afterProject() = Stove.stop()
+    }
+    ```
+
+=== "JUnit"
+
+    ```kotlin hl_lines="1"
+    @ExtendWith(StoveJUnitExtension::class)
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    abstract class BaseE2ETest {
+      companion object {
+        @JvmStatic @BeforeAll
+        fun setup() = runBlocking {
+          Stove().with {
+            dashboard { DashboardSystemOptions(appName = "product-api") }
+            tracing { enableSpanReceiver() }
+            // ... other systems
+          }.run()
+        }
+
+        @JvmStatic @AfterAll
+        fun teardown() = runBlocking { Stove.stop() }
+      }
+    }
+    ```
 
 **5. Run your tests and open the dashboard**
 

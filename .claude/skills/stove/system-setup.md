@@ -457,7 +457,49 @@ Run `stove` CLI separately, then run your tests — the dashboard at `http://loc
 
 ## Reporting
 
-Enabled by default via `StoveKotestExtension()` or `StoveJUnitExtension`.
+Reporting and test hierarchy tracking require the framework extension. This is mandatory for Dashboard, tracing, and structured failure reports.
+
+### Kotest
+
+Register `StoveKotestExtension` in your `AbstractProjectConfig`:
+
+```kotlin
+class StoveConfig : AbstractProjectConfig() {
+    override val extensions: List<Extension> = listOf(StoveKotestExtension())
+
+    override suspend fun beforeProject() {
+        Stove().with { /* systems */ }.run()
+    }
+
+    override suspend fun afterProject() {
+        Stove.stop()
+    }
+}
+```
+
+Requires `stove-extensions-kotest` dependency and a `kotest.properties` file pointing to this config class.
+
+### JUnit
+
+Annotate your base test class with `@ExtendWith(StoveJUnitExtension::class)`:
+
+```kotlin
+@ExtendWith(StoveJUnitExtension::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+abstract class BaseE2ETest {
+    companion object {
+        @JvmStatic @BeforeAll
+        fun setup() = runBlocking {
+            Stove().with { /* systems */ }.run()
+        }
+
+        @JvmStatic @AfterAll
+        fun teardown() = runBlocking { Stove.stop() }
+    }
+}
+```
+
+Requires `stove-extensions-junit` dependency. Supports `@Nested` class hierarchy.
 
 ## Application runner
 
