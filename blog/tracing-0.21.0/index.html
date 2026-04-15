@@ -2403,7 +2403,7 @@
 <p>For those new to <a href="https://github.com/Trendyol/stove">Stove</a>: it's an end-to-end testing framework for the JVM. It spins up your <strong>real application</strong> with <strong>real dependencies</strong> (PostgreSQL, Kafka, MongoDB, Redis, etc. via Testcontainers) and gives you a unified Kotlin DSL for assertions across all of them. It works with Spring Boot, Ktor, Micronaut, and Quarkus. Tests can be written in Kotlin, Java, or Scala.</p>
 <p>The key idea: test your entire application stack as it runs in production, not a stripped-down mock version.</p>
 <h2 id="a-real-application-the-spring-showcase">A Real Application: The Spring Showcase<a class="headerlink" href="#a-real-application-the-spring-showcase" title="Permanent link">&para;</a></h2>
-<p>To demonstrate tracing, let's walk through a realistic application. The <a href="https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase">spring-showcase</a> recipe is an order service that touches six different integration points during a single request:</p>
+<p>To demonstrate tracing, let's walk through a realistic application. The <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase">spring-showcase</a> recipe is an order service that touches six different integration points during a single request:</p>
 <pre class="mermaid"><code>flowchart LR
     A["HTTP POST /api/orders"] --&gt; B[OrderService]
     B --&gt; C["Fraud Detection (gRPC)"]
@@ -2762,13 +2762,13 @@ EXECUTION TRACE (Call Chain)
 </span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="n">enableSpanReceiver</span><span class="p">()</span>
 </span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="p">}</span>
 </span></code></pre></div>
-<p><span data-rn="underline" data-rn-color="#009688">For a complete working example, see the <a href="https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase">spring-showcase recipe</a>. It demonstrates all Stove features together (HTTP, gRPC, Kafka, PostgreSQL, WireMock, db-scheduler, and tracing) in a realistic Spring Boot application.</span></p>
+<p><span data-rn="underline" data-rn-color="#009688">For a complete working example, see the <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase">spring-showcase recipe</a>. It demonstrates all Stove features together (HTTP, gRPC, Kafka, PostgreSQL, WireMock, db-scheduler, and tracing) in a realistic Spring Boot application.</span></p>
 <hr />
 <p><strong>Links:</strong></p>
 <ul>
 <li><a href="https://github.com/Trendyol/stove">Stove on GitHub</a></li>
 <li><a href="../../Components/15-tracing/">Tracing documentation</a></li>
-<li><a href="https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase">Spring Showcase recipe</a></li>
+<li><a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase">Spring Showcase recipe</a></li>
 <li><a href="../../release-notes/0.21.0/">Full 0.21.0 release notes</a></li>
 <li><a href="../../getting-started/">Getting started guide</a></li>
 </ul>
