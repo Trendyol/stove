@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), or registering multiple instances of the same system type (keyed systems with SystemKey).
+description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), or testing non-JVM applications (Go, Python, Rust, Node.js) with custom ApplicationUnderTest and the Stove Kafka bridge library (stove-kafka for Go/Sarama).
 ---
 
 # Setting Up Stove E2E Tests
@@ -383,3 +383,5 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 - [writing-tests.md](writing-tests.md) — Complete test DSL reference with examples
 - [tracing.md](tracing.md) — Tracing plugin options and validation DSL
 - [custom-systems.md](custom-systems.md) — Writing your own Stove system
+- [other-languages.md](other-languages.md) — Testing non-JVM apps (Go, Python, Rust, Node.js)
+- [go-setup.md](go-setup.md) — Go-specific setup: HTTP, PostgreSQL, Kafka bridge, OTel tracing

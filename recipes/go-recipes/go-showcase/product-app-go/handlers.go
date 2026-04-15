@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 
+	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 )
 
@@ -20,20 +22,18 @@ type createProductRequest struct {
 	Price float64 `json:"price"`
 }
 
-func registerRoutes(mux *http.ServeMux, db *sql.DB) {
+func registerRoutes(mux *http.ServeMux, db *sql.DB, producer sarama.SyncProducer) {
 	mux.HandleFunc("GET /health", handleHealth)
-	mux.HandleFunc("POST /api/products", handleCreateProduct(db))
+	mux.HandleFunc("POST /api/products", handleCreateProduct(db, producer))
 	mux.HandleFunc("GET /api/products/{id}", handleGetProduct(db))
 	mux.HandleFunc("GET /api/products", handleListProducts(db))
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "UP"})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "UP"})
 }
 
-func handleCreateProduct(db *sql.DB) http.HandlerFunc {
+func handleCreateProduct(db *sql.DB, producer sarama.SyncProducer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createProductRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -52,9 +52,22 @@ func handleCreateProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(product)
+		// Publish ProductCreatedEvent to Kafka
+		if producer != nil {
+			event := ProductCreatedEvent{ID: product.ID, Name: product.Name, Price: product.Price}
+			eventBytes, err := json.Marshal(event)
+			if err != nil {
+				log.Printf("failed to marshal ProductCreatedEvent: %v", err)
+			} else if _, _, err := producer.SendMessage(&sarama.ProducerMessage{
+				Topic: topicProductCreated,
+				Key:   sarama.StringEncoder(product.ID),
+				Value: sarama.ByteEncoder(eventBytes),
+			}); err != nil {
+				log.Printf("failed to publish ProductCreatedEvent: %v", err)
+			}
+		}
+
+		writeJSON(w, http.StatusCreated, product)
 	}
 }
 
@@ -72,8 +85,7 @@ func handleGetProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(product)
+		writeJSON(w, http.StatusOK, product)
 	}
 }
 
@@ -88,7 +100,12 @@ func handleListProducts(db *sql.DB) http.HandlerFunc {
 			products = []Product{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(products)
+		writeJSON(w, http.StatusOK, products)
 	}
+}
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
 }

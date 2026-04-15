@@ -5,6 +5,9 @@ import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.HttpClientSystemOptions
 import com.trendyol.stove.http.httpClient
+import com.trendyol.stove.kafka.KafkaSystemOptions
+import com.trendyol.stove.kafka.kafka
+import com.trendyol.stove.kafka.stoveKafkaBridgePortDefault
 import com.trendyol.stove.postgres.PostgresqlOptions
 import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.system.Stove
@@ -34,6 +37,14 @@ class StoveConfig : AbstractProjectConfig() {
 
         tracing {
           enableSpanReceiver(port = OTLP_PORT)
+        }
+
+        kafka {
+          KafkaSystemOptions(
+            configureExposedConfiguration = { cfg ->
+              listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
+            }
+          )
         }
 
         postgresql {
@@ -69,6 +80,9 @@ class StoveConfig : AbstractProjectConfig() {
               map["database.password"]?.let { put("DB_PASS", it) }
               // Pass OTLP endpoint so the Go app exports traces to Stove's receiver
               put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
+              // Pass Kafka brokers and Stove bridge port
+              map["kafka.bootstrapServers"]?.let { put("KAFKA_BROKERS", it) }
+              put("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
             }
           }
         )

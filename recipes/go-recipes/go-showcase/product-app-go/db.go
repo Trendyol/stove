@@ -44,6 +44,14 @@ func getProduct(ctx context.Context, db *sql.DB, id string) (*Product, error) {
 	return &p, nil
 }
 
+func updateProduct(ctx context.Context, db *sql.DB, id string, name string, price float64) error {
+	_, err := db.ExecContext(ctx,
+		"UPDATE products SET name = $1, price = $2 WHERE id = $3",
+		name, price, id,
+	)
+	return err
+}
+
 func listProducts(ctx context.Context, db *sql.DB) ([]Product, error) {
 	rows, err := db.QueryContext(ctx, "SELECT id, name, price FROM products")
 	if err != nil {

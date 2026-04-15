@@ -7,7 +7,10 @@ tasks.register<Exec>("buildGoApp") {
   workingDir = goSourceDir
   commandLine("go", "build", "-o", goBinary.absolutePath, ".")
 
-  inputs.files(fileTree(goSourceDir) { include("*.go", "go.mod", "go.sum") })
+  inputs.files(
+    fileTree(goSourceDir) { include("*.go", "go.mod", "go.sum") },
+    fileTree(project.rootDir.resolve("go/stove-kafka")) { include("*.go", "go.mod") }
+  )
   outputs.file(goBinary)
 }
 
@@ -22,5 +25,6 @@ dependencies {
   testImplementation(stoveLibs.stoveHttp)
   testImplementation(stoveLibs.stoveTracing)
   testImplementation(stoveLibs.stoveDashboard)
+  testImplementation(stoveLibs.stoveKafka)
   testImplementation(stoveLibs.stoveExtensionsKotest)
 }
