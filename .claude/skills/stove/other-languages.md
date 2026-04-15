@@ -6,7 +6,7 @@ Stove can test any application that speaks HTTP, databases, and messaging --- re
 
 Your application must:
 
-1. **Read environment variables** --- database URLs, ports, credentials, broker addresses
+1. **Accept configuration** --- via environment variables, CLI arguments, or both
 2. **Handle SIGTERM** --- for clean test teardown
 3. **Optional: expose a readiness endpoint** --- HTTP health check, TCP port, or custom probe
 
@@ -108,6 +108,18 @@ Stove().with {
     //         envProvider = envMapper { "database.host" to "DB_HOST" }
     //     )
     // }
+
+    // For apps that prefer CLI arguments instead of env vars
+    // processApp {
+    //     ProcessApplicationOptions(
+    //         command = listOf("/path/to/rust-server"),
+    //         target = ProcessTarget.Server(port = APP_PORT),
+    //         argsProvider = argsMapper(prefix = "--", separator = "=") {
+    //             "database.host" to "db-host"   // --db-host=localhost
+    //             "database.port" to "db-port"   // --db-port=5432
+    //         }
+    //     )
+    // }
 }.run()
 ```
 
@@ -127,15 +139,34 @@ Stove().with {
 | `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB query, etc.) |
 | `ReadinessStrategy.FixedDelay(duration)` | Simple workers with no readiness signal |
 
-### envMapper builder
+### Configuration passing: envMapper and argsMapper
 
-Replaces manual `configs.associate { split("=") }` boilerplate:
+Two mechanisms to pass Stove configs to the process — use one or both:
+
+**envMapper** — environment variables:
 
 ```kotlin
 envMapper {
     "stove.config.key" to "ENV_VAR_NAME"    // map Stove config → env var
     env("STATIC_VAR", "value")              // static env var
     env("COMPUTED_VAR") { computeValue() }  // computed env var
+}
+```
+
+**argsMapper** — CLI arguments (appended to the command):
+
+```kotlin
+// --db-host=localhost --db-port=5432
+argsMapper(prefix = "--", separator = "=") {
+    "database.host" to "db-host"            // map Stove config → CLI flag
+    arg("verbose")                          // boolean flag
+    arg("log-level", "debug")               // static flag
+}
+
+// -h localhost -p 5432 (space separator → two args per flag)
+argsMapper(prefix = "-", separator = " ") {
+    "database.host" to "h"
+    "database.port" to "p"
 }
 ```
 

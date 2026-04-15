@@ -56,7 +56,13 @@ dependencies {
 | `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB, etc.) |
 | `ReadinessStrategy.FixedDelay(duration)` | Simple workers |
 
-### envMapper builder
+### Configuration passing
+
+Stove collects all system configurations (`configureExposedConfiguration` from each system) as `key=value` strings and passes them to the process. Two mechanisms are available — use one or both:
+
+#### envMapper — environment variables
+
+Maps Stove config keys to OS environment variables:
 
 ```kotlin
 envMapper {
@@ -66,10 +72,54 @@ envMapper {
 }
 ```
 
+#### argsMapper — CLI arguments
+
+Maps Stove config keys to command-line arguments, appended to the process command:
+
+```kotlin
+// GNU-style: --db-host=localhost --db-port=5432
+argsMapper(prefix = "--", separator = "=") {
+    "database.host" to "db-host"
+    "database.port" to "db-port"
+    arg("verbose")                          // boolean flag: --verbose
+    arg("log-level", "debug")               // static: --log-level=debug
+    arg("config-file") { "/tmp/test.yaml" } // computed: --config-file=/tmp/test.yaml
+}
+
+// POSIX-style: -h localhost -p 5432 (space separator → two separate args)
+argsMapper(prefix = "-", separator = " ") {
+    "database.host" to "h"
+    "database.port" to "p"
+}
+
+// No prefix: db-host=localhost
+argsMapper(prefix = "", separator = "=") {
+    "database.host" to "db-host"
+}
+```
+
+#### Using both together
+
+```kotlin
+processApp {
+    ProcessApplicationOptions(
+        command = listOf("/path/to/server"),
+        target = ProcessTarget.Server(port = 8090),
+        envProvider = envMapper {
+            "database.host" to "DB_HOST"         // passed as env var
+        },
+        argsProvider = argsMapper(prefix = "--", separator = "=") {
+            "database.port" to "db-port"         // passed as --db-port=5432
+            arg("verbose")
+        }
+    )
+}
+```
+
 ### Examples
 
 ```kotlin
-// HTTP API (Go)
+// HTTP API (Go) — env vars
 goApp(
     target = ProcessTarget.Server(port = 8090, portEnvVar = "APP_PORT"),
     envProvider = envMapper {
@@ -78,6 +128,18 @@ goApp(
         env("LOG_LEVEL", "debug")
     }
 )
+
+// Rust CLI server — CLI args
+processApp {
+    ProcessApplicationOptions(
+        command = listOf("/path/to/rust-server"),
+        target = ProcessTarget.Server(port = 8090),
+        argsProvider = argsMapper(prefix = "--", separator = "=") {
+            "database.host" to "db-host"
+            "database.port" to "db-port"
+        }
+    )
+}
 
 // gRPC server (any language)
 processApp {
@@ -102,6 +164,7 @@ goApp(
 Key points:
 - `goApp()` defaults binary path from `go.app.binary` system property
 - Port env var is injected automatically for `Server` targets
+- `envProvider` and `argsProvider` can be used independently or together
 - No `bridge()` — the app runs as a separate process, no DI access
 - See [other-languages.md](other-languages.md) and [go-setup.md](go-setup.md) for full setup guides
 

@@ -244,7 +244,7 @@ groupID := "myapp-" + library  // e.g. "myapp-sarama", "myapp-franz"
 
 ## Step 4: Add stove-process dependency
 
-The `stove-process` module provides `goApp()` out of the box — no custom `ApplicationUnderTest` needed.
+The `stove-process` module provides `goApp()` out of the box — no custom `ApplicationUnderTest` needed. It supports passing configs as environment variables (`envMapper`) or CLI arguments (`argsMapper`). Go apps typically use env vars.
 
 ```kotlin
 dependencies {

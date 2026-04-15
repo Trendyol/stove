@@ -501,12 +501,40 @@ dependencies {
 The module handles:
 
 - Starting the binary as an OS process via `ProcessBuilder`
-- Mapping Stove configs to environment variables via `envMapper {}`
+- Mapping Stove configs to environment variables via `envMapper {}` or CLI arguments via `argsMapper {}`
 - Readiness checking (HTTP health, TCP port, custom probe, or fixed delay)
 - Graceful shutdown (SIGTERM → force-kill after timeout)
 - Stdout/stderr reading in a background thread
 
 `goApp()` defaults the binary path from the `go.app.binary` system property. For other languages, use `processApp()` directly.
+
+#### Configuration passing
+
+Two mechanisms are available --- use one or both:
+
+- **`envMapper {}`** --- maps Stove configs to environment variables (Go convention)
+- **`argsMapper(prefix, separator) {}`** --- maps Stove configs to CLI arguments appended to the command
+
+```kotlin
+// Environment variables (default for Go)
+envMapper {
+    "database.host" to "DB_HOST"
+    env("LOG_LEVEL", "debug")
+}
+
+// CLI arguments (for apps using flag-based config)
+argsMapper(prefix = "--", separator = "=") {
+    "database.host" to "db-host"       // --db-host=localhost
+    arg("verbose")                     // --verbose
+}
+
+// Space separator produces two args per flag
+argsMapper(prefix = "--", separator = " ") {
+    "database.host" to "db-host"       // --db-host localhost
+}
+```
+
+Both `envProvider` and `argsProvider` can be set on `ProcessApplicationOptions` simultaneously.
 
 ### Stove Configuration
 
@@ -567,7 +595,7 @@ Stove()
     }.run()
 ```
 
-The `envMapper` block declaratively maps Stove's exposed configurations (from `configureExposedConfiguration` in each system) to environment variables the Go app expects. Use `"stoveKey" to "ENV_VAR"` for config-derived values and `env("NAME", "value")` for static ones. The `stoveKafkaBridgePortDefault` is a dynamically assigned port that the Stove Kafka system starts a gRPC server on --- the Go bridge connects to it.
+The `envMapper` block declaratively maps Stove's exposed configurations (from `configureExposedConfiguration` in each system) to environment variables the Go app expects. Use `"stoveKey" to "ENV_VAR"` for config-derived values and `env("NAME", "value")` for static ones. For apps that prefer CLI arguments, use `argsMapper` instead (or alongside). The `stoveKafkaBridgePortDefault` is a dynamically assigned port that the Stove Kafka system starts a gRPC server on --- the Go bridge connects to it.
 
 ### Database Migration
 
