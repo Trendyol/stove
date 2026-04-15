@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +21,7 @@ type createProductRequest struct {
 	Price float64 `json:"price"`
 }
 
-func registerRoutes(mux *http.ServeMux, db *sql.DB, producer sarama.SyncProducer) {
+func registerRoutes(mux *http.ServeMux, db *sql.DB, producer KafkaProducer) {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("POST /api/products", handleCreateProduct(db, producer))
 	mux.HandleFunc("GET /api/products/{id}", handleGetProduct(db))
@@ -33,7 +32,7 @@ func handleHealth(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "UP"})
 }
 
-func handleCreateProduct(db *sql.DB, producer sarama.SyncProducer) http.HandlerFunc {
+func handleCreateProduct(db *sql.DB, producer KafkaProducer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createProductRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -58,11 +57,7 @@ func handleCreateProduct(db *sql.DB, producer sarama.SyncProducer) http.HandlerF
 			eventBytes, err := json.Marshal(event)
 			if err != nil {
 				log.Printf("failed to marshal ProductCreatedEvent: %v", err)
-			} else if _, _, err := producer.SendMessage(&sarama.ProducerMessage{
-				Topic: topicProductCreated,
-				Key:   sarama.StringEncoder(product.ID),
-				Value: sarama.ByteEncoder(eventBytes),
-			}); err != nil {
+			} else if err := producer.SendMessage(topicProductCreated, product.ID, eventBytes); err != nil {
 				log.Printf("failed to publish ProductCreatedEvent: %v", err)
 			}
 		}

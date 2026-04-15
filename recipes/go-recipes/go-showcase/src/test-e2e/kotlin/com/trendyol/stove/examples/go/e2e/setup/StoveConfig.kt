@@ -80,7 +80,8 @@ class StoveConfig : AbstractProjectConfig() {
               map["database.password"]?.let { put("DB_PASS", it) }
               // Pass OTLP endpoint so the Go app exports traces to Stove's receiver
               put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-              // Pass Kafka brokers and Stove bridge port
+              // Kafka library selection and bridge config
+              put("KAFKA_LIBRARY", System.getProperty("kafka.library") ?: "sarama")
               map["kafka.bootstrapServers"]?.let { put("KAFKA_BROKERS", it) }
               put("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
             }

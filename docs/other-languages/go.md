@@ -13,7 +13,10 @@ go-showcase/
     main.go                    # Entry point, env var config, graceful shutdown
     db.go                      # PostgreSQL queries (auto-traced via otelsql)
     handlers.go                # HTTP handlers + Kafka publish (auto-traced via otelhttp)
-    kafka.go                   # Kafka producer/consumer setup with Stove bridge
+    kafka.go                   # KafkaProducer interface, factory, shared consumer handler
+    kafka_sarama.go            # IBM/sarama implementation
+    kafka_franz.go             # twmb/franz-go implementation
+    kafka_segmentio.go         # segmentio/kafka-go implementation
     tracing.go                 # OpenTelemetry SDK initialization
   src/test-e2e/                # Kotlin Stove tests
     kotlin/com/.../e2e/
@@ -62,8 +65,9 @@ func main() {
     bridge, _ := stovekafka.NewBridgeFromEnv()
     defer bridge.Close()
 
-    // Initialize Kafka producer and consumer
-    producer, stopKafka, _ := initKafka(brokers, db, bridge)
+    // Initialize Kafka producer and consumer (library chosen by KAFKA_LIBRARY env var)
+    kafkaLibrary := getEnv("KAFKA_LIBRARY", "sarama")
+    producer, stopKafka, _ := initKafka(kafkaLibrary, brokers, db, bridge)
     defer stopKafka()
 
     mux := http.NewServeMux()
@@ -85,6 +89,7 @@ Configuration comes entirely from environment variables:
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | PostgreSQL connection | `localhost`, `5432`, `stove`, `sa`, `sa` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint for traces | *(disabled if empty)* |
 | `KAFKA_BROKERS` | Comma-separated Kafka broker addresses | *(disabled if empty)* |
+| `KAFKA_LIBRARY` | Kafka client library to use: `sarama`, `franz`, or `segmentio` | `sarama` |
 | `STOVE_KAFKA_BRIDGE_PORT` | Stove Kafka bridge gRPC port | *(disabled if empty, test-only)* |
 
 ### Handlers
@@ -92,7 +97,7 @@ Configuration comes entirely from environment variables:
 Handlers are pure business logic --- no tracing imports:
 
 ```go title="handlers.go"
-func handleCreateProduct(db *sql.DB, producer sarama.SyncProducer) http.HandlerFunc {
+func handleCreateProduct(db *sql.DB, producer KafkaProducer) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req createProductRequest
         if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -107,18 +112,35 @@ func handleCreateProduct(db *sql.DB, producer sarama.SyncProducer) http.HandlerF
             return
         }
 
-        // Publish ProductCreatedEvent to Kafka
+        // Publish ProductCreatedEvent to Kafka (works with any library)
         if producer != nil {
             event := ProductCreatedEvent{ID: product.ID, Name: product.Name, Price: product.Price}
             eventBytes, _ := json.Marshal(event)
-            producer.SendMessage(&sarama.ProducerMessage{
-                Topic: topicProductCreated,
-                Key:   sarama.StringEncoder(product.ID),
-                Value: sarama.ByteEncoder(eventBytes),
-            })
+            producer.SendMessage(topicProductCreated, product.ID, eventBytes)
         }
 
         writeJSON(w, http.StatusCreated, product)
+    }
+}
+```
+
+The `KafkaProducer` interface abstracts away the Kafka client library:
+
+```go title="kafka.go"
+type KafkaProducer interface {
+    SendMessage(topic, key string, value []byte) error
+    Close() error
+}
+
+func initKafka(library, brokers string, db *sql.DB, bridge *stovekafka.Bridge) (KafkaProducer, func(), error) {
+    groupID := "go-showcase-" + library
+    switch library {
+    case "franz":
+        return initFranzKafka(brokers, groupID, db, bridge)
+    case "segmentio":
+        return initSegmentioKafka(brokers, groupID, db, bridge)
+    default:
+        return initSaramaKafka(brokers, groupID, db, bridge)
     }
 }
 ```
@@ -350,20 +372,54 @@ kafka {
 !!! tip "Commit Reporting"
     Sarama lacks an `onCommit()` interceptor. The `ConsumerInterceptor.OnConsume()` pre-reports the committed offset (`offset+1`) along with the consumed message. This satisfies Stove's `shouldBeConsumed` assertion, which checks `isCommitted(topic, offset, partition)` requiring `committed.offset >= consumed.offset + 1`.
 
-### Consumer Setup
+### Test-Friendly Kafka Settings
 
-The Go app consumes from topics using a standard Sarama consumer group:
+When running against Testcontainers (e.g. in Stove e2e tests), configure your Kafka clients for fast feedback:
 
-```go title="kafka.go"
-consumerGroup, _ := sarama.NewConsumerGroup(brokerList, "go-showcase-group", config)
+- **Auto-create topics** — the test container may not have topics pre-created
+- **Small batch size / low batch timeout** — flush produces immediately
+- **Short auto-commit interval** — make consumed offsets visible to Stove quickly
 
-go func() {
-    for {
-        consumerGroup.Consume(ctx, []string{topicProductUpdate}, handler)
-        if ctx.Err() != nil { return }
+=== "IBM/sarama"
+
+    ```go
+    config := sarama.NewConfig()
+    config.Producer.Return.Successes = true
+    config.Consumer.Offsets.Initial = sarama.OffsetOldest
+    config.Consumer.Offsets.AutoCommit.Interval = 100 * time.Millisecond
+    ```
+
+=== "twmb/franz-go"
+
+    ```go
+    kgo.AllowAutoTopicCreation(),
+    kgo.AutoCommitInterval(100 * time.Millisecond),
+    kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+    ```
+
+=== "segmentio/kafka-go"
+
+    ```go
+    // Writer
+    writer := &kafka.Writer{
+        BatchSize:              1,
+        BatchTimeout:           10 * time.Millisecond,
+        AllowAutoTopicCreation: true,
     }
-}()
-```
+
+    // Reader
+    reader := kafka.NewReader(kafka.ReaderConfig{
+        CommitInterval: 100 * time.Millisecond,
+        MaxWait:        500 * time.Millisecond,
+    })
+    ```
+
+!!! warning "Production vs Test settings"
+    These aggressive settings are optimized for test speed, not throughput. In production, use larger batch sizes, longer commit intervals, and broker-managed topic creation.
+
+### Consumer Groups
+
+Each Kafka library run uses a unique consumer group ID (`"go-showcase-" + library`) to prevent offset carryover between sequential test runs. This ensures each library starts consuming from the beginning of the topic.
 
 ## Go Dependencies
 
@@ -406,10 +462,19 @@ tasks.register<Exec>("buildGoApp") {
     outputs.file(goBinary)
 }
 
-tasks.named<Test>("e2eTest") {
-    dependsOn("buildGoApp")
-    systemProperty("go.app.binary", goBinary.absolutePath)
+// Per-library e2e test tasks — each passes KAFKA_LIBRARY to the Go app
+val kafkaLibraries = listOf("sarama", "franz", "segmentio")
+val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
+    tasks.register<Test>("e2eTest_$lib") {
+        dependsOn("buildGoApp")
+        systemProperty("go.app.binary", goBinary.absolutePath)
+        systemProperty("kafka.library", lib)
+        // Run sequentially: sarama → franz → segmentio
+        if (index > 0) mustRunAfter("e2eTest_${kafkaLibraries[index - 1]}")
+    }
 }
+// `e2eTest` runs all three
+tasks.named<Test>("e2eTest") { dependsOn(kafkaE2eTasks); enabled = false }
 
 dependencies {
     testImplementation(stoveLibs.stove)
@@ -531,8 +596,9 @@ Stove()
                     map["database.username"]?.let { put("DB_USER", it) }
                     map["database.password"]?.let { put("DB_PASS", it) }
                     put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-                    // Kafka broker address and Stove bridge port
+                    // Kafka broker address, library selection, and Stove bridge port
                     map["kafka.bootstrapServers"]?.let { put("KAFKA_BROKERS", it) }
+                    put("KAFKA_LIBRARY", System.getProperty("kafka.library") ?: "sarama")
                     put("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
                 }
             }
@@ -722,19 +788,26 @@ sequenceDiagram
 ## Running
 
 ```bash
-# From the recipes directory
+# From the recipes directory — runs all three Kafka libraries (sarama, franz, segmentio)
 ./gradlew go-recipes:go-showcase:e2eTest
+
+# Run a specific library only
+./gradlew go-recipes:go-showcase:e2eTest_sarama
+./gradlew go-recipes:go-showcase:e2eTest_franz
+./gradlew go-recipes:go-showcase:e2eTest_segmentio
 ```
 
-This will:
+Each per-library task:
 
-1. Compile the Go binary (`go build`)
-2. Start PostgreSQL and Kafka containers (Testcontainers)
-3. Run database migrations
-4. Start the OTLP span receiver and Kafka bridge gRPC server
-5. Launch the Go binary with database, Kafka, tracing, and bridge env vars
-6. Run the Kotlin e2e tests
-7. Stop everything and clean up
+1. Compiles the Go binary (`go build`)
+2. Starts PostgreSQL and Kafka containers (Testcontainers)
+3. Runs database migrations
+4. Starts the OTLP span receiver and Kafka bridge gRPC server
+5. Launches the Go binary with `KAFKA_LIBRARY=<lib>` and infrastructure env vars
+6. Runs the 5 Kotlin e2e tests
+7. Stops everything and cleans up
+
+The `e2eTest` task runs all three sequentially (sarama → franz → segmentio), verifying the Stove Kafka bridge works across all supported Go Kafka libraries.
 
 ## Adapting for Other Languages
 

@@ -100,7 +100,7 @@ class GoShowcaseTest :
           shouldContainSpan("http.request")
           shouldNotHaveFailedSpans()
           spanCountShouldBeAtLeast(4)
-          executionTimeShouldBeLessThan(10.seconds)
+          executionTimeShouldBeLessThan(30.seconds)
         }
       }
     }

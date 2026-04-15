@@ -368,6 +368,7 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 - Use `cleanup` lambdas in system options to wipe test data on teardown — essential for provided (external) instances
 - Use `Stove { keepDependenciesRunning() }` locally for faster iteration; disable in CI
 - **AI agent feedback loop**: Enable tracing + reporting. When tests fail, the execution report contains the full call chain, system snapshots, and timeline. AI agents can parse this structured output to understand exactly what went wrong inside the application and iterate on fixes with precise feedback.
+- **Kafka test-friendly settings**: Default Kafka producer/consumer settings are tuned for production throughput, not test speed. Configure `linger.ms=0`, `batch.size=1`, `auto.commit.interval.ms=100`, `auto-offset-reset=earliest`, and enable broker-level auto-topic creation. Without these, `shouldBePublished`/`shouldBeConsumed` assertions will timeout or flake. See [system-setup.md](system-setup.md#test-friendly-kafka-settings) for JVM details and [go-setup.md](go-setup.md) for Go libraries.
 
 ## Running tests
 

@@ -14,9 +14,27 @@ tasks.register<Exec>("buildGoApp") {
   outputs.file(goBinary)
 }
 
+val kafkaLibraries = listOf("sarama", "franz", "segmentio")
+
+val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
+  tasks.register<Test>("e2eTest_$lib") {
+    description = "Runs e2e tests with the $lib Kafka library."
+    group = "verification"
+    dependsOn("buildGoApp")
+    testClassesDirs = sourceSets[TestFolders.e2e].output.classesDirs
+    classpath = sourceSets[TestFolders.e2e].runtimeClasspath
+    useJUnitPlatform()
+    systemProperty("go.app.binary", goBinary.absolutePath)
+    systemProperty("kafka.library", lib)
+    if (index > 0) {
+      mustRunAfter("e2eTest_${kafkaLibraries[index - 1]}")
+    }
+  }
+}
+
 tasks.named<Test>("e2eTest") {
-  dependsOn("buildGoApp")
-  systemProperty("go.app.binary", goBinary.absolutePath)
+  dependsOn(kafkaE2eTasks)
+  enabled = false
 }
 
 dependencies {

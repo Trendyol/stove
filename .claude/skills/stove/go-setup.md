@@ -29,6 +29,7 @@ Key env vars:
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | PostgreSQL |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint |
 | `KAFKA_BROKERS` | Kafka broker addresses |
+| `KAFKA_LIBRARY` | Kafka client: `sarama`, `franz`, or `segmentio` (default: `sarama`) |
 | `STOVE_KAFKA_BRIDGE_PORT` | Stove bridge gRPC port (test-only) |
 
 ## Step 2: OpenTelemetry
@@ -156,6 +157,91 @@ _ = bridge.ReportCommitted(ctx, msg.Topic, msg.Partition, msg.Offset+1)
 - All Bridge methods are nil-safe: `(*Bridge)(nil).ReportPublished(...)` is a no-op
 - All interceptors/hooks/helpers check for nil bridge first — zero overhead in production
 
+### Test-friendly Kafka settings (Go side)
+
+When running against Testcontainers (Stove e2e tests), configure Kafka clients for **fast feedback**. Default production settings (large batches, long commit intervals, no auto-topic creation) cause timeouts, missed messages, and flaky tests.
+
+**Key principles:**
+
+1. **Auto-create topics** — test containers may not have topics pre-created; without this, produces fail silently or block
+2. **Small batch size / low batch timeout** — flush produces immediately so `shouldBePublished` sees them
+3. **Short auto-commit interval** — make consumed offsets visible to Stove bridge quickly so `shouldBeConsumed` passes
+4. **Unique consumer groups per test run** — prevent offset carryover between runs (e.g. `"myapp-" + library`)
+
+**IBM/sarama:**
+
+```go
+config := sarama.NewConfig()
+config.Producer.Return.Successes = true
+config.Consumer.Offsets.Initial = sarama.OffsetOldest
+config.Consumer.Offsets.AutoCommit.Interval = 100 * time.Millisecond
+// sarama relies on broker-side auto.create.topics.enable (no client-side setting)
+```
+
+**twmb/franz-go:**
+
+```go
+client, _ := kgo.NewClient(
+    kgo.SeedBrokers(brokerList...),
+    kgo.AllowAutoTopicCreation(),                    // client-side topic creation
+    kgo.AutoCommitInterval(100 * time.Millisecond),  // fast offset commits
+    kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+    kgo.WithHooks(&franz.Hook{Bridge: bridge}),
+)
+```
+
+**segmentio/kafka-go:**
+
+```go
+// Writer — flush immediately, auto-create topics
+writer := &kafka.Writer{
+    Addr:                   kafka.TCP(brokerList...),
+    BatchSize:              1,
+    BatchTimeout:           10 * time.Millisecond,
+    RequiredAcks:           kafka.RequireAll,
+    AllowAutoTopicCreation: true,
+}
+
+// Reader — fast commits, low wait
+reader := kafka.NewReader(kafka.ReaderConfig{
+    Brokers:        brokerList,
+    GroupID:         groupID,
+    Topic:           topic,
+    MinBytes:        1,
+    MaxBytes:        10e6,
+    CommitInterval:  100 * time.Millisecond,
+    MaxWait:         500 * time.Millisecond,
+})
+```
+
+**franz-go: separate producer and consumer clients.** Using a single `kgo.Client` for both produce and consume causes consumer group coordination to block `ProduceSync`, leading to 10-30s delays. Always create two clients:
+
+```go
+// Producer — no consumer group overhead
+producerClient, _ := kgo.NewClient(
+    kgo.SeedBrokers(brokerList...),
+    kgo.AllowAutoTopicCreation(),
+    kgo.WithHooks(hook),
+)
+
+// Consumer — consumer group coordination won't block produces
+consumerClient, _ := kgo.NewClient(
+    kgo.SeedBrokers(brokerList...),
+    kgo.ConsumeTopics(topic),
+    kgo.ConsumerGroup(groupID),
+    kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+    kgo.AutoCommitInterval(100 * time.Millisecond),
+    kgo.AllowAutoTopicCreation(),
+    kgo.WithHooks(hook),
+)
+```
+
+**Common pitfall — consumer group offset carryover:** If running the same tests against multiple Kafka libraries sequentially (e.g. sarama → franz → segmentio), use a unique consumer group per library. Otherwise the second run sees committed offsets from the first and skips messages:
+
+```go
+groupID := "myapp-" + library  // e.g. "myapp-sarama", "myapp-franz"
+```
+
 ## Step 4: GoApplicationUnderTest
 
 Reference implementation at `recipes/go-recipes/go-showcase/src/test-e2e/kotlin/.../setup/GoApplicationUnderTest.kt`.
@@ -208,6 +294,7 @@ Stove().with {
                 map["database.password"]?.let { put("DB_PASS", it) }
                 put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
                 map["kafka.bootstrapServers"]?.let { put("KAFKA_BROKERS", it) }
+                put("KAFKA_LIBRARY", System.getProperty("kafka.library") ?: "sarama")
                 put("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
             }
         }
@@ -231,10 +318,17 @@ tasks.register<Exec>("buildGoApp") {
     outputs.file(goBinary)
 }
 
-tasks.named<Test>("e2eTest") {
-    dependsOn("buildGoApp")
-    systemProperty("go.app.binary", goBinary.absolutePath)
+// Per-library e2e test tasks — each passes KAFKA_LIBRARY to the Go app
+val kafkaLibraries = listOf("sarama", "franz", "segmentio")
+val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
+    tasks.register<Test>("e2eTest_$lib") {
+        dependsOn("buildGoApp")
+        systemProperty("go.app.binary", goBinary.absolutePath)
+        systemProperty("kafka.library", lib)
+        if (index > 0) mustRunAfter("e2eTest_${kafkaLibraries[index - 1]}")
+    }
 }
+tasks.named<Test>("e2eTest") { dependsOn(kafkaE2eTasks); enabled = false }
 
 dependencies {
     testImplementation(stoveLibs.stove)
@@ -318,8 +412,13 @@ class GoShowcaseTest : FunSpec({
 ## Running
 
 ```bash
-# From the recipes directory
+# From the recipes directory — runs all three Kafka libraries
 ./gradlew go-recipes:go-showcase:e2eTest
+
+# Run a specific library only
+./gradlew go-recipes:go-showcase:e2eTest_sarama
+./gradlew go-recipes:go-showcase:e2eTest_franz
+./gradlew go-recipes:go-showcase:e2eTest_segmentio
 ```
 
 ## Go dependencies

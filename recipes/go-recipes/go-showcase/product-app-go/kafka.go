@@ -5,11 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
-	"strings"
 
-	"github.com/IBM/sarama"
 	stovekafka "github.com/trendyol/stove/go/stove-kafka"
-	stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
 )
 
 const (
@@ -31,83 +28,42 @@ type ProductUpdateEvent struct {
 	Price float64 `json:"price"`
 }
 
-func initKafka(brokers string, db *sql.DB, bridge *stovekafka.Bridge) (sarama.SyncProducer, func(), error) {
+// KafkaProducer abstracts message production across different Kafka client libraries.
+type KafkaProducer interface {
+	SendMessage(topic, key string, value []byte) error
+	Close() error
+}
+
+// initKafka creates a producer and starts a consumer using the specified library.
+// Supported libraries: "sarama" (default), "franz", "segmentio".
+func initKafka(library, brokers string, db *sql.DB, bridge *stovekafka.Bridge) (KafkaProducer, func(), error) {
 	if brokers == "" {
 		return nil, func() {}, nil
 	}
 
-	brokerList := strings.Split(brokers, ",")
+	log.Printf("Kafka initializing with library=%s brokers=%s", library, brokers)
 
-	config := sarama.NewConfig()
-	config.Producer.Return.Successes = true
-	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	groupID := "go-showcase-" + library
 
-	// Wire Stove bridge interceptors — no-ops when bridge is nil (production mode)
-	config.Producer.Interceptors = []sarama.ProducerInterceptor{
-		&stovesarama.ProducerInterceptor{Bridge: bridge},
+	switch library {
+	case "franz":
+		return initFranzKafka(brokers, groupID, db, bridge)
+	case "segmentio":
+		return initSegmentioKafka(brokers, groupID, db, bridge)
+	default:
+		return initSaramaKafka(brokers, groupID, db, bridge)
 	}
-	config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-		&stovesarama.ConsumerInterceptor{Bridge: bridge},
-	}
-
-	producer, err := sarama.NewSyncProducer(brokerList, config)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Start consumer group for product.update topic
-	consumerGroup, err := sarama.NewConsumerGroup(brokerList, "go-showcase-group", config)
-	if err != nil {
-		producer.Close()
-		return nil, nil, err
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	handler := &productUpdateHandler{db: db}
-
-	go func() {
-		for {
-			if err := consumerGroup.Consume(ctx, []string{topicProductUpdate}, handler); err != nil {
-				log.Printf("consumer group error: %v", err)
-			}
-			if ctx.Err() != nil {
-				return
-			}
-		}
-	}()
-
-	stop := func() {
-		cancel()
-		consumerGroup.Close()
-		producer.Close()
-	}
-
-	log.Printf("Kafka initialized with brokers: %s", brokers)
-	return producer, stop, nil
 }
 
-// productUpdateHandler implements sarama.ConsumerGroupHandler.
-type productUpdateHandler struct {
-	db *sql.DB
-}
-
-func (h *productUpdateHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
-func (h *productUpdateHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
-
-func (h *productUpdateHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	for msg := range claim.Messages() {
-		var event ProductUpdateEvent
-		if err := json.Unmarshal(msg.Value, &event); err != nil {
-			log.Printf("failed to unmarshal update event: %v", err)
-			session.MarkMessage(msg, "")
-			continue
-		}
-
-		if err := updateProduct(context.Background(), h.db, event.ID, event.Name, event.Price); err != nil {
-			log.Printf("failed to update product %s: %v", event.ID, err)
-		}
-
-		session.MarkMessage(msg, "")
+// handleProductUpdate is shared consumer logic for all Kafka libraries.
+func handleProductUpdate(db *sql.DB, value []byte) {
+	var event ProductUpdateEvent
+	if err := json.Unmarshal(value, &event); err != nil {
+		log.Printf("failed to unmarshal update event: %v", err)
+		return
 	}
-	return nil
+
+	if err := updateProduct(context.Background(), db, event.ID, event.Name, event.Price); err != nil {
+		log.Printf("failed to update product %s: %v", event.ID, err)
+	}
 }

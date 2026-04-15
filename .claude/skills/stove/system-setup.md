@@ -554,6 +554,88 @@ kafka {
 - Inject `RecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
 - Register `TestSystemKafkaInterceptor<*, *>` and a `StoveSerde` bean in test dependencies.
 
+### Test-friendly Kafka settings
+
+Default Kafka producer/consumer settings are tuned for production throughput, not test speed. In e2e tests, this causes timeouts, flaky assertions, and slow feedback. Configure for **immediate delivery and fast commits**:
+
+**Container-level** — enable auto-topic creation so topics exist when producers/consumers first connect:
+
+```kotlin
+kafka {
+    KafkaSystemOptions(
+        containerOptions = KafkaContainerOptions(tag = "8.0.3") {
+            withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
+        },
+        configureExposedConfiguration = { cfg ->
+            listOf("spring.kafka.bootstrap-servers=${cfg.bootstrapServers}")
+        }
+    )
+}
+```
+
+**Producer settings** — flush immediately, don't batch:
+
+```properties
+# Spring Boot application.yml or exposed via Stove config
+spring.kafka.producer.properties.linger.ms=0          # Send immediately, don't wait to batch
+spring.kafka.producer.properties.batch.size=1          # Single-message batches
+spring.kafka.producer.acks=all                         # Wait for all replicas (reliable in single-broker test)
+```
+
+**Consumer settings** — commit fast, start from beginning, short timeouts:
+
+```properties
+spring.kafka.consumer.auto-offset-reset=earliest            # Start from beginning (don't miss messages)
+spring.kafka.consumer.properties.auto.commit.interval.ms=100  # Commit offsets every 100ms (default: 5000ms)
+spring.kafka.consumer.properties.max.poll.interval.ms=10000   # Shorter poll timeout (default: 300000ms)
+spring.kafka.consumer.properties.session.timeout.ms=10000     # Faster rebalance on failure (default: 45000ms)
+spring.kafka.consumer.properties.heartbeat.interval.ms=3000   # Faster heartbeat (default: 3000ms, keep ≤ session/3)
+```
+
+**Why this matters for Stove assertions:**
+
+- `shouldBePublished` checks the Stove interceptor sink — messages must reach it promptly. `linger.ms=0` and `batch.size=1` prevent the producer from holding messages.
+- `shouldBeConsumed` checks that the message was consumed AND its offset committed. `auto.commit.interval.ms=100` makes committed offsets visible within 100ms instead of the 5-second default.
+- `shouldBeFailed` / `shouldBeRetried` check error and retry sinks — short `max.poll.interval.ms` prevents long waits before Kafka considers a consumer dead.
+- Without `auto-offset-reset=earliest`, consumers joining after a message is produced will never see it, causing `shouldBeConsumed` to timeout.
+
+**Passing these via Stove's `configureExposedConfiguration`:**
+
+```kotlin
+kafka {
+    KafkaSystemOptions(
+        containerOptions = KafkaContainerOptions {
+            withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
+        },
+        configureExposedConfiguration = { cfg ->
+            listOf(
+                "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}",
+                "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}",
+                "spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}",
+                // Test-friendly overrides
+                "spring.kafka.producer.properties.linger.ms=0",
+                "spring.kafka.producer.properties.batch.size=1",
+                "spring.kafka.consumer.auto-offset-reset=earliest",
+                "spring.kafka.consumer.properties.auto.commit.interval.ms=100"
+            )
+        }
+    )
+}
+```
+
+**Non-Spring JVM apps** — the same principles apply. Pass equivalent properties through your app's configuration mechanism:
+
+| Setting | Production default | Test-friendly value | Why |
+|---------|-------------------|--------------------|----|
+| `linger.ms` | 5-100 | `0` | Immediate send |
+| `batch.size` | 16384 | `1` | No batching |
+| `auto.commit.interval.ms` | 5000 | `100` | Fast offset visibility |
+| `auto.offset.reset` | `latest` | `earliest` | Don't miss messages |
+| `max.poll.interval.ms` | 300000 | `10000` | Faster failure detection |
+| `auto.create.topics.enable` (broker) | `true` | `true` | Topics exist on first use |
+
+**Go applications** — see [go-setup.md](go-setup.md) for per-library settings (sarama, franz-go, segmentio/kafka-go) including auto-topic creation, batch timeouts, commit intervals, and the separate producer/consumer client pattern for franz-go.
+
 ## WireMock
 
 ```kotlin

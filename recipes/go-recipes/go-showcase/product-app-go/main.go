@@ -56,8 +56,9 @@ func main() {
 	defer bridge.Close()
 
 	// Initialize Kafka producer and consumer
+	kafkaLibrary := getEnv("KAFKA_LIBRARY", "sarama")
 	brokers := getEnv("KAFKA_BROKERS", "")
-	producer, stopKafka, err := initKafka(brokers, db, bridge)
+	producer, stopKafka, err := initKafka(kafkaLibrary, brokers, db, bridge)
 	if err != nil {
 		log.Fatalf("failed to init kafka: %v", err)
 	}
