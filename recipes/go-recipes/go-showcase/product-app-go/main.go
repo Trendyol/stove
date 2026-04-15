@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	stovekafkago "github.com/trendyol/stove/go/stove-kafka"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -47,8 +48,23 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize Stove Kafka bridge (nil in production — zero overhead)
+	bridge, err := stovekafkago.NewBridgeFromEnv()
+	if err != nil {
+		log.Fatalf("failed to init stove bridge: %v", err)
+	}
+	defer bridge.Close()
+
+	// Initialize Kafka producer and consumer
+	brokers := getEnv("KAFKA_BROKERS", "")
+	producer, stopKafka, err := initKafka(brokers, db, bridge)
+	if err != nil {
+		log.Fatalf("failed to init kafka: %v", err)
+	}
+	defer stopKafka()
+
 	mux := http.NewServeMux()
-	registerRoutes(mux, db)
+	registerRoutes(mux, db, producer)
 
 	// Wrap with OTel HTTP instrumentation for automatic span creation
 	handler := otelhttp.NewHandler(mux, "http.request")

@@ -12,7 +12,7 @@
 #   ./lint.sh --check rust recipes
 #   ./lint.sh --format --all
 #
-# Projects: jvm, rust, spa, recipes
+# Projects: jvm, rust, spa, recipes, go
 
 set -e
 
@@ -37,7 +37,7 @@ for arg in "$@"; do
     --check)  MODE="check" ;;
     --format) MODE="format" ;;
     --all)    RUN_ALL=true ;;
-    jvm|rust|spa|recipes) PROJECTS="$PROJECTS $arg" ;;
+    jvm|rust|spa|recipes|go) PROJECTS="$PROJECTS $arg" ;;
     *)
       echo "Usage: $0 [--check|--format] [--all] [jvm] [rust] [spa] [recipes]"
       exit 1
@@ -69,11 +69,14 @@ detect_changed() {
   if echo "$CHANGED" | grep -qE "^recipes/"; then
     PROJECTS="$PROJECTS recipes"
   fi
+  if echo "$CHANGED" | grep -qE '\.go$'; then
+    PROJECTS="$PROJECTS go"
+  fi
 }
 
 if [ -z "$PROJECTS" ]; then
   if [ "$RUN_ALL" = true ]; then
-    PROJECTS="jvm rust spa recipes"
+    PROJECTS="jvm rust spa recipes go"
   else
     detect_changed
     if [ -z "$PROJECTS" ]; then
@@ -137,6 +140,27 @@ lint_spa() {
   fi
 }
 
+# ── Go ───────────────────────────────────────────────────────────────
+
+lint_go() {
+  section "Go"
+  GO_DIRS="$REPO_ROOT/go/stove-kafka $REPO_ROOT/recipes/go-recipes/go-showcase/product-app-go"
+  for dir in $GO_DIRS; do
+    if [ -d "$dir" ]; then
+      if [ "$MODE" = "format" ]; then
+        run gofmt -w "$dir"
+      else
+        if [ -n "$(gofmt -l "$dir")" ]; then
+          echo "gofmt: files need formatting in $dir:"
+          gofmt -l "$dir"
+          EXIT_CODE=1
+        fi
+      fi
+      (cd "$dir" && run go vet ./...)
+    fi
+  done
+}
+
 # ── Recipes (Kotlin / Java / Scala) ──────────────────────────────────
 
 lint_recipes() {
@@ -160,6 +184,7 @@ for proj in $PROJECTS; do
       rust)    lint_rust ;;
       spa)     lint_spa ;;
       recipes) lint_recipes ;;
+      go)      lint_go ;;
     esac
     exit $EXIT_CODE
   ) &

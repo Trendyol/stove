@@ -34,7 +34,7 @@ Any language that can:
 
 -   :material-language-go: **Go**
 
-    Full walkthrough: HTTP + PostgreSQL + OpenTelemetry tracing + Dashboard.
+    Full walkthrough: HTTP + PostgreSQL + Kafka + OpenTelemetry tracing + Dashboard.
 
     [Go guide :material-arrow-right:](go.md)
 
@@ -91,12 +91,14 @@ Tests look identical to JVM tests --- `http {}`, `postgresql {}`, `kafka {}`, `t
 Since the application runs as a separate OS process:
 
 - **No `bridge()` / `using<T> {}`** --- you can't access the app's internal state or DI container
-- **No Kafka interceptors** --- `shouldBeConsumed` requires an in-process interceptor. Use `consumer()` to read topics directly instead
 
-Everything else works: HTTP assertions, database queries, Kafka publishing and consuming, tracing, WireMock, gRPC, and the dashboard.
+Everything else works: HTTP assertions, database queries, Kafka publishing and consuming (`shouldBePublished`, `shouldBeConsumed`), tracing, WireMock, gRPC, and the dashboard.
+
+!!! info "Kafka Interceptors for Non-JVM Apps"
+    Stove provides bridge libraries that enable `shouldBeConsumed` and `shouldBePublished` assertions for non-JVM applications. The bridge library intercepts messages via your language's Kafka client (e.g., Sarama interceptors for Go) and forwards them via gRPC to Stove's observer. See the [Go guide](go.md#kafka) for a complete example using `stove-kafka`.
 
 ## Next Steps
 
-- [Go guide](go.md) --- complete example with Go, PostgreSQL, OpenTelemetry, and Dashboard
+- [Go guide](go.md) --- complete example with Go, PostgreSQL, Kafka, OpenTelemetry, and Dashboard
 - [Provided Application](../Components/19-provided-application.md) --- for testing already-deployed apps (black-box)
 - [Writing Custom Systems](../writing-custom-systems.md) --- for extending Stove with new component types
