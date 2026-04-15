@@ -57,9 +57,13 @@ The Stove Kafka bridge library lives at `go/stove-kafka/`. It has a library-agno
 
 ```
 go/stove-kafka/
-  bridge.go           # Core: Bridge, PublishedMessage, ConsumedMessage (no Kafka client dependency)
+  bridge.go           # Core: Bridge, PublishedMessage, ConsumedMessage (library-agnostic)
   sarama/             # IBM/sarama interceptors
-    interceptors.go   # ProducerInterceptor, ConsumerInterceptor
+    interceptors.go
+  franz/              # twmb/franz-go hooks
+    hooks.go
+  segmentio/            # segmentio/kafka-go helpers
+    bridge.go
   stoveobserver/      # Generated gRPC code
 ```
 
@@ -69,7 +73,9 @@ go/stove-kafka/
 go get github.com/trendyol/stove/go/stove-kafka
 ```
 
-### Initialize bridge + wire interceptors
+### Initialize bridge + wire into your Kafka client
+
+**IBM/sarama:**
 
 ```go
 import (
@@ -77,7 +83,6 @@ import (
     stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
 )
 
-// Bridge is nil when STOVE_KAFKA_BRIDGE_PORT is not set (production) — zero overhead
 bridge, _ := stovekafka.NewBridgeFromEnv()
 defer bridge.Close()
 
@@ -90,20 +95,66 @@ config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
 }
 ```
 
+**twmb/franz-go:**
+
+```go
+import (
+    stovekafka "github.com/trendyol/stove/go/stove-kafka"
+    "github.com/trendyol/stove/go/stove-kafka/franz"
+)
+
+bridge, _ := stovekafka.NewBridgeFromEnv()
+defer bridge.Close()
+
+client, _ := kgo.NewClient(
+    kgo.SeedBrokers("localhost:9092"),
+    kgo.WithHooks(&franz.Hook{Bridge: bridge}),
+)
+```
+
+**segmentio/kafka-go:**
+
+```go
+import (
+    stovekafka "github.com/trendyol/stove/go/stove-kafka"
+    "github.com/trendyol/stove/go/stove-kafka/segmentio"
+)
+
+bridge, _ := stovekafka.NewBridgeFromEnv()
+defer bridge.Close()
+
+// After producing
+_ = writer.WriteMessages(ctx, msgs...)
+segmentio.ReportWritten(ctx, bridge, msgs...)
+
+// After consuming
+msg, _ := reader.ReadMessage(ctx)
+segmentio.ReportRead(ctx, bridge, msg)
+```
+
+### Other libraries (e.g. confluent-kafka-go)
+
+The core bridge has no Kafka client dependency. For any unsupported library, use the core types directly:
+
+```go
+import stovekafka "github.com/trendyol/stove/go/stove-kafka"
+
+_ = bridge.ReportPublished(ctx, &stovekafka.PublishedMessage{
+    Topic: msg.Topic, Key: string(msg.Key), Value: msg.Value, Headers: myHeaders(msg),
+})
+_ = bridge.ReportConsumed(ctx, &stovekafka.ConsumedMessage{
+    Topic: msg.Topic, Key: string(msg.Key), Value: msg.Value,
+    Partition: msg.Partition, Offset: msg.Offset, Headers: myHeaders(msg),
+})
+_ = bridge.ReportCommitted(ctx, msg.Topic, msg.Partition, msg.Offset+1)
+```
+
 ### How it works
 
-- `ProducerInterceptor.OnSend()` calls `bridge.ReportPublished()` -> gRPC -> Stove observer -> `shouldBePublished` works
-- `ConsumerInterceptor.OnConsume()` calls `bridge.ReportConsumed()` + `bridge.ReportCommitted(offset+1)` -> gRPC -> Stove observer -> `shouldBeConsumed` works
-- Sarama lacks `onCommit()`, so the consumer interceptor pre-reports commit at `offset+1`
+- All subpackages convert client-specific types to core `PublishedMessage`/`ConsumedMessage` and call bridge methods
+- Consumer interceptors/helpers pre-report commit at `offset+1` (needed for `shouldBeConsumed`)
 - All Bridge methods are nil-safe: `(*Bridge)(nil).ReportPublished(...)` is a no-op
-
-### Adding support for other Go Kafka libraries
-
-The core bridge (`PublishedMessage`, `ConsumedMessage`, `Bridge`) is library-agnostic. To add a new client library:
-
-1. Create a new subpackage (e.g., `go/stove-kafka/franz/`)
-2. Implement interceptors/hooks that convert library-specific types to `stovekafka.PublishedMessage` / `stovekafka.ConsumedMessage`
-3. Call `bridge.ReportPublished()`, `bridge.ReportConsumed()`, `bridge.ReportCommitted()`
+- All interceptors/hooks/helpers check for nil bridge first — zero overhead in production
 
 ## Step 4: GoApplicationUnderTest
 
@@ -274,9 +325,10 @@ class GoShowcaseTest : FunSpec({
 ## Go dependencies
 
 ```
-github.com/IBM/sarama                                            # Kafka client
 github.com/trendyol/stove/go/stove-kafka                        # Stove Kafka bridge (core)
-github.com/trendyol/stove/go/stove-kafka/sarama                 # Sarama interceptors
+github.com/trendyol/stove/go/stove-kafka/sarama                 # IBM/sarama interceptors
+github.com/trendyol/stove/go/stove-kafka/franz                  # twmb/franz-go hooks
+github.com/trendyol/stove/go/stove-kafka/segmentio                # segmentio/kafka-go helpers
 github.com/XSAM/otelsql                                         # database/sql instrumentation
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp    # HTTP instrumentation
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc # OTLP exporter

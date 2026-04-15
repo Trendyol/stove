@@ -5,6 +5,8 @@ go 1.26.2
 require (
 	github.com/IBM/sarama v1.47.0
 	github.com/google/uuid v1.6.0
+	github.com/segmentio/kafka-go v0.4.50
+	github.com/twmb/franz-go v1.20.7
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 )
@@ -22,6 +24,7 @@ require (
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.12.0 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect

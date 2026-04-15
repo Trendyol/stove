@@ -95,7 +95,7 @@ Since the application runs as a separate OS process:
 Everything else works: HTTP assertions, database queries, Kafka publishing and consuming (`shouldBePublished`, `shouldBeConsumed`), tracing, WireMock, gRPC, and the dashboard.
 
 !!! info "Kafka Interceptors for Non-JVM Apps"
-    Stove provides bridge libraries that enable `shouldBeConsumed` and `shouldBePublished` assertions for non-JVM applications. The bridge library intercepts messages via your language's Kafka client (e.g., Sarama interceptors for Go) and forwards them via gRPC to Stove's observer. See the [Go guide](go.md#kafka) for a complete example using `stove-kafka`.
+    Stove provides bridge libraries that enable `shouldBeConsumed` and `shouldBePublished` assertions for non-JVM applications. The `stove-kafka` Go library supports three popular Kafka clients --- IBM/sarama (interceptors), twmb/franz-go (hooks), and segmentio/kafka-go (helpers) --- and forwards messages via gRPC to Stove's observer. See the [Go guide](go.md#kafka) for details.
 
 ## Next Steps
 

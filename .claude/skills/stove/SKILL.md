@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), or testing non-JVM applications (Go, Python, Rust, Node.js) with custom ApplicationUnderTest and the Stove Kafka bridge library (stove-kafka for Go/Sarama).
+description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), or testing non-JVM applications (Go, Python, Rust, Node.js) with custom ApplicationUnderTest and the Stove Kafka bridge library (stove-kafka for Go with IBM/sarama, twmb/franz-go, or segmentio/kafka-go).
 ---
 
 # Setting Up Stove E2E Tests

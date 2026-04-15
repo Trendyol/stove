@@ -32,6 +32,10 @@ go/stove-kafka/            # Stove Kafka bridge for Go applications
   bridge.go                    # Core bridge (library-agnostic gRPC client)
   sarama/                      # IBM/sarama interceptors
     interceptors.go
+  franz/                       # twmb/franz-go hooks
+    hooks.go
+  segmentio/                     # segmentio/kafka-go helpers
+    bridge.go
   stoveobserver/               # Generated gRPC code from messages.proto
   go.mod
 ```
@@ -183,7 +187,36 @@ func initTracing(ctx context.Context, serviceName string) (func(context.Context)
 
 ## Kafka
 
-Stove provides a Go bridge library (`stove-kafka`) that enables `shouldBeConsumed` and `shouldBePublished` assertions for Go applications. The bridge intercepts Sarama producer/consumer messages and forwards them via gRPC to Stove's `StoveKafkaObserverGrpcServer`.
+Stove provides a Go bridge library (`stove-kafka`) that enables `shouldBeConsumed` and `shouldBePublished` assertions for Go applications. The bridge forwards produced/consumed messages via gRPC to Stove's `StoveKafkaObserverGrpcServer`. The core is library-agnostic; client-specific subpackages provide interceptors/hooks for popular Go Kafka libraries:
+
+| Library | Subpackage | Integration |
+|---------|-----------|-------------|
+| [IBM/sarama](https://github.com/IBM/sarama) | `sarama` | `ProducerInterceptor` / `ConsumerInterceptor` |
+| [twmb/franz-go](https://github.com/twmb/franz-go) | `franz` | `kgo.WithHooks(&franz.Hook{...})` |
+| [segmentio/kafka-go](https://github.com/segmentio/kafka-go) | `segmentio` | `segmentio.ReportWritten()` / `segmentio.ReportRead()` |
+
+!!! tip "Using other Kafka libraries (e.g. confluent-kafka-go)"
+    The subpackages above are conveniences. The core bridge (`PublishedMessage`, `ConsumedMessage`, `Bridge`) has **no Kafka client dependency**. For any library not listed above, import only the core package and call `bridge.ReportPublished()`, `bridge.ReportConsumed()`, and `bridge.ReportCommitted()` directly with your own type conversion:
+
+    ```go
+    import stovekafka "github.com/trendyol/stove/go/stove-kafka"
+
+    bridge, _ := stovekafka.NewBridgeFromEnv()
+
+    // After producing
+    _ = bridge.ReportPublished(ctx, &stovekafka.PublishedMessage{
+        Topic: msg.Topic, Key: string(msg.Key), Value: msg.Value,
+        Headers: myHeaders(msg),
+    })
+
+    // After consuming
+    _ = bridge.ReportConsumed(ctx, &stovekafka.ConsumedMessage{
+        Topic: msg.Topic, Key: string(msg.Key), Value: msg.Value,
+        Partition: msg.Partition, Offset: msg.Offset,
+        Headers: myHeaders(msg),
+    })
+    _ = bridge.ReportCommitted(ctx, msg.Topic, msg.Partition, msg.Offset+1)
+    ```
 
 ### How It Works
 
@@ -232,23 +265,50 @@ if err != nil {
 defer bridge.Close()
 ```
 
-#### Step 3: Wire interceptors into your Sarama config
+#### Step 3: Wire the bridge into your Kafka client
 
-```go title="kafka.go"
-import stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
+Choose the tab matching your Go Kafka library:
 
-config := sarama.NewConfig()
+=== "IBM/sarama"
 
-// Add Stove interceptors — no-ops when bridge is nil
-config.Producer.Interceptors = []sarama.ProducerInterceptor{
-    &stovesarama.ProducerInterceptor{Bridge: bridge},
-}
-config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-    &stovesarama.ConsumerInterceptor{Bridge: bridge},
-}
-```
+    ```go title="kafka.go"
+    import stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
 
-That's it on the Go side --- three lines of instrumentation. The interceptors are transparent; when Bridge is nil (production), they do nothing.
+    config := sarama.NewConfig()
+    config.Producer.Interceptors = []sarama.ProducerInterceptor{
+        &stovesarama.ProducerInterceptor{Bridge: bridge},
+    }
+    config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
+        &stovesarama.ConsumerInterceptor{Bridge: bridge},
+    }
+    ```
+
+=== "twmb/franz-go"
+
+    ```go title="kafka.go"
+    import "github.com/trendyol/stove/go/stove-kafka/franz"
+
+    client, err := kgo.NewClient(
+        kgo.SeedBrokers("localhost:9092"),
+        kgo.WithHooks(&franz.Hook{Bridge: bridge}),
+    )
+    ```
+
+=== "segmentio/kafka-go"
+
+    ```go title="kafka.go"
+    import "github.com/trendyol/stove/go/stove-kafka/segmentio"
+
+    // After producing
+    err := writer.WriteMessages(ctx, msgs...)
+    segmentio.ReportWritten(ctx, bridge, msgs...)
+
+    // After consuming
+    msg, err := reader.ReadMessage(ctx)
+    segmentio.ReportRead(ctx, bridge, msg)
+    ```
+
+When Bridge is nil (production), all interceptors/helpers return immediately with zero overhead.
 
 #### Step 4: Add `stoveKafka` to your Gradle test dependencies
 
@@ -314,9 +374,13 @@ go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc # OTLP gRPC expo
 go.opentelemetry.io/otel/sdk                                    # OTel SDK
 github.com/XSAM/otelsql                                         # database/sql auto-instrumentation
 github.com/lib/pq                                                # PostgreSQL driver
-github.com/IBM/sarama                                            # Kafka client
-github.com/trendyol/stove/go/stove-kafka                    # Stove Kafka bridge
 google.golang.org/grpc                                           # gRPC (for OTLP + bridge)
+
+# Kafka — pick one client + its bridge subpackage:
+github.com/IBM/sarama                                            # + stove-kafka/sarama
+github.com/twmb/franz-go/pkg/kgo                                 # + stove-kafka/franz
+github.com/segmentio/kafka-go                                    # + stove-kafka/segmentio
+github.com/trendyol/stove/go/stove-kafka                        # Core bridge (always needed)
 ```
 
 ## Stove Test Setup
@@ -682,7 +746,7 @@ The same pattern works for any language. Replace the Go-specific parts:
 | **Binary** | Single executable | `python app.py` | `node dist/index.js` | Single executable |
 | **OTel HTTP** | `otelhttp.NewHandler` | `opentelemetry-instrumentation-flask` | `@opentelemetry/instrumentation-http` | `tracing-opentelemetry` |
 | **OTel DB** | `otelsql` | `opentelemetry-instrumentation-psycopg2` | `@opentelemetry/instrumentation-pg` | `tracing-opentelemetry` |
-| **Kafka** | `stove-kafka` bridge | *(bridge library needed)* | *(bridge library needed)* | *(bridge library needed)* |
+| **Kafka** | `stove-kafka` bridge (sarama / franz-go / kafka-go) | *(bridge library needed)* | *(bridge library needed)* | *(bridge library needed)* |
 | **Config** | Env vars | Env vars | Env vars | Env vars |
 
 The Kotlin test side stays exactly the same --- only `GoApplicationUnderTest` and the `configMapper` change.

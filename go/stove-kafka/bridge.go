@@ -4,21 +4,30 @@
 // StoveKafkaObserverGrpcServer, enabling shouldBeConsumed and
 // shouldBePublished assertions in Kotlin tests.
 //
-// The core bridge is library-agnostic. Use the sarama subpackage for
-// IBM/sarama interceptors:
+// The core bridge is library-agnostic. Use the appropriate subpackage
+// for your Kafka client:
 //
-//	import stovekafka "github.com/trendyol/stove/go/stove-kafka"
-//	import stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
+//   - sarama  — IBM/sarama interceptors
+//   - franz   — twmb/franz-go hooks
+//   - segmentio — segmentio/kafka-go helpers
+//
+// Example with IBM/sarama:
 //
 //	bridge, _ := stovekafka.NewBridgeFromEnv()
-//
-//	config := sarama.NewConfig()
 //	config.Producer.Interceptors = []sarama.ProducerInterceptor{
 //	    &stovesarama.ProducerInterceptor{Bridge: bridge},
 //	}
-//	config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-//	    &stovesarama.ConsumerInterceptor{Bridge: bridge},
-//	}
+//
+// Example with franz-go:
+//
+//	bridge, _ := stovekafka.NewBridgeFromEnv()
+//	client, _ := kgo.NewClient(kgo.WithHooks(&franz.Hook{Bridge: bridge}))
+//
+// Example with kafka-go:
+//
+//	bridge, _ := stovekafka.NewBridgeFromEnv()
+//	_ = writer.WriteMessages(ctx, msgs...)
+//	segmentio.ReportWritten(ctx, bridge, msgs...)
 package stovekafka
 
 import (
