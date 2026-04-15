@@ -1,0 +1,111 @@
+public final class com/trendyol/stove/process/ArgsMapperBuilder {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun arg (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun arg (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun arg$default (Lcom/trendyol/stove/process/ArgsMapperBuilder;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun to (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract interface class com/trendyol/stove/process/ArgsProvider {
+	public static final field Companion Lcom/trendyol/stove/process/ArgsProvider$Companion;
+	public abstract fun provide (Ljava/util/Map;)Ljava/util/List;
+}
+
+public final class com/trendyol/stove/process/ArgsProvider$Companion {
+	public final fun empty ()Lcom/trendyol/stove/process/ArgsProvider;
+}
+
+public final class com/trendyol/stove/process/ArgsProviderKt {
+	public static final fun argsMapper (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/process/ArgsProvider;
+	public static synthetic fun argsMapper$default (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/process/ArgsProvider;
+}
+
+public final class com/trendyol/stove/process/EnvMapperBuilder {
+	public fun <init> ()V
+	public final fun env (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun env (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun to (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract interface class com/trendyol/stove/process/EnvProvider {
+	public static final field Companion Lcom/trendyol/stove/process/EnvProvider$Companion;
+	public abstract fun provide (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public final class com/trendyol/stove/process/EnvProvider$Companion {
+	public final fun empty ()Lcom/trendyol/stove/process/EnvProvider;
+}
+
+public final class com/trendyol/stove/process/EnvProviderKt {
+	public static final fun envMapper (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/process/EnvProvider;
+}
+
+public final class com/trendyol/stove/process/ProcessApplicationOptions {
+	public synthetic fun <init> (Ljava/util/List;Lcom/trendyol/stove/process/ProcessTarget;Lcom/trendyol/stove/process/EnvProvider;Lcom/trendyol/stove/process/ArgsProvider;Ljava/io/File;ZJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Lcom/trendyol/stove/process/ProcessTarget;Lcom/trendyol/stove/process/EnvProvider;Lcom/trendyol/stove/process/ArgsProvider;Ljava/io/File;ZJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Lcom/trendyol/stove/process/ProcessTarget;
+	public final fun component3 ()Lcom/trendyol/stove/process/EnvProvider;
+	public final fun component4 ()Lcom/trendyol/stove/process/ArgsProvider;
+	public final fun component5 ()Ljava/io/File;
+	public final fun component6 ()Z
+	public final fun component7-UwyO8pc ()J
+	public final fun copy-B8UsjHI (Ljava/util/List;Lcom/trendyol/stove/process/ProcessTarget;Lcom/trendyol/stove/process/EnvProvider;Lcom/trendyol/stove/process/ArgsProvider;Ljava/io/File;ZJ)Lcom/trendyol/stove/process/ProcessApplicationOptions;
+	public static synthetic fun copy-B8UsjHI$default (Lcom/trendyol/stove/process/ProcessApplicationOptions;Ljava/util/List;Lcom/trendyol/stove/process/ProcessTarget;Lcom/trendyol/stove/process/EnvProvider;Lcom/trendyol/stove/process/ArgsProvider;Ljava/io/File;ZJILjava/lang/Object;)Lcom/trendyol/stove/process/ProcessApplicationOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArgsProvider ()Lcom/trendyol/stove/process/ArgsProvider;
+	public final fun getCommand ()Ljava/util/List;
+	public final fun getEnvProvider ()Lcom/trendyol/stove/process/EnvProvider;
+	public final fun getGracefulShutdownTimeout-UwyO8pc ()J
+	public final fun getRedirectErrorStream ()Z
+	public final fun getTarget ()Lcom/trendyol/stove/process/ProcessTarget;
+	public final fun getWorkingDirectory ()Ljava/io/File;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/process/ProcessApplicationUnderTest : com/trendyol/stove/system/abstractions/ApplicationUnderTest {
+	public fun <init> (Lcom/trendyol/stove/process/ProcessApplicationOptions;)V
+	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/process/ProcessDslKt {
+	public static final fun goApp-k5kRdxM (Lcom/trendyol/stove/system/Stove;Ljava/lang/String;Lcom/trendyol/stove/process/ProcessTarget;Lcom/trendyol/stove/process/EnvProvider;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+	public static synthetic fun goApp-k5kRdxM$default (Lcom/trendyol/stove/system/Stove;Ljava/lang/String;Lcom/trendyol/stove/process/ProcessTarget;Lcom/trendyol/stove/process/EnvProvider;ILjava/lang/Object;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+	public static final fun processApp-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+}
+
+public abstract interface class com/trendyol/stove/process/ProcessTarget {
+	public abstract fun getReadiness ()Lcom/trendyol/stove/system/ReadinessStrategy;
+}
+
+public final class com/trendyol/stove/process/ProcessTarget$Server : com/trendyol/stove/process/ProcessTarget {
+	public fun <init> (ILjava/lang/String;Lcom/trendyol/stove/system/ReadinessStrategy;)V
+	public synthetic fun <init> (ILjava/lang/String;Lcom/trendyol/stove/system/ReadinessStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/trendyol/stove/system/ReadinessStrategy;
+	public final fun copy (ILjava/lang/String;Lcom/trendyol/stove/system/ReadinessStrategy;)Lcom/trendyol/stove/process/ProcessTarget$Server;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/process/ProcessTarget$Server;ILjava/lang/String;Lcom/trendyol/stove/system/ReadinessStrategy;ILjava/lang/Object;)Lcom/trendyol/stove/process/ProcessTarget$Server;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPort ()I
+	public final fun getPortEnvVar ()Ljava/lang/String;
+	public fun getReadiness ()Lcom/trendyol/stove/system/ReadinessStrategy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/process/ProcessTarget$Worker : com/trendyol/stove/process/ProcessTarget {
+	public fun <init> ()V
+	public fun <init> (Lcom/trendyol/stove/system/ReadinessStrategy;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/system/ReadinessStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/system/ReadinessStrategy;
+	public final fun copy (Lcom/trendyol/stove/system/ReadinessStrategy;)Lcom/trendyol/stove/process/ProcessTarget$Worker;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/process/ProcessTarget$Worker;Lcom/trendyol/stove/system/ReadinessStrategy;ILjava/lang/Object;)Lcom/trendyol/stove/process/ProcessTarget$Worker;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReadiness ()Lcom/trendyol/stove/system/ReadinessStrategy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

@@ -2,13 +2,6 @@ package com.trendyol.stove.system
 
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.await
-import org.slf4j.LoggerFactory
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -82,52 +75,11 @@ data class ProvidedApplicationOptions(
 class ProvidedApplicationUnderTest(
   private val options: ProvidedApplicationOptions
 ) : ApplicationUnderTest<Unit> {
-  private val logger = LoggerFactory.getLogger(javaClass)
-
   override suspend fun start(configurations: List<String>) {
-    options.healthCheck?.let { performHealthCheck(it) }
+    options.healthCheck?.let { ReadinessChecker.check(it) }
   }
 
   override suspend fun stop(): Unit = Unit
-
-  private suspend fun performHealthCheck(healthCheck: HealthCheckOptions) {
-    val client = HttpClient.newBuilder()
-      .connectTimeout(java.time.Duration.ofMillis(healthCheck.timeout.inWholeMilliseconds))
-      .build()
-
-    val request = HttpRequest.newBuilder()
-      .uri(URI.create(healthCheck.url))
-      .GET()
-      .timeout(java.time.Duration.ofMillis(healthCheck.timeout.inWholeMilliseconds))
-      .build()
-
-    var lastException: Exception? = null
-    repeat(healthCheck.retries) { attempt ->
-      try {
-        val response = client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
-        if (response.statusCode() in healthCheck.expectedStatusCodes) {
-          logger.info("Health check passed for ${healthCheck.url} (status: ${response.statusCode()})")
-          return
-        }
-        lastException = RuntimeException(
-          "Health check returned unexpected status ${response.statusCode()} from ${healthCheck.url}"
-        )
-        logger.warn("Health check attempt ${attempt + 1}/${healthCheck.retries} failed: status ${response.statusCode()}")
-      } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-        lastException = e
-        logger.warn("Health check attempt ${attempt + 1}/${healthCheck.retries} failed: ${e.message}")
-      }
-
-      if (attempt < healthCheck.retries - 1) {
-        delay(healthCheck.retryDelay.inWholeMilliseconds)
-      }
-    }
-
-    throw IllegalStateException(
-      "Health check failed after ${healthCheck.retries} attempts for ${healthCheck.url}",
-      lastException
-    )
-  }
 }
 
 /**

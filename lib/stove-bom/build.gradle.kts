@@ -37,6 +37,7 @@ dependencies {
     api(projects.starters.ktor.stoveKtor)
     api(projects.starters.quarkus.stoveQuarkus)
     api(projects.starters.micronaut.stoveMicronaut)
+    api(projects.starters.process.stoveProcess)
 
     // Extensions
     api(projects.testExtensions.stoveExtensionsKotest)

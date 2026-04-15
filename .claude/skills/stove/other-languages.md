@@ -1,87 +1,61 @@
 # Testing Non-JVM Applications with Stove
 
-Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. The application runs as an OS process; Stove manages infrastructure, passes config via env vars, and runs Kotlin e2e tests against it.
+Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. The `stove-process` module provides a ready-to-use `ApplicationUnderTest` that manages OS processes. No custom implementation needed.
 
 ## Requirements
 
 Your application must:
 
 1. **Read environment variables** --- database URLs, ports, credentials, broker addresses
-2. **Expose an HTTP health endpoint** --- for Stove to detect readiness
-3. **Shut down on SIGTERM** --- for clean test teardown
+2. **Handle SIGTERM** --- for clean test teardown
+3. **Optional: expose a readiness endpoint** --- HTTP health check, TCP port, or custom probe
 
 ## Setup Checklist
 
 ```
-- [ ] Step 1: Create ApplicationUnderTest implementation
-- [ ] Step 2: Create DSL helper function (e.g., goApp(), nodeApp())
-- [ ] Step 3: Create test-e2e source set layout
-- [ ] Step 4: Configure Gradle (build app + e2eTest task)
-- [ ] Step 5: Create StoveConfig with systems + configMapper
-- [ ] Step 6: Instrument app with OpenTelemetry (optional)
-- [ ] Step 7: Add Kafka bridge (optional, Go only for now)
-- [ ] Step 8: Write tests using stove {} DSL
+- [ ] Step 1: Add stove-process dependency
+- [ ] Step 2: Create test-e2e source set layout
+- [ ] Step 3: Configure Gradle (build app + e2eTest task)
+- [ ] Step 4: Create StoveConfig with systems + processApp/goApp
+- [ ] Step 5: Instrument app with OpenTelemetry (optional)
+- [ ] Step 6: Add Kafka bridge (optional, Go only for now)
+- [ ] Step 7: Write tests using stove {} DSL
 ```
 
-## Step 1: Implement ApplicationUnderTest
-
-Start the app as an OS process, pass configs as env vars, wait for health:
+## Step 1: Add dependency
 
 ```kotlin
-@StoveDsl
-class MyAppUnderTest(
-    private val binaryPath: String,
-    private val port: Int,
-    private val configMapper: (List<String>) -> Map<String, String>
-) : ApplicationUnderTest<Unit> {
-
-    private var process: Process? = null
-
-    override suspend fun start(configurations: List<String>) {
-        val envVars = configMapper(configurations)
-        val processBuilder = ProcessBuilder(binaryPath)
-            .redirectErrorStream(true)
-        processBuilder.environment().putAll(envVars)
-        processBuilder.environment()["APP_PORT"] = port.toString()
-
-        process = processBuilder.start()
-        // Read stdout in background to prevent buffer blocking
-        launchOutputReader(process!!)
-        waitForHealth("http://localhost:$port/health")
-    }
-
-    override suspend fun stop() {
-        process?.let { p ->
-            p.destroy()  // SIGTERM
-            if (!p.waitFor(5, TimeUnit.SECONDS)) {
-                p.destroyForcibly()
-            }
-        }
-    }
+dependencies {
+    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
+    testImplementation("com.trendyol:stove-process")
+    // ... other stove dependencies as needed
 }
 ```
 
-## Step 2: DSL helper
+## Step 2-3: Project structure, Gradle
+
+Same as JVM setup (see SKILL.md). Build your app binary before tests:
 
 ```kotlin
-fun WithDsl.myApp(
-    binaryPath: String = System.getProperty("app.binary")
-        ?: error("app.binary system property not set"),
-    port: Int,
-    configMapper: (List<String>) -> Map<String, String>
-): Stove {
-    this.stove.applicationUnderTest(MyAppUnderTest(binaryPath, port, configMapper))
-    return this.stove
+val appSourceDir = project.file("my-app")
+val appBinary = project.layout.buildDirectory.file("my-app").get().asFile
+
+tasks.register<Exec>("buildApp") {
+    workingDir = appSourceDir
+    commandLine("go", "build", "-o", appBinary.absolutePath, ".")  // or npm, cargo, etc.
+    inputs.files(fileTree(appSourceDir) { include("*.go", "go.mod", "go.sum") })
+    outputs.file(appBinary)
+}
+
+tasks.named<Test>("e2eTest") {
+    dependsOn("buildApp")
+    systemProperty("app.binary", appBinary.absolutePath)
 }
 ```
 
-## Step 3-5: Project structure, Gradle, StoveConfig
+## Step 4: StoveConfig with processApp / goApp
 
-Same as JVM setup (see SKILL.md), except:
-
-- **No `springBoot()` / `ktor()` runner** --- use your custom DSL helper instead
-- **No `bridge()`** --- the app runs as a separate process, no DI access
-- **configMapper** translates Stove's `key=value` configs to your app's env vars
+Use `processApp()` for any language, or `goApp()` as a Go convenience:
 
 ```kotlin
 Stove().with {
@@ -112,25 +86,60 @@ Stove().with {
         )
     }
 
-    myApp(
-        port = APP_PORT,
-        configMapper = { configs ->
-            val map = configs.associate { line ->
-                val (key, value) = line.split("=", limit = 2)
-                key to value
-            }
-            buildMap {
-                map["database.host"]?.let { put("DB_HOST", it) }
-                map["database.port"]?.let { put("DB_PORT", it) }
-                // ... map all configs to your app's env vars
-                put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-            }
+    // For Go apps — uses go.app.binary system property by default
+    goApp(
+        target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "APP_PORT"),
+        envProvider = envMapper {
+            "database.host" to "DB_HOST"
+            "database.port" to "DB_PORT"
+            "database.name" to "DB_NAME"
+            "database.username" to "DB_USER"
+            "database.password" to "DB_PASS"
+            "kafka.bootstrapServers" to "KAFKA_BROKERS"
+            env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
         }
     )
+
+    // For any other language — specify the full command
+    // processApp {
+    //     ProcessApplicationOptions(
+    //         command = listOf("python3", "server.py"),
+    //         target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "PORT"),
+    //         envProvider = envMapper { "database.host" to "DB_HOST" }
+    //     )
+    // }
 }.run()
 ```
 
-## Step 6: OpenTelemetry (optional)
+### ProcessTarget variants
+
+| Variant | Use case | Default readiness |
+|---------|----------|-------------------|
+| `ProcessTarget.Server(port, portEnvVar)` | HTTP APIs, gRPC servers, TCP servers | HTTP GET `/health` |
+| `ProcessTarget.Worker()` | Kafka consumers, batch jobs, CLI tools | 2-second fixed delay |
+
+### ReadinessStrategy variants
+
+| Strategy | Use case |
+|----------|----------|
+| `ReadinessStrategy.HttpGet(HealthCheckOptions(...))` | REST APIs with health endpoint |
+| `ReadinessStrategy.TcpPort(port)` | gRPC servers, raw TCP (no HTTP) |
+| `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB query, etc.) |
+| `ReadinessStrategy.FixedDelay(duration)` | Simple workers with no readiness signal |
+
+### envMapper builder
+
+Replaces manual `configs.associate { split("=") }` boilerplate:
+
+```kotlin
+envMapper {
+    "stove.config.key" to "ENV_VAR_NAME"    // map Stove config → env var
+    env("STATIC_VAR", "value")              // static env var
+    env("COMPUTED_VAR") { computeValue() }  // computed env var
+}
+```
+
+## Step 5: OpenTelemetry (optional)
 
 Use your language's OTel SDK. Key points:
 
@@ -138,9 +147,9 @@ Use your language's OTel SDK. Key points:
 - Set **W3C Trace Context propagation** so spans share the test's trace ID
 - Stove's HTTP client sends `traceparent` headers automatically
 
-## Step 7: Kafka bridge (Go only)
+## Step 6: Kafka bridge (Go only)
 
-For Go apps using IBM/sarama, add the `stove-kafka` bridge library. See [go-setup.md](go-setup.md) for details.
+For Go apps using IBM/sarama, twmb/franz-go, or segmentio/kafka-go, add the `stove-kafka` bridge library. See [go-setup.md](go-setup.md) for details.
 
 The bridge intercepts produced/consumed messages and forwards them via gRPC to Stove's observer, enabling `shouldBePublished` and `shouldBeConsumed` assertions.
 
@@ -149,28 +158,8 @@ The bridge intercepts produced/consumed messages and forwards them via gRPC to S
 - **No `bridge()` / `using<T> {}`** --- no access to app's DI container
 - Everything else works: HTTP, databases, Kafka, tracing, WireMock, gRPC, dashboard
 
-## Gradle build task
-
-Build the app binary before tests:
-
-```kotlin
-val appSourceDir = project.file("my-app")
-val appBinary = project.layout.buildDirectory.file("my-app").get().asFile
-
-tasks.register<Exec>("buildApp") {
-    workingDir = appSourceDir
-    commandLine("go", "build", "-o", appBinary.absolutePath, ".")  // or npm, cargo, etc.
-    inputs.files(fileTree(appSourceDir) { include("*.go", "go.mod", "go.sum") })
-    outputs.file(appBinary)
-}
-
-tasks.named<Test>("e2eTest") {
-    dependsOn("buildApp")
-    systemProperty("app.binary", appBinary.absolutePath)
-}
-```
-
 ## Reference
 
+- Process module source: `starters/process/stove-process/`
 - Full Go example: `recipes/go-recipes/go-showcase/`
 - Docs: `docs/other-languages/go.md` and `docs/other-languages/index.md`

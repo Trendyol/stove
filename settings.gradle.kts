@@ -49,7 +49,8 @@ include(
   "starters:spring:tests:spring-3x-kafka-tests",
   "starters:spring:tests:spring-4x-tests",
   "starters:spring:tests:spring-4x-kafka-tests",
-  "starters:micronaut:stove-micronaut"
+  "starters:micronaut:stove-micronaut",
+  "starters:process:stove-process"
 )
 include(
   "examples:spring-example",

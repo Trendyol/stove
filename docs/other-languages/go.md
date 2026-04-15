@@ -21,8 +21,7 @@ go-showcase/
   src/test-e2e/                # Kotlin Stove tests
     kotlin/com/.../e2e/
       setup/
-        GoApplicationUnderTest.kt   # Custom AUT: starts Go binary
-        StoveConfig.kt              # Stove system configuration
+        StoveConfig.kt              # Stove system configuration (uses stove-process goApp())
         ProductMigration.kt         # Creates products table
       tests/
         GoShowcaseTest.kt           # E2E tests
@@ -489,56 +488,25 @@ dependencies {
 
 Running `./gradlew e2eTest` compiles the Go binary first, then runs the Kotlin tests.
 
-### GoApplicationUnderTest
+### stove-process Module
 
-The custom `ApplicationUnderTest` starts the Go binary as an OS process:
-
-```kotlin title="GoApplicationUnderTest.kt" hl_lines="8-10 14-20 25-29"
-@StoveDsl
-class GoApplicationUnderTest(
-    private val binaryPath: String,
-    private val port: Int,
-    private val configMapper: (List<String>) -> Map<String, String>
-) : ApplicationUnderTest<Unit> {
-
-    override suspend fun start(configurations: List<String>) {
-        // Convert Stove configs ("database.host=localhost") to env vars ("DB_HOST=localhost")
-        val envVars = configMapper(configurations)
-
-        val processBuilder = ProcessBuilder(binaryPath)
-            .redirectErrorStream(true)
-        processBuilder.environment().putAll(envVars)
-        processBuilder.environment()["APP_PORT"] = port.toString()
-
-        process = processBuilder.start()
-        launchOutputReader(process!!)
-        waitForHealth("http://localhost:$port/health")
-    }
-
-    override suspend fun stop() {
-        process?.let { p ->
-            p.destroy()                    // SIGTERM
-            if (!p.waitFor(5, TimeUnit.SECONDS)) {
-                p.destroyForcibly()        // Force kill
-            }
-        }
-    }
-}
-```
-
-The `configMapper` is the bridge between Stove's configuration format (`key=value` strings) and your app's environment variables:
+The `stove-process` module provides `goApp()` and `processApp()` out of the box --- no custom `ApplicationUnderTest` implementation needed:
 
 ```kotlin
-fun WithDsl.goApp(
-    binaryPath: String = System.getProperty("go.app.binary")
-        ?: error("go.app.binary system property not set"),
-    port: Int,
-    configMapper: (List<String>) -> Map<String, String>
-): Stove {
-    this.stove.applicationUnderTest(GoApplicationUnderTest(binaryPath, port, configMapper))
-    return this.stove
+dependencies {
+    testImplementation("com.trendyol:stove-process")
 }
 ```
+
+The module handles:
+
+- Starting the binary as an OS process via `ProcessBuilder`
+- Mapping Stove configs to environment variables via `envMapper {}`
+- Readiness checking (HTTP health, TCP port, custom probe, or fixed delay)
+- Graceful shutdown (SIGTERM → force-kill after timeout)
+- Stdout/stderr reading in a background thread
+
+`goApp()` defaults the binary path from the `go.app.binary` system property. For other languages, use `processApp()` directly.
 
 ### Stove Configuration
 
@@ -583,30 +551,23 @@ Stove()
         }
 
         goApp(
-            port = APP_PORT,
-            configMapper = { configs ->
-                val map = configs.associate { line ->
-                    val (key, value) = line.split("=", limit = 2)
-                    key to value
-                }
-                buildMap {
-                    map["database.host"]?.let { put("DB_HOST", it) }
-                    map["database.port"]?.let { put("DB_PORT", it) }
-                    map["database.name"]?.let { put("DB_NAME", it) }
-                    map["database.username"]?.let { put("DB_USER", it) }
-                    map["database.password"]?.let { put("DB_PASS", it) }
-                    put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-                    // Kafka broker address, library selection, and Stove bridge port
-                    map["kafka.bootstrapServers"]?.let { put("KAFKA_BROKERS", it) }
-                    put("KAFKA_LIBRARY", System.getProperty("kafka.library") ?: "sarama")
-                    put("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
-                }
+            target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "APP_PORT"),
+            envProvider = envMapper {
+                "database.host" to "DB_HOST"
+                "database.port" to "DB_PORT"
+                "database.name" to "DB_NAME"
+                "database.username" to "DB_USER"
+                "database.password" to "DB_PASS"
+                "kafka.bootstrapServers" to "KAFKA_BROKERS"
+                env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
+                env("KAFKA_LIBRARY") { System.getProperty("kafka.library") ?: "sarama" }
+                env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
             }
         )
     }.run()
 ```
 
-The `configMapper` receives Stove's exposed configurations (from `configureExposedConfiguration` in each system) and translates them to the environment variables the Go app expects. The `stoveKafkaBridgePortDefault` is a dynamically assigned port that the Stove Kafka system starts a gRPC server on --- the Go bridge connects to it.
+The `envMapper` block declaratively maps Stove's exposed configurations (from `configureExposedConfiguration` in each system) to environment variables the Go app expects. Use `"stoveKey" to "ENV_VAR"` for config-derived values and `env("NAME", "value")` for static ones. The `stoveKafkaBridgePortDefault` is a dynamically assigned port that the Stove Kafka system starts a gRPC server on --- the Go bridge connects to it.
 
 ### Database Migration
 

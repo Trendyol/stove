@@ -1,6 +1,7 @@
 # System Setup Reference
 
 ## Contents
+- [Process Application (non-JVM apps)](#process-application-non-jvm-apps)
 - [Provided Application (smoke testing)](#provided-application-smoke-testing)
 - [Keyed systems (multiple instances)](#keyed-systems-multiple-instances)
 - [HTTP Client](#http-client)
@@ -28,6 +29,81 @@
 - [Keep dependencies running](#keep-dependencies-running)
 
 All systems are configured inside `Stove().with { }`. The application runner goes last.
+
+## Process Application (non-JVM apps)
+
+Use `processApp()` or `goApp()` from the `stove-process` module to test applications written in any language (Go, Python, Rust, Node.js, etc.) as OS processes.
+
+```kotlin
+dependencies {
+    testImplementation("com.trendyol:stove-process")
+}
+```
+
+### ProcessTarget variants
+
+| Variant | Use case | Default readiness |
+|---------|----------|-------------------|
+| `ProcessTarget.Server(port, portEnvVar)` | HTTP/gRPC/TCP servers | HTTP GET `/health` |
+| `ProcessTarget.Worker()` | Kafka consumers, batch jobs | 2s fixed delay |
+
+### ReadinessStrategy variants
+
+| Strategy | Use case |
+|----------|----------|
+| `ReadinessStrategy.HttpGet(HealthCheckOptions(...))` | REST APIs with health endpoint |
+| `ReadinessStrategy.TcpPort(port)` | gRPC/TCP servers (no HTTP) |
+| `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB, etc.) |
+| `ReadinessStrategy.FixedDelay(duration)` | Simple workers |
+
+### envMapper builder
+
+```kotlin
+envMapper {
+    "stove.config.key" to "ENV_VAR_NAME"    // map Stove config → env var
+    env("STATIC_VAR", "value")              // static env var
+    env("COMPUTED_VAR") { computeValue() }  // computed env var
+}
+```
+
+### Examples
+
+```kotlin
+// HTTP API (Go)
+goApp(
+    target = ProcessTarget.Server(port = 8090, portEnvVar = "APP_PORT"),
+    envProvider = envMapper {
+        "database.host" to "DB_HOST"
+        "database.port" to "DB_PORT"
+        env("LOG_LEVEL", "debug")
+    }
+)
+
+// gRPC server (any language)
+processApp {
+    ProcessApplicationOptions(
+        command = listOf("/path/to/grpc-server"),
+        target = ProcessTarget.Server(
+            port = 50051,
+            portEnvVar = "GRPC_PORT",
+            readiness = ReadinessStrategy.TcpPort(port = 50051),
+        ),
+        envProvider = envMapper { "database.host" to "DB_HOST" }
+    )
+}
+
+// Kafka consumer (no port)
+goApp(
+    target = ProcessTarget.Worker(readiness = ReadinessStrategy.FixedDelay(3.seconds)),
+    envProvider = envMapper { "kafka.bootstrapServers" to "KAFKA_BROKERS" }
+)
+```
+
+Key points:
+- `goApp()` defaults binary path from `go.app.binary` system property
+- Port env var is injected automatically for `Server` targets
+- No `bridge()` — the app runs as a separate process, no DI access
+- See [other-languages.md](other-languages.md) and [go-setup.md](go-setup.md) for full setup guides
 
 ## Provided Application (smoke testing)
 

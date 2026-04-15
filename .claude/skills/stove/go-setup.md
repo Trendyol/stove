@@ -8,7 +8,7 @@ Complete guide for testing Go applications with Stove. Covers HTTP, PostgreSQL, 
 - [ ] Step 1: Create Go app with env var config + health endpoint + SIGTERM handling
 - [ ] Step 2: Add OpenTelemetry instrumentation (otelhttp, otelsql)
 - [ ] Step 3: Add Kafka with Stove bridge interceptors (optional)
-- [ ] Step 4: Create GoApplicationUnderTest + goApp() DSL
+- [ ] Step 4: Add stove-process dependency (provides goApp() DSL)
 - [ ] Step 5: Create test-e2e source set + StoveConfig
 - [ ] Step 6: Configure Gradle build (go build + e2eTest)
 - [ ] Step 7: Write tests
@@ -242,16 +242,17 @@ consumerClient, _ := kgo.NewClient(
 groupID := "myapp-" + library  // e.g. "myapp-sarama", "myapp-franz"
 ```
 
-## Step 4: GoApplicationUnderTest
+## Step 4: Add stove-process dependency
 
-Reference implementation at `recipes/go-recipes/go-showcase/src/test-e2e/kotlin/.../setup/GoApplicationUnderTest.kt`.
+The `stove-process` module provides `goApp()` out of the box — no custom `ApplicationUnderTest` needed.
 
-Key points:
-- Starts Go binary via `ProcessBuilder`
-- Passes all config as env vars via `configMapper`
-- Reads stdout in a background coroutine (prevents buffer blocking)
-- Waits for health endpoint before returning
-- Sends SIGTERM on stop, force-kills after 5s timeout
+```kotlin
+dependencies {
+    testImplementation(stoveLibs.stoveProcess) // or "com.trendyol:stove-process"
+}
+```
+
+Source: `starters/process/stove-process/`
 
 ## Step 5: StoveConfig
 
@@ -283,20 +284,17 @@ Stove().with {
     }
 
     goApp(
-        port = APP_PORT,
-        configMapper = { configs ->
-            val map = configs.associate { it.split("=", limit = 2).let { (k, v) -> k to v } }
-            buildMap {
-                map["database.host"]?.let { put("DB_HOST", it) }
-                map["database.port"]?.let { put("DB_PORT", it) }
-                map["database.name"]?.let { put("DB_NAME", it) }
-                map["database.username"]?.let { put("DB_USER", it) }
-                map["database.password"]?.let { put("DB_PASS", it) }
-                put("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-                map["kafka.bootstrapServers"]?.let { put("KAFKA_BROKERS", it) }
-                put("KAFKA_LIBRARY", System.getProperty("kafka.library") ?: "sarama")
-                put("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
-            }
+        target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "APP_PORT"),
+        envProvider = envMapper {
+            "database.host" to "DB_HOST"
+            "database.port" to "DB_PORT"
+            "database.name" to "DB_NAME"
+            "database.username" to "DB_USER"
+            "database.password" to "DB_PASS"
+            "kafka.bootstrapServers" to "KAFKA_BROKERS"
+            env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
+            env("KAFKA_LIBRARY") { System.getProperty("kafka.library") ?: "sarama" }
+            env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
         }
     )
 }.run()
@@ -332,6 +330,7 @@ tasks.named<Test>("e2eTest") { dependsOn(kafkaE2eTasks); enabled = false }
 
 dependencies {
     testImplementation(stoveLibs.stove)
+    testImplementation(stoveLibs.stoveProcess)
     testImplementation(stoveLibs.stovePostgres)
     testImplementation(stoveLibs.stoveHttp)
     testImplementation(stoveLibs.stoveTracing)
@@ -436,6 +435,7 @@ google.golang.org/grpc                                           # gRPC
 
 ## Reference
 
+- Process module (goApp DSL): `starters/process/stove-process/`
 - Full working example: `recipes/go-recipes/go-showcase/`
 - Bridge library source: `go/stove-kafka/`
 - Docs: `docs/other-languages/go.md`
