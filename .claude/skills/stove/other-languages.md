@@ -192,5 +192,5 @@ The bridge intercepts produced/consumed messages and forwards them via gRPC to S
 ## Reference
 
 - Process module source: `starters/process/stove-process/`
-- Full Go example: `recipes/go-recipes/go-showcase/`
+- Full Go example: `recipes/process/golang/go-showcase/`
 - Docs: `docs/other-languages/go.md` and `docs/other-languages/index.md`

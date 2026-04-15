@@ -2,23 +2,22 @@
 
 This guide walks through testing a Go application with Stove --- end to end, including <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">HTTP, PostgreSQL, Kafka, distributed tracing, and the dashboard</span>. The Go app is a simple product CRUD service; Stove starts it as an OS process, passes infrastructure configs as environment variables, and runs Kotlin e2e tests against it.
 
-The full source is at [`recipes/go-recipes/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/go-recipes/go-showcase).
+The full source is at [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase).
 
 ## Project Structure
 
 ```
-go-showcase/
-  product-app-go/              # Go application source
-    go.mod
-    main.go                    # Entry point, env var config, graceful shutdown
-    db.go                      # PostgreSQL queries (auto-traced via otelsql)
-    handlers.go                # HTTP handlers + Kafka publish (auto-traced via otelhttp)
-    kafka.go                   # KafkaProducer interface, factory, shared consumer handler
-    kafka_sarama.go            # IBM/sarama implementation
-    kafka_franz.go             # twmb/franz-go implementation
-    kafka_segmentio.go         # segmentio/kafka-go implementation
-    tracing.go                 # OpenTelemetry SDK initialization
-  src/test-e2e/                # Kotlin Stove tests
+go-showcase/                   # Standalone Gradle project (copy-paste ready)
+  main.go                      # Entry point, env var config, graceful shutdown
+  db.go                        # PostgreSQL queries (auto-traced via otelsql)
+  handlers.go                  # HTTP handlers + Kafka publish (auto-traced via otelhttp)
+  kafka.go                     # KafkaProducer interface, factory, shared consumer handler
+  kafka_sarama.go              # IBM/sarama implementation
+  kafka_franz.go               # twmb/franz-go implementation
+  kafka_segmentio.go           # segmentio/kafka-go implementation
+  tracing.go                   # OpenTelemetry SDK initialization
+  go.mod
+  stovetests/                  # Kotlin Stove tests
     kotlin/com/.../e2e/
       setup/
         StoveConfig.kt              # Stove system configuration (uses stove-process goApp())
@@ -28,6 +27,7 @@ go-showcase/
     resources/
       kotest.properties
   build.gradle.kts             # Builds Go + runs Kotlin tests
+  settings.gradle.kts          # Standalone settings with version catalog
 
 # Distributed as a Go library:
 go/stove-kafka/            # Stove Kafka bridge for Go applications
@@ -445,19 +445,13 @@ github.com/trendyol/stove/go/stove-kafka                        # Core bridge (a
 Gradle compiles the Go binary and passes its path to the test:
 
 ```kotlin title="build.gradle.kts"
-val goSourceDir = project.file("product-app-go")
-val goBinary = project.layout.buildDirectory.file("go-app").get().asFile
+val goBinary = layout.buildDirectory.file("go-app").get().asFile
 
 tasks.register<Exec>("buildGoApp") {
     description = "Compiles the Go application."
     group = "build"
-    workingDir = goSourceDir
     commandLine("go", "build", "-o", goBinary.absolutePath, ".")
-
-    inputs.files(
-        fileTree(goSourceDir) { include("*.go", "go.mod", "go.sum") },
-        fileTree(project.rootDir.resolve("go/stove-kafka")) { include("*.go", "go.mod") }
-    )
+    inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
     outputs.file(goBinary)
 }
 
@@ -477,6 +471,7 @@ tasks.named<Test>("e2eTest") { dependsOn(kafkaE2eTasks); enabled = false }
 
 dependencies {
     testImplementation(stoveLibs.stove)
+    testImplementation(stoveLibs.stoveProcess)
     testImplementation(stoveLibs.stovePostgres)
     testImplementation(stoveLibs.stoveHttp)
     testImplementation(stoveLibs.stoveTracing)
@@ -777,13 +772,14 @@ sequenceDiagram
 ## Running
 
 ```bash
-# From the recipes directory — runs all three Kafka libraries (sarama, franz, segmentio)
-./gradlew go-recipes:go-showcase:e2eTest
+# From the go-showcase directory — runs all three Kafka libraries (sarama, franz, segmentio)
+cd recipes/process/golang/go-showcase
+./gradlew e2eTest
 
 # Run a specific library only
-./gradlew go-recipes:go-showcase:e2eTest_sarama
-./gradlew go-recipes:go-showcase:e2eTest_franz
-./gradlew go-recipes:go-showcase:e2eTest_segmentio
+./gradlew e2eTest_sarama
+./gradlew e2eTest_franz
+./gradlew e2eTest_segmentio
 ```
 
 Each per-library task:
@@ -811,4 +807,4 @@ The same pattern works for any language. Replace the Go-specific parts:
 | **Kafka** | `stove-kafka` bridge (sarama / franz-go / kafka-go) | *(bridge library needed)* | *(bridge library needed)* | *(bridge library needed)* |
 | **Config** | Env vars | Env vars | Env vars | Env vars |
 
-The Kotlin test side stays exactly the same --- only `GoApplicationUnderTest` and the `configMapper` change.
+The Kotlin test side stays exactly the same --- only `processApp()` / `goApp()` and the `envMapper` change.

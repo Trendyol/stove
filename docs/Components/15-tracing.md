@@ -318,7 +318,7 @@ Summary: 8 spans, 0 failures, total: 250ms
 ```
 
 !!! note "Working example"
-    For a complete working project with tracing, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase).
+    For a complete working project with tracing, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase).
 
 ## Configuration Reference
 

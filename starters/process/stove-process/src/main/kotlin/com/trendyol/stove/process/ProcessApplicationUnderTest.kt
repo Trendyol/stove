@@ -3,6 +3,7 @@ package com.trendyol.stove.process
 import com.trendyol.stove.system.ReadinessChecker
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.annotations.StoveDsl
+import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
@@ -59,8 +60,10 @@ class ProcessApplicationUnderTest(
       processBuilder.environment()[target.portEnvVar] = target.port.toString()
     }
 
+    options.beforeStarted(configMap, options)
+
     logger.info("Starting process: {} with {} env vars and {} cli args", fullCommand, envVars.size, cliArgs.size)
-    process = processBuilder.start()
+    process = withContext(Dispatchers.IO) { processBuilder.start() }
     launchOutputReader(process!!)
 
     ReadinessChecker.check(options.target.readiness)

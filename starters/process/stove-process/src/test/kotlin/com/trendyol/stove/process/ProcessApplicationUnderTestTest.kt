@@ -82,6 +82,63 @@ class ProcessApplicationUnderTestTest :
       }
     }
 
+    context("beforeStarted callback") {
+      test("is called with configurations and options before process starts") {
+        lateinit var capturedConfigs: Map<String, String>
+        lateinit var capturedOptions: ProcessApplicationOptions
+
+        val aut = ProcessApplicationUnderTest(
+          ProcessApplicationOptions(
+            command = listOf("sh", "-c", "sleep 5"),
+            target = ProcessTarget.Worker(
+              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
+            ),
+            envProvider = envMapper {
+              "database.host" to "DB_HOST"
+            },
+            beforeStarted = { configs, opts ->
+              capturedConfigs = configs
+              capturedOptions = opts
+            }
+          )
+        )
+
+        runBlocking {
+          aut.start(listOf("database.host=localhost", "database.port=5432"))
+          capturedConfigs shouldBe mapOf("database.host" to "localhost", "database.port" to "5432")
+          capturedOptions.command shouldBe listOf("sh", "-c", "sleep 5")
+          capturedOptions.workingDirectory shouldBe null
+          aut.stop()
+        }
+      }
+
+      test("options include working directory when set") {
+        val tempDir = kotlin.io.path.createTempDirectory("stove-test").toFile()
+        lateinit var capturedOptions: ProcessApplicationOptions
+
+        try {
+          val aut = ProcessApplicationUnderTest(
+            ProcessApplicationOptions(
+              command = listOf("sh", "-c", "sleep 5"),
+              target = ProcessTarget.Worker(
+                readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
+              ),
+              beforeStarted = { _, opts -> capturedOptions = opts },
+              workingDirectory = tempDir
+            )
+          )
+
+          runBlocking {
+            aut.start(emptyList())
+            capturedOptions.workingDirectory shouldBe tempDir
+            aut.stop()
+          }
+        } finally {
+          tempDir.deleteRecursively()
+        }
+      }
+    }
+
     context("Worker target") {
       test("starts without port injection") {
         val aut = ProcessApplicationUnderTest(

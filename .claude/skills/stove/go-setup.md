@@ -303,16 +303,11 @@ Stove().with {
 ## Step 6: Gradle
 
 ```kotlin
-val goSourceDir = project.file("product-app-go")
-val goBinary = project.layout.buildDirectory.file("go-app").get().asFile
+val goBinary = layout.buildDirectory.file("go-app").get().asFile
 
 tasks.register<Exec>("buildGoApp") {
-    workingDir = goSourceDir
     commandLine("go", "build", "-o", goBinary.absolutePath, ".")
-    inputs.files(
-        fileTree(goSourceDir) { include("*.go", "go.mod", "go.sum") },
-        fileTree(project.rootDir.resolve("go/stove-kafka")) { include("*.go", "go.mod") }
-    )
+    inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
     outputs.file(goBinary)
 }
 
@@ -411,13 +406,14 @@ class GoShowcaseTest : FunSpec({
 ## Running
 
 ```bash
-# From the recipes directory — runs all three Kafka libraries
-./gradlew go-recipes:go-showcase:e2eTest
+# From the go-showcase directory — runs all three Kafka libraries
+cd recipes/process/golang/go-showcase
+./gradlew e2eTest
 
 # Run a specific library only
-./gradlew go-recipes:go-showcase:e2eTest_sarama
-./gradlew go-recipes:go-showcase:e2eTest_franz
-./gradlew go-recipes:go-showcase:e2eTest_segmentio
+./gradlew e2eTest_sarama
+./gradlew e2eTest_franz
+./gradlew e2eTest_segmentio
 ```
 
 ## Go dependencies
@@ -436,6 +432,6 @@ google.golang.org/grpc                                           # gRPC
 ## Reference
 
 - Process module (goApp DSL): `starters/process/stove-process/`
-- Full working example: `recipes/go-recipes/go-showcase/`
+- Full working example: `recipes/process/golang/go-showcase/`
 - Bridge library source: `go/stove-kafka/`
 - Docs: `docs/other-languages/go.md`

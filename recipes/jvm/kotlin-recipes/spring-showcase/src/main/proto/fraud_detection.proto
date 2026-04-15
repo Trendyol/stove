@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package frauddetection;
+
+option java_package = "com.trendyol.stove.examples.kotlin.spring.grpc";
+option java_multiple_files = true;
+
+// Request to check if an order is fraudulent
+message CheckFraudRequest {
+  string order_id = 1;
+  string user_id = 2;
+  double amount = 3;
+  string product_id = 4;
+}
+
+// Response with fraud check result
+message CheckFraudResponse {
+  bool is_fraudulent = 1;
+  double risk_score = 2;  // 0.0 - 1.0
+  string reason = 3;      // e.g., "high_value_first_order", "suspicious_pattern"
+}
+
+// External Fraud Detection service (simulates a real microservice)
+service FraudDetectionService {
+  // Check if an order is potentially fraudulent
+  rpc CheckFraud(CheckFraudRequest) returns (CheckFraudResponse);
+}

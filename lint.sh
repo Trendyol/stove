@@ -24,7 +24,7 @@ fi
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 CLI_DIR="$REPO_ROOT/tools/stove-cli"
 SPA_DIR="$CLI_DIR/spa"
-RECIPES_DIR="$REPO_ROOT/recipes"
+RECIPES_DIR="$REPO_ROOT/recipes/jvm"
 
 # ── Parse args ────────────────────────────────────────────────────────
 
@@ -144,7 +144,7 @@ lint_spa() {
 
 lint_go() {
   section "Go"
-  GO_DIRS="$REPO_ROOT/go/stove-kafka $REPO_ROOT/recipes/go-recipes/go-showcase/product-app-go"
+  GO_DIRS="$REPO_ROOT/go/stove-kafka $REPO_ROOT/recipes/process/golang/go-showcase"
   for dir in $GO_DIRS; do
     if [ -d "$dir" ]; then
       if [ "$MODE" = "format" ]; then

@@ -1,7 +1,6 @@
 package com.trendyol.stove.process
 
-import com.trendyol.stove.system.HealthCheckOptions
-import com.trendyol.stove.system.ReadinessStrategy
+import com.trendyol.stove.system.*
 import com.trendyol.stove.system.annotations.StoveDsl
 import java.io.File
 import kotlin.time.Duration
@@ -113,6 +112,9 @@ sealed interface ProcessTarget {
  * @param target Describes the process type and how to verify readiness.
  * @param envProvider Maps Stove configurations to environment variables for the process.
  * @param argsProvider Maps Stove configurations to CLI arguments appended to the command.
+ * @param beforeStarted Called after configurations are resolved but before the process is launched.
+ *   Receives the resolved configuration map and the options themselves. Use this to write config files,
+ *   seed directories, or perform any setup the process needs at startup.
  * @param workingDirectory Optional working directory for the process. Defaults to the JVM's current directory.
  * @param redirectErrorStream Whether to merge stderr into stdout. Defaults to `true`.
  * @param gracefulShutdownTimeout How long to wait for the process to exit after SIGTERM before force-killing.
@@ -129,6 +131,10 @@ data class ProcessApplicationOptions(
   val target: ProcessTarget,
   val envProvider: EnvProvider = EnvProvider.empty(),
   val argsProvider: ArgsProvider = ArgsProvider.empty(),
+  val beforeStarted: suspend (
+    configurations: Map<String, String>,
+    options: ProcessApplicationOptions
+  ) -> Unit = { _, _ -> },
   val workingDirectory: File? = null,
   val redirectErrorStream: Boolean = true,
   val gracefulShutdownTimeout: Duration = 5.seconds

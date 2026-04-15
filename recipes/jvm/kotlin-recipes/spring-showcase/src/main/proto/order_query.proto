@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package orderquery;
+
+option java_multiple_files = true;
+option java_package = "com.trendyol.stove.examples.kotlin.spring.grpc";
+
+// Request to get order by ID
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+// Request to get orders by user
+message GetOrdersByUserRequest {
+  string user_id = 1;
+}
+
+// Order details in response
+message OrderProto {
+  string id = 1;
+  string user_id = 2;
+  string product_id = 3;
+  double amount = 4;
+  string status = 5;
+  string payment_transaction_id = 6;
+  int64 created_at = 7; // Unix timestamp millis
+}
+
+// Single order response
+message GetOrderResponse {
+  bool found = 1;
+  OrderProto order = 2;
+}
+
+// Multiple orders response
+message GetOrdersResponse {
+  repeated OrderProto orders = 1;
+}
+
+// Order Query Service - exposed by our application
+service OrderQueryService {
+  // Get a single order by ID
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+
+  // Get all orders for a user
+  rpc GetOrdersByUser(GetOrdersByUserRequest) returns (GetOrdersResponse);
+}

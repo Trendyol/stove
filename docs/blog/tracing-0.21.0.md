@@ -14,7 +14,7 @@ The key idea: test your entire application stack as it runs in production, not a
 
 ## A Real Application: The Spring Showcase
 
-To demonstrate tracing, let's walk through a realistic application. The [spring-showcase](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase) recipe is an order service that touches six different integration points during a single request:
+To demonstrate tracing, let's walk through a realistic application. The [spring-showcase](https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase) recipe is an order service that touches six different integration points during a single request:
 
 ```mermaid
 flowchart LR
@@ -429,7 +429,7 @@ tracing {
 }
 ```
 
-<span data-rn="underline" data-rn-color="#009688">For a complete working example, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase). It demonstrates all Stove features together (HTTP, gRPC, Kafka, PostgreSQL, WireMock, db-scheduler, and tracing) in a realistic Spring Boot application.</span>
+<span data-rn="underline" data-rn-color="#009688">For a complete working example, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase). It demonstrates all Stove features together (HTTP, gRPC, Kafka, PostgreSQL, WireMock, db-scheduler, and tracing) in a realistic Spring Boot application.</span>
 
 ---
 
@@ -437,6 +437,6 @@ tracing {
 
 - [Stove on GitHub](https://github.com/Trendyol/stove)
 - [Tracing documentation](../Components/15-tracing.md)
-- [Spring Showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/kotlin-recipes/spring-showcase)
+- [Spring Showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase)
 - [Full 0.21.0 release notes](../release-notes/0.21.0.md)
 - [Getting started guide](../getting-started.md)

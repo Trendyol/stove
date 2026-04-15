@@ -1,0 +1,30 @@
+root = true
+
+[*]
+insert_final_newline = true
+ktlint_standard_package-name = disabled
+ktlint_standard_filename = disabled
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_string-template-indent = disabled
+ktlint_standard_function-signature = disabled
+
+[*.java]
+indent_style = space
+max_line_length = 140
+indent_size = 2
+
+[{*.kt,*.kts}]
+indent_style = space
+max_line_length = 140
+indent_size = 2
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ij_continuation_indent_size = 2
+ij_kotlin_allow_trailing_comma = false
+ij_kotlin_allow_trailing_comma_on_call_site = false
+ij_kotlin_name_count_to_use_star_import = 2
+ij_kotlin_name_count_to_use_star_import_for_members = 2
+
+[{**/test/**.kt,**/test-e2e/**.kt,**/test-int/**.kt}]
+max_line_length = 240
+ktlint_standard_no-consecutive-comments = disabled

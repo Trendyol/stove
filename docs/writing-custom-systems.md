@@ -122,7 +122,7 @@ stove {
 ```
 
 !!! note "Full working example"
-    See the [spring-showcase recipe](https://github.com/Trendyol/stove/blob/main/recipes/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/com/trendyol/stove/examples/kotlin/spring/e2e/setup/DbSchedulerSystem.kt) for the complete `DbSchedulerSystem` implementation with reporting integration.
+    See the [spring-showcase recipe](https://github.com/Trendyol/stove/blob/main/recipes/jvm/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/com/trendyol/stove/examples/kotlin/spring/e2e/setup/DbSchedulerSystem.kt) for the complete `DbSchedulerSystem` implementation with reporting integration.
 
 ### Domain Event Capture
 
