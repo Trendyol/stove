@@ -58,7 +58,7 @@ stove = "1.0.0.519-SNAPSHOT"
 kotest = "6.1.11"
 exposed = "1.2.0"
 postgresql = "42.7.10"
-flyway = "12.3.0"
+flyway = "12.4.0"
 
 [libraries]
 # Kotlin
