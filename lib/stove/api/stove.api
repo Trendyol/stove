@@ -785,26 +785,6 @@ public final class com/trendyol/stove/system/BridgeSystemKt {
 	public static final fun withBridgeSystem (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/BridgeSystem;)Lcom/trendyol/stove/system/Stove;
 }
 
-public final class com/trendyol/stove/system/HealthCheckOptions {
-	public synthetic fun <init> (Ljava/lang/String;JIJLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;JIJLjava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2-UwyO8pc ()J
-	public final fun component3 ()I
-	public final fun component4-UwyO8pc ()J
-	public final fun component5 ()Ljava/util/Set;
-	public final fun copy-7Q0yyfQ (Ljava/lang/String;JIJLjava/util/Set;)Lcom/trendyol/stove/system/HealthCheckOptions;
-	public static synthetic fun copy-7Q0yyfQ$default (Lcom/trendyol/stove/system/HealthCheckOptions;Ljava/lang/String;JIJLjava/util/Set;ILjava/lang/Object;)Lcom/trendyol/stove/system/HealthCheckOptions;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getExpectedStatusCodes ()Ljava/util/Set;
-	public final fun getRetries ()I
-	public final fun getRetryDelay-UwyO8pc ()J
-	public final fun getTimeout-UwyO8pc ()J
-	public final fun getUrl ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class com/trendyol/stove/system/PortFinder {
 	public static final field INSTANCE Lcom/trendyol/stove/system/PortFinder;
 	public static final fun findAvailablePort ()I
@@ -827,13 +807,13 @@ public final class com/trendyol/stove/system/PropertiesFile$Companion {
 
 public final class com/trendyol/stove/system/ProvidedApplicationOptions {
 	public fun <init> ()V
-	public fun <init> (Lcom/trendyol/stove/system/HealthCheckOptions;)V
-	public synthetic fun <init> (Lcom/trendyol/stove/system/HealthCheckOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/trendyol/stove/system/HealthCheckOptions;
-	public final fun copy (Lcom/trendyol/stove/system/HealthCheckOptions;)Lcom/trendyol/stove/system/ProvidedApplicationOptions;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/system/ProvidedApplicationOptions;Lcom/trendyol/stove/system/HealthCheckOptions;ILjava/lang/Object;)Lcom/trendyol/stove/system/ProvidedApplicationOptions;
+	public fun <init> (Lcom/trendyol/stove/system/ReadinessStrategy;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/system/ReadinessStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/system/ReadinessStrategy;
+	public final fun copy (Lcom/trendyol/stove/system/ReadinessStrategy;)Lcom/trendyol/stove/system/ProvidedApplicationOptions;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/system/ProvidedApplicationOptions;Lcom/trendyol/stove/system/ReadinessStrategy;ILjava/lang/Object;)Lcom/trendyol/stove/system/ProvidedApplicationOptions;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getHealthCheck ()Lcom/trendyol/stove/system/HealthCheckOptions;
+	public final fun getReadiness ()Lcom/trendyol/stove/system/ReadinessStrategy;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -851,7 +831,6 @@ public final class com/trendyol/stove/system/ProvidedApplicationUnderTestKt {
 
 public final class com/trendyol/stove/system/ReadinessChecker {
 	public static final field INSTANCE Lcom/trendyol/stove/system/ReadinessChecker;
-	public final fun check (Lcom/trendyol/stove/system/HealthCheckOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun check (Lcom/trendyol/stove/system/ReadinessStrategy;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -871,12 +850,21 @@ public final class com/trendyol/stove/system/ReadinessStrategy$FixedDelay : com/
 }
 
 public final class com/trendyol/stove/system/ReadinessStrategy$HttpGet : com/trendyol/stove/system/ReadinessStrategy {
-	public fun <init> (Lcom/trendyol/stove/system/HealthCheckOptions;)V
-	public final fun component1 ()Lcom/trendyol/stove/system/HealthCheckOptions;
-	public final fun copy (Lcom/trendyol/stove/system/HealthCheckOptions;)Lcom/trendyol/stove/system/ReadinessStrategy$HttpGet;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/system/ReadinessStrategy$HttpGet;Lcom/trendyol/stove/system/HealthCheckOptions;ILjava/lang/Object;)Lcom/trendyol/stove/system/ReadinessStrategy$HttpGet;
+	public synthetic fun <init> (Ljava/lang/String;JIJLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JIJLjava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-UwyO8pc ()J
+	public final fun component3 ()I
+	public final fun component4-UwyO8pc ()J
+	public final fun component5 ()Ljava/util/Set;
+	public final fun copy-7Q0yyfQ (Ljava/lang/String;JIJLjava/util/Set;)Lcom/trendyol/stove/system/ReadinessStrategy$HttpGet;
+	public static synthetic fun copy-7Q0yyfQ$default (Lcom/trendyol/stove/system/ReadinessStrategy$HttpGet;Ljava/lang/String;JIJLjava/util/Set;ILjava/lang/Object;)Lcom/trendyol/stove/system/ReadinessStrategy$HttpGet;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getOptions ()Lcom/trendyol/stove/system/HealthCheckOptions;
+	public final fun getExpectedStatusCodes ()Ljava/util/Set;
+	public final fun getRetries ()I
+	public final fun getRetryDelay-UwyO8pc ()J
+	public final fun getTimeout-UwyO8pc ()J
+	public final fun getUrl ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

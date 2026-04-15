@@ -23,12 +23,10 @@ class ReadinessCheckerTest :
         try {
           ReadinessChecker.check(
             ReadinessStrategy.HttpGet(
-              HealthCheckOptions(
-                url = "http://localhost:$port/health",
-                retries = 3,
-                retryDelay = 100.milliseconds,
-                timeout = 2.seconds
-              )
+              url = "http://localhost:$port/health",
+              retries = 3,
+              retryDelay = 100.milliseconds,
+              timeout = 2.seconds
             )
           )
         } finally {
@@ -40,12 +38,10 @@ class ReadinessCheckerTest :
         val error = shouldThrow<IllegalStateException> {
           ReadinessChecker.check(
             ReadinessStrategy.HttpGet(
-              HealthCheckOptions(
-                url = "http://localhost:1/nonexistent",
-                retries = 2,
-                retryDelay = 50.milliseconds,
-                timeout = 500.milliseconds
-              )
+              url = "http://localhost:1/nonexistent",
+              retries = 2,
+              retryDelay = 50.milliseconds,
+              timeout = 500.milliseconds
             )
           )
         }
@@ -65,12 +61,10 @@ class ReadinessCheckerTest :
           val error = shouldThrow<IllegalStateException> {
             ReadinessChecker.check(
               ReadinessStrategy.HttpGet(
-                HealthCheckOptions(
-                  url = "http://localhost:$port/health",
-                  retries = 2,
-                  retryDelay = 50.milliseconds,
-                  timeout = 2.seconds
-                )
+                url = "http://localhost:$port/health",
+                retries = 2,
+                retryDelay = 50.milliseconds,
+                timeout = 2.seconds
               )
             )
           }
@@ -92,13 +86,11 @@ class ReadinessCheckerTest :
         try {
           ReadinessChecker.check(
             ReadinessStrategy.HttpGet(
-              HealthCheckOptions(
-                url = "http://localhost:$port/health",
-                retries = 2,
-                retryDelay = 50.milliseconds,
-                timeout = 2.seconds,
-                expectedStatusCodes = setOf(204)
-              )
+              url = "http://localhost:$port/health",
+              retries = 2,
+              retryDelay = 50.milliseconds,
+              timeout = 2.seconds,
+              expectedStatusCodes = setOf(204)
             )
           )
         } finally {
@@ -185,22 +177,6 @@ class ReadinessCheckerTest :
         ReadinessChecker.check(ReadinessStrategy.FixedDelay(200.milliseconds))
         val elapsed = System.currentTimeMillis() - start
         (elapsed >= 180) shouldBe true
-      }
-    }
-
-    context("check(HealthCheckOptions) overload") {
-      test("delegates to HTTP check") {
-        val error = shouldThrow<IllegalStateException> {
-          ReadinessChecker.check(
-            HealthCheckOptions(
-              url = "http://localhost:1/nope",
-              retries = 2,
-              retryDelay = 50.milliseconds,
-              timeout = 500.milliseconds
-            )
-          )
-        }
-        error.message shouldContain "Health check failed after 2 attempts"
       }
     }
   })

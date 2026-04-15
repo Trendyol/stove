@@ -3,6 +3,10 @@ package com.trendyol.stove.system
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+private const val DEFAULT_RETRIES = 30
+private const val DEFAULT_HEALTH_CHECK_RETRIES = 10
+private const val HTTP_OK = 200
+
 /**
  * Protocol-agnostic readiness checking strategy for applications under test.
  *
@@ -14,9 +18,7 @@ import kotlin.time.Duration.Companion.seconds
  *
  * ```kotlin
  * // HTTP health check (REST APIs)
- * ReadinessStrategy.HttpGet(
- *     HealthCheckOptions(url = "http://localhost:8080/health")
- * )
+ * ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
  *
  * // TCP port check (gRPC, raw TCP)
  * ReadinessStrategy.TcpPort(port = 50051)
@@ -29,7 +31,6 @@ import kotlin.time.Duration.Companion.seconds
  * ```
  *
  * @see ReadinessChecker
- * @see HealthCheckOptions
  */
 sealed interface ReadinessStrategy {
   /**
@@ -37,11 +38,26 @@ sealed interface ReadinessStrategy {
    *
    * Best for REST APIs and web servers that expose a health endpoint.
    *
-   * @param options HTTP health check configuration (URL, retries, timeout, expected status codes).
+   * @param url The health check endpoint URL (e.g., "http://localhost:8080/health").
+   * @param timeout Maximum time to wait for each HTTP request.
+   * @param retries Number of retry attempts before giving up.
+   * @param retryDelay Delay between retry attempts.
+   * @param expectedStatusCodes HTTP status codes considered healthy.
    */
   data class HttpGet(
-    val options: HealthCheckOptions
-  ) : ReadinessStrategy
+    val url: String,
+    val timeout: Duration = 30.seconds,
+    val retries: Int = DEFAULT_HEALTH_CHECK_RETRIES,
+    val retryDelay: Duration = 1.seconds,
+    val expectedStatusCodes: Set<Int> = setOf(HTTP_OK)
+  ) : ReadinessStrategy {
+    init {
+      require(url.isNotBlank()) { "Health check URL must not be blank" }
+      require(retries > 0) { "retries must be positive, got $retries" }
+      require(timeout.isPositive()) { "timeout must be positive, got $timeout" }
+      require(!retryDelay.isNegative()) { "retryDelay must not be negative, got $retryDelay" }
+    }
+  }
 
   /**
    * Try to open a TCP connection to a port until it succeeds.
@@ -55,7 +71,7 @@ sealed interface ReadinessStrategy {
    */
   data class TcpPort(
     val port: Int,
-    val retries: Int = 30,
+    val retries: Int = DEFAULT_RETRIES,
     val retryDelay: Duration = 1.seconds
   ) : ReadinessStrategy
 
@@ -70,7 +86,7 @@ sealed interface ReadinessStrategy {
    * @param check Suspend function that returns `true` when the process is ready.
    */
   data class Probe(
-    val retries: Int = 30,
+    val retries: Int = DEFAULT_RETRIES,
     val retryDelay: Duration = 1.seconds,
     val check: suspend () -> Boolean
   ) : ReadinessStrategy

@@ -37,10 +37,10 @@ class ProvidedApplicationUnderTestTest :
       // No exception — configs silently ignored
     }
 
-    test("health check fails with unreachable URL") {
+    test("readiness check fails with unreachable URL") {
       val aut = ProvidedApplicationUnderTest(
         ProvidedApplicationOptions(
-          healthCheck = HealthCheckOptions(
+          readiness = ReadinessStrategy.HttpGet(
             url = "http://localhost:1/nonexistent-health",
             retries = 2,
             retryDelay = 50.milliseconds,

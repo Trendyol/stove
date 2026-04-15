@@ -23,7 +23,7 @@ Stove().with {
     // Signal: app is already running, don't start it
     providedApplication {
         ProvidedApplicationOptions(
-            healthCheck = HealthCheckOptions(
+            readiness = ReadinessStrategy.HttpGet(
                 url = "https://staging.myapp.com/actuator/health"
             )
         )
@@ -33,10 +33,10 @@ Stove().with {
 
 ### Health Check
 
-The optional health check verifies the remote application is reachable before tests run. If the check fails after all retries, Stove throws immediately with a clear error.
+The optional readiness check verifies the remote application is reachable before tests run. If the check fails after all retries, Stove throws immediately with a clear error.
 
 ```kotlin
-HealthCheckOptions(
+ReadinessStrategy.HttpGet(
     url = "https://staging.myapp.com/health",   // Health endpoint URL
     timeout = 30.seconds,                        // HTTP request timeout
     retries = 10,                                // Number of retry attempts
@@ -47,7 +47,7 @@ HealthCheckOptions(
 
 ### No Health Check
 
-If you're sure the app is up, skip the health check entirely:
+If you're sure the app is up, skip the readiness check entirely:
 
 ```kotlin
 providedApplication()  // No-op --- just satisfies the AUT requirement
@@ -83,7 +83,7 @@ class TestConfig : AbstractProjectConfig() {
             // App is already deployed
             providedApplication {
                 ProvidedApplicationOptions(
-                    healthCheck = HealthCheckOptions(
+                    readiness = ReadinessStrategy.HttpGet(
                         url = "https://staging.myapp.com/actuator/health",
                         timeout = 15.seconds
                     )

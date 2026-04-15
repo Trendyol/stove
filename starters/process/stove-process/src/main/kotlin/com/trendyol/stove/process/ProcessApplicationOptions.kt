@@ -59,7 +59,7 @@ sealed interface ProcessTarget {
     val port: Int,
     val portEnvVar: String = "PORT",
     override val readiness: ReadinessStrategy =
-      ReadinessStrategy.HttpGet(HealthCheckOptions(url = "http://localhost:$port/health"))
+      ReadinessStrategy.HttpGet(url = "http://localhost:$port/health")
   ) : ProcessTarget
 
   /**

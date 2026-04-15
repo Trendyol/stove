@@ -134,7 +134,7 @@ Stove().with {
 
 | Strategy | Use case |
 |----------|----------|
-| `ReadinessStrategy.HttpGet(HealthCheckOptions(...))` | REST APIs with health endpoint |
+| `ReadinessStrategy.HttpGet(url, timeout, retries, retryDelay, expectedStatusCodes)` | REST APIs with health endpoint |
 | `ReadinessStrategy.TcpPort(port)` | gRPC servers, raw TCP (no HTTP) |
 | `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB query, etc.) |
 | `ReadinessStrategy.FixedDelay(duration)` | Simple workers with no readiness signal |

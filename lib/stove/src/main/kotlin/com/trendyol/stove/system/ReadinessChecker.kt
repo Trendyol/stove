@@ -20,7 +20,6 @@ import kotlin.time.Duration
  * Used internally by [ProvidedApplicationUnderTest] and `ProcessApplicationUnderTest`.
  *
  * @see ReadinessStrategy
- * @see HealthCheckOptions
  */
 object ReadinessChecker {
   private val logger = LoggerFactory.getLogger(ReadinessChecker::class.java)
@@ -34,7 +33,7 @@ object ReadinessChecker {
    */
   suspend fun check(strategy: ReadinessStrategy) {
     when (strategy) {
-      is ReadinessStrategy.HttpGet -> checkHttp(strategy.options)
+      is ReadinessStrategy.HttpGet -> checkHttp(strategy)
 
       is ReadinessStrategy.TcpPort -> checkTcp(strategy)
 
@@ -47,30 +46,18 @@ object ReadinessChecker {
     }
   }
 
-  /**
-   * Performs an HTTP health check using the given [options].
-   *
-   * Convenience overload for callers that already have [HealthCheckOptions]
-   * (e.g., [ProvidedApplicationUnderTest]).
-   *
-   * @throws IllegalStateException if the health check fails after all retries.
-   */
-  suspend fun check(options: HealthCheckOptions) {
-    checkHttp(options)
-  }
-
-  private suspend fun checkHttp(options: HealthCheckOptions) {
+  private suspend fun checkHttp(strategy: ReadinessStrategy.HttpGet) {
     val client = HttpClient.newBuilder()
-      .connectTimeout(java.time.Duration.ofMillis(options.timeout.inWholeMilliseconds))
+      .connectTimeout(java.time.Duration.ofMillis(strategy.timeout.inWholeMilliseconds))
       .build()
 
     val request = HttpRequest.newBuilder()
-      .uri(URI.create(options.url))
+      .uri(URI.create(strategy.url))
       .GET()
-      .timeout(java.time.Duration.ofMillis(options.timeout.inWholeMilliseconds))
+      .timeout(java.time.Duration.ofMillis(strategy.timeout.inWholeMilliseconds))
       .build()
 
-    retryUntilReady(options.retries, options.retryDelay, "Health check failed after ${options.retries} attempts for ${options.url}") {
+    retryUntilReady(strategy.retries, strategy.retryDelay, "Health check failed after ${strategy.retries} attempts for ${strategy.url}") {
         attempt,
         total
       ->
@@ -80,11 +67,11 @@ object ReadinessChecker {
         logger.warn("Health check attempt ${attempt + 1}/$total failed: ${it.message}")
       }.getOrThrow()
 
-      if (response.statusCode() !in options.expectedStatusCodes) {
+      if (response.statusCode() !in strategy.expectedStatusCodes) {
         logger.warn("Health check attempt ${attempt + 1}/$total failed: status ${response.statusCode()}")
-        throw IllegalStateException("Health check returned unexpected status ${response.statusCode()} from ${options.url}")
+        throw IllegalStateException("Health check returned unexpected status ${response.statusCode()} from ${strategy.url}")
       }
-      logger.info("Health check passed for ${options.url} (status: ${response.statusCode()})")
+      logger.info("Health check passed for ${strategy.url} (status: ${response.statusCode()})")
     }
   }
 

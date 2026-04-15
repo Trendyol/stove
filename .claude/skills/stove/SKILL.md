@@ -309,7 +309,7 @@ Stove().with {
     }
     providedApplication {
         ProvidedApplicationOptions(
-            healthCheck = HealthCheckOptions(url = "https://staging.myapp.com/health")
+            readiness = ReadinessStrategy.HttpGet(url = "https://staging.myapp.com/health")
         )
     }
 }.run()

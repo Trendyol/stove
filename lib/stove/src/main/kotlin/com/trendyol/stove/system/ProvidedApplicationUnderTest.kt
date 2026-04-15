@@ -2,44 +2,18 @@ package com.trendyol.stove.system
 
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-
-private const val DEFAULT_HEALTH_CHECK_RETRIES = 10
-private const val HTTP_OK = 200
-
-/**
- * Options for health-checking a remote application before running tests.
- *
- * @param url The health check endpoint URL (e.g., "https://staging.myapp.com/actuator/health").
- * @param timeout Maximum time to wait for the health check to succeed.
- * @param retries Number of retry attempts before giving up.
- * @param retryDelay Delay between retry attempts.
- * @param expectedStatusCodes HTTP status codes considered healthy.
- */
-data class HealthCheckOptions(
-  val url: String,
-  val timeout: Duration = 30.seconds,
-  val retries: Int = DEFAULT_HEALTH_CHECK_RETRIES,
-  val retryDelay: Duration = 1.seconds,
-  val expectedStatusCodes: Set<Int> = setOf(HTTP_OK)
-) {
-  init {
-    require(url.isNotBlank()) { "Health check URL must not be blank" }
-    require(retries > 0) { "retries must be positive, got $retries" }
-    require(timeout.isPositive()) { "timeout must be positive, got $timeout" }
-    require(!retryDelay.isNegative()) { "retryDelay must not be negative, got $retryDelay" }
-  }
-}
 
 /**
  * Options for [ProvidedApplicationUnderTest].
  *
- * @param healthCheck Optional health check configuration. If provided, Stove will verify
- *                    the remote application is reachable before running tests.
+ * @param readiness Optional readiness strategy. If provided, Stove will verify
+ *                  the remote application is reachable before running tests.
+ *                  Use [ReadinessStrategy.HttpGet] for HTTP health checks,
+ *                  [ReadinessStrategy.TcpPort] for gRPC/TCP, or [ReadinessStrategy.Probe]
+ *                  for custom checks.
  */
 data class ProvidedApplicationOptions(
-  val healthCheck: HealthCheckOptions? = null
+  val readiness: ReadinessStrategy? = null
 )
 
 /**
@@ -60,7 +34,7 @@ data class ProvidedApplicationOptions(
  *     }
  *     providedApplication {
  *         ProvidedApplicationOptions(
- *             healthCheck = HealthCheckOptions(
+ *             readiness = ReadinessStrategy.HttpGet(
  *                 url = "https://staging.myapp.com/actuator/health"
  *             )
  *         )
@@ -69,14 +43,14 @@ data class ProvidedApplicationOptions(
  * ```
  *
  * @see ProvidedApplicationOptions
- * @see HealthCheckOptions
+ * @see ReadinessStrategy
  */
 @StoveDsl
 class ProvidedApplicationUnderTest(
   private val options: ProvidedApplicationOptions
 ) : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) {
-    options.healthCheck?.let { ReadinessChecker.check(it) }
+    options.readiness?.let { ReadinessChecker.check(it) }
   }
 
   override suspend fun stop(): Unit = Unit
@@ -97,7 +71,9 @@ class ProvidedApplicationUnderTest(
  *     postgresql(AppDb) { PostgresqlOptions.provided(jdbcUrl = "jdbc:...") }
  *     providedApplication {
  *         ProvidedApplicationOptions(
- *             healthCheck = HealthCheckOptions(url = "https://staging.myapp.com/health")
+ *             readiness = ReadinessStrategy.HttpGet(
+ *                 url = "https://staging.myapp.com/health"
+ *             )
  *         )
  *     }
  * }.run()

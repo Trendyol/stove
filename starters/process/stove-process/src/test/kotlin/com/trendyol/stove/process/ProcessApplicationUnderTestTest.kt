@@ -236,8 +236,8 @@ class ProcessApplicationUnderTestTest :
         val target = ProcessTarget.Server(port = 8080)
         val readiness = target.readiness
         (readiness is ReadinessStrategy.HttpGet) shouldBe true
-        (readiness as ReadinessStrategy.HttpGet).options.url shouldContain "8080"
-        readiness.options.url shouldContain "/health"
+        (readiness as ReadinessStrategy.HttpGet).url shouldContain "8080"
+        readiness.url shouldContain "/health"
       }
 
       test("Server accepts custom portEnvVar") {

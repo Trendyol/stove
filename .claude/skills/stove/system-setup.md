@@ -51,7 +51,7 @@ dependencies {
 
 | Strategy | Use case |
 |----------|----------|
-| `ReadinessStrategy.HttpGet(HealthCheckOptions(...))` | REST APIs with health endpoint |
+| `ReadinessStrategy.HttpGet(url, timeout, retries, retryDelay, expectedStatusCodes)` | REST APIs with health endpoint |
 | `ReadinessStrategy.TcpPort(port)` | gRPC/TCP servers (no HTTP) |
 | `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB, etc.) |
 | `ReadinessStrategy.FixedDelay(duration)` | Simple workers |
@@ -179,7 +179,7 @@ Stove().with {
     }
     providedApplication {
         ProvidedApplicationOptions(
-            healthCheck = HealthCheckOptions(
+            readiness = ReadinessStrategy.HttpGet(
                 url = "https://staging.myapp.com/health",
                 retries = 10,
                 retryDelay = 1.seconds,
@@ -219,7 +219,7 @@ Stove().with {
     }
     providedApplication {
         ProvidedApplicationOptions(
-            healthCheck = HealthCheckOptions(url = "https://staging.myapp.com/health")
+            readiness = ReadinessStrategy.HttpGet(url = "https://staging.myapp.com/health")
         )
     }
 }.run()
