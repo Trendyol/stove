@@ -2288,7 +2288,7 @@
 <p>Everything else works: HTTP assertions, database queries, Kafka publishing and consuming (<code>shouldBePublished</code>, <code>shouldBeConsumed</code>), tracing, WireMock, gRPC, and the dashboard.</p>
 <div class="admonition info">
 <p class="admonition-title">Kafka Interceptors for Non-JVM Apps</p>
-<p>Stove provides bridge libraries that enable <code>shouldBeConsumed</code> and <code>shouldBePublished</code> assertions for non-JVM applications. The bridge library intercepts messages via your language's Kafka client (e.g., Sarama interceptors for Go) and forwards them via gRPC to Stove's observer. See the <a href="go/#kafka">Go guide</a> for a complete example using <code>stove-kafka</code>.</p>
+<p>Stove provides bridge libraries that enable <code>shouldBeConsumed</code> and <code>shouldBePublished</code> assertions for non-JVM applications. The <code>stove-kafka</code> Go library supports three popular Kafka clients --- IBM/sarama (interceptors), twmb/franz-go (hooks), and segmentio/kafka-go (helpers) --- and forwards messages via gRPC to Stove's observer. See the <a href="go/#kafka">Go guide</a> for details.</p>
 </div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
