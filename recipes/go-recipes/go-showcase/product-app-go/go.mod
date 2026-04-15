@@ -7,7 +7,7 @@ require (
 	github.com/XSAM/otelsql v0.42.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
-	github.com/trendyol/stove/go/stove-kafka v0.0.0
+	github.com/trendyol/stove/go/stove-kafka v0.23.4
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.43.0
