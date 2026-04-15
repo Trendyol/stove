@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/IBM/sarama"
-	stovekafkago "github.com/trendyol/stove/go/stove-kafka"
+	stovekafka "github.com/trendyol/stove/go/stove-kafka"
+	stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
 )
 
 const (
@@ -30,7 +31,7 @@ type ProductUpdateEvent struct {
 	Price float64 `json:"price"`
 }
 
-func initKafka(brokers string, db *sql.DB, bridge *stovekafkago.Bridge) (sarama.SyncProducer, func(), error) {
+func initKafka(brokers string, db *sql.DB, bridge *stovekafka.Bridge) (sarama.SyncProducer, func(), error) {
 	if brokers == "" {
 		return nil, func() {}, nil
 	}
@@ -43,10 +44,10 @@ func initKafka(brokers string, db *sql.DB, bridge *stovekafkago.Bridge) (sarama.
 
 	// Wire Stove bridge interceptors — no-ops when bridge is nil (production mode)
 	config.Producer.Interceptors = []sarama.ProducerInterceptor{
-		&stovekafkago.ProducerInterceptor{Bridge: bridge},
+		&stovesarama.ProducerInterceptor{Bridge: bridge},
 	}
 	config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-		&stovekafkago.ConsumerInterceptor{Bridge: bridge},
+		&stovesarama.ConsumerInterceptor{Bridge: bridge},
 	}
 
 	producer, err := sarama.NewSyncProducer(brokerList, config)

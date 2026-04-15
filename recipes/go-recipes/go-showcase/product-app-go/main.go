@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	stovekafkago "github.com/trendyol/stove/go/stove-kafka"
+	stovekafka "github.com/trendyol/stove/go/stove-kafka"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -49,7 +49,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize Stove Kafka bridge (nil in production — zero overhead)
-	bridge, err := stovekafkago.NewBridgeFromEnv()
+	bridge, err := stovekafka.NewBridgeFromEnv()
 	if err != nil {
 		log.Fatalf("failed to init stove bridge: %v", err)
 	}

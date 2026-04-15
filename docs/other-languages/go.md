@@ -29,8 +29,9 @@ go-showcase/
 
 # Distributed as a Go library:
 go/stove-kafka/            # Stove Kafka bridge for Go applications
-  bridge.go                    # gRPC client to Stove's Kafka observer
-  interceptors.go              # Sarama producer/consumer interceptors
+  bridge.go                    # Core bridge (library-agnostic gRPC client)
+  sarama/                      # IBM/sarama interceptors
+    interceptors.go
   stoveobserver/               # Generated gRPC code from messages.proto
   go.mod
 ```
@@ -54,7 +55,7 @@ func main() {
     defer db.Close()
 
     // Initialize Stove Kafka bridge (nil in production — zero overhead)
-    bridge, _ := stovekafkago.NewBridgeFromEnv()
+    bridge, _ := stovekafka.NewBridgeFromEnv()
     defer bridge.Close()
 
     // Initialize Kafka producer and consumer
@@ -221,10 +222,10 @@ go get github.com/trendyol/stove/go/stove-kafka
 #### Step 2: Initialize the bridge in your app
 
 ```go
-import stovekafkago "github.com/trendyol/stove/go/stove-kafka"
+import stovekafka "github.com/trendyol/stove/go/stove-kafka"
 
 // Returns nil when STOVE_KAFKA_BRIDGE_PORT is not set (production mode)
-bridge, err := stovekafkago.NewBridgeFromEnv()
+bridge, err := stovekafka.NewBridgeFromEnv()
 if err != nil {
     log.Fatalf("failed to init stove bridge: %v", err)
 }
@@ -234,14 +235,16 @@ defer bridge.Close()
 #### Step 3: Wire interceptors into your Sarama config
 
 ```go title="kafka.go"
+import stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
+
 config := sarama.NewConfig()
 
 // Add Stove interceptors — no-ops when bridge is nil
 config.Producer.Interceptors = []sarama.ProducerInterceptor{
-    &stovekafkago.ProducerInterceptor{Bridge: bridge},
+    &stovesarama.ProducerInterceptor{Bridge: bridge},
 }
 config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-    &stovekafkago.ConsumerInterceptor{Bridge: bridge},
+    &stovesarama.ConsumerInterceptor{Bridge: bridge},
 }
 ```
 

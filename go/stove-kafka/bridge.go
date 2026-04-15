@@ -1,22 +1,25 @@
-// Package stovekafkago provides a Kafka message bridge for Stove e2e testing.
+// Package stovekafka provides a Kafka message bridge for Stove e2e testing.
 //
-// It intercepts Sarama producer/consumer messages and forwards them via gRPC
-// to Stove's StoveKafkaObserverGrpcServer, enabling shouldBeConsumed and
+// It forwards produced/consumed Kafka messages via gRPC to Stove's
+// StoveKafkaObserverGrpcServer, enabling shouldBeConsumed and
 // shouldBePublished assertions in Kotlin tests.
 //
-// Usage:
+// The core bridge is library-agnostic. Use the sarama subpackage for
+// IBM/sarama interceptors:
 //
-//	bridge, err := stovekafkago.NewBridgeFromEnv()
-//	// bridge is nil if STOVE_KAFKA_BRIDGE_PORT is not set (production mode)
+//	import stovekafka "github.com/trendyol/stove/go/stove-kafka"
+//	import stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
+//
+//	bridge, _ := stovekafka.NewBridgeFromEnv()
 //
 //	config := sarama.NewConfig()
 //	config.Producer.Interceptors = []sarama.ProducerInterceptor{
-//	    &stovekafkago.ProducerInterceptor{Bridge: bridge},
+//	    &stovesarama.ProducerInterceptor{Bridge: bridge},
 //	}
 //	config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-//	    &stovekafkago.ConsumerInterceptor{Bridge: bridge},
+//	    &stovesarama.ConsumerInterceptor{Bridge: bridge},
 //	}
-package stovekafkago
+package stovekafka
 
 import (
 	"context"
@@ -24,12 +27,29 @@ import (
 	"log"
 	"os"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/trendyol/stove/go/stove-kafka/stoveobserver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+// PublishedMessage is a library-agnostic representation of a produced Kafka message.
+type PublishedMessage struct {
+	Topic   string
+	Key     string
+	Value   []byte
+	Headers map[string]string
+}
+
+// ConsumedMessage is a library-agnostic representation of a consumed Kafka message.
+type ConsumedMessage struct {
+	Topic     string
+	Key       string
+	Value     []byte
+	Partition int32
+	Offset    int64
+	Headers   map[string]string
+}
 
 const envBridgePort = "STOVE_KAFKA_BRIDGE_PORT"
 
@@ -76,27 +96,17 @@ func (b *Bridge) Close() error {
 
 // ReportPublished sends a published message to the Stove observer.
 // Safe to call on nil Bridge (no-op).
-func (b *Bridge) ReportPublished(ctx context.Context, msg *sarama.ProducerMessage) error {
+func (b *Bridge) ReportPublished(ctx context.Context, msg *PublishedMessage) error {
 	if b == nil {
 		return nil
 	}
 
-	value, err := msg.Value.Encode()
-	if err != nil {
-		return fmt.Errorf("stove bridge: failed to encode producer message value: %w", err)
-	}
-
-	key, err := encodeSaramaKey(msg.Key)
-	if err != nil {
-		return fmt.Errorf("stove bridge: failed to encode producer message key: %w", err)
-	}
-
-	_, err = b.client.OnPublishedMessage(ctx, &stoveobserver.PublishedMessage{
+	_, err := b.client.OnPublishedMessage(ctx, &stoveobserver.PublishedMessage{
 		Id:      uuid.New().String(),
-		Message: value,
+		Message: msg.Value,
 		Topic:   msg.Topic,
-		Key:     key,
-		Headers: producerHeaders(msg.Headers),
+		Key:     msg.Key,
+		Headers: msg.Headers,
 	})
 	if err != nil {
 		log.Printf("stove bridge: failed to report published message: %v", err)
@@ -106,7 +116,7 @@ func (b *Bridge) ReportPublished(ctx context.Context, msg *sarama.ProducerMessag
 
 // ReportConsumed sends a consumed message to the Stove observer.
 // Safe to call on nil Bridge (no-op).
-func (b *Bridge) ReportConsumed(ctx context.Context, msg *sarama.ConsumerMessage) error {
+func (b *Bridge) ReportConsumed(ctx context.Context, msg *ConsumedMessage) error {
 	if b == nil {
 		return nil
 	}
@@ -117,40 +127,13 @@ func (b *Bridge) ReportConsumed(ctx context.Context, msg *sarama.ConsumerMessage
 		Topic:     msg.Topic,
 		Partition: msg.Partition,
 		Offset:    msg.Offset,
-		Key:       string(msg.Key),
-		Headers:   consumerHeaders(msg.Headers),
+		Key:       msg.Key,
+		Headers:   msg.Headers,
 	})
 	if err != nil {
 		log.Printf("stove bridge: failed to report consumed message: %v", err)
 	}
 	return err
-}
-
-func encodeSaramaKey(key sarama.Encoder) (string, error) {
-	if key == nil {
-		return "", nil
-	}
-	keyBytes, err := key.Encode()
-	if err != nil {
-		return "", err
-	}
-	return string(keyBytes), nil
-}
-
-func producerHeaders(headers []sarama.RecordHeader) map[string]string {
-	m := make(map[string]string, len(headers))
-	for _, h := range headers {
-		m[string(h.Key)] = string(h.Value)
-	}
-	return m
-}
-
-func consumerHeaders(headers []*sarama.RecordHeader) map[string]string {
-	m := make(map[string]string, len(headers))
-	for _, h := range headers {
-		m[string(h.Key)] = string(h.Value)
-	}
-	return m
 }
 
 // ReportCommitted sends a committed offset to the Stove observer.
