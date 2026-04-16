@@ -78,6 +78,9 @@ class StoveConfig : AbstractProjectConfig() {
             env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
             env("KAFKA_LIBRARY") { System.getProperty("kafka.library") ?: "sarama" }
             env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
+            env("GOCOVERDIR") {
+              System.getProperty("go.cover.dir")?.also { java.io.File(it).mkdirs() } ?: ""
+            }
           }
         )
       }.run()

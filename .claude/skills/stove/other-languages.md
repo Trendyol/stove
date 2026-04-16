@@ -184,6 +184,25 @@ For Go apps using IBM/sarama, twmb/franz-go, or segmentio/kafka-go, add the `sto
 
 The bridge intercepts produced/consumed messages and forwards them via gRPC to Stove's observer, enabling `shouldBePublished` and `shouldBeConsumed` assertions.
 
+## Code Coverage (Go)
+
+Go 1.20+ supports integration test coverage: build with `go build -cover`, set `GOCOVERDIR` env var, and coverage data is written on graceful shutdown. This fits Stove's lifecycle (SIGTERM → graceful shutdown → coverage files).
+
+Key pieces:
+- **Gradle**: `-Pgo.coverage=true` adds `-cover` to build, sets `go.cover.dir` system property, disables build cache for coverage runs
+- **StoveConfig**: `env("GOCOVERDIR") { System.getProperty("go.cover.dir")?.also { File(it).mkdirs() } ?: "" }`
+- **Go app**: `signal.Ignore(syscall.SIGPIPE)` in `main()` — prevents SIGPIPE (exit 141) from killing the process before coverage flush when stdout pipe closes under `ProcessBuilder`
+- **Report tasks**: `goCoverageReport` (textfmt), `goCoverageSummary` (per-function), `goCoverageHtml` (visual)
+- **Umbrella task**: `e2eTestWithCoverage` runs tests + generates reports
+
+```bash
+./gradlew e2eTestWithCoverage -Pgo.coverage=true
+```
+
+No Stove framework changes needed — uses existing `envMapper`, Gradle tasks, and SIGTERM shutdown.
+
+See [go-setup.md](go-setup.md#code-coverage) for full details.
+
 ## What you can't do
 
 - **No `bridge()` / `using<T> {}`** --- no access to app's DI container

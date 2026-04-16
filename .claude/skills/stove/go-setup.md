@@ -31,6 +31,7 @@ Key env vars:
 | `KAFKA_BROKERS` | Kafka broker addresses |
 | `KAFKA_LIBRARY` | Kafka client: `sarama`, `franz`, or `segmentio` (default: `sarama`) |
 | `STOVE_KAFKA_BRIDGE_PORT` | Stove bridge gRPC port (test-only) |
+| `GOCOVERDIR` | Directory for Go integration test coverage data (test-only) |
 
 ## Step 2: OpenTelemetry
 
@@ -403,6 +404,78 @@ class GoShowcaseTest : FunSpec({
 })
 ```
 
+## Code Coverage
+
+Go 1.20+ supports integration test coverage for binaries not run via `go test`. Build with `go build -cover`, set `GOCOVERDIR`, and coverage data is written on graceful shutdown — fits perfectly with Stove's lifecycle.
+
+### Gradle setup
+
+Enable with `-Pgo.coverage=true`:
+
+```kotlin
+val coverageEnabled = providers.gradleProperty("go.coverage")
+    .map { it.toBoolean() }.getOrElse(false)
+val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
+
+// Build with -cover when enabled
+tasks.register<Exec>("buildGoApp") {
+    val args = mutableListOf("go", "build")
+    if (coverageEnabled) args.add("-cover")
+    args.addAll(listOf("-o", goBinary.absolutePath, "."))
+    commandLine(args)
+}
+
+// Pass GOCOVERDIR to test JVM, disable build cache for coverage runs
+tasks.register<Test>("e2eTest_sarama") {
+    if (coverageEnabled) {
+        systemProperty("go.cover.dir", goCoverDirPath)
+        outputs.cacheIf { false }  // Coverage data is a side effect
+    }
+}
+
+// Coverage report tasks (register only when coverage is enabled)
+if (coverageEnabled) {
+    tasks.register<Exec>("goCoverageReport") {
+        mustRunAfter(kafkaE2eTasks)
+        commandLine("go", "tool", "covdata", "textfmt", "-i=$goCoverDirPath", "-o=$goCoverOutPath")
+    }
+    tasks.register<Exec>("goCoverageSummary") { dependsOn("goCoverageReport"); /* go tool cover -func */ }
+    tasks.register<Exec>("goCoverageHtml") { dependsOn("goCoverageReport"); /* go tool cover -html */ }
+    tasks.register("e2eTestWithCoverage") {
+        dependsOn(kafkaE2eTasks)
+        finalizedBy("goCoverageSummary", "goCoverageHtml")
+    }
+}
+```
+
+### StoveConfig
+
+Pass `GOCOVERDIR` via `envMapper` — empty when disabled, Go ignores it:
+
+```kotlin
+env("GOCOVERDIR") {
+    System.getProperty("go.cover.dir")?.also { java.io.File(it).mkdirs() } ?: ""
+}
+```
+
+### SIGPIPE handling
+
+When Go runs under Java's `ProcessBuilder`, stdout pipe can close before process exit. Log writes trigger SIGPIPE (exit 141), killing the process before coverage flush. Fix:
+
+```go
+func main() {
+    signal.Ignore(syscall.SIGPIPE) // Ensures clean shutdown + coverage flush
+    // ...
+}
+```
+
+### Running with coverage
+
+```bash
+./gradlew e2eTestWithCoverage -Pgo.coverage=true
+# Output: per-function coverage + HTML report at build/go-coverage/coverage.html
+```
+
 ## Running
 
 ```bash
@@ -414,6 +487,9 @@ cd recipes/process/golang/go-showcase
 ./gradlew e2eTest_sarama
 ./gradlew e2eTest_franz
 ./gradlew e2eTest_segmentio
+
+# With Go code coverage
+./gradlew e2eTestWithCoverage -Pgo.coverage=true
 ```
 
 ## Go dependencies

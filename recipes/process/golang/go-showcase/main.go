@@ -22,6 +22,10 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	// Ignore SIGPIPE so log writes to a closed stdout pipe don't kill the process.
+	// This ensures clean shutdown (and coverage flush) when run under a process manager.
+	signal.Ignore(syscall.SIGPIPE)
+
 	ctx := context.Background()
 
 	port := getEnv("APP_PORT", "8080")

@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), or testing non-JVM applications (Go, Python, Rust, Node.js) with processApp()/goApp() from stove-process module (ProcessTarget.Server/Worker, ReadinessStrategy, envMapper for env vars, argsMapper for CLI arguments) and the Stove Kafka bridge library (stove-kafka for Go with IBM/sarama, twmb/franz-go, or segmentio/kafka-go).
+description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), testing non-JVM applications (Go, Python, Rust, Node.js) with processApp()/goApp() from stove-process module (ProcessTarget.Server/Worker, ReadinessStrategy, envMapper for env vars, argsMapper for CLI arguments), the Stove Kafka bridge library (stove-kafka for Go with IBM/sarama, twmb/franz-go, or segmentio/kafka-go), or collecting Go code coverage from Stove black-box tests (go build -cover, GOCOVERDIR, SIGPIPE handling).
 ---
 
 # Setting Up Stove E2E Tests
@@ -386,4 +386,4 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 - [tracing.md](tracing.md) — Tracing plugin options and validation DSL
 - [custom-systems.md](custom-systems.md) — Writing your own Stove system
 - [other-languages.md](other-languages.md) — Testing non-JVM apps (Go, Python, Rust, Node.js)
-- [go-setup.md](go-setup.md) — Go-specific setup: HTTP, PostgreSQL, Kafka bridge, OTel tracing
+- [go-setup.md](go-setup.md) — Go-specific setup: HTTP, PostgreSQL, Kafka bridge, OTel tracing, code coverage
