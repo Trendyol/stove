@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: recipes/process/golang/go-showcase/go.mod
 
