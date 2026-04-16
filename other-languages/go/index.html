@@ -1207,6 +1207,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#code-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Coverage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Coverage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gradle-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gradle Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stove-configuration_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stove Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sigpipe-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SIGPIPE Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adapting-for-other-languages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2751,6 +2823,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#code-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Coverage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Coverage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gradle-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gradle Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stove-configuration_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stove Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sigpipe-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SIGPIPE Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adapting-for-other-languages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2938,6 +3082,11 @@
 <tr>
 <td><code>STOVE_KAFKA_BRIDGE_PORT</code></td>
 <td>Stove Kafka bridge gRPC port</td>
+<td><em>(disabled if empty, test-only)</em></td>
+</tr>
+<tr>
+<td><code>GOCOVERDIR</code></td>
+<td>Directory for Go integration test coverage data</td>
 <td><em>(disabled if empty, test-only)</em></td>
 </tr>
 </tbody>
@@ -3260,39 +3409,44 @@
 <h3 id="gradle-build">Gradle Build<a class="headerlink" href="#gradle-build" title="Permanent link">&para;</a></h3>
 <p>Gradle compiles the Go binary and passes its path to the test:</p>
 <div class="language-kotlin highlight"><span class="filename">build.gradle.kts</span><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">goBinary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="na">buildDirectory</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="s">&quot;go-app&quot;</span><span class="p">).</span><span class="na">get</span><span class="p">().</span><span class="na">asFile</span>
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;buildGoApp&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Compiles the Go application.&quot;</span>
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
-</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="n">commandLine</span><span class="p">(</span><span class="s">&quot;go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-o&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goBinary</span><span class="p">.</span><span class="na">absolutePath</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;.&quot;</span><span class="p">)</span>
-</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="na">files</span><span class="p">(</span><span class="n">fileTree</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">include</span><span class="p">(</span><span class="s">&quot;*.go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.mod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.sum&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
-</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">    </span><span class="n">outputs</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="n">goBinary</span><span class="p">)</span>
-</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="p">}</span>
-</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>
-</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="c1">// Per-library e2e test tasks — each passes KAFKA_LIBRARY to the Go app</span>
-</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="kd">val</span><span class="w"> </span><span class="nv">kafkaLibraries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;sarama&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;franz&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;segmentio&quot;</span><span class="p">)</span>
-</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="kd">val</span><span class="w"> </span><span class="nv">kafkaE2eTasks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kafkaLibraries</span><span class="p">.</span><span class="na">mapIndexed</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">index</span><span class="p">,</span><span class="w"> </span><span class="n">lib</span><span class="w"> </span><span class="o">-&gt;</span>
-</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="w">    </span><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest_</span><span class="si">$</span><span class="n">lib</span><span class="s">&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-20-15"><a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="w">        </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;buildGoApp&quot;</span><span class="p">)</span>
-</span><span id="__span-20-16"><a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="w">        </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.app.binary&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goBinary</span><span class="p">.</span><span class="na">absolutePath</span><span class="p">)</span>
-</span><span id="__span-20-17"><a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="w">        </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;kafka.library&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">lib</span><span class="p">)</span>
-</span><span id="__span-20-18"><a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a><span class="w">        </span><span class="c1">// Run sequentially: sarama → franz → segmentio</span>
-</span><span id="__span-20-19"><a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">index</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"> </span><span class="n">mustRunAfter</span><span class="p">(</span><span class="s">&quot;e2eTest_</span><span class="si">${</span><span class="n">kafkaLibraries</span><span class="o">[</span><span class="n">index</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">1</span><span class="o">]</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span>
-</span><span id="__span-20-20"><a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-20-21"><a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="p">}</span>
-</span><span id="__span-20-22"><a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="c1">// `e2eTest` runs all three</span>
-</span><span id="__span-20-23"><a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a><span class="n">tasks</span><span class="p">.</span><span class="na">named</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">dependsOn</span><span class="p">(</span><span class="n">kafkaE2eTasks</span><span class="p">);</span><span class="w"> </span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-20-24"><a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a>
-</span><span id="__span-20-25"><a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-20-26"><a id="__codelineno-20-26" name="__codelineno-20-26" href="#__codelineno-20-26"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stove</span><span class="p">)</span>
-</span><span id="__span-20-27"><a id="__codelineno-20-27" name="__codelineno-20-27" href="#__codelineno-20-27"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveProcess</span><span class="p">)</span>
-</span><span id="__span-20-28"><a id="__codelineno-20-28" name="__codelineno-20-28" href="#__codelineno-20-28"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stovePostgres</span><span class="p">)</span>
-</span><span id="__span-20-29"><a id="__codelineno-20-29" name="__codelineno-20-29" href="#__codelineno-20-29"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveHttp</span><span class="p">)</span>
-</span><span id="__span-20-30"><a id="__codelineno-20-30" name="__codelineno-20-30" href="#__codelineno-20-30"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveTracing</span><span class="p">)</span>
-</span><span id="__span-20-31"><a id="__codelineno-20-31" name="__codelineno-20-31" href="#__codelineno-20-31"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveDashboard</span><span class="p">)</span>
-</span><span id="__span-20-32"><a id="__codelineno-20-32" name="__codelineno-20-32" href="#__codelineno-20-32"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveKafka</span><span class="p">)</span>
-</span><span id="__span-20-33"><a id="__codelineno-20-33" name="__codelineno-20-33" href="#__codelineno-20-33"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveExtensionsKotest</span><span class="p">)</span>
-</span><span id="__span-20-34"><a id="__codelineno-20-34" name="__codelineno-20-34" href="#__codelineno-20-34"></a><span class="p">}</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="kd">val</span><span class="w"> </span><span class="nv">coverageEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">gradleProperty</span><span class="p">(</span><span class="s">&quot;go.coverage&quot;</span><span class="p">)</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="p">.</span><span class="na">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">it</span><span class="p">.</span><span class="na">toBoolean</span><span class="p">()</span><span class="w"> </span><span class="p">}.</span><span class="na">getOrElse</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;buildGoApp&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Compiles the Go application.&quot;</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mutableListOf</span><span class="p">(</span><span class="s">&quot;go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">)</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coverageEnabled</span><span class="p">)</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;-cover&quot;</span><span class="p">)</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">    </span><span class="n">args</span><span class="p">.</span><span class="na">addAll</span><span class="p">(</span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;-o&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goBinary</span><span class="p">.</span><span class="na">absolutePath</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;.&quot;</span><span class="p">))</span>
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="w">    </span><span class="n">commandLine</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="na">files</span><span class="p">(</span><span class="n">fileTree</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">include</span><span class="p">(</span><span class="s">&quot;*.go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.mod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.sum&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="w">    </span><span class="n">outputs</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="n">goBinary</span><span class="p">)</span>
+</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="p">}</span>
+</span><span id="__span-20-15"><a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a>
+</span><span id="__span-20-16"><a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="c1">// Per-library e2e test tasks — each passes KAFKA_LIBRARY to the Go app</span>
+</span><span id="__span-20-17"><a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="kd">val</span><span class="w"> </span><span class="nv">kafkaLibraries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;sarama&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;franz&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;segmentio&quot;</span><span class="p">)</span>
+</span><span id="__span-20-18"><a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a><span class="kd">val</span><span class="w"> </span><span class="nv">kafkaE2eTasks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kafkaLibraries</span><span class="p">.</span><span class="na">mapIndexed</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">index</span><span class="p">,</span><span class="w"> </span><span class="n">lib</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-20-19"><a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="w">    </span><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest_</span><span class="si">$</span><span class="n">lib</span><span class="s">&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-20"><a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a><span class="w">        </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;buildGoApp&quot;</span><span class="p">)</span>
+</span><span id="__span-20-21"><a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="w">        </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.app.binary&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goBinary</span><span class="p">.</span><span class="na">absolutePath</span><span class="p">)</span>
+</span><span id="__span-20-22"><a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="w">        </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;kafka.library&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">lib</span><span class="p">)</span>
+</span><span id="__span-20-23"><a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a><span class="w">        </span><span class="c1">// Run sequentially: sarama → franz → segmentio</span>
+</span><span id="__span-20-24"><a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">index</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"> </span><span class="n">mustRunAfter</span><span class="p">(</span><span class="s">&quot;e2eTest_</span><span class="si">${</span><span class="n">kafkaLibraries</span><span class="o">[</span><span class="n">index</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">1</span><span class="o">]</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span id="__span-20-25"><a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-20-26"><a id="__codelineno-20-26" name="__codelineno-20-26" href="#__codelineno-20-26"></a><span class="p">}</span>
+</span><span id="__span-20-27"><a id="__codelineno-20-27" name="__codelineno-20-27" href="#__codelineno-20-27"></a><span class="c1">// `e2eTest` runs all three</span>
+</span><span id="__span-20-28"><a id="__codelineno-20-28" name="__codelineno-20-28" href="#__codelineno-20-28"></a><span class="n">tasks</span><span class="p">.</span><span class="na">named</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">dependsOn</span><span class="p">(</span><span class="n">kafkaE2eTasks</span><span class="p">);</span><span class="w"> </span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-20-29"><a id="__codelineno-20-29" name="__codelineno-20-29" href="#__codelineno-20-29"></a>
+</span><span id="__span-20-30"><a id="__codelineno-20-30" name="__codelineno-20-30" href="#__codelineno-20-30"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-31"><a id="__codelineno-20-31" name="__codelineno-20-31" href="#__codelineno-20-31"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stove</span><span class="p">)</span>
+</span><span id="__span-20-32"><a id="__codelineno-20-32" name="__codelineno-20-32" href="#__codelineno-20-32"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveProcess</span><span class="p">)</span>
+</span><span id="__span-20-33"><a id="__codelineno-20-33" name="__codelineno-20-33" href="#__codelineno-20-33"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stovePostgres</span><span class="p">)</span>
+</span><span id="__span-20-34"><a id="__codelineno-20-34" name="__codelineno-20-34" href="#__codelineno-20-34"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveHttp</span><span class="p">)</span>
+</span><span id="__span-20-35"><a id="__codelineno-20-35" name="__codelineno-20-35" href="#__codelineno-20-35"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveTracing</span><span class="p">)</span>
+</span><span id="__span-20-36"><a id="__codelineno-20-36" name="__codelineno-20-36" href="#__codelineno-20-36"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveDashboard</span><span class="p">)</span>
+</span><span id="__span-20-37"><a id="__codelineno-20-37" name="__codelineno-20-37" href="#__codelineno-20-37"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveKafka</span><span class="p">)</span>
+</span><span id="__span-20-38"><a id="__codelineno-20-38" name="__codelineno-20-38" href="#__codelineno-20-38"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">stoveLibs</span><span class="p">.</span><span class="na">stoveExtensionsKotest</span><span class="p">)</span>
+</span><span id="__span-20-39"><a id="__codelineno-20-39" name="__codelineno-20-39" href="#__codelineno-20-39"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Running <code>./gradlew e2eTest</code> compiles the Go binary first, then runs the Kotlin tests.</p>
 <h3 id="stove-process-module">stove-process Module<a class="headerlink" href="#stove-process-module" title="Permanent link">&para;</a></h3>
@@ -3386,9 +3540,13 @@
 </span><span id="__span-23-49"><a id="__codelineno-23-49" name="__codelineno-23-49" href="#__codelineno-23-49"></a><span class="w">                </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;OTEL_EXPORTER_OTLP_ENDPOINT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;localhost:</span><span class="si">$</span><span class="n">OTLP_PORT</span><span class="s">&quot;</span><span class="p">)</span>
 </span><span id="__span-23-50"><a id="__codelineno-23-50" name="__codelineno-23-50" href="#__codelineno-23-50"></a><span class="w">                </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;KAFKA_LIBRARY&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;kafka.library&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">&quot;sarama&quot;</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-23-51"><a id="__codelineno-23-51" name="__codelineno-23-51" href="#__codelineno-23-51"></a><span class="w">                </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;STOVE_KAFKA_BRIDGE_PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">stoveKafkaBridgePortDefault</span><span class="p">)</span>
-</span><span id="__span-23-52"><a id="__codelineno-23-52" name="__codelineno-23-52" href="#__codelineno-23-52"></a><span class="w">            </span><span class="p">}</span>
-</span><span id="__span-23-53"><a id="__codelineno-23-53" name="__codelineno-23-53" href="#__codelineno-23-53"></a><span class="w">        </span><span class="p">)</span>
-</span><span id="__span-23-54"><a id="__codelineno-23-54" name="__codelineno-23-54" href="#__codelineno-23-54"></a><span class="w">    </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-23-52"><a id="__codelineno-23-52" name="__codelineno-23-52" href="#__codelineno-23-52"></a><span class="w">                </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;GOCOVERDIR&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-53"><a id="__codelineno-23-53" name="__codelineno-23-53" href="#__codelineno-23-53"></a><span class="w">                    </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;go.cover.dir&quot;</span><span class="p">)</span>
+</span><span id="__span-23-54"><a id="__codelineno-23-54" name="__codelineno-23-54" href="#__codelineno-23-54"></a><span class="w">                        </span><span class="o">?.</span><span class="na">also</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">File</span><span class="p">(</span><span class="nb">it</span><span class="p">).</span><span class="na">mkdirs</span><span class="p">()</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-23-55"><a id="__codelineno-23-55" name="__codelineno-23-55" href="#__codelineno-23-55"></a><span class="w">                </span><span class="p">}</span>
+</span><span id="__span-23-56"><a id="__codelineno-23-56" name="__codelineno-23-56" href="#__codelineno-23-56"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-23-57"><a id="__codelineno-23-57" name="__codelineno-23-57" href="#__codelineno-23-57"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-23-58"><a id="__codelineno-23-58" name="__codelineno-23-58" href="#__codelineno-23-58"></a><span class="w">    </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <p>The <code>envMapper</code> block declaratively maps Stove's exposed configurations (from <code>configureExposedConfiguration</code> in each system) to environment variables the Go app expects. Use <code>"stoveKey" to "ENV_VAR"</code> for config-derived values and <code>env("NAME", "value")</code> for static ones. For apps that prefer CLI arguments, use <code>argsMapper</code> instead (or alongside). The <code>stoveKafkaBridgePortDefault</code> is a dynamically assigned port that the Stove Kafka system starts a gRPC server on --- the Go bridge connects to it.</p>
 <h3 id="database-migration">Database Migration<a class="headerlink" href="#database-migration" title="Permanent link">&para;</a></h3>
@@ -3555,6 +3713,9 @@
 </span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>./gradlew<span class="w"> </span>e2eTest_sarama
 </span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>./gradlew<span class="w"> </span>e2eTest_franz
 </span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>./gradlew<span class="w"> </span>e2eTest_segmentio
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="c1"># With Go code coverage (see Code Coverage section below)</span>
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>./gradlew<span class="w"> </span>e2eTestWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
 </span></code></pre></div>
 <p>Each per-library task:</p>
 <ol>
@@ -3567,6 +3728,101 @@
 <li>Stops everything and cleans up</li>
 </ol>
 <p>The <code>e2eTest</code> task runs all three sequentially (sarama → franz → segmentio), verifying the Stove Kafka bridge works across all supported Go Kafka libraries.</p>
+<h2 id="code-coverage">Code Coverage<a class="headerlink" href="#code-coverage" title="Permanent link">&para;</a></h2>
+<p>Since Stove runs the Go binary as an OS process (not via <code>go test</code>), standard <code>go test -cover</code> doesn't apply. Go 1.20+ introduced <strong>integration test coverage</strong>: build with <code>go build -cover</code>, set <code>GOCOVERDIR</code>, and coverage data is written on graceful shutdown. This fits perfectly with Stove's lifecycle (SIGTERM → graceful shutdown → coverage files).</p>
+<h3 id="how-it-works_1">How It Works<a class="headerlink" href="#how-it-works_1" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>1. go build -cover          → instruments the binary
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>2. GOCOVERDIR=/path         → tells the binary where to write coverage data
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>3. SIGTERM (Stove stop)     → graceful shutdown triggers coverage flush
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>4. go tool covdata textfmt  → converts raw data to standard coverage.out
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>5. go tool cover -func/-html → human-readable reports
+</span></code></pre></div>
+<h3 id="gradle-setup">Gradle Setup<a class="headerlink" href="#gradle-setup" title="Permanent link">&para;</a></h3>
+<p>The go-showcase recipe supports coverage via the <code>-Pgo.coverage=true</code> Gradle property. When disabled (default), there is zero overhead.</p>
+<div class="language-kotlin highlight"><span class="filename">build.gradle.kts</span><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">coverageEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">gradleProperty</span><span class="p">(</span><span class="s">&quot;go.coverage&quot;</span><span class="p">)</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">    </span><span class="p">.</span><span class="na">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">it</span><span class="p">.</span><span class="na">toBoolean</span><span class="p">()</span><span class="w"> </span><span class="p">}.</span><span class="na">getOrElse</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="kd">val</span><span class="w"> </span><span class="nv">goCoverDirPath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="na">buildDirectory</span><span class="p">.</span><span class="na">dir</span><span class="p">(</span><span class="s">&quot;go-coverage&quot;</span><span class="p">).</span><span class="na">get</span><span class="p">().</span><span class="na">asFile</span><span class="p">.</span><span class="na">absolutePath</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="kd">val</span><span class="w"> </span><span class="nv">goCoverOutPath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="na">buildDirectory</span><span class="p">.</span><span class="na">dir</span><span class="p">(</span><span class="s">&quot;go-coverage&quot;</span><span class="p">).</span><span class="na">get</span><span class="p">().</span><span class="na">asFile</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">    </span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="s">&quot;coverage.out&quot;</span><span class="p">).</span><span class="na">absolutePath</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="c1">// Build with -cover when enabled</span>
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;buildGoApp&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mutableListOf</span><span class="p">(</span><span class="s">&quot;go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">)</span>
+</span><span id="__span-31-10"><a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coverageEnabled</span><span class="p">)</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;-cover&quot;</span><span class="p">)</span>
+</span><span id="__span-31-11"><a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="w">    </span><span class="n">args</span><span class="p">.</span><span class="na">addAll</span><span class="p">(</span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;-o&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goBinary</span><span class="p">.</span><span class="na">absolutePath</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;.&quot;</span><span class="p">))</span>
+</span><span id="__span-31-12"><a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="w">    </span><span class="n">commandLine</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span id="__span-31-13"><a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="p">}</span>
+</span><span id="__span-31-14"><a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a>
+</span><span id="__span-31-15"><a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a><span class="c1">// Pass GOCOVERDIR to the test JVM, disable build cache for coverage runs</span>
+</span><span id="__span-31-16"><a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest_sarama&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-17"><a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a><span class="w">    </span><span class="c1">// ...</span>
+</span><span id="__span-31-18"><a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coverageEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-19"><a id="__codelineno-31-19" name="__codelineno-31-19" href="#__codelineno-31-19"></a><span class="w">        </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.cover.dir&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goCoverDirPath</span><span class="p">)</span>
+</span><span id="__span-31-20"><a id="__codelineno-31-20" name="__codelineno-31-20" href="#__codelineno-31-20"></a><span class="w">        </span><span class="n">outputs</span><span class="p">.</span><span class="na">cacheIf</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1">// Coverage data is a side effect</span>
+</span><span id="__span-31-21"><a id="__codelineno-31-21" name="__codelineno-31-21" href="#__codelineno-31-21"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-31-22"><a id="__codelineno-31-22" name="__codelineno-31-22" href="#__codelineno-31-22"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Coverage report tasks (only registered when coverage is enabled):</p>
+<div class="language-kotlin highlight"><span class="filename">build.gradle.kts</span><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coverageEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">    </span><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;goCoverageReport&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">        </span><span class="n">mustRunAfter</span><span class="p">(</span><span class="n">kafkaE2eTasks</span><span class="p">)</span>
+</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">        </span><span class="n">commandLine</span><span class="p">(</span><span class="s">&quot;go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;tool&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;covdata&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;textfmt&quot;</span><span class="p">,</span>
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">            </span><span class="s">&quot;-i=</span><span class="si">$</span><span class="n">goCoverDirPath</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-o=</span><span class="si">$</span><span class="n">goCoverOutPath</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span id="__span-32-6"><a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-32-7"><a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="w">    </span><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;goCoverageSummary&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-32-8"><a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="w">        </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;goCoverageReport&quot;</span><span class="p">)</span>
+</span><span id="__span-32-9"><a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="w">        </span><span class="n">commandLine</span><span class="p">(</span><span class="s">&quot;go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;tool&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;cover&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-func=</span><span class="si">$</span><span class="n">goCoverOutPath</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span id="__span-32-10"><a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-32-11"><a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="w">    </span><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;goCoverageHtml&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-32-12"><a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="w">        </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;goCoverageReport&quot;</span><span class="p">)</span>
+</span><span id="__span-32-13"><a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="w">        </span><span class="n">commandLine</span><span class="p">(</span><span class="s">&quot;go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;tool&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;cover&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-html=</span><span class="si">$</span><span class="n">goCoverOutPath</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-o=coverage.html&quot;</span><span class="p">)</span>
+</span><span id="__span-32-14"><a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-32-15"><a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a><span class="w">    </span><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="s">&quot;e2eTestWithCoverage&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-32-16"><a id="__codelineno-32-16" name="__codelineno-32-16" href="#__codelineno-32-16"></a><span class="w">        </span><span class="n">dependsOn</span><span class="p">(</span><span class="n">kafkaE2eTasks</span><span class="p">)</span>
+</span><span id="__span-32-17"><a id="__codelineno-32-17" name="__codelineno-32-17" href="#__codelineno-32-17"></a><span class="w">        </span><span class="n">finalizedBy</span><span class="p">(</span><span class="s">&quot;goCoverageSummary&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;goCoverageHtml&quot;</span><span class="p">)</span>
+</span><span id="__span-32-18"><a id="__codelineno-32-18" name="__codelineno-32-18" href="#__codelineno-32-18"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-32-19"><a id="__codelineno-32-19" name="__codelineno-32-19" href="#__codelineno-32-19"></a><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="stove-configuration_1">Stove Configuration<a class="headerlink" href="#stove-configuration_1" title="Permanent link">&para;</a></h3>
+<p>Pass <code>GOCOVERDIR</code> to the Go process via <code>envMapper</code>. The directory is created lazily; when coverage is disabled the value is empty and Go ignores it:</p>
+<div class="language-kotlin highlight"><span class="filename">StoveConfig.kt</span><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">goApp</span><span class="p">(</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="w">    </span><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ProcessTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">APP_PORT</span><span class="p">,</span><span class="w"> </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">),</span>
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="w">    </span><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">        </span><span class="c1">// ... other mappings ...</span>
+</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="w">        </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;GOCOVERDIR&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-33-6"><a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="w">            </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;go.cover.dir&quot;</span><span class="p">)</span>
+</span><span id="__span-33-7"><a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a><span class="w">                </span><span class="o">?.</span><span class="na">also</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">File</span><span class="p">(</span><span class="nb">it</span><span class="p">).</span><span class="na">mkdirs</span><span class="p">()</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-33-8"><a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-33-9"><a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-33-10"><a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="sigpipe-handling">SIGPIPE Handling<a class="headerlink" href="#sigpipe-handling" title="Permanent link">&para;</a></h3>
+<p>When a Go process runs under Java's <code>ProcessBuilder</code>, the stdout pipe can close before the process exits. If Go writes to the closed pipe (e.g. <code>log.Println</code> during shutdown), it receives SIGPIPE and terminates immediately --- before the coverage counters are flushed. Add this at the top of <code>main()</code>:</p>
+<div class="language-go highlight"><span class="filename">main.go</span><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">    </span><span class="c1">// Ignore SIGPIPE so log writes to a closed stdout pipe don&#39;t kill the process.</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="c1">// This ensures clean shutdown (and coverage flush) when run under a process manager.</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">    </span><span class="nx">signal</span><span class="p">.</span><span class="nx">Ignore</span><span class="p">(</span><span class="nx">syscall</span><span class="p">.</span><span class="nx">SIGPIPE</span><span class="p">)</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">    </span><span class="c1">// ...</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>This is a good practice for any long-running Go service managed by an external process, not just for coverage.</p>
+<h3 id="running_1">Running<a class="headerlink" href="#running_1" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="c1"># Without coverage (default — zero overhead)</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>./gradlew<span class="w"> </span>e2eTest_sarama
+</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
+</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="c1"># With coverage — runs tests + generates reports</span>
+</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>./gradlew<span class="w"> </span>e2eTestWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
+</span><span id="__span-35-6"><a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>
+</span><span id="__span-35-7"><a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="c1"># Output includes per-function coverage:</span>
+</span><span id="__span-35-8"><a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="c1"># github.com/.../handlers.go:15:   HandleCreate    85.7%</span>
+</span><span id="__span-35-9"><a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a><span class="c1"># github.com/.../db.go:23:         QueryProducts   100.0%</span>
+</span><span id="__span-35-10"><a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="c1"># total:                           (statements)    81.9%</span>
+</span></code></pre></div>
+<p>The HTML report is written to <code>build/go-coverage/coverage.html</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Why no Stove framework changes needed</p>
+<p>Everything is achievable with existing primitives: the <code>-cover</code> build flag is a Gradle task concern, <code>GOCOVERDIR</code> is just another env var via <code>envMapper</code>, coverage processing happens after tests via Gradle tasks, and graceful shutdown (SIGTERM) is already handled by <code>ProcessApplicationUnderTest.stop()</code>.</p>
+</div>
 <h2 id="adapting-for-other-languages">Adapting for Other Languages<a class="headerlink" href="#adapting-for-other-languages" title="Permanent link">&para;</a></h2>
 <p>The same pattern works for any language. Replace the Go-specific parts:</p>
 <table>
