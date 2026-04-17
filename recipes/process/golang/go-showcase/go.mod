@@ -2,8 +2,6 @@ module github.com/trendyol/stove-go-showcase
 
 go 1.26.2
 
-toolchain go1.26.2
-
 require (
 	github.com/IBM/sarama v1.47.0
 	github.com/XSAM/otelsql v0.42.0

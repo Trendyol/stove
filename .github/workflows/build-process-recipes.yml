@@ -70,6 +70,9 @@ jobs:
         env:
           GOTOOLCHAIN: auto
         run: |
+          GO_EXECUTABLE="$(command -v go)"
+          export GO_EXECUTABLE
+          "$GO_EXECUTABLE" version
           gradle -p recipes/process/golang/go-showcase e2eTest \
             --build-cache \
             --no-daemon

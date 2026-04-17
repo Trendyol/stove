@@ -5,18 +5,29 @@ plugins {
 
 // -- Go build ----------------------------------------------------------------
 val goBinary = layout.buildDirectory.file("go-app").get().asFile
+val goExecutable = providers.environmentVariable("GO_EXECUTABLE").getOrElse("go")
 val coverageEnabled = providers.gradleProperty("go.coverage").map { it.toBoolean() }.getOrElse(false)
 val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
 val goCoverOutPath = layout.buildDirectory.dir("go-coverage").get().asFile.resolve("coverage.out").absolutePath
 
+tasks.register<Exec>("goModTidy") {
+  description = "Runs go mod tidy to sync dependencies."
+  group = "build"
+  commandLine(goExecutable, "mod", "tidy")
+  inputs.files("go.mod", "go.sum")
+  outputs.files("go.mod", "go.sum")
+}
+
 tasks.register<Exec>("buildGoApp") {
   description = "Compiles the Go application."
   group = "build"
-  val args = mutableListOf("go", "build")
+  dependsOn("goModTidy")
+  val args = mutableListOf(goExecutable, "build")
   if (coverageEnabled) args.add("-cover")
   args.addAll(listOf("-o", goBinary.absolutePath, "."))
   commandLine(args)
   inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
+  inputs.property("goExecutable", goExecutable)
   outputs.file(goBinary)
 }
 
@@ -82,21 +93,21 @@ if (coverageEnabled) {
     description = "Converts Go coverage data to standard format."
     group = "verification"
     mustRunAfter(kafkaE2eTasks)
-    commandLine("go", "tool", "covdata", "textfmt", "-i=$goCoverDirPath", "-o=$goCoverOutPath")
+    commandLine(goExecutable, "tool", "covdata", "textfmt", "-i=$goCoverDirPath", "-o=$goCoverOutPath")
   }
 
   tasks.register<Exec>("goCoverageSummary") {
     description = "Prints Go coverage summary."
     group = "verification"
     dependsOn("goCoverageReport")
-    commandLine("go", "tool", "cover", "-func=$goCoverOutPath")
+    commandLine(goExecutable, "tool", "cover", "-func=$goCoverOutPath")
   }
 
   tasks.register<Exec>("goCoverageHtml") {
     description = "Generates HTML coverage report."
     group = "verification"
     dependsOn("goCoverageReport")
-    commandLine("go", "tool", "cover", "-html=$goCoverOutPath", "-o=$goCoverHtmlPath")
+    commandLine(goExecutable, "tool", "cover", "-html=$goCoverOutPath", "-o=$goCoverHtmlPath")
     doLast { logger.lifecycle("Go coverage HTML: $goCoverHtmlPath") }
   }
 

@@ -447,13 +447,14 @@ Gradle compiles the Go binary and passes its path to the test:
 
 ```kotlin title="build.gradle.kts"
 val goBinary = layout.buildDirectory.file("go-app").get().asFile
+val goExecutable = providers.environmentVariable("GO_EXECUTABLE").getOrElse("go")
 val coverageEnabled = providers.gradleProperty("go.coverage")
     .map { it.toBoolean() }.getOrElse(false)
 
 tasks.register<Exec>("buildGoApp") {
     description = "Compiles the Go application."
     group = "build"
-    val args = mutableListOf("go", "build")
+    val args = mutableListOf(goExecutable, "build")
     if (coverageEnabled) args.add("-cover")
     args.addAll(listOf("-o", goBinary.absolutePath, "."))
     commandLine(args)
@@ -826,6 +827,7 @@ Since Stove runs the Go binary as an OS process (not via `go test`), standard `g
 The go-showcase recipe supports coverage via the `-Pgo.coverage=true` Gradle property. When disabled (default), there is zero overhead.
 
 ```kotlin title="build.gradle.kts"
+val goExecutable = providers.environmentVariable("GO_EXECUTABLE").getOrElse("go")
 val coverageEnabled = providers.gradleProperty("go.coverage")
     .map { it.toBoolean() }.getOrElse(false)
 val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
@@ -834,7 +836,7 @@ val goCoverOutPath = layout.buildDirectory.dir("go-coverage").get().asFile
 
 // Build with -cover when enabled
 tasks.register<Exec>("buildGoApp") {
-    val args = mutableListOf("go", "build")
+    val args = mutableListOf(goExecutable, "build")
     if (coverageEnabled) args.add("-cover")
     args.addAll(listOf("-o", goBinary.absolutePath, "."))
     commandLine(args)
@@ -856,16 +858,16 @@ Coverage report tasks (only registered when coverage is enabled):
 if (coverageEnabled) {
     tasks.register<Exec>("goCoverageReport") {
         mustRunAfter(kafkaE2eTasks)
-        commandLine("go", "tool", "covdata", "textfmt",
+        commandLine(goExecutable, "tool", "covdata", "textfmt",
             "-i=$goCoverDirPath", "-o=$goCoverOutPath")
     }
     tasks.register<Exec>("goCoverageSummary") {
         dependsOn("goCoverageReport")
-        commandLine("go", "tool", "cover", "-func=$goCoverOutPath")
+        commandLine(goExecutable, "tool", "cover", "-func=$goCoverOutPath")
     }
     tasks.register<Exec>("goCoverageHtml") {
         dependsOn("goCoverageReport")
-        commandLine("go", "tool", "cover", "-html=$goCoverOutPath", "-o=coverage.html")
+        commandLine(goExecutable, "tool", "cover", "-html=$goCoverOutPath", "-o=coverage.html")
     }
     tasks.register("e2eTestWithCoverage") {
         dependsOn(kafkaE2eTasks)
