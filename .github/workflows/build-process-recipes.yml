@@ -20,8 +20,6 @@ concurrency:
 jobs:
   go-showcase:
     runs-on: ubuntu-latest
-    env:
-      GOTOOLCHAIN: auto
     permissions:
       checks: write
       pull-requests: write
@@ -69,6 +67,8 @@ jobs:
             docker-process-recipes-${{ runner.os }}-
 
       - name: Run E2E Tests (all Kafka libraries)
+        env:
+          GOTOOLCHAIN: auto
         run: |
           gradle -p recipes/process/golang/go-showcase e2eTest \
             --build-cache \
