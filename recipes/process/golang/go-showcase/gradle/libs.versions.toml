@@ -1,5 +1,5 @@
 [versions]
-stove = "1.0.0.522-SNAPSHOT"
+stove = "1.0.0.523-SNAPSHOT"
 kotest = "6.1.11"
 
 [libraries]
