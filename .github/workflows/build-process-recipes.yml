@@ -20,6 +20,8 @@ concurrency:
 jobs:
   go-showcase:
     runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: auto
     permissions:
       checks: write
       pull-requests: write
