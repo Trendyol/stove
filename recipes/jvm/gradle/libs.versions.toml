@@ -34,7 +34,7 @@ mongodb = "5.6.5"
 # Tooling
 spotless = "8.4.0"
 detekt = "1.23.8"
-lombok = "1.18.44"
+lombok = "1.18.46"
 
 # Misc
 hoplite = "2.9.0"
@@ -42,13 +42,13 @@ kediatr = "4.3.0"
 
 # OpenTelemetry
 opentelemetry = "1.61.0"
-opentelemetry-instrumentation = "2.26.1"
+opentelemetry-instrumentation = "2.27.0"
 
 # gRPC
 grpc = "1.80.0"
 grpc-kotlin = "1.5.0"
 protobuf = "4.34.1"
-protobuf-plugin = "0.9.6"
+protobuf-plugin = "0.10.0"
 
 # db-scheduler
 db-scheduler = "16.7.1"
@@ -57,8 +57,8 @@ db-scheduler = "16.7.1"
 stove = "1.0.0.523-SNAPSHOT"
 kotest = "6.1.11"
 exposed = "1.2.0"
-postgresql = "42.7.10"
-flyway = "12.4.0"
+postgresql = "42.7.11"
+flyway = "12.5.0"
 
 [libraries]
 # Kotlin
@@ -107,7 +107,7 @@ ktor-server-callId = { module = "io.ktor:ktor-server-call-id-jvm", version.ref =
 ktor-server-conditionalHeaders = { module = "io.ktor:ktor-server-conditional-headers", version.ref = "ktor" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
 ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.6.0" }
+ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.7.0" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
