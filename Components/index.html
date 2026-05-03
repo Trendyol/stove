@@ -881,6 +881,8 @@
       
         
       
+        
+      
     
     
     
@@ -1429,6 +1431,34 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
   
 
     
@@ -2295,6 +2325,7 @@
 
 <h1 id="components">Components<a class="headerlink" href="#components" title="Permanent link">&para;</a></h1>
 <p>Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. By default, components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, but they can also connect to <a href="11-provided-instances/">provided instances</a> (existing infrastructure) when Docker is unavailable or undesirable.</p>
+<p>This section also includes observability and agent-facing tooling such as <a href="13-reporting/">Reporting</a>, <a href="15-tracing/">Tracing</a>, <a href="18-dashboard/">Dashboard</a>, and <a href="21-mcp/">MCP</a>. These do not replace a dependency system; they help you understand failures and share compact evidence with tools.</p>
 <p>If you have not picked an application starter yet, start with <a href="../frameworks/">Supported Frameworks</a> first and then come back here for the physical dependencies.</p>
 <p>Most teams start with 2 to 4 components, not the whole catalog.</p>
 <h2 id="start-from-the-workflow">Start From The Workflow<a class="headerlink" href="#start-from-the-workflow" title="Permanent link">&para;</a></h2>
@@ -2318,7 +2349,7 @@
 </li>
 <li>
 <p><strong>Visual test observability</strong></p>
-<p>Add <a href="18-dashboard/">Dashboard</a> for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs.</p>
+<p>Add <a href="18-dashboard/">Dashboard</a> for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs. Agents can use <a href="21-mcp/">MCP</a> for compact failed-test evidence.</p>
 </li>
 <li>
 <p><strong>Testing a deployed service (any language)</strong></p>
@@ -2470,6 +2501,11 @@
 <td><a href="18-dashboard/">Dashboard</a></td>
 <td><code>stove-dashboard</code> + <a href="https://github.com/Trendyol/stove/tree/main/tools/stove-cli">CLI</a></td>
 <td>Real-time web dashboard for test observability</td>
+</tr>
+<tr>
+<td><a href="21-mcp/">MCP</a></td>
+<td><code>stove-cli</code></td>
+<td>Local read-only agent API for compact failed-test evidence</td>
 </tr>
 </tbody>
 </table>
@@ -2633,6 +2669,10 @@
 <td><a href="18-dashboard/">Dashboard</a></td>
 <td>Real-time web dashboard for browsing test runs, traces, and system snapshots</td>
 </tr>
+<tr>
+<td><a href="21-mcp/">MCP</a></td>
+<td>Local read-only agent API for compact failed-test evidence from the dashboard database</td>
+</tr>
 </tbody>
 </table>
 <h2 id="common-configuration-pattern">Common Configuration Pattern<a class="headerlink" href="#common-configuration-pattern" title="Permanent link">&para;</a></h2>
@@ -2783,6 +2823,7 @@
 <li><a href="13-reporting/">Reporting</a> - Detailed execution reports and failure diagnostics</li>
 <li><a href="15-tracing/">Tracing</a> - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span></li>
 <li><a href="18-dashboard/">Dashboard</a> - Real-time web dashboard for browsing test runs, traces, and snapshots</li>
+<li><a href="21-mcp/">MCP</a> - Local read-only agent API for failed-test triage</li>
 </ul>
 
 

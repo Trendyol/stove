@@ -881,6 +881,8 @@
       
         
       
+        
+      
     
     
     
@@ -1624,6 +1626,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#mcp-endpoint-unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Endpoint Unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1765,6 +1778,34 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
   
 
     
@@ -2624,6 +2665,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#mcp-endpoint-unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Endpoint Unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2983,6 +3035,9 @@
 <li>Switching to <code>JsonReportRenderer</code> for full output</li>
 <li>Checking your logging configuration</li>
 </ul>
+<h3 id="mcp-endpoint-unavailable">MCP Endpoint Unavailable<a class="headerlink" href="#mcp-endpoint-unavailable" title="Permanent link">&para;</a></h3>
+<p>If an AI agent cannot connect to Stove MCP, first confirm that <code>stove</code> is running and check the startup banner for the actual <code>http://localhost:&lt;port&gt;/mcp</code> endpoint. You can also call <code>GET /api/v1/meta</code> and verify <code>mcp.enabled</code> is <code>true</code>.</p>
+<p>MCP is optional. If it is unavailable, ambiguous, or missing data for a run, agents should fall back to the normal failure report, test output, and logs.</p>
 
 
 

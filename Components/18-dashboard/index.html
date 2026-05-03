@@ -14,7 +14,7 @@
         <link rel="prev" href="../17-cassandra/">
       
       
-        <link rel="next" href="../19-provided-application/">
+        <link rel="next" href="../21-mcp/">
       
       
         
@@ -839,6 +839,8 @@
       
         
           
+        
+      
         
       
         
@@ -1762,6 +1764,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../19-provided-application/" class="md-nav__link">
         
   
@@ -2659,6 +2689,7 @@
 <li><strong>Real-time web UI</strong> — updates live via SSE as your tests execute</li>
 <li><strong>Single binary</strong> — receives events via gRPC, persists in SQLite, serves an embedded SPA</li>
 <li><strong>Persistent</strong> — browse test runs after they complete, across sessions</li>
+<li><strong>Agent API</strong> — exposes a local read-only MCP endpoint for compact failed-test evidence</li>
 </ul>
 <p>Unlike <a href="../13-reporting/">Reporting</a> (console output on failure) and <a href="../15-tracing/">Tracing</a> (span collection for assertions), Dashboard gives you a <span data-rn="underline" data-rn-color="#009688">persistent, browsable view</span> of your test runs — including successful ones.</p>
 <h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
@@ -2717,10 +2748,11 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>stove
 </span></code></pre></div>
 <p>You'll see:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Stove CLI v0.23.0
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  HTTP server: http://localhost:4040
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  gRPC server: http://localhost:4041
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  Database: ~/.stove-dashboard.db
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Stove CLI v0.23.0 running
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>UI:   http://localhost:4040
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>REST: http://localhost:4040/api/v1
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>MCP:  http://localhost:4040/mcp
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>gRPC: localhost:4041
 </span></code></pre></div>
 <p><strong>2. Add the dependency</strong></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="gradle" name="__tabbed_2" type="radio" /><input id="maven" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="gradle">Gradle</label><label for="maven">Maven</label></div>
@@ -2800,6 +2832,7 @@
 </span></code></pre></div>
 <p>Navigate to <a href="http://localhost:4040">http://localhost:4040</a>. The UI updates in real time as tests execute.</p>
 <p>If the dashboard shows a version mismatch warning, align your Stove BOM and test dependencies with the <code>stove-cli</code> version, or upgrade <code>stove-cli</code> to the runtime version reported by the selected app.</p>
+<p>AI agents can connect to the local MCP endpoint shown in the startup output. See <a href="../21-mcp/">MCP</a> for the tool list and fallback behavior.</p>
 <h2 id="what-gets-captured">What Gets Captured<a class="headerlink" href="#what-gets-captured" title="Permanent link">&para;</a></h2>
 <p>Once <code>dashboard {}</code> is registered, Stove <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">automatically captures everything</span> — no code changes to your tests:</p>
 <table>
@@ -2936,6 +2969,11 @@
 <tbody>
 <tr>
 <td>GET</td>
+<td><code>/meta</code></td>
+<td>CLI version and MCP discovery metadata</td>
+</tr>
+<tr>
+<td>GET</td>
 <td><code>/apps</code></td>
 <td>List applications with latest run info</td>
 </tr>
@@ -2981,6 +3019,7 @@
 </tr>
 </tbody>
 </table>
+<p>For AI agents, prefer the MCP endpoint at <code>/mcp</code> over the REST API when the task is failed-test triage. MCP returns compact, scoped evidence and ready-to-use follow-up tool calls. See <a href="../21-mcp/">MCP</a> for setup and fallback behavior.</p>
 <h3 id="sse-events">SSE Events<a class="headerlink" href="#sse-events" title="Permanent link">&para;</a></h3>
 <p>The <code>/events/stream</code> endpoint delivers server-sent events with JSON payloads:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="nt">&quot;run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;abc-123&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;event_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;test_ended&quot;</span><span class="p">}</span>
@@ -3159,13 +3198,13 @@
         
         
           
-          <a href="../19-provided-application/" class="md-footer__link md-footer__link--next" aria-label="Next: Provided Application">
+          <a href="../21-mcp/" class="md-footer__link md-footer__link--next" aria-label="Next: MCP">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Provided Application
+                MCP
               </div>
             </div>
             <div class="md-footer__button md-icon">

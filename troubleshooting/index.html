@@ -879,6 +879,8 @@
       
         
       
+        
+      
     
     
     
@@ -1424,6 +1426,34 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Components/21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
   
 
     
@@ -2060,6 +2090,17 @@
     <span class="md-ellipsis">
       
         Q: Why is container startup slow?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-why-cant-my-ai-agent-connect-to-stove-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Why can't my AI agent connect to Stove MCP?
       
     </span>
   </a>
@@ -3020,6 +3061,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#q-why-cant-my-ai-agent-connect-to-stove-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Why can't my AI agent connect to Stove MCP?
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3794,6 +3846,10 @@
 - Pre-pull images in CI
 - <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Use <code>keepDependenciesRunning()</code> locally</span>
 - Increase startup timeout for slow containers</p>
+<h4 id="q-why-cant-my-ai-agent-connect-to-stove-mcp">Q: Why can't my AI agent connect to Stove MCP?<a class="headerlink" href="#q-why-cant-my-ai-agent-connect-to-stove-mcp" title="Permanent link">&para;</a></h4>
+<p><strong>A:</strong> Stove MCP is served by <code>stove-cli</code>, not by your test JVM. Start <code>stove</code> first and use the endpoint printed in the startup banner, usually <code>http://localhost:4040/mcp</code>.</p>
+<p>You can also check <code>http://localhost:4040/api/v1/meta</code>; it should include <code>"mcp": { "enabled": true, ... }</code>.</p>
+<p>If MCP still cannot be reached, use the normal failure report, test output, and logs. MCP is a token-saving path for agents, not a required dependency.</p>
 <h3 id="migration-questions">Migration Questions<a class="headerlink" href="#migration-questions" title="Permanent link">&para;</a></h3>
 <h4 id="q-how-do-i-migrate-from-014x-to-015x">Q: How do I migrate from 0.14.x to 0.15.x?<a class="headerlink" href="#q-how-do-i-migrate-from-014x-to-015x" title="Permanent link">&para;</a></h4>
 <p><strong>A:</strong> See <a href="../release-notes/0.15.0/">Migration Notes</a> for detailed instructions. Key changes:</p>
@@ -3809,7 +3865,7 @@
 <li>If using the plugin, properties use Gradle's <code>Property&lt;T&gt;</code> API (e.g., <code>serviceName.set("...")</code> instead of <code>serviceName = "..."</code>)</li>
 </ul>
 <h4 id="q-how-do-i-migrate-from-0212-to-022x">Q: How do I migrate from 0.21.2 to 0.22.x?<a class="headerlink" href="#q-how-do-i-migrate-from-0212-to-022x" title="Permanent link">&para;</a></h4>
-<p><strong>A:</strong> See <a href="release-notes/0.22.0.md">Migration Notes</a> for detailed instructions. Key changes:</p>
+<p><strong>A:</strong> See <a href="../release-notes/0.22.2/">Migration Notes</a> for detailed instructions. Key changes:</p>
 <ul>
 <li>New <code>stove-quarkus</code> module available for Quarkus applications</li>
 <li>Console reporting rewritten with Mordant for better output</li>
