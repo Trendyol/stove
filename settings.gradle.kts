@@ -35,6 +35,7 @@ include(
   "test-extensions:stove-extensions-junit"
 )
 include(
+  "starters:container:stove-container",
   "starters:ktor:stove-ktor",
   "starters:ktor:tests:ktor-test-fixtures",
   "starters:ktor:tests:ktor-koin-tests",
@@ -74,7 +75,7 @@ dependencyResolutionManagement {
   }
 }
 plugins {
-  id("org.danilopianini.gradle-pre-commit-git-hooks").version("2.1.16")
+  id("org.danilopianini.gradle-pre-commit-git-hooks").version("2.1.12")
 }
 gitHooks {
   preCommit {

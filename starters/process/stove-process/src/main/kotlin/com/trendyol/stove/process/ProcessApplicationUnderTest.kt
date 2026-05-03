@@ -3,6 +3,7 @@ package com.trendyol.stove.process
 import com.trendyol.stove.system.ReadinessChecker
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.application.toConfigurationMap
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -40,10 +41,7 @@ class ProcessApplicationUnderTest(
   private var process: Process? = null
 
   override suspend fun start(configurations: List<String>) {
-    val configMap = configurations.associate { line ->
-      val (key, value) = line.split("=", limit = 2)
-      key to value
-    }
+    val configMap = configurations.toConfigurationMap()
     val envVars = options.envProvider.provide(configMap)
     val cliArgs = options.argsProvider.provide(configMap)
     val fullCommand = options.command + cliArgs

@@ -1175,6 +1175,56 @@ public abstract interface class com/trendyol/stove/system/abstractions/Validated
 public abstract interface annotation class com/trendyol/stove/system/annotations/StoveDsl : java/lang/annotation/Annotation {
 }
 
+public final class com/trendyol/stove/system/application/ApplicationConfigurationsKt {
+	public static final fun toConfigurationMap (Ljava/util/List;)Ljava/util/Map;
+}
+
+public final class com/trendyol/stove/system/application/ArgsMapperBuilder {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun arg (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun arg (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun arg$default (Lcom/trendyol/stove/system/application/ArgsMapperBuilder;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun build ()Lcom/trendyol/stove/system/application/ArgsProvider;
+	public final fun map (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun to (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract interface class com/trendyol/stove/system/application/ArgsProvider {
+	public static final field Companion Lcom/trendyol/stove/system/application/ArgsProvider$Companion;
+	public abstract fun provide (Ljava/util/Map;)Ljava/util/List;
+}
+
+public final class com/trendyol/stove/system/application/ArgsProvider$Companion {
+	public final fun empty ()Lcom/trendyol/stove/system/application/ArgsProvider;
+}
+
+public final class com/trendyol/stove/system/application/ArgsProviderKt {
+	public static final fun argsMapper (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/application/ArgsProvider;
+	public static synthetic fun argsMapper$default (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/system/application/ArgsProvider;
+}
+
+public final class com/trendyol/stove/system/application/EnvMapperBuilder {
+	public fun <init> ()V
+	public final fun build ()Lcom/trendyol/stove/system/application/EnvProvider;
+	public final fun env (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun env (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun map (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun to (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract interface class com/trendyol/stove/system/application/EnvProvider {
+	public static final field Companion Lcom/trendyol/stove/system/application/EnvProvider$Companion;
+	public abstract fun provide (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public final class com/trendyol/stove/system/application/EnvProvider$Companion {
+	public final fun empty ()Lcom/trendyol/stove/system/application/EnvProvider;
+}
+
+public final class com/trendyol/stove/system/application/EnvProviderKt {
+	public static final fun envMapper (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/application/EnvProvider;
+}
+
 public final class com/trendyol/stove/tracing/ExceptionInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
