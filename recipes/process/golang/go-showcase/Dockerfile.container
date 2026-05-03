@@ -8,7 +8,7 @@ COPY *.go ./
 ARG GO_BUILD_FLAGS=""
 RUN CGO_ENABLED=0 GOOS=linux go build ${GO_BUILD_FLAGS} -o /out/go-showcase .
 
-FROM alpine:3.22
+FROM alpine:3.23
 WORKDIR /app
 COPY --from=build /out/go-showcase /app/go-showcase
 
