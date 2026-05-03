@@ -387,4 +387,6 @@ Stove is extensible. For the complete pattern with a working db-scheduler exampl
 - [tracing.md](tracing.md) — Tracing plugin options and validation DSL
 - [custom-systems.md](custom-systems.md) — Writing your own Stove system
 - [other-languages.md](other-languages.md) — Testing non-JVM apps (Go, Python, Rust, Node.js)
-- [go-setup.md](go-setup.md) — Go-specific setup: HTTP, PostgreSQL, Kafka bridge, OTel tracing, code coverage
+- [go-setup.md](go-setup.md) — Go-specific setup (process mode focus): HTTP, PostgreSQL, Kafka bridge, OTel tracing, code coverage
+- [container.md](container.md) — Language-agnostic `containerApp(...)` AUT (image source is the user's responsibility, not Stove's)
+- [mcp.md](mcp.md) — Stove CLI MCP endpoint for agent-driven failed-test triage

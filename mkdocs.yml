@@ -23,7 +23,10 @@ nav:
     - Quarkus: frameworks/quarkus.md
   - Other Languages & Stacks:
     - Overview: other-languages/index.md
-    - Go: other-languages/go.md
+    - Go:
+      - Overview: other-languages/go.md
+      - Process Mode: other-languages/go-process.md
+      - Container Mode: other-languages/go-container.md
   - Components:
     - Overview: Components/index.md
     - Couchbase: Components/01-couchbase.md
@@ -45,15 +48,18 @@ nav:
     - Cassandra: Components/17-cassandra.md
     - Dashboard: Components/18-dashboard.md
     - MCP: Components/21-mcp.md
+    - Container AUT: Components/22-container.md
     - Provided Application: Components/19-provided-application.md
     - Multiple Systems: Components/20-multiple-systems.md
   - Writing Custom Systems: writing-custom-systems.md
   - Best Practices: best-practices.md
   - Troubleshooting: troubleshooting.md
   - Blog:
+      - "Polyglot Stove in 0.24.0": blog/polyglot-0.24.0.md
       - "Stove Dashboard in 0.23.0": blog/dashboard-0.23.0.md
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
+      - "0.24.0": release-notes/0.24.0.md
       - "0.23.0": release-notes/0.23.0.md
       - 0.22.2: release-notes/0.22.2.md
       - 0.21.2: release-notes/0.21.2.md

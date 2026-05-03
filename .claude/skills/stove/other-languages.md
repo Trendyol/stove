@@ -1,6 +1,13 @@
 # Testing Non-JVM Applications with Stove
 
-Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. Use `stove-process` when you want to run a host binary/process (`processApp`/`goApp`), or `stove-container` when the AUT should run as a Docker image (`containerApp`).
+Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. Two starters:
+
+- **`stove-process`** — host binary, fastest iteration loop (`processApp` / `goApp`)
+- **`stove-container`** — Docker image, CI parity with the production artifact (`containerApp`). See [container.md](container.md) for the full container guide.
+
+Same Stove DSL, same systems, same env/args mapping. The only difference is *how* the AUT starts.
+
+For Stove + AI agent triage on failed runs, see [mcp.md](mcp.md).
 
 ## Requirements
 
@@ -210,9 +217,49 @@ See [go-setup.md](go-setup.md#code-coverage) for full details.
 - **No `bridge()` / `using<T> {}`** --- no access to app's DI container
 - Everything else works: HTTP, databases, Kafka, tracing, WireMock, gRPC, dashboard
 
+## Container mode (`containerApp`)
+
+Use `containerApp(...)` from `stove-container` when the AUT should run as a Docker image. Same envMapper/argsMapper model as processApp, plus a `configureContainer { ... }` block for Testcontainers-level customization (network mode, bind mounts, log consumers).
+
+```kotlin
+import com.trendyol.stove.container.ContainerTarget
+import com.trendyol.stove.container.containerApp
+import com.trendyol.stove.system.application.envMapper
+
+containerApp(
+    image = "my-app:local",
+    target = ContainerTarget.Server(
+        hostPort = 8090, internalPort = 8090,
+        portEnvVar = "APP_PORT", bindHostPort = false
+    ),
+    envProvider = envMapper {
+        "database.host" to "DB_HOST"
+        "kafka.bootstrapServers" to "KAFKA_BROKERS"
+        env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
+    },
+    configureContainer = {
+        withNetworkMode("host")  // Linux only; use port binding + shared network on macOS/Windows
+    }
+)
+```
+
+`ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort)` for HTTP/gRPC servers, `ContainerTarget.Worker()` for jobs. See [container.md](container.md) for the full guide (Dockerfile, Gradle wiring, networking strategies, coverage volume mounts, common pitfalls).
+
+A common pattern: one `StoveConfig.kt` branches on `-Dgo.aut.mode=process|container` to switch between starters. The infrastructure systems and tests stay identical.
+
+## MCP triage on failures
+
+When `stove` (the CLI) is running, agents can triage failed runs through the local MCP endpoint at `http://localhost:4040/mcp` instead of scraping logs. See [mcp.md](mcp.md) for the workflow.
+
 ## Reference
 
 - Process module source: `starters/process/stove-process/`
 - Container module source: `starters/container/stove-container/`
-- Full Go example: `recipes/process/golang/go-showcase/`
-- Docs: `docs/other-languages/go.md` and `docs/other-languages/index.md`
+- Container DSL: `starters/container/stove-container/src/main/kotlin/com/trendyol/stove/container/ContainerDsl.kt`
+- Full Go example (process + container in one repo): `recipes/process/golang/go-showcase/`
+- Docs:
+  - `docs/other-languages/go.md` — overview / mode picker
+  - `docs/other-languages/go-process.md` — process mode walkthrough
+  - `docs/other-languages/go-container.md` — container mode walkthrough
+  - `docs/other-languages/index.md`
+  - `docs/Components/21-mcp.md` — MCP triage

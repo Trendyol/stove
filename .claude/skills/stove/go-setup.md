@@ -1,6 +1,10 @@
 # Go Application Setup with Stove
 
-Complete guide for testing Go applications with Stove. Covers HTTP, PostgreSQL, Kafka (with bridge), OpenTelemetry tracing, and dashboard.
+Complete guide for testing Go applications with Stove. Covers HTTP, PostgreSQL, Kafka (with bridge), OpenTelemetry tracing, dashboard, MCP triage, and integration coverage.
+
+This skill focuses on **process mode** (`stove-process` / `goApp`) — fastest local iteration. For container-image AUT (`stove-container` / `containerApp`) — language-agnostic, image source is your responsibility — see [container.md](container.md). For agent-driven failure triage via the `stove` CLI MCP endpoint, see [mcp.md](mcp.md).
+
+The same `StoveConfig.kt` can serve both modes by branching on a system property like `-Daut.mode=process|container` (see the showcase recipe).
 
 ## Setup Checklist
 
@@ -508,6 +512,14 @@ google.golang.org/grpc                                           # gRPC
 ## Reference
 
 - Process module (goApp DSL): `starters/process/stove-process/`
-- Full working example: `recipes/process/golang/go-showcase/`
+- Container module (containerApp DSL): `starters/container/stove-container/`
+- Full working example (process + container in one repo): `recipes/process/golang/go-showcase/`
 - Bridge library source: `go/stove-kafka/`
-- Docs: `docs/other-languages/go.md`
+- Docs:
+  - `docs/other-languages/go.md` — overview / mode picker
+  - `docs/other-languages/go-process.md` — process mode walkthrough
+  - `docs/other-languages/go-container.md` — container mode walkthrough
+- Sibling skills:
+  - [container.md](container.md) — language-agnostic container AUT
+  - [mcp.md](mcp.md) — MCP triage on failed runs
+  - [other-languages.md](other-languages.md) — non-JVM overview
