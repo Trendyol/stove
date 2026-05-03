@@ -1,8 +1,19 @@
 # <span data-rn="underline" data-rn-color="#ff9800">Go</span>
 
-This guide walks through testing a Go application with Stove --- end to end, including <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">HTTP, PostgreSQL, Kafka, distributed tracing, and the dashboard</span>. The Go app is a simple product CRUD service; Stove starts it as an OS process, passes infrastructure configs as environment variables, and runs Kotlin e2e tests against it.
+This guide walks through testing a Go application with Stove --- end to end, including <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">HTTP, PostgreSQL, Kafka, distributed tracing, and the dashboard</span>. The Go app is a simple product CRUD service; Stove can run it either as an OS process (`stove-process`) or as a Docker container (`stove-container`) while keeping the same test DSL and system setup model.
 
 The full source is at [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase).
+
+## Choosing AUT Mode
+
+Both modes use the same `stove {}` assertions. The difference is only how the application under test is launched:
+
+| Mode | Starter | Good fit | Trade-off |
+|------|---------|----------|-----------|
+| **Process mode** | `stove-process` (`goApp` / `processApp`) | Fast local iteration, direct binary run | You manage host binary/runtime alignment |
+| **Container mode** | `stove-container` (`containerApp`) | CI parity with production container image | Docker image build adds setup cost |
+
+Rule of thumb: start with process mode for fast feedback, then add container mode when you want image-level confidence in CI.
 
 ## Project Structure
 
@@ -20,16 +31,17 @@ go-showcase/                   # Standalone Gradle project (copy-paste ready)
   stovetests/                  # Kotlin Stove tests
     kotlin/com/.../e2e/
       setup/
-        StoveConfig.kt              # Stove system configuration (uses stove-process goApp())
+        StoveConfig.kt              # Single setup file (switches process/container via go.aut.mode)
         ProductMigration.kt         # Creates products table
       tests/
         GoShowcaseTest.kt           # E2E tests
     resources/
       kotest.properties
+  Dockerfile.container         # Container AUT image build recipe
   build.gradle.kts             # Builds Go + runs Kotlin tests
   settings.gradle.kts          # Standalone settings with version catalog
 
-# Distributed as a Go library:
+# Published Go library used by the showcase:
 go/stove-kafka/            # Stove Kafka bridge for Go applications
   bridge.go                    # Core bridge (library-agnostic gRPC client)
   sarama/                      # IBM/sarama interceptors
@@ -510,6 +522,22 @@ The module handles:
 
 `goApp()` defaults the binary path from the `go.app.binary` system property. For other languages, use `processApp()` directly.
 
+### stove-container Module
+
+`stove-container` runs the same application as a Docker image instead of a host process. Conceptually, everything outside AUT startup stays the same:
+
+- Same Stove systems (`httpClient`, `postgresql`, `kafka`, `tracing`, `dashboard`)
+- Same `stove {}` assertions and test classes
+- Same env mapping model (`envMapper` / `argsMapper`) for passing exposed configuration
+
+The practical differences are:
+
+- Build an image first (`buildContainerImage`)
+- Use `containerApp(...)` in setup
+- Provide host-to-container extras when needed (for example, coverage directory bind mount)
+
+The Docker recipe builds from the Go showcase directory and consumes the published `github.com/trendyol/stove/go/stove-kafka` module. It should not copy repo-local bridge sources into the image; update the `go.mod` version when you want the recipe to use a newer bridge release.
+
 #### Configuration passing
 
 Two mechanisms are available --- use one or both:
@@ -536,7 +564,7 @@ argsMapper(prefix = "--", separator = " ") {
 }
 ```
 
-Both `envProvider` and `argsProvider` can be set on `ProcessApplicationOptions` simultaneously.
+Both `envProvider` and `argsProvider` can be set on `processApp(...)` or `containerApp(...)` simultaneously.
 
 ### Stove Configuration
 
@@ -794,7 +822,18 @@ cd recipes/process/golang/go-showcase
 
 # With Go code coverage (see Code Coverage section below)
 ./gradlew e2eTestWithCoverage -Pgo.coverage=true
+
+# Container AUT path (sarama only)
+./gradlew e2eTest-container
+
+# Before the released snapshot is available, opt into local Stove artifacts
+./gradlew e2eTest-container -PuseMavenLocal=true
+
+# Remove the local image manually when needed
+./gradlew removeContainerImage
 ```
+
+By default, the recipe resolves Stove from Maven Central and Sonatype snapshots. `mavenLocal()` is intentionally opt-in so CI validates the same published snapshot path that users consume.
 
 Each per-library task:
 
@@ -806,11 +845,11 @@ Each per-library task:
 6. Runs the 5 Kotlin e2e tests
 7. Stops everything and cleans up
 
-The `e2eTest` task runs all three sequentially (sarama → franz → segmentio), verifying the Stove Kafka bridge works across all supported Go Kafka libraries.
+The `e2eTest` task runs all three process-mode libraries sequentially (sarama → franz → segmentio), verifying the Stove Kafka bridge across supported Go Kafka clients. The `e2eTest-container` task validates the container AUT path with `sarama` as the focused baseline.
 
 ## Code Coverage
 
-Since Stove runs the Go binary as an OS process (not via `go test`), standard `go test -cover` doesn't apply. Go 1.20+ introduced **integration test coverage**: build with `go build -cover`, set `GOCOVERDIR`, and coverage data is written on graceful shutdown. This fits perfectly with Stove's lifecycle (SIGTERM → graceful shutdown → coverage files).
+For both process-mode and container-mode AUT runs, Stove executes your app outside `go test`, so standard `go test -cover` doesn't apply. Go 1.20+ integration coverage fits this model: build with `go build -cover`, set `GOCOVERDIR`, and flush data on graceful shutdown (SIGTERM).
 
 ### How It Works
 
@@ -916,6 +955,7 @@ This is a good practice for any long-running Go service managed by an external p
 
 # With coverage — runs tests + generates reports
 ./gradlew e2eTestWithCoverage -Pgo.coverage=true
+./gradlew e2eTest-containerWithCoverage -Pgo.coverage=true
 
 # Output includes per-function coverage:
 # github.com/.../handlers.go:15:   HandleCreate    85.7%
@@ -926,7 +966,7 @@ This is a good practice for any long-running Go service managed by an external p
 The HTML report is written to `build/go-coverage/coverage.html`.
 
 !!! tip "Why no Stove framework changes needed"
-    Everything is achievable with existing primitives: the `-cover` build flag is a Gradle task concern, `GOCOVERDIR` is just another env var via `envMapper`, coverage processing happens after tests via Gradle tasks, and graceful shutdown (SIGTERM) is already handled by `ProcessApplicationUnderTest.stop()`.
+    Everything is achievable with existing primitives: the `-cover` build flag is a Gradle concern, `GOCOVERDIR` is just another env var, coverage processing happens after tests, and graceful shutdown is handled by the AUT starter (`stove-process` or `stove-container`).
 
 ## Adapting for Other Languages
 
@@ -941,4 +981,4 @@ The same pattern works for any language. Replace the Go-specific parts:
 | **Kafka** | `stove-kafka` bridge (sarama / franz-go / kafka-go) | *(bridge library needed)* | *(bridge library needed)* | *(bridge library needed)* |
 | **Config** | Env vars | Env vars | Env vars | Env vars |
 
-The Kotlin test side stays exactly the same --- only `processApp()` / `goApp()` and the `envMapper` change.
+The Kotlin test side stays exactly the same --- only the AUT runner (`goApp()` / `processApp()` / `containerApp()`) and environment/CLI mapping differ.

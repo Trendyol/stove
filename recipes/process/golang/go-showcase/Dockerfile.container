@@ -1,0 +1,16 @@
+FROM golang:1.26.2 AS build
+
+WORKDIR /workspace
+COPY go.mod go.sum ./
+RUN go mod download
+COPY *.go ./
+
+ARG GO_BUILD_FLAGS=""
+RUN CGO_ENABLED=0 GOOS=linux go build ${GO_BUILD_FLAGS} -o /out/go-showcase .
+
+FROM alpine:3.22
+WORKDIR /app
+COPY --from=build /out/go-showcase /app/go-showcase
+
+EXPOSE 8090
+ENTRYPOINT ["/app/go-showcase"]
