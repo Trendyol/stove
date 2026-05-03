@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 /// CLI configuration parsed from command-line arguments.
 #[derive(Parser, Debug)]
@@ -9,6 +9,7 @@ use clap::Parser;
   about = "Stove CLI \u{2014} local e2e test observability",
   version = env!("STOVE_VERSION")
 )]
+#[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
 pub struct Config {
   /// HTTP port for the web UI and REST API
   #[arg(long, default_value_t = 4040)]
@@ -29,6 +30,41 @@ pub struct Config {
   /// Drop and recreate the database from scratch (backs up existing file first)
   #[arg(long)]
   pub fresh_start: bool,
+
+  /// Fetch and apply Stove agent skills from GitHub on startup without prompting.
+  /// Useful for automation inside repositories.
+  #[arg(long)]
+  pub update_skills: bool,
+
+  /// Skip the startup Stove agent skills check entirely.
+  #[arg(long)]
+  pub no_skills_check: bool,
+
+  /// Optional subcommand. When omitted, the CLI runs the dashboard.
+  #[command(subcommand)]
+  pub command: Option<StoveCommand>,
+}
+
+/// Top-level subcommands for the Stove CLI.
+#[derive(Subcommand, Debug)]
+pub enum StoveCommand {
+  /// Manage Stove agent skills under the current project.
+  Skills {
+    #[command(subcommand)]
+    command: SkillsCommand,
+  },
+}
+
+/// `stove skills <...>` subcommands.
+#[derive(Subcommand, Debug)]
+pub enum SkillsCommand {
+  /// Install or update Stove agent skills from GitHub.
+  Install {
+    /// Skip git repository detection and overwrite without prompting.
+    /// Installs into the resolved skill target relative to the current directory.
+    #[arg(long)]
+    force: bool,
+  },
 }
 
 /// If `--fresh-start` is set, backs up the existing database file and deletes the original.
@@ -145,5 +181,45 @@ mod tests {
     let config = Config::try_parse_from(["stove", "--db", "/tmp/my.db"]).unwrap();
 
     assert_eq!(config.db, "/tmp/my.db");
+  }
+
+  #[test]
+  fn cli_defaults_skills_flags_off() {
+    let config = Config::try_parse_from(["stove"]).unwrap();
+    assert!(!config.update_skills);
+    assert!(!config.no_skills_check);
+    assert!(config.command.is_none());
+  }
+
+  #[test]
+  fn cli_parses_update_skills_flag() {
+    let config = Config::try_parse_from(["stove", "--update-skills"]).unwrap();
+    assert!(config.update_skills);
+  }
+
+  #[test]
+  fn cli_parses_no_skills_check_flag() {
+    let config = Config::try_parse_from(["stove", "--no-skills-check"]).unwrap();
+    assert!(config.no_skills_check);
+  }
+
+  #[test]
+  fn cli_parses_skills_install_subcommand() {
+    let config = Config::try_parse_from(["stove", "skills", "install"]).unwrap();
+    let Some(StoveCommand::Skills { command }) = config.command else {
+      panic!("expected skills subcommand");
+    };
+    let SkillsCommand::Install { force } = command;
+    assert!(!force);
+  }
+
+  #[test]
+  fn cli_parses_skills_install_force() {
+    let config = Config::try_parse_from(["stove", "skills", "install", "--force"]).unwrap();
+    let Some(StoveCommand::Skills { command }) = config.command else {
+      panic!("expected skills subcommand");
+    };
+    let SkillsCommand::Install { force } = command;
+    assert!(force);
   }
 }

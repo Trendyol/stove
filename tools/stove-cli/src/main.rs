@@ -9,6 +9,7 @@ use stove::grpc;
 use stove::http;
 use stove::ingest;
 use stove::proto;
+use stove::skills;
 use stove::sse;
 use stove::storage;
 
@@ -21,6 +22,11 @@ async fn main() -> anyhow::Result<()> {
     .init();
 
   let config = config::Config::parse();
+
+  // Handle a `skills` subcommand if requested. Returns true when handled.
+  if skills::handle_skills_command(&config).await? {
+    return Ok(());
+  }
 
   // Handle --fresh-start: back up and delete the existing database
   if config.fresh_start {
@@ -41,6 +47,10 @@ async fn main() -> anyhow::Result<()> {
     info!("Cleared all stored runs.");
     return Ok(());
   }
+
+  // Suggest or apply Stove agent skills update before serving.
+  // Network/IO errors are swallowed inside; never blocks startup.
+  skills::maybe_update_skills(&config).await;
 
   let sse_manager = Arc::new(sse::manager::SseManager::new());
   let ingestor = ingest::EventIngestor::new(repository.clone());

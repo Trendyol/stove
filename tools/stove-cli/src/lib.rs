@@ -14,6 +14,7 @@ pub mod grpc;
 pub mod http;
 pub mod ingest;
 pub mod mcp;
+pub mod skills;
 pub mod sse;
 pub mod storage;
 

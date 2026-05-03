@@ -56,8 +56,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 
+# HTTP client (used for the Stove agent skills sync against GitHub)
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "gzip", "http2"] }
+
 [dev-dependencies]
-reqwest = { version = "0.13", features = ["json"] }
 tempfile = "3"
 
 [build-dependencies]

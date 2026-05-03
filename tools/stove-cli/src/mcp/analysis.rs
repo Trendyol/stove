@@ -723,12 +723,11 @@ fn correlated_test_for_trace(repository: &Repository, run: &Run, trace_id: &str)
     .find(|test| {
       repository
         .get_entries(&run.id, &test.id)
-        .map(|entries| {
+        .is_ok_and(|entries| {
           entries
             .iter()
             .any(|entry| entry.trace_id.as_deref() == Some(trace_id))
         })
-        .unwrap_or(false)
     })
 }
 
