@@ -2179,7 +2179,7 @@
 
 <h1 id="other-languages-stacks">Other Languages &amp; Stacks<a class="headerlink" href="#other-languages-stacks" title="Permanent link">&para;</a></h1>
 <p>Stove ships with JVM framework starters (Spring Boot, Ktor, Micronaut, Quarkus), but the core testing model isn't limited to JVM applications. You can use Stove to <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test any application that speaks HTTP, databases, and messaging</span> --- regardless of the language it's written in.</p>
-<p>The key: implement a custom <code>ApplicationUnderTest</code> that starts your app as an OS process, pass infrastructure configuration via environment variables, and let Stove manage the rest.</p>
+<p>The key: choose an <code>ApplicationUnderTest</code> strategy (<code>stove-process</code> for binaries/processes or <code>stove-container</code> for Docker images), pass infrastructure configuration via env vars or CLI args, and let Stove manage the rest.</p>
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>graph LR
     S[Stove Test&lt;br&gt;Kotlin] --&gt;|starts containers| PG[(PostgreSQL)]
@@ -2222,7 +2222,7 @@
 <tr>
 <td><strong>Application startup</strong></td>
 <td>Framework starter (<code>springBoot()</code>, <code>ktor()</code>)</td>
-<td>Custom <code>ApplicationUnderTest</code> via <code>goApp()</code>, <code>nodeApp()</code>, etc.</td>
+<td>Starter AUT via <code>goApp()</code> / <code>processApp()</code> (<code>stove-process</code>) or <code>containerApp()</code> (<code>stove-container</code>)</td>
 </tr>
 <tr>
 <td><strong>Config passing</strong></td>
