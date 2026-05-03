@@ -569,6 +569,8 @@ Now that you're up and running, here's what to explore next:
 - **Quarkus** - If your application uses Quarkus, follow the [Quarkus guide](frameworks/quarkus.md)
 - **Tracing** - Enable [Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
 - **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics
+- **Dashboard** - Start the [local dashboard](Components/18-dashboard.md) when you want live timelines, traces, snapshots, and the REST API
+- **MCP** - Let AI agents inspect failed tests through the local [Stove MCP endpoint](Components/21-mcp.md) served by `stove`
 - **gRPC Mocking** - Mock external gRPC services with [gRPC Mocking](Components/14-grpc-mock.md)
 - **Best Practices** - Read the [Best Practices guide](best-practices.md) for tips on writing effective e2e tests
 - **Troubleshooting** - Hit an issue? Check the [Troubleshooting guide](troubleshooting.md)

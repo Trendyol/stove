@@ -2,6 +2,8 @@
 
 Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. By default, components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, but they can also connect to [provided instances](11-provided-instances.md) (existing infrastructure) when Docker is unavailable or undesirable.
 
+This section also includes observability and agent-facing tooling such as [Reporting](13-reporting.md), [Tracing](15-tracing.md), [Dashboard](18-dashboard.md), and [MCP](21-mcp.md). These do not replace a dependency system; they help you understand failures and share compact evidence with tools.
+
 If you have not picked an application starter yet, start with [Supported Frameworks](../frameworks/index.md) first and then come back here for the physical dependencies.
 
 Most teams start with 2 to 4 components, not the whole catalog.
@@ -28,7 +30,7 @@ Most teams start with 2 to 4 components, not the whole catalog.
 
 -   **Visual test observability**
 
-    Add [Dashboard](18-dashboard.md) for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs.
+    Add [Dashboard](18-dashboard.md) for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs. Agents can use [MCP](21-mcp.md) for compact failed-test evidence.
 
 -   **Testing a deployed service (any language)**
 
@@ -71,6 +73,7 @@ Most teams start with 2 to 4 components, not the whole catalog.
 | [Multiple Systems](20-multiple-systems.md) | Built-in | Register multiple instances of the same system type with typed keys |
 | [Reporting](13-reporting.md) | `stove-extensions-kotest` or `stove-extensions-junit` | Rich failure reports with execution context |
 | [Dashboard](18-dashboard.md) | `stove-dashboard` + [CLI](https://github.com/Trendyol/stove/tree/main/tools/stove-cli) | Real-time web dashboard for test observability |
+| [MCP](21-mcp.md) | `stove-cli` | Local read-only agent API for compact failed-test evidence |
 
 ## Quick Start
 
@@ -164,6 +167,7 @@ stove {
 | [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
 | [Tracing](15-tracing.md) | <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span> |
 | [Dashboard](18-dashboard.md) | Real-time web dashboard for browsing test runs, traces, and system snapshots |
+| [MCP](21-mcp.md) | Local read-only agent API for compact failed-test evidence from the dashboard database |
 
 ## Common Configuration Pattern
 
@@ -339,3 +343,4 @@ test("should process order end-to-end") {
 - [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
 - [Tracing](15-tracing.md) - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span>
 - [Dashboard](18-dashboard.md) - Real-time web dashboard for browsing test runs, traces, and snapshots
+- [MCP](21-mcp.md) - Local read-only agent API for failed-test triage

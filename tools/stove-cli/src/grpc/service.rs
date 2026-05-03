@@ -57,9 +57,19 @@ impl DashboardEventServiceImpl {
     max_batch_size: usize,
     max_batch_delay: Duration,
   ) -> Self {
+    let ingestor = EventIngestor::with_config(repository.clone(), max_batch_size, max_batch_delay);
+    Self::new_with_ingestor(repository, sse_manager, ingestor)
+  }
+
+  #[must_use]
+  pub fn new_with_ingestor(
+    repository: Arc<Repository>,
+    sse_manager: Arc<SseManager>,
+    ingestor: EventIngestor,
+  ) -> Self {
     Self {
-      repository: repository.clone(),
-      ingestor: EventIngestor::with_config(repository, max_batch_size, max_batch_delay),
+      repository,
+      ingestor,
       sse_manager,
       next_live_seq: AtomicU64::new(0),
       state: Mutex::new(LiveState::default()),

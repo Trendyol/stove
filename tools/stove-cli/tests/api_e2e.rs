@@ -257,6 +257,9 @@ async fn meta_returns_cli_version() {
   let body = server.get_json("/meta").await;
 
   assert_eq!(body["stove_cli_version"], stove::STOVE_CLI_VERSION);
+  assert_eq!(body["mcp"]["enabled"], true);
+  assert_eq!(body["mcp"]["transport"], "streamable-http");
+  assert_eq!(body["mcp"]["endpoint"], format!("{}/mcp", server.base_url));
 }
 
 // ---------------------------------------------------------------------------

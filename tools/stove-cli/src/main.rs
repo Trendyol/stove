@@ -7,6 +7,7 @@ use tracing::info;
 use stove::config;
 use stove::grpc;
 use stove::http;
+use stove::ingest;
 use stove::proto;
 use stove::sse;
 use stove::storage;
@@ -42,11 +43,15 @@ async fn main() -> anyhow::Result<()> {
   }
 
   let sse_manager = Arc::new(sse::manager::SseManager::new());
+  let ingestor = ingest::EventIngestor::new(repository.clone());
 
   // Start gRPC server
   let grpc_addr: SocketAddr = format!("0.0.0.0:{}", config.grpc_port).parse()?;
-  let grpc_service =
-    grpc::service::DashboardEventServiceImpl::new(repository.clone(), sse_manager.clone());
+  let grpc_service = grpc::service::DashboardEventServiceImpl::new_with_ingestor(
+    repository.clone(),
+    sse_manager.clone(),
+    ingestor.clone(),
+  );
   let grpc_handle = tokio::spawn(async move {
     info!("gRPC server listening on {}", grpc_addr);
     tonic::transport::Server::builder()
@@ -59,16 +64,22 @@ async fn main() -> anyhow::Result<()> {
 
   // Start HTTP server
   let http_addr: SocketAddr = format!("0.0.0.0:{}", config.port).parse()?;
-  let router = http::server::create_router(repository, sse_manager);
+  let router = http::server::create_router_with_ingestor(repository, sse_manager, Some(ingestor));
   let http_handle = tokio::spawn(async move {
     info!("HTTP server listening on {}", http_addr);
     let listener = tokio::net::TcpListener::bind(http_addr).await?;
-    axum::serve(listener, router).await
+    axum::serve(
+      listener,
+      router.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
   });
 
   println!(
-    "\n  Stove CLI v{} running\n  UI:   http://localhost:{}\n  gRPC: localhost:{}\n",
+    "\n  Stove CLI v{} running\n  UI:   http://localhost:{}\n  REST: http://localhost:{}/api/v1\n  MCP:  http://localhost:{}/mcp\n  gRPC: localhost:{}\n",
     env!("STOVE_VERSION"),
+    config.port,
+    config.port,
     config.port,
     config.grpc_port
   );

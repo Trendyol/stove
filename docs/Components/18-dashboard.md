@@ -8,6 +8,7 @@ Stove Dashboard is a <span data-rn="highlight" data-rn-color="#00968855" data-rn
 - **Real-time web UI** — updates live via SSE as your tests execute
 - **Single binary** — receives events via gRPC, persists in SQLite, serves an embedded SPA
 - **Persistent** — browse test runs after they complete, across sessions
+- **Agent API** — exposes a local read-only MCP endpoint for compact failed-test evidence
 
 Unlike [Reporting](13-reporting.md) (console output on failure) and [Tracing](15-tracing.md) (span collection for assertions), Dashboard gives you a <span data-rn="underline" data-rn-color="#009688">persistent, browsable view</span> of your test runs — including successful ones.
 
@@ -63,10 +64,11 @@ stove
 You'll see:
 
 ```
-Stove CLI v0.23.0
-  HTTP server: http://localhost:4040
-  gRPC server: http://localhost:4041
-  Database: ~/.stove-dashboard.db
+Stove CLI v0.23.0 running
+UI:   http://localhost:4040
+REST: http://localhost:4040/api/v1
+MCP:  http://localhost:4040/mcp
+gRPC: localhost:4041
 ```
 
 **2. Add the dependency**
@@ -158,6 +160,8 @@ See [Tracing](15-tracing.md) for the full plugin configuration reference.
 Navigate to [http://localhost:4040](http://localhost:4040). The UI updates in real time as tests execute.
 
 If the dashboard shows a version mismatch warning, align your Stove BOM and test dependencies with the `stove-cli` version, or upgrade `stove-cli` to the runtime version reported by the selected app.
+
+AI agents can connect to the local MCP endpoint shown in the startup output. See [MCP](21-mcp.md) for the tool list and fallback behavior.
 
 ## What Gets Captured
 
@@ -265,6 +269,7 @@ The dashboard exposes a REST API at `/api/v1` for programmatic access:
 
 | Method | Path                                         | Description                    |
 |--------|----------------------------------------------|--------------------------------|
+| GET    | `/meta`                                      | CLI version and MCP discovery metadata |
 | GET    | `/apps`                                      | List applications with latest run info |
 | GET    | `/runs?app={name}`                           | List runs, optionally filtered by app  |
 | GET    | `/runs/{run_id}`                             | Get a specific run             |
@@ -274,6 +279,8 @@ The dashboard exposes a REST API at `/api/v1` for programmatic access:
 | GET    | `/runs/{run_id}/tests/{test_id}/snapshots`   | List snapshots for a test      |
 | GET    | `/traces/{trace_id}`                         | Get all spans in a trace       |
 | GET    | `/events/stream`                             | SSE stream for real-time events |
+
+For AI agents, prefer the MCP endpoint at `/mcp` over the REST API when the task is failed-test triage. MCP returns compact, scoped evidence and ready-to-use follow-up tool calls. See [MCP](21-mcp.md) for setup and fallback behavior.
 
 ### SSE Events
 

@@ -349,3 +349,9 @@ If output appears truncated in your console, try:
 - Using a wider terminal window
 - Switching to `JsonReportRenderer` for full output
 - Checking your logging configuration
+
+### MCP Endpoint Unavailable
+
+If an AI agent cannot connect to Stove MCP, first confirm that `stove` is running and check the startup banner for the actual `http://localhost:<port>/mcp` endpoint. You can also call `GET /api/v1/meta` and verify `mcp.enabled` is `true`.
+
+MCP is optional. If it is unavailable, ambiguous, or missing data for a run, agents should fall back to the normal failure report, test output, and logs.

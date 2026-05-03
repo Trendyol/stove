@@ -11,6 +11,12 @@ export function Header() {
         <span className="text-[var(--stove-text-muted)] text-xs">v{__STOVE_VERSION__}</span>
       </div>
       <div className="flex items-center gap-3 text-xs text-[var(--stove-text-secondary)]">
+        <code
+          className="rounded border border-stove-border bg-stove-base px-1.5 py-0.5 font-mono text-[10px] text-[var(--stove-text-secondary)]"
+          title={`MCP endpoint: ${window.location.origin}/mcp`}
+        >
+          MCP /mcp
+        </code>
         <a
           href="https://trendyol.github.io/stove/"
           target="_blank"

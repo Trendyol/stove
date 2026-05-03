@@ -4,6 +4,7 @@ use axum::Router;
 use axum::routing::{delete, get};
 use tower_http::cors::CorsLayer;
 
+use crate::ingest::EventIngestor;
 use crate::sse::manager::SseManager;
 use crate::storage::repository::Repository;
 
@@ -12,13 +13,24 @@ use crate::storage::repository::Repository;
 pub struct AppState {
   pub repository: Arc<Repository>,
   pub sse_manager: Arc<SseManager>,
+  pub ingestor: Option<EventIngestor>,
 }
 
 /// Create the axum router with all API routes, SSE, and embedded SPA.
 pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Router {
+  create_router_with_ingestor(repository, sse_manager, None)
+}
+
+/// Create the axum router with an optional ingest flush handle for MCP reads.
+pub fn create_router_with_ingestor(
+  repository: Arc<Repository>,
+  sse_manager: Arc<SseManager>,
+  ingestor: Option<EventIngestor>,
+) -> Router {
   let state = AppState {
     repository,
     sse_manager,
+    ingestor,
   };
 
   let api = Router::new()
@@ -44,6 +56,10 @@ pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) 
     .route("/data", delete(super::routes::clear_all));
 
   Router::new()
+    .route(
+      "/mcp",
+      get(crate::mcp::handle_get).post(crate::mcp::handle_post),
+    )
     .nest("/api/v1", api)
     .fallback(super::routes::static_handler)
     .layer(CorsLayer::permissive())

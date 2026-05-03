@@ -82,6 +82,12 @@ You start the real app, bring up only the dependencies you need, and assert thro
 
     [Provided Instances](Components/11-provided-instances.md)
 
+-   **Debugging failures or using AI agents**
+
+    Add the local dashboard, tracing, and MCP so failures come with timelines, spans, snapshots, and compact agent-readable evidence.
+
+    [Dashboard & MCP](Components/18-dashboard.md)
+
 </div>
 
 ## Why Stove
@@ -117,7 +123,7 @@ Stove composes framework starters with pluggable components, so you can match yo
 - event flows through [Kafka](Components/02-kafka.md)
 - persistence through [PostgreSQL](Components/06-postgresql.md), [MySQL](Components/16-mysql.md), [MongoDB](Components/07-mongodb.md), [Cassandra](Components/17-cassandra.md), [Redis](Components/09-redis.md), and more
 - external integrations through [WireMock](Components/04-wiremock.md) and [gRPC Mock](Components/14-grpc-mock.md)
-- execution diagnostics through [Reporting](Components/13-reporting.md) and [Tracing](Components/15-tracing.md)
+- execution diagnostics through [Reporting](Components/13-reporting.md), [Tracing](Components/15-tracing.md), the [Dashboard](Components/18-dashboard.md), and [MCP](Components/21-mcp.md)
 
 ## High Level Architecture
 
@@ -128,7 +134,8 @@ Stove composes framework starters with pluggable components, so you can match yo
 1. Read [Getting Started](getting-started.md) for the shared setup.
 2. Open your starter guide under [Supported Frameworks](frameworks/index.md).
 3. Add the components you need from [Components](Components/index.md).
-4. Compare against a real project in [examples](https://github.com/Trendyol/stove/tree/main/examples).
+4. Add [Dashboard](Components/18-dashboard.md) and [MCP](Components/21-mcp.md) when you want local observability or AI-agent triage.
+5. Compare against a real project in [examples](https://github.com/Trendyol/stove/tree/main/examples).
 
 ## Building From Source
 

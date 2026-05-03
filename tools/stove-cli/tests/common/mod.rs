@@ -3,10 +3,14 @@
 //! Provides `TestServer` (a real axum server on a random port with in-memory SQLite)
 //! and ergonomic seed helpers that hide `.unwrap()` noise and struct boilerplate.
 
+#![allow(dead_code)]
+
 use std::sync::Arc;
 
 use serde_json::Value;
 use stove::http::server::create_router;
+use stove::http::server::create_router_with_ingestor;
+use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
 use stove::storage::database::Database;
 use stove::storage::models::{NewEntry, NewSpan};
@@ -35,7 +39,12 @@ impl TestServer {
     let base_url = format!("http://127.0.0.1:{port}");
 
     tokio::spawn(async move {
-      axum::serve(listener, router).await.unwrap();
+      axum::serve(
+        listener,
+        router.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+      )
+      .await
+      .unwrap();
     });
 
     Self {
@@ -46,10 +55,49 @@ impl TestServer {
     }
   }
 
+  /// Start a test server that shares an ingest queue with callers.
+  pub async fn start_with_ingestor() -> (Self, EventIngestor) {
+    let db = Database::open(":memory:").expect("in-memory database should open");
+    let repo = Arc::new(Repository::new(db));
+    let sse_manager = Arc::new(SseManager::new());
+    let ingestor = EventIngestor::with_config(repo.clone(), 50, std::time::Duration::from_secs(60));
+    let router =
+      create_router_with_ingestor(repo.clone(), sse_manager.clone(), Some(ingestor.clone()));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+      .await
+      .expect("should bind to a free port");
+    let port = listener.local_addr().unwrap().port();
+    let base_url = format!("http://127.0.0.1:{port}");
+
+    tokio::spawn(async move {
+      axum::serve(
+        listener,
+        router.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+      )
+      .await
+      .unwrap();
+    });
+
+    (
+      Self {
+        base_url,
+        repo,
+        sse: sse_manager,
+        client: reqwest::Client::new(),
+      },
+      ingestor,
+    )
+  }
+
   // ── HTTP helpers ──────────────────────────────────────────────────
 
   pub fn url(&self, path: &str) -> String {
     format!("{}/api/v1{path}", self.base_url)
+  }
+
+  pub fn mcp_url(&self) -> String {
+    format!("{}/mcp", self.base_url)
   }
 
   pub async fn get(&self, path: &str) -> reqwest::Response {

@@ -726,6 +726,14 @@ Solutions:
 - <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Use `keepDependenciesRunning()` locally</span>
 - Increase startup timeout for slow containers
 
+#### Q: Why can't my AI agent connect to Stove MCP?
+
+**A:** Stove MCP is served by `stove-cli`, not by your test JVM. Start `stove` first and use the endpoint printed in the startup banner, usually `http://localhost:4040/mcp`.
+
+You can also check `http://localhost:4040/api/v1/meta`; it should include `"mcp": { "enabled": true, ... }`.
+
+If MCP still cannot be reached, use the normal failure report, test output, and logs. MCP is a token-saving path for agents, not a required dependency.
+
 ### Migration Questions
 
 #### Q: How do I migrate from 0.14.x to 0.15.x?
@@ -745,7 +753,7 @@ Solutions:
 
 #### Q: How do I migrate from 0.21.2 to 0.22.x?
 
-**A:** See [Migration Notes](release-notes/0.22.0.md) for detailed instructions. Key changes:
+**A:** See [Migration Notes](release-notes/0.22.2.md) for detailed instructions. Key changes:
 
 - New `stove-quarkus` module available for Quarkus applications
 - Console reporting rewritten with Mordant for better output
