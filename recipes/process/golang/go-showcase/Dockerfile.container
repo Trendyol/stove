@@ -1,10 +1,10 @@
 FROM golang:1.26.2 AS build
 
 WORKDIR /workspace
-COPY go/stove-kafka ./go/stove-kafka
-COPY recipes/process/golang/go-showcase ./recipes/process/golang/go-showcase
+COPY go.mod go.sum ./
+RUN go mod download
+COPY *.go ./
 
-WORKDIR /workspace/recipes/process/golang/go-showcase
 ARG GO_BUILD_FLAGS=""
 RUN CGO_ENABLED=0 GOOS=linux go build ${GO_BUILD_FLAGS} -o /out/go-showcase .
 

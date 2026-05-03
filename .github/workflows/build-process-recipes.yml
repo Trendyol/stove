@@ -5,12 +5,10 @@ on:
     branches: [main]
     paths:
       - 'recipes/process/**'
-      - 'go/stove-kafka/**'
   pull_request:
     branches: [main]
     paths:
       - 'recipes/process/**'
-      - 'go/stove-kafka/**'
 
 # Cancel in-progress runs for the same branch
 concurrency:

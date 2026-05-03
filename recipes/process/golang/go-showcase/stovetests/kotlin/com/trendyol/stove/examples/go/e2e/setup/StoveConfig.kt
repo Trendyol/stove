@@ -1,6 +1,5 @@
 package com.trendyol.stove.examples.go.e2e.setup
 
-import com.trendyol.stove.container.ContainerApplicationOptions
 import com.trendyol.stove.container.ContainerTarget
 import com.trendyol.stove.container.containerApp
 import com.trendyol.stove.dashboard.DashboardSystemOptions
@@ -102,35 +101,33 @@ class StoveConfig : AbstractProjectConfig() {
 
           GoAutMode.Container -> {
             require(appImage.isNotBlank()) { "go.app.container.image system property not set" }
-            containerApp {
-              ContainerApplicationOptions(
-                image = appImage,
-                target = ContainerTarget.Server(
-                  hostPort = APP_PORT,
-                  internalPort = APP_PORT,
-                  portEnvVar = "APP_PORT",
-                  bindHostPort = false
-                ),
-                envProvider = containerEnvMapper {
-                  "database.host" to "DB_HOST"
-                  "database.port" to "DB_PORT"
-                  "database.name" to "DB_NAME"
-                  "database.username" to "DB_USER"
-                  "database.password" to "DB_PASS"
-                  "kafka.bootstrapServers" to "KAFKA_BROKERS"
-                  env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-                  env("KAFKA_LIBRARY", kafkaLibrary)
-                  env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
-                  env("GOCOVERDIR", coverageDirInContainer)
-                },
-                configureContainer = {
-                  withNetworkMode("host")
-                  if (hostCoverageDir.isNotBlank()) {
-                    withFileSystemBind(hostCoverageDir, COVERAGE_DIR_IN_CONTAINER)
-                  }
+            containerApp(
+              image = appImage,
+              target = ContainerTarget.Server(
+                hostPort = APP_PORT,
+                internalPort = APP_PORT,
+                portEnvVar = "APP_PORT",
+                bindHostPort = false
+              ),
+              envProvider = containerEnvMapper {
+                "database.host" to "DB_HOST"
+                "database.port" to "DB_PORT"
+                "database.name" to "DB_NAME"
+                "database.username" to "DB_USER"
+                "database.password" to "DB_PASS"
+                "kafka.bootstrapServers" to "KAFKA_BROKERS"
+                env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
+                env("KAFKA_LIBRARY", kafkaLibrary)
+                env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
+                env("GOCOVERDIR", coverageDirInContainer)
+              },
+              configureContainer = {
+                withNetworkMode("host")
+                if (hostCoverageDir.isNotBlank()) {
+                  withFileSystemBind(hostCoverageDir, COVERAGE_DIR_IN_CONTAINER)
                 }
-              )
-            }
+              }
+            )
           }
         }
       }.run()

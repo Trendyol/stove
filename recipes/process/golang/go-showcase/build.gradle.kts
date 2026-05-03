@@ -7,7 +7,6 @@ plugins {
 val goBinary = layout.buildDirectory.file("go-app").get().asFile
 val goExecutable = providers.environmentVariable("GO_EXECUTABLE").getOrElse("go")
 val dockerExecutable = providers.environmentVariable("DOCKER_EXECUTABLE").getOrElse("docker")
-val repositoryRootDir = projectDir.resolve("../../../../").canonicalFile
 val coverageEnabled = providers.gradleProperty("go.coverage").map { it.toBoolean() }.getOrElse(false)
 val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
 val goCoverOutPath = layout.buildDirectory.dir("go-coverage").get().asFile.resolve("coverage.out").absolutePath
@@ -48,11 +47,11 @@ tasks.register<Exec>("buildContainerImage") {
     goShowcaseContainerImage,
     "--build-arg",
     "GO_BUILD_FLAGS=$buildFlags",
-    repositoryRootDir.absolutePath
+    projectDir.absolutePath
   )
   inputs.file(project.file("Dockerfile.container"))
+  inputs.file(project.file(".dockerignore"))
   inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
-  inputs.files(fileTree(repositoryRootDir.resolve("go/stove-kafka")) { include("**/*.go", "go.mod", "go.sum") })
   inputs.property("coverageEnabled", coverageEnabled)
   outputs.upToDateWhen { false }
 }

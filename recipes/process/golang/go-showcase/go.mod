@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
 	github.com/segmentio/kafka-go v0.4.51
-	github.com/trendyol/stove/go/stove-kafka v0.23.4
+	github.com/trendyol/stove/go/stove-kafka v0.0.0-20260503095836-333309ee621f
 	github.com/twmb/franz-go v1.21.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0
 	go.opentelemetry.io/otel v1.43.0
@@ -16,8 +16,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.43.0
 	google.golang.org/grpc v1.80.0
 )
-
-replace github.com/trendyol/stove/go/stove-kafka => ../../../../go/stove-kafka
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

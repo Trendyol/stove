@@ -41,7 +41,7 @@ go-showcase/                   # Standalone Gradle project (copy-paste ready)
   build.gradle.kts             # Builds Go + runs Kotlin tests
   settings.gradle.kts          # Standalone settings with version catalog
 
-# Distributed as a Go library:
+# Published Go library used by the showcase:
 go/stove-kafka/            # Stove Kafka bridge for Go applications
   bridge.go                    # Core bridge (library-agnostic gRPC client)
   sarama/                      # IBM/sarama interceptors
@@ -533,8 +533,10 @@ The module handles:
 The practical differences are:
 
 - Build an image first (`buildContainerImage`)
-- Use `containerApp { ContainerApplicationOptions(...) }` in setup
+- Use `containerApp(...)` in setup
 - Provide host-to-container extras when needed (for example, coverage directory bind mount)
+
+The Docker recipe builds from the Go showcase directory and consumes the published `github.com/trendyol/stove/go/stove-kafka` module. It should not copy repo-local bridge sources into the image; update the `go.mod` version when you want the recipe to use a newer bridge release.
 
 #### Configuration passing
 
@@ -562,7 +564,7 @@ argsMapper(prefix = "--", separator = " ") {
 }
 ```
 
-Both `envProvider` and `argsProvider` can be set on `ProcessApplicationOptions` simultaneously.
+Both `envProvider` and `argsProvider` can be set on `processApp(...)` or `containerApp(...)` simultaneously.
 
 ### Stove Configuration
 
