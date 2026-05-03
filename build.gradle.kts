@@ -61,10 +61,10 @@ kover {
     }
   }
 }
-val related = subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "process", "tests", "test-extensions", except = listOf("stove-bom"))
+val related = subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "container", "process", "tests", "test-extensions", except = listOf("stove-bom"))
 dependencies { related.forEach { kover(it) } }
 
-subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "process", "tests", "test-extensions", except = listOf("stove-bom")) {
+subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "container", "process", "tests", "test-extensions", except = listOf("stove-bom")) {
   apply {
     plugin("kotlin")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
@@ -163,13 +163,14 @@ val publishedProjects = listOf(
   projects.starters.spring.stoveSpring.name,
   projects.starters.spring.stoveSpringKafka.name,
   projects.starters.micronaut.stoveMicronaut.name,
+  projects.starters.container.stoveContainer.name,
   projects.starters.process.stoveProcess.name,
   projects.testExtensions.stoveExtensionsKotest.name,
   projects.testExtensions.stoveExtensionsJunit.name,
   projects.plugins.stoveTracingGradlePlugin.name,
 )
 
-subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "process", "test-extensions", "plugins", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
+subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "container", "process", "test-extensions", "plugins", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {
   apply {
     plugin("java")
     plugin(rootProject.libs.plugins.maven.publish.pluginId)

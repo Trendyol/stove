@@ -36,6 +36,8 @@ dependencies {
     testImplementation("com.trendyol:stove-grpc-mock")
     testImplementation("com.trendyol:stove-tracing")
     testImplementation("com.trendyol:stove-dashboard")
+    testImplementation("com.trendyol:stove-process")            // non-JVM process AUT
+    testImplementation("com.trendyol:stove-container")          // non-JVM container AUT
 }
 ```
 
@@ -150,5 +152,7 @@ abstract class BaseE2ETest {
 | `stove-grpc-mock` | gRPC mock server system |
 | `stove-tracing` | Tracing system |
 | `stove-dashboard` | Dashboard system (streams events to stove CLI) |
+| `stove-process` | Process-based AUT starter (`processApp`, `goApp`) |
+| `stove-container` | Container-based AUT starter (`containerApp`) |
 | `stove-extensions-kotest` | Kotest reporting integration |
 | `stove-extensions-junit` | JUnit reporting integration |

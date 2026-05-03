@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), testing non-JVM applications (Go, Python, Rust, Node.js) with processApp()/goApp() from stove-process module (ProcessTarget.Server/Worker, ReadinessStrategy, envMapper for env vars, argsMapper for CLI arguments), the Stove Kafka bridge library (stove-kafka for Go with IBM/sarama, twmb/franz-go, or segmentio/kafka-go), or collecting Go code coverage from Stove black-box tests (go build -cover, GOCOVERDIR, SIGPIPE handling).
+description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), testing non-JVM applications (Go, Python, Rust, Node.js) with processApp()/goApp() from stove-process or containerApp() from stove-container (target/readiness, env/args mapping, image-based AUT), the Stove Kafka bridge library (stove-kafka for Go with IBM/sarama, twmb/franz-go, or segmentio/kafka-go), or collecting Go code coverage from Stove black-box tests (go build -cover, GOCOVERDIR, SIGPIPE handling).
 ---
 
 # Setting Up Stove E2E Tests
@@ -69,6 +69,7 @@ dependencies {
     testImplementation("com.trendyol:stove-tracing")
     testImplementation("com.trendyol:stove-dashboard")
     testImplementation("com.trendyol:stove-process")  // non-JVM apps (Go, Python, etc.)
+    testImplementation("com.trendyol:stove-container")  // non-JVM apps as Docker images
 }
 ```
 

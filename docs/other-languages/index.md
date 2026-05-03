@@ -2,7 +2,7 @@
 
 Stove ships with JVM framework starters (Spring Boot, Ktor, Micronaut, Quarkus), but the core testing model isn't limited to JVM applications. You can use Stove to <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test any application that speaks HTTP, databases, and messaging</span> --- regardless of the language it's written in.
 
-The key: implement a custom `ApplicationUnderTest` that starts your app as an OS process, pass infrastructure configuration via environment variables, and let Stove manage the rest.
+The key: choose an `ApplicationUnderTest` strategy (`stove-process` for binaries/processes or `stove-container` for Docker images), pass infrastructure configuration via env vars or CLI args, and let Stove manage the rest.
 
 ## How It Works
 
@@ -44,7 +44,7 @@ Any language that can:
 
 | Concern | JVM App (Spring Boot, etc.) | Non-JVM App (Go, Python, etc.) |
 |---------|---------------------------|-------------------------------|
-| **Application startup** | Framework starter (`springBoot()`, `ktor()`) | Custom `ApplicationUnderTest` via `goApp()`, `nodeApp()`, etc. |
+| **Application startup** | Framework starter (`springBoot()`, `ktor()`) | Starter AUT via `goApp()` / `processApp()` (`stove-process`) or `containerApp()` (`stove-container`) |
 | **Config passing** | JVM system properties / Spring properties | Environment variables via `configMapper` |
 | **Infrastructure** | Same (`postgresql {}`, `kafka {}`, `http {}`) | Same |
 | **Test DSL** | Same (`stove { http { ... } postgresql { ... } }`) | Same |

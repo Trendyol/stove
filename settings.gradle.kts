@@ -35,6 +35,7 @@ include(
   "test-extensions:stove-extensions-junit"
 )
 include(
+  "starters:container:stove-container",
   "starters:ktor:stove-ktor",
   "starters:ktor:tests:ktor-test-fixtures",
   "starters:ktor:tests:ktor-koin-tests",

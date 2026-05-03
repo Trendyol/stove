@@ -1,6 +1,6 @@
 # Testing Non-JVM Applications with Stove
 
-Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. The `stove-process` module provides a ready-to-use `ApplicationUnderTest` that manages OS processes. No custom implementation needed.
+Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. Use `stove-process` when you want to run a host binary/process (`processApp`/`goApp`), or `stove-container` when the AUT should run as a Docker image (`containerApp`).
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Your application must:
 ## Setup Checklist
 
 ```
-- [ ] Step 1: Add stove-process dependency
+- [ ] Step 1: Add `stove-process` or `stove-container` dependency
 - [ ] Step 2: Create test-e2e source set layout
 - [ ] Step 3: Configure Gradle (build app + e2eTest task)
 - [ ] Step 4: Create StoveConfig with systems + processApp/goApp
@@ -28,6 +28,7 @@ Your application must:
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
     testImplementation("com.trendyol:stove-process")
+    testImplementation("com.trendyol:stove-container") // if AUT runs as Docker image
     // ... other stove dependencies as needed
 }
 ```
@@ -53,9 +54,9 @@ tasks.named<Test>("e2eTest") {
 }
 ```
 
-## Step 4: StoveConfig with processApp / goApp
+## Step 4: StoveConfig with processApp / goApp / containerApp
 
-Use `processApp()` for any language, or `goApp()` as a Go convenience:
+Use `processApp()` for any language binary, `goApp()` as a Go convenience, or `containerApp()` when tests should launch an image directly.
 
 ```kotlin
 Stove().with {
@@ -197,6 +198,7 @@ Key pieces:
 
 ```bash
 ./gradlew e2eTestWithCoverage -Pgo.coverage=true
+./gradlew e2eTest-containerWithCoverage -Pgo.coverage=true
 ```
 
 No Stove framework changes needed — uses existing `envMapper`, Gradle tasks, and SIGTERM shutdown.
@@ -211,5 +213,6 @@ See [go-setup.md](go-setup.md#code-coverage) for full details.
 ## Reference
 
 - Process module source: `starters/process/stove-process/`
+- Container module source: `starters/container/stove-container/`
 - Full Go example: `recipes/process/golang/go-showcase/`
 - Docs: `docs/other-languages/go.md` and `docs/other-languages/index.md`
