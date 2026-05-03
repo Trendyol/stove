@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../18-dashboard/">
+        <link rel="prev" href="../21-mcp/">
       
       
-        <link rel="next" href="../22-container/">
+        <link rel="next" href="../19-provided-application/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>MCP - Stove</title>
+        <title>Container AUT - Stove</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mcp" class="md-skip">
+        <a href="#container-aut-stove-container" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              MCP
+              Container AUT
             
           </span>
         </div>
@@ -1574,6 +1574,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1593,7 +1621,7 @@
   <span class="md-ellipsis">
     
   
-    MCP
+    Container AUT
   
 
     
@@ -1611,7 +1639,7 @@
   <span class="md-ellipsis">
     
   
-    MCP
+    Container AUT
   
 
     
@@ -1637,10 +1665,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#discovery" class="md-nav__link">
+  <a href="#what-stove-container-is-responsible-for" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discovery
+        What stove-container is responsible for
       
     </span>
   </a>
@@ -1648,10 +1676,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integration" class="md-nav__link">
+  <a href="#what-stove-container-is-not-responsible-for" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Integration
+        What stove-container is not responsible for
       
     </span>
   </a>
@@ -1659,10 +1687,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-workflow" class="md-nav__link">
+  <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent Workflow
+        Install
       
     </span>
   </a>
@@ -1670,10 +1698,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tools" class="md-nav__link">
+  <a href="#image-source-patterns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tools
+        Image source patterns
       
     </span>
   </a>
@@ -1681,10 +1709,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#token-budgeting" class="md-nav__link">
+  <a href="#dsl-containerapp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Token Budgeting
+        DSL: containerApp(...)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DSL: containerApp(...)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#containertarget-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ContainerTarget variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readiness-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Readiness strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#networking-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Networking strategies
       
     </span>
   </a>
@@ -1692,10 +1770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#security" class="md-nav__link">
+  <a href="#configurecontainer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security
+        configureContainer { ... }
       
     </span>
   </a>
@@ -1703,10 +1781,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
+  <a href="#beforestarted" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Troubleshooting
+        beforeStarted { ... }
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-between-process-and-container-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching between process and container mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common pitfalls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
       
     </span>
   </a>
@@ -1717,34 +1828,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../22-container/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Container AUT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2373,10 +2456,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#discovery" class="md-nav__link">
+  <a href="#what-stove-container-is-responsible-for" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discovery
+        What stove-container is responsible for
       
     </span>
   </a>
@@ -2384,10 +2467,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integration" class="md-nav__link">
+  <a href="#what-stove-container-is-not-responsible-for" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Integration
+        What stove-container is not responsible for
       
     </span>
   </a>
@@ -2395,10 +2478,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-workflow" class="md-nav__link">
+  <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent Workflow
+        Install
       
     </span>
   </a>
@@ -2406,10 +2489,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tools" class="md-nav__link">
+  <a href="#image-source-patterns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tools
+        Image source patterns
       
     </span>
   </a>
@@ -2417,10 +2500,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#token-budgeting" class="md-nav__link">
+  <a href="#dsl-containerapp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Token Budgeting
+        DSL: containerApp(...)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DSL: containerApp(...)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#containertarget-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ContainerTarget variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readiness-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Readiness strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#networking-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Networking strategies
       
     </span>
   </a>
@@ -2428,10 +2561,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#security" class="md-nav__link">
+  <a href="#configurecontainer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security
+        configureContainer { ... }
       
     </span>
   </a>
@@ -2439,10 +2572,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
+  <a href="#beforestarted" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Troubleshooting
+        beforeStarted { ... }
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-between-process-and-container-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching between process and container mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common pitfalls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
       
     </span>
   </a>
@@ -2517,147 +2683,316 @@
   
 
 
-<h1 id="mcp">MCP<a class="headerlink" href="#mcp" title="Permanent link">&para;</a></h1>
-<p>Stove CLI exposes a local MCP endpoint for AI agents. It lets agents inspect failed end-to-end tests through compact, structured tools instead of loading full logs into context.</p>
-<p>MCP starts automatically when you run <code>stove</code>:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>stove
-</span></code></pre></div>
-<p>The startup output includes the endpoint:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Stove CLI v0.23.0 running
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>UI:   http://localhost:4040
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>REST: http://localhost:4040/api/v1
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>MCP:  http://localhost:4040/mcp
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>gRPC: localhost:4041
-</span></code></pre></div>
-<h2 id="discovery">Discovery<a class="headerlink" href="#discovery" title="Permanent link">&para;</a></h2>
-<p>Agents and humans can discover Stove MCP from:</p>
+<h1 id="container-aut-stove-container">Container AUT (<code>stove-container</code>)<a class="headerlink" href="#container-aut-stove-container" title="Permanent link">&para;</a></h1>
+<p><code>stove-container</code> runs the application under test as a Docker image. It works with <strong>any language and any framework</strong> — Go, Python, Node.js, Rust, .NET, JVM, anything that ships in a container — and gives you image-level parity with what you deploy to production.</p>
+<p>For a host-binary AUT (process mode), see <a href="../../other-languages/"><code>stove-process</code></a>. For a Go-specific walkthrough that pairs <code>stove-container</code> with PostgreSQL + Kafka + tracing + coverage, see <a href="../../other-languages/go-container/">Go Container Mode</a>.</p>
+<h2 id="what-stove-container-is-responsible-for">What <code>stove-container</code> is responsible for<a class="headerlink" href="#what-stove-container-is-responsible-for" title="Permanent link">&para;</a></h2>
 <ul>
-<li>the <code>stove</code> startup banner</li>
-<li>the dashboard UI</li>
-<li><code>GET http://localhost:4040/api/v1/meta</code></li>
-<li>project or agent instructions</li>
+<li>Pulling / locating the image, configuring it as a Testcontainers <code>GenericContainer</code></li>
+<li>Mapping Stove configurations to environment variables (<code>envMapper</code>) or CLI arguments (<code>argsMapper</code>)</li>
+<li>Optional pre-start hook (<code>beforeStarted</code>) with resolved configurations</li>
+<li>Container start, readiness check, log streaming</li>
+<li>Graceful stop with configurable timeout, force-close fallback</li>
 </ul>
-<p>The metadata endpoint includes:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;stove_cli_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.23.0&quot;</span><span class="p">,</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&quot;transport&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;streamable-http&quot;</span><span class="p">,</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">&quot;endpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:4040/mcp&quot;</span><span class="p">,</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">&quot;scope&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;read-only-test-observability&quot;</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}</span>
+<h2 id="what-stove-container-is-not-responsible-for">What <code>stove-container</code> is <strong>not</strong> responsible for<a class="headerlink" href="#what-stove-container-is-not-responsible-for" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Building the image.</strong> That is the user's pipeline. Stove only needs an image reference.</li>
+<li><strong>Choosing the image registry or auth.</strong> Use Testcontainers / Docker config like you would for any other test.</li>
+<li><strong>Owning the Dockerfile.</strong> Show your existing production Dockerfile to Stove via a tag.</li>
+</ul>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">stoveVersion</span><span class="s">&quot;</span><span class="p">))</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-container&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Most MCP clients need the endpoint URL explicitly. There is no guaranteed universal auto-discovery mechanism for local MCP servers, so the endpoint is advertised in the places above.</p>
-<h2 id="integration">Integration<a class="headerlink" href="#integration" title="Permanent link">&para;</a></h2>
-<p>Stove MCP is served by <code>stove-cli</code>; application systems and test JVMs do not start or host MCP themselves. The integration path is:</p>
-<ol>
-<li>Start <code>stove</code>.</li>
-<li>Configure the MCP client or agent runtime to use the Streamable HTTP endpoint from the startup banner or <code>/api/v1/meta</code>.</li>
-<li>Run the tests as usual. Stove records runs, entries, traces, and snapshots through its normal dashboard pipeline.</li>
-<li>Let the agent query MCP for compact evidence after a failure.</li>
-</ol>
-<p>Generic MCP client configuration should point at the same HTTP port as the dashboard:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;stove&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">&quot;transport&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;streamable-http&quot;</span><span class="p">,</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:4040/mcp&quot;</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
-</span></code></pre></div>
-<p>Exact configuration keys vary by agent runtime, but the important values are the transport and URL. If the dashboard runs on a custom port, use the endpoint printed by <code>stove</code> or returned from <code>/api/v1/meta</code>.</p>
-<p>Recommended agent instruction:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>When Stove is running, prefer the local Stove MCP endpoint for failed-test triage.
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Start with stove_failures, then use the returned run_id + test_id with
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>stove_failure_detail. Drill into stove_timeline, stove_trace, or stove_snapshot
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>only when needed. If MCP is unavailable, ambiguous, or incomplete, fall back to
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>normal test output, Stove reports, and logs.
-</span></code></pre></div>
-<p>Agents should not infer a test selector from names alone. A database can contain multiple apps, multiple runs per app, and duplicate test names. Use the exact <code>run_id + test_id</code> returned by MCP.</p>
-<h2 id="agent-workflow">Agent Workflow<a class="headerlink" href="#agent-workflow" title="Permanent link">&para;</a></h2>
-<p>Use MCP as an optimization, not as a dependency:</p>
-<ol>
-<li>Call <code>stove_failures</code>.</li>
-<li>Pick a specific <code>run_id</code> and <code>test_id</code> from the result.</li>
-<li>Call <code>stove_failure_detail</code> for the compact failure packet.</li>
-<li>Drill into <code>stove_timeline</code>, <code>stove_trace</code>, or <code>stove_snapshot</code> only when needed.</li>
-<li>If MCP is unavailable, ambiguous, or missing data, fall back to normal test output, Stove failure reports, and logs.</li>
-</ol>
-<p>Stove data is hierarchical:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>database
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  -&gt; apps by app_name
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    -&gt; runs by run_id
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>      -&gt; tests by test_id
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>        -&gt; entries, spans, snapshots
-</span></code></pre></div>
-<p><code>app_name</code> is a grouping label. A single database can contain multiple apps, and each app can have many runs. <code>run_id + test_id</code> is the exact test selector.</p>
-<h2 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h2>
+<h2 id="image-source-patterns">Image source patterns<a class="headerlink" href="#image-source-patterns" title="Permanent link">&para;</a></h2>
+<p><code>containerApp(...)</code> only needs an image reference. Where it comes from is your choice:</p>
 <table>
 <thead>
 <tr>
-<th>Tool</th>
+<th>Pattern</th>
+<th>When to use</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CI artifact</strong></td>
+<td>Most realistic CI path</td>
+<td>CI publishes a tag (e.g. <code>ghcr.io/acme/app:sha-abc</code>); test reads it from a system property or env var</td>
+</tr>
+<tr>
+<td><strong>Registry pull</strong></td>
+<td>Image already published; no local build needed</td>
+<td>Just reference the tag — Testcontainers pulls lazily on first use</td>
+</tr>
+<tr>
+<td><strong>Local build</strong> (optional)</td>
+<td>Inner-loop convenience when iterating on the Dockerfile</td>
+<td>Wire a Gradle <code>Exec</code> task running <code>docker build</code>; have a <em>separate</em> test task <code>dependsOn</code> it</td>
+</tr>
+</tbody>
+</table>
+<p>The minimal Gradle wiring for the CI path:</p>
+<div class="language-kotlin highlight"><span class="filename">build.gradle.kts</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">containerImage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">environmentVariable</span><span class="p">(</span><span class="s">&quot;APP_IMAGE&quot;</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="p">.</span><span class="na">orElse</span><span class="p">(</span><span class="n">providers</span><span class="p">.</span><span class="na">gradleProperty</span><span class="p">(</span><span class="s">&quot;app.image&quot;</span><span class="p">))</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p">.</span><span class="na">orElse</span><span class="p">(</span><span class="s">&quot;my-app:local&quot;</span><span class="p">)</span><span class="w">     </span><span class="c1">// local fallback only</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest-container&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="n">useJUnitPlatform</span><span class="p">()</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;app.container.image&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">containerImage</span><span class="p">.</span><span class="na">get</span><span class="p">())</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># CI</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nv">APP_IMAGE</span><span class="o">=</span>ghcr.io/acme/app:sha-abc123<span class="w"> </span>./gradlew<span class="w"> </span>e2eTest-container
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># or</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>./gradlew<span class="w"> </span>e2eTest-container<span class="w"> </span>-Papp.image<span class="o">=</span>ghcr.io/acme/app:sha-abc123
+</span></code></pre></div>
+<p>A separate optional task can wrap <code>docker build</code> for local convenience without coupling it to the main test task.</p>
+<h2 id="dsl-containerapp">DSL: <code>containerApp(...)</code><a class="headerlink" href="#dsl-containerapp" title="Permanent link">&para;</a></h2>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.container.ContainerTarget</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.container.containerApp</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.application.envMapper</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">containerApp</span><span class="p">(</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;app.container.image&quot;</span><span class="p">),</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ContainerTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="n">hostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="n">internalPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">,</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="n">bindHostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w">      </span><span class="c1">// host network → no need to bind</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="p">),</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="s">&quot;database.host&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_HOST&quot;</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="s">&quot;database.port&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_PORT&quot;</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">        </span><span class="s">&quot;kafka.bootstrapServers&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;KAFKA_BROKERS&quot;</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;OTEL_EXPORTER_OTLP_ENDPOINT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;localhost:4317&quot;</span><span class="p">)</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">    </span><span class="n">configureContainer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">        </span><span class="n">withNetworkMode</span><span class="p">(</span><span class="s">&quot;host&quot;</span><span class="p">)</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">    </span><span class="n">beforeStarted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">configurations</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">        </span><span class="c1">// optional async hook with resolved configs</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
 <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>stove_apps</code></td>
-<td>Lists apps recorded in the dashboard database</td>
+<td><code>image</code></td>
+<td><code>String</code></td>
+<td>Image reference. From CI tag, registry, or local build — Stove does not care</td>
 </tr>
 <tr>
-<td><code>stove_runs</code></td>
-<td>Lists runs, filterable by app and status</td>
+<td><code>target</code></td>
+<td><code>ContainerTarget</code></td>
+<td><code>Server</code> (HTTP / gRPC / TCP) or <code>Worker</code> (consumers, jobs); carries the readiness strategy</td>
 </tr>
 <tr>
-<td><code>stove_failures</code></td>
-<td>Default entrypoint; failed tests grouped by app and run</td>
+<td><code>registry</code></td>
+<td><code>String</code></td>
+<td>Image registry override (defaults to <code>DEFAULT_REGISTRY</code>)</td>
 </tr>
 <tr>
-<td><code>stove_failure_detail</code></td>
-<td>Compact detail for one exact failed test</td>
+<td><code>compatibleSubstitute</code></td>
+<td><code>String?</code></td>
+<td>Substitute image for arch/OS compatibility (Apple Silicon / arm64)</td>
 </tr>
 <tr>
-<td><code>stove_timeline</code></td>
-<td>Ordered test actions, failure-focused by default</td>
+<td><code>command</code></td>
+<td><code>List&lt;String&gt;</code></td>
+<td>Override container command (gets <code>argsMapper</code> output appended)</td>
 </tr>
 <tr>
-<td><code>stove_trace</code></td>
-<td>Critical path and exception evidence from correlated spans</td>
+<td><code>envProvider</code></td>
+<td><code>EnvProvider</code></td>
+<td><code>envMapper { ... }</code> mapping Stove configs to env vars</td>
 </tr>
 <tr>
-<td><code>stove_snapshot</code></td>
-<td>System snapshot summaries and targeted JSON drill-down</td>
+<td><code>argsProvider</code></td>
+<td><code>ArgsProvider</code></td>
+<td><code>argsMapper(prefix, separator) { ... }</code> for CLI-flag-driven apps</td>
 </tr>
 <tr>
-<td><code>stove_raw_evidence</code></td>
-<td>Capped raw lookup for one entry, span, or snapshot</td>
+<td><code>beforeStarted</code></td>
+<td>suspend lambda</td>
+<td>Async hook with resolved configs, runs before container start</td>
+</tr>
+<tr>
+<td><code>configureContainer</code></td>
+<td><code>GenericContainer&lt;*&gt;.()</code></td>
+<td>Anything Testcontainers exposes — bind mounts, network mode, capabilities, log consumers</td>
+</tr>
+<tr>
+<td><code>gracefulShutdownTimeout</code></td>
+<td><code>Duration</code></td>
+<td>Defaults to 5 seconds; falls back to force-close on timeout</td>
 </tr>
 </tbody>
 </table>
-<p>Every failure result includes ready-to-use next tool calls, so agents do not need to guess scopes from names.</p>
-<h2 id="token-budgeting">Token Budgeting<a class="headerlink" href="#token-budgeting" title="Permanent link">&para;</a></h2>
-<p>MCP tools default to compact output. Large payloads are truncated deterministically and include omitted counts or follow-up tool calls. Sensitive keys such as <code>authorization</code>, <code>cookie</code>, <code>password</code>, <code>secret</code>, <code>token</code>, <code>apiKey</code>, and <code>credential</code> are redacted before data is returned.</p>
-<p>Use <code>budget</code> when a client needs a different amount of detail:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;budget&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tiny&quot;</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="p">}</span>
+<h3 id="containertarget-variants"><code>ContainerTarget</code> variants<a class="headerlink" href="#containertarget-variants" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Use case</th>
+<th>Default readiness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort)</code></td>
+<td>HTTP / gRPC / TCP servers</td>
+<td>HTTP GET <code>http://localhost:$hostPort/health</code></td>
+</tr>
+<tr>
+<td><code>ContainerTarget.Worker()</code></td>
+<td>Kafka consumers, batch jobs</td>
+<td>2-second fixed delay</td>
+</tr>
+</tbody>
+</table>
+<p><code>bindHostPort = false</code> is the right default when using <code>withNetworkMode("host")</code> — the container shares the host network namespace and binding the port again would conflict.</p>
+<h3 id="readiness-strategies">Readiness strategies<a class="headerlink" href="#readiness-strategies" title="Permanent link">&para;</a></h3>
+<p><code>ContainerTarget.Server</code> defaults to <code>ReadinessStrategy.HttpGet</code>. You can override:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ContainerTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">hostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">internalPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">,</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="n">readiness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ReadinessStrategy</span><span class="p">.</span><span class="na">TcpPort</span><span class="p">(</span><span class="m">8090</span><span class="p">)</span><span class="w">   </span><span class="c1">// for raw TCP / gRPC w/o HTTP</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>Supported values are <code>tiny</code>, <code>compact</code>, and <code>full</code>. Tools that expose raw evidence also accept <code>max_chars</code>.</p>
-<h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
-<p>The MCP endpoint is read-only and local-only. It does not expose tools to clear data, retry tests, delete runs, or mutate snapshots.</p>
-<p><code>/mcp</code> accepts loopback clients and localhost <code>Host</code>/<code>Origin</code> headers. Requests from non-local hosts are rejected to reduce the risk of browser or DNS rebinding abuse.</p>
-<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<p>If an agent cannot use MCP:</p>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReadinessStrategy.HttpGet(url, timeout, retries, retryDelay, expectedStatusCodes)</code></td>
+<td>REST APIs</td>
+</tr>
+<tr>
+<td><code>ReadinessStrategy.TcpPort(port)</code></td>
+<td>gRPC / raw TCP (no HTTP)</td>
+</tr>
+<tr>
+<td><code>ReadinessStrategy.Probe { ... }</code></td>
+<td>Custom (file, DB query, log scan, etc.)</td>
+</tr>
+<tr>
+<td><code>ReadinessStrategy.FixedDelay(duration)</code></td>
+<td>Workers / no readiness signal</td>
+</tr>
+</tbody>
+</table>
+<h2 id="networking-strategies">Networking strategies<a class="headerlink" href="#networking-strategies" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="host-network-linux-only" name="__tabbed_1" type="radio" /><input id="port-binding-cross-platform" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="host-network-linux-only">Host network (Linux only)</label><label for="port-binding-cross-platform">Port binding (cross-platform)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ContainerTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span><span class="n">hostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span><span class="w"> </span><span class="n">internalPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bindHostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">),</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">configureContainer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">withNetworkMode</span><span class="p">(</span><span class="s">&quot;host&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>Container shares the host's network namespace. The app reaches PostgreSQL / Kafka on <code>localhost</code>. Does <strong>not</strong> work on Docker Desktop for macOS / Windows.</p>
+</div>
+<div class="tabbed-block">
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ContainerTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span><span class="n">hostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span><span class="w"> </span><span class="n">internalPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bindHostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">),</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">configureContainer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">withNetwork</span><span class="p">(</span><span class="n">Network</span><span class="p">.</span><span class="na">SHARED</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>Stove binds <code>hostPort → internalPort</code>. The app reaches databases / brokers via shared network aliases or <code>host.docker.internal</code>.</p>
+</div>
+</div>
+</div>
+<h2 id="configurecontainer"><code>configureContainer { ... }</code><a class="headerlink" href="#configurecontainer" title="Permanent link">&para;</a></h2>
+<p>Accepts a <code>GenericContainer&lt;*&gt;.()</code> block. Anything Testcontainers exposes is available:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">configureContainer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">withNetworkMode</span><span class="p">(</span><span class="s">&quot;host&quot;</span><span class="p">)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">withFileSystemBind</span><span class="p">(</span><span class="n">hostPath</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/inside/container&quot;</span><span class="p">)</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">withLogConsumer</span><span class="p">(</span><span class="n">Slf4jLogConsumer</span><span class="p">(</span><span class="n">LoggerFactory</span><span class="p">.</span><span class="na">getLogger</span><span class="p">(</span><span class="s">&quot;app&quot;</span><span class="p">)))</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="n">withEnv</span><span class="p">(</span><span class="s">&quot;EXTRA_DEBUG&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">)</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="n">withCreateContainerCmdModifier</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="cm">/* low-level docker-java */</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Use bind mounts for any data the container or the test needs to share with the host: coverage directories, fixture seeds, read-only configs.</p>
+<h2 id="beforestarted"><code>beforeStarted { ... }</code><a class="headerlink" href="#beforestarted" title="Permanent link">&para;</a></h2>
+<p>Async hook that runs after Stove resolves all configurations but before the container starts. Useful for prepping data the app expects on boot.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">beforeStarted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">configurations</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="n">seedRedisCache</span><span class="p">(</span><span class="n">configurations</span><span class="o">[</span><span class="s">&quot;redis.host&quot;</span><span class="o">]!!</span><span class="p">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="switching-between-process-and-container-mode">Switching between process and container mode<a class="headerlink" href="#switching-between-process-and-container-mode" title="Permanent link">&para;</a></h2>
+<p>A single <code>StoveConfig.kt</code> can serve both starters by branching on a system property. Infrastructure systems and tests stay identical — only the AUT runner changes.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">when</span><span class="w"> </span><span class="p">((</span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;aut.mode&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">&quot;process&quot;</span><span class="p">).</span><span class="na">lowercase</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="s">&quot;process&quot;</span><span class="w">   </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">processApp</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ProcessApplicationOptions</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="s">&quot;container&quot;</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">containerApp</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="k">else</span><span class="w">        </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Unsupported aut.mode&quot;</span><span class="p">)</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest&quot;</span><span class="p">)</span><span class="w">           </span><span class="p">{</span><span class="w"> </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;aut.mode&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;process&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest-container&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;aut.mode&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;container&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>A common pattern: <code>e2eTest</code> runs process mode locally for fast iteration; <code>e2eTest-container</code> runs container mode in CI against the image the build job just published.</p>
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>connection refused</code> to Postgres / Kafka inside container</td>
+<td>Container can't reach Testcontainers on <code>localhost</code></td>
+<td><code>withNetworkMode("host")</code> (Linux) or shared network + aliases (cross-platform)</td>
+</tr>
+<tr>
+<td>Stove never sees <code>/health</code></td>
+<td>Wrong port / binding</td>
+<td>Confirm <code>bindHostPort</code> matches network mode; verify app listens on <code>internalPort</code></td>
+</tr>
+<tr>
+<td><code>Failed to start container application</code></td>
+<td>Image missing or unauthorized pull</td>
+<td>Verify the image exists locally / in the registry; check <code>docker images</code> and registry credentials</td>
+</tr>
+<tr>
+<td>Slow inner loop</td>
+<td>Image build dominates iteration</td>
+<td>Use <a href="../../other-languages/"><code>stove-process</code></a> for daily dev; container mode in CI</td>
+</tr>
+<tr>
+<td>App killed before clean shutdown</td>
+<td><code>gracefulShutdownTimeout</code> too short for the app</td>
+<td>Bump <code>gracefulShutdownTimeout</code> on <code>containerApp(...)</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
 <ul>
-<li>confirm <code>stove</code> is running</li>
-<li>check the startup banner for the actual port</li>
-<li>open <code>http://localhost:4040/api/v1/meta</code> and verify <code>mcp.enabled</code> is <code>true</code></li>
-<li>make sure the MCP client is configured with <code>http://localhost:4040/mcp</code></li>
-<li>fall back to normal test output and logs if the endpoint cannot be reached</li>
+<li>Module source: <code>starters/container/stove-container/</code></li>
+<li>DSL source: <code>starters/container/stove-container/src/main/kotlin/com/trendyol/stove/container/ContainerDsl.kt</code></li>
+<li>Go-specific recipe (process <strong>and</strong> container modes in one repo): <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>recipes/process/golang/go-showcase</code></a></li>
+<li>Related docs:</li>
+<li><a href="../../other-languages/go-container/">Go Container Mode</a> — Go-specific walkthrough that uses this module</li>
+<li><a href="../../other-languages/">Other Languages &amp; Stacks</a> — process vs. container overview</li>
+<li><a href="../18-dashboard/">Dashboard</a> and <a href="../21-mcp/">MCP</a> — observability for any AUT, including container ones</li>
+<li><a href="../15-tracing/">Tracing</a> — distributed tracing across the test and the container</li>
 </ul>
-<p>If MCP returns no failures, the latest recorded runs may have passed, the dashboard dependency may not be registered in the test config, or the test run may still be in progress.</p>
 
 
 
@@ -2695,7 +3030,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../18-dashboard/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Dashboard">
+          <a href="../21-mcp/" class="md-footer__link md-footer__link--prev" aria-label="Previous: MCP">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2705,20 +3040,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Dashboard
+                MCP
               </div>
             </div>
           </a>
         
         
           
-          <a href="../22-container/" class="md-footer__link md-footer__link--next" aria-label="Next: Container AUT">
+          <a href="../19-provided-application/" class="md-footer__link md-footer__link--next" aria-label="Next: Provided Application">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Container AUT
+                Provided Application
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -1,0 +1,3029 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="End-to-end testing framework for the JVM">
+      
+      
+      
+      
+        <link rel="prev" href="../../troubleshooting/">
+      
+      
+        <link rel="next" href="../dashboard-0.23.0/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Polyglot Stove in 0.24.0 - Stove</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../css/custom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stove-0240-going-polyglot-and-an-mcp-for-ai-triage" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Stove
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Polyglot Stove in 0.24.0
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trendyol/stove" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trendyol/stove
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../frameworks/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Supported Frameworks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../other-languages/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Other Languages & Stacks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Components/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Components
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../writing-custom-systems/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Writing Custom Systems
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../best-practices/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Best Practices
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../release-notes/0.24.0/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Release Notes
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Stove
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trendyol/stove" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trendyol/stove
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../frameworks/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Frameworks
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Frameworks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/spring-boot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spring Boot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/ktor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ktor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/micronaut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Micronaut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/quarkus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quarkus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../other-languages/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Other Languages & Stacks
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Other Languages & Stacks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Go
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../other-languages/go/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../other-languages/go-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Process Mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../other-languages/go-container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container Mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../Components/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Components
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Components
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/01-couchbase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Couchbase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/02-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/03-elasticsearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Elasticsearch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/04-wiremock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WireMock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/05-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/06-postgresql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PostgreSQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/07-mongodb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MongoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/08-mssql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MSSQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/09-redis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/10-bridge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bridge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/11-provided-instances/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Instances
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/12-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    gRPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/13-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/14-grpc-mock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    gRPC Mocking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/15-tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/16-mysql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MySQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/17-cassandra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cassandra
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/18-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/22-container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container AUT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/19-provided-application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/20-multiple-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../writing-custom-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Custom Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blog
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Blog
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Stove in 0.24.0
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Stove in 0.24.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-polyglot-why-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why polyglot, why now
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-tour-go-on-stove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A tour: Go on Stove
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A tour: Go on Stove">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-go-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Go side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-kotlin-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Kotlin side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafka-in-three-flavors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kafka, in three flavors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-from-black-box-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage from black-box tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-mode-is-not-just-for-go" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container mode is not just for Go
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#black-box-mode-testing-apps-stove-didnt-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Black-box mode: testing apps Stove didn't start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-instances-of-the-same-system-with-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple instances of the same system, with keys
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-failure-triage-for-ai-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP — failure triage for AI agents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-it-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Putting it together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard-0.23.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stove Dashboard in 0.23.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tracing-0.21.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Tracing in 0.21.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.24.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.24.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.23.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.23.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.22.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.22.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.21.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.21.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.21.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.21.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.20.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.20.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.19.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.19.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.15.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.15.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-polyglot-why-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why polyglot, why now
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-tour-go-on-stove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A tour: Go on Stove
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A tour: Go on Stove">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-go-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Go side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-kotlin-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Kotlin side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafka-in-three-flavors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kafka, in three flavors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-from-black-box-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage from black-box tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-mode-is-not-just-for-go" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container mode is not just for Go
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#black-box-mode-testing-apps-stove-didnt-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Black-box mode: testing apps Stove didn't start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-instances-of-the-same-system-with-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple instances of the same system, with keys
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-failure-triage-for-ai-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP — failure triage for AI agents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-it-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Putting it together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Blog
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="stove-0240-going-polyglot-and-an-mcp-for-ai-triage">Stove 0.24.0 — Going Polyglot, and an MCP for AI Triage<a class="headerlink" href="#stove-0240-going-polyglot-and-an-mcp-for-ai-triage" title="Permanent link">&para;</a></h1>
+<p>Stove started as a JVM end-to-end testing framework. Spring Boot, Ktor, Quarkus, Micronaut — spin them up with real PostgreSQL, real Kafka, real WireMock, then assert the whole flow with one Kotlin DSL. That core hasn't changed. What 0.24.0 changes is who gets to play.</p>
+<p>This release pushes on five things at once: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Go becomes a first-class application under test</span>, <span data-rn="underline" data-rn-color="#009688">any container image can be the AUT</span>, the framework starter is no longer required (test against an already-deployed app), one system type can have many keyed instances (verify across services), and the <span data-rn="underline" data-rn-color="#ff9800"><code>stove</code> CLI grows an MCP endpoint</span> so AI agents can triage failed runs without scraping logs.</p>
+<h2 id="why-polyglot-why-now">Why polyglot, why now<a class="headerlink" href="#why-polyglot-why-now" title="Permanent link">&para;</a></h2>
+<p>Microservice fleets are not monolingual. The order service might be Spring Boot, the inventory service Go, the recommender Python, the edge router Rust. If your e2e framework only covers the JVM, every non-JVM service either gets its own bespoke harness or doesn't get end-to-end tested at all. Both are bad outcomes.</p>
+<p>The interesting question isn't "how do we add a Go runner?" It's "what's actually language-specific about an end-to-end test?" The answer turns out to be: very little. The Stove DSL — <code>http {}</code>, <code>postgresql {}</code>, <code>kafka {}</code>, <code>tracing {}</code>, <code>dashboard {}</code> — is about the <em>contract</em>: what went over the wire, what's in the database, what spans appeared. The language of the application under test is an implementation detail.</p>
+<p>So 0.24.0 splits AUT lifecycle from test logic. Two new starters, the test surface unchanged:</p>
+<ul>
+<li><strong><code>stove-process</code></strong> runs your app as a host binary. Fast iteration, easy debugging.</li>
+<li><strong><code>stove-container</code></strong> runs your app as a Docker image. CI parity with the artifact you ship.</li>
+</ul>
+<p>Both work for any language. Both pass infrastructure config the same way (<code>envMapper</code> / <code>argsMapper</code>). Both ride the same readiness model. The Kotlin tests don't care which one is in play.</p>
+<h2 id="a-tour-go-on-stove">A tour: Go on Stove<a class="headerlink" href="#a-tour-go-on-stove" title="Permanent link">&para;</a></h2>
+<p>Go gets the deepest treatment because it's the showcase language. The <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>go-showcase</code></a> recipe is an HTTP + PostgreSQL + Kafka service. Same <code>StoveConfig.kt</code> runs the binary directly <em>or</em> runs it inside a Docker container, branched on a single system property.</p>
+<h3 id="the-go-side">The Go side<a class="headerlink" href="#the-go-side" title="Permanent link">&para;</a></h3>
+<p>The Go application stays small. All tracing is in the infrastructure layer — <code>otelhttp</code> wraps the mux, <code>otelsql</code> wraps the DB driver. Business handlers stay clean:</p>
+<div class="language-go highlight"><span class="filename">handlers.go</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">func</span><span class="w"> </span><span class="nx">handleCreateProduct</span><span class="p">(</span><span class="nx">db</span><span class="w"> </span><span class="o">*</span><span class="nx">sql</span><span class="p">.</span><span class="nx">DB</span><span class="p">,</span><span class="w"> </span><span class="nx">producer</span><span class="w"> </span><span class="nx">KafkaProducer</span><span class="p">)</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">HandlerFunc</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">w</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span><span class="w"> </span><span class="nx">r</span><span class="w"> </span><span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">req</span><span class="w"> </span><span class="nx">createProductRequest</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="nx">json</span><span class="p">.</span><span class="nx">NewDecoder</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">Body</span><span class="p">).</span><span class="nx">Decode</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">req</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="nx">product</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">Product</span><span class="p">{</span><span class="nx">ID</span><span class="p">:</span><span class="w"> </span><span class="nx">uuid</span><span class="p">.</span><span class="nx">New</span><span class="p">().</span><span class="nx">String</span><span class="p">(),</span><span class="w"> </span><span class="nx">Name</span><span class="p">:</span><span class="w"> </span><span class="nx">req</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span><span class="w"> </span><span class="nx">Price</span><span class="p">:</span><span class="w"> </span><span class="nx">req</span><span class="p">.</span><span class="nx">Price</span><span class="p">}</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nx">insertProduct</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">Context</span><span class="p">(),</span><span class="w"> </span><span class="nx">db</span><span class="p">,</span><span class="w"> </span><span class="nx">product</span><span class="p">)</span><span class="w">  </span><span class="c1">// otelsql traces this automatically</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="nx">producer</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">            </span><span class="nx">event</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">ProductCreatedEvent</span><span class="p">{</span><span class="nx">ID</span><span class="p">:</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">ID</span><span class="p">,</span><span class="w"> </span><span class="nx">Name</span><span class="p">:</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span><span class="w"> </span><span class="nx">Price</span><span class="p">:</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">Price</span><span class="p">}</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">            </span><span class="nx">eventBytes</span><span class="p">,</span><span class="w"> </span><span class="nx">_</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">json</span><span class="p">.</span><span class="nx">Marshal</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">            </span><span class="nx">producer</span><span class="p">.</span><span class="nx">SendMessage</span><span class="p">(</span><span class="s">&quot;product.created&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">ID</span><span class="p">,</span><span class="w"> </span><span class="nx">eventBytes</span><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="nx">writeJSON</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">StatusCreated</span><span class="p">,</span><span class="w"> </span><span class="nx">product</span><span class="p">)</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The Stove HTTP client sends a <code>traceparent</code> header. <code>otelhttp</code> extracts it. Spans created in the Go app share the originating test's trace ID. No glue code, no manual correlation.</p>
+<h3 id="the-kotlin-side">The Kotlin side<a class="headerlink" href="#the-kotlin-side" title="Permanent link">&para;</a></h3>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;create product, verify HTTP, DB, Kafka, traces&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nv">productId</span><span class="p">:</span><span class="w"> </span><span class="kt">String?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">            </span><span class="n">postAndExpectBody</span><span class="o">&lt;</span><span class="n">ProductResponse</span><span class="o">&gt;</span><span class="p">(</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">                </span><span class="n">uri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/api/products&quot;</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CreateProductRequest</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Test&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">42.99</span><span class="p">).</span><span class="na">some</span><span class="p">()</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">actual</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">                </span><span class="n">actual</span><span class="p">.</span><span class="na">status</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">201</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">                </span><span class="n">productId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">actual</span><span class="p">.</span><span class="na">body</span><span class="p">().</span><span class="na">id</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">            </span><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">ProductRow</span><span class="o">&gt;</span><span class="p">(</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">                </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;SELECT id, name, price FROM products WHERE id = &#39;</span><span class="si">$</span><span class="n">productId</span><span class="s">&#39;&quot;</span><span class="p">,</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">                </span><span class="n">mapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">productRowMapper</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">rows</span><span class="p">.</span><span class="na">size</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">        </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">            </span><span class="n">shouldBePublished</span><span class="o">&lt;</span><span class="n">ProductCreatedEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="m">10.</span><span class="n">seconds</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">                </span><span class="n">actual</span><span class="p">.</span><span class="na">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;Test&quot;</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">        </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">            </span><span class="n">shouldContainSpan</span><span class="p">(</span><span class="s">&quot;http.request&quot;</span><span class="p">)</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">            </span><span class="n">shouldNotHaveFailedSpans</span><span class="p">()</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>If you removed the file path, you couldn't tell from this test that the AUT is in Go. That's the point.</p>
+<h3 id="kafka-in-three-flavors">Kafka, in three flavors<a class="headerlink" href="#kafka-in-three-flavors" title="Permanent link">&para;</a></h3>
+<p><code>shouldBePublished&lt;T&gt;</code> and <code>shouldBeConsumed&lt;T&gt;</code> need an observation point on the broker side. For JVM apps, Stove uses Kafka client interceptors. For Go, 0.24.0 ships <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka"><code>stove-kafka</code></a>, a small Go library that forwards produced/consumed/committed messages over gRPC to Stove's observer.</p>
+<p>The bridge is library-agnostic at its core. First-party integrations exist for the three Go Kafka clients people actually use:</p>
+<ul>
+<li><a href="https://github.com/IBM/sarama">IBM/sarama</a> via <code>ProducerInterceptor</code> / <code>ConsumerInterceptor</code></li>
+<li><a href="https://github.com/twmb/franz-go">twmb/franz-go</a> via <code>kgo.WithHooks(...)</code></li>
+<li><a href="https://github.com/segmentio/kafka-go">segmentio/kafka-go</a> via tiny <code>ReportWritten</code> / <code>ReportRead</code> helpers</li>
+</ul>
+<p>Want confluent-kafka-go or something else? Skip the subpackages, use the core API:</p>
+<div class="language-go highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nx">bridge</span><span class="p">.</span><span class="nx">ReportPublished</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="nx">stovekafka</span><span class="p">.</span><span class="nx">PublishedMessage</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nx">bridge</span><span class="p">.</span><span class="nx">ReportConsumed</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span><span class="w">  </span><span class="o">&amp;</span><span class="nx">stovekafka</span><span class="p">.</span><span class="nx">ConsumedMessage</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nx">bridge</span><span class="p">.</span><span class="nx">ReportCommitted</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span><span class="w"> </span><span class="nx">topic</span><span class="p">,</span><span class="w"> </span><span class="nx">partition</span><span class="p">,</span><span class="w"> </span><span class="nx">offset</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+</span></code></pre></div>
+<p>In production, <code>STOVE_KAFKA_BRIDGE_PORT</code> is unset, <code>NewBridgeFromEnv()</code> returns nil, and every method becomes a no-op. <strong>Zero overhead in prod, full assertion fidelity in tests.</strong></p>
+<h3 id="coverage-from-black-box-tests">Coverage from black-box tests<a class="headerlink" href="#coverage-from-black-box-tests" title="Permanent link">&para;</a></h3>
+<p>A nice side-effect of standardizing on <code>stove-process</code> and <code>stove-container</code>: Go 1.20+ integration coverage just works. Build with <code>go build -cover</code>, set <code>GOCOVERDIR</code>, and Go writes coverage data on graceful shutdown. Stove already sends SIGTERM and waits for clean exit — exactly the lifecycle Go's coverage tooling expects.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./gradlew<span class="w"> </span>e2eTestWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./gradlew<span class="w"> </span>e2eTest-containerWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
+</span></code></pre></div>
+<p>Per-function summary, HTML report. One catch worth a paragraph: when Go runs under Java's <code>ProcessBuilder</code>, the stdout pipe can close before the process exits. Log writes to that closed pipe trigger SIGPIPE — Go dies before flushing coverage. The fix is one line in <code>main()</code>:</p>
+<div class="language-go highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nx">signal</span><span class="p">.</span><span class="nx">Ignore</span><span class="p">(</span><span class="nx">syscall</span><span class="p">.</span><span class="nx">SIGPIPE</span><span class="p">)</span>
+</span></code></pre></div>
+<p>That's it. No framework changes were needed for coverage; it's a Gradle concern, an env var, and an existing graceful-shutdown signal.</p>
+<h2 id="container-mode-is-not-just-for-go">Container mode is not just for Go<a class="headerlink" href="#container-mode-is-not-just-for-go" title="Permanent link">&para;</a></h2>
+<p><code>stove-container</code> is <strong>language-agnostic</strong>. Anything that ships in an image works — Go, Python, Node.js, Rust, .NET, even your existing JVM artifact when you want to test the actual deployed binary instead of the in-process bean graph.</p>
+<p>One thing worth being explicit about: <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">building the image is not Stove's job</span>. <code>containerApp(...)</code> only needs an image reference. Where it comes from is your call:</p>
+<ul>
+<li>A tag your CI just produced (<code>-Papp.image=ghcr.io/acme/app:sha-abc</code>)</li>
+<li>A pull from a registry, lazy on first use</li>
+<li>An optional Gradle <code>Exec</code> task that runs <code>docker build</code> for local iteration</li>
+</ul>
+<p>Most teams already have a perfectly good image-build pipeline. Stove doesn't try to own it.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">containerApp</span><span class="p">(</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;app.container.image&quot;</span><span class="p">),</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ContainerTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="n">hostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span><span class="w"> </span><span class="n">internalPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">,</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bindHostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="p">),</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">        </span><span class="s">&quot;database.host&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_HOST&quot;</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="s">&quot;kafka.bootstrapServers&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;KAFKA_BROKERS&quot;</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;OTEL_EXPORTER_OTLP_ENDPOINT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;localhost:4317&quot;</span><span class="p">)</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span><span class="n">configureContainer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">withNetworkMode</span><span class="p">(</span><span class="s">&quot;host&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><code>configureContainer { ... }</code> exposes the underlying Testcontainers <code>GenericContainer</code>, so anything Testcontainers can do — bind mounts, network mode, log consumers, capabilities — is available without bespoke API surface.</p>
+<p>A common pattern: <code>e2eTest</code> runs process mode for daily local development; <code>e2eTest-container</code> runs container mode in CI against the image the build job just published. Same StoveConfig, same tests, branched on a system property.</p>
+<h2 id="black-box-mode-testing-apps-stove-didnt-start">Black-box mode: testing apps Stove didn't start<a class="headerlink" href="#black-box-mode-testing-apps-stove-didnt-start" title="Permanent link">&para;</a></h2>
+<p>Polyglot AUT is one half of "Stove doesn't have to own the app." The other half is <code>providedApplication()</code> — telling Stove the application is already running somewhere, and you just want to run your tests against it.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://staging.myapp.com&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="n">PostgresqlOptions</span><span class="p">.</span><span class="na">provided</span><span class="p">(</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">            </span><span class="n">jdbcUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;jdbc:postgresql://staging-db:5432/myapp&quot;</span><span class="p">,</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">            </span><span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;staging-db&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5432</span><span class="p">,</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">            </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">emptyList</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="n">providedApplication</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">        </span><span class="n">ProvidedApplicationOptions</span><span class="p">(</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">            </span><span class="n">readiness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ReadinessStrategy</span><span class="p">.</span><span class="na">HttpGet</span><span class="p">(</span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://staging.myapp.com/health&quot;</span><span class="p">)</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span></code></pre></div>
+<p>Same Stove DSL. Same assertions. No <code>springBoot()</code> / <code>ktor()</code> / <code>goApp()</code> block. Stove waits for the deployed health check, then runs your tests against the live URL — and verifies side effects in the actual database / Kafka / Redis the deployed app uses (via <code>*.provided(...)</code> factories on each system).</p>
+<p>The use case is post-deployment smoke testing: the e2e tests you already wrote can double as a CI/CD gate that hits staging immediately after a release. Same code, same intent, different infrastructure.</p>
+<h2 id="multiple-instances-of-the-same-system-with-keys">Multiple instances of the same system, with keys<a class="headerlink" href="#multiple-instances-of-the-same-system-with-keys" title="Permanent link">&para;</a></h2>
+<p>Microservice integration tests usually need to talk to more than one downstream service, or verify state in more than one database. 0.24.0 adds <strong>keyed system registration</strong> for that:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">object</span><span class="w"> </span><span class="nc">OrderService</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kd">object</span><span class="w"> </span><span class="nc">PaymentService</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="kd">object</span><span class="w"> </span><span class="nc">AppDb</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="kd">object</span><span class="w"> </span><span class="nc">AnalyticsDb</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://myapp.com&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w">                       </span><span class="c1">// default</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="n">httpClient</span><span class="p">(</span><span class="n">OrderService</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://order.internal&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="n">httpClient</span><span class="p">(</span><span class="n">PaymentService</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://pay.internal&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="n">postgresql</span><span class="p">(</span><span class="n">AppDb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">    </span><span class="n">postgresql</span><span class="p">(</span><span class="n">AnalyticsDb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span></code></pre></div>
+<p>In tests, the same key drives the validation DSL:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">http</span><span class="p">(</span><span class="n">OrderService</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">getResponse</span><span class="p">(</span><span class="s">&quot;/api/orders/</span><span class="si">$</span><span class="n">orderId</span><span class="s">&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">postgresql</span><span class="p">(</span><span class="n">AnalyticsDb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">AnalyticsEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>Keys are Kotlin <code>object</code>s — compile-time-safe, IDE-autocompleted, refactor-safe. Default and keyed instances of the same type coexist independently. Reports and traces label keyed calls (<code>HTTP [OrderService] &gt; GET /api/orders/123</code>) so it's clear which service did what.</p>
+<p>This pairs naturally with <code>providedApplication()</code>. A single Stove config can wire your app's API, three downstream services, two shared databases, and a Kafka cluster — all already running in staging — and a single Kotlin test asserts behaviour across all of them.</p>
+<h2 id="mcp-failure-triage-for-ai-agents">MCP — failure triage for AI agents<a class="headerlink" href="#mcp-failure-triage-for-ai-agents" title="Permanent link">&para;</a></h2>
+<p>The other big addition in 0.24.0 has nothing to do with non-JVM apps and everything to do with how people debug failed e2e runs in 2026.</p>
+<p>If you're using an AI agent in your editor or CI bot, you've probably watched it try to triage a failed test by reading the entire stdout, then the entire stderr, then <code>tail</code>-ing logs, then guessing at trace IDs. It works, but it burns tokens proportional to log size, and it hallucinates when names are ambiguous.</p>
+<p>The Stove dashboard already records every run — timeline, traces, snapshots, Kafka message counts — in a local SQLite database. 0.24.0 adds a <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> endpoint on the same <code>stove</code> CLI that exposes that data as structured tools:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>$ stove
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Stove CLI v0.24.0 running
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>UI:   http://localhost:4040
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>REST: http://localhost:4040/api/v1
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>MCP:  http://localhost:4040/mcp
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>gRPC: localhost:4041
+</span></code></pre></div>
+<p>Wire any MCP-capable agent at <code>http://localhost:4040/mcp</code>. Then the conversation looks like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Agent: stove_failures()
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  → 2 failed runs across go-showcase and order-service
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>Agent: stove_failure_detail(run_id=&quot;...&quot;, test_id=&quot;...&quot;)
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  → compact failure packet: assertion, expected vs actual,
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    timeline of last 5 actions, exception class
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>Agent: stove_trace(run_id=&quot;...&quot;, test_id=&quot;...&quot;)
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  → critical path: 4 spans, exception in PostgresOrderRepository.save
+</span></code></pre></div>
+<p>Eight tools total, all read-only, all local-only. Defaults are token-aware: payloads are truncated deterministically with omitted-counts, sensitive keys (<code>authorization</code>, <code>cookie</code>, <code>password</code>, <code>secret</code>, <code>token</code>, <code>apiKey</code>, <code>credential</code>) are redacted before return, and a <code>budget: tiny|compact|full</code> knob lets the agent dial detail when needed.</p>
+<p>Two design decisions worth calling out:</p>
+<ol>
+<li>
+<p><strong><code>run_id + test_id</code> is the only authoritative test selector.</strong> Apps and runs can contain duplicate test names; an agent inferring "OrderTest::should create order" from a phrase will eventually hit the wrong run. Every tool result includes the next call's exact arguments — agents follow links, they don't construct queries.</p>
+</li>
+<li>
+<p><strong>Loopback only.</strong> The <code>/mcp</code> endpoint accepts only localhost <code>Host</code>/<code>Origin</code> headers and rejects anything else. This blocks DNS rebinding from a malicious page in your browser. Safe to leave running on a dev machine; not exposed externally.</p>
+</li>
+</ol>
+<p>If MCP is unavailable, agents fall back to normal test output and logs — it's an optimization, not a dependency.</p>
+<h2 id="putting-it-together">Putting it together<a class="headerlink" href="#putting-it-together" title="Permanent link">&para;</a></h2>
+<p>Stove 0.24.0 is one consistent picture, even though the changes touch four different surfaces:</p>
+<ul>
+<li>A test that drives a Go service through HTTP, asserts on PostgreSQL state, validates Kafka messages, and traces the call chain — using the exact same DSL that drives the Spring Boot service next door.</li>
+<li>The same test running against a host binary in your IDE for fast feedback, then against a real Docker image in CI for production parity, with one <code>-Daut.mode</code> flip.</li>
+<li>When something fails, the dashboard shows you what happened. When the agent in your editor wants to help, it asks the dashboard via MCP instead of inhaling logs.</li>
+</ul>
+<p>Three integrations, one feedback loop. That's the release.</p>
+<hr />
+<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p>Upgrade the CLI:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>brew<span class="w"> </span>upgrade<span class="w"> </span>stove
+</span></code></pre></div>
+<p>Add the modules you need to your test classpath:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-bom:0.24.0&quot;</span><span class="p">))</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-process&quot;</span><span class="p">)</span><span class="w">     </span><span class="c1">// host binary</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-container&quot;</span><span class="p">)</span><span class="w">   </span><span class="c1">// Docker image</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-dashboard&quot;</span><span class="p">)</span><span class="w">   </span><span class="c1">// dashboard streaming</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-tracing&quot;</span><span class="p">)</span><span class="w">     </span><span class="c1">// distributed tracing</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">testImplementation</span><span class="p">(</span><span class="s">&quot;com.trendyol:stove-kafka&quot;</span><span class="p">)</span><span class="w">       </span><span class="c1">// Kafka assertions</span>
+</span></code></pre></div>
+<p>For Go Kafka assertions:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>go<span class="w"> </span>get<span class="w"> </span>github.com/trendyol/stove/go/stove-kafka
+</span></code></pre></div>
+<h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../release-notes/0.24.0/">Full 0.24.0 release notes</a></li>
+<li><a href="../../other-languages/">Other Languages &amp; Stacks overview</a></li>
+<li><a href="../../other-languages/go-process/">Go Process Mode</a></li>
+<li><a href="../../other-languages/go-container/">Go Container Mode</a></li>
+<li><a href="../../Components/21-mcp/">MCP component docs</a></li>
+<li><a href="../../Components/18-dashboard/">Dashboard component docs</a></li>
+<li><a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>go-showcase</code> recipe</a> — process <em>and</em> container modes in one repo</li>
+<li><a href="https://github.com/Trendyol/stove/tree/main/go/stove-kafka"><code>stove-kafka</code> Go bridge</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../troubleshooting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Troubleshooting">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Troubleshooting
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../dashboard-0.23.0/" class="md-footer__link md-footer__link--next" aria-label="Next: Stove Dashboard in 0.23.0">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Stove Dashboard in 0.23.0
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/trendyol/stove" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://trendyol.github.io/" target="_blank" rel="noopener" title="trendyol.github.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M64 48c-8.8 0-16 7.2-16 16v384c0 8.8 7.2 16 16 16h80v-80c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32v80h80c8.8 0 16-7.2 16-16V64c0-8.8-7.2-16-16-16zM0 64C0 28.7 28.7 0 64 0h256c35.3 0 64 28.7 64 64v384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64zm96 48c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16zm144-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16M96 240c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16zm144-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "navigation.path", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../assets/rough-notation.iife.js"></script>
+      
+        <script src="../../js/rough-notation-mkdocs.js"></script>
+      
+    
+  </body>
+</html>
