@@ -863,6 +863,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#choosing-aut-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing AUT Mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#project-structure" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1110,7 +1121,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="stove-process Module">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stove-container-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stove-container Module
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="stove-container Module">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2479,6 +2501,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#choosing-aut-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing AUT Mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#project-structure" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2726,7 +2759,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="stove-process Module">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stove-container-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stove-container Module
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="stove-container Module">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2974,8 +3018,35 @@
 
 
 <h1 id="go"><span data-rn="underline" data-rn-color="#ff9800">Go</span><a class="headerlink" href="#go" title="Permanent link">&para;</a></h1>
-<p>This guide walks through testing a Go application with Stove --- end to end, including <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">HTTP, PostgreSQL, Kafka, distributed tracing, and the dashboard</span>. The Go app is a simple product CRUD service; Stove starts it as an OS process, passes infrastructure configs as environment variables, and runs Kotlin e2e tests against it.</p>
+<p>This guide walks through testing a Go application with Stove --- end to end, including <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">HTTP, PostgreSQL, Kafka, distributed tracing, and the dashboard</span>. The Go app is a simple product CRUD service; Stove can run it either as an OS process (<code>stove-process</code>) or as a Docker container (<code>stove-container</code>) while keeping the same test DSL and system setup model.</p>
 <p>The full source is at <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>recipes/process/golang/go-showcase</code></a>.</p>
+<h2 id="choosing-aut-mode">Choosing AUT Mode<a class="headerlink" href="#choosing-aut-mode" title="Permanent link">&para;</a></h2>
+<p>Both modes use the same <code>stove {}</code> assertions. The difference is only how the application under test is launched:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Starter</th>
+<th>Good fit</th>
+<th>Trade-off</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Process mode</strong></td>
+<td><code>stove-process</code> (<code>goApp</code> / <code>processApp</code>)</td>
+<td>Fast local iteration, direct binary run</td>
+<td>You manage host binary/runtime alignment</td>
+</tr>
+<tr>
+<td><strong>Container mode</strong></td>
+<td><code>stove-container</code> (<code>containerApp</code>)</td>
+<td>CI parity with production container image</td>
+<td>Docker image build adds setup cost</td>
+</tr>
+</tbody>
+</table>
+<p>Rule of thumb: start with process mode for fast feedback, then add container mode when you want image-level confidence in CI.</p>
 <h2 id="project-structure">Project Structure<a class="headerlink" href="#project-structure" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>go-showcase/                   # Standalone Gradle project (copy-paste ready)
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  main.go                      # Entry point, env var config, graceful shutdown
@@ -2990,26 +3061,27 @@
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  stovetests/                  # Kotlin Stove tests
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    kotlin/com/.../e2e/
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>      setup/
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        StoveConfig.kt              # Stove system configuration (uses stove-process goApp())
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        StoveConfig.kt              # Single setup file (switches process/container via go.aut.mode)
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        ProductMigration.kt         # Creates products table
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>      tests/
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        GoShowcaseTest.kt           # E2E tests
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    resources/
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>      kotest.properties
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>  build.gradle.kts             # Builds Go + runs Kotlin tests
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>  settings.gradle.kts          # Standalone settings with version catalog
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a># Distributed as a Go library:
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>go/stove-kafka/            # Stove Kafka bridge for Go applications
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>  bridge.go                    # Core bridge (library-agnostic gRPC client)
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>  sarama/                      # IBM/sarama interceptors
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    interceptors.go
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>  franz/                       # twmb/franz-go hooks
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    hooks.go
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>  segmentio/                     # segmentio/kafka-go helpers
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>    bridge.go
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>  stoveobserver/               # Generated gRPC code from messages.proto
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>  go.mod
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>  Dockerfile.container         # Container AUT image build recipe
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>  build.gradle.kts             # Builds Go + runs Kotlin tests
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>  settings.gradle.kts          # Standalone settings with version catalog
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a># Published Go library used by the showcase:
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>go/stove-kafka/            # Stove Kafka bridge for Go applications
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>  bridge.go                    # Core bridge (library-agnostic gRPC client)
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>  sarama/                      # IBM/sarama interceptors
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    interceptors.go
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>  franz/                       # twmb/franz-go hooks
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    hooks.go
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>  segmentio/                     # segmentio/kafka-go helpers
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    bridge.go
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>  stoveobserver/               # Generated gRPC code from messages.proto
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>  go.mod
 </span></code></pre></div>
 <h2 id="the-go-application">The Go Application<a class="headerlink" href="#the-go-application" title="Permanent link">&para;</a></h2>
 <p>A minimal HTTP + PostgreSQL service. The key design choice: <span data-rn="underline" data-rn-color="#009688">all tracing is in the infrastructure layer</span>, not in business logic.</p>
@@ -3465,6 +3537,20 @@
 <li>Stdout/stderr reading in a background thread</li>
 </ul>
 <p><code>goApp()</code> defaults the binary path from the <code>go.app.binary</code> system property. For other languages, use <code>processApp()</code> directly.</p>
+<h3 id="stove-container-module">stove-container Module<a class="headerlink" href="#stove-container-module" title="Permanent link">&para;</a></h3>
+<p><code>stove-container</code> runs the same application as a Docker image instead of a host process. Conceptually, everything outside AUT startup stays the same:</p>
+<ul>
+<li>Same Stove systems (<code>httpClient</code>, <code>postgresql</code>, <code>kafka</code>, <code>tracing</code>, <code>dashboard</code>)</li>
+<li>Same <code>stove {}</code> assertions and test classes</li>
+<li>Same env mapping model (<code>envMapper</code> / <code>argsMapper</code>) for passing exposed configuration</li>
+</ul>
+<p>The practical differences are:</p>
+<ul>
+<li>Build an image first (<code>buildContainerImage</code>)</li>
+<li>Use <code>containerApp(...)</code> in setup</li>
+<li>Provide host-to-container extras when needed (for example, coverage directory bind mount)</li>
+</ul>
+<p>The Docker recipe builds from the Go showcase directory and consumes the published <code>github.com/trendyol/stove/go/stove-kafka</code> module. It should not copy repo-local bridge sources into the image; update the <code>go.mod</code> version when you want the recipe to use a newer bridge release.</p>
 <h4 id="configuration-passing">Configuration passing<a class="headerlink" href="#configuration-passing" title="Permanent link">&para;</a></h4>
 <p>Two mechanisms are available --- use one or both:</p>
 <ul>
@@ -3488,7 +3574,7 @@
 </span><span id="__span-22-15"><a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="w">    </span><span class="s">&quot;database.host&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;db-host&quot;</span><span class="w">       </span><span class="c1">// --db-host localhost</span>
 </span><span id="__span-22-16"><a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Both <code>envProvider</code> and <code>argsProvider</code> can be set on <code>ProcessApplicationOptions</code> simultaneously.</p>
+<p>Both <code>envProvider</code> and <code>argsProvider</code> can be set on <code>processApp(...)</code> or <code>containerApp(...)</code> simultaneously.</p>
 <h3 id="stove-configuration">Stove Configuration<a class="headerlink" href="#stove-configuration" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><span class="filename">StoveConfig.kt</span><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
@@ -3717,7 +3803,17 @@
 </span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>
 </span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="c1"># With Go code coverage (see Code Coverage section below)</span>
 </span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>./gradlew<span class="w"> </span>e2eTestWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
+</span><span id="__span-29-12"><a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>
+</span><span id="__span-29-13"><a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a><span class="c1"># Container AUT path (sarama only)</span>
+</span><span id="__span-29-14"><a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>./gradlew<span class="w"> </span>e2eTest-container
+</span><span id="__span-29-15"><a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>
+</span><span id="__span-29-16"><a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a><span class="c1"># Before the released snapshot is available, opt into local Stove artifacts</span>
+</span><span id="__span-29-17"><a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a>./gradlew<span class="w"> </span>e2eTest-container<span class="w"> </span>-PuseMavenLocal<span class="o">=</span><span class="nb">true</span>
+</span><span id="__span-29-18"><a id="__codelineno-29-18" name="__codelineno-29-18" href="#__codelineno-29-18"></a>
+</span><span id="__span-29-19"><a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a><span class="c1"># Remove the local image manually when needed</span>
+</span><span id="__span-29-20"><a id="__codelineno-29-20" name="__codelineno-29-20" href="#__codelineno-29-20"></a>./gradlew<span class="w"> </span>removeContainerImage
 </span></code></pre></div>
+<p>By default, the recipe resolves Stove from Maven Central and Sonatype snapshots. <code>mavenLocal()</code> is intentionally opt-in so CI validates the same published snapshot path that users consume.</p>
 <p>Each per-library task:</p>
 <ol>
 <li>Compiles the Go binary (<code>go build</code>)</li>
@@ -3728,9 +3824,9 @@
 <li>Runs the 5 Kotlin e2e tests</li>
 <li>Stops everything and cleans up</li>
 </ol>
-<p>The <code>e2eTest</code> task runs all three sequentially (sarama → franz → segmentio), verifying the Stove Kafka bridge works across all supported Go Kafka libraries.</p>
+<p>The <code>e2eTest</code> task runs all three process-mode libraries sequentially (sarama → franz → segmentio), verifying the Stove Kafka bridge across supported Go Kafka clients. The <code>e2eTest-container</code> task validates the container AUT path with <code>sarama</code> as the focused baseline.</p>
 <h2 id="code-coverage">Code Coverage<a class="headerlink" href="#code-coverage" title="Permanent link">&para;</a></h2>
-<p>Since Stove runs the Go binary as an OS process (not via <code>go test</code>), standard <code>go test -cover</code> doesn't apply. Go 1.20+ introduced <strong>integration test coverage</strong>: build with <code>go build -cover</code>, set <code>GOCOVERDIR</code>, and coverage data is written on graceful shutdown. This fits perfectly with Stove's lifecycle (SIGTERM → graceful shutdown → coverage files).</p>
+<p>For both process-mode and container-mode AUT runs, Stove executes your app outside <code>go test</code>, so standard <code>go test -cover</code> doesn't apply. Go 1.20+ integration coverage fits this model: build with <code>go build -cover</code>, set <code>GOCOVERDIR</code>, and flush data on graceful shutdown (SIGTERM).</p>
 <h3 id="how-it-works_1">How It Works<a class="headerlink" href="#how-it-works_1" title="Permanent link">&para;</a></h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>1. go build -cover          → instruments the binary
 </span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>2. GOCOVERDIR=/path         → tells the binary where to write coverage data
@@ -3814,16 +3910,17 @@
 </span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
 </span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="c1"># With coverage — runs tests + generates reports</span>
 </span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>./gradlew<span class="w"> </span>e2eTestWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
-</span><span id="__span-35-6"><a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>
-</span><span id="__span-35-7"><a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="c1"># Output includes per-function coverage:</span>
-</span><span id="__span-35-8"><a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="c1"># github.com/.../handlers.go:15:   HandleCreate    85.7%</span>
-</span><span id="__span-35-9"><a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a><span class="c1"># github.com/.../db.go:23:         QueryProducts   100.0%</span>
-</span><span id="__span-35-10"><a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="c1"># total:                           (statements)    81.9%</span>
+</span><span id="__span-35-6"><a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>./gradlew<span class="w"> </span>e2eTest-containerWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
+</span><span id="__span-35-7"><a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>
+</span><span id="__span-35-8"><a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="c1"># Output includes per-function coverage:</span>
+</span><span id="__span-35-9"><a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a><span class="c1"># github.com/.../handlers.go:15:   HandleCreate    85.7%</span>
+</span><span id="__span-35-10"><a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="c1"># github.com/.../db.go:23:         QueryProducts   100.0%</span>
+</span><span id="__span-35-11"><a id="__codelineno-35-11" name="__codelineno-35-11" href="#__codelineno-35-11"></a><span class="c1"># total:                           (statements)    81.9%</span>
 </span></code></pre></div>
 <p>The HTML report is written to <code>build/go-coverage/coverage.html</code>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Why no Stove framework changes needed</p>
-<p>Everything is achievable with existing primitives: the <code>-cover</code> build flag is a Gradle task concern, <code>GOCOVERDIR</code> is just another env var via <code>envMapper</code>, coverage processing happens after tests via Gradle tasks, and graceful shutdown (SIGTERM) is already handled by <code>ProcessApplicationUnderTest.stop()</code>.</p>
+<p>Everything is achievable with existing primitives: the <code>-cover</code> build flag is a Gradle concern, <code>GOCOVERDIR</code> is just another env var, coverage processing happens after tests, and graceful shutdown is handled by the AUT starter (<code>stove-process</code> or <code>stove-container</code>).</p>
 </div>
 <h2 id="adapting-for-other-languages">Adapting for Other Languages<a class="headerlink" href="#adapting-for-other-languages" title="Permanent link">&para;</a></h2>
 <p>The same pattern works for any language. Replace the Go-specific parts:</p>
@@ -3882,7 +3979,7 @@
 </tr>
 </tbody>
 </table>
-<p>The Kotlin test side stays exactly the same --- only <code>processApp()</code> / <code>goApp()</code> and the <code>envMapper</code> change.</p>
+<p>The Kotlin test side stays exactly the same --- only the AUT runner (<code>goApp()</code> / <code>processApp()</code> / <code>containerApp()</code>) and environment/CLI mapping differ.</p>
 
 
 
