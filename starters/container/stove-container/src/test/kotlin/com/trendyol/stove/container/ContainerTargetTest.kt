@@ -1,11 +1,10 @@
 package com.trendyol.stove.container
 
-import com.trendyol.stove.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.system.ReadinessStrategy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
-class ContainerApplicationOptionsTest :
+class ContainerTargetTest :
   FunSpec({
     test("server target defaults use host port and health readiness") {
       val target = ContainerTarget.Server(hostPort = 8080)
@@ -21,16 +20,5 @@ class ContainerApplicationOptionsTest :
       val target = ContainerTarget.Worker()
 
       (target.readiness is ReadinessStrategy.FixedDelay) shouldBe true
-    }
-
-    test("container application options use empty env and args providers by default") {
-      val options = ContainerApplicationOptions(
-        image = "busybox:latest",
-        target = ContainerTarget.Worker()
-      )
-
-      options.registry shouldBe DEFAULT_REGISTRY
-      options.envProvider.provide(mapOf("a" to "b")) shouldBe emptyMap()
-      options.argsProvider.provide(mapOf("a" to "b")) shouldBe emptyList()
     }
   })

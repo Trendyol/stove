@@ -1,56 +1,6 @@
-public final class com/trendyol/stove/container/ContainerApplicationContext {
-	public fun <init> (Lorg/testcontainers/containers/GenericContainer;)V
-	public final fun component1 ()Lorg/testcontainers/containers/GenericContainer;
-	public final fun copy (Lorg/testcontainers/containers/GenericContainer;)Lcom/trendyol/stove/container/ContainerApplicationContext;
-	public static synthetic fun copy$default (Lcom/trendyol/stove/container/ContainerApplicationContext;Lorg/testcontainers/containers/GenericContainer;ILjava/lang/Object;)Lcom/trendyol/stove/container/ContainerApplicationContext;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getContainer ()Lorg/testcontainers/containers/GenericContainer;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/trendyol/stove/container/ContainerApplicationOptions {
-	public synthetic fun <init> (Ljava/lang/String;Lcom/trendyol/stove/container/ContainerTarget;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/system/application/EnvProvider;Lcom/trendyol/stove/system/application/ArgsProvider;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/trendyol/stove/container/ContainerTarget;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/system/application/EnvProvider;Lcom/trendyol/stove/system/application/ArgsProvider;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component10-UwyO8pc ()J
-	public final fun component2 ()Lcom/trendyol/stove/container/ContainerTarget;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/util/List;
-	public final fun component6 ()Lcom/trendyol/stove/system/application/EnvProvider;
-	public final fun component7 ()Lcom/trendyol/stove/system/application/ArgsProvider;
-	public final fun component8 ()Lkotlin/jvm/functions/Function3;
-	public final fun component9 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy-bkPiSVE (Ljava/lang/String;Lcom/trendyol/stove/container/ContainerTarget;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/system/application/EnvProvider;Lcom/trendyol/stove/system/application/ArgsProvider;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;J)Lcom/trendyol/stove/container/ContainerApplicationOptions;
-	public static synthetic fun copy-bkPiSVE$default (Lcom/trendyol/stove/container/ContainerApplicationOptions;Ljava/lang/String;Lcom/trendyol/stove/container/ContainerTarget;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/system/application/EnvProvider;Lcom/trendyol/stove/system/application/ArgsProvider;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;JILjava/lang/Object;)Lcom/trendyol/stove/container/ContainerApplicationOptions;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getArgsProvider ()Lcom/trendyol/stove/system/application/ArgsProvider;
-	public final fun getBeforeStarted ()Lkotlin/jvm/functions/Function3;
-	public final fun getCommand ()Ljava/util/List;
-	public final fun getCompatibleSubstitute ()Ljava/lang/String;
-	public final fun getConfigureContainer ()Lkotlin/jvm/functions/Function1;
-	public final fun getEnvProvider ()Lcom/trendyol/stove/system/application/EnvProvider;
-	public final fun getGracefulShutdownTimeout-UwyO8pc ()J
-	public final fun getImage ()Ljava/lang/String;
-	public final fun getRegistry ()Ljava/lang/String;
-	public final fun getTarget ()Lcom/trendyol/stove/container/ContainerTarget;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/trendyol/stove/container/ContainerApplicationUnderTest : com/trendyol/stove/system/abstractions/ApplicationUnderTest {
-	public static final field Companion Lcom/trendyol/stove/container/ContainerApplicationUnderTest$Companion;
-	public fun <init> (Lcom/trendyol/stove/container/ContainerApplicationOptions;)V
-	public fun start (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class com/trendyol/stove/container/ContainerApplicationUnderTest$Companion {
-}
-
 public final class com/trendyol/stove/container/ContainerDslKt {
-	public static final fun containerApp-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+	public static final fun containerApp-tBQrr_I (Lcom/trendyol/stove/system/Stove;Ljava/lang/String;Lcom/trendyol/stove/container/ContainerTarget;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/system/application/EnvProvider;Lcom/trendyol/stove/system/application/ArgsProvider;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;J)Lcom/trendyol/stove/system/abstractions/ReadyStove;
+	public static synthetic fun containerApp-tBQrr_I$default (Lcom/trendyol/stove/system/Stove;Ljava/lang/String;Lcom/trendyol/stove/container/ContainerTarget;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/trendyol/stove/system/application/EnvProvider;Lcom/trendyol/stove/system/application/ArgsProvider;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;JILjava/lang/Object;)Lcom/trendyol/stove/system/abstractions/ReadyStove;
 }
 
 public abstract interface class com/trendyol/stove/container/ContainerTarget {

@@ -7,9 +7,12 @@ import com.github.dockerjava.api.model.ExposedPort
 import com.github.dockerjava.api.model.HostConfig
 import com.github.dockerjava.api.model.PortBinding
 import com.github.dockerjava.api.model.Ports
+import com.trendyol.stove.containers.DEFAULT_REGISTRY
 import com.trendyol.stove.containers.withProvidedRegistry
 import com.trendyol.stove.system.ReadinessChecker
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.system.application.ArgsProvider
+import com.trendyol.stove.system.application.EnvProvider
 import com.trendyol.stove.system.application.toConfigurationMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,18 +20,51 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-internal typealias ContainerFactory = (ContainerApplicationOptions) -> GenericContainer<*>
+internal typealias ContainerFactory = () -> GenericContainer<*>
 internal typealias LaunchConfigurationObserver = (List<String>, Map<String, String>) -> Unit
 
-class ContainerApplicationUnderTest internal constructor(
-  private val options: ContainerApplicationOptions,
+internal class ContainerApplicationUnderTest(
+  private val image: String,
+  private val target: ContainerTarget,
+  private val command: List<String> = emptyList(),
+  private val envProvider: EnvProvider = EnvProvider.empty(),
+  private val argsProvider: ArgsProvider = ArgsProvider.empty(),
+  private val beforeStarted: suspend (configurations: Map<String, String>) -> Unit = {},
+  private val configureContainer: GenericContainer<*>.() -> Unit = {},
+  private val gracefulShutdownTimeout: Duration = 5.seconds,
   private val containerFactory: ContainerFactory,
   private val launchConfigurationObserver: LaunchConfigurationObserver
 ) : ApplicationUnderTest<ContainerApplicationContext> {
-  constructor(options: ContainerApplicationOptions) : this(
-    options = options,
-    containerFactory = ::defaultContainerFactory,
+  constructor(
+    image: String,
+    target: ContainerTarget,
+    registry: String = DEFAULT_REGISTRY,
+    compatibleSubstitute: String? = null,
+    command: List<String> = emptyList(),
+    envProvider: EnvProvider = EnvProvider.empty(),
+    argsProvider: ArgsProvider = ArgsProvider.empty(),
+    beforeStarted: suspend (configurations: Map<String, String>) -> Unit = {},
+    configureContainer: GenericContainer<*>.() -> Unit = {},
+    gracefulShutdownTimeout: Duration = 5.seconds
+  ) : this(
+    image = image,
+    target = target,
+    command = command,
+    envProvider = envProvider,
+    argsProvider = argsProvider,
+    beforeStarted = beforeStarted,
+    configureContainer = configureContainer,
+    gracefulShutdownTimeout = gracefulShutdownTimeout,
+    containerFactory = {
+      defaultContainerFactory(
+        image = image,
+        registry = registry,
+        compatibleSubstitute = compatibleSubstitute
+      )
+    },
     launchConfigurationObserver = { _, _ -> }
   )
 
@@ -37,16 +73,16 @@ class ContainerApplicationUnderTest internal constructor(
 
   override suspend fun start(configurations: List<String>): ContainerApplicationContext {
     val configurationMap = configurations.toConfigurationMap()
-    val commandArgs = options.argsProvider.provide(configurationMap)
-    val fullCommand = options.command + commandArgs
+    val commandArgs = argsProvider.provide(configurationMap)
+    val fullCommand = command + commandArgs
     val envVars = resolveEnv(configurationMap)
     launchConfigurationObserver(fullCommand, envVars)
 
-    options.beforeStarted(configurationMap, options)
+    beforeStarted(configurationMap)
 
-    val container = containerFactory(options)
-    configureContainer(container = container, fullCommand = fullCommand, envVars = envVars)
-    logger.info("Starting container image {} with {} env vars", options.image, envVars.size)
+    val container = containerFactory()
+    applyContainerConfiguration(container = container, fullCommand = fullCommand, envVars = envVars)
+    logger.info("Starting container image {} with {} env vars", image, envVars.size)
 
     runCatching {
       withContext(Dispatchers.IO) {
@@ -57,14 +93,14 @@ class ContainerApplicationUnderTest internal constructor(
       onFailure = { throwable ->
         val containerLogs = runCatching { container.logs }.getOrElse { "<container logs unavailable>" }
         throw IllegalStateException(
-          "Failed to start container application `${options.image}`. Logs:\n$containerLogs",
+          "Failed to start container application `$image`. Logs:\n$containerLogs",
           throwable
         )
       }
     )
     withContext(Dispatchers.IO) {
       runCatching {
-        container.followOutput(Slf4jLogConsumer(logger).withPrefix(options.image))
+        container.followOutput(Slf4jLogConsumer(logger).withPrefix(image))
       }.onFailure {
         logger.debug("Container log streaming could not be attached: {}", it.message)
       }
@@ -72,7 +108,7 @@ class ContainerApplicationUnderTest internal constructor(
 
     runningContainer = Some(container)
     try {
-      ReadinessChecker.check(options.target.readiness)
+      ReadinessChecker.check(target.readiness)
       logger.info("Container application is ready")
     } catch (t: IllegalStateException) {
       stop()
@@ -87,7 +123,7 @@ class ContainerApplicationUnderTest internal constructor(
       is Some -> {
         val container = activeContainer.value
         val gracefullyStopped = withContext(Dispatchers.IO) {
-          withTimeoutOrNull(options.gracefulShutdownTimeout) {
+          withTimeoutOrNull(gracefulShutdownTimeout) {
             container.stop()
           } != null
         }
@@ -104,14 +140,14 @@ class ContainerApplicationUnderTest internal constructor(
   }
 
   private fun resolveEnv(configurationMap: Map<String, String>): Map<String, String> {
-    val mappedEnv = options.envProvider.provide(configurationMap)
-    return when (val target = options.target) {
+    val mappedEnv = envProvider.provide(configurationMap)
+    return when (val target = target) {
       is ContainerTarget.Server -> mappedEnv + (target.portEnvVar to target.internalPort.toString())
       is ContainerTarget.Worker -> mappedEnv
     }
   }
 
-  private fun configureContainer(
+  private fun applyContainerConfiguration(
     container: GenericContainer<*>,
     fullCommand: List<String>,
     envVars: Map<String, String>
@@ -122,11 +158,11 @@ class ContainerApplicationUnderTest internal constructor(
     if (fullCommand.isNotEmpty()) {
       container.withCommand(*fullCommand.toTypedArray())
     }
-    options.configureContainer(container)
+    configureContainer(container)
   }
 
   private fun configureTarget(container: GenericContainer<*>) {
-    when (val target = options.target) {
+    when (val target = target) {
       is ContainerTarget.Server -> {
         if (target.bindHostPort) {
           container.withExposedPorts(target.internalPort)
@@ -149,11 +185,15 @@ class ContainerApplicationUnderTest internal constructor(
   }
 
   companion object {
-    private fun defaultContainerFactory(options: ContainerApplicationOptions): GenericContainer<*> =
+    private fun defaultContainerFactory(
+      image: String,
+      registry: String,
+      compatibleSubstitute: String?
+    ): GenericContainer<*> =
       withProvidedRegistry(
-        imageName = options.image,
-        registry = options.registry,
-        compatibleSubstitute = options.compatibleSubstitute
+        imageName = image,
+        registry = registry,
+        compatibleSubstitute = compatibleSubstitute
       ) { imageName ->
         GenericContainer(imageName)
       }

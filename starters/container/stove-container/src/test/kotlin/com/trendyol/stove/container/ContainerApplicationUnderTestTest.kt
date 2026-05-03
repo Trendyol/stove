@@ -16,7 +16,8 @@ class ContainerApplicationUnderTestTest :
       val fakeContainer = FakeContainer()
       var capturedCommand: List<String> = emptyList()
       var capturedEnv: Map<String, String> = emptyMap()
-      val options = ContainerApplicationOptions(
+
+      val aut = ContainerApplicationUnderTest(
         image = "busybox:latest",
         command = listOf("worker"),
         target = ContainerTarget.Server(
@@ -30,11 +31,7 @@ class ContainerApplicationUnderTestTest :
         },
         argsProvider = argsMapper(prefix = "--", separator = "=") {
           "database.port" to "db-port"
-        }
-      )
-
-      val aut = ContainerApplicationUnderTest(
-        options = options,
+        },
         containerFactory = { fakeContainer },
         launchConfigurationObserver = { fullCommand, envVars ->
           capturedCommand = fullCommand
@@ -57,18 +54,15 @@ class ContainerApplicationUnderTestTest :
     test("invokes container customizer before start") {
       val fakeContainer = FakeContainer()
       var customizerCalled = false
-      val options = ContainerApplicationOptions(
+
+      val aut = ContainerApplicationUnderTest(
         image = "busybox:latest",
         target = ContainerTarget.Worker(
           readiness = ReadinessStrategy.FixedDelay(1.milliseconds)
         ),
         configureContainer = {
           customizerCalled = true
-        }
-      )
-
-      val aut = ContainerApplicationUnderTest(
-        options = options,
+        },
         containerFactory = { fakeContainer },
         launchConfigurationObserver = { _, _ -> }
       )
@@ -85,10 +79,8 @@ class ContainerApplicationUnderTestTest :
 
     test("stop is a no-op when container was never started") {
       val aut = ContainerApplicationUnderTest(
-        options = ContainerApplicationOptions(
-          image = "busybox:latest",
-          target = ContainerTarget.Worker()
-        ),
+        image = "busybox:latest",
+        target = ContainerTarget.Worker(),
         containerFactory = { FakeContainer() },
         launchConfigurationObserver = { _, _ -> }
       )
