@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 kotlinx = "1.10.2"
 exposed = "1.2.0"
 hikari = "7.0.2"
@@ -269,7 +269,7 @@ protobuf = { id = "com.google.protobuf", version = "0.10.0" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binaryCompatibilityValidator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinBinaryCompatibilityValidator" }
-google-ksp = { id = "com.google.devtools.ksp", version = "2.3.6" }
+google-ksp = { id = "com.google.devtools.ksp", version = "2.3.7" }
 micronaut-application = { id = "io.micronaut.application", version = "4.6.2" }
 micronaut-aot = { id = "io.micronaut.aot", version = "4.6.2" }
 micronaut-library = { id = "io.micronaut.library", version = "4.6.2" }
