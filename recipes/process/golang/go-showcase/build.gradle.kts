@@ -6,9 +6,12 @@ plugins {
 // -- Go build ----------------------------------------------------------------
 val goBinary = layout.buildDirectory.file("go-app").get().asFile
 val goExecutable = providers.environmentVariable("GO_EXECUTABLE").getOrElse("go")
+val dockerExecutable = providers.environmentVariable("DOCKER_EXECUTABLE").getOrElse("docker")
+val repositoryRootDir = projectDir.resolve("../../../../").canonicalFile
 val coverageEnabled = providers.gradleProperty("go.coverage").map { it.toBoolean() }.getOrElse(false)
 val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
 val goCoverOutPath = layout.buildDirectory.dir("go-coverage").get().asFile.resolve("coverage.out").absolutePath
+val goShowcaseContainerImage = "stove-go-showcase-container:local"
 
 tasks.register<Exec>("goModTidy") {
   description = "Runs go mod tidy to sync dependencies."
@@ -29,6 +32,36 @@ tasks.register<Exec>("buildGoApp") {
   inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
   inputs.property("goExecutable", goExecutable)
   outputs.file(goBinary)
+}
+
+tasks.register<Exec>("buildContainerImage") {
+  description = "Builds the Go showcase Docker image."
+  group = "build"
+  dependsOn("goModTidy")
+  val buildFlags = if (coverageEnabled) "-cover" else ""
+  commandLine(
+    dockerExecutable,
+    "build",
+    "--file",
+    projectDir.resolve("Dockerfile.container").absolutePath,
+    "--tag",
+    goShowcaseContainerImage,
+    "--build-arg",
+    "GO_BUILD_FLAGS=$buildFlags",
+    repositoryRootDir.absolutePath
+  )
+  inputs.file(project.file("Dockerfile.container"))
+  inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
+  inputs.files(fileTree(repositoryRootDir.resolve("go/stove-kafka")) { include("**/*.go", "go.mod", "go.sum") })
+  inputs.property("coverageEnabled", coverageEnabled)
+  outputs.upToDateWhen { false }
+}
+
+val removeContainerImageTask = tasks.register<Exec>("removeContainerImage") {
+  description = "Removes the local Go showcase Docker image."
+  group = "build"
+  commandLine(dockerExecutable, "image", "rm", goShowcaseContainerImage)
+  isIgnoreExitValue = true
 }
 
 // -- Test source set ----------------------------------------------------------
@@ -68,6 +101,7 @@ val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
     testClassesDirs = sourceSets[stoveTests].output.classesDirs
     classpath = sourceSets[stoveTests].runtimeClasspath
     useJUnitPlatform()
+    systemProperty("go.aut.mode", "process")
     systemProperty("go.app.binary", goBinary.absolutePath)
     systemProperty("kafka.library", lib)
     if (coverageEnabled) {
@@ -85,6 +119,22 @@ tasks.register<Test>("e2eTest") {
   enabled = false
 }
 
+val containerE2eTask = tasks.register<Test>("e2eTest-container") {
+  description = "Runs container-based e2e tests with sarama Kafka library."
+  group = "verification"
+  dependsOn("buildContainerImage")
+  testClassesDirs = sourceSets[stoveTests].output.classesDirs
+  classpath = sourceSets[stoveTests].runtimeClasspath
+  useJUnitPlatform()
+  systemProperty("go.aut.mode", "container")
+  systemProperty("go.app.container.image", goShowcaseContainerImage)
+  systemProperty("kafka.library", "sarama")
+  if (coverageEnabled) {
+    systemProperty("go.cover.dir", goCoverDirPath)
+    outputs.cacheIf { false } // Coverage data is a side effect, not a tracked output
+  }
+}
+
 // -- Go coverage reports ------------------------------------------------------
 if (coverageEnabled) {
   val goCoverHtmlPath = layout.buildDirectory.dir("go-coverage").get().asFile.resolve("coverage.html").absolutePath
@@ -93,6 +143,7 @@ if (coverageEnabled) {
     description = "Converts Go coverage data to standard format."
     group = "verification"
     mustRunAfter(kafkaE2eTasks)
+    mustRunAfter(containerE2eTask)
     commandLine(goExecutable, "tool", "covdata", "textfmt", "-i=$goCoverDirPath", "-o=$goCoverOutPath")
   }
 
@@ -117,11 +168,19 @@ if (coverageEnabled) {
     dependsOn(kafkaE2eTasks)
     finalizedBy("goCoverageSummary", "goCoverageHtml")
   }
+
+  tasks.register("e2eTest-containerWithCoverage") {
+    description = "Runs container e2e tests and generates Go coverage report."
+    group = "verification"
+    dependsOn(containerE2eTask)
+    finalizedBy("goCoverageSummary", "goCoverageHtml")
+  }
 }
 
 // -- Dependencies -------------------------------------------------------------
 dependencies {
   testImplementation(stoveLibs.stove)
+  testImplementation("com.trendyol:stove-container:${libs.versions.stove.get()}")
   testImplementation(stoveLibs.stoveProcess)
   testImplementation(stoveLibs.stovePostgres)
   testImplementation(stoveLibs.stoveHttp)

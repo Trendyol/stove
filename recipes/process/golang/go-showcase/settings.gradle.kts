@@ -4,6 +4,7 @@ import dev.aga.gradle.versioncatalogs.Generator.generate
 import dev.aga.gradle.versioncatalogs.GeneratorConfig
 
 rootProject.name = "go-showcase"
+val useMavenLocal = providers.gradleProperty("useMavenLocal").map(String::toBoolean).getOrElse(false)
 
 pluginManagement {
   repositories {
@@ -19,7 +20,9 @@ plugins {
 
 dependencyResolutionManagement {
   repositories {
-    mavenLocal()
+    if (useMavenLocal) {
+      mavenLocal()
+    }
     mavenCentral()
     maven("https://central.sonatype.com/repository/maven-snapshots") {
       content {

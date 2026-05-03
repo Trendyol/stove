@@ -61,6 +61,7 @@ type ConsumedMessage struct {
 }
 
 const envBridgePort = "STOVE_KAFKA_BRIDGE_PORT"
+const envBridgeHost = "STOVE_KAFKA_BRIDGE_HOST"
 
 // Bridge wraps the gRPC client to the Stove Kafka observer server.
 // A nil Bridge is safe to use — all methods are no-ops.
@@ -76,7 +77,12 @@ func NewBridge(port string) (*Bridge, error) {
 		return nil, nil
 	}
 
-	target := fmt.Sprintf("localhost:%s", port)
+	host := os.Getenv(envBridgeHost)
+	if host == "" {
+		host = "localhost"
+	}
+
+	target := fmt.Sprintf("%s:%s", host, port)
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("stove bridge: failed to connect to %s: %w", target, err)
