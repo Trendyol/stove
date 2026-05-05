@@ -15,7 +15,7 @@ class WireMockVacuumCleaner(
   private lateinit var wireMock: WireMockServer
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-  override fun getName(): String = "StoveVacuumCleaner"
+  override fun getName(): String = WireMockExtensionNames.VACUUM_CLEANER
 
   fun wireMock(wireMockServer: WireMockServer) {
     this.wireMock = wireMockServer

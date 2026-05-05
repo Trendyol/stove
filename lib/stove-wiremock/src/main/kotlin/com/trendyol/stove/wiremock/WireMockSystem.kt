@@ -9,17 +9,27 @@ import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
+import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
+import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.tracing.TraceContext
+import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON
+import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON_UTF8
+import com.trendyol.stove.wiremock.WireMockHeaders.CONTENT_TYPE
+import com.trendyol.stove.wiremock.WireMockReportActions.VALIDATE_ALL_REQUESTS_MATCHED
+import com.trendyol.stove.wiremock.WireMockReportActions.VALIDATE_ALL_REQUESTS_SHOULD_MATCH
+import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.RESPONSE_HEADERS
+import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.STATUS_CODE
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Callback invoked after a stub is removed (when `removeStubAfterRequestMatched` is enabled).
@@ -111,14 +121,16 @@ typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
  *
  * ```kotlin
  * wiremock {
- *     // Verify a request was made
- *     verify { getRequestedFor(urlEqualTo("/api/users/123")) }
+ *     // Verify a request was made exactly once
+ *     shouldHaveBeenCalled(RequestMethod.GET, "/api/users/123")
  *
  *     // Verify request count
- *     verify(2) { postRequestedFor(urlEqualTo("/api/payments")) }
+ *     shouldHaveBeenCalled(exactly(2)) {
+ *         postRequestedFor(urlEqualTo("/api/payments"))
+ *     }
  *
  *     // Verify with request body
- *     verify {
+ *     shouldHaveBeenCalled {
  *         postRequestedFor(urlEqualTo("/api/users"))
  *             .withRequestBody(matchingJsonPath("$.name", equalTo("John")))
  *     }
@@ -152,7 +164,7 @@ typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
  *
  *         // Verify the gateway was called
  *         wiremock {
- *             verify { postRequestedFor(urlEqualTo("/gateway/charge")) }
+ *             shouldHaveBeenCalled(RequestMethod.POST, "/gateway/charge")
  *         }
  *     }
  * }
@@ -179,6 +191,7 @@ typealias AfterRequestHandler = (ServeEvent, Cache<UUID, StubMapping>) -> Unit
  * @see WireMockSystemOptions
  */
 @WiremockDsl
+@Suppress("LargeClass", "TooManyFunctions")
 class WireMockSystem(
   override val stove: Stove,
   private val ctx: WireMockContext
@@ -187,72 +200,38 @@ class WireMockSystem(
   RunAware,
   ExposesConfiguration,
   Reports {
-  override val reportSystemName: String = "WireMock" + (ctx.keyName?.let { " [$it]" } ?: "")
+  override val reportSystemName: String = WireMockReportSystem.name(ctx.keyName)
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
+  private val callJournal = WireMockCallJournal()
+  private val serde: StoveSerde<Any, ByteArray> = ctx.serde
+  private val verification = WireMockVerification(this, callJournal, serde)
+  private val completedTestIds = ConcurrentLinkedQueue<String>()
+  private val reportListener = object : ReportEventListener {
+    override fun onTestStarted(ctx: StoveTestContext) {
+      clearCompletedTestJournals()
+      callJournal.clear(ctx.testId)
+    }
+
+    override fun onTestEnded(testId: String) {
+      completedTestIds.add(testId)
+    }
+  }
+  private var reportListenerRegistered = false
   private lateinit var exposedConfiguration: WireMockExposedConfiguration
 
   override fun configuration(): List<String> = ctx.configureExposedConfiguration(exposedConfiguration)
 
-  override fun snapshot(): SystemSnapshot {
-    val currentTestId = reporter.currentTestId()
-
-    val testStubs = stubLog.asMap().values.filter { stub ->
-      stub.metadata?.getString(STOVE_TEST_ID_KEY) == currentTestId
-    }
-
-    val testStubIds = testStubs.map { it.id }.toSet()
-    val allServeEvents = wireMock.allServeEvents
-    val testServeEvents = allServeEvents.filter { event ->
-      event.stubMapping?.id in testStubIds
-    }
-
-    // Filter unmatched requests to only include those from the current test
-    // by checking the X-Stove-Test-Id header
-    val unmatched = wireMock.findAllUnmatchedRequests().filter { req ->
-      req.getHeader(TraceContext.STOVE_TEST_ID_HEADER) == currentTestId
-    }
-
-    return SystemSnapshot(
-      system = reportSystemName,
-      state = mapOf(
-        "registeredStubs" to testStubs.map { stub ->
-          mapOf(
-            "id" to stub.id.toString(),
-            "method" to stub.request.method.value(),
-            "url" to stub.request.url,
-            "status" to stub.response.status
-          )
-        },
-        "servedRequests" to testServeEvents.map { event ->
-          mapOf(
-            "method" to event.request.method.value(),
-            "url" to event.request.url,
-            "matched" to event.wasMatched,
-            "responseStatus" to event.response.status
-          )
-        },
-        "unmatchedRequests" to unmatched.map { req ->
-          mapOf(
-            "method" to req.method.value(),
-            "url" to req.url,
-            "body" to req.bodyAsString
-          )
-        }
-      ),
-      summary = buildString {
-        appendLine("Registered stubs (this test): ${testStubs.size}")
-        appendLine("Served requests (this test): ${testServeEvents.size} (matched: ${testServeEvents.count { it.wasMatched }})")
-        appendLine("Unmatched requests: ${unmatched.size}")
-      }
-    )
-  }
+  override fun snapshot(): SystemSnapshot =
+    WireMockSnapshotBuilder(reportSystemName, callJournal, wireMock.stubMappings)
+      .build(reporter.currentTestId())
 
   private var wireMock: WireMockServer
-  private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   init {
-    val cfg = wireMockConfig().port(ctx.port).extensions(WireMockRequestListener(stubLog, ctx.afterRequest))
+    val cfg = wireMockConfig()
+      .port(ctx.port)
+      .extensions(WireMockRequestListener(stubLog, ctx.afterRequest, callJournal::record))
     val stoveExtensions = mutableListOf<Extension>()
     if (ctx.removeStubAfterRequestMatched) {
       stoveExtensions.add(WireMockVacuumCleaner(stubLog, ctx.afterStubRemoved))
@@ -266,9 +245,13 @@ class WireMockSystem(
    * Starts the WireMock server.
    */
   override suspend fun run() {
+    if (!reportListenerRegistered) {
+      stove.addReportListener(reportListener)
+      reportListenerRegistered = true
+    }
     wireMock.start()
     exposedConfiguration = WireMockExposedConfiguration(
-      host = "localhost",
+      host = LOCALHOST,
       port = wireMock.port()
     )
   }
@@ -294,19 +277,17 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, String> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
-  ): WireMockSystem {
-    report(
-      action = "Register stub: GET $url",
-      metadata = mapOf("statusCode" to statusCode, "responseHeaders" to responseHeaders)
-    ) {
-      val mockRequest = get(urlEqualTo(url))
-      mockRequest.withMetadata(enrichMetadataWithTestId(metadata))
-      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem =
+    mockRequest(
+      methodName = RequestMethod.GET.value(),
+      url = url,
+      method = ::get,
+      statusCode = statusCode,
+      responseBody = responseBody,
+      metadata = metadata,
+      responseHeaders = responseHeaders,
+      reportMetadata = mapOf(STATUS_CODE to statusCode, RESPONSE_HEADERS to responseHeaders)
+    )
 
   /**
    * Mocks a POST request with exact URL and request body matching.
@@ -330,20 +311,17 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
-  ): WireMockSystem {
-    report(
-      action = "Register stub: POST $url",
-      input = requestBody,
-      metadata = mapOf("statusCode" to statusCode)
-    ) {
-      val mockRequest = post(urlEqualTo(url))
-      configureBodyAndMetadata(mockRequest, metadata, requestBody)
-      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem =
+    mockRequest(
+      methodName = RequestMethod.POST.value(),
+      url = url,
+      method = ::post,
+      statusCode = statusCode,
+      requestBody = requestBody,
+      responseBody = responseBody,
+      metadata = metadata,
+      responseHeaders = responseHeaders
+    )
 
   /**
    * Mocks a PUT request with exact URL and request body matching.
@@ -367,20 +345,17 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
-  ): WireMockSystem {
-    report(
-      action = "Register stub: PUT $url",
-      input = requestBody,
-      metadata = mapOf("statusCode" to statusCode)
-    ) {
-      val req = put(urlEqualTo(url))
-      configureBodyAndMetadata(req, metadata, requestBody)
-      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-      val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem =
+    mockRequest(
+      methodName = RequestMethod.PUT.value(),
+      url = url,
+      method = ::put,
+      statusCode = statusCode,
+      requestBody = requestBody,
+      responseBody = responseBody,
+      metadata = metadata,
+      responseHeaders = responseHeaders
+    )
 
   /**
    * Mocks a PATCH request with exact URL and request body matching.
@@ -404,20 +379,17 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf()
-  ): WireMockSystem {
-    report(
-      action = "Register stub: PATCH $url",
-      input = requestBody,
-      metadata = mapOf("statusCode" to statusCode)
-    ) {
-      val req = patch(urlEqualTo(url))
-      configureBodyAndMetadata(req, metadata, requestBody)
-      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-      val stub = wireMock.stubFor(req.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem =
+    mockRequest(
+      methodName = RequestMethod.PATCH.value(),
+      url = url,
+      method = ::patch,
+      statusCode = statusCode,
+      requestBody = requestBody,
+      responseBody = responseBody,
+      metadata = metadata,
+      responseHeaders = responseHeaders
+    )
 
   /**
    * Mocks a DELETE request with exact URL matching.
@@ -431,19 +403,14 @@ class WireMockSystem(
     url: String,
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
-  ): WireMockSystem {
-    report(
-      action = "Register stub: DELETE $url",
-      metadata = mapOf("statusCode" to statusCode)
-    ) {
-      val mockRequest = delete(urlEqualTo(url))
-      configureBodyAndMetadata(mockRequest, metadata, None)
-      val mockResponse = configureResponse(statusCode, None, mapOf())
-      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem =
+    mockRequest(
+      methodName = RequestMethod.DELETE.value(),
+      url = url,
+      method = ::delete,
+      statusCode = statusCode,
+      metadata = metadata
+    )
 
   /**
    * Mocks a HEAD request with exact URL matching.
@@ -457,19 +424,14 @@ class WireMockSystem(
     url: String,
     statusCode: Int,
     metadata: Map<String, Any> = mapOf()
-  ): WireMockSystem {
-    report(
-      action = "Register stub: HEAD $url",
-      metadata = mapOf("statusCode" to statusCode)
-    ) {
-      val mockRequest = head(urlEqualTo(url))
-      configureBodyAndMetadata(mockRequest, metadata, None)
-      val mockResponse = configureResponse(statusCode, None, mapOf())
-      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem =
+    mockRequest(
+      methodName = RequestMethod.HEAD.value(),
+      url = url,
+      method = ::head,
+      statusCode = statusCode,
+      metadata = metadata
+    )
 
   /**
    * Mocks a PUT request with full configuration control.
@@ -487,16 +449,7 @@ class WireMockSystem(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
-  ): WireMockSystem {
-    report(action = "Register stub: PUT $url (custom)") {
-      val req = put(urlPatternFn(url))
-      val configuredReq = configure(req, serde)
-      configuredReq.withMetadata(enrichMetadataWithTestId(emptyMap()))
-      val stub = wireMock.stubFor(configuredReq.withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem = mockRequestConfigure(RequestMethod.PUT.value(), url, urlPatternFn, ::put, configure)
 
   /**
    * Mocks a PATCH request with full configuration control.
@@ -514,16 +467,7 @@ class WireMockSystem(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
-  ): WireMockSystem {
-    report(action = "Register stub: PATCH $url (custom)") {
-      val req = patch(urlPatternFn(url))
-      val configuredReq = configure(req, serde)
-      configuredReq.withMetadata(enrichMetadataWithTestId(emptyMap()))
-      val stub = wireMock.stubFor(configuredReq.withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem = mockRequestConfigure(RequestMethod.PATCH.value(), url, urlPatternFn, ::patch, configure)
 
   /**
    * Mocks a GET request with full configuration control.
@@ -541,16 +485,7 @@ class WireMockSystem(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
-  ): WireMockSystem {
-    report(action = "Register stub: GET $url (custom)") {
-      val req = get(urlPatternFn(url))
-      val configuredReq = configure(req, serde)
-      configuredReq.withMetadata(enrichMetadataWithTestId(emptyMap()))
-      val stub = wireMock.stubFor(configuredReq.withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem = mockRequestConfigure(RequestMethod.GET.value(), url, urlPatternFn, ::get, configure)
 
   /**
    * Mocks a HEAD request with full configuration control.
@@ -568,16 +503,7 @@ class WireMockSystem(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
-  ): WireMockSystem {
-    report(action = "Register stub: HEAD $url (custom)") {
-      val req = head(urlPatternFn(url))
-      val configuredReq = configure(req, serde)
-      configuredReq.withMetadata(enrichMetadataWithTestId(emptyMap()))
-      val stub = wireMock.stubFor(configuredReq.withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem = mockRequestConfigure(RequestMethod.HEAD.value(), url, urlPatternFn, ::head, configure)
 
   /**
    * Mocks a DELETE request with full configuration control.
@@ -595,16 +521,7 @@ class WireMockSystem(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
-  ): WireMockSystem {
-    report(action = "Register stub: DELETE $url (custom)") {
-      val req = delete(urlPatternFn(url))
-      val configuredReq = configure(req, serde)
-      configuredReq.withMetadata(enrichMetadataWithTestId(emptyMap()))
-      val stub = wireMock.stubFor(configuredReq.withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem = mockRequestConfigure(RequestMethod.DELETE.value(), url, urlPatternFn, ::delete, configure)
 
   /**
    * Mocks a POST request with full configuration control.
@@ -622,16 +539,7 @@ class WireMockSystem(
     url: String,
     urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
     configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
-  ): WireMockSystem {
-    report(action = "Register stub: POST $url (custom)") {
-      val req = post(urlPatternFn(url))
-      val configuredReq = configure(req, serde)
-      configuredReq.withMetadata(enrichMetadataWithTestId(emptyMap()))
-      val stub = wireMock.stubFor(configuredReq.withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
+  ): WireMockSystem = mockRequestConfigure(RequestMethod.POST.value(), url, urlPatternFn, ::post, configure)
 
   /**
    * Configures stateful stub behavior for scenario-based testing.
@@ -663,8 +571,16 @@ class WireMockSystem(
     method: (String) -> MappingBuilder,
     block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
   ) {
-    report(action = "Register behaviour stub: $url") {
-      stubBehaviour(wireMock, serde = serde, url, method, enrichMetadataWithTestId(emptyMap()), block)
+    report(action = WireMockReportActions.registerBehaviourStub(url)) {
+      stubBehaviour(
+        wireMockServer = wireMock,
+        serde = serde,
+        url = url,
+        method = method,
+        metadata = enrichMetadataWithTestId(emptyMap()),
+        recordStub = ::recordStub,
+        block = block
+      )
     }
   }
 
@@ -872,6 +788,157 @@ class WireMockSystem(
     urlPatternFn = urlPatternFn
   )
 
+  /**
+   * Verifies that a request matching the provided criteria has been called.
+   *
+   * By default, the request must have been called exactly once. Use WireMock's count helpers
+   * such as [moreThanOrExactly], [lessThan], or [exactly] to customize the expected count.
+   */
+  suspend fun shouldHaveBeenCalled(
+    method: RequestMethod,
+    url: String,
+    count: CountMatchingStrategy = exactly(1),
+    requestBody: Option<Any> = None,
+    requestContaining: Map<String, Any> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+    queryParams: Map<String, String> = emptyMap(),
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+  ): WireMockSystem =
+    verification.shouldHaveBeenCalled(
+      method = method,
+      url = url,
+      count = count,
+      requestBody = requestBody,
+      requestContaining = requestContaining,
+      headers = headers,
+      queryParams = queryParams,
+      urlPatternFn = urlPatternFn
+    )
+
+  /**
+   * Verifies that a request matching the provided WireMock pattern has been called.
+   *
+   * By default, the request must have been called exactly once.
+   */
+  suspend fun shouldHaveBeenCalled(
+    count: CountMatchingStrategy = exactly(1),
+    request: @WiremockDsl () -> RequestPatternBuilder
+  ): WireMockSystem =
+    verification.shouldHaveBeenCalled(count, request)
+
+  /**
+   * Verifies that no request matching the provided criteria has been called.
+   */
+  suspend fun shouldNotHaveBeenCalled(
+    method: RequestMethod,
+    url: String,
+    requestBody: Option<Any> = None,
+    requestContaining: Map<String, Any> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+    queryParams: Map<String, String> = emptyMap(),
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+  ): WireMockSystem =
+    verification.shouldNotHaveBeenCalled(
+      method = method,
+      url = url,
+      requestBody = requestBody,
+      requestContaining = requestContaining,
+      headers = headers,
+      queryParams = queryParams,
+      urlPatternFn = urlPatternFn
+    )
+
+  /**
+   * Verifies that no request matching the provided WireMock pattern has been called.
+   */
+  suspend fun shouldNotHaveBeenCalled(
+    request: @WiremockDsl () -> RequestPatternBuilder
+  ): WireMockSystem =
+    verification.shouldNotHaveBeenCalled(request)
+
+  /**
+   * Returns requests from the current test matching the provided criteria.
+   */
+  fun callsFor(
+    method: RequestMethod,
+    url: String,
+    requestBody: Option<Any> = None,
+    requestContaining: Map<String, Any> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+    queryParams: Map<String, String> = emptyMap(),
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+  ): List<LoggedRequest> =
+    verification.callsFor(
+      method = method,
+      url = url,
+      requestBody = requestBody,
+      requestContaining = requestContaining,
+      headers = headers,
+      queryParams = queryParams,
+      urlPatternFn = urlPatternFn
+    )
+
+  /**
+   * Returns requests from the current test matching the provided WireMock pattern.
+   */
+  fun callsFor(
+    request: @WiremockDsl () -> RequestPatternBuilder
+  ): List<LoggedRequest> = verification.callsFor(request)
+
+  private suspend fun mockRequest(
+    methodName: String,
+    url: String,
+    method: (UrlPattern) -> MappingBuilder,
+    statusCode: Int,
+    requestBody: Option<Any> = None,
+    responseBody: Option<Any> = None,
+    metadata: Map<String, Any> = emptyMap(),
+    responseHeaders: Map<String, String> = emptyMap(),
+    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode)
+  ): WireMockSystem =
+    mockRequest(
+      action = WireMockReportActions.registerStub(methodName, url),
+      request = method(urlEqualTo(url)),
+      statusCode = statusCode,
+      requestBody = requestBody,
+      responseBody = responseBody,
+      metadata = metadata,
+      responseHeaders = responseHeaders,
+      reportMetadata = reportMetadata
+    )
+
+  private suspend fun mockRequest(
+    action: String,
+    request: MappingBuilder,
+    statusCode: Int,
+    requestBody: Option<Any> = None,
+    responseBody: Option<Any> = None,
+    metadata: Map<String, Any> = emptyMap(),
+    responseHeaders: Map<String, String> = emptyMap(),
+    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode)
+  ): WireMockSystem =
+    registerStub(
+      action = action,
+      input = requestBody,
+      metadata = reportMetadata
+    ) {
+      configureBodyAndMetadata(request, metadata, requestBody)
+      request.willReturn(configureResponse(statusCode, responseBody, responseHeaders))
+    }
+
+  private suspend fun mockRequestConfigure(
+    methodName: String,
+    url: String,
+    urlPatternFn: (url: String) -> UrlPattern,
+    method: (UrlPattern) -> MappingBuilder,
+    configure: (MappingBuilder, StoveSerde<Any, ByteArray>) -> MappingBuilder
+  ): WireMockSystem =
+    registerStub(action = WireMockReportActions.registerCustomStub(methodName, url)) {
+      val configuredRequest = configure(method(urlPatternFn(url)), serde)
+      configuredRequest.withMetadata(enrichMetadataWithTestId(emptyMap()))
+      configuredRequest
+    }
+
   private suspend fun mockRequestContaining(
     url: String,
     method: (UrlPattern) -> MappingBuilder,
@@ -882,65 +949,19 @@ class WireMockSystem(
     responseHeaders: Map<String, String>,
     urlPatternFn: (url: String) -> UrlPattern
   ): WireMockSystem {
-    require(requestContaining.isNotEmpty()) { "requestContaining must not be empty" }
+    require(requestContaining.isNotEmpty()) { WireMockValidationMessages.REQUEST_CONTAINING_EMPTY }
 
-    report(
-      action = "Register stub: $url (partial match)",
+    return registerStub(
+      action = WireMockReportActions.registerPartialStub(url),
       input = requestContaining.some(),
-      metadata = mapOf("statusCode" to statusCode)
+      metadata = mapOf(STATUS_CODE to statusCode)
     ) {
       val mockRequest = method(urlPatternFn(url))
       mockRequest.withMetadata(enrichMetadataWithTestId(metadata))
-      mockRequest.withHeader("Content-Type", ContainsPattern("application/json"))
-      configureBodyContaining(mockRequest, requestContaining)
+      mockRequest.withHeader(CONTENT_TYPE, ContainsPattern(APPLICATION_JSON))
+      mockRequest.configureBodyContaining(requestContaining, serde)
       val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
-      val stub = wireMock.stubFor(mockRequest.willReturn(mockResponse).withId(UUID.randomUUID()))
-      stubLog.put(stub.id, stub)
-    }
-    return this
-  }
-
-  private fun configureBodyContaining(
-    request: MappingBuilder,
-    requestContaining: Map<String, Any>
-  ) {
-    requestContaining.forEach { (key, value) ->
-      val matcher = createValueMatcher(value)
-      // Support dot notation for nested paths (e.g., "order.customer.id" -> "$.order.customer.id")
-      val jsonPath = "$.$key"
-      request.withRequestBody(matchingJsonPath(jsonPath, matcher))
-    }
-  }
-
-  private fun createValueMatcher(value: Any): StringValuePattern = when (value) {
-    is String -> {
-      equalTo(value)
-    }
-
-    is Number -> {
-      equalTo(value.toString())
-    }
-
-    is Boolean -> {
-      equalTo(value.toString())
-    }
-
-    is Map<*, *> -> {
-      // For nested objects, use equalToJson with ignoreExtraElements=true for deep partial matching
-      val serialized = serde.serialize(value).decodeToString()
-      equalToJson(serialized, true, true)
-    }
-
-    is Collection<*> -> {
-      // For arrays, use equalToJson with ignoreArrayOrder=true and ignoreExtraElements=true
-      val serialized = serde.serialize(value).decodeToString()
-      equalToJson(serialized, true, true)
-    }
-
-    else -> {
-      // For other objects, serialize and use equalToJson
-      val serialized = serde.serialize(value).decodeToString()
-      equalToJson(serialized, true, true)
+      mockRequest.willReturn(mockResponse)
     }
   }
 
@@ -956,19 +977,6 @@ class WireMockSystem(
    * @throws AssertionError if there are unmatched requests.
    */
   override suspend fun validate() {
-    data class ValidationResult(
-      val url: String,
-      val bodyAsString: String,
-      val queryParams: String
-    ) {
-      override fun toString(): String =
-        """
-                Url: $url
-                Body: $bodyAsString
-                QueryParams: $queryParams
-        """.trimIndent()
-    }
-
     val currentTestId = reporter.currentTestId()
 
     // Filter unmatched requests to only include those from the current test
@@ -980,24 +988,24 @@ class WireMockSystem(
 
     if (!passed) {
       val problems = unmatched.joinToString("\n") {
-        ValidationResult(
-          "${it.method.value()} ${it.url}",
-          it.bodyAsString,
-          serde.serialize(it.queryParams).decodeToString()
-        ).toString()
+        WireMockValidationMessages.unmatchedRequestDetails(
+          url = "${it.method.value()} ${it.url}",
+          bodyAsString = it.bodyAsString,
+          queryParams = serde.serialize(it.queryParams).decodeToString()
+        )
       }
       val error = AssertionError(
-        "There are unmatched requests in the mock pipeline, please satisfy all the wanted requests.\n$problems"
+        WireMockValidationMessages.unmatchedRequests(problems)
       )
 
       reporter.record(
         ReportEntry.failure(
           system = reportSystemName,
           testId = reporter.currentTestId(),
-          action = "Validate: All requests should match registered stubs",
-          error = error.message ?: "Validation failed",
-          expected = "0 unmatched requests".some(),
-          actual = "${unmatched.size} unmatched request(s)".some()
+          action = VALIDATE_ALL_REQUESTS_SHOULD_MATCH,
+          error = error.message ?: WireMockValidationMessages.VALIDATION_FAILED,
+          expected = WireMockValidationMessages.EXPECTED_NO_UNMATCHED_REQUESTS.some(),
+          actual = WireMockValidationMessages.unmatchedRequestCount(unmatched.size).some()
         )
       )
 
@@ -1007,7 +1015,7 @@ class WireMockSystem(
         ReportEntry.success(
           system = reportSystemName,
           testId = reporter.currentTestId(),
-          action = "Validate: All requests matched registered stubs"
+          action = VALIDATE_ALL_REQUESTS_MATCHED
         )
       )
     }
@@ -1018,8 +1026,42 @@ class WireMockSystem(
    */
   override fun close(): Unit = runBlocking {
     Try {
+      if (reportListenerRegistered) {
+        stove.removeReportListener(reportListener)
+        reportListenerRegistered = false
+      }
       stop()
-    }.recover { logger.warn("got an error while stopping wiremock: ${it.message}") }
+      callJournal.clearAll()
+    }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
+  }
+
+  private fun clearCompletedTestJournals() {
+    while (true) {
+      val testId = completedTestIds.poll() ?: return
+      callJournal.clear(testId)
+    }
+  }
+
+  private suspend fun registerStub(
+    action: String,
+    input: Option<Any> = None,
+    metadata: Map<String, Any> = emptyMap(),
+    request: () -> MappingBuilder
+  ): WireMockSystem {
+    report(action = action, input = input, metadata = metadata) {
+      registerStub(request())
+    }
+    return this
+  }
+
+  private fun registerStub(request: MappingBuilder) {
+    val stub = wireMock.stubFor(request.withId(UUID.randomUUID()))
+    recordStub(stub)
+  }
+
+  private fun recordStub(stub: StubMapping) {
+    stubLog.put(stub.id, stub)
+    callJournal.recordStub(stub)
   }
 
   private fun enrichMetadataWithTestId(metadata: Map<String, Any>): Map<String, Any> =
@@ -1039,7 +1081,7 @@ class WireMockSystem(
             true,
             false
           )
-        ).withHeader("Content-Type", ContainsPattern("application/json"))
+        ).withHeader(CONTENT_TYPE, ContainsPattern(APPLICATION_JSON))
     }
   }
 
@@ -1050,7 +1092,7 @@ class WireMockSystem(
   ): ResponseDefinitionBuilder? {
     val mockResponse = aResponse()
       .withStatus(statusCode)
-      .withHeader("Content-Type", "application/json; charset=UTF-8")
+      .withHeader(CONTENT_TYPE, APPLICATION_JSON_UTF8)
     responseHeaders.forEach {
       mockResponse.withHeader(it.key, it.value)
     }
@@ -1063,6 +1105,7 @@ class WireMockSystem(
      * Metadata key used to associate stubs with test IDs for filtering in snapshots.
      */
     const val STOVE_TEST_ID_KEY = "stoveTestId"
+    private const val LOCALHOST = "localhost"
 
     /**
      * Exposes the [WireMockServer] instance for the given [WireMockSystem].

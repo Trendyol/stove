@@ -67,6 +67,9 @@ public final class com/trendyol/stove/wiremock/WireMockSystem : com/trendyol/sto
 	public static final field STOVE_TEST_ID_KEY Ljava/lang/String;
 	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/wiremock/WireMockContext;)V
 	public final fun behaviourFor (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun callsFor (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public final fun callsFor (Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+	public static synthetic fun callsFor$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -105,6 +108,13 @@ public final class com/trendyol/stove/wiremock/WireMockSystem : com/trendyol/sto
 	public static synthetic fun mockPutContaining$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shouldHaveBeenCalled (Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shouldHaveBeenCalled (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun shouldHaveBeenCalled$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun shouldHaveBeenCalled$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun shouldNotHaveBeenCalled (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shouldNotHaveBeenCalled (Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun shouldNotHaveBeenCalled$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/system/Stove;

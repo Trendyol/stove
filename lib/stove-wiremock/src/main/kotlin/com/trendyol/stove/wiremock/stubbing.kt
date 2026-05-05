@@ -3,6 +3,7 @@ package com.trendyol.stove.wiremock
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.trendyol.stove.serialization.StoveSerde
 
 internal fun stubBehaviour(
@@ -11,9 +12,10 @@ internal fun stubBehaviour(
   url: String,
   method: (String) -> MappingBuilder,
   metadata: Map<String, Any> = emptyMap(),
+  recordStub: (StubMapping) -> Unit = {},
   block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
 ) {
-  val builder = StubBehaviourBuilder(wireMockServer, url, method, metadata)
+  val builder = StubBehaviourBuilder(wireMockServer, url, method, metadata, recordStub)
   builder.block(serde)
 }
 
@@ -23,24 +25,35 @@ class StubBehaviourBuilder(
   private val method: (String) -> MappingBuilder,
   private val metadata: Map<String, Any> = emptyMap()
 ) {
-  private val scenarioName = "Scenario for $url"
+  private val scenarioName = WireMockBehaviourNames.scenarioName(url)
   private var previousState: String = STARTED
   private var stateCounter = 0
   private var initializedCounter = 0
+  private var recordStub: (StubMapping) -> Unit = {}
+
+  internal constructor(
+    wireMockServer: WireMockServer,
+    url: String,
+    method: (String) -> MappingBuilder,
+    metadata: Map<String, Any> = emptyMap(),
+    recordStub: (StubMapping) -> Unit
+  ) : this(wireMockServer, url, method, metadata) {
+    this.recordStub = recordStub
+  }
 
   fun initially(step: () -> ResponseDefinitionBuilder) {
-    check(initializedCounter == 0) { "You should call initially only once" }
+    check(initializedCounter == 0) { WireMockBehaviourMessages.INITIALLY_ONCE }
     stateCounter++
-    val nextState = "State$stateCounter"
+    val nextState = WireMockBehaviourNames.state(stateCounter)
     createStub(step(), previousState, nextState)
     previousState = nextState
     initializedCounter++
   }
 
   fun then(step: () -> ResponseDefinitionBuilder) {
-    check(previousState != STARTED) { "You should call initially before calling then" }
+    check(previousState != STARTED) { WireMockBehaviourMessages.INITIALLY_BEFORE_THEN }
     stateCounter++
-    val nextState = "State$stateCounter"
+    val nextState = WireMockBehaviourNames.state(stateCounter)
     createStub(step(), previousState, nextState)
     previousState = nextState
   }
@@ -50,7 +63,7 @@ class StubBehaviourBuilder(
     whenState: String,
     setState: String
   ) {
-    wireMockServer.stubFor(
+    val stub = wireMockServer.stubFor(
       method(url)
         .inScenario(scenarioName)
         .whenScenarioStateIs(whenState)
@@ -58,5 +71,6 @@ class StubBehaviourBuilder(
         .willSetStateTo(setState)
         .withMetadata(metadata)
     )
+    recordStub(stub)
   }
 }

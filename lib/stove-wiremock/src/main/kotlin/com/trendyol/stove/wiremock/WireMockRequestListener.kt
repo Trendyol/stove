@@ -9,10 +9,24 @@ class WireMockRequestListener(
   private val stubLog: Cache<UUID, StubMapping>,
   private val afterRequest: AfterRequestHandler
 ) : ServeEventListener {
+  private var recordRequest: (ServeEvent) -> Unit = {}
+
+  internal constructor(
+    stubLog: Cache<UUID, StubMapping>,
+    afterRequest: AfterRequestHandler,
+    recordRequest: (ServeEvent) -> Unit
+  ) : this(stubLog, afterRequest) {
+    this.recordRequest = recordRequest
+  }
+
   override fun getName(): String = WireMockRequestListener::class.java.simpleName
 
   override fun beforeResponseSent(
     serveEvent: ServeEvent?,
     parameters: Parameters?
-  ): Unit = afterRequest(serveEvent!!, stubLog)
+  ) {
+    val event = serveEvent!!
+    recordRequest(event)
+    afterRequest(event, stubLog)
+  }
 }

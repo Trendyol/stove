@@ -22,7 +22,7 @@ data class WireMockExposedConfiguration(
   val host: String,
   val port: Int
 ) : ExposedConfiguration {
-  val baseUrl: String get() = "http://$host:$port"
+  val baseUrl: String get() = WireMockUrls.baseUrl(host, port)
 }
 
 data class WireMockSystemOptions(
@@ -123,7 +123,10 @@ internal fun Stove.wiremock(): WireMockSystem =
 
 internal fun Stove.wiremock(key: SystemKey): WireMockSystem =
   getOrNone<WireMockSystem>(key).getOrElse {
-    throw SystemNotRegisteredException(WireMockSystem::class, "No WireMockSystem registered with key '${keyDisplayName(key)}'")
+    throw SystemNotRegisteredException(
+      WireMockSystem::class,
+      WireMockSystemMessages.systemNotRegistered(keyDisplayName(key))
+    )
   }
 
 fun WithDsl.wiremock(
