@@ -22,7 +22,7 @@ kafka-kotlin = "0.4.1"
 
 # Logging
 slf4j = "2.0.17"
-kotlinLogging = "8.0.01"
+kotlinLogging = "8.0.02"
 
 # Ktor
 ktor = "3.4.3"
@@ -54,7 +54,7 @@ protobuf-plugin = "0.10.0"
 db-scheduler = "16.7.1"
 
 # Testing
-stove = "1.0.0.525-SNAPSHOT"
+stove = "1.0.0.526-SNAPSHOT"
 kotest = "6.1.11"
 exposed = "1.2.0"
 postgresql = "42.7.11"
