@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
-val generatedDashboardSourcesDir =
-  layout.buildDirectory.dir("generated/source/stoveVersion/kotlin")
+val generatedDashboardSourcesDir = layout.buildDirectory.dir("generated/source/stoveVersion/kotlin")
 val stoveCompatibilityVersionValue = providers
   .fileContents(rootProject.layout.projectDirectory.file("gradle.properties"))
   .asText
@@ -14,6 +13,7 @@ val stoveCompatibilityVersionValue = providers
   }
 
 val generateDashboardVersionSource by tasks.registering(GenerateDashboardVersionSourceTask::class) {
+  description = "Generates a source file containing the Stove version."
   stoveCompatibilityVersion.set(stoveCompatibilityVersionValue)
   outputDir.set(generatedDashboardSourcesDir)
 }
@@ -36,7 +36,5 @@ dependencies {
   implementation(libs.io.grpc.netty)
   implementation(libs.kotlinx.core)
 
-  compileOnly(projects.lib.stoveTracing)
-
-  testImplementation(libs.io.grpc.netty)
+  testImplementation(projects.lib.stoveTracing)
 }
