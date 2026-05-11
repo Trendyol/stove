@@ -4,8 +4,8 @@ package stove.ktor.example
 
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
+import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -28,7 +28,7 @@ fun run(
 ): Application {
   val config = loadConfiguration<AppConfiguration>(args)
 
-  val applicationEngine = embeddedServer(Netty, port = config.port, host = "localhost") {
+  val applicationEngine = embeddedServer(CIO, port = config.port, host = "localhost") {
     mainModule(config, applicationOverrides)
   }
 
