@@ -51,6 +51,32 @@
       "groupName": "kafka"
     },
     {
+      "matchDepNames": [
+        "/.*springframework.*/"
+      ],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchDepNames": [
+        "/org.apache.kafka.*/"
+      ],
+      "allowedVersions": "!/^8\\./"
+    },
+    {
+      "matchDepNames": [
+        "org.scala-lang:scala-library"
+      ],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchDepNames": [
+        "/org.jetbrains.kotlinx:kotlinx-coroutines.*/"
+      ],
+      "allowedVersions": "<=1.10.2"
+    },
+    {
       "groupName": "com.trendyol",
       "allowedVersions": "!/1f1ca59/",
       "matchPackageNames": [
