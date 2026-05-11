@@ -3,7 +3,7 @@ module github.com/trendyol/stove/go/stove-kafka
 go 1.26.2
 
 require (
-	github.com/IBM/sarama v1.48.0
+	github.com/IBM/sarama v1.48.1
 	github.com/google/uuid v1.6.0
 	github.com/segmentio/kafka-go v0.4.51
 	github.com/twmb/franz-go v1.21.1
@@ -21,13 +21,13 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/klauspost/compress v1.18.5 // indirect
+	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.13.1 // indirect
-	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
 )
