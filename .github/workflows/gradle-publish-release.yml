@@ -52,6 +52,13 @@ jobs:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ env.JRELEASER_PROJECT_VERSION }}
 
+      - name: Tag Go stove-kafka module
+        run: |
+          git tag "go/stove-kafka/v${{ env.JRELEASER_PROJECT_VERSION }}"
+          git push origin "go/stove-kafka/v${{ env.JRELEASER_PROJECT_VERSION }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+
       - name: Upload JReleaser output
         if: always()
         uses: actions/upload-artifact@v7
