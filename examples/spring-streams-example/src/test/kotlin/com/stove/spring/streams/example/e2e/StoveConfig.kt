@@ -3,6 +3,8 @@ package com.stove.spring.streams.example.e2e
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.INPUT_TOPIC
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.INPUT_TOPIC2
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.OUTPUT_TOPIC
+import com.trendyol.stove.dashboard.DashboardSystemOptions
+import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.spring.*

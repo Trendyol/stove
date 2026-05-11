@@ -29,6 +29,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveTracing)
   testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.starters.spring.stoveSpring)
+  testImplementation(libs.kotlinx.core)
   testImplementation(libs.testcontainers.kafka)
 }
 
@@ -59,6 +60,16 @@ protobuf {
       it.descriptorSetOptions.includeImports = true
       it.builtins {
         id("kotlin")
+      }
+    }
+  }
+}
+
+configurations.all {
+  this.resolutionStrategy {
+    eachDependency {
+      if (requested.group == libs.kotlinx.core.get().group && requested.name.startsWith("kotlinx-coroutines")) {
+        useVersion(libs.versions.kotlinx.asProvider().get())
       }
     }
   }
