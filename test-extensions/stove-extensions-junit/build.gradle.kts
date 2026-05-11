@@ -25,7 +25,7 @@ kover {
         classes(
           "*Test",
           "*Tests",
-          "*Config",
+          "*Config"
         )
       }
     }

@@ -21,6 +21,7 @@ application {
 
 stoveTracing {
   serviceName = "ktor-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }
 
 dependencies {
@@ -55,6 +56,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stovePostgres)
   testImplementation(projects.stove.lib.stoveKafka)
+  testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.lib.stoveGrpc)
   testImplementation(projects.stove.lib.stoveGrpcMock)
   testImplementation(projects.stove.starters.ktor.stoveKtor)

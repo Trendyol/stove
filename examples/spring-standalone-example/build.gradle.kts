@@ -1,3 +1,5 @@
+import com.trendyol.stove.gradle.stoveTracing
+
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.three)
@@ -31,11 +33,18 @@ dependencies {
 dependencies {
   testImplementation(projects.stove.testExtensions.stoveExtensionsKotest)
   testImplementation(projects.stove.lib.stoveHttp)
+  testImplementation(projects.stove.lib.stoveTracing)
+  testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stovePostgres)
   testImplementation(projects.stove.lib.stoveElasticsearch)
   testImplementation(projects.stove.lib.stoveKafka)
   testImplementation(projects.stove.starters.spring.stoveSpring)
+}
+
+stoveTracing {
+  serviceName = "spring-standalone-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }
 
 application { mainClass.set("stove.spring.standalone.example.ExampleAppKt") }

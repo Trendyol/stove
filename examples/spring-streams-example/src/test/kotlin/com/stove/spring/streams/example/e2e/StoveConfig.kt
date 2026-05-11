@@ -3,14 +3,10 @@ package com.stove.spring.streams.example.e2e
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.INPUT_TOPIC
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.INPUT_TOPIC2
 import com.stove.spring.streams.example.e2e.ExampleTest.Companion.OUTPUT_TOPIC
-import com.trendyol.stove.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.spring.bridge
-import com.trendyol.stove.spring.springBoot
+import com.trendyol.stove.spring.*
 import com.trendyol.stove.system.*
-import com.trendyol.stove.system.Stove
-import com.trendyol.stove.system.stove
 import com.trendyol.stove.tracing.tracing
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
@@ -45,9 +41,8 @@ class StoveConfig : AbstractProjectConfig() {
         }
       }
       bridge()
-      tracing {
-        enableSpanReceiver()
-      }
+      tracing { enableSpanReceiver() }
+      dashboard { DashboardSystemOptions(appName = "spring-streams-example") }
       springBoot(
         runner = { parameters ->
           run(parameters)

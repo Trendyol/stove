@@ -29,6 +29,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveHttp)
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stoveTracing)
+  testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(projects.stove.starters.spring.stoveSpringKafka)
 }
@@ -40,6 +41,7 @@ application { mainClass.set("stove.spring.example4x.ExampleAppkt") }
 // ============================================================================
 stoveTracing {
   serviceName = "spring-4x-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }
 
 tasks.test {

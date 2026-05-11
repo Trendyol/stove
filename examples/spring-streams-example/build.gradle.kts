@@ -1,4 +1,5 @@
 import com.google.protobuf.gradle.id
+import com.trendyol.stove.gradle.stoveTracing
 
 plugins {
   alias(libs.plugins.spring.plugin)
@@ -23,8 +24,10 @@ dependencies {
 }
 
 dependencies {
-  testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.stove.testExtensions.stoveExtensionsKotest)
   testImplementation(projects.stove.lib.stoveKafka)
+  testImplementation(projects.stove.lib.stoveTracing)
+  testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(libs.testcontainers.kafka)
 }
@@ -68,4 +71,9 @@ configurations.matching { it.name == "detekt" }.all {
       useVersion(io.gitlab.arturbosch.detekt.getSupportedKotlinVersion())
     }
   }
+}
+
+stoveTracing {
+  serviceName = "spring-streams-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }

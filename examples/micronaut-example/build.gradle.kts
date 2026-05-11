@@ -1,3 +1,5 @@
+import com.trendyol.stove.gradle.stoveTracing
+
 plugins {
   kotlin("jvm") version libs.versions.kotlin
   kotlin("plugin.serialization") version libs.versions.kotlin
@@ -36,6 +38,8 @@ dependencies {
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stovePostgres)
   testImplementation(projects.stove.lib.stoveElasticsearch)
+  testImplementation(projects.stove.lib.stoveDashboard)
+  testImplementation(projects.stove.lib.stoveTracing)
   testImplementation(projects.stove.starters.micronaut.stoveMicronaut)
   testImplementation(projects.testExtensions.stoveExtensionsKotest)
 }
@@ -48,6 +52,11 @@ graalvmNative.toolchainDetection = false
 
 java {
   sourceCompatibility = JavaVersion.toVersion("17")
+}
+
+stoveTracing {
+  serviceName = "micronaut-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }
 
 micronaut {

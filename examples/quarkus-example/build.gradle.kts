@@ -38,6 +38,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stovePostgres)
   testImplementation(projects.stove.lib.stoveKafka)
+  testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.lib.stoveTracing)
   testImplementation(projects.stove.starters.quarkus.stoveQuarkus)
 }
@@ -71,4 +72,5 @@ kotlin {
 
 stoveTracing {
   serviceName = "quarkus-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }

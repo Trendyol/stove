@@ -1,5 +1,6 @@
 package com.stove.ktor.example.e2e
 
+import com.trendyol.stove.dashboard.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
@@ -35,9 +36,8 @@ class StoveConfig : AbstractProjectConfig() {
         )
       }
       bridge()
-      tracing {
-        enableSpanReceiver()
-      }
+      tracing { enableSpanReceiver() }
+      dashboard { DashboardSystemOptions(appName = "ktor-example") }
       postgresql {
         PostgresqlOptions(configureExposedConfiguration = { cfg ->
           listOf(

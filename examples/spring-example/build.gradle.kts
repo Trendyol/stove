@@ -9,6 +9,7 @@ plugins {
 
 stoveTracing {
   serviceName = "spring-example"
+  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
 }
 
 dependencies {

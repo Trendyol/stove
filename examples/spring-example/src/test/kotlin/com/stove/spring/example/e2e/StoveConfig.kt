@@ -1,14 +1,12 @@
 package com.stove.spring.example.e2e
 
-import com.trendyol.stove.dashboard.DashboardSystemOptions
-import com.trendyol.stove.dashboard.dashboard
+import com.trendyol.stove.dashboard.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.spring.*
-import com.trendyol.stove.system.PortFinder
-import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.*
 import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
@@ -28,9 +26,7 @@ class StoveConfig : AbstractProjectConfig() {
     Stove()
       .with {
         dashboard { DashboardSystemOptions(appName = "spring-example") }
-        tracing {
-          enableSpanReceiver()
-        }
+        tracing { enableSpanReceiver() }
         httpClient {
           HttpClientSystemOptions(
             baseUrl = "http://localhost:$appPort"

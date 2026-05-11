@@ -103,6 +103,18 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
     }
+
+    kotlinGradle {
+      ktlint(libs.ktlint.cli.get().version)
+        .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
+        .editorConfigOverride(
+          mapOf(
+            "ktlint_standard_kdoc" to "disabled",
+            "ktlint_standard_class-signature" to "disabled"
+          )
+        )
+      targetExclude("build/", "generated/", "out/")
+    }
   }
   the<IdeaModel>().apply {
     module {

@@ -1,22 +1,14 @@
 package com.stove.quarkus.example.e2e
 
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
-import com.trendyol.stove.http.HttpClientSystemOptions
-import com.trendyol.stove.http.httpClient
-import com.trendyol.stove.kafka.KafkaContainerOptions
-import com.trendyol.stove.kafka.KafkaMigration
-import com.trendyol.stove.kafka.KafkaMigrationContext
-import com.trendyol.stove.kafka.KafkaSystemOptions
-import com.trendyol.stove.kafka.kafka
-import com.trendyol.stove.postgres.PostgresqlOptions
-import com.trendyol.stove.postgres.postgresql
+import com.trendyol.stove.http.*
+import com.trendyol.stove.kafka.*
+import com.trendyol.stove.postgres.*
 import com.trendyol.stove.quarkus.quarkus
 import com.trendyol.stove.serialization.StoveSerde
-import com.trendyol.stove.system.PortFinder
-import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.*
 import com.trendyol.stove.tracing.tracing
-import com.trendyol.stove.wiremock.WireMockSystemOptions
-import com.trendyol.stove.wiremock.wiremock
+import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import org.apache.kafka.clients.admin.NewTopic
@@ -33,9 +25,8 @@ class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     Stove()
       .with {
-        tracing {
-          enableSpanReceiver()
-        }
+        tracing { enableSpanReceiver() }
+        dashboard { DashboardSystemOptions(appName = "quarkus-example") }
         httpClient {
           HttpClientSystemOptions(
             baseUrl = "http://localhost:$appPort"

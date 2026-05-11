@@ -1,15 +1,12 @@
 package com.stove.spring.standalone.example.e2e
 
-import com.trendyol.stove.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.serialization.StoveSerde
-import com.trendyol.stove.spring.bridge
-import com.trendyol.stove.spring.springBoot
+import com.trendyol.stove.spring.*
 import com.trendyol.stove.system.*
-import com.trendyol.stove.system.Stove
 import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
@@ -66,9 +63,8 @@ class StoveConfig : AbstractProjectConfig() {
           }
         }
         bridge()
-        tracing {
-          enableSpanReceiver()
-        }
+        tracing { enableSpanReceiver() }
+        dashboard { DashboardSystemOptions(appName = "spring-standalone-example") }
         wiremock {
           WireMockSystemOptions(
             port = 0,

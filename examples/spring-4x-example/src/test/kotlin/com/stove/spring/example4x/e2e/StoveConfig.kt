@@ -4,9 +4,8 @@ import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.spring.*
-import com.trendyol.stove.system.PortFinder
-import com.trendyol.stove.system.Stove
-import com.trendyol.stove.tracing.*
+import com.trendyol.stove.system.*
+import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
@@ -44,9 +43,8 @@ class StoveConfig : AbstractProjectConfig() {
 
         // Enable tracing - starts OTLP gRPC receiver on port 4317
         // Service name is automatically extracted from incoming spans (set by OTel agent)
-        tracing {
-          enableSpanReceiver()
-        }
+        tracing { enableSpanReceiver() }
+        dashboard { DashboardSystemOptions(appName = "spring-4x-example") }
 
         wiremock {
           WireMockSystemOptions(

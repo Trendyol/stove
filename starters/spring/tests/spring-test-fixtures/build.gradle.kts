@@ -11,7 +11,7 @@ dependencies {
   testFixturesApi(libs.kotest.runner.junit5)
   testFixturesApi(libs.google.protobuf.kotlin)
   testFixturesApi(libs.kafka.streams.protobuf.serde)
-  
+
   // Spring Boot as compileOnly - version provided by consuming module
   testFixturesCompileOnly(libs.spring.boot)
   testFixturesCompileOnly(libs.spring.boot.autoconfigure)
