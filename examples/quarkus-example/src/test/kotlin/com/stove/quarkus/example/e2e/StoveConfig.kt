@@ -1,5 +1,7 @@
 package com.stove.quarkus.example.e2e
 
+import com.trendyol.stove.dashboard.DashboardSystemOptions
+import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
