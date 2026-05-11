@@ -65,16 +65,6 @@ protobuf {
   }
 }
 
-configurations.all {
-  this.resolutionStrategy {
-    eachDependency {
-      if (requested.group == libs.kotlinx.core.get().group && requested.name.startsWith("kotlinx-coroutines")) {
-        useVersion(libs.versions.kotlinx.asProvider().get())
-      }
-    }
-  }
-}
-
 configurations.matching { it.name == "detekt" }.all {
   resolutionStrategy.eachDependency {
     if (requested.group == "org.jetbrains.kotlin") {
