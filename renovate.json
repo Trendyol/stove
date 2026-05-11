@@ -61,7 +61,7 @@
       "matchDepNames": [
         "/org.apache.kafka.*/"
       ],
-      "allowedVersions": "!/^8\\./"
+      "allowedVersions": "!/^[78]\\./"
     },
     {
       "matchDepNames": [
