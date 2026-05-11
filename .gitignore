@@ -85,3 +85,4 @@ kotlin-ide/
 build
 .kotlin
 *.tsbuildinfo
+.junie
