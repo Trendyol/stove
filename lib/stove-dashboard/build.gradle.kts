@@ -32,6 +32,7 @@ tasks.named("sourcesJar") {
 
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveLogging)
   api(projects.lib.stoveDashboardApi)
   implementation(libs.io.grpc.netty)
   implementation(libs.kotlinx.core)

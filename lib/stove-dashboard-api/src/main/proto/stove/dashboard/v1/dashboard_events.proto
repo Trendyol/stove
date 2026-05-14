@@ -16,6 +16,8 @@ message DashboardEvent {
     EntryRecordedEvent entry_recorded = 14;
     SpanRecordedEvent span_recorded = 15;
     SnapshotEvent snapshot = 16;
+    LogRecordedEvent log_recorded = 17;
+    LogsDroppedEvent logs_dropped = 18;
   }
 }
 
@@ -89,6 +91,34 @@ message SnapshotEvent {
   string system = 2;
   string state_json = 3;
   string summary = 4;
+}
+
+message LogRecordedEvent {
+  string test_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.Timestamp observed_timestamp = 3;
+  string severity_text = 4;
+  int32 severity_number = 5;
+  string logger = 6;
+  string thread = 7;
+  string body = 8;
+  string exception_type = 9;
+  string exception_message = 10;
+  string exception_stack_trace = 11;
+  map<string, string> attributes = 12;
+  string trace_id = 13;
+  string span_id = 14;
+  string correlation_source = 15;
+  string source = 16;
+  bool truncated = 17;
+}
+
+message LogsDroppedEvent {
+  string test_id = 1;
+  string trace_id = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  int64 dropped_count = 4;
+  string reason = 5;
 }
 
 message EventAck {

@@ -5,6 +5,7 @@ import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.ktor.*
+import com.trendyol.stove.logging.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
@@ -38,6 +39,7 @@ class StoveConfig : AbstractProjectConfig() {
       bridge()
       tracing { enableSpanReceiver() }
       dashboard { DashboardSystemOptions(appName = "ktor-example") }
+      logging { LoggingSystemOptions() }
       postgresql {
         PostgresqlOptions(configureExposedConfiguration = { cfg ->
           listOf(

@@ -87,6 +87,7 @@ class Stove(
   }
 
   private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
+  private val failureReportContributors = java.util.concurrent.CopyOnWriteArrayList<FailureReportContributor>()
 
   @PublishedApi
   internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
@@ -174,6 +175,14 @@ class Stove(
   fun removeReportListener(listener: ReportEventListener) =
     reporter.removeListener(listener)
 
+  fun addFailureReportContributor(contributor: FailureReportContributor) {
+    failureReportContributors.add(contributor)
+  }
+
+  fun removeFailureReportContributor(contributor: FailureReportContributor) {
+    failureReportContributors.remove(contributor)
+  }
+
   /**
    * Starts tracking a new test in the reporter.
    */
@@ -212,6 +221,11 @@ class Stove(
     fun options(): StoveOptions {
       check(::instance.isInitialized) { "Stove is not initialized yet, do not forget to call Stove#run" }
       return instance.options
+    }
+
+    fun failureReportContributors(): List<FailureReportContributor> {
+      check(::instance.isInitialized) { "Stove is not initialized yet, do not forget to call Stove#run" }
+      return instance.failureReportContributors.toList()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -379,7 +393,7 @@ class Stove(
           logger.info(report)
         }
       }
-      cleanup.forEach { it() }
+      cleanup.asReversed().forEach { it() }
     }.recover { logger.warn("got an error while stopping Stove: ${it.message}") }
   }
 }

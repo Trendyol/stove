@@ -18,12 +18,15 @@ pub(super) mod event_type {
   pub const ENTRY_RECORDED: &str = "entry_recorded";
   pub const SPAN_RECORDED: &str = "span_recorded";
   pub const SNAPSHOT: &str = "snapshot";
+  pub const LOG_RECORDED: &str = "log_recorded";
+  pub const LOGS_DROPPED: &str = "logs_dropped";
 }
 
 #[derive(Default)]
 pub(super) struct LiveState {
   pub(super) runs: HashSet<String>,
   pub(super) tests: HashSet<(String, String)>,
+  pub(super) ended_tests: HashSet<(String, String)>,
   pub(super) traces: HashMap<(String, String), String>,
 }
 
@@ -32,6 +35,9 @@ impl LiveState {
     self.runs.remove(run_id);
     self
       .tests
+      .retain(|(known_run_id, _)| known_run_id != run_id);
+    self
+      .ended_tests
       .retain(|(known_run_id, _)| known_run_id != run_id);
     self
       .traces

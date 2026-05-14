@@ -28,6 +28,7 @@ dependencies {
     api(projects.lib.stoveWiremock)
     api(projects.lib.stoveGrpcMock)
     api(projects.lib.stoveTracing)
+    api(projects.lib.stoveLogging)
     api(projects.lib.stoveDashboard)
     api(projects.lib.stoveDashboardApi)
 

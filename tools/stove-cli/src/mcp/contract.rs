@@ -26,18 +26,20 @@ pub(crate) enum ToolName {
   FailureDetail,
   Timeline,
   Trace,
+  Logs,
   Snapshot,
   RawEvidence,
 }
 
 impl ToolName {
-  pub(crate) const ALL: [Self; 8] = [
+  pub(crate) const ALL: [Self; 9] = [
     Self::Apps,
     Self::Runs,
     Self::Failures,
     Self::FailureDetail,
     Self::Timeline,
     Self::Trace,
+    Self::Logs,
     Self::Snapshot,
     Self::RawEvidence,
   ];
@@ -50,6 +52,7 @@ impl ToolName {
       Self::FailureDetail => "stove_failure_detail",
       Self::Timeline => "stove_timeline",
       Self::Trace => "stove_trace",
+      Self::Logs => "stove_logs",
       Self::Snapshot => "stove_snapshot",
       Self::RawEvidence => "stove_raw_evidence",
     }
@@ -68,8 +71,11 @@ pub(crate) enum ArgName {
   Id,
   JsonPointer,
   Kind,
+  Level,
+  Logger,
   Limit,
   MaxChars,
+  Q,
   RunId,
   Status,
   System,
@@ -87,8 +93,11 @@ impl ArgName {
       Self::Id => "id",
       Self::JsonPointer => "json_pointer",
       Self::Kind => "kind",
+      Self::Level => "level",
+      Self::Logger => "logger",
       Self::Limit => "limit",
       Self::MaxChars => "max_chars",
+      Self::Q => "q",
       Self::RunId => "run_id",
       Self::Status => "status",
       Self::System => "system",
@@ -130,6 +139,23 @@ pub(crate) enum TimelineFocus {
   All,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LogsFocus {
+  Failure,
+  All,
+}
+
+impl LogsFocus {
+  pub(crate) const ALL: [Self; 2] = [Self::Failure, Self::All];
+
+  pub(crate) const fn as_str(self) -> &'static str {
+    match self {
+      Self::Failure => "failure",
+      Self::All => "all",
+    }
+  }
+}
+
 impl TimelineFocus {
   pub(crate) const ALL: [Self; 2] = [Self::Failure, Self::All];
 
@@ -165,16 +191,18 @@ pub(crate) enum RawEvidenceKind {
   Entry,
   Span,
   Snapshot,
+  Log,
 }
 
 impl RawEvidenceKind {
-  pub(crate) const ALL: [Self; 3] = [Self::Entry, Self::Span, Self::Snapshot];
+  pub(crate) const ALL: [Self; 4] = [Self::Entry, Self::Span, Self::Snapshot, Self::Log];
 
   pub(crate) const fn as_str(self) -> &'static str {
     match self {
       Self::Entry => "entry",
       Self::Span => "span",
       Self::Snapshot => "snapshot",
+      Self::Log => "log",
     }
   }
 

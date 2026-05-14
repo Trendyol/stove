@@ -33,7 +33,14 @@ object TraceReportBuilder {
     val options = Stove.options()
     val report = Stove.reporter().dumpIfFailed(options.failureRenderer)
     val traceTree = getColoredTraceTreeIfEnabled()
-    return buildReport(report, traceTree)
+    val extraSections = Stove
+      .failureReportContributors()
+      .mapNotNull { contributor ->
+        runCatching { contributor.contribute(Stove.reporter().currentTestId()) }
+          .getOrNull()
+          ?.takeIf(String::isNotBlank)
+      }
+    return buildReport(report, traceTree, extraSections)
   }
 
   /**
@@ -55,7 +62,7 @@ object TraceReportBuilder {
         }
       }.getOrElse { "" }
 
-  private fun buildReport(stoveReport: String, traceTree: String): String = buildString {
+  private fun buildReport(stoveReport: String, traceTree: String, extraSections: List<String>): String = buildString {
     if (stoveReport.isNotEmpty()) {
       append(stoveReport)
     }
@@ -63,6 +70,10 @@ object TraceReportBuilder {
       if (isNotEmpty()) appendLine().appendLine()
       appendLine(buildColoredHeader())
       append(traceTree)
+    }
+    extraSections.forEach { section ->
+      if (isNotEmpty()) appendLine().appendLine()
+      append(section)
     }
   }
 

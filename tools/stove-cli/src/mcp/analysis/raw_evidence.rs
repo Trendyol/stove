@@ -10,12 +10,14 @@ use super::common::display_error;
 use super::common::fallback_message;
 use super::common::output;
 use super::evidence::entry_preview;
+use super::evidence::log_preview;
 use super::evidence::snapshot_detail;
 use super::evidence::span_preview;
 use crate::mcp::args::Budget;
 use crate::mcp::args::RawEvidenceArgs;
 use crate::mcp::args::parse;
 use crate::mcp::contract::RawEvidenceKind;
+use crate::storage::models::LogQuery;
 
 impl Analyzer {
   pub(super) fn raw_evidence(&self, arguments: Value) -> Result<ToolOutput, String> {
@@ -91,12 +93,45 @@ impl Analyzer {
           })?;
         json!({ "kind": RawEvidenceKind::Snapshot.as_str(), "evidence": snapshot_detail(&snapshot, None, budget.raw_string_chars) })
       }
+      Some(RawEvidenceKind::Log) => {
+        let query = LogQuery {
+          limit: 2_000,
+          ..LogQuery::default()
+        };
+        let logs = if let Some(trace_id) = args.trace_id.as_deref() {
+          self
+            .repository
+            .get_logs_for_trace(trace_id, &query)
+            .map_err(display_error)?
+        } else {
+          let run_id = args.run_id.as_deref().ok_or_else(|| {
+            "raw log lookup requires trace_id or run_id + optional test_id".to_string()
+          })?;
+          if let Some(test_id) = args.test_id.as_deref() {
+            self
+              .repository
+              .get_logs_for_test(run_id, test_id, &query)
+              .map_err(display_error)?
+          } else {
+            self
+              .repository
+              .get_logs_for_run(run_id, &query)
+              .map_err(display_error)?
+          }
+        };
+        let log = logs
+          .into_iter()
+          .find(|log| log.id == args.id)
+          .ok_or_else(|| format!("log {} was not found", args.id))?;
+        json!({ "kind": RawEvidenceKind::Log.as_str(), "evidence": log_preview(&log, budget.raw_string_chars) })
+      }
       None => {
         return Err(format!(
-          "kind must be one of: {}, {}, {}",
+          "kind must be one of: {}, {}, {}, {}",
           RawEvidenceKind::Entry.as_str(),
           RawEvidenceKind::Span.as_str(),
-          RawEvidenceKind::Snapshot.as_str()
+          RawEvidenceKind::Snapshot.as_str(),
+          RawEvidenceKind::Log.as_str()
         ));
       }
     };

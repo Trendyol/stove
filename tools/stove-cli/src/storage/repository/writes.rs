@@ -10,6 +10,7 @@ use super::sql::non_empty;
 use crate::error::Result;
 use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::NewEntry;
+use crate::storage::models::NewLogRecord;
 use crate::storage::models::NewSpan;
 use crate::storage::models::RunStatus;
 
@@ -137,10 +138,16 @@ impl Repository {
     Ok(())
   }
 
+  pub fn save_log(&self, log: &NewLogRecord) -> Result<()> {
+    let db = self.lock_write_db();
+    save_log_on(db.conn(), log)?;
+    Ok(())
+  }
+
   pub fn clear_all(&self) -> Result<()> {
     let db = self.lock_write_db();
     db.conn().execute_batch(
-      "DELETE FROM snapshots; DELETE FROM spans; DELETE FROM entries; DELETE FROM tests; DELETE FROM runs;",
+      "DELETE FROM logs; DELETE FROM snapshots; DELETE FROM spans; DELETE FROM entries; DELETE FROM tests; DELETE FROM runs;",
     )?;
     Ok(())
   }
@@ -226,6 +233,7 @@ fn apply_persisted_event(
       state_json,
       summary,
     } => save_snapshot_on(conn, run_id, test_id, system, state_json, summary),
+    PersistedDashboardEvent::LogRecorded(log) => save_log_on(conn, log),
   }
 }
 
@@ -354,6 +362,34 @@ fn save_snapshot_on(
   conn.execute(
     "INSERT INTO snapshots (run_id, test_id, system, state_json, summary) VALUES (?1, ?2, ?3, ?4, ?5)",
     rusqlite::params![run_id, test_id, system, state_json, summary],
+  )?;
+  Ok(())
+}
+
+fn save_log_on(conn: &rusqlite::Connection, log: &NewLogRecord) -> Result<()> {
+  conn.execute(
+    "INSERT INTO logs (run_id, test_id, trace_id, span_id, timestamp, observed_timestamp, severity_text, severity_number, logger, thread, body, exception_type, exception_message, exception_stack_trace, attributes, correlation_source, source, late, truncated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+    rusqlite::params![
+      log.run_id,
+      non_empty(&log.test_id),
+      non_empty(&log.trace_id),
+      non_empty(&log.span_id),
+      log.timestamp,
+      log.observed_timestamp,
+      log.severity_text,
+      log.severity_number,
+      log.logger,
+      log.thread,
+      log.body,
+      non_empty(&log.exception_type),
+      non_empty(&log.exception_message),
+      non_empty(&log.exception_stack_trace),
+      non_empty(&log.attributes),
+      log.correlation_source,
+      log.source,
+      log.late,
+      log.truncated
+    ],
   )?;
   Ok(())
 }

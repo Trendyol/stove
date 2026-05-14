@@ -165,6 +165,31 @@ pub struct Snapshot {
   pub summary: String,
 }
 
+/// A captured application log record.
+#[derive(Debug, Clone, Serialize)]
+pub struct LogRecord {
+  pub id: i64,
+  pub run_id: String,
+  pub test_id: Option<String>,
+  pub trace_id: Option<String>,
+  pub span_id: Option<String>,
+  pub timestamp: String,
+  pub observed_timestamp: String,
+  pub severity_text: String,
+  pub severity_number: i32,
+  pub logger: String,
+  pub thread: String,
+  pub body: String,
+  pub exception_type: Option<String>,
+  pub exception_message: Option<String>,
+  pub exception_stack_trace: Option<String>,
+  pub attributes: Option<String>,
+  pub correlation_source: String,
+  pub source: String,
+  pub late: bool,
+  pub truncated: bool,
+}
+
 // --- Input structs for write operations ---
 
 /// Data required to save a new report entry.
@@ -201,4 +226,39 @@ pub struct NewSpan {
   pub exception_type: String,
   pub exception_message: String,
   pub exception_stack_trace: String,
+}
+
+/// Data required to save a new captured log record.
+#[derive(Clone, Debug, Default)]
+pub struct NewLogRecord {
+  pub run_id: String,
+  pub test_id: String,
+  pub trace_id: String,
+  pub span_id: String,
+  pub timestamp: String,
+  pub observed_timestamp: String,
+  pub severity_text: String,
+  pub severity_number: i32,
+  pub logger: String,
+  pub thread: String,
+  pub body: String,
+  pub exception_type: String,
+  pub exception_message: String,
+  pub exception_stack_trace: String,
+  pub attributes: String,
+  pub correlation_source: String,
+  pub source: String,
+  pub late: bool,
+  pub truncated: bool,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct LogQuery {
+  pub level: Option<String>,
+  pub min_severity: Option<i32>,
+  pub logger: Option<String>,
+  pub thread: Option<String>,
+  pub q: Option<String>,
+  pub cursor: Option<i64>,
+  pub limit: usize,
 }

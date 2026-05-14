@@ -17,9 +17,11 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
+use self::sql::LOG_COLUMNS;
 use self::sql::RUN_COLUMNS;
 use self::sql::SPAN_COLUMNS;
 use self::sql::entry_from_row;
+use self::sql::log_from_row;
 use self::sql::parse_run_status;
 use self::sql::run_from_row;
 use self::sql::snapshot_from_row;
@@ -29,6 +31,8 @@ use crate::error::Result;
 use crate::storage::database::Database;
 use crate::storage::models::AppSummary;
 use crate::storage::models::Entry;
+use crate::storage::models::LogQuery;
+use crate::storage::models::LogRecord;
 use crate::storage::models::Run;
 use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
@@ -166,6 +170,92 @@ impl Repository {
     let mut stmt = db.conn().prepare(&sql)?;
     let rows = stmt
       .query_map(rusqlite::params![trace_id], span_from_row)?
+      .filter_map(|r| r.ok())
+      .collect();
+    Ok(rows)
+  }
+
+  pub fn get_logs_for_test(
+    &self,
+    run_id: &str,
+    test_id: &str,
+    query: &LogQuery,
+  ) -> Result<Vec<LogRecord>> {
+    self.query_logs(
+      "run_id = ? AND test_id = ?",
+      vec![
+        rusqlite::types::Value::Text(run_id.to_string()),
+        rusqlite::types::Value::Text(test_id.to_string()),
+      ],
+      query,
+    )
+  }
+
+  pub fn get_logs_for_run(&self, run_id: &str, query: &LogQuery) -> Result<Vec<LogRecord>> {
+    self.query_logs(
+      "run_id = ?",
+      vec![rusqlite::types::Value::Text(run_id.to_string())],
+      query,
+    )
+  }
+
+  pub fn get_logs_for_trace(&self, trace_id: &str, query: &LogQuery) -> Result<Vec<LogRecord>> {
+    self.query_logs(
+      "trace_id = ?",
+      vec![rusqlite::types::Value::Text(trace_id.to_string())],
+      query,
+    )
+  }
+
+  fn query_logs(
+    &self,
+    base_filter: &str,
+    mut params: Vec<rusqlite::types::Value>,
+    query: &LogQuery,
+  ) -> Result<Vec<LogRecord>> {
+    let db = self.lock_read_db();
+    let mut filters = vec![base_filter.to_string()];
+    if let Some(level) = query.level.as_deref().filter(|value| !value.is_empty()) {
+      filters.push("severity_text = ?".to_string());
+      params.push(rusqlite::types::Value::Text(level.to_ascii_uppercase()));
+    }
+    if let Some(min_severity) = query.min_severity {
+      filters.push("severity_number >= ?".to_string());
+      params.push(rusqlite::types::Value::Integer(min_severity.into()));
+    }
+    if let Some(logger) = query.logger.as_deref().filter(|value| !value.is_empty()) {
+      filters.push("logger LIKE ?".to_string());
+      params.push(rusqlite::types::Value::Text(format!("%{logger}%")));
+    }
+    if let Some(thread) = query.thread.as_deref().filter(|value| !value.is_empty()) {
+      filters.push("thread = ?".to_string());
+      params.push(rusqlite::types::Value::Text(thread.to_string()));
+    }
+    if let Some(search) = query.q.as_deref().filter(|value| !value.is_empty()) {
+      filters.push("(body LIKE ? OR logger LIKE ? OR thread LIKE ? OR exception_message LIKE ? OR attributes LIKE ?)".to_string());
+      let value = rusqlite::types::Value::Text(format!("%{search}%"));
+      params.extend([
+        value.clone(),
+        value.clone(),
+        value.clone(),
+        value.clone(),
+        value,
+      ]);
+    }
+    if let Some(cursor) = query.cursor {
+      filters.push("id > ?".to_string());
+      params.push(rusqlite::types::Value::Integer(cursor));
+    }
+    params.push(rusqlite::types::Value::Integer(
+      query.limit.clamp(1, 2_000) as i64,
+    ));
+    let sql = format!(
+      "SELECT {LOG_COLUMNS} FROM logs WHERE {} ORDER BY timestamp, id LIMIT ?",
+      filters.join(" AND ")
+    );
+    let mut stmt = db.conn().prepare(&sql)?;
+    let rows = stmt
+      .query_map(rusqlite::params_from_iter(params.iter()), log_from_row)?
       .filter_map(|r| r.ok())
       .collect();
     Ok(rows)

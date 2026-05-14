@@ -10,6 +10,8 @@ use crate::ingest::FlushBehavior;
 use crate::ingest::LiveDashboardEvent;
 use crate::ingest::LiveDashboardPayload;
 use crate::ingest::LiveEntryRecordedPayload;
+use crate::ingest::LiveLogRecordedPayload;
+use crate::ingest::LiveLogsDroppedPayload;
 use crate::ingest::LiveRunEndedPayload;
 use crate::ingest::LiveRunStartedPayload;
 use crate::ingest::LiveSnapshotPayload;
@@ -19,6 +21,7 @@ use crate::ingest::LiveTestStartedPayload;
 use crate::ingest::PersistedDashboardEvent;
 use crate::proto;
 use crate::storage::models::NewEntry;
+use crate::storage::models::NewLogRecord;
 use crate::storage::models::NewSpan;
 
 use super::convert::PreparedDashboardEvent;
@@ -136,6 +139,9 @@ pub(super) fn prepare_test_ended(
 ) -> AppResult<PreparedDashboardEvent> {
   ensure_test_known(state, run_id, &event.test_id)?;
   let ended_at = format_timestamp(event.timestamp.as_ref());
+  state
+    .ended_tests
+    .insert((run_id.to_string(), event.test_id.clone()));
   Ok(PreparedDashboardEvent {
     live: live_event(
       run_id,
@@ -309,6 +315,136 @@ pub(super) fn prepare_snapshot(
       state_json: event.state_json.clone(),
       summary: event.summary.clone(),
     },
+    flush: FlushBehavior::Deferred,
+  })
+}
+
+pub(super) fn prepare_log_recorded(
+  state: &mut LiveState,
+  run_id: &str,
+  event: &proto::LogRecordedEvent,
+) -> AppResult<PreparedDashboardEvent> {
+  ensure_run_known(state, run_id)?;
+  if !event.trace_id.is_empty() && !event.test_id.is_empty() {
+    state.traces.insert(
+      (run_id.to_string(), event.trace_id.clone()),
+      event.test_id.clone(),
+    );
+  }
+  let timestamp = format_timestamp(event.timestamp.as_ref());
+  let observed_timestamp = format_timestamp(event.observed_timestamp.as_ref());
+  let attributes = serde_json::to_string(&event.attributes)?;
+  let late = !event.test_id.is_empty()
+    && state
+      .ended_tests
+      .contains(&(run_id.to_string(), event.test_id.clone()));
+  let log = NewLogRecord {
+    run_id: run_id.to_string(),
+    test_id: event.test_id.clone(),
+    trace_id: event.trace_id.clone(),
+    span_id: event.span_id.clone(),
+    timestamp: timestamp.clone(),
+    observed_timestamp: observed_timestamp.clone(),
+    severity_text: event.severity_text.clone(),
+    severity_number: event.severity_number,
+    logger: event.logger.clone(),
+    thread: event.thread.clone(),
+    body: event.body.clone(),
+    exception_type: event.exception_type.clone(),
+    exception_message: event.exception_message.clone(),
+    exception_stack_trace: event.exception_stack_trace.clone(),
+    attributes: attributes.clone(),
+    correlation_source: event.correlation_source.clone(),
+    source: event.source.clone(),
+    late,
+    truncated: event.truncated,
+  };
+
+  Ok(PreparedDashboardEvent {
+    live: live_event(
+      run_id,
+      event_type::LOG_RECORDED,
+      LiveDashboardPayload::LogRecorded(LiveLogRecordedPayload {
+        id: 0,
+        test_id: non_empty(&event.test_id),
+        trace_id: non_empty(&event.trace_id),
+        span_id: non_empty(&event.span_id),
+        timestamp,
+        observed_timestamp,
+        severity_text: event.severity_text.clone(),
+        severity_number: event.severity_number,
+        logger: event.logger.clone(),
+        thread: event.thread.clone(),
+        body: event.body.clone(),
+        exception_type: non_empty(&event.exception_type),
+        exception_message: non_empty(&event.exception_message),
+        exception_stack_trace: non_empty(&event.exception_stack_trace),
+        attributes: non_empty(&attributes),
+        correlation_source: event.correlation_source.clone(),
+        source: event.source.clone(),
+        late,
+        truncated: event.truncated,
+      }),
+    ),
+    persisted: PersistedDashboardEvent::LogRecorded(log),
+    flush: FlushBehavior::Deferred,
+  })
+}
+
+pub(super) fn prepare_logs_dropped(
+  state: &mut LiveState,
+  run_id: &str,
+  event: &proto::LogsDroppedEvent,
+) -> AppResult<PreparedDashboardEvent> {
+  ensure_run_known(state, run_id)?;
+  let timestamp = format_timestamp(event.timestamp.as_ref());
+  let attributes = serde_json::to_string(&serde_json::json!({
+    "dropped_count": event.dropped_count,
+    "reason": event.reason,
+  }))?;
+  let late = !event.test_id.is_empty()
+    && state
+      .ended_tests
+      .contains(&(run_id.to_string(), event.test_id.clone()));
+  let body = format!(
+    "Dropped {} log record(s): {}",
+    event.dropped_count, event.reason
+  );
+  let log = NewLogRecord {
+    run_id: run_id.to_string(),
+    test_id: event.test_id.clone(),
+    trace_id: event.trace_id.clone(),
+    span_id: String::new(),
+    timestamp: timestamp.clone(),
+    observed_timestamp: timestamp.clone(),
+    severity_text: "WARN".to_string(),
+    severity_number: 13,
+    logger: "stove.logging".to_string(),
+    thread: String::new(),
+    body: body.clone(),
+    exception_type: String::new(),
+    exception_message: String::new(),
+    exception_stack_trace: String::new(),
+    attributes: attributes.clone(),
+    correlation_source: "DROPPED_MARKER".to_string(),
+    source: "stove".to_string(),
+    late,
+    truncated: false,
+  };
+
+  Ok(PreparedDashboardEvent {
+    live: live_event(
+      run_id,
+      event_type::LOGS_DROPPED,
+      LiveDashboardPayload::LogsDropped(LiveLogsDroppedPayload {
+        test_id: non_empty(&event.test_id),
+        trace_id: non_empty(&event.trace_id),
+        timestamp,
+        dropped_count: event.dropped_count,
+        reason: event.reason.clone(),
+      }),
+    ),
+    persisted: PersistedDashboardEvent::LogRecorded(log),
     flush: FlushBehavior::Deferred,
   })
 }

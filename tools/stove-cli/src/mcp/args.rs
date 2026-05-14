@@ -72,6 +72,19 @@ pub(crate) struct TraceArgs {
   pub(crate) view: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Default)]
+pub(crate) struct LogsArgs {
+  #[serde(flatten)]
+  pub(crate) common: CommonArgs,
+  pub(crate) run_id: Option<String>,
+  pub(crate) test_id: Option<String>,
+  pub(crate) trace_id: Option<String>,
+  pub(crate) focus: Option<String>,
+  pub(crate) level: Option<String>,
+  pub(crate) logger: Option<String>,
+  pub(crate) q: Option<String>,
+}
+
 #[derive(Debug, Deserialize)]
 pub(crate) struct SnapshotArgs {
   #[serde(flatten)]
@@ -97,6 +110,7 @@ pub(crate) struct Budget {
   pub(crate) raw_string_chars: usize,
   pub(crate) timeline_events: usize,
   pub(crate) trace_spans: usize,
+  pub(crate) logs: usize,
   pub(crate) failed_entries: usize,
   pub(crate) snapshots: usize,
 }
@@ -112,6 +126,7 @@ impl Budget {
         raw_string_chars: 800,
         timeline_events: 5,
         trace_spans: 8,
+        logs: 10,
         failed_entries: 3,
         snapshots: 3,
       },
@@ -120,6 +135,7 @@ impl Budget {
         raw_string_chars: 12_000,
         timeline_events: 100,
         trace_spans: 200,
+        logs: 500,
         failed_entries: 50,
         snapshots: 50,
       },
@@ -128,6 +144,7 @@ impl Budget {
         raw_string_chars: 4_000,
         timeline_events: 15,
         trace_spans: 40,
+        logs: 100,
         failed_entries: 10,
         snapshots: 10,
       },

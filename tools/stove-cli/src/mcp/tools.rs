@@ -1,7 +1,8 @@
 use serde_json::{Value, json};
 
 use super::contract::{
-  ArgName, BudgetValue, RawEvidenceKind, RunStatusValue, TimelineFocus, ToolName, TraceView,
+  ArgName, BudgetValue, LogsFocus, RawEvidenceKind, RunStatusValue, TimelineFocus, ToolName,
+  TraceView,
 };
 
 pub(crate) fn definitions() -> Value {
@@ -74,6 +75,26 @@ impl ToolSpec {
           FieldSpec::string(ArgName::TraceId),
           FieldSpec::string_enum(ArgName::View, SchemaEnum::TraceView)
             .string_default(TraceView::CriticalPath.as_str()),
+          FieldSpec::budget(),
+          FieldSpec::max_chars(),
+        ],
+      },
+      ToolName::Logs => Self {
+        tool,
+        description: "Return captured logs by run_id + test_id or explicit trace_id. Failure-focused WARN+ logs by default.",
+        fields: vec![
+          FieldSpec::string(ArgName::RunId),
+          FieldSpec::string(ArgName::TestId),
+          FieldSpec::string(ArgName::TraceId),
+          FieldSpec::string_enum(ArgName::Focus, SchemaEnum::LogsFocus)
+            .string_default(LogsFocus::Failure.as_str()),
+          FieldSpec::string(ArgName::Level)
+            .description("Optional exact level such as ERROR, WARN, INFO, DEBUG, or TRACE."),
+          FieldSpec::string(ArgName::Logger).description("Optional logger name substring."),
+          FieldSpec::string(ArgName::Q).description(
+            "Optional search string across message, logger, thread, exception, and attributes.",
+          ),
+          FieldSpec::limit(),
           FieldSpec::budget(),
           FieldSpec::max_chars(),
         ],
@@ -285,6 +306,7 @@ enum FieldKind {
 #[derive(Debug, Clone, Copy)]
 enum SchemaEnum {
   Budget,
+  LogsFocus,
   TimelineFocus,
   TraceView,
   RawEvidenceKind,
@@ -298,6 +320,7 @@ impl SchemaEnum {
         .into_iter()
         .map(BudgetValue::as_str)
         .collect(),
+      Self::LogsFocus => LogsFocus::ALL.into_iter().map(LogsFocus::as_str).collect(),
       Self::TimelineFocus => TimelineFocus::ALL
         .into_iter()
         .map(TimelineFocus::as_str)
@@ -398,7 +421,8 @@ mod tests {
       json!([
         RawEvidenceKind::Entry.as_str(),
         RawEvidenceKind::Span.as_str(),
-        RawEvidenceKind::Snapshot.as_str()
+        RawEvidenceKind::Snapshot.as_str(),
+        RawEvidenceKind::Log.as_str()
       ])
     );
   }

@@ -28,6 +28,7 @@ include(
   "lib:stove-mongodb",
   "lib:stove-cassandra",
   "lib:stove-dashboard-api",
+  "lib:stove-logging",
   "lib:stove-dashboard"
 )
 include(

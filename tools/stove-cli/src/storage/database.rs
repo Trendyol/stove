@@ -19,6 +19,7 @@ const MIGRATIONS: &[(&str, &str)] = &[
     "V3__test_path",
     include_str!("migrations/V3__test_path.sql"),
   ),
+  ("V4__logs", include_str!("migrations/V4__logs.sql")),
 ];
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.

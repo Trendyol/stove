@@ -147,6 +147,26 @@ async fn failure_detail_includes_timeline_trace_and_snapshot_summaries() {
     "expired card",
     "stack line 1\nstack line 2",
   );
+  server.seed_log(
+    "run-1",
+    "test-1",
+    "trace-1",
+    "span-2",
+    "WARN",
+    13,
+    "checkout.PaymentClient",
+    "payment retry failed",
+  );
+  server.seed_log(
+    "run-1",
+    "test-1",
+    "trace-1",
+    "span-2",
+    "ERROR",
+    17,
+    "checkout.PaymentClient",
+    "payment declined",
+  );
   server.seed_snapshot(
     "run-1",
     "test-1",
@@ -169,10 +189,83 @@ async fn failure_detail_includes_timeline_trace_and_snapshot_summaries() {
   assert_eq!(content["timeline_summary"]["failed_entries"], 1);
   assert_eq!(content["trace_summary"]["trace_status"], "correlated");
   assert_eq!(content["trace_summary"]["exception_spans"], 1);
+  assert_eq!(content["log_summary"]["warn_or_error_logs"], 2);
+  assert_eq!(
+    content["log_summary"]["last_warn_or_error_logs"][1]["message"],
+    "payment declined"
+  );
   assert_eq!(content["snapshot_summaries"][0]["system"], "Kafka");
   assert_eq!(
     content["failed_entries"][0]["input"]["authorization"],
     "[REDACTED]"
+  );
+}
+
+#[tokio::test]
+async fn logs_tool_returns_failure_focus_and_raw_log_evidence() {
+  let server = TestServer::start().await;
+  server.seed_run("run-logs", "checkout-api");
+  server.seed_test("run-logs", "test-logs", "captures logs", "CheckoutSpec");
+  server.seed_log(
+    "run-logs",
+    "test-logs",
+    "trace-logs",
+    "span-info",
+    "INFO",
+    9,
+    "checkout.Noisy",
+    "normal progress",
+  );
+  server.seed_log(
+    "run-logs",
+    "test-logs",
+    "trace-logs",
+    "span-warn",
+    "WARN",
+    13,
+    "checkout.PaymentClient",
+    "retrying payment",
+  );
+  server.seed_log(
+    "run-logs",
+    "test-logs",
+    "trace-logs",
+    "span-error",
+    "ERROR",
+    17,
+    "checkout.PaymentClient",
+    "payment failed",
+  );
+
+  let logs = mcp_tool(
+    &server,
+    "stove_logs",
+    json!({ "run_id": "run-logs", "test_id": "test-logs" }),
+  )
+  .await;
+  let content = &logs["result"]["structuredContent"];
+  let items = content["logs"].as_array().unwrap();
+
+  assert_eq!(items.len(), 2);
+  assert_eq!(items[0]["level"], "WARN");
+  assert_eq!(items[1]["level"], "ERROR");
+  assert_eq!(content["dropped_logs"], 0);
+
+  let raw = mcp_tool(
+    &server,
+    "stove_raw_evidence",
+    json!({
+      "kind": "log",
+      "id": items[1]["id"],
+      "run_id": "run-logs",
+      "test_id": "test-logs"
+    }),
+  )
+  .await;
+
+  assert_eq!(
+    raw["result"]["structuredContent"]["raw_evidence"]["evidence"]["message"],
+    "payment failed"
   );
 }
 

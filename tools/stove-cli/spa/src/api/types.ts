@@ -10,6 +10,8 @@ export const EVENT_TYPE = {
   ENTRY_RECORDED: "entry_recorded",
   SPAN_RECORDED: "span_recorded",
   SNAPSHOT: "snapshot",
+  LOG_RECORDED: "log_recorded",
+  LOGS_DROPPED: "logs_dropped",
 } as const;
 
 export type EventType = (typeof EVENT_TYPE)[keyof typeof EVENT_TYPE];
@@ -98,6 +100,29 @@ export interface Snapshot {
   summary: string;
 }
 
+export interface LogRecord {
+  id: LiveRecordId;
+  run_id: string;
+  test_id: string | null;
+  trace_id: string | null;
+  span_id: string | null;
+  timestamp: string;
+  observed_timestamp: string;
+  severity_text: string;
+  severity_number: number;
+  logger: string;
+  thread: string;
+  body: string;
+  exception_type: string | null;
+  exception_message: string | null;
+  exception_stack_trace: string | null;
+  attributes: string | null;
+  correlation_source: string;
+  source: string;
+  late: boolean;
+  truncated: boolean;
+}
+
 export interface LiveRunStartedPayload {
   app_name: string;
   started_at: string;
@@ -172,6 +197,36 @@ export interface LiveSnapshotPayload {
   summary: string;
 }
 
+export interface LiveLogRecordedPayload {
+  id: LiveRecordId;
+  test_id: string | null;
+  trace_id: string | null;
+  span_id: string | null;
+  timestamp: string;
+  observed_timestamp: string;
+  severity_text: string;
+  severity_number: number;
+  logger: string;
+  thread: string;
+  body: string;
+  exception_type: string | null;
+  exception_message: string | null;
+  exception_stack_trace: string | null;
+  attributes: string | null;
+  correlation_source: string;
+  source: string;
+  late: boolean;
+  truncated: boolean;
+}
+
+export interface LiveLogsDroppedPayload {
+  test_id: string | null;
+  trace_id: string | null;
+  dropped_count: number;
+  reason: string;
+  timestamp: string;
+}
+
 interface LiveEventBase {
   seq: number;
   run_id: string;
@@ -193,4 +248,12 @@ export type LiveDashboardEvent =
       event_type: typeof EVENT_TYPE.SPAN_RECORDED;
       payload: LiveSpanRecordedPayload;
     })
-  | (LiveEventBase & { event_type: typeof EVENT_TYPE.SNAPSHOT; payload: LiveSnapshotPayload });
+  | (LiveEventBase & { event_type: typeof EVENT_TYPE.SNAPSHOT; payload: LiveSnapshotPayload })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.LOG_RECORDED;
+      payload: LiveLogRecordedPayload;
+    })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.LOGS_DROPPED;
+      payload: LiveLogsDroppedPayload;
+    });

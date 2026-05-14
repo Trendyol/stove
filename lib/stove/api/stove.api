@@ -327,6 +327,10 @@ public final class com/trendyol/stove/reporting/AssertionResult$Companion {
 	public final fun of (Z)Lcom/trendyol/stove/reporting/AssertionResult;
 }
 
+public abstract interface class com/trendyol/stove/reporting/FailureReportContributor {
+	public abstract fun contribute (Ljava/lang/String;)Ljava/lang/String;
+}
+
 public final class com/trendyol/stove/reporting/JsonReportEntry {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -500,6 +504,17 @@ public abstract interface class com/trendyol/stove/reporting/SpanListenerRegistr
 	public abstract fun addSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
 }
 
+public final class com/trendyol/stove/reporting/StoveMdc {
+	public static final field INSTANCE Lcom/trendyol/stove/reporting/StoveMdc;
+	public static final field SPEC_NAME_KEY Ljava/lang/String;
+	public static final field TEST_ID_KEY Ljava/lang/String;
+	public static final field TEST_NAME_KEY Ljava/lang/String;
+	public final fun install (Lcom/trendyol/stove/reporting/StoveTestContext;)Ljava/util/Map;
+	public final fun mergedValues (Lcom/trendyol/stove/reporting/StoveTestContext;)Ljava/util/Map;
+	public final fun restore (Ljava/util/Map;)V
+	public final fun values (Lcom/trendyol/stove/reporting/StoveTestContext;)Ljava/util/Map;
+}
+
 public final class com/trendyol/stove/reporting/StoveReporter {
 	public static final field Companion Lcom/trendyol/stove/reporting/StoveReporter$Companion;
 	public fun <init> ()V
@@ -560,6 +575,32 @@ public final class com/trendyol/stove/reporting/StoveTestContextHolder {
 
 public final class com/trendyol/stove/reporting/StoveTestContextKt {
 	public static final fun currentStoveTestContext (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/reporting/StoveTestCoroutineContextElement : kotlin/coroutines/AbstractCoroutineContextElement, kotlinx/coroutines/ThreadContextElement {
+	public static final field Key Lcom/trendyol/stove/reporting/StoveTestCoroutineContextElement$Key;
+	public fun <init> (Lcom/trendyol/stove/reporting/StoveTestContext;Z)V
+	public synthetic fun <init> (Lcom/trendyol/stove/reporting/StoveTestContext;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Lcom/trendyol/stove/reporting/StoveTestCoroutineContextElement$PreviousState;)V
+	public synthetic fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Ljava/lang/Object;)V
+	public fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Lcom/trendyol/stove/reporting/StoveTestCoroutineContextElement$PreviousState;
+	public synthetic fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/reporting/StoveTestCoroutineContextElement$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public final class com/trendyol/stove/reporting/StoveTestCoroutineContextElement$PreviousState {
+	public fun <init> (Lcom/trendyol/stove/reporting/StoveTestContext;Ljava/util/Map;)V
+	public final fun component1 ()Lcom/trendyol/stove/reporting/StoveTestContext;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Lcom/trendyol/stove/reporting/StoveTestContext;Ljava/util/Map;)Lcom/trendyol/stove/reporting/StoveTestCoroutineContextElement$PreviousState;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/reporting/StoveTestCoroutineContextElement$PreviousState;Lcom/trendyol/stove/reporting/StoveTestContext;Ljava/util/Map;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/StoveTestCoroutineContextElement$PreviousState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMdc ()Ljava/util/Map;
+	public final fun getTestContext ()Lcom/trendyol/stove/reporting/StoveTestContext;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/trendyol/stove/reporting/StoveTestErrorException : java/lang/Exception {
@@ -916,6 +957,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public fun <init> ()V
 	public fun <init> (Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun addFailureReportContributor (Lcom/trendyol/stove/reporting/FailureReportContributor;)V
 	public final fun addReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public final fun allRegisteredSystems ()Ljava/util/Collection;
 	public final fun allSystems ()Ljava/util/Collection;
@@ -930,6 +972,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public final fun getRunMigrationsAlways ()Z
 	public final fun recordReport (Lcom/trendyol/stove/reporting/ReportEntry;)V
 	public final fun registerForDispose (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
+	public final fun removeFailureReportContributor (Lcom/trendyol/stove/reporting/FailureReportContributor;)V
 	public final fun removeReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun startTest (Lcom/trendyol/stove/reporting/StoveTestContext;)V
@@ -937,6 +980,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 }
 
 public final class com/trendyol/stove/system/Stove$Companion {
+	public final fun failureReportContributors ()Ljava/util/List;
 	public final fun getSystem (Lkotlin/reflect/KClass;)Lcom/trendyol/stove/system/abstractions/PluggedSystem;
 	public final fun getSystemOrNone (Lkotlin/reflect/KClass;)Larrow/core/Option;
 	public final fun instanceInitialized ()Z

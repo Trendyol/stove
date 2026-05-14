@@ -13,6 +13,7 @@ use super::common::fallback_message;
 use super::common::groups_have_running_runs;
 use super::common::is_failed_status;
 use super::common::is_failed_test;
+use super::common::log_summary;
 use super::common::output;
 use super::common::selected_runs;
 use super::common::selector_rules;
@@ -28,6 +29,7 @@ use crate::mcp::args::FailuresArgs;
 use crate::mcp::args::parse;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
+use crate::storage::models::LogQuery;
 use crate::storage::models::RunStatus;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
@@ -106,6 +108,17 @@ impl Analyzer {
       .repository
       .get_spans_for_test(&args.run_id, &args.test_id)
       .map_err(display_error)?;
+    let logs = self
+      .repository
+      .get_logs_for_test(
+        &args.run_id,
+        &args.test_id,
+        &LogQuery {
+          limit: budget.logs,
+          ..LogQuery::default()
+        },
+      )
+      .map_err(display_error)?;
 
     let failed_entries: Vec<&Entry> = entries
       .iter()
@@ -146,13 +159,16 @@ impl Analyzer {
         "entries": entries.len().saturating_sub(budget.timeline_events),
         "failed_entries": failed_entries.len().saturating_sub(budget.failed_entries),
         "spans": spans.len().saturating_sub(budget.trace_spans),
+        "logs": logs.len().saturating_sub(budget.logs),
         "snapshots": snapshots.len().saturating_sub(snapshot_summaries.len()),
       },
       "timeline_summary": timeline_summary,
       "trace_summary": trace_summary,
+      "log_summary": log_summary(&logs, &args.run_id, &args.test_id, budget.logs, budget.string_chars),
       "snapshot_summaries": snapshot_summaries,
       "timeline_tool_call": exact_test_tool_call(ToolName::Timeline, &args.run_id, &args.test_id),
       "trace_tool_call": exact_test_tool_call(ToolName::Trace, &args.run_id, &args.test_id),
+      "logs_tool_call": exact_test_tool_call(ToolName::Logs, &args.run_id, &args.test_id),
       "snapshot_tool_call": exact_test_tool_call(ToolName::Snapshot, &args.run_id, &args.test_id),
       "fallback": fallback_message(),
     });

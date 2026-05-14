@@ -7,6 +7,7 @@ use crate::mcp::contract::ArgName;
 use crate::mcp::contract::RawEvidenceKind;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
+use crate::storage::models::LogRecord;
 use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 
@@ -47,6 +48,35 @@ pub(super) fn span_preview(span: &Span, max_chars: usize) -> Value {
     "exception_type": span.exception_type,
     "exception_message": clip_opt(span.exception_message.as_deref(), max_chars),
     "exception_stack_trace": clip_opt(span.exception_stack_trace.as_deref(), max_chars),
+  })
+}
+
+pub(super) fn log_preview(log: &LogRecord, max_chars: usize) -> Value {
+  json!({
+    "id": log.id,
+    "timestamp": log.timestamp,
+    "level": log.severity_text,
+    "logger": log.logger,
+    "thread": log.thread,
+    "message": clip_string(&log.body, max_chars),
+    "test_id": log.test_id,
+    "trace_id": log.trace_id,
+    "span_id": log.span_id,
+    "exception_type": log.exception_type,
+    "exception_message": clip_opt(log.exception_message.as_deref(), max_chars),
+    "exception_stack_trace": clip_opt(log.exception_stack_trace.as_deref(), max_chars),
+    "attributes": preview_field(log.attributes.as_deref(), max_chars),
+    "correlation_source": log.correlation_source,
+    "source": log.source,
+    "late": log.late,
+    "truncated": log.truncated,
+    "raw_tool_call": tool_call(ToolName::RawEvidence, tool_args([
+      (ArgName::Kind, json!(RawEvidenceKind::Log.as_str())),
+      (ArgName::Id, json!(log.id)),
+      (ArgName::RunId, json!(&log.run_id)),
+      (ArgName::TestId, json!(&log.test_id)),
+      (ArgName::TraceId, json!(&log.trace_id)),
+    ])),
   })
 }
 

@@ -3,6 +3,7 @@
 //! nor the write impl has to depend on the other's internals.
 
 use crate::storage::models::Entry;
+use crate::storage::models::LogRecord;
 use crate::storage::models::Run;
 use crate::storage::models::RunStatus;
 use crate::storage::models::Snapshot;
@@ -12,6 +13,7 @@ use crate::storage::models::TestStatus;
 
 pub(super) const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, stove_version, systems";
 pub(super) const SPAN_COLUMNS: &str = "id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace";
+pub(super) const LOG_COLUMNS: &str = "id, run_id, test_id, trace_id, span_id, timestamp, observed_timestamp, severity_text, severity_number, logger, thread, body, exception_type, exception_message, exception_stack_trace, attributes, correlation_source, source, late, truncated";
 
 /// Convert empty strings to `None` for optional database fields.
 pub(super) fn non_empty(s: &str) -> Option<&str> {
@@ -90,6 +92,31 @@ pub(super) fn snapshot_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Sna
     system: row.get(3)?,
     state_json: row.get(4)?,
     summary: row.get(5)?,
+  })
+}
+
+pub(super) fn log_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<LogRecord> {
+  Ok(LogRecord {
+    id: row.get(0)?,
+    run_id: row.get(1)?,
+    test_id: row.get(2)?,
+    trace_id: row.get(3)?,
+    span_id: row.get(4)?,
+    timestamp: row.get(5)?,
+    observed_timestamp: row.get(6)?,
+    severity_text: row.get(7)?,
+    severity_number: row.get(8)?,
+    logger: row.get(9)?,
+    thread: row.get(10)?,
+    body: row.get(11)?,
+    exception_type: row.get(12)?,
+    exception_message: row.get(13)?,
+    exception_stack_trace: row.get(14)?,
+    attributes: row.get(15)?,
+    correlation_source: row.get(16)?,
+    source: row.get(17)?,
+    late: row.get(18)?,
+    truncated: row.get(19)?,
   })
 }
 

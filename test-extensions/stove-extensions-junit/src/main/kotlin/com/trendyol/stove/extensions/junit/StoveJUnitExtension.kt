@@ -1,5 +1,6 @@
 package com.trendyol.stove.extensions.junit
 
+import com.trendyol.stove.reporting.StoveMdc
 import com.trendyol.stove.reporting.StoveTestContext
 import com.trendyol.stove.reporting.StoveTestContextHolder
 import com.trendyol.stove.reporting.StoveTestFailureException
@@ -40,10 +41,13 @@ class StoveJUnitExtension :
   BeforeEachCallback,
   AfterEachCallback,
   TestExecutionExceptionHandler {
+  private data class PreviousMdc(val values: Map<String, String>?)
+
   override fun beforeEach(context: ExtensionContext) {
     if (!Stove.instanceInitialized()) return
 
     val ctx = context.toStoveContext()
+    context.getStore(NAMESPACE).put(MDC_KEY, PreviousMdc(StoveMdc.install(ctx)))
     StoveTestContextHolder.set(ctx)
     Stove.reporter().startTest(ctx)
     TraceContext.start(ctx.testId)
@@ -78,6 +82,10 @@ class StoveJUnitExtension :
       clear()
     }
     StoveTestContextHolder.clear()
+    context
+      .getStore(NAMESPACE)
+      .remove(MDC_KEY, PreviousMdc::class.java)
+      ?.let { StoveMdc.restore(it.values) }
   }
 
   private fun ExtensionContext.toStoveContext(): StoveTestContext {
@@ -127,5 +135,10 @@ class StoveJUnitExtension :
       ctx = ctx.parent.orElse(null)
     }
     return rootClass
+  }
+
+  private companion object {
+    val NAMESPACE: ExtensionContext.Namespace = ExtensionContext.Namespace.create(StoveJUnitExtension::class.java)
+    val MDC_KEY = "stove-mdc"
   }
 }

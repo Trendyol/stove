@@ -1,6 +1,15 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Status } from "../utils/status";
-import type { AppSummary, Entry, LiveDashboardEvent, Run, Snapshot, Span, Test } from "./types";
+import type {
+  AppSummary,
+  Entry,
+  LiveDashboardEvent,
+  LogRecord,
+  Run,
+  Snapshot,
+  Span,
+  Test,
+} from "./types";
 import { EVENT_TYPE } from "./types";
 
 const RUNNING: Status = "RUNNING";
@@ -85,6 +94,11 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         ["snapshots", event.run_id, event.payload.test_id],
         (snapshots) => snapshots ?? [],
       );
+      queryClient.setQueryData<LogRecord[]>(
+        ["logs", event.run_id, event.payload.test_id],
+        (logs) => logs ?? [],
+      );
+      queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) => logs ?? []);
       break;
     }
     case EVENT_TYPE.TEST_ENDED: {
@@ -179,6 +193,84 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       );
       break;
     }
+    case EVENT_TYPE.LOG_RECORDED: {
+      const log: LogRecord = {
+        id: event.payload.id,
+        run_id: event.run_id,
+        test_id: event.payload.test_id,
+        trace_id: event.payload.trace_id,
+        span_id: event.payload.span_id,
+        timestamp: event.payload.timestamp,
+        observed_timestamp: event.payload.observed_timestamp,
+        severity_text: event.payload.severity_text,
+        severity_number: event.payload.severity_number,
+        logger: event.payload.logger,
+        thread: event.payload.thread,
+        body: event.payload.body,
+        exception_type: event.payload.exception_type,
+        exception_message: event.payload.exception_message,
+        exception_stack_trace: event.payload.exception_stack_trace,
+        attributes: event.payload.attributes,
+        correlation_source: event.payload.correlation_source,
+        source: event.payload.source,
+        late: event.payload.late,
+        truncated: event.payload.truncated,
+      };
+
+      if (log.test_id) {
+        queryClient.setQueryData<LogRecord[]>(["logs", event.run_id, log.test_id], (logs) =>
+          appendLogs(logs, log),
+        );
+      } else {
+        queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) =>
+          appendLogs(logs, log),
+        );
+      }
+      if (log.trace_id) {
+        queryClient.setQueryData<LogRecord[]>(["traceLogs", log.trace_id], (logs) =>
+          appendLogs(logs, log),
+        );
+      }
+      break;
+    }
+    case EVENT_TYPE.LOGS_DROPPED: {
+      const marker: LogRecord = {
+        id: `dropped-${event.seq}`,
+        run_id: event.run_id,
+        test_id: event.payload.test_id,
+        trace_id: event.payload.trace_id,
+        span_id: null,
+        timestamp: event.payload.timestamp,
+        observed_timestamp: event.payload.timestamp,
+        severity_text: "WARN",
+        severity_number: 13,
+        logger: "stove.logging",
+        thread: "stove-cli",
+        body: `${event.payload.dropped_count} logs dropped: ${event.payload.reason}`,
+        exception_type: null,
+        exception_message: null,
+        exception_stack_trace: null,
+        attributes: JSON.stringify({
+          dropped_count: event.payload.dropped_count,
+          reason: event.payload.reason,
+        }),
+        correlation_source: "DROPPED_MARKER",
+        source: "stove-cli",
+        late: false,
+        truncated: false,
+      };
+
+      if (marker.test_id) {
+        queryClient.setQueryData<LogRecord[]>(["logs", event.run_id, marker.test_id], (logs) =>
+          appendLogs(logs, marker),
+        );
+      } else {
+        queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) =>
+          appendLogs(logs, marker),
+        );
+      }
+      break;
+    }
   }
 }
 
@@ -190,6 +282,8 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
     queryClient.invalidateQueries({ queryKey: ["snapshots", runId] });
+    queryClient.invalidateQueries({ queryKey: ["logs", runId] });
+    queryClient.invalidateQueries({ queryKey: ["runLogs", runId] });
   } else {
     queryClient.invalidateQueries();
   }
@@ -276,6 +370,17 @@ function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot):
     return snapshots;
   }
   return [...(snapshots ?? []), incoming];
+}
+
+function appendLogs(logs: LogRecord[] | undefined, incoming: LogRecord): LogRecord[] {
+  if (logs?.some((log) => log.id === incoming.id)) {
+    return logs;
+  }
+  return [...(logs ?? []), incoming].sort(
+    (left, right) =>
+      left.timestamp.localeCompare(right.timestamp) ||
+      String(left.id).localeCompare(String(right.id)),
+  );
 }
 
 function compareRuns(left: Run, right: Run): number {

@@ -51,7 +51,16 @@ pub fn create_router_with_ingestor(
       "/runs/{run_id}/tests/{test_id}/snapshots",
       get(super::routes::get_snapshots),
     )
+    .route(
+      "/runs/{run_id}/tests/{test_id}/logs",
+      get(super::routes::get_test_logs),
+    )
+    .route("/runs/{run_id}/logs", get(super::routes::get_run_logs))
     .route("/traces/{trace_id}", get(super::routes::get_trace))
+    .route(
+      "/traces/{trace_id}/logs",
+      get(super::routes::get_trace_logs),
+    )
     .route("/events/stream", get(super::routes::sse_handler))
     .route("/data", delete(super::routes::clear_all));
 

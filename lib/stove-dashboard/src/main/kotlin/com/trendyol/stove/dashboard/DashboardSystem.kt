@@ -5,11 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.protobuf.Timestamp
 import com.trendyol.stove.dashboard.api.DashboardEvent
 import com.trendyol.stove.dashboard.api.EntryRecordedEvent
+import com.trendyol.stove.dashboard.api.LogRecordedEvent
+import com.trendyol.stove.dashboard.api.LogsDroppedEvent
 import com.trendyol.stove.dashboard.api.RunEndedEvent
 import com.trendyol.stove.dashboard.api.RunStartedEvent
 import com.trendyol.stove.dashboard.api.SpanRecordedEvent
 import com.trendyol.stove.dashboard.api.TestEndedEvent
 import com.trendyol.stove.dashboard.api.TestStartedEvent
+import com.trendyol.stove.logging.LogEventListener
+import com.trendyol.stove.logging.LogListenerRegistry
+import com.trendyol.stove.logging.LogsDropped
+import com.trendyol.stove.logging.StoveLogRecord
 import com.trendyol.stove.reporting.ReportEntry
 import com.trendyol.stove.reporting.ReportEventListener
 import com.trendyol.stove.reporting.Reports
@@ -43,7 +49,8 @@ class DashboardSystem(
 ) : PluggedSystem,
   RunAware,
   ReportEventListener,
-  SpanEventListener {
+  SpanEventListener,
+  LogEventListener {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(DashboardSystem::class.java)
   private val jsonMapper = ObjectMapper()
@@ -61,6 +68,7 @@ class DashboardSystem(
     emitter = DashboardEmitter(options.cliHost, options.cliPort)
     stove.addReportListener(this)
     registerSpanListener()
+    registerLogListener()
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {
@@ -159,6 +167,46 @@ class DashboardSystem(
     )
   }
 
+  override fun onLogRecorded(record: StoveLogRecord) {
+    emitter.tryEmit(
+      dashboardEvent {
+        logRecorded = LogRecordedEvent.newBuilder()
+          .setTestId(record.testId ?: "")
+          .setTimestamp(timestamp(record.timestamp))
+          .setObservedTimestamp(timestamp(record.observedTimestamp))
+          .setSeverityText(record.severityText)
+          .setSeverityNumber(record.severityNumber)
+          .setLogger(record.logger)
+          .setThread(record.thread)
+          .setBody(record.body)
+          .setExceptionType(record.exceptionType ?: "")
+          .setExceptionMessage(record.exceptionMessage ?: "")
+          .setExceptionStackTrace(record.exceptionStackTrace ?: "")
+          .putAllAttributes(record.attributes)
+          .setTraceId(record.traceId ?: "")
+          .setSpanId(record.spanId ?: "")
+          .setCorrelationSource(record.correlationSource.name)
+          .setSource(record.source)
+          .setTruncated(record.truncated)
+          .build()
+      }
+    )
+  }
+
+  override fun onLogsDropped(event: LogsDropped) {
+    emitter.tryEmit(
+      dashboardEvent {
+        logsDropped = LogsDroppedEvent.newBuilder()
+          .setTestId(event.testId ?: "")
+          .setTraceId(event.traceId ?: "")
+          .setTimestamp(timestamp(event.timestamp))
+          .setDroppedCount(event.droppedCount)
+          .setReason(event.reason)
+          .build()
+      }
+    )
+  }
+
   override fun close() {
     lifecycleLock.withLock {
       if (!::emitter.isInitialized) return
@@ -176,6 +224,7 @@ class DashboardSystem(
         }
       )
       stove.removeReportListener(this)
+      unregisterLogListener()
       emitter.close()
     }
   }
@@ -246,17 +295,26 @@ class DashboardSystem(
       ?.addSpanListener(this)
   }
 
+  private fun registerLogListener() {
+    stove.systemsOf<LogListenerRegistry>()
+      .forEach { it.addLogListener(this) }
+  }
+
+  private fun unregisterLogListener() {
+    stove.systemsOf<LogListenerRegistry>()
+      .forEach { it.removeLogListener(this) }
+  }
+
   private fun dashboardEvent(block: DashboardEvent.Builder.() -> Unit): DashboardEvent =
     DashboardEvent.newBuilder()
       .setRunId(runId)
       .apply(block)
       .build()
 
-  private fun now(): Timestamp {
-    val instant = Instant.now()
-    return Timestamp.newBuilder()
-      .setSeconds(instant.epochSecond)
-      .setNanos(instant.nano)
-      .build()
-  }
+  private fun now(): Timestamp = timestamp(Instant.now())
+
+  private fun timestamp(instant: Instant): Timestamp = Timestamp.newBuilder()
+    .setSeconds(instant.epochSecond)
+    .setNanos(instant.nano)
+    .build()
 }

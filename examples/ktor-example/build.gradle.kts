@@ -58,6 +58,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveKafka)
   testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.lib.stoveGrpc)
+  testImplementation(projects.stove.lib.stoveLogging)
   testImplementation(projects.stove.lib.stoveGrpcMock)
   testImplementation(projects.stove.starters.ktor.stoveKtor)
 }

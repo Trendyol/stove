@@ -13,7 +13,7 @@ use stove::http::server::create_router_with_ingestor;
 use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
 use stove::storage::database::Database;
-use stove::storage::models::{NewEntry, NewSpan};
+use stove::storage::models::{NewEntry, NewLogRecord, NewSpan};
 use stove::storage::repository::Repository;
 
 /// A running test server with its base URL and repository handle.
@@ -361,6 +361,40 @@ impl TestServer {
     self
       .repo
       .save_snapshot(run_id, test_id, system, state_json, summary)
+      .unwrap();
+  }
+
+  #[allow(clippy::too_many_arguments)]
+  pub fn seed_log(
+    &self,
+    run_id: &str,
+    test_id: &str,
+    trace_id: &str,
+    span_id: &str,
+    level: &str,
+    severity_number: i32,
+    logger: &str,
+    body: &str,
+  ) {
+    self
+      .repo
+      .save_log(&NewLogRecord {
+        run_id: run_id.into(),
+        test_id: test_id.into(),
+        trace_id: trace_id.into(),
+        span_id: span_id.into(),
+        timestamp: "2024-06-01T10:00:04Z".into(),
+        observed_timestamp: "2024-06-01T10:00:04Z".into(),
+        severity_text: level.into(),
+        severity_number,
+        logger: logger.into(),
+        thread: "test-worker".into(),
+        body: body.into(),
+        attributes: r#"{"request.id":"req-1"}"#.into(),
+        correlation_source: "MDC".into(),
+        source: "test".into(),
+        ..Default::default()
+      })
       .unwrap();
   }
 

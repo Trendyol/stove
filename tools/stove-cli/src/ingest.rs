@@ -6,7 +6,7 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::warn;
 
 use crate::error::{AppError, Result};
-use crate::storage::models::{NewEntry, NewSpan};
+use crate::storage::models::{NewEntry, NewLogRecord, NewSpan};
 use crate::storage::repository::Repository;
 
 pub const DEFAULT_MAX_BATCH_SIZE: usize = 20;
@@ -54,6 +54,7 @@ pub enum PersistedDashboardEvent {
     state_json: String,
     summary: String,
   },
+  LogRecorded(NewLogRecord),
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -73,10 +74,12 @@ impl LiveDashboardEvent {
       LiveDashboardPayload::EntryRecorded(payload) => payload.id = temp_id,
       LiveDashboardPayload::SpanRecorded(payload) => payload.id = temp_id,
       LiveDashboardPayload::Snapshot(payload) => payload.id = temp_id,
+      LiveDashboardPayload::LogRecorded(payload) => payload.id = temp_id,
       LiveDashboardPayload::RunStarted(_)
       | LiveDashboardPayload::RunEnded(_)
       | LiveDashboardPayload::TestStarted(_)
-      | LiveDashboardPayload::TestEnded(_) => {}
+      | LiveDashboardPayload::TestEnded(_)
+      | LiveDashboardPayload::LogsDropped(_) => {}
     }
     self
   }
@@ -92,6 +95,8 @@ pub enum LiveDashboardPayload {
   EntryRecorded(LiveEntryRecordedPayload),
   SpanRecorded(LiveSpanRecordedPayload),
   Snapshot(LiveSnapshotPayload),
+  LogRecorded(LiveLogRecordedPayload),
+  LogsDropped(LiveLogsDroppedPayload),
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -173,6 +178,38 @@ pub struct LiveSnapshotPayload {
   pub system: String,
   pub state_json: String,
   pub summary: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LiveLogRecordedPayload {
+  pub id: i64,
+  pub test_id: Option<String>,
+  pub trace_id: Option<String>,
+  pub span_id: Option<String>,
+  pub timestamp: String,
+  pub observed_timestamp: String,
+  pub severity_text: String,
+  pub severity_number: i32,
+  pub logger: String,
+  pub thread: String,
+  pub body: String,
+  pub exception_type: Option<String>,
+  pub exception_message: Option<String>,
+  pub exception_stack_trace: Option<String>,
+  pub attributes: Option<String>,
+  pub correlation_source: String,
+  pub source: String,
+  pub late: bool,
+  pub truncated: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LiveLogsDroppedPayload {
+  pub test_id: Option<String>,
+  pub trace_id: Option<String>,
+  pub timestamp: String,
+  pub dropped_count: i64,
+  pub reason: String,
 }
 
 #[derive(Clone)]

@@ -1,10 +1,10 @@
 package com.stove.spring.example4x.e2e
 
-import com.trendyol.stove.dashboard.DashboardSystemOptions
-import com.trendyol.stove.dashboard.dashboard
+import com.trendyol.stove.dashboard.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
+import com.trendyol.stove.logging.*
 import com.trendyol.stove.spring.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.tracing.tracing
@@ -47,6 +47,7 @@ class StoveConfig : AbstractProjectConfig() {
         // Service name is automatically extracted from incoming spans (set by OTel agent)
         tracing { enableSpanReceiver() }
         dashboard { DashboardSystemOptions(appName = "spring-4x-example") }
+        logging { LoggingSystemOptions() }
 
         wiremock {
           WireMockSystemOptions(

@@ -145,6 +145,12 @@ impl DashboardEventServiceImpl {
       proto::dashboard_event::Event::Snapshot(inner) => {
         preparers::prepare_snapshot(&mut state, &event.run_id, inner)
       }
+      proto::dashboard_event::Event::LogRecorded(inner) => {
+        preparers::prepare_log_recorded(&mut state, &event.run_id, inner)
+      }
+      proto::dashboard_event::Event::LogsDropped(inner) => {
+        preparers::prepare_logs_dropped(&mut state, &event.run_id, inner)
+      }
     }?;
 
     Ok(Some(prepared))

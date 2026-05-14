@@ -29,6 +29,7 @@ dependencies {
   testImplementation(projects.stove.lib.stoveHttp)
   testImplementation(projects.stove.lib.stoveWiremock)
   testImplementation(projects.stove.lib.stoveTracing)
+  testImplementation(projects.stove.lib.stoveLogging)
   testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.starters.spring.stoveSpring)
   testImplementation(projects.stove.starters.spring.stoveSpringKafka)

@@ -198,6 +198,65 @@ fn snapshot_event(
   }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn log_recorded_event(
+  run_id: &str,
+  test_id: &str,
+  trace_id: &str,
+  span_id: &str,
+  level: &str,
+  severity_number: i32,
+  logger: &str,
+  body: &str,
+  seconds: i64,
+  nanos: i32,
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::dashboard_event::Event::LogRecorded(
+      proto::LogRecordedEvent {
+        test_id: test_id.to_string(),
+        timestamp: ts(seconds, nanos),
+        observed_timestamp: ts(seconds, nanos + 1),
+        severity_text: level.to_string(),
+        severity_number,
+        logger: logger.to_string(),
+        thread: "test-worker".to_string(),
+        body: body.to_string(),
+        exception_type: String::new(),
+        exception_message: String::new(),
+        exception_stack_trace: String::new(),
+        attributes: HashMap::from([("request.id".to_string(), "req-1".to_string())]),
+        trace_id: trace_id.to_string(),
+        span_id: span_id.to_string(),
+        correlation_source: "MDC".to_string(),
+        source: "logback".to_string(),
+        truncated: false,
+      },
+    )),
+  }
+}
+
+fn logs_dropped_event(
+  run_id: &str,
+  test_id: &str,
+  trace_id: &str,
+  dropped_count: i64,
+) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::dashboard_event::Event::LogsDropped(
+      proto::LogsDroppedEvent {
+        test_id: test_id.to_string(),
+        trace_id: trace_id.to_string(),
+        timestamp: ts(1_704_067_205, 0),
+        dropped_count,
+        reason: "queue_overflow".to_string(),
+      },
+    )),
+  }
+}
+
 async fn send_event(
   service: &DashboardEventServiceImpl,
   event: proto::DashboardEvent,
@@ -1332,6 +1391,128 @@ async fn get_trace_returns_empty_for_unknown_trace() {
 
   let body = server.get_json("/traces/nonexistent").await;
   assert_eq!(body, Value::Array(vec![]));
+}
+
+#[tokio::test]
+async fn logs_are_persisted_filterable_and_trace_queryable() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
+
+  send_event(
+    &service,
+    run_started_event("run-logs", "checkout-api", 1_704_067_200, 0),
+  )
+  .await
+  .unwrap();
+  send_event(
+    &service,
+    test_started_event(
+      "run-logs",
+      "test-logs",
+      "captures logs",
+      "CheckoutSpec",
+      1_704_067_201,
+      0,
+    ),
+  )
+  .await
+  .unwrap();
+  send_event(
+    &service,
+    log_recorded_event(
+      "run-logs",
+      "test-logs",
+      "trace-logs",
+      "span-1",
+      "INFO",
+      9,
+      "checkout.Service",
+      "normal progress",
+      1_704_067_202,
+      0,
+    ),
+  )
+  .await
+  .unwrap();
+  send_event(
+    &service,
+    log_recorded_event(
+      "run-logs",
+      "",
+      "",
+      "",
+      "WARN",
+      13,
+      "checkout.Background",
+      "ambient warning",
+      1_704_067_203,
+      0,
+    ),
+  )
+  .await
+  .unwrap();
+  send_event(
+    &service,
+    test_ended_event(
+      "run-logs",
+      "test-logs",
+      "FAILED",
+      20,
+      "boom",
+      1_704_067_204,
+      0,
+    ),
+  )
+  .await
+  .unwrap();
+  send_event(
+    &service,
+    log_recorded_event(
+      "run-logs",
+      "test-logs",
+      "trace-logs",
+      "span-2",
+      "ERROR",
+      17,
+      "checkout.Service",
+      "late failure log",
+      1_704_067_205,
+      0,
+    ),
+  )
+  .await
+  .unwrap();
+  send_event(
+    &service,
+    logs_dropped_event("run-logs", "test-logs", "trace-logs", 7),
+  )
+  .await
+  .unwrap();
+  flush_events(&service).await;
+
+  let test_logs = server
+    .get_json("/runs/run-logs/tests/test-logs/logs?q=failure")
+    .await;
+  let test_logs = test_logs.as_array().unwrap();
+  assert_eq!(test_logs.len(), 1);
+  assert_eq!(test_logs[0]["body"], "late failure log");
+  assert_eq!(test_logs[0]["late"], true);
+
+  let run_logs = server
+    .get_json("/runs/run-logs/logs?logger=Background")
+    .await;
+  let run_logs = run_logs.as_array().unwrap();
+  assert_eq!(run_logs.len(), 1);
+  assert!(run_logs[0]["test_id"].is_null());
+
+  let trace_logs = server.get_json("/traces/trace-logs/logs?level=WARN").await;
+  let trace_logs = trace_logs.as_array().unwrap();
+  assert_eq!(trace_logs.len(), 1);
+  assert_eq!(trace_logs[0]["correlation_source"], "DROPPED_MARKER");
+  assert_eq!(
+    trace_logs[0]["body"],
+    "Dropped 7 log record(s): queue_overflow"
+  );
 }
 
 // ---------------------------------------------------------------------------

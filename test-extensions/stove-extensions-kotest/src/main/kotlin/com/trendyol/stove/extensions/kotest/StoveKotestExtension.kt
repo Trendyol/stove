@@ -1,7 +1,9 @@
 package com.trendyol.stove.extensions.kotest
 
+import com.trendyol.stove.reporting.StoveMdc
 import com.trendyol.stove.reporting.StoveReporter
 import com.trendyol.stove.reporting.StoveTestContext
+import com.trendyol.stove.reporting.StoveTestCoroutineContextElement
 import com.trendyol.stove.reporting.StoveTestErrorException
 import com.trendyol.stove.reporting.StoveTestFailureException
 import com.trendyol.stove.system.Stove
@@ -12,6 +14,8 @@ import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestType
 import io.kotest.engine.test.TestResult
+import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.withContext
 
 /**
  * Kotest extension that automatically manages test context and enriches test failures
@@ -139,8 +143,14 @@ private suspend fun <T> StoveReporter.withTestContext(
   startTest(ctx)
   TraceContext.start(ctx.testId)
   return try {
-    TraceContext.withCurrentPropagation {
-      block()
+    withContext(
+      ctx +
+        StoveTestCoroutineContextElement(ctx, includeMdc = false) +
+        MDCContext(StoveMdc.mergedValues(ctx))
+    ) {
+      TraceContext.withCurrentPropagation {
+        block()
+      }
     }
   } finally {
     TraceContext.clear()

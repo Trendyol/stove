@@ -1,6 +1,8 @@
 package stove.ktor.example.application
 
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.apache.kafka.clients.producer.*
+import org.slf4j.LoggerFactory
 import stove.ktor.example.domain.*
 import stove.ktor.example.infrastructure.FeatureToggleClient
 import stove.ktor.example.infrastructure.PricingClient
@@ -18,6 +20,7 @@ class ProductService(
     private const val DURATION = 30L
     private const val FEATURE_PRODUCT_UPDATE = "product-update-enabled"
   }
+  private val logger = LoggerFactory.getLogger(ProductService::class.java)
 
   suspend fun update(id: Int, request: UpdateProductRequest) {
     // 1. Check if product update feature is enabled (Feature Toggle Service)
@@ -25,6 +28,8 @@ class ProductService(
       featureName = FEATURE_PRODUCT_UPDATE,
       context = request.userId ?: "anonymous"
     )
+
+    logger.info("Product update feature check result: ${featureCheck.enabled}")
 
     if (!featureCheck.enabled) {
       error("Product update feature is currently disabled")
@@ -45,6 +50,8 @@ class ProductService(
       return
     }
 
+    logger.info("after lock")
+
     try {
       repository.transaction {
         val product = it.findById(id)
@@ -53,7 +60,7 @@ class ProductService(
       }
 
       // Publish event with price info
-      suspendCoroutine {
+      suspendCancellableCoroutine {
         kafkaProducer
           .send(
             ProducerRecord(
@@ -68,6 +75,8 @@ class ProductService(
               it.resume(Unit)
             }
           }
+
+        logger.info("Product updated event published")
       }
     } finally {
       lockProvider.releaseLock(::ProductService.name)

@@ -10,6 +10,7 @@ mod apps;
 mod common;
 pub(super) mod evidence;
 mod failures;
+mod logs;
 mod raw_evidence;
 mod runs;
 mod snapshot;
@@ -60,6 +61,7 @@ impl Analyzer {
       Some(ToolName::FailureDetail) => self.failure_detail(arguments),
       Some(ToolName::Timeline) => self.timeline(arguments),
       Some(ToolName::Trace) => self.trace(arguments),
+      Some(ToolName::Logs) => self.logs(arguments),
       Some(ToolName::Snapshot) => self.snapshot(arguments),
       Some(ToolName::RawEvidence) => self.raw_evidence(arguments),
       None => Err(format!("unknown Stove MCP tool: {name}")),

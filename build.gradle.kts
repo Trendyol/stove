@@ -39,6 +39,7 @@ apiValidation {
     "stove-tracing-gradle-plugin",
     "stove-dashboard-api",
     "stove-dashboard",
+    "stove-logging",
   )
 }
 kover {
@@ -154,6 +155,7 @@ val publishedProjects = listOf(
   projects.lib.stoveBom.name,
   projects.lib.stove.name,
   projects.lib.stoveTracing.name,
+  projects.lib.stoveLogging.name,
   projects.lib.stoveCouchbase.name,
   projects.lib.stoveElasticsearch.name,
   projects.lib.stoveGrpc.name,

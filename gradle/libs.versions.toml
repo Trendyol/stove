@@ -113,6 +113,7 @@ jackson3-kotlin = { module = "tools.jackson.module:jackson-module-kotlin", versi
 
 # Slfj4
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 # Ktor
 ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
@@ -165,6 +166,8 @@ mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-corouti
 # misc
 lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.5.1.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.32" }
+log4j-api = { module = "org.apache.logging.log4j:log4j-api", version = "2.25.2" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version = "2.25.2" }
 microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.4.0.jre11" }
 
 ### Testing
