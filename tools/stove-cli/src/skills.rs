@@ -117,7 +117,10 @@ async fn decide_sync_action(target: &Path, force_update: bool) -> SyncAction {
 
 fn apply_install(target: &Path, remote: &RemoteSkills) {
   match install_skills(target, remote) {
-    Ok(()) => println!("  Updated Stove agent skills at {}", target.display()),
+    Ok(()) => {
+      let target = target.display();
+      println!("  Updated Stove agent skills at {target}");
+    }
     Err(err) => eprintln!("  warning: failed to install Stove skills: {err}"),
   }
 }

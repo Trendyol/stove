@@ -202,12 +202,12 @@ impl EventIngestor {
     Self { sender }
   }
 
-  pub fn enqueue(&self, event: PersistedDashboardEvent, flush_immediately: bool) -> Result<()> {
+  pub fn enqueue(&self, event: PersistedDashboardEvent, flush: FlushBehavior) -> Result<()> {
     self
       .sender
       .send(IngestCommand::Persist {
         event: Box::new(event),
-        flush_immediately,
+        flush,
       })
       .map_err(|_| AppError::Startup("persistence worker is not running".to_string()))
   }
@@ -224,10 +224,19 @@ impl EventIngestor {
   }
 }
 
+/// Whether a queued event should trigger an immediate batch flush.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FlushBehavior {
+  /// Flush the pending batch as soon as this event is enqueued.
+  Immediate,
+  /// Defer flushing until the batch size or delay threshold is reached.
+  Deferred,
+}
+
 enum IngestCommand {
   Persist {
     event: Box<PersistedDashboardEvent>,
-    flush_immediately: bool,
+    flush: FlushBehavior,
   },
   Flush {
     reply: oneshot::Sender<Result<()>>,
@@ -291,14 +300,10 @@ fn handle_command(
   max_batch_size: usize,
 ) {
   match command {
-    IngestCommand::Persist {
-      event,
-      flush_immediately,
-    } => {
+    IngestCommand::Persist { event, flush } => {
       pending.push(*event);
-      if (flush_immediately || pending.len() >= max_batch_size)
-        && let Err(error) = persist_pending(repository, pending)
-      {
+      let should_flush = flush == FlushBehavior::Immediate || pending.len() >= max_batch_size;
+      if should_flush && let Err(error) = persist_pending(repository, pending) {
         warn!(%error, "Failed to persist dashboard events after batch threshold");
       }
     }

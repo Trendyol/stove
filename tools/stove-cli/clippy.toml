@@ -1,1 +1,9 @@
 too-many-arguments-threshold = 8
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true
+await-holding-invalid-types = [
+    { path = "tokio::sync::MutexGuard" },
+    { path = "tokio::sync::RwLockReadGuard" },
+    { path = "tokio::sync::RwLockWriteGuard" },
+]
+large-error-threshold = 256

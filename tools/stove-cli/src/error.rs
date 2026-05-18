@@ -19,7 +19,6 @@ pub enum AppError {
   InvalidEvent(String),
 
   #[error("Server startup failed: {0}")]
-  #[allow(dead_code)]
   Startup(String),
 }
 
