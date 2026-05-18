@@ -1,7 +1,14 @@
-use serde_json::{Value, json};
+use serde_json::Value;
+use serde_json::json;
 
-use super::super::contract::{ArgName, RawEvidenceKind, ToolName};
-use crate::storage::models::{Entry, Snapshot, Span};
+use super::common::tool_args;
+use super::common::tool_call;
+use crate::mcp::contract::ArgName;
+use crate::mcp::contract::RawEvidenceKind;
+use crate::mcp::contract::ToolName;
+use crate::storage::models::Entry;
+use crate::storage::models::Snapshot;
+use crate::storage::models::Span;
 
 pub(super) fn entry_preview(entry: &Entry, max_chars: usize) -> Value {
   json!({
@@ -17,7 +24,7 @@ pub(super) fn entry_preview(entry: &Entry, max_chars: usize) -> Value {
     "actual": preview_field(entry.actual.as_deref(), max_chars),
     "error": clip_opt(entry.error.as_deref(), max_chars),
     "trace_id": entry.trace_id,
-    "raw_tool_call": super::tool_call(ToolName::RawEvidence, super::tool_args([
+    "raw_tool_call": tool_call(ToolName::RawEvidence, tool_args([
       (ArgName::Kind, json!(RawEvidenceKind::Entry.as_str())),
       (ArgName::Id, json!(entry.id)),
       (ArgName::RunId, json!(&entry.run_id)),
@@ -50,7 +57,7 @@ pub(super) fn snapshot_summary(snapshot: &Snapshot, max_chars: usize) -> Value {
     "system": snapshot.system,
     "summary": clip_string(&snapshot.summary, max_chars),
     "state_overview": state_overview(&state),
-    "snapshot_tool_call": super::tool_call(ToolName::Snapshot, super::tool_args([
+    "snapshot_tool_call": tool_call(ToolName::Snapshot, tool_args([
       (ArgName::RunId, json!(&snapshot.run_id)),
       (ArgName::TestId, json!(&snapshot.test_id)),
       (ArgName::System, json!(&snapshot.system)),
@@ -82,7 +89,7 @@ pub(super) fn snapshot_detail(
     "system": snapshot.system,
     "summary": clip_string(&snapshot.summary, max_chars),
     "state": selected_state,
-    "raw_tool_call": super::tool_call(ToolName::RawEvidence, super::tool_args([
+    "raw_tool_call": tool_call(ToolName::RawEvidence, tool_args([
       (ArgName::Kind, json!(RawEvidenceKind::Snapshot.as_str())),
       (ArgName::Id, json!(snapshot.id)),
       (ArgName::RunId, json!(&snapshot.run_id)),

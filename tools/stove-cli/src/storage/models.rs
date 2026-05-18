@@ -76,7 +76,7 @@ impl fmt::Display for TestStatus {
 }
 
 /// Summary of an application known to the dashboard.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct AppSummary {
   pub app_name: String,
   pub latest_run_id: String,
@@ -86,7 +86,7 @@ pub struct AppSummary {
 }
 
 /// A single test run (one execution of a test suite).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Run {
   pub id: String,
   pub app_name: String,
@@ -102,7 +102,7 @@ pub struct Run {
 }
 
 /// A single test within a run.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Test {
   pub id: String,
   pub run_id: String,
@@ -117,7 +117,7 @@ pub struct Test {
 }
 
 /// A report entry (action + result) within a test.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Entry {
   pub id: i64,
   pub run_id: String,
@@ -136,7 +136,7 @@ pub struct Entry {
 }
 
 /// A span in a distributed trace.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Span {
   pub id: i64,
   pub run_id: String,
@@ -155,7 +155,7 @@ pub struct Span {
 }
 
 /// A system snapshot captured during a test.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Snapshot {
   pub id: i64,
   pub run_id: String,

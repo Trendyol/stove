@@ -20,21 +20,18 @@ pub struct McpMeta {
 }
 
 pub async fn get_meta(headers: HeaderMap) -> Json<MetaResponse> {
+  let endpoint = headers
+    .get(HOST)
+    .and_then(|value| value.to_str().ok())
+    .filter(|host| !host.trim().is_empty())
+    .map_or_else(|| "/mcp".to_string(), |host| format!("http://{host}/mcp"));
   Json(MetaResponse {
     stove_cli_version: STOVE_CLI_VERSION,
     mcp: McpMeta {
       enabled: true,
       transport: "streamable-http",
-      endpoint: mcp_endpoint(&headers),
+      endpoint,
       scope: "read-only-test-observability",
     },
   })
-}
-
-fn mcp_endpoint(headers: &HeaderMap) -> String {
-  headers
-    .get(HOST)
-    .and_then(|value| value.to_str().ok())
-    .filter(|host| !host.trim().is_empty())
-    .map_or_else(|| "/mcp".to_string(), |host| format!("http://{host}/mcp"))
 }

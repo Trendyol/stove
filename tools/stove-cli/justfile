@@ -1,0 +1,25 @@
+default:
+    @just --list
+
+fmt:
+    cargo fmt --all
+
+fmt-check:
+    cargo fmt --all -- --check
+
+fix:
+    cargo clippy --fix --allow-dirty --allow-staged --all-targets -- -D warnings
+
+clippy:
+    cargo clippy --all-targets -- -D warnings
+
+test:
+    SKIP_SPA_BUILD=1 cargo test
+
+test-lib:
+    SKIP_SPA_BUILD=1 cargo test --lib
+
+build:
+    SKIP_SPA_BUILD=1 cargo build
+
+verify: fmt-check clippy test

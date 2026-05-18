@@ -9,11 +9,11 @@
 pub const STOVE_CLI_VERSION: &str = env!("STOVE_VERSION");
 
 pub mod config;
-pub mod error;
+pub(crate) mod error;
 pub mod grpc;
 pub mod http;
 pub mod ingest;
-pub mod mcp;
+pub(crate) mod mcp;
 pub mod skills;
 pub mod sse;
 pub mod storage;
