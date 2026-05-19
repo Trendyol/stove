@@ -1,125 +1,83 @@
-# Go. Process Mode
+# Go · Process Mode
 
-Run the Go binary directly as the application under test using `stove-process` and the `goApp()` DSL. This is the fastest iteration loop: no image build, no registry, just `go build` and run.
+Run your Go binary as the AUT. `stove-process` + `goApp()`. Fastest iteration: no image build, no registry, just `go build` and run.
 
-For container-based AUT (CI parity with the production image), see [Container Mode](go-container.md).
+For CI-grade image parity, see [Container Mode](go-container.md).
 
-## What this guide covers
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Build your Go binary with Gradle. Stove starts it via <code>goApp()</code>, hands it Postgres + Kafka URLs and the OTLP tracing endpoint as env vars. Write tests with the standard <code>stove { http { } postgresql { } kafka { } tracing { } }</code> DSL. Kafka assertions need the <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka"><code>stove-kafka</code></a> bridge wired into your producer/consumer.
+</div>
 
-End-to-end Go testing with HTTP, PostgreSQL, Kafka (sarama / franz-go / segmentio), distributed tracing, dashboard streaming, MCP triage, and integration coverage.
+A full working example (HTTP + Postgres + Kafka + tracing + coverage) lives at [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase).
 
-The full source is at [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase).
+## What your Go app needs
 
-## Project Structure
+Three things, none Stove-specific in production:
 
-```
-go-showcase/                   # Standalone Gradle project (copy-paste ready)
-  main.go                      # Entry point, env var config, graceful shutdown
-  db.go                        # PostgreSQL queries (auto-traced via otelsql)
-  handlers.go                  # HTTP handlers + Kafka publish (auto-traced via otelhttp)
-  kafka.go                     # KafkaProducer interface, factory, shared consumer handler
-  kafka_sarama.go              # IBM/sarama implementation
-  kafka_franz.go               # twmb/franz-go implementation
-  kafka_segmentio.go           # segmentio/kafka-go implementation
-  tracing.go                   # OpenTelemetry SDK initialization
-  go.mod
-  stovetests/                  # Kotlin Stove tests
-    kotlin/com/.../e2e/
-      setup/
-        StoveConfig.kt              # Single setup file (switches process/container via go.aut.mode)
-        ProductMigration.kt         # Creates products table
-      tests/
-        GoShowcaseTest.kt           # E2E tests
-    resources/
-      kotest.properties
-  build.gradle.kts             # Builds Go + runs Kotlin tests
-  settings.gradle.kts
+1. **Env-driven config.** Read connection details from env vars (your test wires them).
+2. **OpenTelemetry init.** Standard SDK setup. Reads `OTEL_EXPORTER_OTLP_ENDPOINT`. Disabled in prod if unset.
+3. **(Optional) Stove Kafka bridge** if you want `shouldBePublished` / `shouldBeConsumed`.
 
-# Published Go library used by the showcase:
-go/stove-kafka/                # Stove Kafka bridge for Go applications
-  bridge.go                    # Core bridge (library-agnostic gRPC client)
-  sarama/                      # IBM/sarama interceptors
-  franz/                       # twmb/franz-go hooks
-  segmentio/                   # segmentio/kafka-go helpers
-  stoveobserver/               # Generated gRPC code from messages.proto
-  go.mod
-```
+### Anatomy of `main()`
 
-## The Go Application
-
-A minimal HTTP + PostgreSQL service. The key design choice: <span data-rn="underline" data-rn-color="#009688">all tracing is in the infrastructure layer</span>, not in business logic.
-
-### Entry Point
-
-```go title="main.go"
+<div class="stove-anatomy" markdown="0">
+  <div class="stove-anatomy-code">
 func main() {
-    // Ignore SIGPIPE so log writes to a closed stdout pipe don't kill the process
-    // when running under ProcessBuilder. Critical for graceful shutdown + coverage flush.
-    signal.Ignore(syscall.SIGPIPE)
+    signal.Ignore(syscall.SIGPIPE) <span class="anchor">1</span>
 
-    ctx := context.Background()
-    port := getEnv("APP_PORT", "8080")
+    port := getEnv("APP_PORT", "8080") <span class="anchor">2</span>
 
-    shutdownTracing, _ := initTracing(ctx, "go-showcase")
+    shutdownTracing, _ := initTracing(ctx, "my-service") <span class="anchor">3</span>
     defer shutdownTracing(ctx)
 
-    db, _ := initDB(connStr)  // otelsql wraps database/sql automatically
+    db, _ := initDB(connStr) <span class="anchor">4</span>
     defer db.Close()
 
-    bridge, _ := stovekafka.NewBridgeFromEnv()  // nil in production. zero overhead
+    bridge, _ := stovekafka.NewBridgeFromEnv() <span class="anchor">5</span>
     defer bridge.Close()
 
-    kafkaLibrary := getEnv("KAFKA_LIBRARY", "sarama")
-    producer, stopKafka, _ := initKafka(kafkaLibrary, brokers, db, bridge)
+    producer, stopKafka, _ := initKafka(brokers, bridge)
     defer stopKafka()
 
-    mux := http.NewServeMux()
-    registerRoutes(mux, db, producer)
-
-    handler := otelhttp.NewHandler(mux, "http.request")
+    handler := otelhttp.NewHandler(mux, "http.request") <span class="anchor">6</span>
     server := &http.Server{Addr: ":" + port, Handler: handler}
-    // ... graceful shutdown on SIGTERM
 }
-```
+  </div>
+  <div class="stove-anatomy-notes">
+    <div class="stove-note"><span class="stove-note-tag">1</span><strong>Ignore SIGPIPE</strong>. Stove sends SIGTERM to stop the process; SIGPIPE on a closed stdout pipe would kill Go before graceful shutdown finishes.</div>
+    <div class="stove-note"><span class="stove-note-tag">2</span><strong>Env-driven config.</strong> Stove's <code>envMapper</code> populates these before start.</div>
+    <div class="stove-note"><span class="stove-note-tag">3</span><strong>OTel init</strong> reads <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>. Production: unset → no tracing. Test: set by Stove → spans flow to dashboard.</div>
+    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>otelsql</code></strong> wraps <code>database/sql</code>. DB spans show up automatically.</div>
+    <div class="stove-note"><span class="stove-note-tag">5</span><strong>Kafka bridge.</strong> Returns nil when <code>STOVE_KAFKA_BRIDGE_PORT</code> isn't set. Nil-safe no-ops. Zero production overhead.</div>
+    <div class="stove-note"><span class="stove-note-tag">6</span><strong><code>otelhttp</code></strong> extracts <code>traceparent</code> from incoming requests. Go spans tie to the test's trace ID.</div>
+  </div>
+</div>
 
-Configuration comes entirely from environment variables:
+### Env vars Stove passes you
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `APP_PORT` | HTTP listen port | `8080` |
-| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | PostgreSQL connection | `localhost`, `5432`, `stove`, `sa`, `sa` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint for traces | *(disabled if empty)* |
-| `KAFKA_BROKERS` | Comma-separated Kafka broker addresses | *(disabled if empty)* |
-| `KAFKA_LIBRARY` | Kafka client library: `sarama`, `franz`, or `segmentio` | `sarama` |
-| `STOVE_KAFKA_BRIDGE_PORT` | Stove Kafka bridge gRPC port | *(disabled if empty, test-only)* |
-| `GOCOVERDIR` | Directory for Go integration test coverage data | *(disabled if empty, test-only)* |
+| Variable | Use |
+|---|---|
+| `APP_PORT` | HTTP listen port |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | Postgres connection (rename to whatever you read) |
+| `KAFKA_BROKERS` | Kafka bootstrap servers |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint for traces |
+| `STOVE_KAFKA_BRIDGE_PORT` | Stove Kafka observer port (test-only) |
+| `GOCOVERDIR` | Integration coverage data dir (test-only, when coverage enabled) |
 
-### Handlers, DB, Tracing
+Names are conventions. Map any key your app uses through `envMapper`.
 
-Handlers and DB code are pure business logic. No tracing imports. Because `otelhttp` and `otelsql` instrument transparently. See the [container guide](go-container.md) and the showcase repo for the full code; the same files are used in both modes.
+### Tracing essentials
 
-!!! tip "Sync vs Batch Exporter"
-    Use `sdktrace.WithSyncer(exporter)` for tests so spans are exported immediately when they end. In production, use `WithBatcher(exporter)` for performance. The 5-second default batch interval would cause test assertions to fail because spans wouldn't arrive in time.
+!!! tip "Sync exporter for tests"
+    Use `sdktrace.WithSyncer(exporter)` so spans export immediately when they end. Production: `WithBatcher` for performance. The 5-second batch default breaks test assertions.
 
-!!! info "W3C Trace Context Propagation"
-    Setting `propagation.TraceContext{}` is essential. Stove's HTTP client sends a `traceparent` header with each request. The `otelhttp` middleware extracts it, so all spans in the Go app share the same trace ID as the test. And the [Stove Dashboard](../Components/18-dashboard.md) and [MCP](../Components/21-mcp.md) tools can correlate them with the failure.
+!!! info "W3C propagation matters"
+    Install `propagation.TraceContext{}`. Stove's HTTP client sends a `traceparent` header; `otelhttp` extracts it; every Go span shares the test's trace ID. Dashboard + MCP then correlate them with the failure.
 
-## Kafka. `stove-kafka` bridge
+## Kafka: the `stove-kafka` bridge
 
-Stove provides a Go bridge library (`stove-kafka`) that enables `shouldBeConsumed` and `shouldBePublished` assertions for Go applications. The bridge forwards produced/consumed messages over gRPC to Stove's `StoveKafkaObserverGrpcServer`. The core is library-agnostic; client-specific subpackages provide interceptors/hooks for popular Go Kafka libraries:
-
-| Library | Subpackage | Integration |
-|---------|-----------|-------------|
-| [IBM/sarama](https://github.com/IBM/sarama) | `sarama` | `ProducerInterceptor` / `ConsumerInterceptor` |
-| [twmb/franz-go](https://github.com/twmb/franz-go) | `franz` | `kgo.WithHooks(&franz.Hook{...})` |
-| [segmentio/kafka-go](https://github.com/segmentio/kafka-go) | `segmentio` | `segmentio.ReportWritten()` / `segmentio.ReportRead()` |
-
-!!! tip "Using other Kafka libraries (e.g. confluent-kafka-go)"
-    The subpackages above are conveniences. The core bridge (`PublishedMessage`, `ConsumedMessage`, `Bridge`) has **no Kafka client dependency**. For any library not listed above, import only the core package and call `bridge.ReportPublished()`, `bridge.ReportConsumed()`, and `bridge.ReportCommitted()` directly with your own type conversion.
-
-In production, `STOVE_KAFKA_BRIDGE_PORT` is not set, so `NewBridgeFromEnv()` returns `nil`. All Bridge methods are nil-safe no-ops. Zero overhead.
-
-### Integrating the Bridge
+Stove can only assert on Kafka messages it can see. The bridge forwards your producer/consumer events to Stove over gRPC.
 
 ```bash
 go get github.com/trendyol/stove/go/stove-kafka
@@ -132,7 +90,7 @@ bridge, _ := stovekafka.NewBridgeFromEnv()
 defer bridge.Close()
 ```
 
-Wire into your client:
+Wire into your Kafka client (one of the three supported; see [stove-kafka](https://github.com/trendyol/stove/tree/main/go/stove-kafka) for the full reference).
 
 === "IBM/sarama"
 
@@ -171,20 +129,15 @@ Wire into your client:
     segmentio.ReportRead(ctx, bridge, msg)
     ```
 
-When `Bridge` is nil (production), all interceptors/helpers return immediately with zero overhead.
+Using a different Kafka client (confluent-kafka-go, etc.)? Import only the core bridge and call `bridge.ReportPublished()`, `ReportConsumed()`, `ReportCommitted()` directly.
 
-### Test-Friendly Kafka Settings
+### Test-friendly Kafka settings
 
-When running against Testcontainers, configure Kafka clients for **fast feedback**:
-
-- **Auto-create topics**. The test container may not have topics pre-created
-- **Small batch size / low batch timeout**. Flush produces immediately
-- **Short auto-commit interval**. Make consumed offsets visible to Stove quickly
+Default client settings are tuned for throughput, not test speed. Without overrides, assertions flake. Use small batches + short commit intervals + auto-topic-create.
 
 === "IBM/sarama"
 
     ```go
-    config := sarama.NewConfig()
     config.Producer.Return.Successes = true
     config.Consumer.Offsets.Initial = sarama.OffsetOldest
     config.Consumer.Offsets.AutoCommit.Interval = 100 * time.Millisecond
@@ -212,227 +165,187 @@ When running against Testcontainers, configure Kafka clients for **fast feedback
     })
     ```
 
-!!! warning "Production vs Test settings"
-    These aggressive settings are optimized for test speed, not throughput. In production, use larger batch sizes, longer commit intervals, and broker-managed topic creation.
+!!! warning "Test vs production settings"
+    These are aggressive for fast feedback. Production: larger batches, longer commits, broker-managed topic creation.
 
-### Consumer Groups
+## Stove test setup
 
-Each Kafka library run uses a unique consumer group ID (`"go-showcase-" + library`) to prevent offset carryover between sequential test runs.
-
-## Stove Test Setup
-
-### Gradle Build
+### Gradle
 
 ```kotlin title="build.gradle.kts"
 val goBinary = layout.buildDirectory.file("go-app").get().asFile
 val goExecutable = providers.environmentVariable("GO_EXECUTABLE").getOrElse("go")
-val coverageEnabled = providers.gradleProperty("go.coverage")
-    .map { it.toBoolean() }.getOrElse(false)
 
 tasks.register<Exec>("buildGoApp") {
     description = "Compiles the Go application."
     group = "build"
-    val args = mutableListOf(goExecutable, "build")
-    if (coverageEnabled) args.add("-cover")
-    args.addAll(listOf("-o", goBinary.absolutePath, "."))
-    commandLine(args)
+    commandLine(goExecutable, "build", "-o", goBinary.absolutePath, ".")
     inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
     outputs.file(goBinary)
 }
 
-// Per-library e2e test tasks
-val kafkaLibraries = listOf("sarama", "franz", "segmentio")
-val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
-    tasks.register<Test>("e2eTest_$lib") {
-        dependsOn("buildGoApp")
-        systemProperty("go.aut.mode", "process")
-        systemProperty("go.app.binary", goBinary.absolutePath)
-        systemProperty("kafka.library", lib)
-        if (index > 0) mustRunAfter("e2eTest_${kafkaLibraries[index - 1]}")
-    }
+tasks.register<Test>("e2eTest") {
+    description = "Runs Stove e2e tests against the Go binary."
+    group = "verification"
+    dependsOn("buildGoApp")
+    useJUnitPlatform()
+    systemProperty("go.app.binary", goBinary.absolutePath)
 }
-tasks.named<Test>("e2eTest") { dependsOn(kafkaE2eTasks); enabled = false }
 
 dependencies {
-    testImplementation(stoveLibs.stove)
-    testImplementation(stoveLibs.stoveProcess)
-    testImplementation(stoveLibs.stovePostgres)
-    testImplementation(stoveLibs.stoveHttp)
-    testImplementation(stoveLibs.stoveTracing)
-    testImplementation(stoveLibs.stoveDashboard)
-    testImplementation(stoveLibs.stoveKafka)
-    testImplementation(stoveLibs.stoveExtensionsKotest)
+    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
+    testImplementation("com.trendyol:stove")
+    testImplementation("com.trendyol:stove-process")
+    testImplementation("com.trendyol:stove-extensions-kotest")
+    testImplementation("com.trendyol:stove-http")
+    testImplementation("com.trendyol:stove-postgres")
+    testImplementation("com.trendyol:stove-kafka")
+    testImplementation("com.trendyol:stove-tracing")
+    testImplementation("com.trendyol:stove-dashboard")
 }
 ```
 
-### Stove Configuration
+### `StoveConfig.kt`
 
 ```kotlin title="StoveConfig.kt"
-Stove()
-    .with {
-        httpClient {
-            HttpClientSystemOptions(baseUrl = "http://localhost:$APP_PORT")
-        }
+Stove().with {
+    httpClient {
+        HttpClientSystemOptions(baseUrl = "http://localhost:8090")
+    }
 
-        dashboard {
-            DashboardSystemOptions(appName = "go-showcase")
-        }
+    tracing { enableSpanReceiver() }
+    dashboard { DashboardSystemOptions(appName = "my-service") }
 
-        tracing {
-            enableSpanReceiver(port = OTLP_PORT)
-        }
-
-        kafka {
-            KafkaSystemOptions(
-                configureExposedConfiguration = { cfg ->
-                    listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
-                }
-            )
-        }
-
-        postgresql {
-            PostgresqlOptions(
-                databaseName = "stove",
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "database.host=${cfg.host}",
-                        "database.port=${cfg.port}",
-                        "database.name=stove",
-                        "database.username=${cfg.username}",
-                        "database.password=${cfg.password}"
-                    )
-                }
-            ).migrations {
-                register<ProductMigration>()
-            }
-        }
-
-        goApp(
-            target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "APP_PORT"),
-            envProvider = envMapper {
-                "database.host" to "DB_HOST"
-                "database.port" to "DB_PORT"
-                "database.name" to "DB_NAME"
-                "database.username" to "DB_USER"
-                "database.password" to "DB_PASS"
-                "kafka.bootstrapServers" to "KAFKA_BROKERS"
-                env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-                env("KAFKA_LIBRARY") { System.getProperty("kafka.library") ?: "sarama" }
-                env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
-                env("GOCOVERDIR") {
-                    System.getProperty("go.cover.dir")
-                        ?.also { java.io.File(it).mkdirs() } ?: ""
-                }
+    kafka {
+        KafkaSystemOptions(
+            configureExposedConfiguration = { cfg ->
+                listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
             }
         )
-    }.run()
-```
+    }
 
-The `envMapper` block declaratively maps Stove's exposed configurations to environment variables the Go app expects. Use `"stoveKey" to "ENV_VAR"` for config-derived values and `env("NAME", "value")` for static ones. For apps that prefer CLI arguments, use `argsMapper` instead (or alongside).
-
-### Database Migration
-
-```kotlin title="ProductMigration.kt"
-class ProductMigration : DatabaseMigration<PostgresSqlMigrationContext> {
-    override val order: Int = 1
-
-    override suspend fun execute(connection: PostgresSqlMigrationContext) {
-        connection.sql.execute(
-            queryOf("""
-                CREATE TABLE IF NOT EXISTS products (
-                    id VARCHAR(255) PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    price DECIMAL(10, 2) NOT NULL
+    postgresql {
+        PostgresqlOptions(
+            databaseName = "appdb",
+            configureExposedConfiguration = { cfg ->
+                listOf(
+                    "database.host=${cfg.host}",
+                    "database.port=${cfg.port}",
+                    "database.name=${cfg.database}",
+                    "database.username=${cfg.username}",
+                    "database.password=${cfg.password}"
                 )
-            """).asExecute
+            }
         )
     }
-}
+
+    goApp(
+        target = ProcessTarget.Server(port = 8090, portEnvVar = "APP_PORT"),
+        envProvider = envMapper {
+            "database.host"          to "DB_HOST"
+            "database.port"          to "DB_PORT"
+            "database.name"          to "DB_NAME"
+            "database.username"      to "DB_USER"
+            "database.password"      to "DB_PASS"
+            "kafka.bootstrapServers" to "KAFKA_BROKERS"
+            env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
+        }
+    )
+}.run()
 ```
 
-## Writing Tests
+`envMapper` declaratively maps Stove's exposed config to env var names your Go app reads. `"stoveKey" to "ENV_VAR"` for config-derived. `env("NAME", "value")` for static. For CLI-arg apps, use `argsMapper` instead (or alongside).
 
-```kotlin title="GoShowcaseTest.kt"
-class GoShowcaseTest : FunSpec({
-    test("create product, verify HTTP, DB, Kafka, traces") {
-        stove {
-            var productId: String? = null
+## Writing tests
 
-            http {
-                postAndExpectBody<ProductResponse>(
-                    uri = "/api/products",
-                    body = CreateProductRequest(name = "Test", price = 42.99).some()
-                ) { actual ->
-                    actual.status shouldBe 201
-                    productId = actual.body().id
-                }
-            }
+Same DSL as JVM tests. Bridge (`using<T>`) isn't available because Go runs in a separate process.
 
-            postgresql {
-                shouldQuery<ProductRow>(
-                    query = "SELECT id, name, price FROM products WHERE id = '$productId'",
-                    mapper = productRowMapper
-                ) { rows -> rows.size shouldBe 1 }
-            }
+```kotlin
+class OrderE2ETest : FunSpec({
+  test("create product, verify HTTP + DB + Kafka + traces") {
+    stove {
+      var productId: String? = null
 
-            kafka {
-                shouldBePublished<ProductCreatedEvent> {
-                    actual.name == "Test"
-                }
-            }
-
-            tracing {
-                waitForSpans(4, 5000)
-                shouldContainSpan("http.request")
-                shouldNotHaveFailedSpans()
-            }
+      http {
+        postAndExpectBody<ProductResponse>(
+          uri = "/api/products",
+          body = CreateProductRequest(name = "Test", price = 42.99).some()
+        ) {
+          it.status shouldBe 201
+          productId = it.body().id
         }
+      }
+
+      postgresql {
+        shouldQuery<ProductRow>(
+          query = "SELECT id, name, price FROM products WHERE id = '$productId'",
+          mapper = { row -> ProductRow(row.string("id"), row.string("name"), row.double("price")) }
+        ) { it.size shouldBe 1 }
+      }
+
+      kafka {
+        shouldBePublished<ProductCreatedEvent> {
+          actual.name == "Test"
+        }
+      }
+
+      tracing {
+        shouldContainSpan("http.request")
+        shouldNotHaveFailedSpans()
+      }
     }
+  }
 })
 ```
 
-Verify the Go app consumes events and updates state:
+To verify the Go app **consumes** events from a topic, publish from the test and assert the resulting state:
 
 ```kotlin
-test("consume product update events from Kafka") {
-    stove {
-        var productId: String? = null
+test("Go app consumes product update events") {
+  stove {
+    val productId = "p-${UUID.randomUUID()}"
 
-        http {
-            postAndExpectBody<ProductResponse>(
-                uri = "/api/products",
-                body = CreateProductRequest(name = "Original", price = 10.0).some()
-            ) { actual -> productId = actual.body().id }
-        }
-
-        kafka {
-            publish("product.update", ProductUpdateEvent(id = productId!!, name = "Updated", price = 99.99))
-            shouldBeConsumed<ProductUpdateEvent> {
-                actual.id == productId && actual.name == "Updated"
-            }
-        }
-
-        postgresql {
-            shouldQuery<ProductRow>(
-                query = "SELECT id, name, price FROM products WHERE id = '$productId'",
-                mapper = productRowMapper
-            ) { rows -> rows.first().name shouldBe "Updated" }
-        }
+    kafka {
+      publish("product.update", ProductUpdateEvent(id = productId, name = "Updated"))
+      shouldBeConsumed<ProductUpdateEvent> { actual.id == productId }
     }
+
+    postgresql {
+      shouldQuery<ProductRow>(
+        query = "SELECT name FROM products WHERE id = '$productId'",
+        mapper = { row -> ProductRow(name = row.string("name")) }
+      ) { it.first().name shouldBe "Updated" }
+    }
+  }
 }
+```
+
+## Running
+
+```bash
+./gradlew e2eTest
 ```
 
 ## Dashboard & MCP
 
-When the [`stove` CLI](../Components/18-dashboard.md) is running, the Go run streams to `http://localhost:4040` like any JVM run. Timeline, traces, snapshots, Kafka explorer.
+Start `stove serve`. The Go run streams to `http://localhost:8086` like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the [MCP endpoint](../Components/21-mcp.md). No log scraping.
 
-For AI-assisted triage, the same CLI exposes a [Model Context Protocol endpoint](../Components/21-mcp.md) at `http://localhost:4040/mcp`. Agents call `stove_failures` to discover failed Go tests, then `stove_failure_detail`, `stove_timeline`, `stove_trace`, and `stove_snapshot` for compact, structured evidence. No log scraping required.
+## How tracing flows
 
-## Code Coverage
+```
+1. StoveKotestExtension starts a TraceContext before each test
+2. Stove HTTP client injects `traceparent` into requests
+3. otelhttp middleware extracts traceparent, creates HTTP span as child
+4. Handler passes r.Context() to DB functions
+5. otelsql creates DB spans as children of the HTTP span
+6. All spans share the test's trace ID
+7. Spans export via OTLP gRPC to Stove's receiver
+8. tracing { shouldContainSpan(...) } queries by trace ID
+```
 
-For both process-mode and container-mode AUT runs, Stove executes your app outside `go test`, so standard `go test -cover` doesn't apply. Go 1.20+ integration coverage fits this model: build with `go build -cover`, set `GOCOVERDIR`, and flush data on graceful shutdown (SIGTERM).
+## <a id="code-coverage"></a>Code coverage (optional)
 
-### How It Works
+Stove runs your app outside `go test`, so plain `go test -cover` doesn't apply. Go 1.20+ integration coverage works: build with `go build -cover`, set `GOCOVERDIR`, flush on SIGTERM.
 
 ```
 1. go build -cover          → instruments the binary
@@ -442,106 +355,57 @@ For both process-mode and container-mode AUT runs, Stove executes your app outsi
 5. go tool cover -func/-html → human-readable reports
 ```
 
-### Gradle Setup
-
-The recipe supports coverage via the `-Pgo.coverage=true` Gradle property. When disabled (default), there is zero overhead.
+Opt-in via a Gradle property (no overhead when off):
 
 ```kotlin title="build.gradle.kts"
 val coverageEnabled = providers.gradleProperty("go.coverage")
     .map { it.toBoolean() }.getOrElse(false)
 val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
 
-tasks.register<Exec>("buildGoApp") {
-    val args = mutableListOf(goExecutable, "build")
-    if (coverageEnabled) args.add("-cover")
-    args.addAll(listOf("-o", goBinary.absolutePath, "."))
-    commandLine(args)
+tasks.named<Exec>("buildGoApp") {
+    if (coverageEnabled) commandLine(goExecutable, "build", "-cover", "-o", goBinary.absolutePath, ".")
 }
 
-tasks.register<Test>("e2eTest_sarama") {
+tasks.named<Test>("e2eTest") {
     if (coverageEnabled) {
         systemProperty("go.cover.dir", goCoverDirPath)
-        outputs.cacheIf { false }  // Coverage data is a side effect
+        outputs.cacheIf { false }
     }
 }
 
 if (coverageEnabled) {
     tasks.register<Exec>("goCoverageReport") {
-        mustRunAfter(kafkaE2eTasks)
+        mustRunAfter("e2eTest")
         commandLine(goExecutable, "tool", "covdata", "textfmt",
             "-i=$goCoverDirPath", "-o=$goCoverOutPath")
-    }
-    tasks.register<Exec>("goCoverageSummary") {
-        dependsOn("goCoverageReport")
-        commandLine(goExecutable, "tool", "cover", "-func=$goCoverOutPath")
     }
     tasks.register<Exec>("goCoverageHtml") {
         dependsOn("goCoverageReport")
         commandLine(goExecutable, "tool", "cover", "-html=$goCoverOutPath", "-o=coverage.html")
     }
-    tasks.register("e2eTestWithCoverage") {
-        dependsOn(kafkaE2eTasks)
-        finalizedBy("goCoverageSummary", "goCoverageHtml")
-    }
 }
 ```
 
-### SIGPIPE Handling
+Wire `GOCOVERDIR` through `envMapper`:
 
-When a Go process runs under Java's `ProcessBuilder`, the stdout pipe can close before the process exits. If Go writes to the closed pipe (e.g. `log.Println` during shutdown), it receives SIGPIPE and terminates immediately. Before the coverage counters are flushed. Add this at the top of `main()`:
-
-```go title="main.go"
-func main() {
-    signal.Ignore(syscall.SIGPIPE)
-    // ...
+```kotlin
+env("GOCOVERDIR") {
+    System.getProperty("go.cover.dir")?.also { java.io.File(it).mkdirs() } ?: ""
 }
 ```
 
-This is good practice for any long-running Go service managed by an external process, not just for coverage.
-
-### Running
+Run:
 
 ```bash
-# Without coverage (default. zero overhead)
-./gradlew e2eTest_sarama
-
-# With coverage. runs tests + generates reports
-./gradlew e2eTestWithCoverage -Pgo.coverage=true
+./gradlew e2eTest -Pgo.coverage=true
+./gradlew goCoverageHtml -Pgo.coverage=true
+# Open build/go-coverage/coverage.html
 ```
 
-The HTML report is written to `build/go-coverage/coverage.html`. Container-mode coverage uses the same flag. See [Container Mode](go-container.md#code-coverage).
+!!! warning "SIGPIPE handling"
+    `signal.Ignore(syscall.SIGPIPE)` at the top of `main()` is required. Without it, Go can die on SIGPIPE before coverage counters flush. Same trick helps any long-running Go service managed by an external process.
 
-!!! tip "Why no Stove framework changes were needed"
-    Everything is achievable with existing primitives: the `-cover` build flag is a Gradle concern, `GOCOVERDIR` is just another env var, coverage processing happens after tests, and graceful shutdown is handled by the AUT starter (`stove-process` or `stove-container`).
-
-## How Tracing Flows
-
-```
-1. StoveKotestExtension starts a TraceContext before each test
-2. Stove HTTP client injects `traceparent` header into requests
-3. otelhttp middleware extracts traceparent, creates HTTP span as child
-4. Handler passes r.Context() to DB functions
-5. otelsql creates DB spans as children of the HTTP span
-6. All spans share the same trace ID as the test
-7. Spans are exported via OTLP gRPC to Stove's receiver
-8. tracing { shouldContainSpan(...) } queries spans by trace ID
-```
-
-## Running
-
-```bash
-# From the go-showcase directory. runs all three Kafka libraries
-cd recipes/process/golang/go-showcase
-./gradlew e2eTest
-
-./gradlew e2eTest_sarama
-./gradlew e2eTest_franz
-./gradlew e2eTest_segmentio
-
-./gradlew e2eTestWithCoverage -Pgo.coverage=true
-```
-
-## Go Dependencies
+## Go dependencies
 
 ```
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp  # HTTP middleware
@@ -550,11 +414,17 @@ go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc # OTLP gRPC expo
 go.opentelemetry.io/otel/sdk                                    # OTel SDK
 github.com/XSAM/otelsql                                         # database/sql auto-instrumentation
 github.com/lib/pq                                                # PostgreSQL driver
-google.golang.org/grpc                                           # gRPC (for OTLP + bridge)
 
-# Kafka. pick one client + its bridge subpackage:
+# Kafka. Pick one client + its bridge subpackage:
 github.com/IBM/sarama                                            # + stove-kafka/sarama
 github.com/twmb/franz-go/pkg/kgo                                 # + stove-kafka/franz
 github.com/segmentio/kafka-go                                    # + stove-kafka/segmentio
-github.com/trendyol/stove/go/stove-kafka                        # Core bridge (always needed)
+github.com/trendyol/stove/go/stove-kafka                        # core bridge
 ```
+
+## Pairs well with
+
+- [Go Container Mode](go-container.md) for CI-grade image parity
+- [Tracing](../Components/15-tracing.md) for span assertions
+- [Dashboard](../Components/18-dashboard.md) for live UI
+- [MCP](../Components/21-mcp.md) for agent-driven triage

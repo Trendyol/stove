@@ -14,6 +14,7 @@ extra_javascript:
   # so we can set the required `data-selector` attribute (mkdocs extra_javascript
   # can't add custom attrs).
   - js/kotlin-playground-init.js
+  - js/stove-flow.js
 plugins:
   - search
   - awesome-pages:

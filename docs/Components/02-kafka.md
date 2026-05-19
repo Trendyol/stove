@@ -143,6 +143,10 @@ stove {
 }
 ```
 
+How it works under the hood:
+
+<div class="stove-flow" data-scenario="shouldBePublished"></div>
+
 ### Asserting consumed (Spring integration)
 
 ```kotlin
@@ -156,6 +160,10 @@ stove {
   }
 }
 ```
+
+How `shouldBeConsumed` flows across test, broker, app, and bridge:
+
+<div class="stove-flow" data-scenario="shouldBeConsumed"></div>
 
 ### Testing retry / failure paths
 

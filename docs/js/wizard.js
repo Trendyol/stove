@@ -62,7 +62,7 @@
         test: "kotest",
         systems: ["sys.http", "sys.postgresql", "sys.kafka"],
         mocks: ["sys.wiremock"],
-        obs: ["obs.tracing", "obs.dashboard"],
+        obs: ["obs.reporting", "obs.tracing", "obs.dashboard"],
         bridge: true,
         keyed: false,
         pkg: "com.yourcompany.yourapp",
@@ -89,6 +89,9 @@
         this.loadFromUrl();
         this.$watch("state", () => this.syncUrl(), { deep: true });
         this.$watch("step", () => this.syncUrl());
+        // Canonicalize URL immediately so shareUrl() reflects defaults,
+        // not the bare /wizard/ a first-time visitor lands on.
+        this.syncUrl();
         this.ready = true;
       },
 
@@ -319,7 +322,19 @@ ${fill(test.sample, { body })}`;
         });
       },
 
-      shareUrl() { return location.href; },
+      shareUrl() {
+        // Build from state so the link is always complete, even before the
+        // browser's history.replaceState round-trip has updated location.href.
+        const s = this.state;
+        const p = new URLSearchParams({
+          rt: s.runtime, fw: s.framework, lang: s.language, test: s.test,
+          sys: s.systems.join(","), mk: s.mocks.join(","), obs: s.obs.join(","),
+          br: s.bridge ? "1" : "0", kd: s.keyed ? "1" : "0",
+          pkg: s.pkg, cls: s.appClass, step: String(this.step),
+        });
+        const base = location.origin + location.pathname.replace(/\?.*$/, "");
+        return base + "?" + p.toString() + "#stove-wizard";
+      },
 
       // Catalog accessors for templates
       sysIds() { return this.data ? Object.keys(this.data.systems).filter((id) => this.data.systems[id].family !== "mock" && id !== "sys.bridge") : []; },
@@ -496,25 +511,45 @@ ${fill(test.sample, { body })}`;
               </template>
             </div>
             <div class="sw-callout" x-show="state.obs.includes('obs.tracing')">
-              <strong>Gradle required for tracing.</strong>
-              The <code>stoveTracing</code> plugin attaches the OpenTelemetry agent, runs the OTLP receiver, and exposes the endpoint to your AUT. Maven users can wire OTel manually, but the plugin path is JVM + Gradle only.
+              <strong>🐘 Gradle required for tracing.</strong>
+              The <code>stoveTracing</code> plugin attaches the OpenTelemetry Java agent, runs the OTLP receiver, allocates a per-task port, and exposes the endpoint to your AUT via env vars. <strong>Zero app-code changes.</strong>
+              Maven users would need to wire all of that manually. If you're on Maven, this is the moment to consider switching. <code>gradle init --type pom</code> gets you most of the way there.
             </div>
           </section>
 
           <!-- Step 6 -->
           <section class="sw-panel" x-show="step === 6">
             <h3>Your Stove setup</h3>
-            <p>Paste these into your project. Share via <a :href="shareUrl()" x-text="shareUrl()"></a></p>
+
+            <div class="sw-gradle-banner">
+              <div class="sw-gradle-banner-head">
+                <span class="sw-gradle-icon">🐘</span>
+                <strong>Built for Gradle (Kotlin DSL)</strong>
+              </div>
+              <p>
+                The <code>stoveTracing</code> plugin (OpenTelemetry agent attach + OTLP receiver + per-task port allocation) is <strong>Gradle-only</strong>.
+                Stove dependencies work on Maven, but tracing, dashboard auto-wiring, and the polyglot tooling assume the Gradle path.
+                On Maven? Converting is worth it. Use Gradle's <code>init</code> task as a starting point:
+              </p>
+              <pre><code>gradle init --type pom</code></pre>
+            </div>
+
+            <div class="sw-share">
+              <p>Paste these into your project.</p>
+              <button class="sw-btn primary sw-share-btn"
+                      @click="copy(shareUrl(), $event.currentTarget)"
+                      :title="shareUrl()">
+                🔗 Copy share link
+              </button>
+              <a class="sw-share-open" :href="shareUrl()" target="_blank" rel="noopener">open ↗</a>
+            </div>
 
             <div class="sw-output">
               <div class="sw-output-head">
-                <h4>build.gradle.kts</h4>
+                <h4><span class="sw-output-tag">Gradle Kotlin DSL</span> build.gradle.kts</h4>
                 <button class="sw-copy" @click="copy(renderGradle(), $event.target)">copy</button>
               </div>
               <pre><code class="language-kotlin" x-text="renderGradle()"></code></pre>
-              <p class="sw-hint" x-show="state.obs.includes('obs.tracing')">
-                Gradle Kotlin DSL recommended. The <code>stoveTracing</code> plugin requires Gradle. Maven works for the rest of Stove; tracing requires manual OTel wiring without it.
-              </p>
             </div>
 
             <div class="sw-output">
