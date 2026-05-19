@@ -18,3 +18,12 @@
   }
 "testDsl": |-
   mysql { shouldExecute("SELECT 1") }
+"configureProvided": |-
+  mysql {
+    MySqlOptions.provided(
+      jdbcUrl = "jdbc:mysql://staging-mysql:3306/myapp?allowPublicKeyRetrieval=true&useSSL=false",
+      username = System.getenv("MYSQL_USER"),
+      password = System.getenv("MYSQL_PASS"),
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

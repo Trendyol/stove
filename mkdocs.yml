@@ -10,6 +10,16 @@ extra_javascript:
   - js/rough-notation-mkdocs.js
   - https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js
   - js/wizard.js
+  # Prism.js for client-side Kotlin syntax highlight in the wizard + cookbook
+  # (Material's server-side pygments doesn't reach Alpine-rendered dynamic content).
+  # `prism-init.js` MUST load before prism-core to set window.Prism.manual = true
+  # — otherwise Prism auto-runs and re-tokenizes static MD blocks, mangling whitespace.
+  - js/prism-init.js
+  - https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js
+  - https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js
+  - https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-java.min.js
+  - https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-kotlin.min.js
+  - https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-properties.min.js
   # KotlinPlayground script tag is injected dynamically by the init below
   # so we can set the required `data-selector` attribute (mkdocs extra_javascript
   # can't add custom attrs).

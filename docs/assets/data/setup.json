@@ -125,7 +125,8 @@
         "com.trendyol.stove.testing.e2e.cassandra.*"
       ],
       "configure": "cassandra {\n  CassandraSystemOptions(\n    configureExposedConfiguration = { cfg ->\n      listOf(\"cassandra.contact-points=${cfg.contactPoints}\")\n    }\n  )\n}",
-      "testDsl": "cassandra { shouldExecute(\"SELECT now() FROM system.local\") }"
+      "testDsl": "cassandra { shouldExecute(\"SELECT now() FROM system.local\") }",
+      "configureProvided": "cassandra {\n  CassandraSystemOptions.provided(\n    contactPoints = listOf(\"staging-cassandra:9042\"),\n    keyspace = \"myapp\",\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.couchbase": {
       "label": "Couchbase",
@@ -137,7 +138,8 @@
         "com.trendyol.stove.testing.e2e.couchbase.*"
       ],
       "configure": "couchbase {\n  CouchbaseSystemOptions(\n    bucketName = \"testbucket\",\n    configureExposedConfiguration = { cfg ->\n      listOf(\n        \"couchbase.hosts=${cfg.hostsWithPort}\",\n        \"couchbase.username=${cfg.username}\",\n        \"couchbase.password=${cfg.password}\"\n      )\n    }\n  )\n}",
-      "testDsl": "couchbase {\n  shouldGet<MyDoc>(\"doc-id\") {\n    it.field shouldBe \"value\"\n  }\n}"
+      "testDsl": "couchbase {\n  shouldGet<MyDoc>(\"doc-id\") {\n    it.field shouldBe \"value\"\n  }\n}",
+      "configureProvided": "couchbase {\n  CouchbaseSystemOptions.provided(\n    bucketName = \"myapp\",\n    hostsWithPort = \"staging-couchbase:8091\",\n    username = System.getenv(\"CB_USER\"),\n    password = System.getenv(\"CB_PASS\"),\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.elasticsearch": {
       "label": "Elasticsearch",
@@ -149,7 +151,8 @@
         "com.trendyol.stove.testing.e2e.elasticsearch.*"
       ],
       "configure": "elasticsearch {\n  ElasticsearchSystemOptions(\n    configureExposedConfiguration = { cfg ->\n      listOf(\"elasticsearch.url=${cfg.url}\")\n    }\n  )\n}",
-      "testDsl": "elasticsearch {\n  shouldGet<MyDoc>(index = \"orders\", key = \"id\") {\n    it.field shouldBe \"x\"\n  }\n}"
+      "testDsl": "elasticsearch {\n  shouldGet<MyDoc>(index = \"orders\", key = \"id\") {\n    it.field shouldBe \"x\"\n  }\n}",
+      "configureProvided": "elasticsearch {\n  ElasticsearchSystemOptions.provided(\n    url = \"http://staging-es:9200\",\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.grpc-mock": {
       "label": "gRPC Mock",
@@ -186,7 +189,8 @@
         "com.trendyol.stove.testing.e2e.http.HttpClientSystemOptions"
       ],
       "configure": "httpClient {\n  HttpClientSystemOptions(baseUrl = \"http://localhost:8080\")\n}",
-      "testDsl": "http {\n  get<String>(\"/hello\") { body ->\n    body shouldContain \"hello\"\n  }\n}"
+      "testDsl": "http {\n  get<String>(\"/hello\") { body ->\n    body shouldContain \"hello\"\n  }\n}",
+      "configureProvided": "httpClient {\n  HttpClientSystemOptions(baseUrl = \"https://staging.myapp.com\")   // remote AUT\n}"
     },
     "sys.kafka": {
       "label": "Kafka",
@@ -200,7 +204,8 @@
         "kotlin.time.Duration.Companion.seconds"
       ],
       "configure": "kafka {\n  KafkaSystemOptions(\n    serde = StoveSerde.jackson.anyByteArraySerde(),\n    configureExposedConfiguration = { cfg ->\n      listOf(\n        \"spring.kafka.bootstrap-servers=${cfg.bootstrapServers}\",\n        \"spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}\",\n        \"spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}\"\n      )\n    }\n  )\n}",
-      "testDsl": "kafka {\n  shouldBePublished<Map<String, Any>> {\n    actual[\"type\"] == \"created\"\n  }\n}"
+      "testDsl": "kafka {\n  shouldBePublished<Map<String, Any>> {\n    actual[\"type\"] == \"created\"\n  }\n}",
+      "configureProvided": "kafka {\n  KafkaSystemOptions.provided(\n    bootstrapServers = \"staging-kafka:9092\",\n    cleanup = { admin ->\n      // Optional: delete only your test-prefixed topics\n      admin.listTopics().names().get()\n        .filter { it.startsWith(\"test_${TestRunContext.runId}_\") }\n        .takeIf { it.isNotEmpty() }\n        ?.let { admin.deleteTopics(it).all().get() }\n    },\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.mongodb": {
       "label": "MongoDB",
@@ -212,7 +217,8 @@
         "com.trendyol.stove.testing.e2e.mongodb.*"
       ],
       "configure": "mongodb {\n  MongodbSystemOptions(\n    configureExposedConfiguration = { cfg ->\n      listOf(\"spring.data.mongodb.uri=${cfg.connectionString}\")\n    }\n  )\n}",
-      "testDsl": "mongodb {\n  shouldGet<MyDoc>(objectId = \"doc-id\", collection = \"orders\") {\n    it.status shouldBe \"CREATED\"\n  }\n}"
+      "testDsl": "mongodb {\n  shouldGet<MyDoc>(objectId = \"doc-id\", collection = \"orders\") {\n    it.status shouldBe \"CREATED\"\n  }\n}",
+      "configureProvided": "mongodb {\n  MongodbSystemOptions.provided(\n    connectionString = \"mongodb://staging-mongo:27017/myapp\",\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.mssql": {
       "label": "MSSQL",
@@ -224,7 +230,8 @@
         "com.trendyol.stove.testing.e2e.database.mssql.*"
       ],
       "configure": "mssql {\n  MsSqlOptions(\n    configureExposedConfiguration = { cfg ->\n      listOf(\"spring.datasource.url=${cfg.jdbcUrl}\")\n    }\n  )\n}",
-      "testDsl": "mssql { shouldExecute(\"SELECT 1\") }"
+      "testDsl": "mssql { shouldExecute(\"SELECT 1\") }",
+      "configureProvided": "mssql {\n  MsSqlOptions.provided(\n    jdbcUrl = \"jdbc:sqlserver://staging-mssql:1433;databaseName=myapp\",\n    username = System.getenv(\"MSSQL_USER\"),\n    password = System.getenv(\"MSSQL_PASS\"),\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.mysql": {
       "label": "MySQL",
@@ -236,7 +243,8 @@
         "com.trendyol.stove.testing.e2e.database.mysql.*"
       ],
       "configure": "mysql {\n  MySqlOptions(\n    configureExposedConfiguration = { cfg ->\n      listOf(\"spring.datasource.url=${cfg.jdbcUrl}\")\n    }\n  )\n}",
-      "testDsl": "mysql { shouldExecute(\"SELECT 1\") }"
+      "testDsl": "mysql { shouldExecute(\"SELECT 1\") }",
+      "configureProvided": "mysql {\n  MySqlOptions.provided(\n    jdbcUrl = \"jdbc:mysql://staging-mysql:3306/myapp?allowPublicKeyRetrieval=true&useSSL=false\",\n    username = System.getenv(\"MYSQL_USER\"),\n    password = System.getenv(\"MYSQL_PASS\"),\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.postgresql": {
       "label": "PostgreSQL",
@@ -248,7 +256,8 @@
         "com.trendyol.stove.testing.e2e.database.postgresql.*"
       ],
       "configure": "postgresql {\n  PostgresqlOptions(\n    databaseName = \"testdb\",\n    configureExposedConfiguration = { cfg ->\n      listOf(\n        \"spring.datasource.url=${cfg.jdbcUrl}\",\n        \"spring.datasource.username=${cfg.username}\",\n        \"spring.datasource.password=${cfg.password}\"\n      )\n    }\n  )\n}",
-      "testDsl": "postgresql {\n  shouldExecute(\"SELECT 1\")\n}"
+      "testDsl": "postgresql {\n  shouldExecute(\"SELECT 1\")\n}",
+      "configureProvided": "postgresql {\n  PostgresqlOptions.provided(\n    jdbcUrl = \"jdbc:postgresql://staging-db:5432/myapp\",   // TODO real URL\n    username = System.getenv(\"PG_USER\"),\n    password = System.getenv(\"PG_PASS\"),\n    cleanup = { ops ->\n      // Optional: clean only your prefixed rows\n      ops.execute(\"DELETE FROM orders WHERE test_run = '${TestRunContext.runId}'\")\n    },\n    configureExposedConfiguration = { cfg -> emptyList() }   // app already configured\n  )\n}"
     },
     "sys.redis": {
       "label": "Redis",
@@ -260,7 +269,8 @@
         "com.trendyol.stove.testing.e2e.redis.*"
       ],
       "configure": "redis {\n  RedisSystemOptions(\n    configureExposedConfiguration = { cfg ->\n      listOf(\"spring.data.redis.url=${cfg.url}\")\n    }\n  )\n}",
-      "testDsl": "redis {\n  client().connect().sync().get(\"order:1\") shouldNotBe null\n}"
+      "testDsl": "redis {\n  client().connect().sync().get(\"order:1\") shouldNotBe null\n}",
+      "configureProvided": "redis {\n  RedisOptions.provided(\n    url = \"redis://staging-redis:6379\",\n    configureExposedConfiguration = { cfg -> emptyList() }\n  )\n}"
     },
     "sys.wiremock": {
       "label": "WireMock (HTTP mock)",

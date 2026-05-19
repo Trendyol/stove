@@ -31,3 +31,17 @@
       actual["type"] == "created"
     }
   }
+"configureProvided": |-
+  kafka {
+    KafkaSystemOptions.provided(
+      bootstrapServers = "staging-kafka:9092",
+      cleanup = { admin ->
+        // Optional: delete only your test-prefixed topics
+        admin.listTopics().names().get()
+          .filter { it.startsWith("test_${TestRunContext.runId}_") }
+          .takeIf { it.isNotEmpty() }
+          ?.let { admin.deleteTopics(it).all().get() }
+      },
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

@@ -75,6 +75,15 @@ Filter by name, family (database, mock, observability), or substring. Each card 
     return items;
   }
 
+  function hl(code, lang) {
+    if (code == null) return "";
+    const target = (lang || "kotlin").toLowerCase();
+    if (window.Prism && Prism.languages && Prism.languages[target]) {
+      return Prism.highlight(String(code), Prism.languages[target], target);
+    }
+    return esc(code);
+  }
+
   function copyToClipboard(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
       const orig = btn.textContent;
@@ -98,21 +107,21 @@ Filter by name, family (database, mock, observability), or substring. Each card 
 
     return filtered.map((it) => {
       const gradleBlock = (it.gradle || []).length
-        ? `<pre><code>${esc((it.gradle || []).map((d) => `testImplementation("${d}")`).join("\n"))}</code></pre>`
+        ? `<pre><code class="language-kotlin">${hl((it.gradle || []).map((d) => `testImplementation("${d}")`).join("\n"), "kotlin")}</code></pre>`
         : `<p class="sw-hint">No extra dependency (built into core).</p>`;
 
       const configBlock = it.configure
-        ? `<pre><code>${esc(dedent(it.configure))}</code></pre>`
+        ? `<pre><code class="language-kotlin">${hl(dedent(it.configure), "kotlin")}</code></pre>`
         : it.runner
-          ? `<pre><code>${esc(dedent(it.runner.replace(/\{pkg\}/g, "com.yourcompany.yourapp")))}</code></pre>`
+          ? `<pre><code class="language-kotlin">${hl(dedent(it.runner.replace(/\{pkg\}/g, "com.yourcompany.yourapp")), "kotlin")}</code></pre>`
           : `<p class="sw-hint">No configuration block.</p>`;
 
       const testBlock = it.testDsl
-        ? `<pre><code>stove {\n${indent(dedent(it.testDsl), "  ")}\n}</code></pre>`
+        ? `<pre><code class="language-kotlin">${hl("stove {\n" + indent(dedent(it.testDsl), "  ") + "\n}", "kotlin")}</code></pre>`
         : "";
 
       const pluginBlock = (it.pluginLine || it.pluginBlock)
-        ? `<pre><code>${esc(["plugins {\n  " + (it.pluginLine || "") + "\n}", dedent(it.pluginBlock || "")].filter(Boolean).join("\n\n"))}</code></pre>`
+        ? `<pre><code class="language-kotlin">${hl(["plugins {\n  " + (it.pluginLine || "") + "\n}", dedent(it.pluginBlock || "")].filter(Boolean).join("\n\n"), "kotlin")}</code></pre>`
         : "";
 
       const sysParam = it.id.startsWith("sys.")
