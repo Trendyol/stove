@@ -1,0 +1,20 @@
+"label": |-
+  MSSQL
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-mssql
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.database.mssql.*
+"configure": |-
+  mssql {
+    MsSqlOptions(
+      configureExposedConfiguration = { cfg ->
+        listOf("spring.datasource.url=${cfg.jdbcUrl}")
+      }
+    )
+  }
+"testDsl": |-
+  mssql { shouldExecute("SELECT 1") }

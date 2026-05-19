@@ -71,7 +71,7 @@ test("create product, verify HTTP, DB, Kafka, traces") {
         }
 
         kafka {
-            shouldBePublished<ProductCreatedEvent>(10.seconds) {
+            shouldBePublished<ProductCreatedEvent> {
                 actual.name == "Test"
             }
         }

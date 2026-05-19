@@ -1,477 +1,161 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Tracing</span>
+# Tracing
 
-Your end-to-end test just failed. Now what?
+Test failed. Need to know what happened *inside the app*, not just at the test boundary. Stove's tracing wires OpenTelemetry into your test JVM, attaches the OTel Java Agent to the AUT, and prints the full span tree alongside the failure.
 
-You stare at a stack trace that says *"expected message not found within timeout"*. You dig through application logs. You check Kafka topics. You wonder if the HTTP request even reached the controller. Was it a database error? A serialization issue? A Kafka consumer that silently died?
-
-**What if your test failure told you exactly what happened inside your application?**
-
-```
-═══════════════════════════════════════════════════════════════════════════════
-EXECUTION TRACE (Call Chain)
-═══════════════════════════════════════════════════════════════════════════════
-✓ POST (377ms)
-  ✓ POST /api/product/create (361ms)
-    ✓ ProductController.create (141ms)
-      ✓ ProductCreator.create (0ms)
-      ✓ KafkaProducer.send (137ms)
-        ✓ orders.created publish (81ms)
-          ✗ orders.created process (82ms)  ← FAILURE POINT
-```
-
-That's Stove tracing. When a test fails, you see the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application, powered by <span data-rn="underline" data-rn-color="#ff9800">OpenTelemetry</span>: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. It's a unique feature.
-
-## What You Get
-
-When tracing is enabled, every test failure comes with the full story:
-
-```
-STOVE EXECUTION REPORT
-═══════════════════════════════════════════════════════════════════════════════
-
-TIMELINE
-────────
-14:45:38.439 ✓ PASSED [HTTP] POST /api/product/create
-14:45:38.472 ✗ FAILED [Kafka] shouldBePublished<ProductCreatedEvent>
-
-SYSTEM SNAPSHOTS
-────────────────
-KAFKA
-  Consumed: 0
-  Produced: 1
-  Failed: 1
-    [0] topic: orders.created
-        reason: Something went wrong
-
-═══════════════════════════════════════════════════════════════════════════════
-EXECUTION TRACE (Call Chain)
-═══════════════════════════════════════════════════════════════════════════════
-✓ POST (377ms)
-  ✓ POST /api/product/create (361ms)
-    ✓ ProductController.create (141ms)
-      ✓ ProductCreator.create (0ms)
-      ✓ KafkaProducer.send (137ms)
-        ✓ orders.created publish (81ms)
-          ✗ orders.created process (82ms)  ← FAILURE POINT
-```
-
-<span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Everything is automatic:</span>
-
-- Traces **start and end** with each test
-- W3C `traceparent` headers are **injected into HTTP requests**
-- Trace headers are **injected into Kafka messages**
-- Trace metadata is **injected into gRPC calls**
-- All spans are **correlated back to the originating test**
-- Failure reports are **enriched with the execution trace**
-
-When failures include exceptions, you see those too:
-
-```
-✗ PaymentGateway.charge [80ms] ⚠ FAILURE POINT
-├── Exception: PaymentDeclinedException
-│   Message: Card declined
-│   at PaymentGateway.charge(PaymentGateway.kt:42)
-```
-
-Successful traces render as clean hierarchical trees:
-
-```
-✓ OrderController.createOrder [100ms]
-├── ✓ OrderService.processOrder [95ms]
-│   ├── ✓ UserRepository.findById [10ms]
-│   │   └── db.system: postgresql
-│   └── ✓ PaymentClient.charge [65ms]
-│       └── http.url: https://payment.api/charge
-
-Summary: 4 spans, 0 failures, total: 100ms
-```
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">Two steps</span>
+1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. Spans from <em>every</em> instrumented library show up in failure reports automatically. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.
+</div>
 
 ## Setup
 
-Two steps. That's it.
+<a id="gradle-plugin"></a>
 
-### Step 1: Enable tracing in your Stove config
+### 1. Gradle plugin (recommended)
 
-```kotlin hl_lines="3-4"
-Stove()
-    .with {
-        tracing {
-            enableSpanReceiver()
-        }
-        // ... your other systems (http, kafka, etc.)
-    }
-    .run()
-```
-
-### Step 2: Attach the OpenTelemetry agent in your build
-
-=== "Gradle Plugin (Recommended)"
-
-    ```kotlin hl_lines="2 6-7"
-    plugins {
-        id("com.trendyol.stove.tracing") version "<stove-version>"
-    }
-
-    stoveTracing {
-        serviceName.set("my-service")
-    }
-    ```
-
-    The plugin is published to [Maven Central](https://central.sonatype.com/artifact/com.trendyol/stove-tracing-gradle-plugin). Add `mavenCentral()` to your `pluginManagement` repositories if not already present.
-
-=== "buildSrc (Copy-Paste)"
-
-    Copy [StoveTracingConfiguration.kt](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
-
-    ```kotlin hl_lines="3-4"
-    import com.trendyol.stove.gradle.stoveTracing
-
-    stoveTracing {
-        serviceName = "my-service"
-    }
-    ```
-
-Both approaches handle everything: downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.
-
-!!! tip "That's all you need"
-    Now write your tests as usual. When a test fails, you'll see the execution trace automatically. <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">No code changes to your application required.</span> The OpenTelemetry agent instruments 100+ libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) with zero code changes.
-
-### Dependencies
-
-```kotlin hl_lines="2"
-dependencies {
-    testImplementation("com.trendyol:stove-tracing:$stoveVersion")
-    testImplementation("com.trendyol:stove-extensions-kotest:$stoveVersion")
-    // or
-    testImplementation("com.trendyol:stove-extensions-junit:$stoveVersion")
-}
-```
-
-!!! info "Test Framework Extensions"
-    `StoveKotestExtension` (`stove-extensions-kotest`) and `StoveJUnitExtension` (`stove-extensions-junit`) are separate packages that must be on your classpath. **Kotest** requires **6.1.3+**; **JUnit** requires **Jupiter 6.x** if possible. For Kotest, add a `kotest.properties` file with `kotest.framework.config.fqn=<your config class FQN>`. See the [Getting Started guide](../getting-started.md#step-3-create-test-configuration) for details.
-
-## Zero-Effort Trace Propagation
-
-You don't need to do anything special in your test code. Stove injects trace headers into every interaction automatically:
-
-=== "HTTP"
-
-    ```kotlin
-    http {
-        get<UserResponse>("/users/123") { user ->
-            user.name shouldBe "John"
-        }
-    }
-    ```
-
-=== "Kafka"
-
-    ```kotlin
-    kafka {
-        publish("orders.created", OrderCreatedEvent(orderId = "123"))
-    }
-    ```
-
-=== "gRPC"
-
-    ```kotlin
-    grpc {
-        channel<GreeterServiceStub> {
-            sayHello(HelloRequest(name = "World"))
-        }
-    }
-    ```
-
-Every HTTP request gets a `traceparent` header. Every Kafka message gets trace headers. Every gRPC call gets trace metadata. Your application picks these up through the OpenTelemetry agent, and Stove collects the resulting spans, all without you writing a single line of tracing code.
-
-## Trace Validation DSL
-
-Beyond automatic failure reports, you can actively query and assert on traces using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it did.
-
-```kotlin hl_lines="9 10 11 12"
-test("order processing should call payment service") {
-    stove {
-        http {
-            post<OrderResponse>("/orders", orderRequest) { response ->
-                response.status shouldBe "created"
-            }
-        }
-
-        tracing {
-            shouldContainSpan("OrderService.processOrder")
-            shouldContainSpan("PaymentClient.charge")
-            shouldNotHaveFailedSpans()
-            executionTimeShouldBeLessThan(500.milliseconds)
-        }
-    }
-}
-```
-
-### Span Assertions
-
-Verify which operations happened (or didn't) during a test:
-
-```kotlin hl_lines="2 3 6 9"
-tracing {
-    shouldContainSpan("UserService.findById")
-    shouldContainSpanMatching { it.operationName.contains("Repository") }
-    shouldNotContainSpan("AdminService.delete")
-
-    shouldNotHaveFailedSpans()
-    shouldHaveFailedSpan("PaymentGateway.charge")
-
-    shouldHaveSpanWithAttribute("http.method", "GET")
-    shouldHaveSpanWithAttributeContaining("http.url", "/api/users")
-}
-```
-
-### Performance Assertions
-
-Assert on execution timing and span counts:
-
-```kotlin hl_lines="2 6"
-tracing {
-    executionTimeShouldBeLessThan(500.milliseconds)
-    executionTimeShouldBeGreaterThan(10.milliseconds)
-
-    spanCountShouldBe(10)
-    spanCountShouldBeAtLeast(5)
-    spanCountShouldBeAtMost(20)
-}
-```
-
-### Debugging Helpers
-
-When you need to understand what happened during a test, render the trace:
-
-```kotlin
-tracing {
-    println(renderTree())    // Hierarchical tree view
-    println(renderSummary()) // Compact summary
-
-    val failedSpans = getFailedSpans()
-    val totalDuration = getTotalDuration()
-    val span = findSpanByName("OrderService.process")
-
-    // Wait for spans to arrive before asserting (useful for async flows)
-    waitForSpans(expectedCount = 5, timeoutMs = 3000)
-}
-```
-
-## Real-World Example
-
-Here's a realistic scenario: an HTTP request triggers order processing, which publishes a Kafka event, which is consumed and writes to the database.
-
-```kotlin hl_lines="28-33"
-test("should create order and notify downstream services") {
-    stove {
-        val orderId = UUID.randomUUID().toString()
-
-        // 1. Create order via HTTP
-        http {
-            post<OrderResponse>("/orders", CreateOrderRequest(orderId, amount = 99.99)) { response ->
-                response.status shouldBe "created"
-            }
-        }
-
-        // 2. Verify Kafka event was published
-        kafka {
-            shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
-                actual.orderId == orderId
-            }
-        }
-
-        // 3. Verify database state
-        postgresql {
-            shouldQuery<Order>("SELECT * FROM orders WHERE id = '$orderId'") { orders ->
-                orders.size shouldBe 1
-                orders.first().status shouldBe "CREATED"
-            }
-        }
-
-        // 4. Verify the execution flow
-        tracing {
-            shouldContainSpan("OrderController.create")
-            shouldContainSpan("OrderService.processOrder")
-            shouldContainSpan("orders.created publish")
-            shouldNotHaveFailedSpans()
-        }
-    }
-}
-```
-
-If any step fails, the trace tree shows you <span data-rn="highlight" data-rn-color="#ef535044" data-rn-duration="800">exactly where and why</span>:
-
-```
-✓ POST (250ms)
-  ✓ POST /orders (245ms)
-    ✓ OrderController.create [120ms]
-    ├── ✓ OrderService.processOrder [115ms]
-    │   ├── ✓ INSERT INTO orders [15ms]
-    │   │   └── db.system: postgresql
-    │   └── ✓ KafkaProducer.send [90ms]
-    │       └── ✓ orders.created publish [45ms]
-    │           └── ✓ orders.created process [40ms]
-    │               └── ✓ UPDATE orders SET status='CREATED' [8ms]
-
-Summary: 8 spans, 0 failures, total: 250ms
-```
-
-!!! note "Working example"
-    For a complete working project with tracing, see the [spring-showcase recipe](https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase).
-
-## Configuration Reference
-
-### Stove Test Config
-
-Configure tracing behavior in your Stove setup:
-
-```kotlin hl_lines="2"
-tracing {
-    enableSpanReceiver()              // Required: starts the span receiver
-    spanCollectionTimeout(10.seconds) // How long to wait for spans (default: 5s)
-    maxSpansPerTrace(2000)            // Cap spans per trace (default: 1000)
-    spanFilter { span ->              // Filter which spans are collected
-        !span.operationName.contains("health-check")
-    }
-}
-```
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `enableSpanReceiver(port?)` | Port from `STOVE_TRACING_PORT` env or `4317` | Starts the OTLP gRPC receiver |
-| `spanCollectionTimeout` | `5.seconds` | How long to wait for spans when building failure reports |
-| `maxSpansPerTrace` | `1000` | Maximum spans stored per trace (prevents memory issues) |
-| `spanFilter` | Accept all | Predicate to filter which spans are collected |
-
-### Gradle Plugin
-
-The Stove Tracing Gradle plugin configures the OpenTelemetry Java Agent for your test tasks. It is published to **Maven Central**.
-
-Add `mavenCentral()` to your `pluginManagement` repositories:
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-```
-
-Then apply the plugin:
-
-```kotlin
+```kotlin hl_lines="2 6 7 8"
 plugins {
-    id("com.trendyol.stove.tracing") version "<stove-version>"
+    id("com.trendyol.stove.tracing") version "$stoveVersion"
 }
-```
 
-For snapshot versions, also add the Maven Central snapshot repository:
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    repositories {
-        mavenCentral()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        gradlePluginPortal()
-    }
-}
-```
-
-Configure the plugin in your `build.gradle.kts`:
-
-```kotlin hl_lines="2-4"
 stoveTracing {
     serviceName.set("my-service")
-    testTaskNames.set(listOf("integrationTest")) // Only apply to specific tasks
-    disabledInstrumentations.set(listOf("jdbc"))  // Exclude noisy instrumentations
+    testTaskNames.set(listOf("e2eTest"))
 }
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `serviceName` | `"stove-traced-app"` | Service name shown in traces |
-| `enabled` | `true` | Toggle tracing on/off |
-| `protocol` | `"grpc"` | OTLP protocol (currently only `grpc` is supported) |
-| `testTaskNames` | `[]` | Apply only to specific test tasks (empty = all) |
-| `otelAgentVersion` | `"2.24.0"` | OpenTelemetry Java Agent version |
-| `captureHttpHeaders` | `true` | Include HTTP headers in spans |
-| `captureExperimentalTelemetry` | `true` | Enable experimental HTTP telemetry |
-| `disabledInstrumentations` | `[]` | Instrumentations to disable (e.g., `jdbc`, `hibernate`) |
-| `additionalInstrumentations` | `[]` | Extra instrumentations to enable |
-| `customAnnotations` | `[]` | Custom annotation classes to instrument |
-| `bspScheduleDelay` | `100` | Batch span processor delay in ms (lower = faster export) |
-| `bspMaxBatchSize` | `1` | Batch size for span export (1 = immediate) |
+The plugin:
 
-??? note "Alternative: buildSrc copy-paste approach"
-    If you prefer not to use the plugin, copy [`StoveTracingConfiguration.kt`](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory and use `stoveTracing { ... }` in your build script.
+- attaches the OpenTelemetry Java agent to your test JVM (zero code changes to your app)
+- boots an OTLP gRPC receiver on a free port
+- exposes `OTEL_*` env vars to the AUT so spans flow back to the test
+- handles agent download + caching
 
-??? note "Alternative: Manual OTel agent setup"
-    If you prefer full control, you can configure the agent manually:
+### 2. Enable span receiver in Stove
 
-    ```kotlin
-    // build.gradle.kts
-    val otelAgent by configurations.creating { isTransitive = false }
+```kotlin
+Stove().with {
+    tracing { enableSpanReceiver() }
+    // ... your systems + runner
+}.run()
+```
 
-    dependencies {
-        otelAgent("io.opentelemetry.javaagent:opentelemetry-javaagent:2.24.0")
-    }
+That's it. Spans from Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB (and 100+ other libraries the OTel agent supports) show up in the failure report automatically.
 
-    tasks.test {
-        doFirst {
-            jvmArgs(
-                "-javaagent:${otelAgent.singleFile.absolutePath}",
-                "-Dotel.traces.exporter=otlp",
-                "-Dotel.exporter.otlp.protocol=grpc",
-                "-Dotel.exporter.otlp.endpoint=http://localhost:4317",
-                "-Dotel.metrics.exporter=none",
-                "-Dotel.logs.exporter=none",
-                "-Dotel.service.name=my-service",
-                "-Dotel.propagators=tracecontext,baggage",
-                "-Dotel.traces.sampler=always_on",
-                "-Dotel.bsp.schedule.delay=100",
-                "-Dotel.bsp.max.export.batch.size=1",
-                "-Dotel.instrumentation.grpc.enabled=false"
-            )
+!!! info "Why Gradle?"
+    The `stoveTracing` plugin handles JVM agent attachment and OTLP wiring per test task. Maven can replicate the receiver setup manually, but the agent-attach + per-task port allocation is plugin-only today.
+
+## What you get
+
+<div class="stove-ribbon" markdown="0">
+  <div class="stove-ribbon-item">
+    <div class="icon">🌲</div>
+    <strong>Full call chain on failure</strong>
+    <p>Failure reports include the span tree: controller → service → DB → Kafka, with timings per hop.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🚀</div>
+    <strong>Zero app changes</strong>
+    <p>OTel agent instruments your code at bytecode level. Your production app doesn't even know.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🔗</div>
+    <strong>W3C propagation</strong>
+    <p><code>traceparent</code> headers and Kafka headers carry context across services. Distributed traces work.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🧪</div>
+    <strong>Parallel-test safe</strong>
+    <p>Each test gets its own trace ID. Concurrent tests don't blur into one tree.</p>
+  </div>
+</div>
+
+## Assertions on spans
+
+`tracing { }` exposes a small DSL inside `stove { }`:
+
+```kotlin
+stove {
+    http { post<OrderResponse>("/orders", body) { /* ... */ } }
+
+    tracing {
+        shouldContainSpan("OrderService.place") {
+            attributes["order.amount"] shouldBe "99.99"
         }
+        shouldNotHaveFailedSpans()
+        executionTimeShouldBeLessThan(2.seconds)
     }
-    ```
+}
+```
 
-## Best Practices
+| Assertion | Use for |
+|---|---|
+| `shouldContainSpan(name) { ... }` | A specific operation ran with expected attributes |
+| `shouldNotHaveFailedSpans()` | No span ended in error state |
+| `shouldHaveSpanCount(n)` | Span count matches expectation (regression guard) |
+| `executionTimeShouldBeLessThan(d)` | Total trace duration under a budget |
 
-1. <span data-rn="underline" data-rn-color="#009688">**Just enable it.**</span> Tracing is automatic and low-overhead; there's no reason not to use it
-2. **Use `tracing { }` sparingly.** The automatic failure reports cover most debugging needs; use the DSL only when you want to assert on the execution flow
-3. **Start with `shouldNotHaveFailedSpans()`.** The simplest assertion that catches unexpected errors
-4. **Filter noise.** If you see too many spans, use `disabledInstrumentations` to exclude verbose libraries like `jdbc` or `spring-scheduling`
-5. **CI just works.** <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Ports are dynamically assigned</span>, so parallel test runs don't conflict
+## Configuration
 
-!!! tip "Works with Reporting"
-    Tracing integrates seamlessly with Stove's [Reporting](13-reporting.md) system. When both are enabled, test failures include the execution report *and* the trace tree together, giving you <span data-rn="underline" data-rn-color="#009688">the complete picture</span>.
+`stoveTracing { }` Gradle extension:
+
+| Option | Default | Notes |
+|---|---|---|
+| `serviceName` | project name | shown in spans + dashboard |
+| `testTaskNames` | `["test"]` | tasks the plugin instruments |
+| `spanCollectionTimeout` | 5 seconds | how long to wait for late spans after the test ends |
+| `maxSpansPerTrace` | 1000 | bounds memory; spans past the cap are dropped |
+| `otelAgentVersion` | latest stable | override if you need to pin |
+
+`tracing { }` runtime block options inside `Stove().with`:
+
+| Option | Default | Notes |
+|---|---|---|
+| `enableSpanReceiver()` | required | starts the OTLP receiver |
+| `filterSpans { span -> ... }` | none | drop noise (e.g. health checks) |
+
+## Real-world example
+
+Order placement: HTTP → service → inventory check → DB insert → Kafka publish. When the test fails (no event published), the span tree shows *why*:
+
+```
+▾ POST /orders                       42ms
+  ├─ OrderController.create          2ms
+  ├─ ▾ OrderService.place           35ms
+  │    ├─ InventoryClient.fetch     7ms
+  │    ├─ ▾ StockGuard.check        1ms
+  │    │    └─ returned: INSUFFICIENT
+  │    └─ KafkaProducer.send         3ms
+  │         topic = order.failed.v1      ← !? expected order.created.v1
+  └─ HTTP 201 returned
+```
+
+Bug found: inventory shows out-of-stock, app published `order.failed.v1` instead. Walk the entire flow visually in [When a test fails](../observability/when-it-fails.md).
+
+## Polyglot apps (Go, Python, ...)
+
+For non-JVM AUT, the plugin still boots the OTLP receiver and exposes `OTEL_EXPORTER_OTLP_ENDPOINT` to the AUT. Wire your language's OTel SDK to read it. Spans land in the same trace tree as the test. See [Polyglot overview](../other-languages/index.md).
+
+## Pairs well with
+
+<div class="grid cards" markdown>
+
+-   :material-monitor-dashboard: **[Dashboard](18-dashboard.md)**. Interactive span tree, attribute search, timeline view.
+
+-   :material-robot-outline: **[MCP](21-mcp.md)**. `stove_trace` exposes the tree to agents.
+
+-   :material-text-box-search-outline: **[Reporting](13-reporting.md)**. Console output combines test entries + span summary.
+
+-   :material-chart-arc: **[When a test fails](../observability/when-it-fails.md)**. The whole loop in one scroll.
+
+</div>
 
 ## Troubleshooting
 
-### No trace in failure reports
-
-1. Ensure `stove-tracing` is in your dependencies
-2. Verify `enableSpanReceiver()` is called in your Stove config
-3. Verify the `com.trendyol.stove.tracing` plugin is applied in your `build.gradle.kts`
-4. Look for *"Stove tracing: Attached OTel agent"* in test output
-
-### Too many spans
-
-Use `disabledInstrumentations` to exclude noisy libraries:
-
-```kotlin
-stoveTracing {
-    serviceName.set("my-service")
-    disabledInstrumentations.set(listOf("jdbc", "hibernate", "spring-scheduling"))
-}
-```
-
-### Spans missing parent-child relationships
-
-1. Ensure trace context is propagated through async boundaries
-2. Check that the OTel agent version is compatible with your framework version
+| Symptom | Check |
+|---|---|
+| No spans in failure report | `stoveTracing` plugin applied? Task name listed in `testTaskNames`? `tracing { enableSpanReceiver() }` in `Stove().with`? |
+| Test task hangs at end | Span collection timeout too high; lower `spanCollectionTimeout` |
+| Span tree too noisy | Use `filterSpans { ... }` to drop health checks and trivial spans |
+| Different agent version needed | Pin via `otelAgentVersion.set("...")` |
+| Custom OTel SDK in app conflicts | The plugin's agent takes precedence; remove the in-app SDK or use SDK-only mode (advanced) |

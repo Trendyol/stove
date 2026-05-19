@@ -1,62 +1,79 @@
 # Ktor
 
-`stove-ktor` is the starter for applications built on Ktor. Stove starts the real Ktor application and keeps the test setup in one place.
+Stove starts your real Ktor server. Works with Koin, Ktor-DI, or any custom container via a one-line resolver.
 
-## Dependency
+<a class="open-in-wizard" data-fw="ktor" data-sys="http,postgresql">Open Ktor + Postgres in wizard</a>
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">Two knobs</span>
+1) Your <code>run(args, wait = false, ...)</code> returns the started <code>Application</code>. 2) <code>ktor(runner = ...)</code> calls it. Bridge auto-detects Koin vs Ktor-DI; custom containers plug in via a resolver lambda.
+</div>
+
+## Anatomy
+
+<div class="stove-anatomy" markdown="0">
+  <div class="stove-anatomy-code">
+ktor( <span class="anchor">1</span>
+  runner = { params ->
+    com.app.run( <span class="anchor">2</span>
+      params,
+      shouldWait = false, <span class="anchor">3</span>
+      testModules = listOf(testModule)
+    )
+  },
+  withParameters = listOf("port=8080")
+)
+  </div>
+  <div class="stove-anatomy-notes">
+    <div class="stove-note"><span class="stove-note-tag">1</span><strong><code>ktor { }</code></strong> registers Ktor as the AUT runner.</div>
+    <div class="stove-note"><span class="stove-note-tag">2</span><strong><code>runner</code></strong> calls your extracted <code>run</code>. Pass test modules / test deps here.</div>
+    <div class="stove-note"><span class="stove-note-tag">3</span><strong><code>shouldWait = false</code></strong> is critical. Stove keeps the suite alive itself.</div>
+  </div>
+</div>
+
+## Setup
 
 ```kotlin
 dependencies {
-    testImplementation(platform("com.trendyol:stove-bom:$version"))
+    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
     testImplementation("com.trendyol:stove")
     testImplementation("com.trendyol:stove-ktor")
+    testImplementation("com.trendyol:stove-extensions-kotest")  // or -junit
 }
 ```
 
-## Application Entrypoint
-
-Expose a reusable `run` function and return the started `Application`. The exact shape depends on your DI framework:
+Extract `run` to accept test overrides:
 
 === "Koin"
 
     ```kotlin
-    fun main(args: Array<String>) {
-      run(args, shouldWait = true)
-    }
+    fun main(args: Array<String>) = run(args, shouldWait = true).let { Unit }
 
     fun run(
       args: Array<String>,
       shouldWait: Boolean = false,
       testModules: List<Module> = emptyList()
     ): Application {
-      val config = loadConfiguration<AppConfiguration>(args)
-
-      val applicationEngine = embeddedServer(Netty, port = config.port, host = "localhost") {
-        install(Koin) {
-          modules(appModule, *testModules.toTypedArray())
-        }
+      val cfg = loadConfiguration<AppConfiguration>(args)
+      return embeddedServer(Netty, port = cfg.port, host = "localhost") {
+        install(Koin) { modules(appModule, *testModules.toTypedArray()) }
         configureRouting()
-      }
-
-      applicationEngine.start(wait = shouldWait)
-      return applicationEngine.application
+      }.start(wait = shouldWait).application
     }
     ```
 
 === "Ktor-DI"
 
     ```kotlin
-    fun main(args: Array<String>) {
-      run(args, shouldWait = true)
-    }
+    fun main(args: Array<String>) = run(args, shouldWait = true).let { Unit }
 
     fun run(
       args: Array<String>,
       shouldWait: Boolean = false,
       testDependencies: (DependencyRegistrar.() -> Unit)? = null
     ): Application {
-      val config = loadConfiguration<AppConfiguration>(args)
-
-      val applicationEngine = embeddedServer(Netty, port = config.port, host = "localhost") {
+      val cfg = loadConfiguration<AppConfiguration>(args)
+      return embeddedServer(Netty, port = cfg.port, host = "localhost") {
         install(DI) {
           dependencies {
             provide<MyService> { MyServiceImpl() }
@@ -64,120 +81,98 @@ Expose a reusable `run` function and return the started `Application`. The exact
           }
         }
         configureRouting()
-      }
-
-      applicationEngine.start(wait = shouldWait)
-      return applicationEngine.application
+      }.start(wait = shouldWait).application
     }
     ```
 
-## Minimal Stove Setup
+Minimal `Stove().with { }`:
 
 ```kotlin
-Stove()
-  .with {
+Stove().with {
+    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
     ktor(
-      runner = { params -> run(params, shouldWait = false) },
-      withParameters = listOf("port=8080")
+        runner = { params -> run(params, shouldWait = false) },
+        withParameters = listOf("port=8080")
     )
-  }
-  .run()
+}.run()
 ```
 
-## What You Get
+## Bridge. Automatic DI detection
 
-- real Ktor startup from your own server bootstrap
-- `bridge()` support with automatic DI detection
-- easy composition with Kafka, databases, WireMock, tracing, and HTTP assertions
+| DI framework | Detection | Priority |
+|---|---|---|
+| Ktor-DI | `dependencies { }` block active | Preferred when both present |
+| Koin | `install(Koin) { }` active | Used when Ktor-DI absent |
+| Custom (Kodein, Dagger, etc.) | Manual resolver lambda | Explicit override |
 
-## Bridge and DI Support
-
-Ktor Bridge automatically detects which DI framework your application uses at runtime:
-
-| DI Framework | Detection | Priority |
-|-------------|-----------|----------|
-| **Ktor-DI** | `dependencies { ... }` is active in the application | Preferred when both are present |
-| **Koin** | `install(Koin) { ... }` is active | Used when Ktor-DI is not active |
-| **Custom** | Manual resolver provided via `bridge { app, type -> ... }` | Explicit override |
-
-### Registering Test Dependencies
+### Test overrides
 
 === "Koin"
 
-    Pass test modules that override production beans:
-
     ```kotlin
-    Stove()
-      .with {
-        bridge()
-        ktor(
-          runner = { params ->
-            run(
-              params,
-              shouldWait = false,
-              testModules = listOf(
-                module {
-                  single<TimeProvider>(override = true) { FixedTimeProvider() }
-                }
-              )
-            )
-          }
-        )
-      }
-      .run()
+    Stove().with {
+      bridge()
+      ktor(runner = { params ->
+        run(params, shouldWait = false, testModules = listOf(
+          module { single<TimeProvider>(override = true) { FixedTimeProvider() } }
+        ))
+      })
+    }.run()
     ```
 
 === "Ktor-DI"
 
-    Pass a lambda that registers test overrides (later `provide<T>` calls override earlier ones):
-
     ```kotlin
-    Stove()
-      .with {
-        bridge()
-        ktor(
-          runner = { params ->
-            run(params, shouldWait = false) {
-              provide<TimeProvider> { FixedTimeProvider() }
-            }
-          }
-        )
-      }
-      .run()
-    ```
-
-=== "Custom Resolver"
-
-    For other DI frameworks (Kodein, Dagger, etc.), provide a custom resolver:
-
-    ```kotlin
-    Stove()
-      .with {
-        bridge { application, type ->
-          myDiContainer.resolve(type)
+    Stove().with {
+      bridge()
+      ktor(runner = { params ->
+        run(params, shouldWait = false) {
+          provide<TimeProvider> { FixedTimeProvider() }
         }
-        ktor(runner = { params -> run(params, shouldWait = false) })
-      }
-      .run()
+      })
+    }.run()
     ```
 
-### Using Bridge in Tests
+=== "Custom resolver"
+
+    ```kotlin
+    Stove().with {
+      bridge { application, type -> myDiContainer.resolve(type) }
+      ktor(runner = { params -> run(params, shouldWait = false) })
+    }.run()
+    ```
+
+### Using Bridge in tests
 
 ```kotlin
 stove {
   using<UserService> {
-    val user = findById(123)
-    user.name shouldBe "John"
+    findById(123).name shouldBe "John"
   }
 
   using<List<PaymentService>> {
-    forEach { service -> service.validate() }
+    forEach { it.validate() }
   }
 }
 ```
 
-See the [Bridge documentation](../Components/10-bridge.md) for complete usage patterns including multi-bean access, value capture, and generic type resolution.
+Full patterns (multi-bean access, value capture, generics): [Bridge reference](../Components/10-bridge.md).
+
+## What you get
+
+- :white_check_mark: Real Netty server, real routing
+- :white_check_mark: `bridge()` for Koin **and** Ktor-DI without config
+- :white_check_mark: Composes with every Stove system
+- :white_check_mark: Hot-swap DI containers via custom resolver
+
+## Common pitfalls
+
+!!! warning "`shouldWait = true` hangs the suite"
+    Production `main` waits; tests must not. Always pass `shouldWait = false` from the runner.
+
+!!! warning "DI not detected"
+    Bridge looks for `install(Koin)` or `install(DI)`. If you wrap them in feature plugins, expose a custom resolver.
 
 ## Example
 
-- [ktor-example](https://github.com/Trendyol/stove/tree/main/examples/ktor-example)
+- [ktor-example](https://github.com/Trendyol/stove/tree/main/examples/ktor-example). Full stack with Koin + Postgres + Kafka

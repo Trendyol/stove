@@ -1,0 +1,22 @@
+"label": |-
+  gRPC Mock
+"family": |-
+  mock
+"gradle":
+- |-
+  com.trendyol:stove-grpc-mock
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.grpc.mock.*
+"configure": |-
+  grpcMock {
+    GrpcMockSystemOptions(port = 0)
+  }
+"testDsl": |-
+  grpcMock {
+    mockUnary(
+      serviceName = "com.acme.InventoryService",
+      methodName = "Reserve",
+      response = ReserveResponse.newBuilder().setSuccess(true).build()
+    )
+  }

@@ -1,541 +1,245 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Kafka</span>
+# Kafka
 
-Stove supports Kafka in two ways: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">standalone Kafka or Kafka with Spring integration</span>. You can use either one, but not both in the same project.
+Real Kafka in a container (or wire to existing cluster). Publish, consume, assert published events with time bounds, capture in-flight messages, simulate failures.
 
-## Standalone Kafka
+<a class="open-in-wizard" data-sys="kafka">Open in setup wizard</a>
 
-=== "Gradle"
+<!--{wizard:snippet id=sys.kafka parts=gradle,configure,test}-->
 
-    ``` kotlin
-        dependencies {
-            testImplementation("com.trendyol:stove-kafka:$version")
-        }
-    ```
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">Two modes</span>
+<strong>Standalone</strong> (<code>stove-kafka</code>). Plain Kafka client, works with any framework. <strong>Spring integration</strong> (<code>stove-spring-kafka</code>). Extra assertions for Spring's Kafka listeners. Both rely on the <em>Stove Kafka bridge interceptor</em> being wired into your app's producer/consumer so Stove can see what your code publishes and consumes.
+</div>
 
-### Configure
+## Bridge interceptor (required)
 
-```kotlin hl_lines="6-7 10-11"
-Stove()
-  .with {
-    // other dependencies
+Stove can only assert messages it can see. The bridge interceptor must be on your app's producer + consumer interceptor list.
 
-    kafka {
-      stoveKafkaObjectMapperRef = objectMapperRef
-      KafkaSystemOptions {
+```kotlin
+// expose Stove's interceptor class via property
+"kafka.interceptorClasses=${cfg.interceptorClass}"
+// or hardcode (less flexible):
+"kafka.interceptorClasses=com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge"
+```
+
+The `kafka.interceptorClasses` *prefix* is whatever your app reads. Mirror your app's property names.
+
+## Standalone setup
+
+```kotlin
+Stove().with {
+  kafka {
+    KafkaSystemOptions(
+      serde = StoveSerde.jackson.anyByteArraySerde(),
+      configureExposedConfiguration = { cfg ->
         listOf(
-          "kafka.bootstrapServers=${it.bootstrapServers}",
-          "kafka.interceptorClasses=${it.interceptorClass}"
+          "kafka.bootstrapServers=${cfg.bootstrapServers}",
+          "kafka.interceptorClasses=${cfg.interceptorClass}"
         )
       }
-    }
-  }.run()
-```
-
-The configuration values are:
-
-```kotlin
-class KafkaSystemOptions(
-  /**
-   * Suffixes for error and retry topics in the application.
-   */
-  val topicSuffixes: TopicSuffixes = TopicSuffixes(),
-  /**
-   * If true, the system will listen to the messages published by the Kafka system.
-   */
-  val listenPublishedMessagesFromStove: Boolean = false,
-  /**
-   * The port of the bridge gRPC server that is used to communicate with the Kafka system.
-   */
-  val bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
-  /**
-   * The Serde that is used while asserting the messages,
-   * serializing while bridging the messages. Take a look at the [serde] property for more information.
-   *
-   * The default value is [StoveSerde.jackson]'s anyByteArraySerde.
-   * Depending on your application's needs you might want to change this value.
-   *
-   * The places where it was used listed below:
-   *
-   * @see [com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge] for bridging the messages.
-   * @see StoveKafkaValueSerializer for serializing the messages.
-   * @see StoveKafkaValueDeserializer for deserializing the messages.
-   * @see valueSerializer for serializing the messages.
-   */
-  val serde: StoveSerde<Any, ByteArray> = stoveSerdeRef,
-  /**
-   * The Value serializer that is used to serialize messages.
-   */
-  val valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
-  /**
-   * The options for the Kafka container.
-   */
-  val containerOptions: KafkaContainerOptions = KafkaContainerOptions(),
-  /**
-   * The options for the Kafka system that is exposed to the application
-   */
-  override val configureExposedConfiguration: (KafkaExposedConfiguration) -> List<String>
-) : SystemOptions, ConfiguresExposedConfiguration<KafkaExposedConfiguration>
-```
-
-### Configuring Serializer and Deserializer
-
-Like every `SystemOptions` object, `KafkaSystemOptions` has a `serde` property that you can configure. It is a
-`StoveSerde` object that has two functions `serialize` and `deserialize`. You can configure them depending on your
-application's needs.
-
-```kotlin
-val kafkaSystemOptions = KafkaSystemOptions(
-  serde = object : StoveSerde<Any, ByteArray> {
-    override fun serialize(value: Any): ByteArray {
-      return objectMapper.writeValueAsBytes(value)
-    }
-
-    override fun <T> deserialize(value: ByteArray): T {
-      return objectMapper.readValue(value, Any::class.java) as T
-    }
-  }
-)
-```
-
-### Kafka Bridge With Your Application
-
-Stove Kafka bridge is a **MUST** to work with Kafka. Otherwise you can't assert any messages from your application.
-
-As you can see in the example above, you need to add a support to your application to work with interceptor that Stove
-provides.
-
-```kotlin
- "kafka.interceptorClasses=com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge"
-
-// or
-
-"kafka.interceptorClasses={cfg.interceptorClass}" // cfg.interceptorClass is exposed by Stove
-```
-
-!!! Important
-
-    `kafka.` prefix or `interceptorClasses` are assumptions that you can change it with your own prefix or configuration.
-
-## Spring Kafka
-
-When you want to use Kafka with Application Aware testing it provides more assertion capabilities. It is recommended way
-of working. Stove-Kafka does that with intercepting the messages.
-
-### How to get?
-
-=== "Gradle"
-
-    ``` kotlin
-        dependencies {
-          testImplementation("com.trendyol:stove-spring-kafka:$version")
-        }
-    ```
-
-=== "Maven"
-
-    ```xml
-     <dependency>
-        <groupId>com.trendyol</groupId>
-        <artifactId>stove-spring-kafka</artifactId>
-        <version>${stove-version}</version>
-     </dependency>
-    ```
-
-### Configure
-
-#### Configuration Values
-
-Kafka works with some settings as default, your application might have these values as not configurable, to make the
-application testable we need to tweak a little bit.
-
-If you have the following configurations:
-
-- `AUTO_OFFSET_RESET_CONFIG | "auto.offset.reset" | should be "earliest"`
-- `ALLOW_AUTO_CREATE_TOPICS_CONFIG | "allow.auto.create.topics" | should be true`
-- `HEARTBEAT_INTERVAL_MS_CONFIG | "heartbeat.interval.ms" | should be 2 seconds`
-
-You better make them configurable, so from the e2e testing context we can change them work with Stove-Kafka testing.
-
-As an example:
-
-```kotlin
-Stove()
-  .with {
-    httpClient {
-      HttpClientSystemOptions(baseUrl = "http://localhost:8080")
-    }
-    kafka {
-      KafkaSystemOptions {
-        listOf(
-          "kafka.bootstrapServers=${it.bootstrapServers}",
-          "kafka.interceptorClasses=${it.interceptorClass}"
-        )
-      }
-    }
-    springBoot(
-      runner = { parameters ->
-        com.trendyol.exampleapp.run(parameters)
-      },
-      withParameters = listOf(
-        "logging.level.root=error",
-        "logging.level.org.springframework.web=error",
-        "spring.profiles.active=default",
-        "server.http2.enabled=false",
-        "kafka.heartbeatInSeconds=2",
-        "kafka.autoCreateTopics=true",
-        "kafka.offset=earliest"
-      )
     )
-  }.run()
-```
-
-As you can see, we pass these configuration values as parameters. Since they are configurable, the application considers
-these values instead of application-default values.
-
-### Consumer Settings
-
-Second thing we need to do is tweak your consumer configuration. For that we will provide Stove-Kafka interceptor to
-your Kafka configuration.
-
-Locate to the point where you define your `ConcurrentKafkaListenerContainerFactory` or where you can set the
-interceptor. Interceptor needs to implement `ConsumerAwareRecordInterceptor<String, String>` since
-Stove-Kafka [relies on that](https://github.com/Trendyol/stove/blob/main/starters/spring/stove-spring-kafka/src/main/kotlin/com/trendyol/stove/testing/e2e/kafka/TestSystemInterceptor.kt).
-
-```kotlin
-@EnableKafka
-@Configuration
-class KafkaConsumerConfiguration(
-  private val interceptor: ConsumerAwareRecordInterceptor<String, String>,
-) {
-
-  @Bean
-  fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> {
-    val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-    // ...
-    factory.setRecordInterceptor(interceptor)
-    return factory
   }
-}
+}.run()
 ```
 
-### Producer Settings
-
-Make sure that the [aforementioned](#configuration-values) values are also configurable for producer settings, too.
-Stove will have access to `KafkaTemplate` and will use `setProducerListener` to arrange itself to listen produced
-messages.
-
-### Plugging in
-
-When all the configuration is done, it is time to tell to application to use our `TestSystemInterceptor` and
-configuration values.
-
-#### TestSystemKafkaInterceptor and Bean Registration
-
-Register the interceptor and serde using `addTestDependencies`:
-
-**Spring Boot 2.x / 3.x:**
+Custom serde:
 
 ```kotlin
-import com.trendyol.stove.addTestDependencies
+val mapper = ObjectMapper().apply { /* your app's config */ }
 
-springBoot(
-  runner = { parameters ->
-    runApplication<MyApp>(*parameters) {
-      addTestDependencies {
-        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
-        bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
-      }
-    }
-  },
-```
-
-**Spring Boot 4.x:**
-
-```kotlin
-import com.trendyol.stove.addTestDependencies4x
-
-springBoot(
-  runner = { parameters ->
-    runApplication<MyApp>(*parameters) {
-      addTestDependencies4x {
-        registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
-        registerBean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
-      }
-    }
-  },
-```
-
-#### Configuring the SystemUnderTest and Parameters
-
-```kotlin hl_lines="4-8"
-springBoot(
-  runner = { parameters ->
-    runApplication<MyApp>(*parameters) {
-      addTestDependencies {
-        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
-        bean { StoveSerde.jackson.anyByteArraySerde(yourObjectMapper()) }
-      }
-    }
-  },
-  withParameters = listOf(
-    "logging.level.root=error",
-    "logging.level.org.springframework.web=error",
-    "spring.profiles.active=default",
-    "server.http2.enabled=false",
-    "kafka.heartbeatInSeconds=2", // Added Parameter
-    "kafka.autoCreateTopics=true", // Added Parameter
-    "kafka.offset=earliest" // Added Parameter
+kafka {
+  KafkaSystemOptions(
+    serde = StoveSerde.jackson.anyByteArraySerde(mapper),
+    /* ... */
   )
-)
+}
 ```
 
-Now you're full set and have control over Kafka messages from the testing context.
+## Spring integration
 
-## Testing
+When testing a Spring Boot service with Spring Kafka listeners, use the dedicated starter. Adds listener-aware assertions on top.
 
-### Publishing Messages
+```kotlin
+dependencies {
+  testImplementation("com.trendyol:stove-spring-kafka")
+}
+```
 
-You can publish messages to Kafka topics for testing:
+Register the interceptor bean for the AUT:
+
+=== "Spring Boot 2.x / 3.x"
+
+    ```kotlin
+    springBoot(runner = { params ->
+      runApplication<MyApp>(*params) {
+        addTestDependencies {
+          bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+          bean { StoveSerde.jackson.anyByteArraySerde() }
+        }
+      }
+    })
+    ```
+
+=== "Spring Boot 4.x"
+
+    ```kotlin
+    springBoot(runner = { params ->
+      runApplication<MyApp>(*params) {
+        addTestDependencies4x {
+          registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+          registerBean { StoveSerde.jackson.anyByteArraySerde() }
+        }
+      }
+    })
+    ```
+
+## Test-friendly settings
+
+Default Kafka client settings are tuned for production throughput, not test speed. Without overrides, `shouldBePublished` / `shouldBeConsumed` *will* flake or timeout.
+
+```properties
+# producer
+linger.ms=0
+batch.size=1
+
+# consumer
+auto.commit.interval.ms=100
+auto-offset-reset=earliest
+```
+
+Plus broker-level auto-topic-create (handy for parameterized topic names). Wire these via the AUT's Kafka config, not via Stove options.
+
+## Test DSL
+
+### Publishing from the test
 
 ```kotlin
 stove {
   kafka {
     publish(
-      topic = "product-events",
-      message = ProductCreated(id = "123", name = "T-Shirt"),
-      key = "product-123".some(), // Optional
-      headers = mapOf("X-UserEmail" to "user@example.com"), // Optional
-      partition = 0 // Optional
+      topic = "orders.created",
+      message = OrderCreatedEvent(id = "1"),
+      key = "1",
+      headers = mapOf("X-Correlation-ID" to "abc")
     )
   }
 }
 ```
 
-### Asserting Published Messages
-
-Test that your application publishes messages correctly:
-
-```kotlin hl_lines="4 11"
-stove {
-  // Trigger an action in your application
-  http {
-    postAndExpectBodilessResponse("/products", body = CreateProductRequest(name = "Laptop").some()) { response ->
-      response.status shouldBe 200
-    }
-  }
-
-  // Verify the message was published
-  kafka {
-    shouldBePublished<ProductCreatedEvent>(atLeastIn = 10.seconds) {
-      actual.name == "Laptop" &&
-      actual.id != null &&
-      metadata.topic == "product-events" &&
-      metadata.headers["event-type"] == "PRODUCT_CREATED"
-    }
-  }
-}
-```
-
-### Asserting Consumed Messages
-
-Test that your application consumes messages correctly:
-
-```kotlin hl_lines="4 12 20"
-stove {
-  // Publish a message
-  kafka {
-    publish(
-      topic = "order-events",
-      message = OrderCreated(orderId = "456", amount = 100.0)
-    )
-  }
-
-  // Verify your application consumed and processed it
-  kafka {
-    shouldBeConsumed<OrderCreated>(atLeastIn = 20.seconds) {
-      actual.orderId == "456" &&
-      actual.amount == 100.0
-    }
-  }
-
-  // Verify side effects (e.g., database write)
-  couchbase {
-    shouldGet<Order>("order:456") { order ->
-      order.orderId shouldBe "456"
-      order.status shouldBe "CREATED"
-    }
-  }
-}
-```
-
-### Testing Failed Messages
-
-Test that your application handles failures correctly:
+### Asserting published
 
 ```kotlin
 stove {
   kafka {
-    // Publish an invalid message
-    publish("user-events", FailingEvent(id = 5L))
+    shouldBePublished<OrderCreatedEvent> {
+      actual.id == "1"
+    }
 
-    // Verify it failed with the expected reason
-    shouldBeFailed<FailingEvent>(atLeastIn = 10.seconds) {
-      actual.id == 5L &&
-      reason is BusinessException
+    // Negative assertion: nothing matches in N seconds
+    shouldNotBePublished<OrderFailedEvent> {
+      actual.id == "1"
     }
   }
 }
 ```
 
-### Testing Retry Logic
-
-Test that your application retries failed messages:
+### Asserting consumed (Spring integration)
 
 ```kotlin
 stove {
   kafka {
-    publish("product-failing", ProductFailingCreated(productId = "789"))
-    
-    // Verify it was retried 3 times
-    shouldBeRetried<ProductFailingCreated>(atLeastIn = 1.minutes, times = 3) {
-      actual.productId == "789"
-    }
+    publish("orders.input", incomingOrder)
 
-    // Verify it ended up in error topic
-    shouldBePublished<ProductFailingCreated>(atLeastIn = 1.minutes) {
-      metadata.topic == "product-failing.error"
+    shouldBeConsumed<OrderInputEvent> {
+      actual.id == incomingOrder.id
     }
   }
 }
 ```
 
-### Working with Message Metadata
-
-Access message metadata including headers, topic, partition, offset:
+### Testing retry / failure paths
 
 ```kotlin
 stove {
   kafka {
-    shouldBeConsumed<OrderCreated> {
-      actual.orderId == "123" &&
-      metadata.topic == "order-events" &&
-      metadata.headers["correlation-id"] != null &&
-      metadata.partition == 0
+    publish("orders.input", invalidOrder)
+
+    // App's listener should requeue / DLT
+    shouldBePublished<DLTRecord<OrderInputEvent>> {
+      actual.original.id == invalidOrder.id
     }
   }
 }
 ```
 
-### Peeking Messages
-
-Inspect messages without consuming them:
+### Working with metadata
 
 ```kotlin
 stove {
   kafka {
-    // Peek at published messages
-    peekPublishedMessages(atLeastIn = 5.seconds, topic = "product-events") { record ->
-      record.key == "product-123"
-    }
-
-    // Peek at consumed messages
-    peekConsumedMessages(atLeastIn = 5.seconds, topic = "order-events") { record ->
-      record.offset >= 10L
-    }
-
-    // Peek at committed messages
-    peekCommittedMessages(topic = "order-events") { record ->
-      record.offset == 101L // next offset after 100 messages
+    shouldBePublished<OrderCreatedEvent> {
+      metadata.topic == "orders.created" &&
+        metadata.headers["X-Correlation-ID"] == "abc"
     }
   }
 }
 ```
 
-### Admin Operations
+`metadata` exposes `topic`, `partition`, `offset`, `key`, `headers`, `timestamp`.
 
-Manage Kafka topics and configurations:
+### Peek the in-flight stream
 
 ```kotlin
 stove {
   kafka {
-    adminOperations {
-      createTopic(NewTopic("test-topic", 1, 1))
-      // Other admin operations available here
-    }
+    val all = peek<OrderCreatedEvent>(topic = "orders.created", limit = 50)
+    all.map { it.actual.id } shouldContain "1"
   }
 }
 ```
 
-### In-Flight Consumer
-
-Create a consumer for advanced testing scenarios:
+### Admin operations
 
 ```kotlin
 stove {
   kafka {
-    consumer<String, ProductCreated>(
-      topic = "product-events",
-      readOnly = false, // commit messages
-      autoOffsetReset = "earliest",
-      autoCreateTopics = true,
-      keepConsumingAtLeastFor = 10.seconds
-    ) { record ->
-      println("Consumed: ${record.value()}")
-      // Process the message
-    }
+    admin().createTopics(NewTopic("audit", 3, 1))
+    admin().listTopics().names().get() shouldContain "audit"
   }
 }
 ```
 
-## Complete Example
+## Complete example
 
-Here's a complete <span data-rn="underline" data-rn-color="#009688">end-to-end test combining HTTP, Kafka, and database assertions</span>:
-
-```kotlin hl_lines="9 14 23 32 40"
-test("should create product and publish event") {
+```kotlin hl_lines="7 13 19"
+test("order placement publishes events end-to-end") {
   stove {
-    val productId = UUID.randomUUID()
-    val productName = "Laptop"
+    val orderId = UUID.randomUUID().toString()
 
-    // Mock external service
-    wiremock {
-      mockGet("/categories/electronics", statusCode = 200, responseBody = Category(id = 1, active = true).some())
-    }
-
-    // Make HTTP request
     http {
-      postAndExpectBodilessResponse(
-        uri = "/products",
-        body = ProductCreateRequest(id = productId, name = productName, categoryId = 1).some()
-      ) { response ->
-        response.status shouldBe 200
-      }
+      postAndExpectBody<OrderResponse>(
+        uri = "/orders",
+        body = CreateOrderRequest(id = orderId).some()
+      ) { it.status shouldBe 201 }
     }
 
-    // Verify Kafka message was published
     kafka {
-      shouldBePublished<ProductCreatedEvent>(atLeastIn = 10.seconds) {
-        actual.id == productId &&
-        actual.name == productName &&
-        metadata.headers["X-UserEmail"] != null
-      }
-    }
-
-    // Verify database state
-    couchbase {
-      shouldGet<Product>("product:$productId") { product ->
-        product.id shouldBe productId
-        product.name shouldBe productName
-      }
-    }
-
-    // Verify the event was consumed by another service
-    kafka {
-      shouldBeConsumed<ProductCreatedEvent>(atLeastIn = 20.seconds) {
-        actual.id == productId &&
-        actual.name == productName
+      shouldBePublished<OrderCreatedEvent> {
+        actual.id == orderId &&
+          actual.status == "CREATED"
       }
     }
   }
 }
 ```
+
+## Provided Kafka cluster
+
+For shared CI clusters: `KafkaSystemOptions.provided(bootstrapServers = ...)`. Add cleanup of test topics. See [Provided Instances · Kafka isolation](11-provided-instances.md#shared-infrastructure-isolation-pattern).
+
+## Pairs well with
+
+- [Tracing](15-tracing.md). Kafka spans appear with topic + partition attributes
+- [Bridge](10-bridge.md). Register custom interceptor beans (or replace them per test)
+- [Recipes · order flow](../recipes/order-flow.md). Multi-system Kafka assertion
+- [Quarkus](../frameworks/quarkus.md). Quarkus needs a classloader tweak (see that page)

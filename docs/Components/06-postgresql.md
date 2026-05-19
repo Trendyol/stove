@@ -1,44 +1,40 @@
-# <span data-rn="underline" data-rn-color="#ff9800">PostgreSQL</span>
+# PostgreSQL
 
-=== "Gradle"
+Real Postgres in a container (or wired to existing infra). Migrations, type-safe queries, pause/unpause for fault-injection tests.
 
-    ``` kotlin
-        dependencies {
-            testImplementation(platform("com.trendyol:stove-bom:$version"))
-            testImplementation("com.trendyol:stove-postgres")
-        }
-    ```
+<a class="open-in-wizard" data-sys="postgresql">Open in setup wizard</a>
+
+<!--{wizard:snippet id=sys.postgresql parts=gradle,configure,test}-->
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Add <code>stove-postgres</code>. Register <code>postgresql { PostgresqlOptions(...) }</code> in <code>Stove().with</code>. Hand connection details to your app via <code>configureExposedConfiguration</code>. Run migrations through <code>.migrations { register&lt;T&gt;() }</code>. Query with <code>shouldQuery&lt;T&gt;</code>; execute DDL/DML with <code>shouldExecute</code>.
+</div>
 
 ## Configure
 
-Once you've added the dependency, you can configure PostgreSQL in your Stove setup:
-
-```kotlin hl_lines="4 6-12"
-Stove()
-  .with {
-    postgresql {
-      PostgresqlOptions(
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "postgresql.host=${cfg.host}",
-            "postgresql.port=${cfg.port}",
-            "postgresql.database=${cfg.database}",
-            "postgresql.username=${cfg.username}",
-            "postgresql.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }.run()
+```kotlin
+Stove().with {
+  postgresql {
+    PostgresqlOptions(
+      databaseName = "testdb",
+      configureExposedConfiguration = { cfg ->
+        listOf(
+          "spring.datasource.url=${cfg.jdbcUrl}",
+          "spring.datasource.username=${cfg.username}",
+          "spring.datasource.password=${cfg.password}"
+        )
+      }
+    )
+  }
+}.run()
 ```
 
-The `it` reference gives you access to the PostgreSQL container's connection details, which you can pass to your application.
+`cfg` exposes `host`, `port`, `database`, `username`, `password`, `jdbcUrl`. Mirror your app's property names.
 
 ## Migrations
 
-Stove provides a way to run database migrations before tests start:
-
-```kotlin hl_lines="1-2 5-6"
+```kotlin
 class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
   override val order: Int = 1
 
@@ -57,79 +53,44 @@ class InitialMigration : DatabaseMigration<PostgresSqlMigrationContext> {
 }
 ```
 
-Register migrations in your Stove configuration:
+Register:
 
 ```kotlin
-Stove()
-  .with {
-    postgresql {
-      PostgresqlOptions(
-        databaseName = "testing",
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      ).migrations {
-        register<InitialMigration>()
-      }
-    }
-  }
-  .run()
-```
-
-## Usage
-
-### Executing SQL
-
-Execute DDL and DML statements:
-
-```kotlin
-stove {
-  postgresql {
-    // Create tables
-    shouldExecute(
-      """
-      DROP TABLE IF EXISTS products;
-      CREATE TABLE IF NOT EXISTS products (
-        id serial PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        price DECIMAL(10, 2) NOT NULL,
-        stock INT DEFAULT 0
-      );
-      """.trimIndent()
-    )
-
-    // Insert data
-    shouldExecute(
-      """
-      INSERT INTO products (name, price, stock) 
-      VALUES ('Laptop', 999.99, 10)
-      """.trimIndent()
-    )
-
-    // Update data
-    shouldExecute("UPDATE products SET stock = 5 WHERE name = 'Laptop'")
-
-    // Delete data
-    shouldExecute("DELETE FROM products WHERE stock = 0")
+postgresql {
+  PostgresqlOptions(/* ... */).migrations {
+    register<InitialMigration>()
   }
 }
 ```
 
-### Querying Data
+## Query DSL
 
-Query data with type-safe mappers:
+### Execute DDL/DML
 
-```kotlin hl_lines="11 13 21"
-data class Product(
-  val id: Long,
-  val name: String,
-  val price: Double,
-  val stock: Int
-)
+```kotlin
+stove {
+  postgresql {
+    shouldExecute(
+      """
+      CREATE TABLE IF NOT EXISTS products (
+        id serial PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL
+      )
+      """.trimIndent()
+    )
+
+    shouldExecute("INSERT INTO products (name, price) VALUES ('Laptop', 999.99)")
+    shouldExecute("UPDATE products SET price = 899.99 WHERE name = 'Laptop'")
+    shouldExecute("DELETE FROM products WHERE price = 0")
+  }
+}
+```
+
+### Type-safe query
+
+```kotlin
+data class Product(val id: Long, val name: String, val price: Double)
 
 stove {
   postgresql {
@@ -139,8 +100,7 @@ stove {
         Product(
           id = row.long("id"),
           name = row.string("name"),
-          price = row.double("price"),
-          stock = row.int("stock")
+          price = row.double("price")
         )
       }
     ) { products ->
@@ -151,149 +111,60 @@ stove {
 }
 ```
 
-### Query with Parameters
+Use `row.stringOrNull(...)` for nullable columns. Joins / aggregations / CTEs work identically. Just write the SQL.
 
-Use parameterized queries for safety:
+### Direct operations
+
+For advanced control (parameterized inserts, custom mappers):
 
 ```kotlin
 stove {
   postgresql {
-    val minPrice = 100.0
-    shouldQuery<Product>(
-      query = "SELECT * FROM products WHERE price >= ?",
-      mapper = { row ->
-        Product(
-          id = row.long("id"),
-          name = row.string("name"),
-          price = row.double("price"),
-          stock = row.int("stock")
-        )
-      }
-    ) { products ->
-      products.all { it.price >= minPrice } shouldBe true
+    val ops = operations()
+
+    ops.execute(
+      "INSERT INTO users (name, email) VALUES (?, ?)",
+      Parameter("name", "Alice"),
+      Parameter("email", "alice@example.com")
+    )
+
+    val users = ops.select("SELECT * FROM users") { row ->
+      User(
+        id = row.long("id"),
+        name = row.string("name"),
+        email = row.string("email")
+      )
     }
   }
 }
 ```
 
-### Working with Nullable Fields
+## Fault injection: pause / unpause
 
-Handle nullable columns:
-
-```kotlin
-data class User(
-  val id: Long,
-  val name: String,
-  val email: String?,
-  val phone: String?
-)
-
-stove {
-  postgresql {
-    shouldQuery<User>(
-      query = "SELECT * FROM users",
-      mapper = { row ->
-        User(
-          id = row.long("id"),
-          name = row.string("name"),
-          email = row.stringOrNull("email"),
-          phone = row.stringOrNull("phone")
-        )
-      }
-    ) { users ->
-      users.size shouldBeGreaterThan 0
-    }
-  }
-}
-```
-
-### Complex Queries
-
-Execute joins and aggregations:
-
-```kotlin
-data class OrderSummary(
-  val userId: Long,
-  val userName: String,
-  val totalOrders: Int,
-  val totalAmount: Double
-)
-
-stove {
-  postgresql {
-    shouldQuery<OrderSummary>(
-      query = """
-        SELECT 
-          u.id as user_id,
-          u.name as user_name,
-          COUNT(o.id) as total_orders,
-          SUM(o.amount) as total_amount
-        FROM users u
-        LEFT JOIN orders o ON u.id = o.user_id
-        GROUP BY u.id, u.name
-        HAVING COUNT(o.id) > 0
-      """.trimIndent(),
-      mapper = { row ->
-        OrderSummary(
-          userId = row.long("user_id"),
-          userName = row.string("user_name"),
-          totalOrders = row.int("total_orders"),
-          totalAmount = row.double("total_amount")
-        )
-      }
-    ) { summaries ->
-      summaries.all { it.totalOrders > 0 } shouldBe true
-    }
-  }
-}
-```
-
-### Pause and Unpause Container
-
-Test failure scenarios:
+Container mode only. Simulate database outage mid-test:
 
 ```kotlin
 stove {
   postgresql {
-    // Database is running
-    shouldQuery<Product>(
-      "SELECT COUNT(*) as count FROM products",
-      mapper = { row -> row.int("count") }
-    ) { result ->
-      result.first() shouldBeGreaterThanOrEqual 0
-    }
-
-    // Pause the database
     pause()
 
-    // Your application should handle the failure
-    // ...
-
-    // Unpause the database
-    unpause()
-
-    // Verify recovery
-    shouldQuery<Product>(
-      "SELECT COUNT(*) as count FROM products",
-      mapper = { row -> row.int("count") }
-    ) { result ->
-      result.first() shouldBeGreaterThanOrEqual 0
+    http {
+      get("/health") { it.status shouldBe 503 }  // app reports degraded
     }
+
+    unpause()
   }
 }
 ```
 
-## Complete Example
+## Complete example
 
-Here's a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">complete end-to-end test</span>:
-
-```kotlin hl_lines="7 12 24 28"
-test("should create user via API and verify in database") {
+```kotlin hl_lines="8 18 31"
+test("create user via API, verify row + published event") {
   stove {
     val userName = "John Doe"
     val userEmail = "john@example.com"
 
-    // Create user via API
     http {
       postAndExpectBody<UserResponse>(
         uri = "/users",
@@ -304,7 +175,6 @@ test("should create user via API and verify in database") {
       }
     }
 
-    // Verify in PostgreSQL
     postgresql {
       shouldQuery<User>(
         query = "SELECT * FROM users WHERE email = ?",
@@ -318,347 +188,66 @@ test("should create user via API and verify in database") {
       ) { users ->
         users.size shouldBe 1
         users.first().name shouldBe userName
-        users.first().email shouldBe userEmail
       }
     }
 
-    // Verify event was published
     kafka {
-      shouldBePublished<UserCreatedEvent>(atLeastIn = 10.seconds) {
-        actual.name == userName &&
-        actual.email == userEmail
+      shouldBePublished<UserCreatedEvent> {
+        actual.name == userName && actual.email == userEmail
       }
     }
   }
 }
 ```
 
-## Integration with Application
+## Multiple databases on one container
 
-Use the bridge to access application components:
-
-```kotlin
-test("should use repository to save user") {
-  stove {
-    val user = User(id = 1L, name = "Jane Doe", email = "jane@example.com")
-
-    // Use application's repository
-    using<UserRepository> {
-      save(user)
-    }
-
-    // Verify in database
-    postgresql {
-      shouldQuery<User>(
-        query = "SELECT * FROM users WHERE id = ?",
-        mapper = { row ->
-          User(
-            id = row.long("id"),
-            name = row.string("name"),
-            email = row.string("email")
-          )
-        }
-      ) { users ->
-        users.size shouldBe 1
-        users.first().name shouldBe "Jane Doe"
-      }
-    }
-  }
-}
-```
-
-## Batch Operations
-
-Execute multiple operations:
-
-```kotlin
-stove {
-  postgresql {
-    // Create tables
-    shouldExecute(
-      """
-      CREATE TABLE IF NOT EXISTS categories (
-        id serial PRIMARY KEY,
-        name VARCHAR(50) NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS products (
-        id serial PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        category_id INT REFERENCES categories(id)
-      );
-      """.trimIndent()
-    )
-
-    // Insert categories
-    listOf("Electronics", "Books", "Clothing").forEach { category ->
-      shouldExecute("INSERT INTO categories (name) VALUES ('$category')")
-    }
-
-    // Verify all inserted
-    shouldQuery<String>(
-      "SELECT name FROM categories",
-      mapper = { it.string("name") }
-    ) { categories ->
-      categories.size shouldBe 3
-      categories shouldContain "Electronics"
-      categories shouldContain "Books"
-    }
-  }
-}
-```
-
-## Advanced: Direct SQL Operations
-
-Access SQL operations directly for advanced use cases:
-
-```kotlin
-stove {
-  postgresql {
-    val ops = operations()
-    
-    // Execute with parameters
-    ops.execute(
-      "INSERT INTO users (name, email) VALUES (?, ?)",
-      Parameter("name", "Alice"),
-      Parameter("email", "alice@example.com")
-    )
-
-    // Custom select operation
-    val users = ops.select("SELECT * FROM users") { row ->
-      User(
-        id = row.long("id"),
-        name = row.string("name"),
-        email = row.string("email")
-      )
-    }
-
-    users.size shouldBeGreaterThan 0
-  }
-}
-```
-
-## Multiple Databases
-
-In production, your application might connect to multiple PostgreSQL instances (e.g., separate databases for users, orders, analytics). With Stove, you can achieve the same behavior using a **single PostgreSQL container** by creating multiple databases through migrations.
-
-### The Pattern
-
-1. Create additional databases in migrations
-2. Expose all database configurations to your application
-3. Your application connects to each database as if they were separate instances
-
-### Implementation
-
-#### Step 1: Create a Multi-Database Migration
+Production may have separate Postgres instances per bounded context. In tests, one container with multiple `CREATE DATABASE` calls is enough. Your app reads them as separate datasources.
 
 ```kotlin
 class CreateDatabasesMigration : DatabaseMigration<PostgresSqlMigrationContext> {
-    override val order: Int = 0  // Run first!
+  override val order: Int = 0
 
-    override suspend fun execute(connection: PostgresSqlMigrationContext) {
-        // Create additional databases
-        // Note: You're connected to the default database, create others from here
-        connection.operations.execute("CREATE DATABASE IF NOT EXISTS users_db")
-        connection.operations.execute("CREATE DATABASE IF NOT EXISTS orders_db")
-        connection.operations.execute("CREATE DATABASE IF NOT EXISTS analytics_db")
+  override suspend fun execute(connection: PostgresSqlMigrationContext) {
+    listOf("users_db", "orders_db", "analytics_db").forEach { db ->
+      connection.operations.execute("CREATE DATABASE IF NOT EXISTS $db")
     }
+  }
 }
 
-class UsersDbMigration : DatabaseMigration<PostgresSqlMigrationContext> {
-    override val order: Int = 1
-
-    override suspend fun execute(connection: PostgresSqlMigrationContext) {
-        // This runs on the default database
-        // For users_db schema, you'll set it up via application or separate connection
-        connection.operations.execute(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(100),
-                email VARCHAR(100)
-            )
-            """.trimIndent()
+Stove().with {
+  postgresql {
+    PostgresqlOptions(
+      databaseName = "main",
+      configureExposedConfiguration = { cfg ->
+        val base = "jdbc:postgresql://${cfg.host}:${cfg.port}"
+        listOf(
+          "db.users.url=$base/users_db",
+          "db.users.username=${cfg.username}",
+          "db.users.password=${cfg.password}",
+          "db.orders.url=$base/orders_db",
+          "db.orders.username=${cfg.username}",
+          "db.orders.password=${cfg.password}",
+          "db.analytics.url=$base/analytics_db",
+          "db.analytics.username=${cfg.username}",
+          "db.analytics.password=${cfg.password}"
         )
+      }
+    ).migrations {
+      register<CreateDatabasesMigration>()
     }
+  }
 }
 ```
 
-#### Step 2: Configure Stove with Multiple Database URLs
+For genuinely independent test instances (different versions, different config), use [keyed systems](20-multiple-systems.md): `postgresql(AppDb) { ... }` plus `postgresql(AnalyticsDb) { ... }`.
 
-```kotlin
-Stove()
-    .with {
-        postgresql {
-            PostgresqlOptions(
-                databaseName = "main_db",  // Default/main database
-                configureExposedConfiguration = { cfg ->
-                    // Expose multiple database URLs to the application
-                    // All databases are on the same host:port, just different DB names
-                    listOf(
-                        // Main database
-                        "spring.datasource.url=${cfg.jdbcUrl}",
-                        "spring.datasource.username=${cfg.username}",
-                        "spring.datasource.password=${cfg.password}",
-                        
-                        // Users database (same host, different database name)
-                        "users.datasource.url=jdbc:postgresql://${cfg.host}:${cfg.port}/users_db",
-                        "users.datasource.username=${cfg.username}",
-                        "users.datasource.password=${cfg.password}",
-                        
-                        // Orders database
-                        "orders.datasource.url=jdbc:postgresql://${cfg.host}:${cfg.port}/orders_db",
-                        "orders.datasource.username=${cfg.username}",
-                        "orders.datasource.password=${cfg.password}",
-                        
-                        // Analytics database
-                        "analytics.datasource.url=jdbc:postgresql://${cfg.host}:${cfg.port}/analytics_db",
-                        "analytics.datasource.username=${cfg.username}",
-                        "analytics.datasource.password=${cfg.password}"
-                    )
-                }
-            ).migrations {
-                register<CreateDatabasesMigration>()
-                register<UsersDbMigration>()
-            }
-        }
-    }
-    .run()
-```
+## Shared infrastructure
 
-#### Step 3: Application Configuration
+Use `PostgresqlOptions.provided(...)` to wire to existing Postgres. See [Provided Instances](11-provided-instances.md) for unique-prefix isolation patterns.
 
-Your application should read these separate datasource configurations:
+## Pairs well with
 
-```kotlin
-// Spring Boot example with multiple DataSources
-@Configuration
-class DataSourceConfig {
-    
-    @Bean
-    @Primary
-    @ConfigurationProperties("spring.datasource")
-    fun mainDataSource(): DataSource = DataSourceBuilder.create().build()
-    
-    @Bean
-    @ConfigurationProperties("users.datasource")
-    fun usersDataSource(): DataSource = DataSourceBuilder.create().build()
-    
-    @Bean
-    @ConfigurationProperties("orders.datasource")
-    fun ordersDataSource(): DataSource = DataSourceBuilder.create().build()
-    
-    @Bean
-    @ConfigurationProperties("analytics.datasource")
-    fun analyticsDataSource(): DataSource = DataSourceBuilder.create().build()
-}
-```
-
-### Complete Example
-
-```kotlin
-object DatabaseNames {
-    const val USERS = "users_db"
-    const val ORDERS = "orders_db"
-    const val ANALYTICS = "analytics_db"
-}
-
-class SetupDatabasesMigration : DatabaseMigration<PostgresSqlMigrationContext> {
-    override val order: Int = 0
-
-    override suspend fun execute(connection: PostgresSqlMigrationContext) {
-        listOf(DatabaseNames.USERS, DatabaseNames.ORDERS, DatabaseNames.ANALYTICS).forEach { db ->
-            connection.operations.execute("CREATE DATABASE IF NOT EXISTS $db")
-        }
-    }
-}
-
-// Test configuration
-Stove()
-    .with {
-        postgresql {
-            PostgresqlOptions(
-                databaseName = "main",
-                configureExposedConfiguration = { cfg ->
-                    val baseUrl = "jdbc:postgresql://${cfg.host}:${cfg.port}"
-                    listOf(
-                        "db.users.url=$baseUrl/${DatabaseNames.USERS}",
-                        "db.users.username=${cfg.username}",
-                        "db.users.password=${cfg.password}",
-                        
-                        "db.orders.url=$baseUrl/${DatabaseNames.ORDERS}",
-                        "db.orders.username=${cfg.username}",
-                        "db.orders.password=${cfg.password}",
-                        
-                        "db.analytics.url=$baseUrl/${DatabaseNames.ANALYTICS}",
-                        "db.analytics.username=${cfg.username}",
-                        "db.analytics.password=${cfg.password}"
-                    )
-                }
-            ).migrations {
-                register<SetupDatabasesMigration>()
-            }
-        }
-        springBoot(
-            runner = { params -> myApp.run(params) }
-        )
-    }
-    .run()
-
-// In tests
-test("should save user and create order in separate databases") {
-    stove {
-        // Create user (goes to users_db)
-        http {
-            postAndExpectBodilessResponse("/users", body = CreateUserRequest(...).some()) {
-                it.status shouldBe 201
-            }
-        }
-        
-        // Create order (goes to orders_db)
-        http {
-            postAndExpectBodilessResponse("/orders", body = CreateOrderRequest(...).some()) {
-                it.status shouldBe 201
-            }
-        }
-        
-        // Verify using application repositories (each connects to its own DB)
-        using<UserRepository, OrderRepository> { userRepo, orderRepo ->
-            userRepo.count() shouldBe 1
-            orderRepo.count() shouldBe 1
-        }
-    }
-}
-```
-
-### With Provided Instances
-
-The same pattern works with provided PostgreSQL instances:
-
-```kotlin
-Stove()
-    .with {
-        postgresql {
-            PostgresqlOptions.provided(
-                jdbcUrl = "jdbc:postgresql://shared-postgres:5432/main_db",
-                host = "shared-postgres",
-                port = 5432,
-                databaseName = "main_db",
-                username = "postgres",
-                password = "postgres",
-                runMigrations = true,  // Creates additional databases
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "db.users.url=jdbc:postgresql://${cfg.host}:${cfg.port}/users_db",
-                        "db.orders.url=jdbc:postgresql://${cfg.host}:${cfg.port}/orders_db",
-                        // ... credentials
-                    )
-                }
-            ).migrations {
-                register<SetupDatabasesMigration>()
-            }
-        }
-    }
-```
-
-!!! tip "Production vs Test"
-    In production, these might be completely separate PostgreSQL instances (even in different regions). In tests, <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">they're all in one container but behave identically from your application's perspective</span>.
+- [Bridge](10-bridge.md). Verify via the app's own repositories when needed
+- [Tracing](15-tracing.md). JDBC spans appear in the trace tree on failure
+- [Recipes · order flow](../recipes/order-flow.md). Full multi-system example

@@ -1,242 +1,131 @@
-# <span data-rn="underline" data-rn-color="#ff9800">HTTP Client</span>
+# HTTP Client
 
-=== "Gradle"
+Drive your app's REST API like a real client. Type-safe responses, full headers + status access, multipart uploads, WebSocket support.
 
-    ``` kotlin
-        dependencies {
-            testImplementation("com.trendyol:stove-http:$version")
-        }
-    ```
+<a class="open-in-wizard" data-sys="http">Open in setup wizard</a>
+
+<!--{wizard:snippet id=sys.http parts=gradle,configure,test}-->
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Add <code>stove-http</code>. Register <code>httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }</code>. Drive endpoints with <code>get&lt;T&gt;</code>, <code>post&lt;T&gt;</code>, <code>put&lt;T&gt;</code>, <code>patch&lt;T&gt;</code>, <code>delete&lt;T&gt;</code>. Each returns parsed body via Jackson (or your converter). For full <code>status + headers + body</code>, use <code>*Response</code> / <code>*ExpectBody</code> variants.
+</div>
 
 ## Configure
 
-Once you've added the dependency, you'll have access to the `httpClient` function when configuring Stove:
-
-```kotlin hl_lines="3 5"
-Stove()
-  .with {
-    httpClient {
-      HttpClientSystemOptions(
-        baseUrl = "http://localhost:8080",
-      )
-    }
-  }
-  .run()
-```
-
-The other options that you can set are:
 ```kotlin
-data class HttpClientSystemOptions(
-  /**
-   * Base URL of the HTTP client.
-   */
-  val baseUrl: String,
-
-  /**
-   * Content converter for the HTTP client. Default is JacksonConverter. You can use GsonConverter or any other converter.
-   * If you want to use your own converter, you can implement ContentConverter interface.
-   */
-  val contentConverter: ContentConverter = JacksonConverter(StoveSerde.jackson.default),
-
-  /**
-   * Timeout for the HTTP client. Default is 30 seconds.
-   */
-  val timeout: Duration = 30.seconds,
-
-  /**
-   * Create client function for the HTTP client. Default is jsonHttpClient.
-   */
-  val createClient: () -> io.ktor.client.HttpClient = { jsonHttpClient(timeout, contentConverter) }
-)
-```
-
-## Usage
-
-### GET Requests
-
-Making GET requests with various options:
-
-```kotlin hl_lines="4 10 20 25"
-stove {
-  http {
-    // Simple GET request with type-safe response
-    get<UserResponse>("/users/123") { user ->
-      user.id shouldBe 123
-      user.name shouldBe "John Doe"
-    }
-
-    // GET with query parameters
-    get<String>("/api/index", queryParams = mapOf("keyword" to "search-term")) { response ->
-      response shouldContain "search-term"
-    }
-
-    // GET with headers
-    get<UserProfile>("/profile", headers = mapOf("X-Custom-Header" to "value")) { profile ->
-      profile.email shouldNotBe null
-    }
-
-    // GET with authentication token
-    get<SecureData>("/secure-endpoint", token = "jwt-token".some()) { data ->
-      data.isAuthorized shouldBe true
-    }
-
-    // GET multiple items (list response)
-    getMany<ProductResponse>("/products", queryParams = mapOf("page" to "1", "size" to "10")) { products ->
-      products.size shouldBe 10
-      products.first().name shouldNotBe null
-    }
+Stove().with {
+  httpClient {
+    HttpClientSystemOptions(baseUrl = "http://localhost:8080")
   }
-}
+}.run()
 ```
 
-### GET with Full Response Access
+Options:
 
-When you need access to status code and headers:
+| Field | Default | Use |
+|---|---|---|
+| `baseUrl` | required | base for all relative URIs |
+| `contentConverter` | `JacksonConverter(StoveSerde.jackson.default)` | use `GsonConverter`, or your own custom converter, or pass your app's `ObjectMapper` for alignment |
+| `timeout` | `30.seconds` | HTTP request timeout |
+| `createClient` | `jsonHttpClient(timeout, contentConverter)` | custom Ktor `HttpClient` factory |
+
+## Test DSL by verb
+
+### GET
 
 ```kotlin
 stove {
   http {
+    // body-only (typed)
+    get<UserResponse>("/users/123") {
+      it.id shouldBe 123
+      it.name shouldBe "John Doe"
+    }
+
+    // query params
+    get<String>("/api/search", queryParams = mapOf("q" to "stove")) {
+      it shouldContain "stove"
+    }
+
+    // headers + token
+    get<SecureData>(
+      "/secure",
+      headers = mapOf("X-Trace-Id" to "abc"),
+      token = "jwt".some()
+    ) {
+      it.isAuthorized shouldBe true
+    }
+
+    // list response
+    getMany<ProductResponse>("/products", queryParams = mapOf("page" to "1")) {
+      it.size shouldBe 10
+    }
+
+    // full response (status + headers + body)
     getResponse<UserResponse>("/users/123") { response ->
       response.status shouldBe 200
       response.headers["Content-Type"] shouldContain "application/json"
       response.body().id shouldBe 123
     }
 
-    // Bodiless response (only status and headers)
-    getResponse("/health") { response ->
-      response.status shouldBe 200
+    // bodiless (just status)
+    getResponse("/health") {
+      it.status shouldBe 200
     }
   }
 }
 ```
 
-### POST Requests
-
-Various POST request patterns:
+### POST / PUT / PATCH / DELETE
 
 ```kotlin
 stove {
   http {
-    // POST with request body and expect JSON response
+    // POST expecting JSON back
     postAndExpectJson<UserResponse>("/users") {
       CreateUserRequest(name = "John", email = "john@example.com")
     } { user ->
       user.id shouldNotBe null
-      user.name shouldBe "John"
     }
 
-    // POST and expect bodiless response (only status)
-    postAndExpectBodilessResponse(
-      uri = "/products/activate",
-      body = ActivateRequest(productId = 123).some()
-    ) { response ->
-      response.status shouldBe 200
-    }
-
-    // POST with full response access
+    // POST with full response
     postAndExpectBody<ProductResponse>(
       uri = "/products",
       body = CreateProductRequest(name = "Laptop", price = 999.99).some()
     ) { response ->
       response.status shouldBe 201
       response.headers["Location"] shouldNotBe null
-      response.body().id shouldNotBe null
     }
 
-    // POST with headers and token
-    postAndExpectJson<OrderResponse>(
-      uri = "/orders",
-      body = CreateOrderRequest(items = listOf("item1", "item2")).some(),
-      headers = mapOf("X-Request-ID" to "12345"),
-      token = "jwt-token".some()
-    ) { order ->
-      order.id shouldNotBe null
-      order.status shouldBe "CREATED"
+    // POST bodiless
+    postAndExpectBodilessResponse(
+      uri = "/products/activate",
+      body = ActivateRequest(productId = 123).some()
+    ) {
+      it.status shouldBe 200
     }
-  }
-}
-```
 
-### PUT Requests
-
-Update operations with PUT:
-
-```kotlin
-stove {
-  http {
-    // PUT with response body
+    // PUT
     putAndExpectJson<UserResponse>("/users/123") {
-      UpdateUserRequest(name = "Jane Doe", email = "jane@example.com")
-    } { user ->
-      user.name shouldBe "Jane Doe"
-      user.email shouldBe "jane@example.com"
-    }
+      UpdateUserRequest(name = "Jane Doe")
+    } { it.name shouldBe "Jane Doe" }
 
-    // PUT without response body
-    putAndExpectBodilessResponse(
-      uri = "/products/123",
-      body = UpdateProductRequest(name = "Updated Product").some()
-    ) { response ->
-      response.status shouldBe 200
-    }
-
-    // PUT with full response access
-    putAndExpectBody<ProductResponse>(
-      uri = "/products/456",
-      body = UpdateProductRequest(price = 899.99).some()
-    ) { response ->
-      response.status shouldBe 200
-      response.body().price shouldBe 899.99
-    }
-  }
-}
-```
-
-### PATCH Requests
-
-Partial updates with PATCH:
-
-```kotlin
-stove {
-  http {
-    // PATCH with response body
+    // PATCH
     patchAndExpectBody<UserResponse>(
       uri = "/users/123",
-      body = mapOf("email" to "newemail@example.com").some()
-    ) { response ->
-      response.status shouldBe 200
-      response.body().email shouldBe "newemail@example.com"
+      body = mapOf("email" to "new@example.com").some()
+    ) { it.body().email shouldBe "new@example.com" }
+
+    // DELETE
+    deleteAndExpectBodilessResponse("/users/123") {
+      it.status shouldBe 204
     }
   }
 }
 ```
 
-### DELETE Requests
-
-Delete operations:
-
-```kotlin
-stove {
-  http {
-    // DELETE without response body
-    deleteAndExpectBodilessResponse("/users/123") { response ->
-      response.status shouldBe 204
-    }
-
-    // DELETE with authentication
-    deleteAndExpectBodilessResponse(
-      uri = "/products/456",
-      token = "jwt-token".some()
-    ) { response ->
-      response.status shouldBe 200
-    }
-  }
-}
-```
-
-### File Upload with Multipart
-
-Upload files using multipart form data:
+### Multipart upload
 
 ```kotlin
 stove {
@@ -245,7 +134,6 @@ stove {
       uri = "/products/import",
       body = listOf(
         StoveMultiPartContent.Text("productName", "Laptop"),
-        StoveMultiPartContent.Text("description", "A powerful laptop"),
         StoveMultiPartContent.File(
           param = "file",
           fileName = "products.csv",
@@ -256,108 +144,188 @@ stove {
     ) { response ->
       response.status shouldBe 200
       response.body().uploadedFiles.size shouldBe 1
-      response.body().message shouldContain "products.csv"
     }
   }
 }
 ```
 
-### Advanced: Using Ktor Client Directly
-
-For advanced scenarios, access the underlying Ktor HttpClient:
+### Escape hatch: raw Ktor client
 
 ```kotlin
 stove {
   http {
     client { baseUrl ->
-      // Direct access to Ktor HttpClient
       val response = get {
-        url(baseUrl.buildString() + "/custom-endpoint")
-        header("Custom-Header", "value")
+        url(baseUrl.buildString() + "/custom")
+        header("X-Custom", "value")
       }
-      println(response.status)
+      response.status.value shouldBe 200
     }
   }
 }
 ```
 
-## Complete Example
+## CRUD example
 
-Here's a <span data-rn="underline" data-rn-color="#009688">complete CRUD test example</span>:
-
-```kotlin hl_lines="7 20 30 38"
-test("should perform CRUD operations on products") {
+```kotlin hl_lines="7 20 28 36"
+test("CRUD on products") {
   stove {
     var productId: Long? = null
 
-    // CREATE
     http {
+      // create
       postAndExpectBody<ProductResponse>(
         uri = "/products",
-        body = CreateProductRequest(name = "Laptop", price = 999.99, categoryId = 1).some()
+        body = CreateProductRequest(name = "Laptop", price = 999.99).some()
       ) { response ->
         response.status shouldBe 201
         productId = response.body().id
-        response.body().name shouldBe "Laptop"
       }
-    }
 
-    // READ
-    http {
-      get<ProductResponse>("/products/$productId") { product ->
-        product.id shouldBe productId
-        product.name shouldBe "Laptop"
-        product.price shouldBe 999.99
+      // read
+      get<ProductResponse>("/products/$productId") {
+        it.name shouldBe "Laptop"
       }
-    }
 
-    // UPDATE
-    http {
+      // update
       putAndExpectJson<ProductResponse>("/products/$productId") {
         UpdateProductRequest(price = 899.99)
-      } { product ->
-        product.price shouldBe 899.99
-      }
-    }
+      } { it.price shouldBe 899.99 }
 
-    // DELETE
-    http {
-      deleteAndExpectBodilessResponse("/products/$productId") { response ->
-        response.status shouldBe 204
+      // delete
+      deleteAndExpectBodilessResponse("/products/$productId") {
+        it.status shouldBe 204
       }
-    }
 
-    // Verify deletion
-    http {
-      getResponse<ErrorResponse>("/products/$productId") { response ->
-        response.status shouldBe 404
+      // verify gone
+      getResponse<ErrorResponse>("/products/$productId") {
+        it.status shouldBe 404
       }
     }
   }
 }
 ```
 
-## Integration with Other Components
+## Error scenarios
 
-### HTTP + Database
-
-```kotlin hl_lines="4 12"
+```kotlin
 stove {
-  // Create via API and capture user ID
-  var userId: Long = 0
   http {
-    postAndExpectBody<UserResponse>("/users", body = CreateUserRequest(name = "John").some()) { response ->
-      userId = response.body().id
+    postAndExpectBody<ValidationErrorResponse>(
+      uri = "/users",
+      body = InvalidUserRequest().some()
+    ) {
+      it.status shouldBe 400
+      it.body().errors shouldContain "name is required"
+    }
+
+    getResponse<ErrorResponse>("/secure") { it.status shouldBe 401 }
+    getResponse<ErrorResponse>("/users/999999") { it.status shouldBe 404 }
+  }
+}
+```
+
+## WebSocket
+
+`webSocket` opens a session inside `http { }`. Same connection lifetime as the lambda.
+
+```kotlin
+stove {
+  http {
+    webSocket("/chat") {
+      send("Hello, WebSocket!")
+      val response = receiveText()
+      response shouldBe "Echo: Hello, WebSocket!"
     }
   }
+}
+```
 
-  // Verify in database
+### Send / receive
+
+```kotlin
+webSocket("/endpoint") {
+  // send
+  send("Hello")                                         // text
+  send(byteArrayOf(1, 2, 3))                            // binary
+  send(StoveWebSocketMessage.Text("via sealed class"))
+
+  // receive
+  val text = receiveText()
+  val bytes = receiveBinary()
+  val typed = receive()    // StoveWebSocketMessage.Text | Binary | null
+
+  // with timeout
+  val opt = receiveTextWithTimeout(5.seconds)           // Option<String>
+}
+```
+
+### Batch + streaming
+
+```kotlin
+webSocket("/broadcast") {
+  // batch with timeout
+  val msgs = collectTexts(count = 5, timeout = 10.seconds)
+  msgs.size shouldBe 5
+
+  // streaming via Flow
+  incomingTexts().take(10).toList() shouldHaveSize 10
+
+  incoming().take(5).collect { msg ->
+    when (msg) {
+      is StoveWebSocketMessage.Text   -> println(msg.content)
+      is StoveWebSocketMessage.Binary -> println(msg.content.size)
+    }
+  }
+}
+```
+
+### Auth, headers, close, raw access
+
+```kotlin
+webSocket(uri = "/secure", token = "jwt".some()) { /* ... */ }
+
+webSocket(
+  uri = "/chat",
+  headers = mapOf("X-Trace-Id" to "abc")
+) {
+  send("hi")
+  close("test done")
+}
+
+// raw Ktor session for advanced frame control
+webSocketRaw("/advanced") {
+  send(Frame.Text("raw"))
+  for (frame in incoming) {
+    when (frame) {
+      is Frame.Text -> println(frame.readText())
+      is Frame.Close -> break
+      else -> {}
+    }
+  }
+}
+```
+
+## Multi-system patterns
+
+### HTTP + DB
+
+```kotlin
+stove {
+  var userId: Long = 0
+
+  http {
+    postAndExpectBody<UserResponse>(
+      "/users",
+      body = CreateUserRequest(name = "John").some()
+    ) { userId = it.body().id }
+  }
+
   postgresql {
-    shouldQuery(
+    shouldQuery<User>(
       query = "SELECT * FROM users WHERE id = $userId",
       mapper = { row -> User(row.long("id"), row.string("name")) }
     ) { users ->
-      users.size shouldBe 1
       users.first().name shouldBe "John"
     }
   }
@@ -368,16 +336,15 @@ stove {
 
 ```kotlin
 stove {
-  // Trigger event via API
   http {
-    postAndExpectBodilessResponse("/orders", body = CreateOrderRequest(amount = 100.0).some()) { response ->
-      response.status shouldBe 201
-    }
+    postAndExpectBodilessResponse(
+      "/orders",
+      body = CreateOrderRequest(amount = 100.0).some()
+    ) { it.status shouldBe 201 }
   }
 
-  // Verify event was published
   kafka {
-    shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
+    shouldBePublished<OrderCreatedEvent> {
       actual.amount == 100.0
     }
   }
@@ -388,367 +355,18 @@ stove {
 
 ```kotlin
 stove {
-  // Mock external service
   wiremock {
-    mockGet(
-      url = "/external-api/data",
-      statusCode = 200,
-      responseBody = ExternalData(id = 1, value = "test").some()
-    )
+    mockGet("/external/data", 200, ExternalData(value = "test").some())
   }
 
-  // Call your API that depends on external service
   http {
-    get<ResponseData>("/data") { response ->
-      response.value shouldBe "test"
-    }
+    get<ResponseData>("/data") { it.value shouldBe "test" }
   }
 }
 ```
 
-## Error Handling
+## Pairs well with
 
-```kotlin
-stove {
-  http {
-    // Test validation errors
-    postAndExpectBody<ValidationErrorResponse>("/users", body = InvalidUserRequest().some()) { response ->
-      response.status shouldBe 400
-      response.body().errors shouldContain "name is required"
-    }
-
-    // Test authentication errors
-    getResponse<ErrorResponse>("/secure-endpoint") { response ->
-      response.status shouldBe 401
-    }
-
-    // Test not found
-    getResponse<ErrorResponse>("/users/999999") { response ->
-      response.status shouldBe 404
-    }
-
-    // Test business logic errors
-    postAndExpectBody<ErrorResponse>("/products", body = InvalidProductRequest().some()) { response ->
-      response.status shouldBe 409 // Conflict
-      response.body().message shouldContain "already exists"
-    }
-  }
-}
-```
-
-## WebSocket Support
-
-Stove provides <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">built-in support for testing WebSocket endpoints</span>. The WebSocket functionality is integrated into the HTTP system and uses Ktor's WebSocket client under the hood.
-
-### Basic WebSocket Usage
-
-Send and receive messages through a WebSocket connection:
-
-```kotlin hl_lines="3 5"
-stove {
-  http {
-    webSocket("/chat") {
-      // Send a text message
-      send("Hello, WebSocket!")
-      
-      // Receive a text message
-      val response = receiveText()
-      response shouldBe "Echo: Hello, WebSocket!"
-    }
-  }
-}
-```
-
-### Sending Messages
-
-Multiple ways to send messages:
-
-```kotlin
-stove {
-  http {
-    webSocket("/endpoint") {
-      // Send text message
-      send("Hello")
-      
-      // Send binary data
-      send(byteArrayOf(1, 2, 3, 4, 5))
-      
-      // Send using sealed class
-      send(StoveWebSocketMessage.Text("Hello via sealed class"))
-      send(StoveWebSocketMessage.Binary(byteArrayOf(1, 2, 3)))
-    }
-  }
-}
-```
-
-### Receiving Messages
-
-Various methods to receive messages:
-
-```kotlin
-stove {
-  http {
-    webSocket("/endpoint") {
-      // Receive text
-      val text = receiveText()
-      text shouldBe "expected message"
-      
-      // Receive binary
-      val bytes = receiveBinary()
-      bytes shouldBe byteArrayOf(1, 2, 3)
-      
-      // Receive as sealed class (auto-detect type)
-      val message = receive()
-      when (message) {
-        is StoveWebSocketMessage.Text -> println(message.content)
-        is StoveWebSocketMessage.Binary -> println(message.content.size)
-        null -> println("Connection closed")
-      }
-      
-      // Receive with timeout
-      val response = receiveTextWithTimeout(5.seconds)
-      response.isSome() shouldBe true
-      response.getOrNull() shouldBe "expected"
-    }
-  }
-}
-```
-
-### Collecting Multiple Messages
-
-Collect a batch of messages:
-
-```kotlin
-stove {
-  http {
-    webSocket("/broadcast") {
-      // Collect 5 text messages with a 10 second timeout
-      val messages = collectTexts(count = 5, timeout = 10.seconds)
-      messages.size shouldBe 5
-      messages[0] shouldBe "Message 1"
-      messages[4] shouldBe "Message 5"
-      
-      // Collect binary messages
-      val binaryMessages = collectBinaries(count = 3, timeout = 5.seconds)
-      binaryMessages.size shouldBe 3
-    }
-  }
-}
-```
-
-### Streaming with Flow
-
-Use Kotlin Flow for streaming scenarios:
-
-```kotlin
-stove {
-  http {
-    webSocket("/events") {
-      // Stream text messages
-      val messages = incomingTexts()
-        .take(10)
-        .toList()
-      
-      messages.size shouldBe 10
-      
-      // Stream binary messages
-      incomingBinaries()
-        .take(5)
-        .collect { bytes ->
-          println("Received ${bytes.size} bytes")
-        }
-      
-      // Stream all message types
-      incoming()
-        .take(5)
-        .collect { message ->
-          when (message) {
-            is StoveWebSocketMessage.Text -> println(message.content)
-            is StoveWebSocketMessage.Binary -> println(message.content.size)
-          }
-        }
-    }
-  }
-}
-```
-
-### Authentication and Headers
-
-Connect with authentication or custom headers:
-
-```kotlin
-stove {
-  http {
-    // With bearer token
-    webSocket(
-      uri = "/secure-chat",
-      token = "jwt-token".some()
-    ) {
-      val response = receiveText()
-      response shouldBe "Authenticated successfully"
-    }
-    
-    // With custom headers
-    webSocket(
-      uri = "/chat",
-      headers = mapOf(
-        "X-Custom-Header" to "value",
-        "Authorization" to "Bearer custom-token"
-      )
-    ) {
-      send("Hello with custom headers")
-      receiveText() shouldNotBe null
-    }
-  }
-}
-```
-
-### WebSocket Expect (Assertion Alias)
-
-Use `webSocketExpect` for assertion-focused tests:
-
-```kotlin
-stove {
-  http {
-    webSocketExpect("/notifications") {
-      val messages = collectTexts(count = 3)
-      messages.size shouldBe 3
-      messages.all { it.startsWith("notification:") } shouldBe true
-    }
-  }
-}
-```
-
-### Raw WebSocket Access
-
-For advanced scenarios, access the underlying Ktor WebSocket session:
-
-```kotlin
-stove {
-  http {
-    webSocketRaw("/advanced") {
-      // Direct access to Ktor's DefaultClientWebSocketSession
-      send(Frame.Text("raw frame"))
-      
-      for (frame in incoming) {
-        when (frame) {
-          is Frame.Text -> println(frame.readText())
-          is Frame.Binary -> println(frame.readBytes().size)
-          is Frame.Close -> break
-          else -> {}
-        }
-      }
-    }
-  }
-}
-```
-
-### Underlying Session Access
-
-Access the underlying session from within `StoveWebSocketSession`:
-
-```kotlin
-stove {
-  http {
-    webSocket("/endpoint") {
-      // Use simplified API first
-      send("Hello")
-      
-      // Then access underlying session for advanced operations
-      underlyingSession {
-        send(Frame.Text("Advanced operation"))
-        val frame = incoming.receive()
-        (frame as Frame.Text).readText() shouldBe "Response"
-      }
-    }
-  }
-}
-```
-
-### Closing Connections
-
-Gracefully close WebSocket connections:
-
-```kotlin
-stove {
-  http {
-    webSocket("/chat") {
-      send("Hello")
-      receiveText()
-      
-      // Close with custom reason
-      close("Test completed")
-    }
-  }
-}
-```
-
-### Complete WebSocket Test Example
-
-A comprehensive example testing a chat application:
-
-```kotlin
-test("should handle chat room operations") {
-  stove {
-    http {
-      // Test echo functionality
-      webSocket("/chat/echo") {
-        send("Hello, World!")
-        receiveText() shouldBe "Echo: Hello, World!"
-        
-        send("Another message")
-        receiveText() shouldBe "Echo: Another message"
-      }
-      
-      // Test broadcast with authentication
-      webSocket(
-        uri = "/chat/room/123",
-        token = "user-jwt-token".some()
-      ) {
-        // Verify join notification
-        val joinMessage = receiveText()
-        joinMessage shouldContain "joined"
-        
-        // Send a message
-        send("Hi everyone!")
-        
-        // Collect broadcast responses
-        val messages = collectTexts(count = 2, timeout = 5.seconds)
-        messages.any { it.contains("Hi everyone!") } shouldBe true
-      }
-      
-      // Test binary data (e.g., file sharing)
-      webSocket("/chat/files") {
-        val fileData = "Hello".toByteArray()
-        send(fileData)
-        
-        val response = receiveBinary()
-        response shouldNotBe null
-      }
-    }
-  }
-}
-```
-
-### WebSocket + Kafka Integration
-
-Test WebSocket events that trigger Kafka messages:
-
-```kotlin
-stove {
-  http {
-    webSocket("/events") {
-      send("""{"type": "order", "action": "create", "amount": 100.0}""")
-      
-      val confirmation = receiveText()
-      confirmation shouldContain "received"
-    }
-  }
-  
-  kafka {
-    shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
-      actual.amount == 100.0
-    }
-  }
-}
-```
+- [WireMock](04-wiremock.md). Mock outbound HTTP at the boundary
+- [Recipes · order flow](../recipes/order-flow.md). Full multi-system flow
+- [Bridge](10-bridge.md). Drive a domain service directly when there's no HTTP path

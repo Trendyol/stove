@@ -1,222 +1,152 @@
 # Container AUT (`stove-container`)
 
-`stove-container` runs the application under test as a Docker image. It works with **any language and any framework** — Go, Python, Node.js, Rust, .NET, JVM, anything that ships in a container — and gives you image-level parity with what you deploy to production.
+Run the AUT as a **Docker image**. Any language, any framework. Image-level parity with what you ship to production.
 
-For a host-binary AUT (process mode), see [`stove-process`](../other-languages/index.md). For a Go-specific walkthrough that pairs `stove-container` with PostgreSQL + Kafka + tracing + coverage, see [Go Container Mode](../other-languages/go-container.md).
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Replace your framework starter with <code>containerApp(image = "my-app:tag", target = ContainerTarget.Server(...), envProvider = envMapper { ... })</code>. Stove starts the container, waits on a readiness probe, and exposes stable host ports. Image build is <em>your</em> responsibility, not Stove's.
+</div>
 
-## What `stove-container` is responsible for
+For a host-binary AUT (process mode) see [`stove-process`](../other-languages/index.md). For a Go-specific walkthrough see [Go Container Mode](../other-languages/go-container.md).
 
-- Pulling / locating the image, configuring it as a Testcontainers `GenericContainer`
-- Mapping Stove configurations to environment variables (`envMapper`) or CLI arguments (`argsMapper`)
-- Optional pre-start hook (`beforeStarted`) with resolved configurations
-- Container start, readiness check, log streaming
-- Graceful stop with configurable timeout, force-close fallback
+<a id="image-source-patterns"></a>
 
-## What `stove-container` is **not** responsible for
+## What `stove-container` does
 
-- **Building the image.** That is the user's pipeline. Stove only needs an image reference.
-- **Choosing the image registry or auth.** Use Testcontainers / Docker config like you would for any other test.
-- **Owning the Dockerfile.** Show your existing production Dockerfile to Stove via a tag.
+- Pulls / locates the image; wraps it as a Testcontainers `GenericContainer`
+- Maps Stove infrastructure config to env vars (`envMapper`) or CLI args (`argsMapper`)
+- Waits for readiness via your chosen `ReadinessStrategy`
+- Exposes stable host ports for tests
+- Graceful shutdown with force-close fallback
 
-## Install
+What it does NOT do:
 
-```kotlin
-dependencies {
-    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
-    testImplementation("com.trendyol:stove-container")
-}
-```
+- :x: Build your image (use Docker, Bazel, ko, jib, whatever)
+- :x: Manage your registry
+- :x: Bridge into your app's DI container
 
-## Image source patterns
-
-`containerApp(...)` only needs an image reference. Where it comes from is your choice:
-
-| Pattern | When to use | How |
-|---------|-------------|-----|
-| **CI artifact** | Most realistic CI path | CI publishes a tag (e.g. `ghcr.io/acme/app:sha-abc`); test reads it from a system property or env var |
-| **Registry pull** | Image already published; no local build needed | Just reference the tag — Testcontainers pulls lazily on first use |
-| **Local build** (optional) | Inner-loop convenience when iterating on the Dockerfile | Wire a Gradle `Exec` task running `docker build`; have a *separate* test task `dependsOn` it |
-
-The minimal Gradle wiring for the CI path:
-
-```kotlin title="build.gradle.kts"
-val containerImage = providers.environmentVariable("APP_IMAGE")
-    .orElse(providers.gradleProperty("app.image"))
-    .orElse("my-app:local")     // local fallback only
-
-tasks.register<Test>("e2eTest-container") {
-    useJUnitPlatform()
-    systemProperty("app.container.image", containerImage.get())
-}
-```
-
-```bash
-# CI
-APP_IMAGE=ghcr.io/acme/app:sha-abc123 ./gradlew e2eTest-container
-# or
-./gradlew e2eTest-container -Papp.image=ghcr.io/acme/app:sha-abc123
-```
-
-A separate optional task can wrap `docker build` for local convenience without coupling it to the main test task.
-
-## DSL: `containerApp(...)`
+## Configure
 
 ```kotlin
-import com.trendyol.stove.container.ContainerTarget
-import com.trendyol.stove.container.containerApp
-import com.trendyol.stove.system.application.envMapper
+Stove().with {
+  postgresql { /* ... */ }
+  kafka      { /* ... */ }
 
-containerApp(
-    image = System.getProperty("app.container.image"),
+  containerApp(
+    image = "ghcr.io/your-org/your-app:local",
     target = ContainerTarget.Server(
-        hostPort = 8090,
-        internalPort = 8090,
-        portEnvVar = "APP_PORT",
-        bindHostPort = false      // host network → no need to bind
+      hostPort = 8090,
+      internalPort = 8090,
+      portEnvVar = "APP_PORT"
     ),
     envProvider = envMapper {
-        "database.host" to "DB_HOST"
-        "database.port" to "DB_PORT"
-        "kafka.bootstrapServers" to "KAFKA_BROKERS"
-        env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
+      // Stove config key -> AUT env var
+      "postgresql.jdbc-url" to "DB_URL"
+      "postgresql.username" to "DB_USER"
+      "postgresql.password" to "DB_PASS"
+      "kafka.bootstrap-servers" to "KAFKA_BROKERS"
     },
+    readiness = ReadinessStrategy.HttpGet(path = "/health"),
     configureContainer = {
-        withNetworkMode("host")
-    },
-    beforeStarted = { configurations ->
-        // optional async hook with resolved configs
+      withNetworkMode("host")   // Linux only; cross-platform = use port binding
+      withFileSystemBind("./fixtures", "/app/fixtures")
     }
-)
+  )
+}.run()
 ```
 
-### Parameters
+## Target
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `image` | `String` | Image reference. From CI tag, registry, or local build — Stove does not care |
-| `target` | `ContainerTarget` | `Server` (HTTP / gRPC / TCP) or `Worker` (consumers, jobs); carries the readiness strategy |
-| `registry` | `String` | Image registry override (defaults to `DEFAULT_REGISTRY`) |
-| `compatibleSubstitute` | `String?` | Substitute image for arch/OS compatibility (Apple Silicon / arm64) |
-| `command` | `List<String>` | Override container command (gets `argsMapper` output appended) |
-| `envProvider` | `EnvProvider` | `envMapper { ... }` mapping Stove configs to env vars |
-| `argsProvider` | `ArgsProvider` | `argsMapper(prefix, separator) { ... }` for CLI-flag-driven apps |
-| `beforeStarted` | suspend lambda | Async hook with resolved configs, runs before container start |
-| `configureContainer` | `GenericContainer<*>.()` | Anything Testcontainers exposes — bind mounts, network mode, capabilities, log consumers |
-| `gracefulShutdownTimeout` | `Duration` | Defaults to 5 seconds; falls back to force-close on timeout |
+| Variant | Use |
+|---|---|
+| `ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort = true)` | App listens on a port; readiness probe required |
+| `ContainerTarget.Worker()` | No port; readiness via `Probe` or `FixedDelay` |
 
-### `ContainerTarget` variants
+Use `hostPort = 0` for a dynamic, CI-safe port assignment.
 
-| Variant | Use case | Default readiness |
-|---------|----------|-------------------|
-| `ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort)` | HTTP / gRPC / TCP servers | HTTP GET `http://localhost:$hostPort/health` |
-| `ContainerTarget.Worker()` | Kafka consumers, batch jobs | 2-second fixed delay |
-
-`bindHostPort = false` is the right default when using `withNetworkMode("host")` — the container shares the host network namespace and binding the port again would conflict.
-
-### Readiness strategies
-
-`ContainerTarget.Server` defaults to `ReadinessStrategy.HttpGet`. You can override:
+## Readiness
 
 ```kotlin
-target = ContainerTarget.Server(
-    hostPort = 8090,
-    internalPort = 8090,
-    portEnvVar = "APP_PORT",
-    readiness = ReadinessStrategy.TcpPort(8090)   // for raw TCP / gRPC w/o HTTP
-)
+ReadinessStrategy.HttpGet(path = "/health")
+ReadinessStrategy.TcpPort                          // any TCP listener
+ReadinessStrategy.Probe { container -> /* boolean */ }
+ReadinessStrategy.FixedDelay(5.seconds)            // last resort
 ```
 
-| Strategy | Use case |
-|----------|----------|
-| `ReadinessStrategy.HttpGet(url, timeout, retries, retryDelay, expectedStatusCodes)` | REST APIs |
-| `ReadinessStrategy.TcpPort(port)` | gRPC / raw TCP (no HTTP) |
-| `ReadinessStrategy.Probe { ... }` | Custom (file, DB query, log scan, etc.) |
-| `ReadinessStrategy.FixedDelay(duration)` | Workers / no readiness signal |
+## Env vs CLI args
 
-## Networking strategies
+```kotlin
+// env (most images)
+envProvider = envMapper {
+  "postgresql.jdbc-url" to "DB_URL"
+}
 
-=== "Host network (Linux only)"
+// CLI args (some Go / Rust binaries)
+argsProvider = argsMapper {
+  "postgresql.jdbc-url" to "--db-url"
+  "kafka.bootstrap-servers" to "--kafka"
+}
+```
 
-    ```kotlin
-    target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090,
-        portEnvVar = "APP_PORT", bindHostPort = false),
-    configureContainer = { withNetworkMode("host") }
-    ```
+Both can coexist on the same `containerApp`.
 
-    Container shares the host's network namespace. The app reaches PostgreSQL / Kafka on `localhost`. Does **not** work on Docker Desktop for macOS / Windows.
+## Networking gotchas
 
-=== "Port binding (cross-platform)"
+| Mode | Pros | Cons |
+|---|---|---|
+| `withNetworkMode("host")` | App reaches `localhost:port` directly | Linux only |
+| Port binding (default) | Cross-platform | Stove-managed infra reachable via Testcontainers network alias, not `localhost` |
 
-    ```kotlin
-    target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090,
-        portEnvVar = "APP_PORT", bindHostPort = true),
-    configureContainer = { withNetwork(Network.SHARED) }
-    ```
+For port binding, map infra hosts in `envProvider`:
 
-    Stove binds `hostPort → internalPort`. The app reaches databases / brokers via shared network aliases or `host.docker.internal`.
+```kotlin
+envProvider = envMapper {
+  "postgresql.host" to "DB_HOST"           // ends up = testcontainers alias
+  "postgresql.port" to "DB_PORT"
+  "kafka.bootstrap-servers" to "KAFKA"
+}
+```
 
-## `configureContainer { ... }`
-
-Accepts a `GenericContainer<*>.()` block. Anything Testcontainers exposes is available:
+## Bind mounts
 
 ```kotlin
 configureContainer = {
-    withNetworkMode("host")
-    withFileSystemBind(hostPath, "/inside/container")
-    withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger("app")))
-    withEnv("EXTRA_DEBUG", "1")
-    withCreateContainerCmdModifier { cmd -> /* low-level docker-java */ }
+  withFileSystemBind(
+    File("./fixtures").absolutePath,
+    "/app/fixtures",
+    BindMode.READ_ONLY
+  )
 }
 ```
 
-Use bind mounts for any data the container or the test needs to share with the host: coverage directories, fixture seeds, read-only configs.
+Useful for seed data, certificates, schema files.
 
-## `beforeStarted { ... }`
+## Coverage / shutdown hooks
 
-Async hook that runs after Stove resolves all configurations but before the container starts. Useful for prepping data the app expects on boot.
-
-```kotlin
-beforeStarted = { configurations ->
-    seedRedisCache(configurations["redis.host"]!!)
-}
-```
-
-## Switching between process and container mode
-
-A single `StoveConfig.kt` can serve both starters by branching on a system property. Infrastructure systems and tests stay identical — only the AUT runner changes.
+`beforeStarted` hook fires before container start. `gracefulShutdownTimeout` controls SIGTERM patience before SIGKILL.
 
 ```kotlin
-when ((System.getProperty("aut.mode") ?: "process").lowercase()) {
-    "process"   -> processApp { ProcessApplicationOptions(/* ... */) }
-    "container" -> containerApp(/* ... */)
-    else        -> error("Unsupported aut.mode")
-}
+containerApp(
+  image = "my-app:local",
+  /* ... */,
+  beforeStarted = { container -> /* tweak container */ },
+  gracefulShutdownTimeout = 30.seconds
+)
 ```
 
-```kotlin
-tasks.register<Test>("e2eTest")           { systemProperty("aut.mode", "process") }
-tasks.register<Test>("e2eTest-container") { systemProperty("aut.mode", "container") }
-```
+Required for languages that flush data on SIGTERM (e.g. Go integration coverage). See [Go Container Mode · Code Coverage](../other-languages/go-container.md#code-coverage).
 
-A common pattern: `e2eTest` runs process mode locally for fast iteration; `e2eTest-container` runs container mode in CI against the image the build job just published.
+## Pitfalls
 
-## Common pitfalls
+| Symptom | Fix |
+|---|---|
+| Container exits immediately | Image entrypoint blocks? Check `docker logs <id>` |
+| Readiness probe times out | App listens on `0.0.0.0`, not `127.0.0.1`; check port binding |
+| Env var ignored | Confirm the AUT reads that exact variable name |
+| Tests can't reach app | Mixing `host` network mode with port binding; pick one |
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `connection refused` to Postgres / Kafka inside container | Container can't reach Testcontainers on `localhost` | `withNetworkMode("host")` (Linux) or shared network + aliases (cross-platform) |
-| Stove never sees `/health` | Wrong port / binding | Confirm `bindHostPort` matches network mode; verify app listens on `internalPort` |
-| `Failed to start container application` | Image missing or unauthorized pull | Verify the image exists locally / in the registry; check `docker images` and registry credentials |
-| Slow inner loop | Image build dominates iteration | Use [`stove-process`](../other-languages/index.md) for daily dev; container mode in CI |
-| App killed before clean shutdown | `gracefulShutdownTimeout` too short for the app | Bump `gracefulShutdownTimeout` on `containerApp(...)` |
+## Pairs well with
 
-## Reference
-
-- Module source: `starters/container/stove-container/`
-- DSL source: `starters/container/stove-container/src/main/kotlin/com/trendyol/stove/container/ContainerDsl.kt`
-- Go-specific recipe (process **and** container modes in one repo): [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase)
-- Related docs:
-  - [Go Container Mode](../other-languages/go-container.md) — Go-specific walkthrough that uses this module
-  - [Other Languages & Stacks](../other-languages/index.md) — process vs. container overview
-  - [Dashboard](18-dashboard.md) and [MCP](21-mcp.md) — observability for any AUT, including container ones
-  - [Tracing](15-tracing.md) — distributed tracing across the test and the container
+- [Polyglot overview](../other-languages/index.md) for non-JVM AUT patterns
+- [Provided Application](19-provided-application.md) for remote-deployed apps
+- [Multiple Systems](20-multiple-systems.md) for testing across multiple AUTs

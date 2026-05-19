@@ -1,195 +1,156 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Multiple Systems</span>
+# Multiple Systems (Keyed)
 
-By default, Stove registers one instance per system type --- one PostgreSQL, one Kafka, one HTTP client. With multiple systems, you can register <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">multiple instances of the same system type</span>, each identified by a typed key.
+Default: one instance per system type. Need more? Register multiple instances of the same type with typed keys. Useful for microservice integration, multiple databases, multi-cluster Kafka, cross-service verification.
 
-## When to Use
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Define keys as Kotlin <code>object</code>s implementing <code>SystemKey</code>. Pass the key as the first argument to any system DSL: <code>postgresql(AppDb) { }</code>, <code>kafka(MainCluster) { }</code>, <code>httpClient(PaymentService) { }</code>. Use the same key inside <code>stove { }</code> to target that instance.
+</div>
 
-- **Microservice integration** --- call multiple services, each with its own HTTP client or gRPC stub
-- **Multiple databases** --- verify state in separate PostgreSQL or MongoDB instances
-- **Multi-cluster Kafka** --- publish/consume from different Kafka clusters
-- **Cross-service verification** --- after calling your app, check that dependent services received the right data
+## Define keys
 
-## Define Keys
-
-Keys are Kotlin singleton objects implementing `SystemKey`:
+Keys are Kotlin singletons implementing `SystemKey`. They show up in reports and traces, so name them after the *role* the instance plays.
 
 ```kotlin
-object OrderService : SystemKey
-object PaymentService : SystemKey
 object AppDb : SystemKey
 object AnalyticsDb : SystemKey
+
+object MainCluster : SystemKey
+object AuditCluster : SystemKey
+
+object PaymentService : SystemKey
+object InventoryService : SystemKey
 ```
 
-!!! tip "Why Objects Instead of Strings?"
-    Kotlin objects give you compile-time safety, IDE autocomplete, and refactor-safe references. Typos become compile errors. The same key can be reused across protocols --- `httpClient(PaymentService)` and `grpc(PaymentService)` both refer to the same logical service.
+!!! tip "Why objects, not strings?"
+    Typed keys catch typos at compile time and let IDEs autocomplete usages. Strings would silently bind to "new" instances if misspelled.
 
-## Configure
+## Register keyed instances
 
-Pass the key as the first argument to any system DSL function:
+Pass the key as the first arg. Everything else is identical to the single-instance API. Default + keyed instances coexist.
 
-```kotlin hl_lines="3 8 13 18"
+```kotlin
 Stove().with {
-    // Default HTTP client --- your app
-    httpClient {
-        HttpClientSystemOptions(baseUrl = "https://myapp.staging.com")
-    }
+  // Default, unkeyed Postgres (optional)
+  postgresql {
+    PostgresqlOptions(/* ... */)
+  }
 
-    // Keyed HTTP clients --- dependent services
-    httpClient(OrderService) {
-        HttpClientSystemOptions(baseUrl = "https://order.internal.com")
-    }
-    httpClient(PaymentService) {
-        HttpClientSystemOptions(baseUrl = "https://payment.internal.com")
-    }
+  // Keyed instances. separate containers, ports, state
+  postgresql(AppDb) {
+    PostgresqlOptions(
+      databaseName = "app",
+      configureExposedConfiguration = { cfg ->
+        listOf("app.datasource.url=${cfg.jdbcUrl}")
+      }
+    )
+  }
 
-    // Keyed databases
-    postgresql(AppDb) {
-        PostgresqlOptions.provided(
-            jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
-            host = "staging-db", port = 5432,
-            configureExposedConfiguration = { emptyList() }
-        )
-    }
-    postgresql(AnalyticsDb) {
-        PostgresqlOptions.provided(
-            jdbcUrl = "jdbc:postgresql://analytics-db:5432/analytics",
-            host = "analytics-db", port = 5432,
-            configureExposedConfiguration = { emptyList() }
-        )
-    }
+  postgresql(AnalyticsDb) {
+    PostgresqlOptions(
+      databaseName = "analytics",
+      configureExposedConfiguration = { cfg ->
+        listOf("analytics.datasource.url=${cfg.jdbcUrl}")
+      }
+    )
+  }
 
-    providedApplication()
+  httpClient(PaymentService) {
+    HttpClientSystemOptions(baseUrl = "https://pay.internal")
+  }
+
+  httpClient(InventoryService) {
+    HttpClientSystemOptions(baseUrl = "https://inv.internal")
+  }
+
+  springBoot(runner = { params -> com.app.run(params) })
 }.run()
 ```
 
-## Write Tests
+## Use keys in tests
 
-Pass the key to the validation DSL:
+Same DSL, just pass the key:
 
-```kotlin hl_lines="5 12 19 26"
-test("create order, verify across services and databases") {
-    stove {
-        // Call the app (default HTTP --- no key)
-        http {
-            postAndExpectJson<OrderResponse>("/orders", body = request.some()) { order ->
-                order.id shouldNotBe null
-            }
-        }
+```kotlin
+stove {
+  postgresql(AppDb) {
+    shouldExecute("INSERT INTO users(id) VALUES ('u1')")
+  }
 
-        // Verify order service received the order
-        http(OrderService) {
-            getResponse("/api/orders/$orderId") { resp ->
-                resp.status shouldBe 200
-            }
-        }
+  postgresql(AnalyticsDb) {
+    shouldQuery<EventRow>("SELECT * FROM events") { it shouldHaveSize 0 }
+  }
 
-        // Verify payment was processed
-        http(PaymentService) {
-            getResponse("/api/payments?orderId=$orderId") { resp ->
-                resp.status shouldBe 200
-            }
-        }
+  httpClient(PaymentService) {
+    get<PaymentResponse>("/health") { it.status shouldBe "OK" }
+  }
 
-        // Verify in app's database
-        postgresql(AppDb) {
-            shouldQuery<Order>("SELECT * FROM orders WHERE id = ?", listOf(orderId)) { rows ->
-                rows shouldHaveSize 1
-            }
-        }
-
-        // Verify analytics event landed
-        postgresql(AnalyticsDb) {
-            shouldQuery<AnalyticsEvent>("SELECT * FROM events WHERE order_id = ?", listOf(orderId)) { events ->
-                events.first().type shouldBe "ORDER_CREATED"
-            }
-        }
-    }
+  httpClient(InventoryService) {
+    post<InventoryResponse>("/reserve", body) { it.status shouldBe 200 }
+  }
 }
 ```
 
-## Supported Systems
+## Supported systems
 
-All multi-instance dependency systems support keyed registration:
+All systems support keyed registration:
 
-| Category | Systems |
-|----------|---------|
-| **Databases** | PostgreSQL, MySQL, MSSQL, MongoDB, Cassandra, Couchbase, Redis, Elasticsearch |
-| **Protocol clients** | HTTP Client, gRPC |
-| **Messaging** | Kafka |
-| **Mocking** | WireMock, gRPC Mock |
+`postgresql · mysql · mssql · mongodb · couchbase · cassandra · redis · elasticsearch · kafka · httpClient · grpc · grpcMock · wiremock`
 
-Single-instance systems (Bridge, Tracing, Dashboard) and framework starters (`springBoot()`, `ktor()`) do **not** support keyed registration --- there is only one application under test.
+## Combine with `providedApplication`
 
-!!! info "Spring Kafka"
-    The Spring Kafka starter (`stove-spring-kafka`) does not support keyed instances because it is tied to a single Spring application context. Use the standalone `stove-kafka` module if you need multiple Kafka instances.
-
-## Default and Keyed Coexist
-
-Default (unkeyed) and keyed instances of the same type are independent:
+For microservice integration tests where you don't own all the AUTs:
 
 ```kotlin
-// Registration
-httpClient { HttpClientSystemOptions(baseUrl = "https://myapp.com") }      // default
-httpClient(OrderService) { HttpClientSystemOptions(baseUrl = "https://order.internal.com") }  // keyed
+Stove().with {
+  // Your service runs locally
+  springBoot(runner = { params -> com.app.run(params) })
 
-// Validation
-http { /* hits myapp.com */ }              // default
-http(OrderService) { /* hits order.internal.com */ }  // keyed
+  // Upstream / downstream services already running
+  httpClient(PaymentService) {
+    HttpClientSystemOptions(baseUrl = "https://pay.staging")
+  }
+  httpClient(InventoryService) {
+    HttpClientSystemOptions(baseUrl = "https://inv.staging")
+  }
+}.run()
 ```
 
 ## Reporting
 
-Keyed systems produce distinguishable names in reports and traces:
+Keyed instances appear in failure reports with their key name, e.g. `kafka[MainCluster] shouldBePublished ...`. No more guessing which Kafka the assertion targeted.
 
-```
-HTTP > GET /orders                          # default
-HTTP [OrderService] > GET /api/orders/123   # keyed
-HTTP [PaymentService] > GET /api/payments   # keyed
-PostgreSQL [AppDb] > shouldQuery > SELECT   # keyed
-PostgreSQL [AnalyticsDb] > shouldQuery      # keyed
-```
+## When NOT to use keys
 
-## Error Handling
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+**One key per logical role.**
 
-If you pass a key that wasn't registered, you get a clear runtime error:
+```kotlin
+object PrimaryDb : SystemKey
+object ReadReplica : SystemKey
 
-```
-SystemNotRegisteredException: HttpSystem was not registered.
-No HttpSystem registered with key 'OrderService'
+postgresql(PrimaryDb) { /* ... */ }
+postgresql(ReadReplica) { /* ... */ }
 ```
 
-## Combining with Provided Application
+  </div>
+  <div class="stove-dont">
+**Don't key for sharding or partitioning.** That's an app concern.
 
-Keyed systems and `providedApplication()` are designed to work together for full black-box testing:
-
-```kotlin hl_lines="2-4 7-14 17"
-Stove().with {
-    // Your app's API
-    httpClient { HttpClientSystemOptions(baseUrl = "https://staging.myapp.com") }
-
-    // Dependent services and infrastructure
-    httpClient(OrderService) { HttpClientSystemOptions(baseUrl = "https://order.internal.com") }
-    postgresql(AppDb) {
-        PostgresqlOptions.provided(
-            jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
-            host = "staging-db", port = 5432,
-            configureExposedConfiguration = { emptyList() }
-        )
-    }
-    kafka {
-        KafkaSystemOptions.provided(
-            bootstrapServers = "staging-kafka:9092",
-            configureExposedConfiguration = { emptyList() }
-        )
-    }
-
-    // App already running
-    providedApplication {
-        ProvidedApplicationOptions(
-            readiness = ReadinessStrategy.HttpGet(url = "https://staging.myapp.com/health")
-        )
-    }
-}.run()
+```kotlin
+object Shard1 : SystemKey
+object Shard2 : SystemKey
+object Shard3 : SystemKey
+// ... 256 more
 ```
 
-See also: [Provided Application](19-provided-application.md) for testing against deployed apps.
+Tests don't model production sharding; they verify the *behavior* one shard at a time.
+  </div>
+</div>
+
+## Related
+
+- [Multi-system order recipe](../recipes/order-flow.md)
+- [Provided Application](19-provided-application.md) for black-box upstream services
+- [Provided Instances](11-provided-instances.md) for shared CI infrastructure

@@ -1,403 +1,146 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Dashboard</span>
+# Dashboard
 
-Your end-to-end tests pass. But do you *see* what they do?
+A local web UI for everything your Stove tests do. Timelines, span trees, snapshots, Kafka explorer. Lives in a SQLite database so runs persist across sessions. Streams live via SSE.
 
-Stove Dashboard is a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">local observability dashboard</span> for your e2e test runs.
-
-- **Captures everything** — HTTP calls, Kafka messages, database queries, gRPC calls, distributed traces, system snapshots
-- **Real-time web UI** — updates live via SSE as your tests execute
-- **Single binary** — receives events via gRPC, persists in SQLite, serves an embedded SPA
-- **Persistent** — browse test runs after they complete, across sessions
-- **Agent API** — exposes a local read-only MCP endpoint for compact failed-test evidence
-
-Unlike [Reporting](13-reporting.md) (console output on failure) and [Tracing](15-tracing.md) (span collection for assertions), Dashboard gives you a <span data-rn="underline" data-rn-color="#009688">persistent, browsable view</span> of your test runs — including successful ones.
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Install <code>stove-cli</code>, run <code>stove serve</code>, add <code>dashboard { }</code> in <code>Stove().with</code>. Open <code>http://localhost:8086</code>. Done.
+</div>
 
 ## Install the CLI
 
-=== "Homebrew (macOS)"
+=== "Homebrew"
 
     ```bash
-    brew install Trendyol/trendyol-tap/stove
+    brew tap trendyol/tap
+    brew install stove
     ```
 
-=== "Shell Script (macOS & Linux)"
+=== "curl"
 
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | bash
     ```
 
-    Options:
+=== "Manual"
 
-    ```bash
-    # Install a specific version
-    curl -fsSL ... | sh -s -- --version 0.23.0
+    Download the right binary from [releases](https://github.com/Trendyol/stove/releases) and add to `$PATH`.
 
-    # Install to a custom directory
-    curl -fsSL ... | sh -s -- --dir /usr/local/bin
-    ```
+Verify: `stove --version`.
 
-=== "Manual Download"
-
-    Download the binary for your platform from [GitHub Releases](https://github.com/Trendyol/stove/releases):
-
-    | Platform    | Archive                                      |
-    |-------------|----------------------------------------------|
-    | macOS arm64 | `stove-<version>-darwin-arm64.tar.gz` |
-    | macOS amd64 | `stove-<version>-darwin-amd64.tar.gz` |
-    | Linux amd64 | `stove-<version>-linux-amd64.tar.gz`  |
-
-    Each archive includes a `.sha256` checksum file.
-
-The CLI is a single binary with no runtime dependencies. It embeds the web UI, so there's nothing else to install.
-
-!!! info "Keep Versions Aligned"
-    Keep `stove-cli`, the Stove BOM, and your Stove test dependencies on the same Stove version. The dashboard shows a warning when the runtime libraries and CLI drift apart, but matching versions avoids inconsistent dashboard data.
-
-## Quick Start
-
-**1. Start the dashboard**
+## Start the dashboard
 
 ```bash
-stove
+stove serve                                  # default port 8086
+stove serve --port 9000 --grpc-port 9001     # override ports
+stove serve --fresh-start                    # wipe DB on start
+stove serve --db ./my-stove.sqlite           # custom DB path
 ```
 
-You'll see:
+Open the printed URL. Empty until tests run.
 
-```
-Stove CLI v0.23.0 running
-UI:   http://localhost:4040
-REST: http://localhost:4040/api/v1
-MCP:  http://localhost:4040/mcp
-gRPC: localhost:4041
-```
-
-**2. Add the dependency**
-
-=== "Gradle"
-
-    ```kotlin hl_lines="3-4"
-    dependencies {
-        testImplementation(platform("com.trendyol:stove-bom:$version"))
-        testImplementation("com.trendyol:stove-dashboard")
-        testImplementation("com.trendyol:stove-tracing")
-    }
-    ```
-
-=== "Maven"
-
-    ```xml hl_lines="3-6"
-    <dependency>
-        <groupId>com.trendyol</groupId>
-        <artifactId>stove-dashboard</artifactId>
-        <scope>test</scope>
-    </dependency>
-    ```
-
-**3. Apply the tracing Gradle plugin**
-
-The tracing Gradle plugin attaches the OpenTelemetry agent to your test tasks, which is required for the dashboard's trace view to receive spans.
+## Wire your tests
 
 ```kotlin
-// build.gradle.kts
-plugins {
-    id("com.trendyol.stove.tracing") version "<stove-version>"
-}
-
-stoveTracing {
-    serviceName.set("product-api")
-}
-```
-
-See [Tracing](15-tracing.md) for the full plugin configuration reference.
-
-**4. Register in your Stove config**
-
-=== "Kotest"
-
-    ```kotlin hl_lines="2 6-7"
-    class StoveConfig : AbstractProjectConfig() {
-      override val extensions = listOf(StoveKotestExtension())
-
-      override suspend fun beforeProject() =
-        Stove().with {
-          dashboard { DashboardSystemOptions(appName = "product-api") }
-          tracing { enableSpanReceiver() }  // recommended: enables distributed trace capture
-          // ... other systems
-        }.run()
-
-      override suspend fun afterProject() = Stove.stop()
+Stove().with {
+    dashboard {
+        DashboardSystemOptions(appName = "my-service")
+        // Defaults are fine. Override host/port if you ran `stove serve --port X`:
+        // DashboardSystemOptions(appName = "my-service", cliHost = "localhost", cliPort = 8086)
     }
-    ```
-
-=== "JUnit"
-
-    ```kotlin hl_lines="1"
-    @ExtendWith(StoveJUnitExtension::class)
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    abstract class BaseE2ETest {
-      companion object {
-        @JvmStatic @BeforeAll
-        fun setup() = runBlocking {
-          Stove().with {
-            dashboard { DashboardSystemOptions(appName = "product-api") }
-            tracing { enableSpanReceiver() }
-            // ... other systems
-          }.run()
-        }
-
-        @JvmStatic @AfterAll
-        fun teardown() = runBlocking { Stove.stop() }
-      }
-    }
-    ```
-
-**5. Run your tests and open the dashboard**
-
-```bash
-./gradlew test
+    // ... other systems + runner
+}.run()
 ```
 
-Navigate to [http://localhost:4040](http://localhost:4040). The UI updates in real time as tests execute.
+Now every test run streams to the dashboard.
 
-If the dashboard shows a version mismatch warning, align your Stove BOM and test dependencies with the `stove-cli` version, or upgrade `stove-cli` to the runtime version reported by the selected app.
+## What you see
 
-AI agents can connect to the local MCP endpoint shown in the startup output. See [MCP](21-mcp.md) for the tool list and fallback behavior.
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Timeline</strong><span class="stove-sys-card-badge">per test</span></div>
+    <p class="stove-sys-card-desc">Chronological list of every HTTP call, DB op, Kafka publish, WireMock match, gRPC call. Click any entry to see request/response payloads.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Trace</strong><span class="stove-sys-card-badge">OTel</span></div>
+    <p class="stove-sys-card-desc">Interactive span tree with attribute search. Requires <a href="../15-tracing/">Tracing</a> enabled.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Snapshots</strong><span class="stove-sys-card-badge">at failure</span></div>
+    <p class="stove-sys-card-desc">System state captured when an assertion failed. WireMock unmatched, Kafka topics, DB rows.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Kafka Explorer</strong><span class="stove-sys-card-badge">live</span></div>
+    <p class="stove-sys-card-desc">All published + consumed messages. Filter by topic, partition, headers. Drill into payloads.</p>
+  </div>
+</div>
 
-## What Gets Captured
-
-Once `dashboard {}` is registered, Stove <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">automatically captures everything</span> — no code changes to your tests:
-
-| Event              | Data                                                         |
-|--------------------|--------------------------------------------------------------|
-| **Run lifecycle**  | Start/end timestamps, app name, active systems, pass/fail counts |
-| **Test lifecycle** | Test name, spec name, duration, status, error messages       |
-| **Entries**        | Every `http {}`, `kafka {}`, `postgresql {}` assertion — system, action, input/output, expected/actual, trace ID |
-| **Spans**          | Distributed traces via OpenTelemetry — operation, service, duration, attributes, exceptions |
-| **Snapshots**      | System state at test boundaries — database contents, Kafka offsets, WireMock stubs |
-
-## The Dashboard
-
-The embedded SPA provides four views for each test:
-
-### Timeline
-
-Chronological list of every action the test performed. Each entry shows timestamp, system badge (color-coded), action name, and pass/fail indicator. Click any entry to expand full detail: input, output, expected vs. actual, error, metadata.
-
-Recognized systems: <span data-rn="highlight" data-rn-color="#00968855">HTTP, Kafka, PostgreSQL, MongoDB, Couchbase, Redis, Elasticsearch, WireMock, gRPC, MySQL, MSSQL, Cassandra</span>.
-
-### Trace
-
-Distributed trace tree built from OpenTelemetry spans. Spans are linked to tests via two mechanisms:
-
-- **Entry-based**: spans sharing a `trace_id` with a test entry
-- **Attribute-based**: spans containing `x-stove-test-id` in their attributes
-
-The tree shows operation name, service, duration, status, relevant attributes (`http.*`, `db.*`, `messaging.*`, `rpc.*`), and exception details with stack traces.
-
-!!! tip "Combine with Tracing"
-    Dashboard's trace view is the visual counterpart to the [Tracing](15-tracing.md) component's console output. Enable both for the best experience: Tracing gives you assertion DSL and failure reports in the terminal, Dashboard gives you a browsable trace tree in the browser.
-
-### Snapshots
-
-Grid of system state cards captured at test boundaries. Each card shows the system name with a color-coded icon and a summary of the captured state.
-
-### Kafka Explorer
-
-Dedicated view filtering Kafka-specific entries. Shows consumed/published/failed message counts with expandable JSON payloads.
-
-## Configuration
-
-### DashboardSystemOptions
-
-```kotlin
-DashboardSystemOptions(
-  appName = "product-api",     // required: identifies the application under test
-  cliHost = "localhost",       // where the stove CLI is running
-  cliPort = 4041               // gRPC port of the stove CLI
-)
-```
-
-| Parameter | Type     | Default       | Description                                |
-|-----------|----------|---------------|--------------------------------------------|
-| `appName` | `String` | *(required)*  | Application name for grouping test runs    |
-| `cliHost` | `String` | `"localhost"` | Hostname where `stove` CLI is running      |
-| `cliPort` | `Int`    | `4041`        | gRPC port where `stove` CLI is listening   |
-
-### CLI Options
+## Data model
 
 ```
-stove [OPTIONS]
-
-Options:
-  --port <PORT>          HTTP port for the web UI and REST API [default: 4040]
-  --grpc-port <PORT>     gRPC port for receiving events [default: 4041]
-  --db <PATH>            Path to SQLite database file [default: ~/.stove-dashboard.db]
-  --clear                Clear all stored data and exit
-  --fresh-start          Back up and recreate the database, then start normally
-  -h, --help             Print help
-  -V, --version          Print version
+database
+└── apps (one per appName)
+    └── runs (one per test suite execution)
+        └── tests (one per test case)
+            ├── entries  (HTTP, DB, Kafka, ...)
+            ├── spans    (OTel tree)
+            └── snapshots (system state at failure)
 ```
 
-```bash
-# Run on custom ports
-stove --port 8080 --grpc-port 8081
+Runs persist until you `--clear` or `--fresh-start`. Browse old runs to compare regressions.
 
-# Use a project-specific database
-stove --db ./my-project-dashboard.db
+## Fault tolerance
 
-# Reset all data (exits after clearing)
-stove --clear
+Dashboard is **opt-in** and **non-blocking**:
 
-# Drop and recreate the database (backs up first, then starts servers)
-stove --fresh-start
-```
-
-## Fault Tolerance
-
-The dashboard emitter is designed to <span data-rn="underline" data-rn-color="#009688">never break your tests</span>:
-
-- Non-blocking event queue (capacity: 512)
-- Auto-disables after 5 consecutive gRPC failures
-- 3-second drain timeout on shutdown
-- If the dashboard CLI is not running, tests continue normally with zero overhead
-
-This means you can add `dashboard {}` to your config permanently. When the CLI is running, you get the dashboard. When it's not, nothing changes.
+- Events queue locally; gRPC publish happens in the background.
+- If the CLI is down or unreachable, the gRPC client auto-disables for the rest of the suite. Tests continue. No flakes.
+- Tests never wait on the dashboard.
 
 ## REST API
 
-The dashboard exposes a REST API at `/api/v1` for programmatic access:
+The CLI exposes REST endpoints for integration:
 
-| Method | Path                                         | Description                    |
-|--------|----------------------------------------------|--------------------------------|
-| GET    | `/meta`                                      | CLI version and MCP discovery metadata |
-| GET    | `/apps`                                      | List applications with latest run info |
-| GET    | `/runs?app={name}`                           | List runs, optionally filtered by app  |
-| GET    | `/runs/{run_id}`                             | Get a specific run             |
-| GET    | `/runs/{run_id}/tests`                       | List tests in a run            |
-| GET    | `/runs/{run_id}/tests/{test_id}/entries`     | List entries for a test        |
-| GET    | `/runs/{run_id}/tests/{test_id}/spans`       | List spans linked to a test    |
-| GET    | `/runs/{run_id}/tests/{test_id}/snapshots`   | List snapshots for a test      |
-| GET    | `/traces/{trace_id}`                         | Get all spans in a trace       |
-| GET    | `/events/stream`                             | SSE stream for real-time events |
+| Endpoint | Use |
+|---|---|
+| `GET /api/v1/meta` | discovery; version, capabilities, MCP availability |
+| `GET /api/v1/apps` | list registered apps |
+| `GET /api/v1/runs?app=...` | list runs for an app |
+| `GET /api/v1/runs/{run}/tests` | tests in a run |
+| `GET /api/v1/traces/{trace_id}` | span tree |
+| `GET /api/v1/events/stream` | SSE: live test events |
 
-For AI agents, prefer the MCP endpoint at `/mcp` over the REST API when the task is failed-test triage. MCP returns compact, scoped evidence and ready-to-use follow-up tool calls. See [MCP](21-mcp.md) for setup and fallback behavior.
+Useful for CI artifact extraction, custom analyzers, or building tooling on top.
 
-### SSE Events
+## CLI options reference
 
-The `/events/stream` endpoint delivers server-sent events with JSON payloads:
+| Flag | Default | Notes |
+|---|---|---|
+| `--port` | 8086 | web UI + REST |
+| `--grpc-port` | 8087 | event ingestion |
+| `--db` | `~/.stove/dashboard.sqlite` | persistence path |
+| `--clear` | off | wipe DB before serving |
+| `--fresh-start` | off | wipe + reset all settings |
 
-```json
-{"run_id": "abc-123", "event_type": "test_ended"}
-```
+## Pairs well with
 
-Event types: `run_started`, `run_ended`, `test_started`, `test_ended`, `entry_recorded`, `span_recorded`, `snapshot`.
+<div class="grid cards" markdown>
 
-## Complete Example
+-   :material-chart-timeline-variant: **[Tracing](15-tracing.md)**. Span tree shows up in Trace view.
 
-```kotlin hl_lines="7-8"
-class StoveConfig : AbstractProjectConfig() {
-  override val extensions = listOf(StoveKotestExtension())
+-   :material-robot-outline: **[MCP](21-mcp.md)**. Same database, agent-readable.
 
-  override suspend fun beforeProject() =
-    Stove()
-      .with {
-        dashboard { DashboardSystemOptions(appName = "spring-example") }
-        tracing { enableSpanReceiver() }
-        httpClient {
-          HttpClientSystemOptions(baseUrl = "http://localhost:$appPort")
-        }
-        postgresql {
-          PostgresqlOptions(databaseName = "stove", configureExposedConfiguration = { cfg ->
-            listOf("spring.datasource.url=${cfg.jdbcUrl}")
-          })
-        }
-        kafka {
-          KafkaSystemOptions(configureExposedConfiguration = {
-            listOf("kafka.bootstrapServers=${it.bootstrapServers}")
-          })
-        }
-        springBoot(runner = { params -> run(params) { addTestSystemDependencies() } })
-      }.run()
+-   :material-text-box-search-outline: **[Reporting](13-reporting.md)**. Console reports + dashboard = full coverage.
 
-  override suspend fun afterProject() = Stove.stop()
-}
-```
+-   :material-chart-arc: **[When a test fails](../observability/when-it-fails.md)**. Dashboard is step 3 of the failure flow.
 
-Then write tests as usual — the dashboard captures everything automatically:
-
-```kotlin
-test("should create order and publish event") {
-  stove {
-    http {
-      postAndExpectBodilessResponse("/orders", body = CreateOrderRequest(orderId).some()) {
-        it.status shouldBe 201
-      }
-    }
-
-    kafka {
-      shouldBePublished<OrderCreatedEvent> {
-        actual.orderId == orderId
-      }
-    }
-
-    postgresql {
-      shouldQuery<Order>("SELECT * FROM orders WHERE id = '$orderId'") {
-        it.first().status shouldBe "CREATED"
-      }
-    }
-  }
-}
-```
-
-Open [http://localhost:4040](http://localhost:4040) to see every HTTP request, Kafka message, database query, and distributed trace — in real time.
-
-## How It Relates to Reporting and Tracing
-
-Dashboard, [Reporting](13-reporting.md), and [Tracing](15-tracing.md) are complementary:
-
-| Feature | Reporting | Tracing | Dashboard |
-|---------|-----------|---------|--------|
-| When | On test failure | On test failure | Always (real-time) |
-| Where | Console/CI output | Console/CI output | Browser UI |
-| What | Test actions + assertions | Application call chain | Everything + history |
-| Persistence | None (ephemeral) | None (ephemeral) | SQLite (across runs) |
-
-<span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">Use all three together</span> for the best experience:
-
-- **Reporting** gives you immediate feedback in the terminal when something breaks
-- **Tracing** gives you the execution trace and assertion DSL in your test code
-- **Dashboard** gives you a browsable, persistent view of all test runs — successful and failed
+</div>
 
 ## Troubleshooting
 
-### Dashboard UI shows "Waiting for test events..."
-
-1. Verify the `stove` CLI is running: `stove --version`
-2. Check that gRPC ports match: CLI default is `4041`, Kotlin default is `4041`
-3. Look for connection errors in the CLI's terminal output
-
-### Tests run fine but nothing appears in Dashboard
-
-1. Ensure `dashboard {}` is registered in your Stove config
-2. Verify `stove-dashboard` is in your test dependencies
-3. Check that the CLI started *before* running tests
-
-### Dashboard works locally but not in CI
-
-Dashboard is designed for <span data-rn="underline" data-rn-color="#009688">local development</span>. In CI, use [Reporting](13-reporting.md) and [Tracing](15-tracing.md) for failure diagnostics — they output to the console and don't require a running server.
-
-### Data from previous runs clutters the UI
-
-```bash
-stove --clear
-```
-
-This wipes the SQLite database and exits. Start the CLI again for a clean slate.
-
-### Database schema is corrupted or migrations fail
-
-```bash
-stove --fresh-start
-```
-
-This backs up the existing database (printing the backup path), deletes it, and recreates a fresh one with all migrations applied. The servers start normally after — no need to run `stove` again.
+| Symptom | Check |
+|---|---|
+| Dashboard empty | `stove serve` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
+| Events not arriving | Port mismatch. `cliPort` in `DashboardSystemOptions` must match `--port` |
+| "gRPC disabled" warning | Expected if CLI started after tests; restart in correct order |
+| Disk filling up | `~/.stove/dashboard.sqlite` grows with runs; periodically `stove serve --clear` |

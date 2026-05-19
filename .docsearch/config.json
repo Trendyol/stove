@@ -1,0 +1,70 @@
+{
+  "_comment": "Algolia DocSearch crawler config for Stove docs. Submit at https://docsearch.algolia.com/apply/ to get API keys, then drop appId/apiKey/indexName into docs/js/docsearch-init.js and uncomment the theme.theme.custom_dir line in mkdocs.yml.",
+  "index_name": "stove",
+  "start_urls": [
+    "https://trendyol.github.io/stove/"
+  ],
+  "sitemap_urls": [
+    "https://trendyol.github.io/stove/sitemap.xml"
+  ],
+  "stop_urls": [
+    "/api/",
+    "/release-notes/"
+  ],
+  "selectors": {
+    "lvl0": {
+      "selector": ".md-nav__title",
+      "default_value": "Documentation"
+    },
+    "lvl1": "article h1",
+    "lvl2": "article h2",
+    "lvl3": "article h3",
+    "lvl4": "article h4",
+    "lvl5": "article h5",
+    "text": "article p, article li, article td"
+  },
+  "strip_chars": " .,;:#",
+  "scrape_start_urls": false,
+  "custom_settings": {
+    "attributesForFaceting": ["language", "version", "type", "docusaurus_tag"],
+    "attributesToRetrieve": ["hierarchy", "content", "anchor", "url", "url_without_anchor", "type"],
+    "attributesToHighlight": ["hierarchy", "content"],
+    "attributesToSnippet": ["content:10"],
+    "camelCaseAttributes": ["hierarchy", "content"],
+    "searchableAttributes": [
+      "unordered(hierarchy.lvl0)",
+      "unordered(hierarchy.lvl1)",
+      "unordered(hierarchy.lvl2)",
+      "unordered(hierarchy.lvl3)",
+      "unordered(hierarchy.lvl4)",
+      "unordered(hierarchy.lvl5)",
+      "content"
+    ],
+    "distinct": true,
+    "attributeForDistinct": "url",
+    "customRanking": [
+      "desc(weight.pageRank)",
+      "desc(weight.level)",
+      "asc(weight.position)"
+    ],
+    "ranking": [
+      "words",
+      "filters",
+      "typo",
+      "attribute",
+      "proximity",
+      "exact",
+      "custom"
+    ],
+    "highlightPreTag": "<span class='algolia-docsearch-suggestion--highlight'>",
+    "highlightPostTag": "</span>",
+    "minWordSizefor1Typo": 3,
+    "minWordSizefor2Typos": 7,
+    "allowTyposOnNumericTokens": false,
+    "minProximity": 1,
+    "ignorePlurals": true,
+    "advancedSyntax": true,
+    "attributeCriteriaComputedByMinProximity": true,
+    "removeWordsIfNoResults": "allOptional"
+  }
+}

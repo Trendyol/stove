@@ -185,7 +185,7 @@ Timed out waiting for condition
 1. **Increase assertion timeout:**
    ```kotlin
    kafka {
-       shouldBePublished<Event>(atLeastIn = 30.seconds) {
+       shouldBePublished<Event> {
            actual.id == expectedId
        }
    }
@@ -314,7 +314,7 @@ Message was not consumed within timeout
 2. **Check topic names:**
    ```kotlin
    kafka {
-       shouldBePublished<Event>(atLeastIn = 10.seconds) {
+       shouldBePublished<Event> {
            println("Checking topic: ${metadata.topic}")  // Debug
            actual.id == expectedId
        }
@@ -558,7 +558,7 @@ class MyE2ETest : FunSpec({
 })
 ```
 
-<span data-rn="underline" data-rn-color="#009688">You can still test your Java application with Stove — just write your e2e test files in Kotlin.</span>
+<span data-rn="underline" data-rn-color="#009688">You can still test your Java application with Stove. Just write your e2e test files in Kotlin.</span>
 
 #### Q: Can I use JUnit instead of Kotest?
 
@@ -757,7 +757,7 @@ If MCP still cannot be reached, use the normal failure report, test output, and 
 
 - New `stove-quarkus` module available for Quarkus applications
 - Console reporting rewritten with Mordant for better output
-- No breaking changes — all existing APIs remain compatible
+- No breaking changes. All existing APIs remain compatible
 
 
 ## Getting Help

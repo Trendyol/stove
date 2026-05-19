@@ -1,125 +1,161 @@
-# Other Languages & Stacks
+# Polyglot
 
-Stove ships with JVM framework starters (Spring Boot, Ktor, Micronaut, Quarkus), but the core testing model isn't limited to JVM applications. You can use Stove to <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test any application that speaks HTTP, databases, and messaging</span> --- regardless of the language it's written in.
+Stove's testing model isn't JVM-only. Any app that speaks HTTP, databases, and messaging fits. Go, Python, Rust, Node, .NET. Pick how the app starts: as a host binary (fast iteration) or as a Docker image (CI parity).
 
-The key choice is *how* the application under test runs:
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">Same DSL, different runner</span>
+<code>stove { http { } postgresql { } kafka { } tracing { } }</code> looks identical. Only the AUT runner changes. Bridge is unavailable. Verify through systems.
+</div>
 
-- **`stove-process`** — start a host binary (`processApp` / `goApp`). Fastest iteration loop. Zero infrastructure beyond your compiler.
-- **`stove-container`** — start a Docker image (`containerApp`). CI-grade parity with the artifact you ship to production.
+## Two ways to run the app
 
-Both expose the same envelope: env-var or CLI-arg config mapping, readiness strategies, graceful shutdown, and the same `stove { http { … } postgresql { … } kafka { … } tracing { … } }` test DSL.
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>🏃 <code>stove-process</code></h4>
+    <p>Run a host binary (<code>goApp()</code> / <code>processApp()</code>). Fastest inner loop. Compile and go.</p>
+    <ul>
+      <li>Quick to iterate</li>
+      <li>Zero infra beyond your compiler</li>
+      <li>Approximate prod parity (host runtime)</li>
+      <li>Best for dev + smoke tests</li>
+    </ul>
+  </div>
+  <div>
+    <h4>🐳 <code>stove-container</code></h4>
+    <p>Run any Docker image (<code>containerApp()</code>). CI-grade parity with what you ship.</p>
+    <ul>
+      <li>Exact production parity</li>
+      <li>Image build per run</li>
+      <li>Best for pre-merge + release validation</li>
+      <li>Language-agnostic</li>
+    </ul>
+  </div>
+</div>
 
-## How It Works
+A common pattern: `e2eTest` (process) for dev, `e2eTest-container` for CI. Same Kotlin tests, same `StoveConfig`, branched on `-Dgo.aut.mode=process|container`.
+
+## How it works
 
 ```mermaid
 graph LR
-    S[Stove Test<br>Kotlin] -->|starts containers| PG[(PostgreSQL)]
+    S[Stove Test<br/>Kotlin] -->|starts containers| PG[(PostgreSQL)]
     S -->|starts containers| K[(Kafka)]
     S -->|starts OTLP receiver| T[Tracing]
-    S -->|process or container| APP[Your App<br>Go / Python / Rust / ...]
+    S -->|process or container| APP[Your App<br/>Go · Python · Rust · ...]
     APP -->|connects| PG
     APP -->|connects| K
     APP -->|exports spans| T
-    S -->|HTTP / gRPC assertions| APP
-    S -->|DB assertions| PG
-    S -->|trace assertions| T
+    S -->|HTTP / gRPC asserts| APP
+    S -->|DB asserts| PG
+    S -->|trace asserts| T
 ```
 
-Stove starts the infrastructure (databases, message brokers, OTLP receiver), launches your application as either an OS process or a Docker container with the right connection details, and runs tests against it using the same DSL you'd use for JVM apps.
+Stove launches infra, hands your app the connection details (env vars / CLI args), and runs the standard DSL against it.
 
-## Supported Languages
+## Language requirements
 
 Any language that can:
 
-1. **Read environment variables (or CLI args)** — to receive database URLs, ports, and credentials
-2. **Expose a readiness signal** — typically an HTTP `/health` endpoint, but TCP / custom probes / fixed delay are supported
-3. **Shut down on SIGTERM** — for clean test teardown (and for things like Go integration coverage flushing)
+1. **Read env vars** (or CLI args) for DB URLs, ports, credentials
+2. **Expose readiness**. HTTP `/health` (preferred), TCP probe, custom probe, fixed delay
+3. **Handle SIGTERM**. For clean teardown and Go integration coverage flush
 
-<div class="grid cards" markdown>
+## Languages we walk through
 
--   :material-language-go: **Go** — first-class
-
-    Full walkthrough across both modes: HTTP + PostgreSQL + Kafka + OpenTelemetry + Dashboard + MCP + integration coverage.
-
-    [Overview :material-arrow-right:](go.md) · [Process Mode :material-arrow-right:](go-process.md) · [Container Mode :material-arrow-right:](go-container.md)
-
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Go</strong><span class="stove-sys-card-badge">First-class</span></div>
+    <p class="stove-sys-card-desc">HTTP · Postgres · Kafka (sarama / franz-go / segmentio) · OTel · Dashboard · MCP · integration coverage.</p>
+    <div class="stove-sys-card-actions">
+      <a href="go/">Overview</a>
+      <a href="go-process/">Process mode</a>
+      <a href="go-container/">Container mode</a>
+    </div>
+  </div>
 </div>
 
-## Process vs. Container at a glance
+Python, Rust, Node, .NET follow the same shape. Pick `processApp` (or `containerApp`) and your language's OTel SDK. Open an issue if you want a dedicated walkthrough.
+
+## Process vs container at a glance
 
 | Concern | `stove-process` | `stove-container` |
-|---------|----------------|-------------------|
-| **Starter** | `goApp()` / `processApp()` | `containerApp()` |
-| **AUT artifact** | Host binary | Docker image |
-| **Iteration speed** | Fast (compile + run) | Slower (image build) |
-| **Production parity** | Approximate (host runtime) | Exact |
-| **CI fit** | Smoke / inner loop | Pre-merge / release validation |
-| **Networking** | Loopback | Host network *or* port binding |
-| **Filesystem isolation** | Host filesystem | Container layer + bind mounts |
-| **Common pitfalls** | Glibc/runtime drift hidden | Network mode + port binding wiring |
+|---|---|---|
+| Starter | `goApp()` / `processApp()` | `containerApp()` |
+| AUT artifact | Host binary | Docker image |
+| Iteration speed | Fast (compile + run) | Slower (image build) |
+| Production parity | Approximate | Exact |
+| CI fit | Smoke / inner loop | Pre-merge / release |
+| Networking | Loopback | Host network *or* port binding |
+| Filesystem isolation | Host filesystem | Container layer + bind mounts |
+| Common pitfalls | Runtime drift hidden | Network mode + port wiring |
 
-A common pattern: `e2eTest` uses process mode for daily development, `e2eTest-container` runs container mode in CI. Same Kotlin tests, same StoveConfig, branched only on a `-Dgo.aut.mode=process|container` system property.
+## vs JVM apps
 
-## At A Glance vs. JVM apps
+| Concern | JVM app | Non-JVM app |
+|---|---|---|
+| AUT startup | `springBoot()`, `ktor()`, ... | `goApp()` / `processApp()` / `containerApp()` |
+| Config | JVM properties | `envMapper` / `argsMapper` |
+| Infra | Same (`postgresql { }`, `kafka { }`, ...) | Same |
+| Test DSL | Same | Same |
+| Tracing | OTel Java Agent (auto) | OTel SDK for your language |
+| Dashboard / MCP | Same | Same |
+| Bridge `using<T> { }` | ✓ | ✗ (separate process / container) |
 
-| Concern | JVM App (Spring Boot, etc.) | Non-JVM App (Go, Python, etc.) |
-|---------|---------------------------|-------------------------------|
-| **Application startup** | Framework starter (`springBoot()`, `ktor()`) | `goApp()` / `processApp()` (`stove-process`) or `containerApp()` (`stove-container`) |
-| **Config passing** | JVM system properties / Spring properties | `envMapper` / `argsMapper` |
-| **Infrastructure** | Same (`postgresql {}`, `kafka {}`, `http {}`) | Same |
-| **Test DSL** | Same (`stove { http { ... } postgresql { ... } }`) | Same |
-| **Tracing** | OTel Java Agent (automatic) | OTel SDK for your language (e.g., `otelhttp`, `otelsql`) |
-| **Dashboard** | Same (`dashboard {}`) | Same |
-| **MCP triage** | Same (`stove` CLI, `/mcp`) | Same |
-| **Bridge (`using<T> {}`)** | Yes (access DI container) | No (separate process / container) |
+## The pattern
 
-## The Pattern
-
-Every non-JVM integration follows the same three steps, regardless of language or mode:
-
-### 1. Choose a starter and wire the AUT
+### 1. Wire the AUT
 
 ```kotlin
 // Process mode
 goApp(
-    target = ProcessTarget.Server(port = 8090, portEnvVar = "APP_PORT"),
-    envProvider = envMapper { /* ... */ }
+  target = ProcessTarget.Server(port = 8090, portEnvVar = "APP_PORT"),
+  envProvider = envMapper { /* ... */ }
 )
 
 // Container mode
 containerApp(
-    image = "my-app:local",
-    target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090, portEnvVar = "APP_PORT"),
-    envProvider = envMapper { /* ... */ },
-    configureContainer = { withNetworkMode("host") }
+  image = "my-app:local",
+  target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090, portEnvVar = "APP_PORT"),
+  envProvider = envMapper { /* ... */ },
+  configureContainer = { withNetworkMode("host") }
 )
 ```
 
-### 2. Instrument your app with OpenTelemetry
+### 2. Instrument with OpenTelemetry
 
-Use your language's OTel SDK. Stove starts an OTLP gRPC receiver and passes the endpoint via env vars. Your app exports spans to Stove, and Stove correlates them back to the test via W3C `traceparent` headers.
+Enable the **`stoveTracing` Gradle plugin**. It boots the OTLP gRPC receiver, picks a free port, and exposes it to your tests + AUT via env vars:
+
+```kotlin hl_lines="2 5 6 7"
+plugins {
+    id("com.trendyol.stove.tracing") version "$stoveVersion"
+}
+
+stoveTracing {
+    serviceName.set("my-service")
+    testTaskNames.set(listOf("e2eTest"))   // and "e2eTest-container", etc.
+}
+```
+
+Then instrument your app with your language's OTel SDK. Stove correlates spans back to the test via W3C `traceparent`. JVM apps get the agent attached automatically; non-JVM apps just need to read the OTLP endpoint from the standard env vars.
 
 ### 3. Write tests with the standard DSL
 
-Tests look identical to JVM tests — `http {}`, `postgresql {}`, `kafka {}`, `tracing {}`, `dashboard {}` all work the same way.
+`http { }`, `postgresql { }`, `kafka { }`, `tracing { }`, `dashboard { }`. Identical to JVM tests.
 
-## What You Can't Do
+## What you can't do
 
-Since the application runs as a separate OS process or container:
+- :x: **No `bridge()` / `using<T> { }`**. Different process / container.
 
-- **No `bridge()` / `using<T> {}`** — you can't access the app's internal state or DI container
-
-Everything else works: HTTP assertions, database queries, Kafka publishing and consuming (`shouldBePublished`, `shouldBeConsumed`), tracing, WireMock, gRPC, the [Dashboard](../Components/18-dashboard.md), and the [MCP](../Components/21-mcp.md) triage tools.
+Everything else works: HTTP/gRPC, DB queries, Kafka assertions (`shouldBePublished`, `shouldBeConsumed`), tracing, WireMock, Dashboard, MCP.
 
 !!! info "Kafka assertions for non-JVM apps"
-    Stove provides bridge libraries that enable `shouldBeConsumed` and `shouldBePublished` assertions for non-JVM applications. The [`stove-kafka`](https://github.com/trendyol/stove/tree/main/go/stove-kafka) Go library supports IBM/sarama (interceptors), twmb/franz-go (hooks), and segmentio/kafka-go (helpers), and forwards messages via gRPC to Stove's observer. The library-agnostic core also lets you wire any other Kafka client (e.g. confluent-kafka-go) yourself.
+    Stove ships bridge libraries to expose `shouldBeConsumed` / `shouldBePublished` for non-JVM apps. The [`stove-kafka`](https://github.com/trendyol/stove/tree/main/go/stove-kafka) Go library supports IBM/sarama (interceptors), twmb/franz-go (hooks), and segmentio/kafka-go (helpers). The library-agnostic core lets you wire any other client (e.g. confluent-kafka-go).
 
-## Next Steps
+## Next
 
-- [Go overview](go.md) — pick the right mode for your needs
-- [Go Process Mode](go-process.md) — fastest iteration, full HTTP + PG + Kafka + tracing + coverage walkthrough
-- [Go Container Mode](go-container.md) — CI-grade parity with the production image
-- [Provided Application](../Components/19-provided-application.md) — for testing already-deployed apps (black-box)
-- [Dashboard](../Components/18-dashboard.md) — live timeline, traces, snapshots, Kafka explorer
-- [MCP](../Components/21-mcp.md) — agent-friendly endpoint for failed-test triage
-- [Writing Custom Systems](../writing-custom-systems.md) — extend Stove with new component types
+- [Go overview](go.md). Pick the right mode for your project
+- [Go Process Mode](go-process.md). Full walkthrough (HTTP + PG + Kafka + OTel + coverage)
+- [Go Container Mode](go-container.md). Production-image parity
+- [Provided Application](../Components/19-provided-application.md). Already-deployed apps (black-box)
+- [Dashboard](../Components/18-dashboard.md) · [MCP](../Components/21-mcp.md). Observability
+- [Custom systems](../writing-custom-systems.md). Extend Stove

@@ -1,0 +1,13 @@
+"label": |-
+  Micronaut
+"gradle":
+- |-
+  com.trendyol:stove-micronaut
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.micronaut.micronaut
+"runner": |-
+  micronaut(
+    runner = { params -> {pkg}.run(params) },
+    withParameters = listOf("micronaut.server.port=8080")
+  )

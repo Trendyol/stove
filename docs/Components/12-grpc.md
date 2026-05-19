@@ -1,469 +1,155 @@
-# <span data-rn="underline" data-rn-color="#ff9800">gRPC</span>
+# gRPC Client
 
-=== "Gradle"
+Call your app's gRPC services from tests. Supports Wire, grpc-kotlin, and custom client factories. Unary, server-stream, client-stream, bidi.
 
-    ``` kotlin
-        dependencies {
-            testImplementation("com.trendyol:stove-grpc:$version")
-        }
-    ```
+<a class="open-in-wizard" data-sys="grpc">Open in setup wizard</a>
+
+<!--{wizard:snippet id=sys.grpc parts=gradle,configure,test}-->
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Register <code>grpc { GrpcSystemOptions(host = "localhost", port = 9090) }</code>. Use <code>wireClient&lt;T&gt;()</code> (Wire) or <code>channel&lt;T&gt;()</code> (gRPC-kotlin). For raw access, <code>rawChannel { channel -&gt; }</code>. Streaming via coroutines: <code>serverStream</code>, <code>clientStream</code>, <code>bidiStream</code>.
+</div>
 
 ## Configure
 
-Once you've added the dependency, you'll have access to the `grpc` function when configuring Stove:
-
-```kotlin hl_lines="3 5-6"
-Stove()
-  .with {
-    grpc {
-      GrpcSystemOptions(
-        host = "localhost",
-        port = 50051
-      )
-    }
-  }
-  .run()
-```
-
-### Configuration Options
-
 ```kotlin
-data class GrpcSystemOptions(
-  /**
-   * The gRPC server host.
-   */
-  val host: String,
-
-  /**
-   * The gRPC server port.
-   */
-  val port: Int,
-
-  /**
-   * Whether to use plaintext (no TLS). Default is true for testing.
-   */
-  val usePlaintext: Boolean = true,
-
-  /**
-   * Request timeout duration (default: 30 seconds).
-   */
-  val timeout: Duration = 30.seconds,
-
-  /**
-   * List of client interceptors for logging, auth, tracing, etc.
-   */
-  val interceptors: List<ClientInterceptor> = emptyList(),
-
-  /**
-   * Default metadata (headers) to send with every request.
-   */
-  val metadata: Map<String, String> = emptyMap(),
-
-  /**
-   * Factory function for creating the underlying ManagedChannel.
-   */
-  val createChannel: (host: String, port: Int) -> ManagedChannel = { h, p ->
-    defaultChannelBuilder(h, p, usePlaintext, timeout, interceptors, metadata)
-  },
-
-  /**
-   * Factory function for creating Wire's GrpcClient with resources.
-   */
-  val createWireClient: (host: String, port: Int) -> WireClientResources = { h, p ->
-    defaultWireGrpcClient(h, p, timeout, metadata)
-  }
-)
-```
-
-### With Authentication
-
-```kotlin
-grpc {
-  GrpcSystemOptions(
-    host = "localhost",
-    port = 50051,
-    metadata = mapOf("authorization" to "Bearer $token"),
-    interceptors = listOf(LoggingInterceptor())
-  )
-}
-```
-
-## Usage
-
-Stove's gRPC module supports multiple gRPC providers through a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">provider-agnostic design</span>:
-
-- **Wire clients** (`wireClient<T>`) - For Wire-generated clients
-- **Typed channel** (`channel<T>`) - For any stub with a Channel constructor
-- **Custom providers** (`withEndpoint`) - For any gRPC library
-- **Raw channel** (`rawChannel`) - For advanced scenarios
-
-### Wire Clients
-
-For services generated with [Wire](https://github.com/square/wire):
-
-```kotlin hl_lines="3 5"
-stove {
+Stove().with {
   grpc {
-    wireClient<GreeterServiceClient> {
-      val response = SayHello().execute(HelloRequest(name = "World"))
-      response.message shouldBe "Hello, World!"
-    }
+    GrpcSystemOptions(
+      host = "localhost",
+      port = 9090,
+      usePlaintext = true,
+      timeout = 30.seconds,
+      interceptors = listOf(/* ClientInterceptor */),
+      metadata = Metadata().apply {
+        put(Metadata.Key.of("x-source", Metadata.ASCII_STRING_MARSHALLER), "stove")
+      }
+    )
   }
-}
+}.run()
 ```
 
-### Typed Channel (grpc-kotlin and Wire stubs)
+| Field | Use |
+|---|---|
+| `host`, `port` | Where your gRPC server listens |
+| `usePlaintext` | `true` for local tests; flip when testing TLS |
+| `timeout` | Per-call deadline |
+| `interceptors` | `ClientInterceptor` chain |
+| `metadata` | Default per-call metadata (auth, tracing, ...) |
+| `createChannel` | Custom `ManagedChannel` factory |
+| `createWireClient` | Custom Wire client factory |
 
-For any stub that takes a Channel constructor. This works with both grpc-kotlin generated stubs and Wire-generated stubs:
+## DSL
 
-```kotlin hl_lines="3 5"
-stove {
-  grpc {
-    channel<GreeterServiceStub> {
-      // 'this' is the stub - direct method calls
-      val response = sayHello(HelloRequest(name = "World"))
-      response.message shouldBe "Hello, World!"
-    }
-  }
-}
-```
-
-#### With Per-Call Metadata
+### Wire client
 
 ```kotlin
 stove {
   grpc {
-    channel<GreeterServiceStub>(
-      metadata = mapOf("authorization" to "Bearer custom-token")
-    ) {
-      val response = sayHello(HelloRequest(name = "Authenticated"))
-      response.message shouldBe "Hello, Authenticated!"
-    }
+    wireClient<OrderServiceClient>().createOrder(
+      OrderRequest(userId = "u1", amount = 99.99)
+    ).status shouldBe OrderStatus.CREATED
   }
 }
 ```
 
-### Custom Providers
-
-For any other gRPC library, use `withEndpoint` with a factory function:
+### grpc-kotlin channel
 
 ```kotlin
 stove {
   grpc {
-    withEndpoint({ host, port -> 
-      // Create your client however you want
-      MyCustomGrpcClient.connect(host, port)
-    }) {
-      // 'this' is your client
-      this.call() shouldBe expected
+    val stub = channel<OrderServiceGrpcKt.OrderServiceCoroutineStub>()
+    stub.createOrder(orderRequest).status shouldBe "CREATED"
+  }
+}
+```
+
+### Per-call metadata override
+
+```kotlin
+stove {
+  grpc {
+    withEndpoint(::OrderServiceClient) {
+      metadata.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER), "Bearer x")
+      createOrder(orderRequest)
     }
   }
 }
 ```
 
-### Raw Channel Access
-
-For advanced scenarios where you need full control:
+### Raw channel access
 
 ```kotlin
 stove {
   grpc {
     rawChannel { channel ->
-      // Full control over channel
-      val stub = GreeterGrpc.newBlockingStub(channel)
-      val response = stub.sayHello(request)
-      response.message shouldBe "Hello!"
+      val stub = MyServiceGrpc.newBlockingStub(channel)
+      stub.something()
     }
   }
 }
 ```
 
-## Streaming
-
-All streaming types work naturally with Kotlin coroutines.
-
-### Server Streaming
+### Streaming
 
 ```kotlin
 stove {
   grpc {
-    channel<StreamServiceStub> {
-      val responses = serverStream(request).toList()
-      
-      responses.size shouldBe 5
-      responses[0].message shouldBe "Item 0"
-      responses[4].message shouldBe "Item 4"
+    // server stream
+    serverStream(::OrderServiceClient) {
+      val flow = streamOrders(StreamRequest(userId = "u1"))
+      flow.toList() shouldHaveSize 10
+    }
+
+    // client stream
+    clientStream(::OrderServiceClient) {
+      val reply = bulkCreate(flowOf(o1, o2, o3))
+      reply.created shouldBe 3
+    }
+
+    // bidi
+    bidiStream(::OrderServiceClient) {
+      val out = chat(flowOf("hi", "hello"))
+      out.toList().size shouldBe 2
     }
   }
 }
 ```
 
-### Client Streaming
+## Error handling
 
 ```kotlin
 stove {
   grpc {
-    channel<StreamServiceStub> {
-      val requestFlow = flow {
-        emit(Request(message = "First"))
-        emit(Request(message = "Second"))
-        emit(Request(message = "Third"))
-      }
-      
-      val response = clientStream(requestFlow)
-      response.message shouldBe "Received: First, Second, Third"
-      response.count shouldBe 3
-    }
+    shouldThrow<StatusException> {
+      wireClient<OrderServiceClient>().getOrder(OrderRequest(id = "missing"))
+    }.status.code shouldBe Status.Code.NOT_FOUND
   }
 }
 ```
 
-### Bidirectional Streaming
+## Multiple gRPC services (keyed)
 
 ```kotlin
+object Inventory : SystemKey
+object Payments  : SystemKey
+
+Stove().with {
+  grpc(Inventory) { GrpcSystemOptions(host = "localhost", port = 9090) }
+  grpc(Payments)  { GrpcSystemOptions(host = "localhost", port = 9091) }
+}
+
 stove {
-  grpc {
-    channel<StreamServiceStub> {
-      val requestFlow = flow {
-        emit(Request(message = "A"))
-        emit(Request(message = "B"))
-      }
-      
-      val responses = bidiStream(requestFlow).toList()
-      responses.size shouldBe 2
-      responses[0].message shouldBe "Echo: A"
-      responses[1].message shouldBe "Echo: B"
-    }
-  }
+  grpc(Inventory) { wireClient<InventoryClient>().reserve(/* ... */) }
+  grpc(Payments)  { wireClient<PaymentClient>().charge(/* ... */) }
 }
 ```
 
-## Wire Client Details
+See [Multiple Systems](20-multiple-systems.md).
 
-### Direct GrpcClient Access
+## Pairs well with
 
-```kotlin
-stove {
-  grpc {
-    rawWireClient { client ->
-      val service = client.create(GreeterServiceClient::class)
-      val response = service.SayHello().execute(HelloRequest(name = "Direct"))
-      response.message shouldBe "Hello, Direct!"
-    }
-  }
-}
-```
-
-### Wire Client with Custom OkHttp Configuration
-
-```kotlin
-stove {
-  grpc {
-    withEndpoint({ host, port ->
-      val okHttpClient = OkHttpClient.Builder()
-        .protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE))
-        .addInterceptor { chain ->
-          val request = chain.request().newBuilder()
-            .addHeader("authorization", "Bearer my-token")
-            .build()
-          chain.proceed(request)
-        }
-        .build()
-      
-      GrpcClient.Builder()
-        .client(okHttpClient)
-        .baseUrl("http://$host:$port")
-        .build()
-        .create(GreeterServiceClient::class)
-    }) {
-      val response = SayHello().execute(HelloRequest(name = "Custom"))
-      response.message shouldBe "Hello, Custom!"
-    }
-  }
-}
-```
-
-## Authentication & Interceptors
-
-### Global Interceptors
-
-```kotlin
-class LoggingInterceptor : ClientInterceptor {
-  override fun <ReqT, RespT> interceptCall(
-    method: MethodDescriptor<ReqT, RespT>,
-    callOptions: CallOptions,
-    next: Channel
-  ): ClientCall<ReqT, RespT> {
-    println("Calling: ${method.fullMethodName}")
-    return next.newCall(method, callOptions)
-  }
-}
-
-Stove()
-  .with {
-    grpc {
-      GrpcSystemOptions(
-        host = "localhost",
-        port = 50051,
-        interceptors = listOf(LoggingInterceptor())
-      )
-    }
-  }
-```
-
-### Per-Call Metadata
-
-```kotlin
-stove {
-  grpc {
-    // Metadata is applied via interceptor automatically
-    channel<SecureServiceStub>(
-      metadata = mapOf(
-        "authorization" to "Bearer jwt-token",
-        "x-request-id" to "12345"
-      )
-    ) {
-      val response = secureEndpoint(request)
-      response.success shouldBe true
-    }
-  }
-}
-```
-
-## Error Handling
-
-### Testing Authentication Errors
-
-```kotlin
-stove {
-  grpc {
-    // Wire client - throws GrpcException
-    wireClient<SecureServiceClient> {
-      val exception = shouldThrow<GrpcException> {
-        SecureCall().execute(Request(message = "Hello"))
-      }
-      exception.grpcStatus shouldBe GrpcStatus.UNAUTHENTICATED
-    }
-    
-    // grpc-kotlin - throws StatusException
-    channel<SecureServiceStub> {
-      val exception = shouldThrow<StatusException> {
-        secureCall(request)
-      }
-      exception.status.code shouldBe Status.Code.UNAUTHENTICATED
-    }
-  }
-}
-```
-
-### Testing Not Found
-
-```kotlin
-stove {
-  grpc {
-    channel<UserServiceStub> {
-      val exception = shouldThrow<StatusException> {
-        getUser(GetUserRequest(id = 999999))
-      }
-      exception.status.code shouldBe Status.Code.NOT_FOUND
-    }
-  }
-}
-```
-
-## Complete Example
-
-Here's a complete test example with various gRPC operations:
-
-```kotlin
-test("should perform gRPC operations") {
-  stove {
-    // Test unary call
-    grpc {
-      channel<UserServiceStub> {
-        val response = createUser(CreateUserRequest(name = "John", email = "john@example.com"))
-        response.id shouldNotBe null
-        response.name shouldBe "John"
-      }
-    }
-
-    // Test with authentication
-    grpc {
-      channel<UserServiceStub>(
-        metadata = mapOf("authorization" to "Bearer admin-token")
-      ) {
-        val users = listUsers(ListUsersRequest(limit = 10)).toList()
-        users.size shouldBeGreaterThan 0
-      }
-    }
-
-    // Test error handling
-    grpc {
-      channel<UserServiceStub> {
-        shouldThrow<StatusException> {
-          getUser(GetUserRequest(id = -1))
-        }.status.code shouldBe Status.Code.INVALID_ARGUMENT
-      }
-    }
-  }
-}
-```
-
-## Integration with Other Components
-
-### gRPC + Database
-
-```kotlin
-stove {
-  // Create via gRPC
-  var userId: Long = 0
-  grpc {
-    channel<UserServiceStub> {
-      val response = createUser(CreateUserRequest(name = "John"))
-      userId = response.id
-    }
-  }
-
-  // Verify in database
-  postgresql {
-    shouldQuery(
-      query = "SELECT * FROM users WHERE id = $userId",
-      mapper = { row -> User(row.long("id"), row.string("name")) }
-    ) { users ->
-      users.size shouldBe 1
-      users.first().name shouldBe "John"
-    }
-  }
-}
-```
-
-### gRPC + Kafka
-
-```kotlin
-stove {
-  // Trigger event via gRPC
-  grpc {
-    channel<OrderServiceStub> {
-      createOrder(CreateOrderRequest(amount = 100.0))
-    }
-  }
-
-  // Verify event was published
-  kafka {
-    shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
-      actual.amount == 100.0
-    }
-  }
-}
-```
-
-## Provider Support
-
-| Provider | DSL Method | Notes |
-|----------|------------|-------|
-| Wire | `wireClient<T>` | For Wire-generated service clients |
-| grpc-kotlin | `channel<T>` | Works with any stub with Channel constructor |
-| Wire stubs | `channel<T>` | Works with Wire server stubs |
-| Custom | `withEndpoint` | Any library with factory function |
-| Advanced | `rawChannel` | Direct ManagedChannel access |
-| Advanced | `rawWireClient` | Direct Wire GrpcClient access |
+- [gRPC Mock](14-grpc-mock.md) for mocking upstream gRPC services
+- [Tracing](15-tracing.md) for full call chain with gRPC spans
+- [Recipes](../recipes/index.md) for multi-system flows

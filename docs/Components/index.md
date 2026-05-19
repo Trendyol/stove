@@ -1,206 +1,251 @@
-# Components
+# Systems
 
-Stove uses a pluggable architecture. Each physical dependency is a separate module you add only when the test actually needs it. By default, components use <span data-rn="underline" data-rn-color="#ff9800">Testcontainers</span> under the hood, but they can also connect to [provided instances](11-provided-instances.md) (existing infrastructure) when Docker is unavailable or undesirable.
+Stove is pluggable. Each physical dependency, mock, or observability surface is a separate module. Add only what your test touches. Default mode uses [Testcontainers](https://testcontainers.com/); flip to [Provided Instances](11-provided-instances.md) to wire to existing infra (no Docker required).
 
-This section also includes observability and agent-facing tooling such as [Reporting](13-reporting.md), [Tracing](15-tracing.md), [Dashboard](18-dashboard.md), and [MCP](21-mcp.md). These do not replace a dependency system; they help you understand failures and share compact evidence with tools.
-
-If you have not picked an application starter yet, start with [Supported Frameworks](../frameworks/index.md) first and then come back here for the physical dependencies.
-
-Most teams start with 2 to 4 components, not the whole catalog.
-
-## Start From The Workflow
-
-<div class="grid cards" markdown>
-
--   **REST service with a database**
-
-    Start with [HTTP Client](05-http.md), one database such as [PostgreSQL](06-postgresql.md), and optionally [WireMock](04-wiremock.md) for external calls.
-
--   **Kafka-driven workflow**
-
-    Start with [Kafka](02-kafka.md), your main database, and [Tracing](15-tracing.md) for better failure diagnosis.
-
--   **Service calling external dependencies**
-
-    Start with [HTTP Client](05-http.md), [WireMock](04-wiremock.md), or [gRPC Mock](14-grpc-mock.md) depending on the remote protocol.
-
--   **Hard-to-debug end-to-end failures**
-
-    Add [Tracing](15-tracing.md) and [Reporting](13-reporting.md) early so failures show execution context instead of only raw assertions.
-
--   **Visual test observability**
-
-    Add [Dashboard](18-dashboard.md) for a real-time web dashboard that shows every test interaction, distributed trace, and system snapshot across runs. Agents can use [MCP](21-mcp.md) for compact failed-test evidence.
-
--   **Testing a deployed service (any language)**
-
-    Use [Provided Application](19-provided-application.md) with [HTTP Client](05-http.md) and your databases. Add [Multiple Systems](20-multiple-systems.md) if you need to verify multiple dependent services.
-
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">Most teams start small</span>
+Two to four systems gets you a useful suite. One starter (Spring/Ktor/Micronaut/Quarkus) plus the surface your app actually has. HTTP, your DB, maybe Kafka, maybe WireMock. Add observability when failures start hurting.
 </div>
 
-## Common Starting Sets
+## Pick a starting set
 
-| You are testing | Start with |
-|-----------------|------------|
-| HTTP API backed by SQL | `stove-http` + `stove-postgres` or `stove-mysql` |
-| Event-driven service | `stove-kafka` + your database + `stove-tracing` |
-| External provider integration | `stove-http` + `stove-wiremock` |
+| You're testing | Add these |
+|---|---|
+| HTTP API + SQL | `stove-http` + `stove-postgres` (or `-mysql`) |
+| Event-driven service | `stove-kafka` + your DB + `stove-tracing` |
+| Service calling external API | `stove-http` + `stove-wiremock` |
 | gRPC service | `stove-grpc` + `stove-grpc-mock` |
-| Stateful service with caching | your database + `stove-redis` |
-| Deployed service (any language) | `stove-http` + your databases + `providedApplication()` |
+| Stateful service with caching | your DB + `stove-redis` |
+| Deployed service (any language) | `stove-http` + `stove-postgres` + `providedApplication()` |
 
-## Available Components
+Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresql,kafka" data-mk="wiremock">open with Postgres + Kafka + WireMock</a>.
 
-| Component | Module | Description |
-|-----------|--------|-------------|
-| [Kafka](02-kafka.md) | `stove-kafka` | Message broker for event-driven architectures |
-| [Couchbase](01-couchbase.md) | `stove-couchbase` | NoSQL document database |
-| [Elasticsearch](03-elasticsearch.md) | `stove-elasticsearch` | Search and analytics engine |
-| [PostgreSQL](06-postgresql.md) | `stove-postgres` | Relational database |
-| [MySQL](16-mysql.md) | `stove-mysql` | Relational database |
-| [MongoDB](07-mongodb.md) | `stove-mongodb` | NoSQL document database |
-| [MSSQL](08-mssql.md) | `stove-mssql` | Microsoft SQL Server |
-| [Redis](09-redis.md) | `stove-redis` | In-memory data store |
-| [Cassandra](17-cassandra.md) | `stove-cassandra` | Wide-column NoSQL database |
-| [WireMock](04-wiremock.md) | `stove-wiremock` | HTTP mock server for external services |
-| [gRPC Mock](14-grpc-mock.md) | `stove-grpc-mock` | gRPC mock server for external gRPC services |
-| [HTTP Client](05-http.md) | `stove-http` | HTTP client for testing your API |
-| [gRPC](12-grpc.md) | `stove-grpc` | gRPC client for testing gRPC services |
-| [Bridge](10-bridge.md) | Built-in | Access to application's DI container |
-| [Tracing](15-tracing.md) | `stove-tracing` | Execution tracing with OpenTelemetry for failure diagnostics |
-| [Provided Instances](11-provided-instances.md) | Built-in | Connect to existing infrastructure instead of containers |
-| [Provided Application](19-provided-application.md) | Built-in | Test against a remote, already-deployed application (any language) |
-| [Multiple Systems](20-multiple-systems.md) | Built-in | Register multiple instances of the same system type with typed keys |
-| [Reporting](13-reporting.md) | `stove-extensions-kotest` or `stove-extensions-junit` | Rich failure reports with execution context |
-| [Dashboard](18-dashboard.md) | `stove-dashboard` + [CLI](https://github.com/Trendyol/stove/tree/main/tools/stove-cli) | Real-time web dashboard for test observability |
-| [MCP](21-mcp.md) | `stove-cli` | Local read-only agent API for compact failed-test evidence |
+## Catalog
 
-## Quick Start
+<div class="stove-cat-group" markdown="0">
+<h3>🗄 Databases</h3>
+<div class="stove-catalog">
 
-Add one starter, then only the components your scenario needs:
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>PostgreSQL</strong><span class="stove-sys-card-badge">SQL</span></div>
+    <p class="stove-sys-card-desc">Relational. Migrations, transactions, full SQL DSL.</p>
+    <div class="stove-sys-card-actions">
+      <a href="06-postgresql/">Reference</a>
+      <a class="open-in-wizard" data-sys="postgresql">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>MySQL</strong><span class="stove-sys-card-badge">SQL</span></div>
+    <p class="stove-sys-card-desc">Relational alternative for MySQL-targeted apps.</p>
+    <div class="stove-sys-card-actions">
+      <a href="16-mysql/">Reference</a>
+      <a class="open-in-wizard" data-sys="mysql">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>MSSQL</strong><span class="stove-sys-card-badge">SQL</span></div>
+    <p class="stove-sys-card-desc">Microsoft SQL Server with T-SQL support.</p>
+    <div class="stove-sys-card-actions">
+      <a href="08-mssql/">Reference</a>
+      <a class="open-in-wizard" data-sys="mssql">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>MongoDB</strong><span class="stove-sys-card-badge">Document</span></div>
+    <p class="stove-sys-card-desc">JSON document storage with aggregation.</p>
+    <div class="stove-sys-card-actions">
+      <a href="07-mongodb/">Reference</a>
+      <a class="open-in-wizard" data-sys="mongodb">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Couchbase</strong><span class="stove-sys-card-badge">Document</span></div>
+    <p class="stove-sys-card-desc">N1QL queries, KV ops, FTS.</p>
+    <div class="stove-sys-card-actions">
+      <a href="01-couchbase/">Reference</a>
+      <a class="open-in-wizard" data-sys="couchbase">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Cassandra</strong><span class="stove-sys-card-badge">Wide-column</span></div>
+    <p class="stove-sys-card-desc">Time-series, IoT, large-scale writes. CQL DSL.</p>
+    <div class="stove-sys-card-actions">
+      <a href="17-cassandra/">Reference</a>
+      <a class="open-in-wizard" data-sys="cassandra">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Redis</strong><span class="stove-sys-card-badge">KV</span></div>
+    <p class="stove-sys-card-desc">In-memory cache, sessions, pub/sub.</p>
+    <div class="stove-sys-card-actions">
+      <a href="09-redis/">Reference</a>
+      <a class="open-in-wizard" data-sys="redis">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Elasticsearch</strong><span class="stove-sys-card-badge">Search</span></div>
+    <p class="stove-sys-card-desc">Full-text search and analytics.</p>
+    <div class="stove-sys-card-actions">
+      <a href="03-elasticsearch/">Reference</a>
+      <a class="open-in-wizard" data-sys="elasticsearch">→ wizard</a>
+    </div>
+  </div>
 
-=== "Gradle"
+</div>
+</div>
 
-    ```kotlin
-    dependencies {
-        testImplementation(platform("com.trendyol:stove-bom:$version"))
-        testImplementation("com.trendyol:stove")
+<div class="stove-cat-group" markdown="0">
+<h3>📨 Messaging</h3>
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Kafka</strong><span class="stove-sys-card-badge">Pub/Sub</span></div>
+    <p class="stove-sys-card-desc">Publish/consume assertions, interceptor-based capture, time-bounded waits.</p>
+    <div class="stove-sys-card-actions">
+      <a href="02-kafka/">Reference</a>
+      <a class="open-in-wizard" data-sys="kafka">→ wizard</a>
+    </div>
+  </div>
+</div>
+</div>
 
-        // Pick one application starter
-        testImplementation("com.trendyol:stove-spring")
+<div class="stove-cat-group" markdown="0">
+<h3>🌐 Network</h3>
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>HTTP Client</strong><span class="stove-sys-card-badge">Drive</span></div>
+    <p class="stove-sys-card-desc">Drive your app's REST API like a real client.</p>
+    <div class="stove-sys-card-actions">
+      <a href="05-http/">Reference</a>
+      <a class="open-in-wizard" data-sys="http">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>gRPC Client</strong><span class="stove-sys-card-badge">Drive</span></div>
+    <p class="stove-sys-card-desc">Call your gRPC services with Wire and grpc-kotlin.</p>
+    <div class="stove-sys-card-actions">
+      <a href="12-grpc/">Reference</a>
+      <a class="open-in-wizard" data-sys="grpc">→ wizard</a>
+    </div>
+  </div>
+</div>
+</div>
 
-        // Add only what the test touches
-        testImplementation("com.trendyol:stove-http")
-        testImplementation("com.trendyol:stove-postgres")
-        testImplementation("com.trendyol:stove-wiremock")
-        testImplementation("com.trendyol:stove-tracing")
-    }
-    ```
+<div class="stove-cat-group" markdown="0">
+<h3>🪞 Mocks</h3>
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>WireMock</strong><span class="stove-sys-card-badge">HTTP</span></div>
+    <p class="stove-sys-card-desc">Mock third-party HTTP services at the network edge.</p>
+    <div class="stove-sys-card-actions">
+      <a href="04-wiremock/">Reference</a>
+      <a class="open-in-wizard" data-mk="wiremock">→ wizard</a>
+    </div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>gRPC Mock</strong><span class="stove-sys-card-badge">gRPC</span></div>
+    <p class="stove-sys-card-desc">Mock external gRPC services.</p>
+    <div class="stove-sys-card-actions">
+      <a href="14-grpc-mock/">Reference</a>
+      <a class="open-in-wizard" data-mk="grpc-mock">→ wizard</a>
+    </div>
+  </div>
+</div>
+</div>
 
-Swap in `stove-kafka`, `stove-redis`, `stove-grpc`, `stove-mongodb`, or other modules as your flow requires.
+<div class="stove-cat-group" markdown="0">
+<h3>📈 Observability</h3>
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Reporting</strong><span class="stove-sys-card-badge">Console</span></div>
+    <p class="stove-sys-card-desc">Pretty console + JSON failure reports with execution context.</p>
+    <div class="stove-sys-card-actions"><a href="13-reporting/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Tracing</strong><span class="stove-sys-card-badge">OTel</span></div>
+    <p class="stove-sys-card-desc">OpenTelemetry agent + span tree. Full call chain on failure.</p>
+    <div class="stove-sys-card-actions"><a href="15-tracing/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Dashboard</strong><span class="stove-sys-card-badge">Local UI</span></div>
+    <p class="stove-sys-card-desc">SQLite-backed web UI for timelines, traces, snapshots.</p>
+    <div class="stove-sys-card-actions"><a href="18-dashboard/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>MCP</strong><span class="stove-sys-card-badge">Agent API</span></div>
+    <p class="stove-sys-card-desc">Loopback read-only API for AI agents to triage failures.</p>
+    <div class="stove-sys-card-actions"><a href="21-mcp/">Reference</a></div>
+  </div>
+</div>
+</div>
 
-## Architecture Overview
+<div class="stove-cat-group" markdown="0">
+<h3>🔌 Integration</h3>
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Bridge</strong><span class="stove-sys-card-badge">DI access</span></div>
+    <p class="stove-sys-card-desc">Reach into the app's DI container. Repos, services, beans.</p>
+    <div class="stove-sys-card-actions"><a href="10-bridge/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Provided Instances</strong><span class="stove-sys-card-badge">No Docker</span></div>
+    <p class="stove-sys-card-desc">Connect to existing infrastructure instead of Testcontainers.</p>
+    <div class="stove-sys-card-actions"><a href="11-provided-instances/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Provided Application</strong><span class="stove-sys-card-badge">Black-box</span></div>
+    <p class="stove-sys-card-desc">Test an already-deployed app. Any language, any framework.</p>
+    <div class="stove-sys-card-actions"><a href="19-provided-application/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Multiple Systems</strong><span class="stove-sys-card-badge">Keyed</span></div>
+    <p class="stove-sys-card-desc">Multiple named instances of the same system type (microservices).</p>
+    <div class="stove-sys-card-actions"><a href="20-multiple-systems/">Reference</a></div>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Container AUT</strong><span class="stove-sys-card-badge">Polyglot</span></div>
+    <p class="stove-sys-card-desc">Run any Docker image as the app under test (Go, Python, Node...).</p>
+    <div class="stove-sys-card-actions"><a href="22-container/">Reference</a></div>
+  </div>
+</div>
+</div>
 
-Each component follows a consistent pattern:
+## Every system shares the same shape
 
-1. **Configuration** - Define how the component should be set up
-2. **Container/Runtime** - Manages the testcontainer or provided instance
-3. **DSL** - Fluent API for test assertions
-4. **Cleanup** - Automatic resource management
+Once you've configured one, the others feel familiar.
 
-```kotlin
-Stove()
-  .with {
-    // Each component is configured in the `with` block
-    kafka { KafkaSystemOptions(...) }
-    couchbase { CouchbaseSystemOptions(...) }
-    http { HttpClientSystemOptions(...) }
-    wiremock { WireMockSystemOptions(...) }
-    tracing { enableSpanReceiver() }
-    
-    // Application under test
-    springBoot(runner = { params -> myApp.run(params) })
-  }
-  .run() // Starts all components and the application
-
-// Test your application
-stove {
-  http { /* HTTP assertions */ }
-  kafka { /* Kafka assertions */ }
-  couchbase { /* Database assertions */ }
-}
-```
-
-## Component Categories
-
-### Databases
-
-| Type | Components | Use Case |
-|------|------------|----------|
-| Document | [Couchbase](01-couchbase.md), [MongoDB](07-mongodb.md), [Elasticsearch](03-elasticsearch.md) | JSON document storage, search |
-| Relational | [PostgreSQL](06-postgresql.md), [MySQL](16-mysql.md), [MSSQL](08-mssql.md) | Structured data, transactions |
-| Key-Value | [Redis](09-redis.md) | Caching, sessions, pub/sub |
-| Wide-Column | [Cassandra](17-cassandra.md) (`stove-cassandra`) | Time-series, IoT, large-scale writes |
-
-### Messaging
-
-| Component | Use Case |
-|-----------|----------|
-| [Kafka](02-kafka.md) | Event streaming, message queues, pub/sub |
-
-### Network
-
-| Component | Use Case |
-|-----------|----------|
-| [HTTP Client](05-http.md) | Testing your application's REST API |
-| [gRPC](12-grpc.md) | Testing your application's gRPC services |
-| [WireMock](04-wiremock.md) | Mocking external HTTP services |
-| [gRPC Mock](14-grpc-mock.md) | Mocking external gRPC services |
-
-### Application Integration
-
-| Component | Use Case |
-|-----------|----------|
-| [Bridge](10-bridge.md) | Access application beans and services directly (supported by Spring, Ktor, and Micronaut starters) |
-| [Provided Application](19-provided-application.md) | Test against a remote app without starting it locally --- any language, any framework |
-| [Multiple Systems](20-multiple-systems.md) | Register multiple named instances of the same system type (e.g., two PostgreSQL databases) |
-| [Reporting](13-reporting.md) | Detailed execution reports and failure diagnostics |
-| [Tracing](15-tracing.md) | <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Execution tracing with full call chain visibility on failure</span> |
-| [Dashboard](18-dashboard.md) | Real-time web dashboard for browsing test runs, traces, and system snapshots |
-| [MCP](21-mcp.md) | Local read-only agent API for compact failed-test evidence from the dashboard database |
-
-## Common Configuration Pattern
-
-All components follow a similar configuration pattern:
-
-```kotlin hl_lines="4-8 12-16"
-componentName {
+<div class="stove-anatomy" markdown="0">
+  <div class="stove-anatomy-code">
+componentName <span class="anchor">1</span> {
   ComponentSystemOptions(
-    // Container configuration
-    container = ContainerOptions(
+    container = ContainerOptions( <span class="anchor">2</span>
       registry = "docker.io",
       image = "component-image",
-      tag = "version"
+      tag = "1.2.3"
     ),
-    
-    // Expose configuration to your application
-    configureExposedConfiguration = { cfg ->
+    configureExposedConfiguration = { cfg ->  <span class="anchor">3</span>
       listOf(
         "app.component.host=${cfg.host}",
         "app.component.port=${cfg.port}"
       )
-    }
+    },
+    cleanup = { ops -> ops.execute("...") }  <span class="anchor">4</span>
   )
 }
-```
+  </div>
+  <div class="stove-anatomy-notes">
+    <div class="stove-note"><span class="stove-note-tag">1</span><strong>DSL block</strong> registers the system in Stove's lifecycle.</div>
+    <div class="stove-note"><span class="stove-note-tag">2</span><strong>Container options</strong> pin image + tag, or swap to <code>.provided(...)</code> for existing infra.</div>
+    <div class="stove-note"><span class="stove-note-tag">3</span><strong>Exposed config</strong> hands runtime values (host, port, URL) to your app as properties before it boots.</div>
+    <div class="stove-note"><span class="stove-note-tag">4</span><strong>Cleanup</strong> wipes test data between runs. Essential for shared infra.</div>
+  </div>
+</div>
 
-## Testcontainer vs Provided Instance
+## Container mode vs Provided Instances
 
-Each component supports two modes:
-
-### Container Mode (Default)
-
-Stove automatically manages testcontainers:
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>Container mode (default)</h4>
+    <p>Stove spins Testcontainers. Best for local dev and CI runners with Docker.</p>
 
 ```kotlin
 kafka {
@@ -211,110 +256,76 @@ kafka {
 }
 ```
 
-### Provided Instance Mode
-
-Connect to existing infrastructure (useful for CI/CD):
+  </div>
+  <div>
+    <h4>Provided instance</h4>
+    <p>Connect to existing infra. Best when Docker isn't available or your CI already runs shared Kafka/Postgres.</p>
 
 ```kotlin
 kafka {
   KafkaSystemOptions.provided(
     bootstrapServers = "localhost:9092",
-    configureExposedConfiguration = { cfg -> 
-      listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
-    }
+    configureExposedConfiguration = { cfg -> listOf(...) }
   )
 }
 ```
 
-See [Provided Instances](11-provided-instances.md) for detailed documentation.
+  </div>
+</div>
 
-## Migrations Support
+See [Provided Instances](11-provided-instances.md) for prefixing strategies that prevent collisions on shared infra.
 
-Database components support migrations:
+## Migrations and cleanup
+
+Databases support migrations and per-system cleanup hooks. Migrations run before the suite; cleanup runs between tests.
 
 ```kotlin
 class CreateTablesMigration : DatabaseMigration<PostgresSqlMigrationContext> {
   override val order: Int = 1
-  
   override suspend fun execute(connection: PostgresSqlMigrationContext) {
-    connection.operations.execute("CREATE TABLE ...")
+    connection.operations.execute("CREATE TABLE orders ...")
   }
 }
 
 postgresql {
-  PostgresqlOptions(...).migrations {
-    register<CreateTablesMigration>()
-  }
+  PostgresqlOptions(
+    cleanup = { ops -> ops.execute("DELETE FROM orders WHERE test = true") },
+    configureExposedConfiguration = { cfg -> listOf(...) }
+  ).migrations { register<CreateTablesMigration>() }
 }
 ```
 
-## Cleanup Support
+## Full-stack test, all systems at once
 
-All components support cleanup functions for data isolation:
-
-```kotlin
-couchbase {
-  CouchbaseSystemOptions(
-    defaultBucket = "bucket",
-    cleanup = { cluster ->
-      cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
-    },
-    configureExposedConfiguration = { cfg ->
-      listOf(
-        "couchbase.hosts=${cfg.hostsWithPort}",
-        "couchbase.username=${cfg.username}",
-        "couchbase.password=${cfg.password}"
-      )
-    }
-  )
-}
-```
-
-## Best Practices
-
-1. **Use random data** - Generate unique identifiers for each test to avoid conflicts
-2. **Leverage cleanup functions** - Clean test data between runs
-3. **Configure timeouts appropriately** - Set realistic timeouts for your environment
-4. **Use the DSL consistently** - Leverage the fluent API for readable tests
-5. **Combine components** - <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Test complete workflows across multiple systems</span>
-
-## Example: Full Stack Test
-
-```kotlin hl_lines="7 12 19 26 31 36"
-test("should process order end-to-end") {
+```kotlin hl_lines="5 9 16 23 28 33"
+test("order flows across HTTP, DB, Kafka, ES, Redis") {
   stove {
     val orderId = UUID.randomUUID().toString()
-    
-    // Mock payment service
+
     wiremock {
-      mockPost("/payments", statusCode = 200, responseBody = PaymentResult(success = true).some())
+      mockPost("/payments", 200, PaymentResult(success = true).some())
     }
-    
-    // Create order via API
+
     http {
-      postAndExpectBody<OrderResponse>("/orders", body = CreateOrderRequest(orderId).some()) { 
-        it.status shouldBe 201 
-      }
+      postAndExpectBody<OrderResponse>(
+        "/orders", body = CreateOrderRequest(orderId).some()
+      ) { it.status shouldBe 201 }
     }
-    
-    // Verify stored in database
+
     couchbase {
-      shouldGet<Order>("orders", orderId) { order ->
-        order.status shouldBe "CREATED"
-      }
+      shouldGet<Order>("orders", orderId) { it.status shouldBe "CREATED" }
     }
-    
-    // Verify event published
+
     kafka {
       shouldBePublished<OrderCreatedEvent> { actual.orderId == orderId }
     }
-    
-    // Verify indexed for search
+
     elasticsearch {
-      shouldGet<Order>(index = "orders", key = orderId) { it.status shouldBe "CREATED" }
+      shouldGet<Order>(index = "orders", key = orderId) {
+        it.status shouldBe "CREATED"
+      }
     }
-    
-    // Verify cached
+
     redis {
       client().connect().sync().get("order:$orderId") shouldNotBe null
     }
@@ -322,25 +333,18 @@ test("should process order end-to-end") {
 }
 ```
 
-## Detailed Documentation
+For a full annotated walkthrough of this pattern, see [the order placement recipe](../recipes/order-flow.md).
 
-- [Couchbase](01-couchbase.md) - NoSQL document database with N1QL queries
-- [Kafka](02-kafka.md) - Message streaming with producer/consumer testing
-- [Elasticsearch](03-elasticsearch.md) - Search engine with query DSL support
-- [WireMock](04-wiremock.md) - Mock external HTTP dependencies
-- [gRPC Mock](14-grpc-mock.md) - Mock external gRPC services
-- [HTTP Client](05-http.md) - Test your REST API endpoints
-- [gRPC](12-grpc.md) - Test your gRPC services with Wire and grpc-kotlin
-- [PostgreSQL](06-postgresql.md) - Relational database with SQL support
-- [MongoDB](07-mongodb.md) - Document database with aggregation support
-- [MSSQL](08-mssql.md) - Microsoft SQL Server support
-- [Redis](09-redis.md) - In-memory data store for caching
-- [Cassandra](17-cassandra.md) - Wide-column NoSQL database with CQL support
-- [Bridge](10-bridge.md) - Direct access to application beans
-- [Provided Instances](11-provided-instances.md) - Use external infrastructure
-- [Provided Application](19-provided-application.md) - Test against a deployed app (any language)
-- [Multiple Systems](20-multiple-systems.md) - Multiple named instances of the same system type
-- [Reporting](13-reporting.md) - Detailed execution reports and failure diagnostics
-- [Tracing](15-tracing.md) - <span data-rn="underline" data-rn-color="#009688">Execution tracing with OpenTelemetry for full call chain visibility</span>
-- [Dashboard](18-dashboard.md) - Real-time web dashboard for browsing test runs, traces, and snapshots
-- [MCP](21-mcp.md) - Local read-only agent API for failed-test triage
+## Where to next
+
+<div class="grid cards" markdown>
+
+-   :material-magic-staff: **Compose your stack**. [Setup Wizard](../wizard.md)
+
+-   :material-book-multiple: **End-to-end scenarios**. [Recipes](../recipes/index.md)
+
+-   :material-chart-timeline: **When a test fails**. [Observability story](../observability/when-it-fails.md)
+
+-   :material-cog-outline: **Per-framework guides**. [Frameworks](../frameworks/index.md)
+
+</div>

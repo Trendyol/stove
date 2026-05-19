@@ -1,240 +1,106 @@
-# <span data-rn="underline" data-rn-color="#ff9800">MySQL</span>
+# MySQL
 
-=== "Gradle"
+Real MySQL in a container or wired to existing infra. Same DSL shape as PostgreSQL and MSSQL: `shouldExecute(sql)`, `shouldQuery<T>(sql, mapper)`, migrations, raw ops.
 
-    ``` kotlin
-        dependencies {
-            testImplementation(platform("com.trendyol:stove-bom:$version"))
-            testImplementation("com.trendyol:stove-mysql")
-        }
-    ```
+<a class="open-in-wizard" data-sys="mysql">Open in setup wizard</a>
+
+<!--{wizard:snippet id=sys.mysql parts=gradle,configure,test}-->
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Register <code>mysql { MySqlOptions(databaseName, ...) }</code>. Parameterized queries with <code>?</code>. Row mapper returns your domain type. AUTO_INCREMENT IDs work as expected.
+</div>
 
 ## Configure
 
-Once you've added the dependency, you can <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">configure MySQL in your Stove setup</span>:
-
-```kotlin hl_lines="4 7-8"
-Stove()
-  .with {
-    mysql {
-      MySqlOptions {
+```kotlin
+Stove().with {
+  mysql {
+    MySqlOptions(
+      databaseName = "testdb",
+      configureExposedConfiguration = { cfg ->
         listOf(
-          "mysql.jdbcUrl=${it.jdbcUrl}",
-          "mysql.host=${it.host}",
-          "mysql.port=${it.port}",
-          "mysql.username=${it.username}",
-          "mysql.password=${it.password}"
+          "spring.datasource.url=${cfg.jdbcUrl}",
+          "spring.datasource.username=${cfg.username}",
+          "spring.datasource.password=${cfg.password}"
         )
       }
-    }
-  }.run()
+    )
+  }
+}.run()
 ```
-
-The `it` reference gives you access to the MySQL container's connection details, which you can pass to your application.
 
 ## Migrations
 
-Stove provides a way to run database migrations before tests start:
-
 ```kotlin
-class InitialMigration : DatabaseMigration<MySqlMigrationContext> {
-  override val order: Int = 1
-
-  override suspend fun execute(connection: MySqlMigrationContext) {
-    connection.operations.execute(
+class CreateUsersTable : DatabaseMigration<MySqlMigrationContext> {
+  override val order = 1
+  override suspend fun execute(ctx: MySqlMigrationContext) {
+    ctx.operations.execute(
       """
       CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(100) NOT NULL UNIQUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      )
       """.trimIndent()
     )
   }
 }
-```
 
-Register migrations in your Stove configuration:
-
-```kotlin
-Stove()
-  .with {
-    mysql {
-      MySqlOptions(
-        databaseName = "testing",
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      ).migrations {
-        register<InitialMigration>()
-      }
-    }
-  }
-  .run()
-```
-
-## Usage
-
-### Executing SQL
-
-<span data-rn="underline" data-rn-color="#009688">Execute DDL and DML statements with `shouldExecute`:</span>
-
-```kotlin hl_lines="4 11 19 22"
-stove {
-  mysql {
-    // Create tables
-    shouldExecute(
-      """
-      DROP TABLE IF EXISTS products;
-      CREATE TABLE IF NOT EXISTS products (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        price DECIMAL(10, 2) NOT NULL,
-        stock INT DEFAULT 0
-      );
-      """.trimIndent()
-    )
-
-    // Insert data
-    shouldExecute(
-      """
-      INSERT INTO products (name, price, stock)
-      VALUES ('Laptop', 999.99, 10)
-      """.trimIndent()
-    )
-
-    // Update data
-    shouldExecute("UPDATE products SET stock = 5 WHERE name = 'Laptop'")
-
-    // Delete data
-    shouldExecute("DELETE FROM products WHERE stock = 0")
-  }
+mysql {
+  MySqlOptions(/* ... */).migrations { register<CreateUsersTable>() }
 }
 ```
 
-### Querying Data
-
-Query data with type-safe mappers:
-
-```kotlin hl_lines="4 12 17"
-data class Product(
-  val id: Long,
-  val name: String,
-  val price: Double,
-  val stock: Int
-)
-
-stove {
-  mysql {
-    shouldQuery<Product>(
-      query = "SELECT * FROM products WHERE price > 500",
-      mapper = { row ->
-        Product(
-          id = row.long("id"),
-          name = row.string("name"),
-          price = row.double("price"),
-          stock = row.int("stock")
-        )
-      }
-    ) { products ->
-      products.size shouldBeGreaterThan 0
-      products.all { it.price > 500 } shouldBe true
-    }
-  }
-}
-```
-
-### Query with Parameters
-
-Use parameterized queries for safety:
+## DSL
 
 ```kotlin
-stove {
-  mysql {
-    val minPrice = 100.0
-    shouldQuery<Product>(
-      query = "SELECT * FROM products WHERE price >= ?",
-      mapper = { row ->
-        Product(
-          id = row.long("id"),
-          name = row.string("name"),
-          price = row.double("price"),
-          stock = row.int("stock")
-        )
-      }
-    ) { products ->
-      products.all { it.price >= minPrice } shouldBe true
-    }
-  }
-}
-```
-
-### Working with Nullable Fields
-
-Handle nullable columns:
-
-```kotlin
-data class User(
-  val id: Long,
-  val name: String,
-  val email: String?,
-  val phone: String?
-)
+data class User(val id: Long, val name: String, val email: String?)
 
 stove {
   mysql {
+    shouldExecute("INSERT INTO users (name, email) VALUES ('Alice', 'a@x.com')")
+
     shouldQuery<User>(
-      query = "SELECT * FROM users",
+      query = "SELECT * FROM users WHERE email = ?",
       mapper = { row ->
         User(
           id = row.long("id"),
           name = row.string("name"),
-          email = row.stringOrNull("email"),
-          phone = row.stringOrNull("phone")
+          email = row.stringOrNull("email")
         )
       }
     ) { users ->
-      users.size shouldBeGreaterThan 0
+      users shouldHaveSize 1
     }
   }
 }
 ```
 
-## Provided Instance (External MySQL)
-
-<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">For CI/CD pipelines or shared infrastructure</span>, connect to an existing MySQL instance instead of starting a container:
+## Provided MySQL
 
 ```kotlin
-Stove()
-  .with {
-    mysql {
-      MySqlOptions.provided(
-        jdbcUrl = "jdbc:mysql://localhost:3306/testdb",
-        host = "localhost",
-        port = 3306,
-        databaseName = "testdb",
-        username = "root",
-        password = "password",
-        runMigrations = true,
-        cleanup = { operations ->
-          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
+mysql {
+  MySqlOptions.provided(
+    jdbcUrl = "jdbc:mysql://shared-mysql:3306/test",
+    username = "test",
+    password = "test",
+    configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+  )
+}
 ```
 
-See [Provided Instances](11-provided-instances.md) for detailed documentation on all supported systems and test isolation strategies.
+## Pitfalls
+
+| Symptom | Fix |
+|---|---|
+| `Public Key Retrieval is not allowed` | Append `?allowPublicKeyRetrieval=true&useSSL=false` to the JDBC URL |
+| Charset issues | Use `utf8mb4` collation in `CREATE TABLE` for full Unicode |
+| AUTO_INCREMENT mismatch across runs | Don't assert exact IDs; verify by business key |
+
+## Pairs well with
+
+- [Provided Instances](11-provided-instances.md) for shared MySQL
+- [Best Practices](../best-practices.md) for shared infra isolation

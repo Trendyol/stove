@@ -1,0 +1,15 @@
+"label": |-
+  Host binary (process mode)
+"gradle":
+- |-
+  com.trendyol:stove-process
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.process.processApp
+"runner": |-
+  processApp {
+    ProcessAppOptions(
+      binaryPath = "./build/app",
+      readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+    )
+  }

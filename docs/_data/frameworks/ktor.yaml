@@ -1,0 +1,13 @@
+"label": |-
+  Ktor
+"gradle":
+- |-
+  com.trendyol:stove-ktor
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.ktor.ktor
+"runner": |-
+  ktor(
+    runner = { params -> {pkg}.run(params, wait = false) },
+    withParameters = listOf("server.port=8080")
+  )

@@ -86,3 +86,21 @@ build
 .kotlin
 *.tsbuildinfo
 .junie
+
+# Python artifacts (mkdocs hooks + macros)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+
+# MkDocs caches (build output already ignored as /site above)
+.cache/
+
+# Note: docs/assets/data/setup.json is auto-regenerated from docs/_data/*.yaml
+# by hooks/macros.py on every mkdocs build. Kept in git so forks without the
+# macros plugin still get a working wizard/cookbook (no compile step required).

@@ -1,391 +1,102 @@
-# <span data-rn="underline" data-rn-color="#ff9800">WireMock</span>
+# WireMock
 
-=== "Gradle"
+Mock third-party HTTP services at the network edge. Stubs for every verb, partial-body matching with dot notation, behavior sequences for retry / circuit-breaker tests.
 
-    ``` kotlin
-        dependencies {
-            testImplementation("com.trendyol:stove-wiremock:$version")
-        }
-    ```
+<a class="open-in-wizard" data-mk="wiremock">Open in setup wizard</a>
+
+<!--{wizard:snippet id=sys.wiremock parts=gradle,configure,test}-->
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Register <code>wiremock { WireMockSystemOptions(port = 0) }</code> (port 0 = dynamic, CI-safe). Inject the actual URL into your AUT via <code>configureExposedConfiguration</code>. In tests, call <code>mockGet</code>, <code>mockPost</code>, <code>mockPut</code>, <code>mockPatch</code>, <code>mockDelete</code>, <code>mockHead</code>. For complex matching, use <code>mockPostContaining</code> with dot notation.
+</div>
 
 ## Configure
 
-Once you've added the dependency, you'll have access to the `wiremock` function when configuring Stove.
-
-This starts a WireMock server instance. By default, WireMock uses a **dynamic port** (port = 0), 
-which lets the system pick an available port automatically. This <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">avoids port conflicts, especially in CI environments</span>.
-
 ```kotlin
-Stove()
-  .with {
-    wiremock {
-      WireMockSystemOptions(
-        // port = 0 by default (dynamic port)
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "external-api.url=${cfg.baseUrl}"  // e.g., http://localhost:54321
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### Dynamic Port Configuration (Recommended)
-
-Using dynamic ports is the recommended approach as it:
-
-- **Avoids port conflicts** in CI/CD pipelines where multiple builds may run in parallel
-- **Eliminates "Address already in use" errors** that occur with hardcoded ports
-- **Automatically exposes** the actual port to your application via `configureExposedConfiguration`
-
-```kotlin hl_lines="11-13 20"
-Stove()
-  .with {
-    wiremock {
-      WireMockSystemOptions(
-        // Dynamic port (default)
-        configureExposedConfiguration = { cfg ->
-          // cfg.baseUrl = "http://localhost:<dynamic-port>"
-          // cfg.port = <dynamic-port>
-          // cfg.host = "localhost"
-          listOf(
-            "payment.service.url=${cfg.baseUrl}",
-            "inventory.service.url=${cfg.baseUrl}",
-            "notification.service.url=${cfg.baseUrl}"
-          )
-        }
-      )
-    }
-    springBoot(
-      runner = { params ->
-        com.myapp.run(params)
+Stove().with {
+  wiremock {
+    WireMockSystemOptions(
+      // port = 0 by default (dynamic, CI-safe)
+      configureExposedConfiguration = { cfg ->
+        // cfg.baseUrl = "http://localhost:<dynamic-port>"
+        listOf(
+          "payment.service.url=${cfg.baseUrl}",
+          "inventory.service.url=${cfg.baseUrl}",
+          "notification.service.url=${cfg.baseUrl}"
+        )
       }
-      // No need to specify external service URLs here - 
-      // they're automatically injected via configureExposedConfiguration
     )
   }
-  .run()
+}.run()
 ```
 
-### Fixed Port Configuration
-
-If you need a specific port (not recommended for CI), you can set it explicitly:
-
-```kotlin
-wiremock {
-  WireMockSystemOptions(
-    port = 9090  // Fixed port
-  )
-}
-```
+!!! warning "External URLs must be configurable in your app"
+    WireMock can't intercept hardcoded URLs. Your app must read these as properties, not bake them into client classes. See [Best Practices · External URLs](../best-practices.md#external-urls-must-be-configurable).
 
 ### Options
 
-```kotlin
-data class WireMockSystemOptions(
-  /**
-   * Port of wiremock server.
-   * Defaults to 0, which lets WireMock pick an available port automatically.
-   * This avoids port conflicts, especially in CI environments.
-   */
-  val port: Int = 0,
-  /**
-   * Configures wiremock server
-   */
-  val configure: WireMockConfiguration.() -> WireMockConfiguration = { this.notifier(ConsoleNotifier(true)) },
-  /**
-   * Removes the stub when request matches/completes
-   * Default value is false
-   */
-  val removeStubAfterRequestMatched: Boolean = false,
-  /**
-   * Called after stub removed
-   */
-  val afterStubRemoved: AfterStubRemoved = { _, _ -> },
-  /**
-   * Called after request handled
-   */
-  val afterRequest: AfterRequestHandler = { _, _ -> },
-  /**
-   * ObjectMapper for serialization/deserialization
-   */
-  val serde: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde(),
-  /**
-   * Configures the exposed configuration for the application under test.
-   * Use this to inject WireMock's URL into your application's configuration.
-   */
-  val configureExposedConfiguration: (WireMockExposedConfiguration) -> List<String> = { _ -> listOf() }
-) : SystemOptions
+| Field | Default | Use |
+|---|---|---|
+| `port` | `0` (dynamic) | Fixed port if needed; prefer 0 |
+| `configure` | `notifier(ConsoleNotifier(true))` | Custom `WireMockConfiguration` builder |
+| `removeStubAfterRequestMatched` | `false` | One-shot stubs |
+| `afterStubRemoved` | no-op | Hook after stub eviction |
+| `afterRequest` | no-op | Hook after each request |
+| `serde` | `StoveSerde.jackson.anyByteArraySerde()` | Pass your app's mapper |
+| `configureExposedConfiguration` | empty | Inject WireMock URL into AUT |
 
-/**
- * Configuration exposed by WireMock after it starts.
- */
-data class WireMockExposedConfiguration(
-  val host: String,   // e.g., "localhost"
-  val port: Int       // The actual port WireMock is listening on
-) {
-  val baseUrl: String // e.g., "http://localhost:54321"
-}
-```
-
-## Mocking
-
-Wiremock starts a mock server on `localhost`. With dynamic ports (the default), the actual port is 
-automatically determined and exposed via `configureExposedConfiguration`.
-
-!!! warning "Critical: External Service URLs Must Match WireMock"
-
-    **<span data-rn="box" data-rn-color="#ef5350">All external service URLs in your application must be configured to point to the WireMock server.</span>**
-    
-    This is one of the most common configuration mistakes. If your application's external service URLs 
-    don't match WireMock's URL, your mocks won't be hit and tests will fail or timeout.
-
-### URL Configuration
-
-Say your application calls external services in production:
-
-- `http://payment-service.com/api/payments`
-- `http://inventory-service.com/api/stock`
-- `http://notification-service.com/api/notify`
-
-For testing, **all** these base URLs must be replaced with the WireMock URL. 
-Use `configureExposedConfiguration` to automatically inject the correct URL:
-
-```kotlin
-Stove()
-  .with {
-    wiremock {
-      WireMockSystemOptions(
-        // port = 0 (default) - dynamic port
-        configureExposedConfiguration = { cfg ->
-          // cfg.baseUrl contains the actual WireMock URL (e.g., http://localhost:54321)
-          listOf(
-            "payment.service.url=${cfg.baseUrl}",
-            "inventory.service.url=${cfg.baseUrl}",
-            "notification.service.url=${cfg.baseUrl}"
-          )
-        }
-      )
-    }
-    springBoot( // or ktor
-      runner = { params ->
-        com.myapp.run(params)
-      }
-      // External service URLs are automatically configured via configureExposedConfiguration
-    )
-  }
-  .run()
-```
-
-!!! tip "Why Dynamic Ports?"
-
-    Using `port = 0` (the default) lets WireMock pick an available port automatically. This is especially 
-    important in CI environments where:
-    
-    - Multiple test runs may execute in parallel
-    - Other services might already be using common ports like 8080, 9090
-    - You get "Address already in use" errors with fixed ports
-    
-    The `configureExposedConfiguration` callback receives the actual port after WireMock starts,
-    ensuring your application always connects to the correct URL.
-
-### Application Configuration Tips
-
-Make your external service URLs configurable in your application:
-
-=== "Spring Boot (application.yml)"
-
-    ```yaml
-    external:
-      payment-service:
-        url: ${PAYMENT_SERVICE_URL:http://payment-service.com}
-      inventory-service:
-        url: ${INVENTORY_SERVICE_URL:http://inventory-service.com}
-    ```
-
-=== "Ktor"
-
-    ```kotlin
-    val paymentUrl = environment.config.propertyOrNull("payment.service.url")
-        ?.getString() ?: "http://payment-service.com"
-    ```
-
-Then in your tests, Stove passes the WireMock URL through parameters, overriding the defaults.
-
-All service endpoints will be pointing to the WireMock server. You can now define the stubs for the services that your
-application calls.
-
-## Usage
-
-### GET Requests
-
-Mock GET requests with various configurations:
-
-```kotlin hl_lines="4-5 14-15 26-27"
-stove {
-  wiremock {
-    // Simple GET mock
-    mockGet(
-      url = "/api/products",
-      statusCode = 200,
-      responseBody = listOf(
-        Product("1", "Laptop", 999.99),
-        Product("2", "Mouse", 29.99)
-      ).some()
-    )
-
-    // GET with custom headers
-    mockGet(
-      url = "/api/user/profile",
-      statusCode = 200,
-      responseBody = UserProfile(id = "123", name = "John").some(),
-      responseHeaders = mapOf(
-        "Content-Type" to "application/json",
-        "X-Rate-Limit" to "100"
-      )
-    )
-
-    // GET returning error
-    mockGet(
-      url = "/api/products/999",
-      statusCode = 404,
-      responseBody = ErrorResponse("Product not found").some()
-    )
-  }
-}
-```
-
-### POST Requests
-
-Mock POST requests with request/response bodies:
+## Basic stubs
 
 ```kotlin
 stove {
   wiremock {
-    // POST with request and response body
+    // GET
+    mockGet(
+      url = "/api/products/1",
+      statusCode = 200,
+      responseBody = Product("1", "Laptop", 999.99).some(),
+      responseHeaders = mapOf("X-Rate-Limit" to "100")
+    )
+
+    // POST
     mockPost(
       url = "/api/orders",
       statusCode = 201,
-      requestBody = CreateOrderRequest(items = listOf("item1", "item2")).some(),
-      responseBody = OrderResponse(orderId = "order-123", status = "CREATED").some()
+      requestBody = CreateOrderRequest(items = listOf("item1")).some(),
+      responseBody = OrderResponse(orderId = "o-123").some()
     )
 
-    // POST with metadata matching
-    mockPost(
-      url = "/api/users",
-      statusCode = 201,
-      requestBody = CreateUserRequest(name = "John").some(),
-      responseBody = UserResponse(id = "user-123", name = "John").some(),
-      metadata = mapOf("Content-Type" to "application/json")
-    )
-
-    // POST returning error
-    mockPost(
-      url = "/api/orders",
-      statusCode = 400,
-      requestBody = InvalidOrderRequest().some(),
-      responseBody = ValidationError("Invalid order data").some()
-    )
-  }
-}
-```
-
-### PUT Requests
-
-Mock PUT requests for updates:
-
-```kotlin
-stove {
-  wiremock {
-    // PUT with full update
+    // PUT
     mockPut(
-      url = "/api/products/123",
+      url = "/api/products/1",
       statusCode = 200,
-      requestBody = UpdateProductRequest(name = "Updated Product", price = 899.99).some(),
-      responseBody = Product("123", "Updated Product", 899.99).some()
+      requestBody = UpdateProductRequest(price = 899.99).some(),
+      responseBody = Product("1", "Updated", 899.99).some()
     )
 
-    // PUT with no response body
-    mockPut(
-      url = "/api/settings/update",
-      statusCode = 204,
-      requestBody = UpdateSettingsRequest(theme = "dark").some()
-    )
-  }
-}
-```
-
-### PATCH Requests
-
-Mock PATCH requests for partial updates:
-
-```kotlin
-stove {
-  wiremock {
-    // PATCH for partial update
+    // PATCH
     mockPatch(
       url = "/api/users/123",
       statusCode = 200,
-      requestBody = mapOf("email" to "newemail@example.com").some(),
-      responseBody = UserResponse(id = "123", email = "newemail@example.com").some()
+      requestBody = mapOf("email" to "new@example.com").some(),
+      responseBody = UserResponse(id = "123", email = "new@example.com").some()
     )
+
+    // DELETE / HEAD (typically bodiless)
+    mockDelete(url = "/api/products/123", statusCode = 204)
+    mockHead(url = "/api/products/exists/123", statusCode = 200)
   }
 }
 ```
 
-### DELETE Requests
+## Advanced matching
 
-Mock DELETE requests:
+For URL patterns, regex bodies, header constraints:
 
 ```kotlin
 stove {
   wiremock {
-    // DELETE returning success
-    mockDelete(
-      url = "/api/products/123",
-      statusCode = 204
-    )
-
-    // DELETE with metadata
-    mockDelete(
-      url = "/api/users/456",
-      statusCode = 200,
-      metadata = mapOf("Authorization" to "Bearer token123")
-    )
-  }
-}
-```
-
-### HEAD Requests
-
-Mock HEAD requests:
-
-```kotlin
-stove {
-  wiremock {
-    mockHead(
-      url = "/api/products/exists/123",
-      statusCode = 200
-    )
-
-    mockHead(
-      url = "/api/products/exists/999",
-      statusCode = 404
-    )
-  }
-}
-```
-
-### Advanced Configuration
-
-For complex scenarios, use the configure methods:
-
-```kotlin hl_lines="4-5 19-20"
-stove {
-  wiremock {
-    // Advanced GET configuration
     mockGetConfigure(
       url = "/api/search",
       urlPatternFn = { urlPathMatching("/api/search.*") }
@@ -395,131 +106,59 @@ stove {
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withBody(serde.serialize(SearchResults(items = listOf("item1", "item2"))))
+            .withBody(serde.serialize(SearchResults(items = listOf("a", "b"))))
         )
     }
 
-    // Advanced POST configuration
     mockPostConfigure(
       url = "/api/webhooks",
       urlPatternFn = { urlEqualTo(it) }
-    ) { builder, serde ->
+    ) { builder, _ ->
       builder
         .withHeader("X-Webhook-Secret", equalTo("secret123"))
         .withRequestBody(containing("event_type"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody("Webhook received")
-        )
+        .willReturn(aResponse().withStatus(200).withBody("ok"))
     }
   }
 }
 ```
 
-### Partial Body Matching
+## Partial body matching (dot notation)
 
-When you only need to match specific fields in a request body without specifying the entire payload, 
-use the `*Containing` methods. This is useful when:
-
-- The request body has fields you don't control (timestamps, generated IDs)
-- You only care about matching certain business-critical fields
-- The request body structure is complex but you need to match a single unique identifier
-
-#### Basic Partial Matching
-
-Match requests containing specific fields:
+The killer feature. Match only the fields you care about; ignore generated IDs, timestamps, surrounding context.
 
 ```kotlin
 stove {
   wiremock {
-    // Only matches requests where productId = 123, ignores other fields
+    // Only matches if productId == 123 (other fields ignored)
     mockPostContaining(
       url = "/api/orders",
       requestContaining = mapOf("productId" to 123),
       statusCode = 201,
-      responseBody = OrderResponse(orderId = "order-123").some()
+      responseBody = OrderResponse(orderId = "o-1").some()
     )
-  }
-}
 
-// This request WILL match (extra fields are ignored):
-// POST /api/orders
-// {"productId": 123, "quantity": 5, "userId": "user-456", "timestamp": "2024-01-01T00:00:00Z"}
-```
-
-#### Multiple Field Matching (AND Logic)
-
-When you specify multiple fields, they are matched using **AND** logic - **all** specified fields 
-must be present and match for the stub to be triggered:
-
-```kotlin
-stove {
-  wiremock {
-    // ALL three fields must match for this stub to respond
+    // Multiple fields: AND logic
     mockPostContaining(
       url = "/api/payments",
       requestContaining = mapOf(
-        "orderId" to "order-123",      // AND
-        "amount" to 99.99,              // AND
+        "orderId" to "o-1",
+        "amount" to 99.99,
         "currency" to "USD"
       ),
       statusCode = 200,
-      responseBody = PaymentResponse(transactionId = "txn-789").some()
+      responseBody = PaymentResponse(transactionId = "t-1").some()
     )
-  }
-}
 
-// ✅ MATCHES - all three fields present and correct:
-// {"orderId": "order-123", "amount": 99.99, "currency": "USD", "extra": "ignored"}
-
-// ❌ DOES NOT MATCH - missing "currency":
-// {"orderId": "order-123", "amount": 99.99}
-
-// ❌ DOES NOT MATCH - wrong value for "amount":
-// {"orderId": "order-123", "amount": 50.00, "currency": "USD"}
-```
-
-#### Deep Nested Matching with Dot Notation
-
-Match specific fields deep within nested JSON structures using dot notation:
-
-```kotlin
-stove {
-  wiremock {
-    // Match a single field deep in the JSON structure
+    // Deep nesting via dot path
     mockPostContaining(
       url = "/api/orders",
       requestContaining = mapOf("order.customer.id" to "cust-123"),
       statusCode = 200,
       responseBody = OrderConfirmation(status = "confirmed").some()
     )
-  }
-}
 
-// This request WILL match:
-// POST /api/orders
-// {
-//   "order": {
-//     "id": "order-999",
-//     "customer": {
-//       "id": "cust-123",           <-- Only this field is matched
-//       "name": "John Doe",
-//       "email": "john@example.com"
-//     },
-//     "items": [...]
-//   },
-//   "metadata": {...}
-// }
-```
-
-#### Multiple Deep Nested Fields
-
-Match multiple fields at different levels of nesting:
-
-```kotlin
-stove {
-  wiremock {
+    // Mix levels
     mockPostContaining(
       url = "/api/checkout",
       requestContaining = mapOf(
@@ -530,94 +169,45 @@ stove {
       statusCode = 200,
       responseBody = CheckoutResponse(success = true).some()
     )
-  }
-}
-```
 
-#### Nested Object Matching
-
-Match nested objects with partial comparison (extra fields in nested objects are ignored):
-
-```kotlin
-stove {
-  wiremock {
-    // Match if the "settings" object contains at least {enabled: true}
+    // Nested object: partial comparison (extra fields in nested object ignored)
     mockPutContaining(
       url = "/api/config",
-      requestContaining = mapOf(
-        "settings" to mapOf("enabled" to true)
-      ),
+      requestContaining = mapOf("settings" to mapOf("enabled" to true)),
       statusCode = 200
     )
-  }
-}
 
-// This request WILL match (extra fields in settings are ignored):
-// PUT /api/config
-// {
-//   "settings": {
-//     "enabled": true,      <-- Matched
-//     "level": 5,           <-- Ignored
-//     "features": [...]     <-- Ignored
-//   }
-// }
-```
-
-#### Available Partial Matching Methods
-
-| Method | HTTP Method | Description |
-|--------|-------------|-------------|
-| `mockPostContaining` | POST | Partial body matching for POST requests |
-| `mockPutContaining` | PUT | Partial body matching for PUT requests |
-| `mockPatchContaining` | PATCH | Partial body matching for PATCH requests |
-
-All methods support:
-
-- **Simple values**: strings, numbers, booleans
-- **Dot notation**: `"order.customer.id"` for deep nested access
-- **Nested objects**: `mapOf("user" to mapOf("id" to 123))`
-- **Arrays**: `mapOf("tags" to listOf("important", "urgent"))`
-- **URL patterns**: Use `urlPatternFn` parameter for regex URL matching
-
-#### URL Pattern with Partial Matching
-
-Combine URL patterns with partial body matching:
-
-```kotlin
-stove {
-  wiremock {
+    // URL pattern + partial body
     mockPostContaining(
       url = "/api/v[0-9]+/orders",
-      requestContaining = mapOf("orderId" to "order-123"),
+      requestContaining = mapOf("orderId" to "o-1"),
       statusCode = 200,
-      urlPatternFn = { urlPathMatching(it) }  // Enable regex URL matching
+      urlPatternFn = { urlPathMatching(it) }
     )
   }
 }
-
-// Matches: POST /api/v1/orders, POST /api/v2/orders, etc.
 ```
 
-### Behavioral Mocking
+| Method | Verb |
+|---|---|
+| `mockPostContaining` | POST |
+| `mockPutContaining` | PUT |
+| `mockPatchContaining` | PATCH |
 
-Simulate service behavior changes over multiple calls:
+Supports primitives, nested maps, arrays, dot paths, and `urlPatternFn` for regex URLs.
+
+## Behavior sequences
+
+Test retry, circuit-breaker, and recovery flows:
 
 ```kotlin
-test("service recovers from failure") {
+test("service recovers after two failures") {
   stove {
     wiremock {
       behaviourFor("/api/external-service", WireMock::get) {
-        initially {
-          aResponse()
-            .withStatus(503)
-            .withBody("Service unavailable")
-        }
-        then {
-          aResponse()
-            .withStatus(503)
-            .withBody("Still unavailable")
-        }
-        then {
+        initially { aResponse().withStatus(503) }
+        then      { aResponse().withStatus(503) }
+        then      {
           aResponse()
             .withStatus(200)
             .withHeader("Content-Type", "application/json")
@@ -627,293 +217,79 @@ test("service recovers from failure") {
     }
 
     http {
-      // First call - failure
-      getResponse("/api/external-service") { response ->
-        response.status shouldBe 503
-      }
-
-      // Second call - still failing
-      getResponse("/api/external-service") { response ->
-        response.status shouldBe 503
-      }
-
-      // Third call - success
-      get<ServiceResponse>("/api/external-service") { response ->
-        response.status shouldBe "OK"
-      }
+      getResponse("/api/external-service") { it.status shouldBe 503 }
+      getResponse("/api/external-service") { it.status shouldBe 503 }
+      get<ServiceResponse>("/api/external-service") { it.status shouldBe "OK" }
     }
   }
 }
 ```
 
-### Testing Circuit Breaker
-
-Test circuit breaker patterns with WireMock:
+## Simulating slow responses
 
 ```kotlin
-test("circuit breaker opens after failures") {
-  stove {
-    wiremock {
-      // Mock service that fails
-      mockGet(
-        url = "/api/unreliable-service",
-        statusCode = 500,
-        responseBody = "Internal Server Error".some()
-      )
-    }
-
-    // Application calls the service multiple times
-    repeat(5) {
-      http {
-        getResponse("/api/call-external") { response ->
-          // First few calls fail
-          response.status shouldBe 500
-        }
-      }
-    }
-
-    // Update mock to return success
-    wiremock {
-      mockGet(
-        url = "/api/unreliable-service",
-        statusCode = 200,
-        responseBody = ServiceResponse(status = "OK").some()
-      )
-    }
-
-    // Circuit breaker should open, need to wait for recovery
-    delay(5.seconds)
-
-    http {
-      get<ServiceResponse>("/api/call-external") { response ->
-        response.status shouldBe "OK"
-      }
-    }
+wiremock {
+  mockGetConfigure("/slow-endpoint") { builder, _ ->
+    builder.willReturn(
+      aResponse()
+        .withStatus(200)
+        .withBody("Response")
+        .withFixedDelay(5000)   // 5-second delay
+    )
   }
 }
 ```
 
-## Complete Example
-
-Here's a complete test with multiple external service mocks:
+## Full example: order with three upstream services
 
 ```kotlin
-test("should create order with external service validation") {
+test("order creation orchestrates user, product, inventory") {
   stove {
     val userId = "user-123"
     val productId = "product-456"
-    val categoryId = 1
 
-    // Mock user service
     wiremock {
       mockGet(
         url = "/users/$userId",
         statusCode = 200,
-        responseBody = User(id = userId, name = "John Doe", active = true).some(),
-        responseHeaders = mapOf("X-Service" to "UserService")
+        responseBody = User(id = userId, name = "John", active = true).some()
       )
-    }
 
-    // Mock product catalog service
-    wiremock {
       mockGet(
         url = "/products/$productId",
         statusCode = 200,
-        responseBody = Product(
-          id = productId,
-          name = "Laptop",
-          price = 999.99,
-          stock = 10
-        ).some()
+        responseBody = Product(id = productId, name = "Laptop", price = 999.99).some()
       )
-    }
 
-    // Mock category service
-    wiremock {
-      mockGet(
-        url = "/categories/$categoryId",
-        statusCode = 200,
-        responseBody = Category(id = categoryId, name = "Electronics", active = true).some()
-      )
-    }
-
-    // Mock inventory service (POST to reserve stock)
-    wiremock {
       mockPost(
         url = "/inventory/reserve",
         statusCode = 200,
         requestBody = ReserveStockRequest(productId = productId, quantity = 1).some(),
-        responseBody = ReservationResponse(reservationId = "res-789", success = true).some()
+        responseBody = ReservationResponse(reservationId = "r-1", success = true).some()
       )
     }
 
-    // Create order via your API
     http {
       postAndExpectBody<OrderResponse>(
         uri = "/orders",
-        body = CreateOrderRequest(
-          userId = userId,
-          productId = productId,
-          quantity = 1
-        ).some()
-      ) { response ->
-        response.status shouldBe 201
-        response.body().orderId shouldNotBe null
-        response.body().status shouldBe "CREATED"
+        body = CreateOrderRequest(userId = userId, productId = productId, quantity = 1).some()
+      ) {
+        it.status shouldBe 201
+        it.body().status shouldBe "CREATED"
       }
     }
 
-    // Verify order was stored
-    postgresql {
-      shouldQuery<Order>(
-        "SELECT * FROM orders WHERE user_id = ?",
-        mapper = { row ->
-          Order(
-            id = row.long("id"),
-            userId = row.string("user_id"),
-            productId = row.string("product_id"),
-            quantity = row.int("quantity")
-          )
-        }
-      ) { orders ->
-        orders.size shouldBe 1
-        orders.first().userId shouldBe userId
-        orders.first().productId shouldBe productId
-      }
-    }
-
-    // Verify event was published
     kafka {
-      shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
-        actual.userId == userId &&
-        actual.productId == productId
+      shouldBePublished<OrderCreatedEvent> {
+        actual.userId == userId && actual.productId == productId
       }
     }
   }
 }
 ```
 
-## Error Scenarios
+## Pairs well with
 
-Test how your application handles external service failures:
-
-```kotlin
-test("should handle external service unavailability") {
-  stove {
-    // Mock external service returning 503
-    wiremock {
-      mockGet(
-        url = "/external-api/data",
-        statusCode = 503,
-        responseBody = ErrorResponse("Service temporarily unavailable").some()
-      )
-    }
-
-    // Your application should handle this gracefully
-    http {
-      getResponse("/api/fetch-data") { response ->
-        response.status shouldBe 503 // or your fallback status
-      }
-    }
-  }
-}
-
-test("should handle timeout") {
-  stove {
-    wiremock {
-      mockGetConfigure("/slow-endpoint") { builder, _ ->
-        builder.willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody("Response")
-            .withFixedDelay(5000) // 5 second delay
-        )
-      }
-    }
-
-    http {
-      getResponse("/api/call-slow-service") { response ->
-        // Your application should timeout and handle it
-        response.status shouldBe 504 // Gateway timeout
-      }
-    }
-  }
-}
-```
-
-## Integration Testing
-
-<span data-rn="underline" data-rn-color="#009688">Test complex integrations with multiple services:</span>
-
-```kotlin
-test("should orchestrate multiple services") {
-  stove {
-    val userId = "user-123"
-
-    // Mock authentication service
-    wiremock {
-      mockPost(
-        url = "/auth/validate",
-        statusCode = 200,
-        requestBody = TokenRequest(token = "jwt-token").some(),
-        responseBody = TokenValidation(valid = true, userId = userId).some()
-      )
-    }
-
-    // Mock permissions service
-    wiremock {
-      mockGet(
-        url = "/permissions/$userId",
-        statusCode = 200,
-        responseBody = Permissions(
-          userId = userId,
-          roles = listOf("USER", "ADMIN")
-        ).some()
-      )
-    }
-
-    // Make authenticated request
-    http {
-      get<SecureData>(
-        uri = "/api/secure-data",
-        token = "jwt-token".some()
-      ) { data ->
-        data.accessible shouldBe true
-      }
-    }
-  }
-}
-```
-
-## Request Verification
-
-Verify that requests were made as expected:
-
-```kotlin
-test("should verify request details") {
-  stove {
-    wiremock {
-      mockPost(
-        url = "/api/webhook",
-        statusCode = 200,
-        metadata = mapOf(
-          "X-Signature" to "expected-signature"
-        )
-      )
-    }
-
-    // Trigger webhook
-    http {
-      postAndExpectBodilessResponse(
-        uri = "/trigger-webhook",
-        body = WebhookTrigger(event = "user.created").some()
-      ) { response ->
-        response.status shouldBe 200
-      }
-    }
-
-    // Verify the webhook was called with correct signature
-    // (WireMock will only match if headers match)
-  }
-}
-```
+- [HTTP Client](05-http.md). Drive your app's API while WireMock stubs the upstream
+- [Best Practices](../best-practices.md#external-boundaries). Configurable URLs, error scenarios
+- [Recipes · order flow](../recipes/order-flow.md). Full multi-system flow

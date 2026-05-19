@@ -1,62 +1,49 @@
 # Best Practices
 
-Here are some practices we've found helpful when writing end-to-end tests with Stove. These aren't hard rules, but they'll make your tests more maintainable and easier to work with.
+Hard-won patterns from real Stove suites. Not rules. Defaults that pay off.
 
-## Test Organization
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">The short list</span>
+Dedicated e2e source set · Stove configured once · unique IDs per run · time-bounded waits (no sleep) · mock external boundaries · align serializers · be specific in assertions · clean up shared infra.
+</div>
 
-### Use Dedicated Source Set for E2E Tests
+## Test organization
 
-Instead of placing <span data-rn="underline" data-rn-color="#ff9800">e2e</span> tests in the regular `src/test` folder, <span data-rn="underline" data-rn-color="#009688">create a dedicated `src/test-e2e` source set</span>. This provides better separation between unit/integration tests and e2e tests:
+### <a id="use-dedicated-source-set-for-e2e-tests"></a>Use a dedicated source set
+
+Put e2e tests in `src/test-e2e/` so they don't slow down unit tests and can run independently in CI.
 
 ```
 src/
-├── main/kotlin/           # Application code
-├── test/kotlin/           # Unit tests
-└── test-e2e/kotlin/       # E2E tests with Stove
-    ├── config/
-    │   └── TestConfig.kt  # Contains Stove setup
-    ├── features/
-    │   ├── OrderE2ETest.kt
-    │   ├── UserE2ETest.kt
-    │   └── ProductE2ETest.kt
-    └── shared/
-        ├── TestData.kt
-        └── Assertions.kt
+├── main/kotlin/
+├── test/kotlin/                  unit tests
+└── test-e2e/kotlin/              Stove tests
+    ├── setup/StoveConfig.kt
+    ├── features/OrderE2ETest.kt
+    └── shared/{TestData,Assertions}.kt
 ```
 
-### Gradle Configuration
-
-Here's how to set up the `test-e2e` source set in your `build.gradle.kts`:
+Gradle wiring (`build.gradle.kts`):
 
 ```kotlin
 sourceSets {
-    @Suppress("LocalVariableName")
     val `test-e2e` by creating {
         compileClasspath += sourceSets.main.get().output
         runtimeClasspath += sourceSets.main.get().output
     }
-    
-    val testE2eImplementation by configurations.getting {
-        extendsFrom(configurations.testImplementation.get())
-    }
+    configurations["testE2eImplementation"].extendsFrom(configurations.testImplementation.get())
     configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
 }
 
-// Register e2e test task
 tasks.register<Test>("e2eTest") {
     description = "Runs e2e tests."
     group = "verification"
     testClassesDirs = sourceSets["test-e2e"].output.classesDirs
     classpath = sourceSets["test-e2e"].runtimeClasspath
-
     useJUnitPlatform()
-    reports {
-        junitXml.required.set(true)
-        html.required.set(true)
-    }
+    reports { junitXml.required.set(true); html.required.set(true) }
 }
 
-// Configure IDEA to recognize test-e2e as test sources
 idea {
     module {
         testSources.from(sourceSets["test-e2e"].allSource.sourceDirectories)
@@ -65,722 +52,528 @@ idea {
 }
 ```
 
-### Running E2E Tests
-
 ```bash
-# Run only e2e tests
-./gradlew e2eTest
-
-# Run unit tests (doesn't include e2e)
-./gradlew test
-
-# Run all tests
-./gradlew test e2eTest
+./gradlew test          # unit only
+./gradlew e2eTest       # e2e only
+./gradlew test e2eTest  # both
 ```
 
-### Benefits of Separate Source Set
+Benefits: isolated runs, CI parallelism, per-suite JVM tuning, clear boundaries.
 
-| Benefit | Description |
-|---------|-------------|
-| **Isolation** | E2E tests run independently from unit tests |
-| **CI Flexibility** | Run unit tests quickly, e2e tests separately or in parallel |
-| **Resource Management** | Different JVM settings for e2e tests (more memory, longer timeouts) |
-| **Clear Boundaries** | Developers know exactly where e2e tests live |
+### Configure Stove once, not per test
 
-!!! tip "See Examples"
-    Check the [recipes](https://github.com/Trendyol/stove/tree/main/recipes) folder for complete working examples with this structure.
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
 
-### Single Setup, Multiple Tests
-
-<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Configure Stove once for all tests:</span>
-
-```kotlin hl_lines="4 10 18"
-// ✅ Good: Single configuration for all tests
-class TestConfig : AbstractProjectConfig() {
-    override suspend fun beforeProject() {
-        Stove()
-            .with { /* configuration */ }
-            .run()
-    }
-    
-    override suspend fun afterProject() {
-        Stove.stop()
-    }
+```kotlin
+class StoveConfig : AbstractProjectConfig() {
+  override suspend fun beforeProject() {
+    Stove().with { /* ... */ }.run()
+  }
+  override suspend fun afterProject() = Stove.stop()
 }
+```
 
-// ❌ Bad: Configuration per test class
+  </div>
+  <div class="stove-dont">
+
+```kotlin
 class MyTest : FunSpec({
-    beforeSpec {
-        Stove().with { /* */ }.run()  // Don't do this!
-    }
+  beforeSpec {
+    Stove().with { /* ... */ }.run()
+  }
 })
 ```
 
-## Test Data Management
+Per-test setup re-spins containers. Minutes lost.
 
-### Use Unique Test Data
+  </div>
+</div>
 
-Generate unique identifiers to prevent test interference:
+## Test data
 
-```kotlin hl_lines="4 5 18"
-// ✅ Good: Unique data per test
-test("should create order") {
-    val orderId = UUID.randomUUID().toString()
-    val userId = "user-${UUID.randomUUID()}"
-    
-    stove {
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/orders",
-                body = CreateOrderRequest(id = orderId, userId = userId).some()
-            ) { /* assertions */ }
-        }
-    }
-}
+### Unique IDs per run
 
-// ❌ Bad: Hardcoded IDs that may conflict
-test("should create order") {
-    val orderId = "order-123"  // May conflict with other tests
-    // ...
-}
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+
+```kotlin
+val orderId = UUID.randomUUID().toString()
+val userId  = "user-${UUID.randomUUID()}"
 ```
 
-### Isolate Shared Infrastructure Resources
+  </div>
+  <div class="stove-dont">
 
-When using provided instances (shared infrastructure in CI/CD), use **unique prefixes for all resources** to prevent parallel test runs from interfering with each other:
+```kotlin
+val orderId = "order-123"  // collides on re-run
+```
+
+  </div>
+</div>
+
+### Shared-infra isolation (CI)
+
+When using [Provided Instances](Components/11-provided-instances.md), prefix every shared resource with a run ID:
 
 ```kotlin
 object TestRunContext {
-    val runId: String = System.getenv("CI_JOB_ID") 
+    val runId: String = System.getenv("CI_JOB_ID")
         ?: UUID.randomUUID().toString().take(8)
-    
     val databaseName = "testdb_$runId"
-    val topicPrefix = "test_${runId}_"
-    val indexPrefix = "test_${runId}_"
+    val topicPrefix  = "test_${runId}_"
+    val indexPrefix  = "test_${runId}_"
 }
 
-// Use unique names in configuration
-Stove()
-    .with {
-        postgresql {
-            PostgresqlOptions.provided(
-                databaseName = TestRunContext.databaseName,
-                // ...
-            )
-        }
-        springBoot(
-            withParameters = listOf(
-                "kafka.topic.orders=${TestRunContext.topicPrefix}orders",
-                "elasticsearch.index.products=${TestRunContext.indexPrefix}products"
-            )
-        )
-    }
+Stove().with {
+    postgresql { PostgresqlOptions.provided(databaseName = TestRunContext.databaseName, /* ... */) }
+    springBoot(withParameters = listOf(
+        "kafka.topic.orders=${TestRunContext.topicPrefix}orders",
+        "elasticsearch.index.products=${TestRunContext.indexPrefix}products"
+    ))
+}
 ```
 
-!!! tip "Detailed Guide"
-    See [Provided Instances - Test Isolation](Components/11-provided-instances.md#test-isolation-with-shared-infrastructure) for comprehensive examples for each system.
+See [Provided Instances · isolation](Components/11-provided-instances.md#test-isolation-with-shared-infrastructure) for per-system patterns.
 
-### Use Cleanup Functions
+### Cleanup hooks
 
-Clean up test data to maintain isolation. The `cleanup` parameter is passed inside the options:
+Each system options block accepts `cleanup`. Use it on shared infra; optional for ephemeral containers.
 
 ```kotlin
-Stove()
-    .with {
-        couchbase {
-            CouchbaseSystemOptions(
-                defaultBucket = "bucket",
-                cleanup = { cluster ->
-                    // Clean test data after tests complete
-                    cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "couchbase.hosts=${cfg.hostsWithPort}",
-                        "couchbase.username=${cfg.username}",
-                        "couchbase.password=${cfg.password}"
-                    )
-                }
-            )
-        }
-        
-        kafka {
-            KafkaSystemOptions(
-                cleanup = { admin ->
-                    // Delete test topics after tests complete
-                    val testTopics = admin.listTopics().names().get()
-                        .filter { it.startsWith("test-") }
-                    if (testTopics.isNotEmpty()) {
-                        admin.deleteTopics(testTopics).all().get()
-                    }
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "kafka.bootstrapServers=${cfg.bootstrapServers}",
-                        "kafka.interceptorClasses=${cfg.interceptorClass}"
-                    )
-                }
-            )
-        }
-    }
-    .run()
+couchbase {
+  CouchbaseSystemOptions(
+    defaultBucket = "bucket",
+    cleanup = { cluster ->
+      cluster.query("DELETE FROM `bucket` WHERE type = 'test'")
+    },
+    configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+  )
+}
+
+kafka {
+  KafkaSystemOptions(
+    cleanup = { admin ->
+      admin.listTopics().names().get()
+        .filter { it.startsWith("test-") }
+        .takeIf { it.isNotEmpty() }
+        ?.let { admin.deleteTopics(it).all().get() }
+    },
+    configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+  )
+}
 ```
 
-### Test Data Builders
+### Test data builders
 
-Create reusable test data builders:
+Centralize defaults so every test reads as the *intent*, not the setup.
 
 ```kotlin
 object TestData {
-    fun createUser(
-        id: String = UUID.randomUUID().toString(),
-        name: String = "Test User",
-        email: String = "test-${UUID.randomUUID()}@example.com"
-    ) = User(id = id, name = name, email = email)
-    
-    fun createProduct(
-        id: String = UUID.randomUUID().toString(),
-        name: String = "Test Product",
-        price: Double = 99.99
-    ) = Product(id = id, name = name, price = price)
-}
-
-// Usage in tests
-test("should create user") {
-    val user = TestData.createUser(name = "John Doe")
-    // ...
+  fun user(id: String = UUID.randomUUID().toString(), name: String = "Test User") =
+    User(id, name, email = "$id@example.com")
 }
 ```
 
 ## Assertions
 
-### Be Specific with Assertions
+### Be specific
 
-Test specific behaviors, not just successful responses:
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
 
 ```kotlin
-// ✅ Good: Specific assertions
-stove {
-    http {
-        postAndExpectBody<OrderResponse>(
-            uri = "/orders",
-            body = CreateOrderRequest(id = orderId, amount = 99.99).some()
-        ) { response ->
-            response.status shouldBe 201
-            response.body().id shouldBe orderId
-            response.body().amount shouldBe 99.99
-            response.body().status shouldBe "CREATED"
-            response.body().createdAt shouldNotBe null
-        }
-    }
-}
-
-// ❌ Bad: Only checking status code
-stove {
-    http {
-        postAndExpectBodilessResponse("/orders", body = order.some()) { response ->
-            response.status shouldBe 201  // Not enough!
-        }
-    }
+http {
+  postAndExpectBody<OrderResponse>("/orders", body) {
+    it.status shouldBe 201
+    it.body().id shouldBe orderId
+    it.body().status shouldBe "CREATED"
+    it.body().createdAt shouldNotBe null
+  }
 }
 ```
 
-### <span data-rn="underline" data-rn-color="#009688">Verify Side Effects</span>
+  </div>
+  <div class="stove-dont">
 
-<span data-rn="underline" data-rn-color="#009688">Test the complete flow including side effects: make the request, then verify database state, published events, search index, and cache.</span>
+```kotlin
+http {
+  postAndExpectBodilessResponse("/orders", body) {
+    it.status shouldBe 201   // tells you nothing
+  }
+}
+```
 
-```kotlin hl_lines="8 17 24 31 38"
-test("should process order completely") {
-    val orderId = UUID.randomUUID().toString()
-    
-    stove {
-        // 1. Make the request
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/orders",
-                body = CreateOrderRequest(id = orderId).some()
-            ) { response ->
-                response.status shouldBe 201
-            }
-        }
-        
-        // 2. Verify database state
-        couchbase {
-            shouldGet<Order>("orders", orderId) { order ->
-                order.status shouldBe "CREATED"
-            }
-        }
-        
-        // 3. Verify event was published
-        kafka {
-            shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
-                actual.orderId == orderId
-            }
-        }
-        
-        // 4. Verify search index updated
-        elasticsearch {
-            shouldGet<Order>(index = "orders", key = orderId) { order ->
-                order.status shouldBe "CREATED"
-            }
-        }
-        
-        // 5. Verify cache populated
-        redis {
-            client().connect().sync().get("order:$orderId") shouldNotBe null
-        }
+  </div>
+</div>
+
+### Verify side effects, not just the response
+
+A complete flow: request → DB row → published event → search index → cache.
+
+```kotlin hl_lines="5 14 22 29 36"
+test("order is fully processed") {
+  val orderId = UUID.randomUUID().toString()
+
+  stove {
+    http {
+      postAndExpectBody<OrderResponse>(
+        "/orders",
+        CreateOrderRequest(orderId).some()
+      ) {
+        it.status shouldBe 201
+      }
     }
+
+    couchbase {
+      shouldGet<Order>("orders", orderId) {
+        it.status shouldBe "CREATED"
+      }
+    }
+
+    kafka {
+      shouldBePublished<OrderCreatedEvent> {
+        actual.orderId == orderId
+      }
+    }
+
+    elasticsearch {
+      shouldGet<Order>(index = "orders", key = orderId) {
+        it.status shouldBe "CREATED"
+      }
+    }
+
+    redis {
+      client().connect().sync().get("order:$orderId") shouldNotBe null
+    }
+  }
+}
+```
+
+### Wait with timeout, never sleep
+
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+
+```kotlin
+kafka {
+  shouldBePublished<Event> {
+    actual.id == expectedId
+  }
+}
+```
+
+  </div>
+  <div class="stove-dont">
+
+```kotlin
+http { post("/async-op") }
+
+Thread.sleep(5_000)   // flaky + slow
+
+kafka {
+  shouldBeConsumed<Event> { true }
+}
+```
+
+  </div>
+</div>
+
+## External boundaries
+
+### Mock at the edge with WireMock
+
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+
+```kotlin
+wiremock {
+  mockPost("/payments/charge", 200,
+    PaymentResult(success = true).some())
+}
+http { /* drive your app */ }
+```
+
+  </div>
+  <div class="stove-dont">
+
+Call real third-party services in tests.
+
+Flaky, slow, costs money, can't simulate edge cases.
+
+  </div>
+</div>
+
+### Cover error scenarios
+
+```kotlin
+test("graceful degradation on payment 500") {
+  stove {
+    wiremock { mockPost("/payments/charge", 500, ErrorResponse("down").some()) }
+    http { postAndExpectBody<OrderResponse>("/orders", req) {
+      it.status shouldBe 503
+      it.body().status shouldBe "PAYMENT_FAILED"
+    } }
+  }
+}
+
+test("retry on transient 503s") {
+  stove {
+    wiremock {
+      behaviourFor("/payments/charge", WireMock::post) {
+        initially { aResponse().withStatus(503) }
+        then      { aResponse().withStatus(503) }
+        then      { aResponse().withStatus(200)
+                      .withBody(it.serialize(PaymentResult(success = true))) }
+      }
+    }
+    http { postAndExpectBody<OrderResponse>("/orders", req) {
+      it.status shouldBe 201   // retried and succeeded
+    } }
+  }
+}
+```
+
+### External URLs must be configurable
+
+WireMock can't intercept hardcoded URLs.
+
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+
+```kotlin
+@Configuration
+class ExternalServicesConfig(
+  @Value("\${payment.url}") val paymentUrl: String,
+  @Value("\${inventory.url}") val inventoryUrl: String,
+)
+```
+
+Test wires both to WireMock:
+
+```kotlin
+springBoot(withParameters = listOf(
+  "payment.url=http://localhost:9090",
+  "inventory.url=http://localhost:9090"
+))
+```
+
+  </div>
+  <div class="stove-dont">
+
+```kotlin
+class PaymentClient {
+  private val url = "http://payment-service.com"
+  // WireMock can't intercept this
+}
+```
+
+  </div>
+</div>
+
+## Serialization
+
+Stove's serde must match your app's. Mismatched mappers = mysterious null fields.
+
+```kotlin
+val mapper = ObjectMapper().apply {
+  registerModule(JavaTimeModule())
+  disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+  setSerializationInclusion(JsonInclude.Include.NON_NULL)
+}
+
+Stove().with {
+  http {
+    HttpClientSystemOptions(
+      baseUrl = "...",
+      contentConverter = JacksonConverter(mapper)
+    )
+  }
+
+  kafka {
+    KafkaSystemOptions(
+      serde = StoveSerde.jackson.anyByteArraySerde(mapper)
+    ) { cfg -> listOf(/* ... */) }
+  }
+
+  wiremock {
+    WireMockSystemOptions(
+      serde = StoveSerde.jackson.anyByteArraySerde(mapper)
+    )
+  }
 }
 ```
 
 ## Performance
 
-### Use keepDependenciesRunning for Development
+### Keep containers warm during dev
 
-Speed up local development:
-
-```kotlin
+```kotlin hl_lines="2"
 Stove {
-    keepDependenciesRunning()  // Containers stay running between test runs
-}.with {
-    // ...
-}.run()
+  keepDependenciesRunning()
+}.with { /* ... */ }.run()
 ```
 
-!!! tip
-    Disable `keepDependenciesRunning()` in CI/CD for clean environments.
+Disable in CI for clean runs.
 
-### Configure Appropriate Timeouts
-
-Set realistic timeouts for your environment:
+### Configure realistic timeouts
 
 ```kotlin
-// HTTP client timeout
 http {
-    HttpClientSystemOptions(
-        baseUrl = "http://localhost:8080",
-        timeout = 30.seconds  // Adjust based on your app's response times
-    )
+  HttpClientSystemOptions(baseUrl = "...", timeout = 30.seconds)
 }
 
-// Kafka assertion timeout
 kafka {
-    shouldBePublished<OrderCreatedEvent>(atLeastIn = 20.seconds) {
-        // Allow enough time for async processing
-        actual.orderId == orderId
-    }
+  shouldBePublished<Event> {
+    actual.id == id
+  }
 }
 ```
 
-### Run Tests in Parallel (With Care)
+### Parallel-safe by default. Only if data is unique
 
-If running tests in parallel, ensure proper isolation:
+Already covered above. Same rule scales to parallel test execution.
+
+## Debugging tools
+
+**Verbose logging** when you need it:
 
 ```kotlin
-// Use unique data per test
-test("test 1") {
-    val id = UUID.randomUUID().toString()  // Unique per test
-    // ...
-}
-
-test("test 2") {
-    val id = UUID.randomUUID().toString()  // Different ID
-    // ...
-}
+springBoot(withParameters = listOf(
+  "logging.level.root=debug",
+  "logging.level.org.springframework.web=trace"
+))
 ```
 
-## External Services
-
-### Mock External Dependencies
-
-Use WireMock for external services:
-
-```kotlin
-// ✅ Good: Mock external services
-stove {
-    wiremock {
-        mockPost(
-            url = "/payments/charge",
-            statusCode = 200,
-            responseBody = PaymentResult(success = true, transactionId = "tx-123").some()
-        )
-    }
-    
-    http {
-        postAndExpectBody<OrderResponse>(
-            uri = "/orders",
-            body = CreateOrderRequest(amount = 99.99).some()
-        ) { response ->
-            response.body().paymentStatus shouldBe "PAID"
-        }
-    }
-}
-
-// ❌ Bad: Calling real external services in tests
-// - Tests become flaky
-// - Tests are slow
-// - May incur costs
-// - Can't test edge cases
-```
-
-### Test Error Scenarios
-
-<span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">Test how your application handles failures:</span>
-
-```kotlin
-test("should handle payment failure gracefully") {
-    stove {
-        wiremock {
-            mockPost(
-                url = "/payments/charge",
-                statusCode = 500,
-                responseBody = ErrorResponse("Payment service unavailable").some()
-            )
-        }
-        
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/orders",
-                body = CreateOrderRequest(amount = 99.99).some()
-            ) { response ->
-                response.status shouldBe 503
-                response.body().status shouldBe "PAYMENT_FAILED"
-            }
-        }
-    }
-}
-
-test("should retry on transient failures") {
-    stove {
-        wiremock {
-            behaviourFor("/payments/charge", WireMock::post) {
-                initially {
-                    aResponse().withStatus(503)
-                }
-                then {
-                    aResponse().withStatus(503)
-                }
-                then {
-                    aResponse()
-                        .withStatus(200)
-                        .withBody(it.serialize(PaymentResult(success = true)))
-                }
-            }
-        }
-        
-        // Application should retry and eventually succeed
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/orders",
-                body = CreateOrderRequest(amount = 99.99).some()
-            ) { response ->
-                response.status shouldBe 201
-            }
-        }
-    }
-}
-```
-
-## Serialization
-
-### Align Serializers
-
-<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Ensure Stove uses the same serialization as your application:</span>
-
-```kotlin
-// If your app uses custom Jackson configuration
-val customObjectMapper = ObjectMapper().apply {
-    registerModule(JavaTimeModule())
-    disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-    setSerializationInclusion(JsonInclude.Include.NON_NULL)
-}
-
-Stove()
-    .with {
-        http {
-            HttpClientSystemOptions(
-                baseUrl = "http://localhost:8080",
-                contentConverter = JacksonConverter(customObjectMapper)
-            )
-        }
-        
-        kafka {
-            KafkaSystemOptions(
-                serde = StoveSerde.jackson.anyByteArraySerde(customObjectMapper)
-            ) { /* config */ }
-        }
-        
-        wiremock {
-            WireMockSystemOptions(
-                serde = StoveSerde.jackson.anyByteArraySerde(customObjectMapper)
-            )
-        }
-    }
-    .run()
-```
-
-## Application Configuration
-
-### Make Configuration Testable
-
-Your application should accept configuration from various sources:
-
-```kotlin
-// ✅ Good: Configurable properties
-@Configuration
-class KafkaConfig(
-    @Value("\${kafka.bootstrapServers}") private val bootstrapServers: String,
-    @Value("\${kafka.offset:latest}") private val offset: String,
-    @Value("\${kafka.autoCreateTopics:false}") private val autoCreate: Boolean
-) {
-    // Stove can override these via command line args
-}
-```
-
-### External Service URLs Must Be Configurable
-
-When using WireMock, <span data-rn="box" data-rn-color="#ef5350">all external service URLs must point to WireMock's URL</span>:
-
-```kotlin hl_lines="4 5 16 17"
-// ✅ Good: External service URLs are configurable
-@Configuration
-class ExternalServicesConfig(
-    @Value("\${payment.service.url}") val paymentUrl: String,
-    @Value("\${inventory.service.url}") val inventoryUrl: String
-)
-
-// In tests, pass WireMock URL for all external services
-Stove()
-    .with {
-        wiremock {
-            WireMockSystemOptions(port = 9090)
-        }
-        springBoot(
-            withParameters = listOf(
-                "payment.service.url=http://localhost:9090",
-                "inventory.service.url=http://localhost:9090"
-            )
-        )
-    }
-```
-
-```kotlin hl_lines="3"
-// ❌ Bad: Hardcoded URLs won't be intercepted by WireMock
-class PaymentClient {
-    private val url = "http://payment-service.com"  // WireMock can't intercept this!
-}
-```
-
-```kotlin hl_lines="4"
-// ❌ Bad: Hardcoded values
-@Configuration
-class KafkaConfig {
-    private val bootstrapServers = "localhost:9092"  // Can't change in tests!
-}
-```
-
-### Use Test Profiles Wisely
-
-<span data-rn="underline" data-rn-color="#009688">Minimize differences between test and production:</span>
-
-```kotlin
-springBoot(
-    runner = { params -> myApp.run(params) },
-    withParameters = listOf(
-        "server.port=8080",
-        "spring.profiles.active=default",  // Use default profile when possible
-        "logging.level.root=warn",
-        // Override only what's necessary
-        "kafka.bootstrapServers=${kafkaConfig.bootstrapServers}"
-    )
-)
-```
-
-## Debugging
-
-### Enable Verbose Logging When Needed
-
-```kotlin
-springBoot(
-    runner = { params -> myApp.run(params) },
-    withParameters = listOf(
-        "logging.level.root=debug",  // For debugging
-        "logging.level.org.springframework.web=trace"
-    )
-)
-```
-
-### Use Container Inspection
-
-Debug container issues:
+**Inspect containers** from inside a test:
 
 ```kotlin
 stove {
-    mongodb {
-        val info = inspect()
-        println("Container ID: ${info?.containerId}")
-        println("Network: ${info?.network}")
-        println("IP: ${info?.ipAddress}")
-    }
+  mongodb {
+    val info = inspect()
+    println("id=${info?.containerId} ip=${info?.ipAddress}")
+  }
 }
 ```
 
-### Access Application Beans
-
-Debug by accessing application components:
+**Reach into DI** via [Bridge](Components/10-bridge.md):
 
 ```kotlin
 stove {
-    using<OrderRepository> {
-        val order = findById(orderId)
-        println("Order state: $order")
-    }
-    
-    using<OrderService, PaymentService> { orderService, paymentService ->
-        // Debug complex scenarios
-    }
+  using<OrderRepository> { println(findById(orderId)) }
+  using<OrderService, PaymentService> { svc, pay -> /* ... */ }
 }
 ```
 
-## CI/CD Considerations
+## CI/CD
 
-### Use Provided Instances in CI
-
-For faster CI builds, use pre-provisioned infrastructure:
+### Pick provided over containers when CI has shared infra
 
 ```kotlin
 val isCI = System.getenv("CI") == "true"
 
-Stove()
-    .with {
-        kafka {
-            if (isCI) {
-                KafkaSystemOptions.provided(
-                    bootstrapServers = System.getenv("KAFKA_SERVERS"),
-                    configureExposedConfiguration = { cfg ->
-                        listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
-                    }
-                )
-            } else {
-                KafkaSystemOptions {
-                    listOf("kafka.bootstrapServers=${it.bootstrapServers}")
-                }
-            }
+Stove().with {
+  kafka {
+    if (isCI) {
+      KafkaSystemOptions.provided(
+        bootstrapServers = System.getenv("KAFKA_SERVERS"),
+        configureExposedConfiguration = { cfg ->
+          listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
         }
+      )
+    } else {
+      KafkaSystemOptions { listOf("kafka.bootstrapServers=${it.bootstrapServers}") }
     }
-    .run()
+  }
+}
 ```
 
-### Configure Docker Registry
-
-For corporate environments:
+### Corporate registry mirror
 
 ```kotlin
-// Set globally for all components
 DEFAULT_REGISTRY = System.getenv("DOCKER_REGISTRY") ?: "docker.io"
 ```
 
-### Handle Resource Constraints
-
-Configure for CI resource limits:
+### Resource caps
 
 ```kotlin
-Stove()
-    .with {
-        couchbase {
-            CouchbaseSystemOptions(
-                container = CouchbaseContainerOptions(
-                    containerFn = { container ->
-                        container.withCreateContainerCmdModifier { cmd ->
-                            cmd.hostConfig?.withMemory(512 * 1024 * 1024)  // 512MB limit
-                        }
-                    }
-                )
-            ) { /* config */ }
-        }
-    }
-    .run()
-```
-
-## Common Anti-Patterns
-
-### ❌ Testing Implementation Details
-
-```kotlin
-// Bad: Testing internal implementation
-using<OrderRepository> {
-    save(order)
-}
-shouldGet<Order>(orderId) { /* verify */ }
-
-// Good: Test through the API
-http {
-    postAndExpectBody<OrderResponse>("/orders", body = order.some()) { /* verify */ }
-}
 couchbase {
-    shouldGet<Order>("orders", orderId) { /* verify */ }
+  CouchbaseSystemOptions(
+    container = CouchbaseContainerOptions(
+      containerFn = { c ->
+        c.withCreateContainerCmdModifier { cmd ->
+          cmd.hostConfig?.withMemory(512L * 1024 * 1024)  // 512MB
+        }
+      }
+    )
+  ) { /* ... */ }
 }
 ```
 
-### ❌ Sleeping Instead of Waiting
+## Anti-patterns to retire
 
-```kotlin hl_lines="4 9"
-// Bad: Fixed sleep
-http { post("/async-operation") }
-Thread.sleep(5000)  // Fragile!
-kafka { shouldBeConsumed<Event> { true } }
-
-// Good: Poll with timeout
-kafka {
-    shouldBePublished<Event>(atLeastIn = 10.seconds) {
-        actual.id == expectedId
-    }
-}
-```
-
-### ❌ Sharing State Between Tests
-
-```kotlin hl_lines="2 5 9 14"
-// Bad: Shared mutable state
-var createdUserId: String? = null
-
-test("create user") {
-    createdUserId = createUser()
-}
-
-test("get user") {
-    getUser(createdUserId!!)  // Depends on test order!
-}
-
-// Good: Independent tests
-test("create and get user") {
-    val userId = createUser()
-    getUser(userId)
-}
-```
-
-### ❌ Overly Broad Assertions
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+**Test through public APIs.**
 
 ```kotlin
-// Bad: Too vague
-response.status shouldBe 200
+http {
+  post<OrderResponse>("/orders", body) { /* assertions */ }
+}
 
-// Good: Specific assertions
-response.status shouldBe 200
-response.body().id shouldBe expectedId
-response.body().status shouldBe "ACTIVE"
-response.body().createdAt shouldNotBe null
+couchbase {
+  shouldGet<Order>("orders", id) { /* assertions */ }
+}
 ```
 
-## Summary
+  </div>
+  <div class="stove-dont">
+**Don't test by writing directly to repos.**
+
+```kotlin
+using<OrderRepository> { save(order) }
+shouldGet<Order>(id) { /* ... */ }
+```
+
+You're testing your test setup, not the app.
+  </div>
+</div>
+
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+**Independent tests.**
+
+```kotlin
+test("create + get user") {
+  val id = createUser()
+  getUser(id)
+}
+```
+
+  </div>
+  <div class="stove-dont">
+**Shared mutable state.**
+
+```kotlin
+var createdId: String? = null
+test("create") { createdId = createUser() }
+test("get")    { getUser(createdId!!) }  // order-dependent
+```
+
+  </div>
+</div>
+
+## Summary cheat sheet
 
 | Do | Don't |
-|----|-------|
-| Use unique test data | Use hardcoded IDs |
+|---|---|
+| Unique IDs per run | Hardcoded IDs |
 | Test through public APIs | Test implementation details |
-| Mock external services | Call real external services |
-| Use appropriate timeouts | Use fixed sleeps |
-| Clean up test data | Leave test artifacts |
-| Keep tests independent | Share state between tests |
-| Be specific in assertions | Use vague assertions |
-| Test error scenarios | Only test happy paths |
+| Mock external services | Call real third parties |
+| `atLeastIn = N.seconds` | `Thread.sleep(...)` |
+| Cleanup on shared infra | Leave artifacts |
+| Independent tests | Share state between tests |
+| Specific assertions on full payload | `status shouldBe 200` and done |
+| Test failure paths | Only test happy paths |
+| Aligned `StoveSerde` | Mismatched mappers |
+| Dedicated `test-e2e` source set | Mixing unit + e2e |

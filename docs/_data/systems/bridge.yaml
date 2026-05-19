@@ -1,0 +1,16 @@
+"label": |-
+  Bridge (DI access)
+"family": |-
+  interaction
+"gradle": []
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.bridge
+"configure": |-
+  bridge()
+"testDsl": |-
+  bridge {
+    using<MyRepository> { repo ->
+      repo.findAll() shouldHaveSize 1
+    }
+  }

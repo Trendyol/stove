@@ -1,0 +1,27 @@
+"label": |-
+  PostgreSQL
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-postgres
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.database.postgresql.*
+"configure": |-
+  postgresql {
+    PostgresqlOptions(
+      databaseName = "testdb",
+      configureExposedConfiguration = { cfg ->
+        listOf(
+          "spring.datasource.url=${cfg.jdbcUrl}",
+          "spring.datasource.username=${cfg.username}",
+          "spring.datasource.password=${cfg.password}"
+        )
+      }
+    )
+  }
+"testDsl": |-
+  postgresql {
+    shouldExecute("SELECT 1")
+  }

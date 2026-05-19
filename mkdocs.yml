@@ -8,52 +8,80 @@ extra_css:
 extra_javascript:
   - assets/rough-notation.iife.js
   - js/rough-notation-mkdocs.js
+  - https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js
+  - js/wizard.js
+  # KotlinPlayground script tag is injected dynamically by the init below
+  # so we can set the required `data-selector` attribute (mkdocs extra_javascript
+  # can't add custom attrs).
+  - js/kotlin-playground-init.js
 plugins:
   - search
   - awesome-pages:
      collapse_single_pages: true
+  - macros:
+      module_name: hooks/macros
+      include_dir: docs/_data
+      on_undefined: keep
+
+hooks:
+  - hooks/wizard_snippets.py
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
-  - Supported Frameworks:
+  - Start:
+    - Setup Wizard: wizard.md
+    - Cookbook: cookbook.md
+    - Playground: playground.md
+    - Getting Started: getting-started.md
+  - JVM Frameworks:
     - Overview: frameworks/index.md
     - Spring Boot: frameworks/spring-boot.md
     - Ktor: frameworks/ktor.md
     - Micronaut: frameworks/micronaut.md
     - Quarkus: frameworks/quarkus.md
-  - Other Languages & Stacks:
+  - Polyglot:
     - Overview: other-languages/index.md
     - Go:
       - Overview: other-languages/go.md
       - Process Mode: other-languages/go-process.md
       - Container Mode: other-languages/go-container.md
-  - Components:
+    - Container AUT (any language): Components/22-container.md
+    - Provided Application (deployed): Components/19-provided-application.md
+  - Systems:
     - Overview: Components/index.md
-    - Couchbase: Components/01-couchbase.md
-    - Kafka: Components/02-kafka.md
-    - Elasticsearch: Components/03-elasticsearch.md
-    - WireMock: Components/04-wiremock.md
-    - HTTP Client: Components/05-http.md
-    - PostgreSQL: Components/06-postgresql.md
-    - MongoDB: Components/07-mongodb.md
-    - MSSQL: Components/08-mssql.md
-    - Redis: Components/09-redis.md
-    - Bridge: Components/10-bridge.md
+    - Databases:
+      - PostgreSQL: Components/06-postgresql.md
+      - MySQL: Components/16-mysql.md
+      - MSSQL: Components/08-mssql.md
+      - MongoDB: Components/07-mongodb.md
+      - Couchbase: Components/01-couchbase.md
+      - Cassandra: Components/17-cassandra.md
+      - Redis: Components/09-redis.md
+      - Elasticsearch: Components/03-elasticsearch.md
+    - Messaging:
+      - Kafka: Components/02-kafka.md
+    - Network:
+      - HTTP Client: Components/05-http.md
+      - gRPC: Components/12-grpc.md
+    - Mocks:
+      - WireMock: Components/04-wiremock.md
+      - gRPC Mock: Components/14-grpc-mock.md
+    - Multiple Systems: Components/20-multiple-systems.md
     - Provided Instances: Components/11-provided-instances.md
-    - gRPC: Components/12-grpc.md
+  - Observability:
+    - When a Test Fails: observability/when-it-fails.md
     - Reporting: Components/13-reporting.md
-    - gRPC Mocking: Components/14-grpc-mock.md
     - Tracing: Components/15-tracing.md
-    - MySQL: Components/16-mysql.md
-    - Cassandra: Components/17-cassandra.md
     - Dashboard: Components/18-dashboard.md
     - MCP: Components/21-mcp.md
-    - Container AUT: Components/22-container.md
-    - Provided Application: Components/19-provided-application.md
-    - Multiple Systems: Components/20-multiple-systems.md
-  - Writing Custom Systems: writing-custom-systems.md
-  - Best Practices: best-practices.md
-  - Troubleshooting: troubleshooting.md
+  - Concepts:
+    - Bridge: Components/10-bridge.md
+    - Writing Custom Systems: writing-custom-systems.md
+  - Reference:
+    - Best Practices: best-practices.md
+    - Troubleshooting: troubleshooting.md
+  - Recipes:
+    - Overview: recipes/index.md
+    - Order Placement Flow: recipes/order-flow.md
   - Blog:
       - "Polyglot Stove in 0.24.0": blog/polyglot-0.24.0.md
       - "Stove Dashboard in 0.23.0": blog/dashboard-0.23.0.md

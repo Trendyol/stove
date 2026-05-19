@@ -1,154 +1,158 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Provided Application</span> (Black-Box Testing)
+# Provided Application (Black-Box)
 
-Stove normally starts the application under test locally via a framework starter (`springBoot()`, `ktor()`, etc.). With `providedApplication()`, you can skip that entirely and <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test against a remote, already-deployed application</span> --- regardless of what language or framework it's built with.
+Skip the local AUT boot. Drive Stove tests against a **remote, already-deployed** application. Any language. Any framework. Same DSL.
 
-## When to Use
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <code>goApp</code>) with <code>providedApplication { }</code> + a readiness probe. Wire <code>httpClient</code> to the remote URL. Use <code>.provided(...)</code> on every system pointing at staging infrastructure. Bridge isn't available (different process); verify through systems.
+</div>
 
-- **Staging/pre-production validation** --- verify deployed services before release
-- **Polyglot testing** --- the app can be Go, Python, .NET, Rust, Node.js, or anything else
-- **Microservice integration** --- test a service through its public API and verify side effects in databases, Kafka, and caches
-- **Smoke testing** --- run Stove tests as post-deployment checks in CI/CD
+## When to use
+
+- **Staging validation**. Verify deployed services before release
+- **Polyglot testing**. The app can be Go, Python, .NET, Rust, Node, anything
+- **Microservice integration**. Drive your service through its public API, verify side effects in shared DBs / Kafka / caches
+- **Smoke testing**. Post-deployment checks in CI/CD
 
 ## Configure
 
-`providedApplication()` replaces the framework starter (`springBoot()`, `ktor()`, etc.) in the `with` block. HTTP, databases, and other systems are configured separately as usual.
+`providedApplication { }` replaces the framework starter in `Stove().with`. HTTP and other systems are configured as usual.
 
-```kotlin hl_lines="3 8-13"
+```kotlin hl_lines="2 3 4 7 8 9 10 11 12 13"
 Stove().with {
-    // Your app's API --- configured via httpClient as usual
-    httpClient {
-        HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")
-    }
+  httpClient {
+    HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")
+  }
 
-    // Signal: app is already running, don't start it
-    providedApplication {
-        ProvidedApplicationOptions(
-            readiness = ReadinessStrategy.HttpGet(
-                url = "https://staging.myapp.com/actuator/health"
-            )
-        )
-    }
+  providedApplication {
+    ProvidedApplicationOptions(
+      readiness = ReadinessStrategy.HttpGet(
+        url = "https://staging.myapp.com/actuator/health"
+      )
+    )
+  }
 }.run()
 ```
 
-### Health Check
+### Readiness probe
 
-The optional readiness check verifies the remote application is reachable before tests run. If the check fails after all retries, Stove throws immediately with a clear error.
+Verifies the remote app is reachable before tests run. If checks fail after all retries, Stove throws with a clear error.
 
 ```kotlin
 ReadinessStrategy.HttpGet(
-    url = "https://staging.myapp.com/health",   // Health endpoint URL
-    timeout = 30.seconds,                        // HTTP request timeout
-    retries = 10,                                // Number of retry attempts
-    retryDelay = 1.seconds,                      // Delay between retries
-    expectedStatusCodes = setOf(200)              // Status codes considered healthy
+  url = "https://staging.myapp.com/health",
+  timeout = 30.seconds,
+  retries = 10,
+  retryDelay = 1.seconds,
+  expectedStatusCodes = setOf(200)
 )
 ```
 
-### No Health Check
-
-If you're sure the app is up, skip the readiness check entirely:
+Skip the probe entirely if you're sure the app is up:
 
 ```kotlin
-providedApplication()  // No-op --- just satisfies the AUT requirement
+providedApplication()  // no-op runner, satisfies AUT requirement
 ```
 
-## Complete Example
+## Full example
 
-```kotlin hl_lines="4 11-14 17-24 27"
+```kotlin hl_lines="5 11 18 25"
 class TestConfig : AbstractProjectConfig() {
-    override suspend fun beforeProject() {
-        Stove().with {
-            // The app itself
-            httpClient {
-                HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")
-            }
+  override suspend fun beforeProject() {
+    Stove().with {
+      httpClient {
+        HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")
+      }
 
-            // Infrastructure the app connects to
-            postgresql {
-                PostgresqlOptions.provided(
-                    jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
-                    host = "staging-db", port = 5432,
-                    configureExposedConfiguration = { emptyList() }
-                )
-            }
+      postgresql {
+        PostgresqlOptions.provided(
+          jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
+          host = "staging-db",
+          port = 5432,
+          configureExposedConfiguration = { emptyList() }
+        )
+      }
 
-            kafka {
-                KafkaSystemOptions.provided(
-                    bootstrapServers = "staging-kafka:9092",
-                    configureExposedConfiguration = { emptyList() }
-                )
-            }
+      kafka {
+        KafkaSystemOptions.provided(
+          bootstrapServers = "staging-kafka:9092",
+          configureExposedConfiguration = { emptyList() }
+        )
+      }
 
-            // App is already deployed
-            providedApplication {
-                ProvidedApplicationOptions(
-                    readiness = ReadinessStrategy.HttpGet(
-                        url = "https://staging.myapp.com/actuator/health",
-                        timeout = 15.seconds
-                    )
-                )
-            }
-        }.run()
-    }
+      providedApplication {
+        ProvidedApplicationOptions(
+          readiness = ReadinessStrategy.HttpGet(
+            url = "https://staging.myapp.com/actuator/health",
+            timeout = 15.seconds
+          )
+        )
+      }
+    }.run()
+  }
 
-    override suspend fun afterProject() = Stove.stop()
+  override suspend fun afterProject() = Stove.stop()
 }
 ```
 
-## Writing Tests
+## Writing tests
 
-Tests are written exactly the same way --- the DSL doesn't change:
+Same DSL. No code changes from local e2e tests.
 
 ```kotlin
-test("create order and verify side effects") {
-    stove {
-        http {
-            postAndExpectJson<OrderResponse>("/orders", body = request.some()) { order ->
-                order.id shouldNotBe null
-            }
-        }
-
-        postgresql {
-            shouldQuery<Order>("SELECT * FROM orders WHERE id = ?", listOf(orderId)) { rows ->
-                rows shouldHaveSize 1
-            }
-        }
-
-        kafka {
-            // Use consumer() to read directly from topics (no interceptor needed)
-            consumer<String, OrderCreatedEvent>("orders.output", readOnly = true) { record ->
-                record.value().orderId shouldBe orderId
-            }
-        }
+test("create order, verify side effects on staging") {
+  stove {
+    http {
+      postAndExpectJson<OrderResponse>("/orders", body = request.some()) { order ->
+        order.id shouldNotBe null
+      }
     }
+
+    postgresql {
+      shouldQuery<Order>(
+        "SELECT * FROM orders WHERE id = ?",
+        listOf(orderId)
+      ) { rows ->
+        rows shouldHaveSize 1
+      }
+    }
+
+    kafka {
+      // use consumer() to read directly. no interceptor inside the AUT
+      consumer<String, OrderCreatedEvent>("orders.output", readOnly = true) { record ->
+        record.value().orderId shouldBe orderId
+      }
+    }
+  }
 }
 ```
 
-## Limitations
+## What works, what doesn't
 
 | Feature | Available? | Notes |
-|---------|-----------|-------|
-| HTTP/gRPC assertions | Yes | Via `httpClient {}` and `grpc {}` |
-| Database queries | Yes | Via `postgresql {}`, `mongodb {}`, etc. |
-| Kafka publish + consumer | Yes | `publish()` and `consumer()` work directly |
-| Kafka `shouldBeConsumed` | No | Requires interceptor bridge inside the app |
-| `using<T> {}` (Bridge) | No | Remote app's DI container is not accessible |
+|---|---|---|
+| HTTP / gRPC assertions | ✓ | `httpClient { }`, `grpc { }` |
+| Database queries | ✓ | `postgresql { }`, `mongodb { }`, ... Via `.provided(...)` |
+| Kafka `publish()` + `consumer()` | ✓ | Direct producer / consumer access |
+| Kafka `shouldBeConsumed` | ✗ | Requires interceptor inside the AUT |
+| `using<T> { }` (Bridge) | ✗ | Remote DI container inaccessible |
 
-!!! warning "Bridge Not Supported"
-    `using<MyService> { }` accesses the application's DI container, which is only possible when the app runs in the same JVM. With `providedApplication()`, calling `using<T>` throws a clear error explaining this.
+!!! warning "Bridge isn't supported"
+    `using<MyService> { }` reaches into the AUT's DI container. Only possible when AUT runs in the same JVM. Provided app gets a clear error.
 
-## Suggested Source Set
-
-For projects that have both local e2e tests and black-box tests against deployed apps:
+## Suggested source-set layout
 
 ```
 my-service/
   src/
-    main/           # Application code
-    test/            # Unit tests
-    test-e2e/        # Stove e2e tests (app started locally)
-    test-blackbox/   # Stove black-box tests (providedApplication)
+    main/            application code
+    test/            unit tests
+    test-e2e/        local Stove e2e (app boots in JVM)
+    test-blackbox/   Stove smoke tests (providedApplication)
 ```
 
-See also: [Multiple Systems](20-multiple-systems.md) for testing against multiple named service instances.
+## Related
+
+- [Provided Instances](11-provided-instances.md) for the `.provided(...)` patterns on each system
+- [Multiple Systems](20-multiple-systems.md) for hitting multiple deployed services
+- [Polyglot](../other-languages/index.md) for testing non-JVM apps

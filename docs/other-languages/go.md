@@ -1,53 +1,86 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Go</span>
+# Go
 
-Stove treats Go as a <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">first-class application under test</span>. The same Stove DSL — `http {}`, `postgresql {}`, `kafka {}`, `tracing {}`, `dashboard {}` — drives a Go service end to end. Distributed traces, dashboard streams, and integration coverage all flow through the standard Stove pipeline.
+Stove treats Go as a **first-class application under test**. Same DSL. Real Postgres. Real Kafka. Real OTel spans flowing into the same trace tree. Real integration coverage on graceful shutdown.
 
-The full source is at [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase). One showcase, two AUT modes — pick the one that matches what you want to test.
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">Two modes, one DSL</span>
+Process mode runs the Go binary (fast iteration). Container mode runs the production Docker image (CI parity). Same Kotlin tests. Switch with one option.
+</div>
+
+Full reference source: [`recipes/process/golang/go-showcase`](https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase).
 
 ## Pick a mode
 
-| Mode | Starter | When to use | Trade-off |
-|------|---------|-------------|-----------|
-| **Process** | `stove-process` (`goApp` / `processApp`) | Fast local iteration, direct binary run, easiest debugging | You manage host runtime/binary alignment |
-| **Container** | `stove-container` (`containerApp`) | CI parity with the production image, environment isolation | Image build adds setup cost |
-
-Rule of thumb: start with [process mode](go-process.md) for fast feedback, then add [container mode](go-container.md) when you want image-level confidence in CI. The same Kotlin tests run against either.
-
-<div class="grid cards" markdown>
-
--   :material-language-go: **Process Mode**
-
-    Run the Go binary directly. Fastest iteration loop.
-
-    [Process Mode guide :material-arrow-right:](go-process.md)
-
--   :material-docker: **Container Mode**
-
-    Run the production Docker image. CI-grade parity.
-
-    [Container Mode guide :material-arrow-right:](go-container.md)
-
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>🏃 Process mode</h4>
+    <p><code>stove-process</code> · <code>goApp()</code> · <code>processApp()</code></p>
+    <ul>
+      <li>Fast local iteration</li>
+      <li>Direct binary run, easiest debugging</li>
+      <li>You manage host runtime alignment</li>
+    </ul>
+    <p><a href="../go-process/" class="stove-btn primary">Process mode guide →</a></p>
+  </div>
+  <div>
+    <h4>🐳 Container mode</h4>
+    <p><code>stove-container</code> · <code>containerApp()</code></p>
+    <ul>
+      <li>CI parity with production image</li>
+      <li>Environment isolation</li>
+      <li>Image build adds setup cost</li>
+    </ul>
+    <p><a href="../go-container/" class="stove-btn primary">Container mode guide →</a></p>
+  </div>
 </div>
 
-## What you get out of the box
+Rule of thumb: start with **process mode** for fast feedback, add **container mode** in CI when you want image-level confidence. Same Kotlin tests run against either.
 
-- **HTTP, PostgreSQL, Kafka, MongoDB, Redis, …** — every Stove system works against a Go AUT
-- **Distributed tracing** via OpenTelemetry — spans from Go appear in the same trace tree as the test
-- **Dashboard** — the Go run streams to `http://localhost:4040` like any JVM run
-- **MCP triage** — failed Go runs are queryable through the [`stove` CLI MCP server](../Components/21-mcp.md)
-- **Kafka assertions** — `shouldBePublished` / `shouldBeConsumed` work for Go via the [`stove-kafka`](https://github.com/trendyol/stove/tree/main/go/stove-kafka) bridge (sarama, franz-go, segmentio, or any client via the core API)
-- **Integration coverage** — `go build -cover` + `GOCOVERDIR` collected on graceful shutdown, with HTML/summary reports
+## What you get
+
+<div class="stove-ribbon" markdown="0">
+  <div class="stove-ribbon-item">
+    <div class="icon">🧱</div>
+    <strong>Every system works</strong>
+    <p>HTTP, PostgreSQL, Kafka, MongoDB, Redis. Same DSL, no special-casing for Go.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🛰️</div>
+    <strong>Distributed tracing</strong>
+    <p>Spans from Go appear in the same trace tree as the test. <code>stoveTracing</code> Gradle plugin starts the OTLP receiver.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">📊</div>
+    <strong>Dashboard streams</strong>
+    <p>Go runs stream to the dashboard like any JVM run. Timelines, snapshots, Kafka explorer.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🤖</div>
+    <strong>MCP triage</strong>
+    <p>Failed Go runs queryable through <code>stove</code> CLI MCP server.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">📨</div>
+    <strong>Kafka assertions</strong>
+    <p><code>shouldBePublished</code> / <code>shouldBeConsumed</code> via the <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka">stove-kafka</a> bridge. Sarama, franz-go, segmentio, or any client.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">📈</div>
+    <strong>Integration coverage</strong>
+    <p><code>go build -cover</code> + <code>GOCOVERDIR</code> collected on graceful shutdown. HTML + summary reports.</p>
+  </div>
+</div>
 
 ## Adapting for other languages
 
-The same model works for any language. Replace the Go-specific parts (build step, OTel SDK, Kafka bridge):
+Same shape, swap the Go-specific parts.
 
 | Part | Go | Python | Node.js | Rust |
-|------|-----|--------|---------|------|
-| **Build step** | `go build` | *(none or pip install)* | `npm install && npm run build` | `cargo build` |
-| **AUT runner** | `goApp()` / `containerApp()` | `processApp()` / `containerApp()` | `processApp()` / `containerApp()` | `processApp()` / `containerApp()` |
-| **OTel HTTP** | `otelhttp.NewHandler` | `opentelemetry-instrumentation-flask` | `@opentelemetry/instrumentation-http` | `tracing-opentelemetry` |
-| **OTel DB** | `otelsql` | `opentelemetry-instrumentation-psycopg2` | `@opentelemetry/instrumentation-pg` | `tracing-opentelemetry` |
-| **Kafka assertions** | `stove-kafka` bridge | *(bridge library needed)* | *(bridge library needed)* | *(bridge library needed)* |
+|---|---|---|---|---|
+| Build | `go build` | *(none / pip install)* | `npm install && build` | `cargo build` |
+| AUT runner | `goApp()` / `containerApp()` | `processApp()` / `containerApp()` | `processApp()` / `containerApp()` | `processApp()` / `containerApp()` |
+| OTel HTTP | `otelhttp.NewHandler` | `opentelemetry-instrumentation-flask` | `@opentelemetry/instrumentation-http` | `tracing-opentelemetry` |
+| OTel DB | `otelsql` | `opentelemetry-instrumentation-psycopg2` | `@opentelemetry/instrumentation-pg` | `tracing-opentelemetry` |
+| Kafka assertions | `stove-kafka` bridge | *(bridge needed)* | *(bridge needed)* | *(bridge needed)* |
 
-The Kotlin test side stays exactly the same — only the AUT runner and config mapping differ.
+The Kotlin test side is unchanged. Only the AUT runner and config mapping differ.

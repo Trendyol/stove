@@ -1,778 +1,251 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Bridge</span>
+# Bridge
 
-The Bridge component gives you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">direct access to your application's dependency injection (DI) container</span> from your tests. This lets you grab any bean or service your application has registered, which is super useful for testing internal state, verifying side effects, or setting up test data through your application's own services.
+Reach into your app's DI container from a test. Read internal state, drive domain services, replace beans for the test only. Type-safe, framework-aware.
 
-## When You'd Use This
-
-When writing end-to-end tests, you often need to:
-
-- **Check internal state** that isn't exposed through APIs
-- **Use application services** to set up test data
-- **Call domain services directly** to test business logic
-- **Swap out time-dependent implementations** for deterministic tests
-- **Verify side effects** that happen inside the application
-
-Bridge gives you a type-safe way to access any component from your application's DI container.
-
-## Configuration
-
-Bridge is built into the supported framework starters, so no extra dependency is needed.
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">When to use Bridge</span>
+You need state or behavior that isn't exposed through HTTP/Kafka/DB surfaces. Verifying internal flags, exercising a domain method directly, swapping <code>Clock</code> for deterministic time, capturing emitted domain events. If a public surface tells you the answer, prefer that instead.
+</div>
 
 !!! warning "Quarkus"
-    `stove-quarkus` does not provide `bridge()` support yet. Quarkus application beans live under the Quarkus runtime classloader, so use HTTP, Kafka, database, gRPC, and tracing assertions instead.
+    Bridge isn't shipped for `stove-quarkus` (CDI lifecycle). Drive verification through HTTP, DB, Kafka, gRPC.
 
-=== "Spring Boot"
+## Setup
+
+Built into the framework starters. No extra dependency.
+
+```kotlin
+Stove().with {
+    bridge()
+    springBoot(runner = { params -> com.app.run(params) })
+}.run()
+```
+
+Ktor auto-detects Koin vs Ktor-DI vs custom (see [Ktor guide](../frameworks/ktor.md#bridge-automatic-di-detection)).
+
+## The `using<T> { }` DSL
+
+Inside `stove { }`, request beans from the AUT:
+
+```kotlin
+stove {
+  using<OrderRepository> {
+    val all = findAll()
+    all shouldHaveSize 1
+  }
+}
+```
+
+Multi-bean fetch. Up to 5 generic args:
+
+```kotlin
+stove {
+  using<OrderService, PaymentService> { orderSvc, paySvc ->
+    orderSvc.place(order)
+    paySvc.charge(order.amount)
+  }
+}
+```
+
+The lambda receives beans in declaration order. Generics resolve correctly (`using<List<Validator>> { ... }` returns the bound list).
+
+## Capture values out of the lambda
+
+```kotlin
+stove {
+  val savedOrder = using<OrderRepository> {
+    findById(orderId).orElseThrow()
+  }
+
+  savedOrder.status shouldBe "CREATED"
+}
+```
+
+`using<T>` returns whatever the lambda returns.
+
+## Register test-only beans
+
+Inject test doubles or interceptors at runner setup time. Pattern depends on framework + version.
+
+=== "Spring Boot 2.x / 3.x"
 
     ```kotlin
-    dependencies {
-        testImplementation("com.trendyol:stove-spring:$version")
-    }
+    springBoot(
+      runner = { params ->
+        com.app.run(params) {
+          addTestDependencies {
+            bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+            bean { StoveSerde.jackson.anyByteArraySerde() }
+            bean<Clock>(isPrimary = true) { FixedClock(Instant.parse("2026-05-19T10:00:00Z")) }
+          }
+        }
+      }
+    )
     ```
 
-=== "Ktor"
+=== "Spring Boot 4.x"
 
     ```kotlin
-    dependencies {
-        testImplementation("com.trendyol:stove-ktor:$version")
-    }
+    springBoot(
+      runner = { params ->
+        runApplication<MyApp>(*params) {
+          addTestDependencies4x {
+            registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
+            registerBean { StoveSerde.jackson.anyByteArraySerde() }
+          }
+        }
+      }
+    )
+    ```
+
+=== "Ktor (Koin)"
+
+    ```kotlin
+    ktor(runner = { params ->
+      com.app.run(params, shouldWait = false, testModules = listOf(
+        module {
+          single<Clock>(override = true) { FixedClock(/* ... */) }
+        }
+      ))
+    })
+    ```
+
+=== "Ktor (Ktor-DI)"
+
+    ```kotlin
+    ktor(runner = { params ->
+      com.app.run(params, shouldWait = false) {
+        provide<Clock> { FixedClock(/* ... */) }
+      }
+    })
     ```
 
 === "Micronaut"
 
     ```kotlin
-    dependencies {
-        testImplementation("com.trendyol:stove-micronaut:$version")
-    }
+    micronaut(runner = { params ->
+      com.app.run(params) {
+        registerSingleton(Clock::class.java, FixedClock(/* ... */), Qualifiers.byName("clock"))
+      }
+    })
     ```
 
-### Setup
+## Real use cases
 
-Enable Bridge in your Stove configuration:
+<div class="stove-catalog">
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Test data setup</strong></div>
+    <p class="stove-sys-card-desc">Seed via the app's own repository so all invariants apply.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>State verification</strong></div>
+    <p class="stove-sys-card-desc">Inspect cache contents, in-memory counters, processed-message lists.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Domain service drive</strong></div>
+    <p class="stove-sys-card-desc">Call a service directly when there's no HTTP path (scheduled jobs, listeners).</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Time control</strong></div>
+    <p class="stove-sys-card-desc">Inject <code>Clock</code> / <code>TimeProvider</code> for deterministic tests.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Event capture</strong></div>
+    <p class="stove-sys-card-desc">Register an <code>@EventListener</code> to assert on domain events.</p>
+  </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Trigger background work</strong></div>
+    <p class="stove-sys-card-desc">Manually advance a scheduled job, drain a retry queue, etc.</p>
+  </div>
+</div>
 
-```kotlin hl_lines="5 7"
-Stove()
-  .with {
-    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
-    
-    bridge()  // Enable access to DI container
-    
-    springBoot(
-      runner = { params -> myApp.run(params) },
-      withParameters = listOf("server.port=8080")
-    )
-  }
-  .run()
-```
-
-## Framework Support
-
-### Spring Boot
-
-For Spring Boot applications, Bridge provides access to the `ApplicationContext`:
-
-```kotlin hl_lines="2"
-// Bridge resolves beans from ApplicationContext
-using<UserService> {
-    // 'this' is the UserService bean from Spring context
-    findById(123)
-}
-```
-
-Under the hood, it uses `ApplicationContext.getBean()`:
+### Time-controlled example
 
 ```kotlin
-class SpringBridgeSystem(testSystem: TestSystem) : BridgeSystem<ApplicationContext>(testSystem) {
-    override fun <D : Any> get(klass: KClass<D>): D = ctx.getBean(klass.java)
-}
-```
-
-### Ktor
-
-Ktor Bridge supports multiple dependency injection frameworks with automatic detection:
-
-- **Koin** - Popular DI framework for Kotlin
-- **Ktor-DI** - Ktor's native DI plugin
-- **Custom** - Any DI framework via custom resolver
-
-Auto-detection is based on **runtime installation state** in the Ktor `Application` (not classpath presence only):
-
-- If `dependencies { ... }` is active, Bridge uses **Ktor-DI**
-- Otherwise, if Koin is active (for example `install(Koin) { ... }`), Bridge uses **Koin**
-- If both are active, Bridge prefers **Ktor-DI**
-- If neither is active, Bridge throws a setup error with guidance
-
-```kotlin
-// Bridge resolves beans from your DI container
-using<UserRepository> {
-    // 'this' is the UserRepository from your DI
-    save(user)
-}
-```
-
-#### DI Framework Setup
-
-**Using Koin:**
-
-```kotlin
-dependencies {
-    testImplementation("io.insert-koin:koin-ktor:$koinVersion")
+class FixedClock(private val instant: Instant) : Clock() {
+  override fun getZone() = ZoneOffset.UTC
+  override fun withZone(zone: ZoneId) = this
+  override fun instant() = instant
 }
 
-// In your test setup - bridge() uses Koin when Ktor-DI is not active at runtime
-Stove()
-    .with {
-        bridge()
-        ktor(runner = { params -> MyApp.run(params) })
-    }
-    .run()
-```
+// Test
+test("order expires after 24h") {
+  stove {
+    val clock = using<Clock> { this }
 
-**Using Ktor-DI:**
+    http { post("/orders", body) { it.status shouldBe 201 } }
 
-```kotlin
-dependencies {
-    testImplementation("io.ktor:ktor-server-di:$ktorVersion")
-}
+    (clock as FixedClock).advance(Duration.ofHours(25))
 
-// In your test setup - bridge() uses Ktor-DI when dependencies { ... } is active
-Stove()
-    .with {
-        bridge()
-        ktor(runner = { params -> MyApp.run(params) })
-    }
-    .run()
-```
-
-**Using Custom Resolver:**
-
-```kotlin
-// For any other DI framework (Kodein, Dagger, etc.)
-Stove()
-    .with {
-        bridge { application, type ->
-            // type is KType - preserves generic info like List<T>
-            myDiContainer.resolve(type)
-        }
-        ktor(runner = { params -> MyApp.run(params) })
-    }
-    .run()
-```
-
-#### Generic Type Resolution
-
-Bridge preserves generic type information, enabling resolution of types like `List<Service>`:
-
-```kotlin
-// Works with Koin or Ktor-DI
-using<List<PaymentService>> {
-    forEach { service -> service.pay(order) }
-}
-```
-
-#### Registering Test Dependencies in Ktor
-
-Unlike Spring Boot's unified `addTestDependencies`, Ktor test dependency registration differs by DI framework:
-
-**Koin - Using Modules:**
-
-```kotlin
-object MyApp {
-    fun run(
-        args: Array<String>,
-        testModules: List<Module> = emptyList()  // Accept test modules
-    ): Application {
-        return embeddedServer(Netty, port = args.getPort()) {
-            install(Koin) {
-                modules(
-                    productionModule,
-                    *testModules.toTypedArray()  // Add test modules
-                )
-            }
-            configureRouting()
-        }.start(wait = false).application
-    }
-}
-
-// In your test setup
-Stove()
-    .with {
-        bridge()
-        ktor(
-            runner = { params ->
-                MyApp.run(
-                    params,
-                    testModules = listOf(
-                        module {
-                            // Override production beans with test doubles
-                            single<TimeProvider>(override = true) { FixedTimeProvider() }
-                            single<EmailService>(override = true) { MockEmailService() }
-                        }
-                    )
-                )
-            }
-        )
-    }
-    .run()
-```
-
-**Ktor-DI - Using Dependencies Block:**
-
-```kotlin
-object MyApp {
-    fun run(
-        args: Array<String>,
-        testDependencies: (DependencyRegistrar.() -> Unit)? = null  // Accept test registrations
-    ): Application {
-        return embeddedServer(Netty, port = args.getPort()) {
-            install(DI) {
-                dependencies {
-                    // Production dependencies
-                    provide<UserService> { UserServiceImpl() }
-                    provide<TimeProvider> { SystemTimeProvider() }
-                    
-                    // Apply test overrides if provided
-                    testDependencies?.invoke(this)
-                }
-            }
-            configureRouting()
-        }.start(wait = false).application
-    }
-}
-
-// In your test setup
-Stove()
-    .with {
-        bridge()
-        ktor(
-            runner = { params ->
-                MyApp.run(params) {
-                    // Override production beans with test doubles
-                    provide<TimeProvider> { FixedTimeProvider() }
-                    provide<EmailService> { MockEmailService() }
-                }
-            }
-        )
-    }
-    .run()
-```
-
-!!! tip "Test Dependency Patterns"
-    - **Koin**: Use `override = true` in test modules to replace production beans
-    - **Ktor-DI**: Later `provide<T>` calls override earlier ones
-    - Both frameworks support the pattern of passing test-specific configuration to your app's run function
-
-## Usage
-
-### Single Bean Access
-
-Access a single bean and perform operations:
-
-```kotlin
-stove {
-    using<UserService> {
-        // 'this' refers to UserService
-        val user = findById(123)
-        user.name shouldBe "John Doe"
-        user.email shouldBe "john@example.com"
-    }
-}
-```
-
-### Multiple Bean Access
-
-Access multiple beans in a single block (up to 5 beans supported):
-
-```kotlin
-stove {
-    // Two beans
-    using<UserService, OrderService> { userService, orderService ->
-        val user = userService.findById(123)
-        val orders = orderService.findByUserId(123)
-        orders.size shouldBeGreaterThan 0
-    }
-    
-    // Three beans
-    using<UserService, ProductService, InventoryService> { users, products, inventory ->
-        val product = products.findById("SKU-123")
-        val stock = inventory.getStock(product.id)
-        stock shouldBeGreaterThan 0
-    }
-    
-    // Four beans
-    using<A, B, C, D> { a, b, c, d ->
-        // Work with all four services
-    }
-    
-    // Five beans
-    using<A, B, C, D, E> { a, b, c, d, e ->
-        // Work with all five services
-    }
-}
-```
-
-### Capturing Values for Later Use
-
-When you need to capture a value from inside the `using` block for later use, declare a variable outside the block and assign it inside:
-
-```kotlin
-stove {
-    // Declare variable outside, assign inside
-    var userId: Long = 0
-    using<UserService> {
-        userId = createUser(CreateUserRequest(name = "John", email = "john@example.com")).id
-    }
-    
-    // Use the captured value in subsequent operations
-    http {
-        get<UserResponse>("/users/$userId") { user ->
-            user.name shouldBe "John"
-        }
-    }
-    
-    // Capture multiple values
-    var user: User? = null
-    var token: String? = null
-    using<AuthService> {
-        user = register(email = "test@example.com", password = "secret")
-        token = generateToken(user!!)
-    }
-    
-    // Or use lateinit for non-nullable types
-    lateinit var order: Order
     using<OrderService> {
-        order = findById(orderId)
+      getOrder(orderId).status shouldBe "EXPIRED"
     }
-    
-    // Use captured values
-    http {
-        getResponse("/orders/${order.id}", headers = mapOf("Authorization" to "Bearer $token")) { response ->
-            response.status shouldBe 200
-        }
-    }
-}
-```
-
-!!! tip "Variable Capture Pattern"
-    Since `using` blocks don't return values, use the pattern of declaring variables outside and assigning inside when you need to pass data between blocks.
-
-## Use Cases
-
-### 1. Setting Up Test Data
-
-Use application repositories to set up test data:
-
-```kotlin
-test("should return user orders") {
-    stove {
-        // Create test data using application's repository
-        var userId: Long = 0
-        using<UserRepository> {
-            userId = save(User(name = "Test User", email = "test@example.com")).id
-        }
-        
-        using<OrderRepository> {
-            save(Order(userId = userId, amount = 100.0))
-            save(Order(userId = userId, amount = 250.0))
-        }
-        
-        // Test the API
-        http {
-            get<List<OrderResponse>>("/users/$userId/orders") { orders ->
-                orders.size shouldBe 2
-                orders.sumOf { it.amount } shouldBe 350.0
-            }
-        }
-    }
-}
-```
-
-### 2. Verifying Internal State
-
-Verify state that isn't exposed through APIs:
-
-```kotlin
-test("should update inventory after order") {
-    stove {
-        val productId = "PROD-123"
-        
-        // Check initial inventory
-        var initialStock = 0
-        using<InventoryService> {
-            initialStock = getStock(productId)
-        }
-        
-        // Place an order via API
-        http {
-            postAndExpectBodilessResponse(
-                uri = "/orders",
-                body = CreateOrderRequest(productId = productId, quantity = 5).some()
-            ) { response ->
-                response.status shouldBe 201
-            }
-        }
-        
-        // Verify inventory was reduced (internal side effect)
-        using<InventoryService> {
-            getStock(productId) shouldBe (initialStock - 5)
-        }
-    }
-}
-```
-
-### 3. Testing Domain Services Directly
-
-Test business logic that may be complex to trigger through APIs:
-
-```kotlin
-test("should calculate shipping cost correctly") {
-    stove {
-        using<ShippingCalculator> {
-            // Test various scenarios directly
-            calculate(weight = 1.0, destination = "US") shouldBe 5.99
-            calculate(weight = 5.0, destination = "US") shouldBe 12.99
-            calculate(weight = 1.0, destination = "EU") shouldBe 15.99
-        }
-    }
-}
-```
-
-### 4. Triggering Scheduled Jobs
-
-Manually trigger scheduled jobs for testing:
-
-```kotlin
-test("should process pending orders when scheduler runs") {
-    stove {
-        // Setup: Create pending orders
-        using<OrderRepository> {
-            save(Order(status = "PENDING", createdAt = Instant.now().minusHours(2)))
-            save(Order(status = "PENDING", createdAt = Instant.now().minusHours(3)))
-        }
-        
-        // Trigger the scheduled job manually
-        using<OrderProcessingScheduler> {
-            processPendingOrders()
-        }
-        
-        // Verify orders were processed
-        using<OrderRepository> {
-            findByStatus("PENDING").size shouldBe 0
-            findByStatus("PROCESSED").size shouldBe 2
-        }
-    }
-}
-```
-
-### 5. Time Control
-
-Control time-dependent behavior:
-
-```kotlin hl_lines="9 18 34"
-// First, create a testable time provider interface
-interface TimeProvider {
-    fun now(): Instant
-}
-
-// Production implementation
-class SystemTimeProvider : TimeProvider {
-    override fun now(): Instant = Instant.now()
-}
-
-// Test implementation
-class FixedTimeProvider(private var time: Instant) : TimeProvider {
-    override fun now(): Instant = time
-    fun advance(duration: Duration) { time = time.plus(duration) }
-}
-
-// Register test implementation in your Stove setup
-addTestDependencies {
-    bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.parse("2024-01-01T00:00:00Z")) }
-}
-
-// Use in tests
-test("should expire session after timeout") {
-    stove {
-        // Create session and capture the session ID
-        var sessionId: String = ""
-        http {
-            postAndExpectBody<SessionResponse>("/login", body = credentials.some()) { response ->
-                sessionId = response.body().sessionId
-            }
-        }
-        
-        // Advance time past session timeout
-        using<FixedTimeProvider> {
-            advance(Duration.ofHours(2))
-        }
-        
-        // Session should be expired
-        http {
-            getResponse("/protected", headers = mapOf("Session-ID" to sessionId)) { response ->
-                response.status shouldBe 401
-            }
-        }
-    }
-}
-```
-
-### 6. Event Verification
-
-Capture and verify domain events:
-
-```kotlin
-// Test event listener (registered via addTestDependencies)
-class TestEventCapture {
-    private val events = ConcurrentLinkedQueue<Any>()
-    
-    @EventListener
-    fun capture(event: Any) {
-        events.add(event)
-    }
-    
-    inline fun <reified T> getEvents(): List<T> = events.filterIsInstance<T>()
-    fun clear() = events.clear()
-}
-
-test("should publish UserCreatedEvent when user registers") {
-    stove {
-        // Clear previous events
-        using<TestEventCapture> { clear() }
-        
-        // Perform action
-        http {
-            postAndExpectBodilessResponse("/users", body = newUser.some()) { 
-                it.status shouldBe 201 
-            }
-        }
-        
-        // Verify event was published
-        using<TestEventCapture> {
-            val events = getEvents<UserCreatedEvent>()
-            events.size shouldBe 1
-            events.first().email shouldBe newUser.email
-        }
-    }
-}
-```
-
-## Test Bean Registration
-
-Register test-specific beans using `addTestDependencies`:
-
-**Spring Boot 2.x / 3.x:**
-
-```kotlin
-import com.trendyol.stove.addTestDependencies
-
-Stove()
-    .with {
-        bridge()
-        springBoot(
-            runner = { params -> 
-                runApplication<MyApp>(*params) {
-                    addTestDependencies {
-                        // Replace production beans with test doubles
-                        bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.now()) }
-                        bean<EmailService>(isPrimary = true) { MockEmailService() }
-                        
-                        // Add test utilities
-                        bean<TestEventCapture>()
-                        bean<TestDataBuilder>()
-                    }
-                }
-            }
-        )
-    }
-    .run()
-```
-
-**Spring Boot 4.x:**
-
-```kotlin
-import com.trendyol.stove.addTestDependencies4x
-
-Stove()
-    .with {
-        bridge()
-        springBoot(
-            runner = { params -> 
-                runApplication<MyApp>(*params) {
-                    addTestDependencies4x {
-                        // Replace production beans with test doubles
-                        registerBean<TimeProvider>(primary = true) { FixedTimeProvider(Instant.now()) }
-                        registerBean<EmailService>(primary = true) { MockEmailService() }
-                        
-                        // Add test utilities
-                        registerBean<TestEventCapture>()
-                        registerBean<TestDataBuilder>()
-                    }
-                }
-            }
-        )
-    }
-    .run()
-```
-
-### Alternative: Using `addInitializers` Directly
-
-For more control, you can use `addInitializers` with `stoveSpringRegistrar`:
-
-```kotlin
-// Spring Boot 2.x / 3.x
-addInitializers(stoveSpringRegistrar {
-    bean<TimeProvider>(isPrimary = true) { FixedTimeProvider(Instant.now()) }
-    bean<TestEventCapture>()
-})
-
-// Spring Boot 4.x
-addInitializers(stoveSpring4xRegistrar {
-    registerBean<TimeProvider>(primary = true) { FixedTimeProvider(Instant.now()) }
-    registerBean<TestEventCapture>()
-})
-```
-
-## Integration with Other Systems
-
-Bridge works seamlessly with other Stove systems:
-
-```kotlin
-test("should process order end-to-end") {
-    stove {
-        val orderId = UUID.randomUUID().toString()
-        
-        // Mock external payment service
-        wiremock {
-            mockPost("/payments/charge", statusCode = 200, responseBody = PaymentResult(success = true).some())
-        }
-        
-        // Create order via API
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/orders",
-                body = CreateOrderRequest(id = orderId, amount = 99.99).some()
-            ) { response ->
-                response.status shouldBe 201
-            }
-        }
-        
-        // Verify in database using application's repository
-        using<OrderRepository> {
-            val order = findById(orderId)
-            order.status shouldBe "PAID"
-            order.paymentId shouldNotBe null
-        }
-        
-        // Verify Kafka event
-        kafka {
-            shouldBePublished<OrderPaidEvent>(atLeastIn = 10.seconds) {
-                actual.orderId == orderId
-            }
-        }
-        
-        // Verify in Couchbase (if using)
-        couchbase {
-            shouldGet<Order>("orders", orderId) { order ->
-                order.status shouldBe "PAID"
-            }
-        }
-        
-        // Access domain service for additional verification
-        using<OrderAnalytics> {
-            getTodaysTotalRevenue() shouldBeGreaterThanOrEqual 99.99
-        }
   }
 }
 ```
 
-## Best Practices
-
-### 1. Use Bridge for Setup, HTTP for Actions
+### Domain event capture
 
 ```kotlin
-// ✅ Good: Use bridge for setup, HTTP for testing
-using<ProductRepository> {
-    save(Product(id = "123", name = "Test", price = 99.99))
-}
-http {
-    get<ProductResponse>("/products/123") { product ->
-        product.name shouldBe "Test"
-    }
+@Component
+class TestEventCaptor {
+  val captured = ConcurrentLinkedQueue<DomainEvent>()
+  @EventListener fun on(e: DomainEvent) { captured.add(e) }
 }
 
-// ❌ Avoid: Using bridge for everything
-using<ProductService> {
-    create(product)
-    val retrieved = findById("123")  // Not testing actual API
-    retrieved.name shouldBe "Test"
-}
-```
-
-### 2. Prefer Application Services Over Direct Repository Access
-
-```kotlin
-// ✅ Good: Use application services that encapsulate business logic
-using<OrderService> {
-    createOrder(CreateOrderRequest(...))  // Triggers all business logic
-}
-
-// ⚠️ Be careful: Direct repository access bypasses business logic
-using<OrderRepository> {
-    save(Order(...))  // No validation, no events, no side effects
-}
-```
-
-### 3. Clean Up Test Data
-
-```kotlin
-// Use cleanup functions or explicit cleanup in tests
+// Register in test dependencies, then assert:
 stove {
-    var userId: Long = 0
-    using<UserRepository> {
-        userId = save(user).id
+  http { post("/orders", body) { it.status shouldBe 201 } }
+
+  using<TestEventCaptor> {
+    eventually(10.seconds) {
+      captured.any { it is OrderCreated && it.id == orderId }
     }
-    
-    try {
-        // Test logic
-        http { /* ... */ }
-    } finally {
-        // Cleanup
-        using<UserRepository> {
-            deleteById(userId)
-        }
-    }
+  }
 }
 ```
 
-### 4. Keep Test Beans Minimal
+## When NOT to use Bridge
 
-Only replace what's necessary:
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+**Drive through HTTP / Kafka / DB if you can.** That's what production uses.
 
 ```kotlin
-// ✅ Good: Replace only time-sensitive components
-addTestDependencies {
-    bean<Clock>(isPrimary = true) { Clock.fixed(fixedInstant, ZoneId.UTC) }
-}
-
-// ❌ Avoid: Replacing too many components (reduces test value)
-addTestDependencies {
-    bean<UserService>(isPrimary = true) { MockUserService() }
-    bean<OrderService>(isPrimary = true) { MockOrderService() }
-    bean<PaymentService>(isPrimary = true) { MockPaymentService() }
+http { post<OrderResponse>("/orders", body) { /* assert */ } }
+kafka {
+  shouldBePublished<OrderCreated> {
+    actual.id == id
+  }
 }
 ```
 
-## Summary
+  </div>
+  <div class="stove-dont">
+**Don't bypass the API to "set up" production state.**
 
-The Bridge component enables:
+```kotlin
+using<OrderRepository> { save(prebuiltOrder) }
+http { get("/orders/$id") { /* assert */ } }
+```
 
-| Capability | Example Use Case |
-|------------|-----------------|
-| **Bean Access** | Resolve any bean from DI container |
-| **State Verification** | Check internal state not exposed by APIs |
-| **Test Setup** | Create test data using application services |
-| **Time Control** | Replace time providers for deterministic tests |
-| **Event Capture** | Verify domain events were published |
-| **Job Triggering** | Manually trigger scheduled tasks |
-| **Service Testing** | Test domain services directly |
+You're testing the test setup, not the app.
+  </div>
+</div>
 
-<span data-rn="underline" data-rn-color="#009688">Bridge is essential for comprehensive e2e testing</span>, allowing you to verify and control aspects of your application that aren't accessible through external interfaces alone.
+## Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| `bridge()` not available | Quarkus isn't supported yet; use HTTP/DB/Kafka assertions |
+| `NoSuchBeanDefinitionException` | Bean exists in production code? Type matches the bound interface? |
+| Ktor: wrong DI container detected | Pass explicit resolver: `bridge { app, type -> myContainer.resolve(type) }` |
+| Test bean not overriding production | Spring 2.x/3.x: `isPrimary = true`. Spring 4.x: `primary = true` |
+| Generics not resolving | Use `using<List<T>> { }` form; Stove resolves via Kotlin reified types |
+
+## Related
+
+- [Spring Boot guide](../frameworks/spring-boot.md)
+- [Ktor guide](../frameworks/ktor.md)
+- [Micronaut guide](../frameworks/micronaut.md)
+- [Best practices · anti-patterns](../best-practices.md#anti-patterns-to-retire)

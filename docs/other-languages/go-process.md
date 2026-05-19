@@ -1,4 +1,4 @@
-# Go — Process Mode
+# Go. Process Mode
 
 Run the Go binary directly as the application under test using `stove-process` and the `goApp()` DSL. This is the fastest iteration loop: no image build, no registry, just `go build` and run.
 
@@ -66,7 +66,7 @@ func main() {
     db, _ := initDB(connStr)  // otelsql wraps database/sql automatically
     defer db.Close()
 
-    bridge, _ := stovekafka.NewBridgeFromEnv()  // nil in production — zero overhead
+    bridge, _ := stovekafka.NewBridgeFromEnv()  // nil in production. zero overhead
     defer bridge.Close()
 
     kafkaLibrary := getEnv("KAFKA_LIBRARY", "sarama")
@@ -96,15 +96,15 @@ Configuration comes entirely from environment variables:
 
 ### Handlers, DB, Tracing
 
-Handlers and DB code are pure business logic — no tracing imports — because `otelhttp` and `otelsql` instrument transparently. See the [container guide](go-container.md) and the showcase repo for the full code; the same files are used in both modes.
+Handlers and DB code are pure business logic. No tracing imports. Because `otelhttp` and `otelsql` instrument transparently. See the [container guide](go-container.md) and the showcase repo for the full code; the same files are used in both modes.
 
 !!! tip "Sync vs Batch Exporter"
     Use `sdktrace.WithSyncer(exporter)` for tests so spans are exported immediately when they end. In production, use `WithBatcher(exporter)` for performance. The 5-second default batch interval would cause test assertions to fail because spans wouldn't arrive in time.
 
 !!! info "W3C Trace Context Propagation"
-    Setting `propagation.TraceContext{}` is essential. Stove's HTTP client sends a `traceparent` header with each request. The `otelhttp` middleware extracts it, so all spans in the Go app share the same trace ID as the test — and the [Stove Dashboard](../Components/18-dashboard.md) and [MCP](../Components/21-mcp.md) tools can correlate them with the failure.
+    Setting `propagation.TraceContext{}` is essential. Stove's HTTP client sends a `traceparent` header with each request. The `otelhttp` middleware extracts it, so all spans in the Go app share the same trace ID as the test. And the [Stove Dashboard](../Components/18-dashboard.md) and [MCP](../Components/21-mcp.md) tools can correlate them with the failure.
 
-## Kafka — `stove-kafka` bridge
+## Kafka. `stove-kafka` bridge
 
 Stove provides a Go bridge library (`stove-kafka`) that enables `shouldBeConsumed` and `shouldBePublished` assertions for Go applications. The bridge forwards produced/consumed messages over gRPC to Stove's `StoveKafkaObserverGrpcServer`. The core is library-agnostic; client-specific subpackages provide interceptors/hooks for popular Go Kafka libraries:
 
@@ -117,7 +117,7 @@ Stove provides a Go bridge library (`stove-kafka`) that enables `shouldBeConsume
 !!! tip "Using other Kafka libraries (e.g. confluent-kafka-go)"
     The subpackages above are conveniences. The core bridge (`PublishedMessage`, `ConsumedMessage`, `Bridge`) has **no Kafka client dependency**. For any library not listed above, import only the core package and call `bridge.ReportPublished()`, `bridge.ReportConsumed()`, and `bridge.ReportCommitted()` directly with your own type conversion.
 
-In production, `STOVE_KAFKA_BRIDGE_PORT` is not set, so `NewBridgeFromEnv()` returns `nil`. All Bridge methods are nil-safe no-ops — zero overhead.
+In production, `STOVE_KAFKA_BRIDGE_PORT` is not set, so `NewBridgeFromEnv()` returns `nil`. All Bridge methods are nil-safe no-ops. Zero overhead.
 
 ### Integrating the Bridge
 
@@ -177,9 +177,9 @@ When `Bridge` is nil (production), all interceptors/helpers return immediately w
 
 When running against Testcontainers, configure Kafka clients for **fast feedback**:
 
-- **Auto-create topics** — the test container may not have topics pre-created
-- **Small batch size / low batch timeout** — flush produces immediately
-- **Short auto-commit interval** — make consumed offsets visible to Stove quickly
+- **Auto-create topics**. The test container may not have topics pre-created
+- **Small batch size / low batch timeout**. Flush produces immediately
+- **Short auto-commit interval**. Make consumed offsets visible to Stove quickly
 
 === "IBM/sarama"
 
@@ -376,7 +376,7 @@ class GoShowcaseTest : FunSpec({
             }
 
             kafka {
-                shouldBePublished<ProductCreatedEvent>(10.seconds) {
+                shouldBePublished<ProductCreatedEvent> {
                     actual.name == "Test"
                 }
             }
@@ -407,7 +407,7 @@ test("consume product update events from Kafka") {
 
         kafka {
             publish("product.update", ProductUpdateEvent(id = productId!!, name = "Updated", price = 99.99))
-            shouldBeConsumed<ProductUpdateEvent>(10.seconds) {
+            shouldBeConsumed<ProductUpdateEvent> {
                 actual.id == productId && actual.name == "Updated"
             }
         }
@@ -424,9 +424,9 @@ test("consume product update events from Kafka") {
 
 ## Dashboard & MCP
 
-When the [`stove` CLI](../Components/18-dashboard.md) is running, the Go run streams to `http://localhost:4040` like any JVM run — timeline, traces, snapshots, Kafka explorer.
+When the [`stove` CLI](../Components/18-dashboard.md) is running, the Go run streams to `http://localhost:4040` like any JVM run. Timeline, traces, snapshots, Kafka explorer.
 
-For AI-assisted triage, the same CLI exposes a [Model Context Protocol endpoint](../Components/21-mcp.md) at `http://localhost:4040/mcp`. Agents call `stove_failures` to discover failed Go tests, then `stove_failure_detail`, `stove_timeline`, `stove_trace`, and `stove_snapshot` for compact, structured evidence — no log scraping required.
+For AI-assisted triage, the same CLI exposes a [Model Context Protocol endpoint](../Components/21-mcp.md) at `http://localhost:4040/mcp`. Agents call `stove_failures` to discover failed Go tests, then `stove_failure_detail`, `stove_timeline`, `stove_trace`, and `stove_snapshot` for compact, structured evidence. No log scraping required.
 
 ## Code Coverage
 
@@ -488,7 +488,7 @@ if (coverageEnabled) {
 
 ### SIGPIPE Handling
 
-When a Go process runs under Java's `ProcessBuilder`, the stdout pipe can close before the process exits. If Go writes to the closed pipe (e.g. `log.Println` during shutdown), it receives SIGPIPE and terminates immediately — before the coverage counters are flushed. Add this at the top of `main()`:
+When a Go process runs under Java's `ProcessBuilder`, the stdout pipe can close before the process exits. If Go writes to the closed pipe (e.g. `log.Println` during shutdown), it receives SIGPIPE and terminates immediately. Before the coverage counters are flushed. Add this at the top of `main()`:
 
 ```go title="main.go"
 func main() {
@@ -502,14 +502,14 @@ This is good practice for any long-running Go service managed by an external pro
 ### Running
 
 ```bash
-# Without coverage (default — zero overhead)
+# Without coverage (default. zero overhead)
 ./gradlew e2eTest_sarama
 
-# With coverage — runs tests + generates reports
+# With coverage. runs tests + generates reports
 ./gradlew e2eTestWithCoverage -Pgo.coverage=true
 ```
 
-The HTML report is written to `build/go-coverage/coverage.html`. Container-mode coverage uses the same flag — see [Container Mode](go-container.md#code-coverage).
+The HTML report is written to `build/go-coverage/coverage.html`. Container-mode coverage uses the same flag. See [Container Mode](go-container.md#code-coverage).
 
 !!! tip "Why no Stove framework changes were needed"
     Everything is achievable with existing primitives: the `-cover` build flag is a Gradle concern, `GOCOVERDIR` is just another env var, coverage processing happens after tests, and graceful shutdown is handled by the AUT starter (`stove-process` or `stove-container`).
@@ -530,7 +530,7 @@ The HTML report is written to `build/go-coverage/coverage.html`. Container-mode 
 ## Running
 
 ```bash
-# From the go-showcase directory — runs all three Kafka libraries
+# From the go-showcase directory. runs all three Kafka libraries
 cd recipes/process/golang/go-showcase
 ./gradlew e2eTest
 
@@ -552,7 +552,7 @@ github.com/XSAM/otelsql                                         # database/sql a
 github.com/lib/pq                                                # PostgreSQL driver
 google.golang.org/grpc                                           # gRPC (for OTLP + bridge)
 
-# Kafka — pick one client + its bridge subpackage:
+# Kafka. pick one client + its bridge subpackage:
 github.com/IBM/sarama                                            # + stove-kafka/sarama
 github.com/twmb/franz-go/pkg/kgo                                 # + stove-kafka/franz
 github.com/segmentio/kafka-go                                    # + stove-kafka/segmentio

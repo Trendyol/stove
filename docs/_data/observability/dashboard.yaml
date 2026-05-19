@@ -1,0 +1,14 @@
+"label": |-
+  Dashboard
+"family": |-
+  obs
+"gradle":
+- |-
+  com.trendyol:stove-dashboard
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.dashboard.*
+"configure": |-
+  dashboard {
+    DashboardSystemOptions(appName = "my-service")
+  }

@@ -1,0 +1,24 @@
+"label": |-
+  MongoDB
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-mongodb
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.mongodb.*
+"configure": |-
+  mongodb {
+    MongodbSystemOptions(
+      configureExposedConfiguration = { cfg ->
+        listOf("spring.data.mongodb.uri=${cfg.connectionString}")
+      }
+    )
+  }
+"testDsl": |-
+  mongodb {
+    shouldGet<MyDoc>(objectId = "doc-id", collection = "orders") {
+      it.status shouldBe "CREATED"
+    }
+  }

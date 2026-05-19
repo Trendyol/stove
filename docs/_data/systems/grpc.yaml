@@ -1,0 +1,18 @@
+"label": |-
+  gRPC client
+"family": |-
+  interaction
+"gradle":
+- |-
+  com.trendyol:stove-grpc
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.grpc.*
+"configure": |-
+  grpc {
+    GrpcSystemOptions(host = "localhost", port = 9090)
+  }
+"testDsl": |-
+  grpc {
+    wireClient<MyServiceClient>().getItem(GetItemRequest(id = "1")).status shouldBe "OK"
+  }

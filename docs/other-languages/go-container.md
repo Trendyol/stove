@@ -1,16 +1,16 @@
-# Go — Container Mode
+# Go. Container Mode
 
-Run the Go application as a Docker image instead of a host binary using `stove-container` and the `containerApp()` DSL. This gives you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">image-level parity with what you ship to production</span> — same Dockerfile, same entrypoint, same runtime — without changing a single line of Stove test code.
+Run the Go application as a Docker image instead of a host binary using `stove-container` and the `containerApp()` DSL. This gives you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">image-level parity with what you ship to production</span>. Same Dockerfile, same entrypoint, same runtime. Without changing a single line of Stove test code.
 
 For fast iteration without an image, see [Process Mode](go-process.md). The same Kotlin tests run against either.
 
-This page is the **Go-specific recipe**. For the language-agnostic `stove-container` reference — full DSL contract, image-source patterns, networking strategies, `configureContainer`, `beforeStarted`, troubleshooting matrix — see [Container AUT (`stove-container`)](../Components/22-container.md). The Go showcase below uses that module; it does not redefine it.
+This page is the **Go-specific recipe**. For the language-agnostic `stove-container` reference. Full DSL contract, image-source patterns, networking strategies, `configureContainer`, `beforeStarted`, troubleshooting matrix. See [Container AUT (`stove-container`)](../Components/22-container.md). The Go showcase below uses that module; it does not redefine it.
 
 ## Why container mode (Go-specific summary)
 
 | Concern | Process mode | Container mode |
 |---------|--------------|----------------|
-| **Iteration speed** | Fast — `go build` only | Slower — image build (or fetch from registry) |
+| **Iteration speed** | Fast. `go build` only | Slower. Image build (or fetch from registry) |
 | **Production parity** | Approximate (host runtime) | Exact (the artifact you ship) |
 | **Glibc / Alpine differences** | Hidden | Surfaced |
 | **CI/CD validation** | Indirect | Direct |
@@ -21,14 +21,14 @@ Use container mode in CI to catch image-only regressions (missing CA certs, wron
 
 The Go application code, OpenTelemetry setup, Kafka bridge integration, and Stove test DSL are identical to [Process Mode](go-process.md). Container mode only changes:
 
-1. **AUT runner** — `containerApp(...)` instead of `goApp(...)` (see the [container component page](../Components/22-container.md))
-2. **Image source** — a tagged image, from CI / a registry / or an optional local build
-3. **(Optional) Coverage volume** — bind-mount a host directory into the container so coverage data survives container removal
+1. **AUT runner**. `containerApp(...)` instead of `goApp(...)` (see the [container component page](../Components/22-container.md))
+2. **Image source**. A tagged image, from CI / a registry / or an optional local build
+3. **(Optional) Coverage volume**. Bind-mount a host directory into the container so coverage data survives container removal
 
 The Kotlin tests, the Stove DSL, the Stove systems, and the Go source code do not change.
 
 !!! info "Image build is not Stove's job"
-    `containerApp(...)` only needs an image reference. Use whatever your CI already produced, pull from a registry, or wire an optional local Gradle build task — see [image source patterns](../Components/22-container.md#image-source-patterns) for the three options. The Dockerfile and `buildContainerImage` task below are the *recipe's* convenience for being self-contained, not a requirement.
+    `containerApp(...)` only needs an image reference. Use whatever your CI already produced, pull from a registry, or wire an optional local Gradle build task. See [image source patterns](../Components/22-container.md#image-source-patterns) for the three options. The Dockerfile and `buildContainerImage` task below are the *recipe's* convenience for being self-contained, not a requirement.
 
 ## (Optional) Dockerfile for the showcase
 
@@ -75,7 +75,7 @@ tasks.register<Test>("e2eTest-container") {
 }
 ```
 
-In CI, point `APP_IMAGE` (or `-Papp.image=...`) at the tag your image-build job just produced. No `dependsOn("buildContainerImage")` needed — Stove just runs whatever is at that tag.
+In CI, point `APP_IMAGE` (or `-Papp.image=...`) at the tag your image-build job just produced. No `dependsOn("buildContainerImage")` needed. Stove just runs whatever is at that tag.
 
 ### (Optional) Local build convenience
 
@@ -111,7 +111,7 @@ tasks.register<Exec>("removeContainerImage") {
     isIgnoreExitValue = true
 }
 
-// Local-build path — only this task triggers a build
+// Local-build path. only this task triggers a build
 tasks.register<Test>("e2eTest-container-local") {
     description = "Builds the image locally and runs container e2e tests."
     group = "verification"
@@ -127,11 +127,11 @@ tasks.register<Test>("e2eTest-container-local") {
 }
 ```
 
-`buildContainerImage` is intentionally not cached — Docker is the source of truth for image freshness. The CI test task (`e2eTest-container`) does **not** depend on it.
+`buildContainerImage` is intentionally not cached. Docker is the source of truth for image freshness. The CI test task (`e2eTest-container`) does **not** depend on it.
 
 ## Stove Configuration (Go specifics)
 
-A single `StoveConfig.kt` can serve both modes by branching on a system property. The infrastructure systems (PostgreSQL, Kafka, tracing, dashboard) are identical to process mode — only the AUT runner block changes:
+A single `StoveConfig.kt` can serve both modes by branching on a system property. The infrastructure systems (PostgreSQL, Kafka, tracing, dashboard) are identical to process mode. Only the AUT runner block changes:
 
 ```kotlin title="StoveConfig.kt"
 containerApp(
@@ -140,7 +140,7 @@ containerApp(
         hostPort = APP_PORT,
         internalPort = APP_PORT,
         portEnvVar = "APP_PORT",
-        bindHostPort = false   // host network — no need to bind
+        bindHostPort = false   // host network. no need to bind
     ),
     envProvider = envMapper {
         // Stove → Go env var mapping (same keys as process mode)
@@ -169,7 +169,7 @@ For the full list of `containerApp` parameters, `ContainerTarget` variants, netw
 ## Running
 
 ```bash
-# CI / registry image — pass the tag in
+# CI / registry image. pass the tag in
 ./gradlew e2eTest-container -Papp.image=ghcr.io/acme/go-showcase:sha-abc123
 # or
 APP_IMAGE=ghcr.io/acme/go-showcase:sha-abc123 ./gradlew e2eTest-container
@@ -188,6 +188,8 @@ APP_IMAGE=ghcr.io/acme/go-showcase:sha-abc123 ./gradlew e2eTest-container
 ```
 
 By default the recipe resolves Stove from Maven Central + Sonatype snapshots so CI validates the same published path that users consume. `mavenLocal()` is opt-in.
+
+<a id="code-coverage"></a>
 
 ## Code Coverage (Go-specific)
 
@@ -222,7 +224,7 @@ containerApp(
 # HTML report at build/go-coverage/coverage.html
 ```
 
-`signal.Ignore(syscall.SIGPIPE)` in `main()` matters here too — Stove sends SIGTERM to stop the container, and Go must finish flushing coverage data before the process dies.
+`signal.Ignore(syscall.SIGPIPE)` in `main()` matters here too. Stove sends SIGTERM to stop the container, and Go must finish flushing coverage data before the process dies.
 
 ## Dashboard & MCP
 
@@ -235,7 +237,7 @@ Agent calls stove_failures
   → drills into stove_trace to see Go spans
 ```
 
-Because tracing is `traceparent`-correlated, a Go span captured inside the container shows up in the same trace tree as the originating Stove HTTP call — no additional plumbing required.
+Because tracing is `traceparent`-correlated, a Go span captured inside the container shows up in the same trace tree as the originating Stove HTTP call. No additional plumbing required.
 
 ## Reference
 

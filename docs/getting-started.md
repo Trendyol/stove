@@ -1,636 +1,491 @@
 # Getting Started
 
-Get Stove running in your project in just a few minutes. Stove helps you write end-to-end tests by spinning up your application and all its dependencies (databases, message queues, etc.) together, so you can <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">test the real thing instead of mocks</span>.
+Boot your real app with real dependencies in five steps. Each step shows what changes, why it matters, and how to verify it worked.
 
-If you already know your application framework, the quickest route is [Supported Frameworks](frameworks/index.md). This guide focuses on the shared setup that applies across all starters.
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">If you'd rather click</span>
+The [Setup Wizard](wizard.md) generates the dependency block, `StoveConfig.kt`, and a runnable sample test from your selections. This page is the manual path with the *why*.
+</div>
 
-## What You'll Need
+## Prerequisites
 
-Make sure you have these installed:
+<div class="stove-ribbon" markdown="0">
+  <div class="stove-ribbon-item">
+    <div class="icon">☕</div>
+    <strong>JDK 17+</strong>
+    <p>Required for Stove and all starters.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🐳</div>
+    <strong>Docker</strong>
+    <p>For Testcontainers (default). Skip if you use <a href="Components/11-provided-instances/">Provided Instances</a>.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">📦</div>
+    <strong>Gradle (recommended)</strong>
+    <p>Examples use Gradle Kotlin DSL. Maven works for deps; the <code>stoveTracing</code> plugin needs Gradle.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🧪</div>
+    <strong>Kotest 6.1.3+ or JUnit Jupiter 6.x</strong>
+    <p>Either test framework. Kotest gets first-class wiring.</p>
+  </div>
+</div>
 
-- **JDK 17+** - Stove needs Java 17 or higher
-- **Docker** - Required when using container mode (the default). Not needed if you use [provided instances](Components/11-provided-instances.md) to connect to existing infrastructure
-- **Kotlin 1.8+** - For writing your tests
-- **Gradle or Maven** - We use Gradle in all examples, but Maven works too
+!!! tip "IDE setup"
+    IntelliJ IDEA + the Kotest plugin = run buttons on every `test {}` block. Worth installing on day one.
 
-!!! tip "IDE Setup"
-    If you're using IntelliJ IDEA, grab the Kotest plugin. It adds run buttons and makes test discovery much smoother.
+## The five steps
 
-## Fastest Path
+<ol class="stove-timeline" markdown="block">
+<li markdown="block">
 
-If you want the smallest useful Stove setup, do this first:
+<span class="stove-step-tag">deps</span>
+### Add the minimum dependencies
 
-1. Add `stove`, one starter, one test extension, and `stove-http`.
-2. Expose a reusable application entrypoint that Stove can call.
-3. Start Stove once for the suite.
-4. Make one real HTTP request and assert the result.
+Start with the smallest set that proves the wiring works: BOM + core + one starter + one test extension + `stove-http`. Add more later.
 
-Everything else can be added incrementally.
-
-## Step 1: Add The Minimum Dependencies
-
-Start with the smallest set that proves the flow works:
+!!! tip "Gradle recommended"
+    All examples use Gradle (Kotlin DSL). Maven works for Stove dependencies; the **`stoveTracing`** Gradle plugin is the easiest path to OTel tracing and is the recommended setup for observability.
 
 ```kotlin
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
     testImplementation("com.trendyol:stove")
-
-    // Pick one starter
-    testImplementation("com.trendyol:stove-spring")
-
-    // Pick one test framework extension
-    testImplementation("com.trendyol:stove-extensions-kotest")
-
-    // Start with one public surface
+    testImplementation("com.trendyol:stove-spring")            // or -ktor / -micronaut / -quarkus
+    testImplementation("com.trendyol:stove-extensions-kotest") // or -extensions-junit
     testImplementation("com.trendyol:stove-http")
 }
 ```
 
-!!! info "Latest Version"
-    Check the [Releases](https://github.com/Trendyol/stove/releases) page for the latest version.
+!!! info "Version alignment"
+    Keep the BOM, every `com.trendyol:stove-*`, and `stove-cli` (if you use the dashboard) on the same version. Check [Releases](https://github.com/Trendyol/stove/releases).
 
-!!! tip "Version Alignment"
-    Keep the Stove BOM and all Stove test dependencies on the same version. If you use the dashboard, keep `stove-cli` on that same version too.
+Components are á-la-carte. Add what you actually use:
 
-Replace `stove-spring` with the starter that matches your runtime:
+| Module | Use for |
+|---|---|
+| `stove-kafka`, `stove-spring-kafka` | event flows |
+| `stove-postgres`, `stove-mysql`, `stove-mssql`, `stove-mongodb`, `stove-couchbase`, `stove-cassandra`, `stove-redis`, `stove-elasticsearch` | persistence |
+| `stove-wiremock`, `stove-grpc-mock` | external surface mocks |
+| `stove-grpc` | gRPC client |
+| `stove-tracing`, `stove-dashboard` | observability |
 
-- Spring Boot: `stove-spring`
-- Ktor: `stove-ktor`
-- Micronaut: `stove-micronaut`
-- Quarkus: `stove-quarkus`
+!!! tip "Enable tracing with the Gradle plugin"
+    `stove-tracing` is wired by the **`com.trendyol.stove.tracing`** Gradle plugin. It attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT. Zero app-code changes.
 
-Then add only the components you actually need:
+    ```kotlin
+    plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
 
-- `stove-http` for REST APIs
-- `stove-kafka` for event flows
-- `stove-postgres`, `stove-mysql`, `stove-mongodb`, or `stove-redis` for persistence
-- `stove-wiremock` or `stove-grpc-mock` for external dependencies
-- `stove-tracing` for richer diagnostics
-
-If you are using Ktor, also add your preferred DI support. See the [Ktor guide](frameworks/ktor.md) for the exact setup.
-
-## Step 2: Prepare Your Application
-
-Stove needs to start your application from tests, which means your app needs a reusable entrypoint. The shared pattern is:
-
-1. keep the normal `main`
-2. move the actual startup logic into a reusable `run(args)` style function
-3. pass that function to Stove as the `runner`
-
-You only need the version for your framework:
-
-=== "Spring Boot"
-
-    ```kotlin hl_lines="13 15 16 17 18"
-    // Before
-    @SpringBootApplication
-    class MyApplication
-    
-    fun main(args: Array<String>) {
-        runApplication<MyApplication>(*args)
-    }
-    
-    // After
-    @SpringBootApplication
-    class MyApplication
-    
-    fun main(args: Array<String>) = run(args)
-    
-    fun run(
-        args: Array<String>,
-        init: SpringApplication.() -> Unit = {}
-    ): ConfigurableApplicationContext {
-        return runApplication<MyApplication>(*args, init = init)
+    stoveTracing {
+        serviceName.set("my-service")
+        testTaskNames.set(listOf("e2eTest"))
     }
     ```
 
-=== "Ktor with Koin"
+    Failures then come with a full call chain inside your app. See [Tracing](Components/15-tracing.md) and [When a test fails](observability/when-it-fails.md).
 
-    ```kotlin hl_lines="10 12 14 15 21"
-    // Before
-    fun main() {
-        embeddedServer(Netty, port = 8080) {
-            install(Koin) { modules(appModule) }
-            configureRouting()
-        }.start(wait = true)
-    }
-    
-    // After - Accept test modules for overriding beans
+</li>
+<li markdown="block">
+
+<span class="stove-step-tag">app</span>
+### Expose a reusable entrypoint
+
+Stove boots your app from tests. Extract startup into a `run(args)` function that both `main` and Stove can call.
+
+=== "Spring Boot"
+
+    ```kotlin
+    @SpringBootApplication
+    class MyApplication
+
+    fun main(args: Array<String>) = run(args)
+
+    fun run(
+        args: Array<String>,
+        init: SpringApplication.() -> Unit = {}
+    ): ConfigurableApplicationContext =
+        runApplication<MyApplication>(*args, init = init)
+    ```
+
+=== "Ktor (Koin)"
+
+    ```kotlin
     object MyApp {
-        @JvmStatic
-        fun main(args: Array<String>) = run(args)
-        
+        @JvmStatic fun main(args: Array<String>) = run(args)
+
         fun run(
             args: Array<String>,
             wait: Boolean = true,
             testModules: List<Module> = emptyList()
-        ): Application {
-            return embeddedServer(Netty, port = args.getPort()) {
-                install(Koin) {
-                    modules(appModule, *testModules.toTypedArray())
-                }
-                configureRouting()
-            }.start(wait = wait).application
-        }
+        ): Application = embeddedServer(Netty, port = args.getPort()) {
+            install(Koin) { modules(appModule, *testModules.toTypedArray()) }
+            configureRouting()
+        }.start(wait = wait).application
     }
     ```
 
-=== "Ktor with Ktor-DI"
+=== "Ktor (Ktor-DI)"
 
-    ```kotlin hl_lines="10 12 14 15 22"
-    // Before
-    fun main() {
-        embeddedServer(Netty, port = 8080) {
-            install(DI) { dependencies { provide<MyService> { MyServiceImpl() } } }
-            configureRouting()
-        }.start(wait = true)
-    }
-    
-    // After - Accept test dependency overrides
+    ```kotlin
     object MyApp {
-        @JvmStatic
-        fun main(args: Array<String>) = run(args)
-        
+        @JvmStatic fun main(args: Array<String>) = run(args)
+
         fun run(
             args: Array<String>,
             wait: Boolean = true,
             testDependencies: (DependencyRegistrar.() -> Unit)? = null
-        ): Application {
-            return embeddedServer(Netty, port = args.getPort()) {
-                install(DI) {
-                    dependencies {
-                        provide<MyService> { MyServiceImpl() }
-                        testDependencies?.invoke(this)  // Apply test overrides
-                    }
+        ): Application = embeddedServer(Netty, port = args.getPort()) {
+            install(DI) {
+                dependencies {
+                    provide<MyService> { MyServiceImpl() }
+                    testDependencies?.invoke(this)
                 }
-                configureRouting()
-            }.start(wait = wait).application
-        }
+            }
+            configureRouting()
+        }.start(wait = wait).application
     }
     ```
 
 === "Micronaut"
 
     ```kotlin
-    fun main(args: Array<String>) {
-        run(args)
-    }
+    fun main(args: Array<String>) = run(args)
 
     fun run(
         args: Array<String>,
         init: ApplicationContext.() -> Unit = {}
-    ): ApplicationContext {
-        val context = ApplicationContext
-            .builder()
-            .args(*args)
-            .build()
-            .also(init)
-            .start()
-
-        context.findBean(EmbeddedApplication::class.java).ifPresent { app ->
-            if (!app.isRunning) {
-                app.start()
+    ): ApplicationContext = ApplicationContext.builder()
+        .args(*args)
+        .build()
+        .also(init)
+        .start()
+        .also { ctx ->
+            ctx.findBean(EmbeddedApplication::class.java).ifPresent { app ->
+                if (!app.isRunning) app.start()
             }
         }
-
-        return context
-    }
     ```
 
 === "Quarkus"
 
     ```kotlin
-    package com.example
-
-    import io.quarkus.runtime.Quarkus
-    import io.quarkus.runtime.ShutdownEvent
-    import io.quarkus.runtime.StartupEvent
-    import io.quarkus.runtime.annotations.QuarkusMain
-    import jakarta.enterprise.context.ApplicationScoped
-    import jakarta.enterprise.event.Observes
-
     @QuarkusMain
     object QuarkusMainApp {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            Quarkus.run(*args)
-        }
+        @JvmStatic fun main(args: Array<String>) { Quarkus.run(*args) }
     }
 
     @ApplicationScoped
     class StoveStartupSignal {
-        fun onStart(@Observes event: StartupEvent) {
+        fun onStart(@Observes event: StartupEvent) =
             System.setProperty("stove.quarkus.ready", "true")
-        }
-
-        fun onStop(@Observes event: ShutdownEvent) {
+        fun onStop(@Observes event: ShutdownEvent) =
             System.clearProperty("stove.quarkus.ready")
-        }
     }
     ```
 
-    Stove calls your Quarkus `main` function directly. If your app has no HTTP endpoint, publish a startup signal like the one above so Stove can detect readiness. See the [Quarkus guide](frameworks/quarkus.md) for the full setup, including Kafka and tracing notes.
+    Quarkus needs a startup signal if your app has no HTTP endpoint Stove can probe. See the [Quarkus guide](frameworks/quarkus.md) for full details.
 
-## Step 3: Create Test Configuration
+</li>
+<li markdown="block">
 
-<span data-rn="underline" data-rn-color="#009688">Set up Stove once for your entire test suite.</span> This configuration runs before all your tests and shuts down after they're done. Use <span data-rn="underline" data-rn-color="#ff9800">Stove()</span> and <span data-rn="underline" data-rn-color="#ff9800">.with { }</span> to configure your test environment. 
+<span class="stove-step-tag">config</span>
+<a id="step-3-create-test-configuration"></a>
+### Configure Stove once per suite
 
-If you are aiming for the fastest first success, start with one starter plus `stove-http`, confirm the app boots and responds, and only then add Kafka, databases, tracing, or mocks.
+Put e2e tests in a dedicated `src/test-e2e/` source set ([why](best-practices.md#use-dedicated-source-set-for-e2e-tests)). `AbstractProjectConfig.beforeProject()` runs once for the entire suite. Set up Stove there, tear it down in `afterProject()`.
 
-We recommend putting e2e tests in a separate `src/test-e2e` source set to keep them separate from unit tests (see [Best Practices](best-practices.md#use-dedicated-source-set-for-e2e-tests) for the Gradle setup).
-
-!!! info "Test Framework Extensions"
-    `StoveKotestExtension` and `StoveJUnitExtension` are separate packages that must be on your classpath:
-
-    ```kotlin
-    testImplementation("com.trendyol:stove-extensions-kotest") // For Kotest
-    // or
-    testImplementation("com.trendyol:stove-extensions-junit")  // For JUnit
-    ```
-
-    **Kotest** requires **6.1.3** or later. **JUnit** requires **Jupiter 6.x** if possible. In Kotest 6.x, `AbstractProjectConfig` is no longer auto-scanned. Create a `kotest.properties` file in your test resources (e.g. `src/test-e2e/resources/kotest.properties`):
-
+!!! info "Kotest 6.x discovery"
+    `AbstractProjectConfig` is **not** auto-scanned in Kotest 6.x. Add `src/test-e2e/resources/kotest.properties`:
     ```properties
     kotest.framework.config.fqn=com.myapp.e2e.TestConfig
     ```
 
-    Set the value to the fully qualified name of your `AbstractProjectConfig` class.
-
-    If you are testing a Quarkus application, see the [Quarkus guide](frameworks/quarkus.md) for the starter-specific setup and limitations.
-
 === "Kotest"
 
-    ```kotlin hl_lines="10 12 13 16 31"
-    // src/test-e2e/kotlin/io/kotest/provided/ProjectConfig.kt
-    import com.trendyol.stove.extensions.kotest.StoveKotestExtension
-    import com.trendyol.stove.system.Stove
-    import com.trendyol.stove.system.stove
-    import com.trendyol.stove.http.*
-    import com.trendyol.stove.spring.springBoot
-    
+    ```kotlin hl_lines="9 11 12 14"
     class TestConfig : AbstractProjectConfig() {
-        // Optional: Add this for detailed failure reports with execution context
         override val extensions: List<Extension> = listOf(StoveKotestExtension())
-        
+
         override suspend fun beforeProject() {
-            Stove()
-                .with {
-                    httpClient {
-                        HttpClientSystemOptions(
-                            baseUrl = "http://localhost:8080"
-                        )
-                    }
-                    
-                    // Replace `springBoot` with `ktor`, `micronaut`, or `quarkus` as needed
-                    springBoot(
-                        runner = { params -> 
-                            com.myapp.run(params)
-                        },
-                        withParameters = listOf(
-                            "server.port=8080",
-                            "logging.level.root=warn"
-                        )
-                    )
+            Stove().with {
+                httpClient {
+                    HttpClientSystemOptions(baseUrl = "http://localhost:8080")
                 }
-                .run()
+
+                // Swap springBoot for ktor / micronaut / quarkus
+                springBoot(
+                    runner = { params -> com.myapp.run(params) },
+                    withParameters = listOf("server.port=8080", "logging.level.root=warn")
+                )
+            }.run()
         }
-        
-        override suspend fun afterProject() {
-            Stove.stop()
-        }
+
+        override suspend fun afterProject() = Stove.stop()
     }
     ```
 
 === "JUnit"
 
     ```kotlin
-    // src/test-e2e/kotlin/e2e/TestConfig.kt
-    import com.trendyol.stove.extensions.junit.StoveJUnitExtension
-    import com.trendyol.stove.system.Stove
-    import com.trendyol.stove.http.*
-    import com.trendyol.stove.spring.springBoot
-    import org.junit.jupiter.api.extension.ExtendWith
-    
-    // Optional: Add this annotation for detailed failure reports
     @ExtendWith(StoveJUnitExtension::class)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     abstract class BaseE2ETest {
-        
         companion object {
-            @JvmStatic
-            @BeforeAll
+            @JvmStatic @BeforeAll
             fun setup() = runBlocking {
-                Stove()
-                    .with {
-                        httpClient {
-                            HttpClientSystemOptions(
-                                baseUrl = "http://localhost:8080"
-                            )
-                        }
-                        
-                        // Replace `springBoot` with `ktor`, `micronaut`, or `quarkus` as needed
-                        springBoot(
-                            runner = { params -> 
-                                com.myapp.run(params)
-                            },
-                            withParameters = listOf(
-                                "server.port=8080",
-                                "logging.level.root=warn"
-                            )
-                        )
-                    }
-                    .run()
+                Stove().with {
+                    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
+                    springBoot(
+                        runner = { params -> com.myapp.run(params) },
+                        withParameters = listOf("server.port=8080")
+                    )
+                }.run()
             }
-            
-            @JvmStatic
-            @AfterAll
-            fun teardown() = runBlocking {
-                Stove.stop()
-            }
+
+            @JvmStatic @AfterAll
+            fun teardown() = runBlocking { Stove.stop() }
         }
     }
     ```
 
-## Step 4: Write Your First Test
+</li>
+<li markdown="block">
+
+<span class="stove-step-tag">first test</span>
+### Write the first assertion
+
+The DSL is `stove { http { ... } }`. Read the result, assert against it. That's it.
 
 === "Kotest"
 
     ```kotlin
-    import com.trendyol.stove.system.stove
-    
     class MyFirstE2ETest : FunSpec({
-        
-        test("should return hello world") {
-            stove {
-                http {
-                    get<String>("/hello") { response ->
-                        response shouldBe "Hello, World!"
-                    }
-                }
+      test("GET /hello returns greeting") {
+        stove {
+          http {
+            get<String>("/hello") { body ->
+              body shouldBe "Hello, World!"
             }
+          }
         }
-        
-        test("should create a user") {
-            stove {
-                http {
-                    postAndExpectBody<UserResponse>(
-                        uri = "/users",
-                        body = CreateUserRequest(name = "John", email = "john@example.com").some()
-                    ) { response ->
-                        response.status shouldBe 201
-                        response.body().name shouldBe "John"
-                    }
-                }
-            }
-        }
+      }
     })
     ```
 
 === "JUnit"
 
     ```kotlin
-    import com.trendyol.stove.system.stove
-    
     class MyFirstE2ETest : BaseE2ETest() {
-        
-        @Test
-        fun `should return hello world`() = runBlocking {
-            stove {
-                http {
-                    get<String>("/hello") { response ->
-                        response shouldBe "Hello, World!"
-                    }
-                }
-            }
+      @Test
+      fun `GET hello returns greeting`() = runBlocking {
+        stove {
+          http {
+            get<String>("/hello") { body -> body shouldBe "Hello, World!" }
+          }
         }
-        
-        @Test
-        fun `should create a user`() = runBlocking {
-            stove {
-                http {
-                    postAndExpectBody<UserResponse>(
-                        uri = "/users",
-                        body = CreateUserRequest(name = "John", email = "john@example.com").some()
-                    ) { response ->
-                        response.status shouldBe 201
-                        response.body().name shouldBe "John"
-                    }
-                }
-            }
-        }
+      }
     }
     ```
 
-## Step 5: Add More Components
+Run it:
 
-Once you've got the basics working, you'll probably want to <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">add more components</span>. Here's how you'd set up a typical stack:
-
-```kotlin hl_lines="9 19 33 37 40"
-Stove()
-    .with {
-        httpClient {
-            HttpClientSystemOptions(baseUrl = "http://localhost:8080")
-        }
-        
-        // Add Kafka for event-driven tests
-        kafka {
-            KafkaSystemOptions {
-                listOf(
-                    "kafka.bootstrapServers=${it.bootstrapServers}",
-                    "kafka.interceptorClasses=${it.interceptorClass}"
-                )
-            }
-        }
-        
-        // Add Couchbase for database tests
-        couchbase {
-            CouchbaseSystemOptions(
-                defaultBucket = "myBucket",
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "couchbase.hosts=${cfg.hostsWithPort}",
-                        "couchbase.username=${cfg.username}",
-                        "couchbase.password=${cfg.password}"
-                    )
-                }
-            )
-        }
-        
-        // Add WireMock for external service mocking
-        wiremock {
-            WireMockSystemOptions(port = 9090)
-        }
-        
-        // Add bridge for DI container access
-        bridge()
-        
-        springBoot(
-            runner = { params -> com.myapp.run(params) },
-            withParameters = listOf(
-                "server.port=8080",
-                "external.service.url=http://localhost:9090"
-            )
-        )
-    }
-    .run()
+```bash
+./gradlew e2eTest                                # all e2e tests
+./gradlew e2eTest --tests "com.myapp.e2e.*Test"  # filter
 ```
 
-## Step 6: Write Tests That Span Multiple Systems
+</li>
+<li markdown="block">
 
-Here's where <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Stove really shines</span>. You can write tests that touch multiple systems and verify everything works together:
+<span class="stove-step-tag">grow</span>
+### Add the systems your app actually uses
 
-```kotlin hl_lines="4 8 17 31 38 46"
-import com.trendyol.stove.system.stove
+The same `.with { }` block composes more systems. Below: HTTP in, Kafka events, Couchbase persistence, WireMock for outbound calls, and `bridge()` for DI access.
 
-test("should create order and publish event") {
-    stove {
-        val orderId = UUID.randomUUID().toString()
-        
-        // Mock external payment service
-        wiremock {
-            mockPost(
-                url = "/payments",
-                statusCode = 200,
-                responseBody = PaymentResult(success = true).some()
-            )
-        }
-        
-        // Create order via API
-        http {
-            postAndExpectBody<OrderResponse>(
-                uri = "/orders",
-                body = CreateOrderRequest(
-                    id = orderId,
-                    items = listOf("item1", "item2"),
-                    amount = 99.99
-                ).some()
-            ) { response ->
-                response.status shouldBe 201
-            }
-        }
-        
-        // Verify order stored in database
-        couchbase {
-            shouldGet<Order>("orders", orderId) { order ->
-                order.status shouldBe "CREATED"
-                order.amount shouldBe 99.99
-            }
-        }
-        
-        // Verify event was published
-        kafka {
-            shouldBePublished<OrderCreatedEvent>(atLeastIn = 10.seconds) {
-                actual.orderId == orderId &&
-                actual.amount == 99.99
-            }
-        }
-        
-        // Access application beans directly
-        using<OrderService> {
-            val order = getOrder(orderId)
-            order.status shouldBe "CREATED"
-        }
+```kotlin hl_lines="3 8 16 27 30"
+Stove().with {
+    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
+
+    kafka {
+        KafkaSystemOptions { cfg -> listOf(
+            "kafka.bootstrapServers=${cfg.bootstrapServers}",
+            "kafka.interceptorClasses=${cfg.interceptorClass}"
+        ) }
     }
+
+    couchbase {
+        CouchbaseSystemOptions(
+            defaultBucket = "myBucket",
+            configureExposedConfiguration = { cfg -> listOf(
+                "couchbase.hosts=${cfg.hostsWithPort}",
+                "couchbase.username=${cfg.username}",
+                "couchbase.password=${cfg.password}"
+            ) }
+        )
+    }
+
+    wiremock { WireMockSystemOptions(port = 0) }
+    bridge()  // DI access for setup + verification
+
+    springBoot(
+        runner = { params -> com.myapp.run(params) },
+        withParameters = listOf("server.port=8080", "external.service.url=http://localhost:9090")
+    )
+}.run()
+```
+
+Then assert across systems in one test:
+
+```kotlin hl_lines="4 11 18 24"
+test("creating an order persists, calls payment, and publishes event") {
+  stove {
+    val orderId = UUID.randomUUID().toString()
+
+    wiremock { mockPost("/payments", 200, PaymentResult(true).some()) }
+
+    http {
+      postAndExpectBody<OrderResponse>(
+        uri = "/orders",
+        body = CreateOrderRequest(orderId, listOf("item1", "item2"), 99.99).some()
+      ) { it.status shouldBe 201 }
+    }
+
+    couchbase {
+      shouldGet<Order>("orders", orderId) { order ->
+        order.status shouldBe "CREATED"
+        order.amount shouldBe 99.99
+      }
+    }
+
+    kafka {
+      shouldBePublished<OrderCreatedEvent> {
+        actual.orderId == orderId && actual.amount == 99.99
+      }
+    }
+
+    using<OrderService> { getOrder(orderId).status shouldBe "CREATED" }
+  }
 }
 ```
 
-<span data-rn="underline" data-rn-color="#009688">Stove starts your application with its dependencies, runs your tests, and shuts everything down when done.</span>
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One DSL, every surface that matters.</span>
 
-## Running Tests
+</li>
+</ol>
 
-Run all your tests:
+## Do this, not that
 
-```bash
-./gradlew test
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+Generate unique IDs per test run.
+
+```kotlin
+val userId = "user-${UUID.randomUUID()}"
 ```
 
-Or run a specific test class:
+No collisions, parallel-safe, works against shared infra.
+  </div>
+  <div class="stove-dont">
+Hard-code identifiers.
 
-```bash
-./gradlew test --tests "com.myapp.e2e.OrderE2ETest"
+```kotlin
+val userId = "user-1"  // collides on re-run
 ```
 
-If you're using the `test-e2e` source set, you might have a separate task:
+  </div>
+</div>
 
-```bash
-./gradlew e2eTest
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+Wait with timeout, not sleep.
+
+```kotlin
+shouldBePublished<E> {
+  actual.userId == userId
+}
 ```
 
-## Next Steps
+  </div>
+  <div class="stove-dont">
+Block the thread.
 
-Now that you're up and running, here's what to explore next:
+```kotlin
+Thread.sleep(5_000)  // flaky, slow
+kafka { shouldBePublished<E>(...) }
+```
 
-- **Components** - Check out the [Components documentation](Components/index.md) to see what's available
-- **Quarkus** - If your application uses Quarkus, follow the [Quarkus guide](frameworks/quarkus.md)
-- **Tracing** - Enable [Tracing](Components/15-tracing.md) to see exactly what happened inside your application when a test fails
-- **Reporting** - Set up [Reporting](Components/13-reporting.md) to get detailed failure diagnostics
-- **Dashboard** - Start the [local dashboard](Components/18-dashboard.md) when you want live timelines, traces, snapshots, and the REST API
-- **MCP** - Let AI agents inspect failed tests through the local [Stove MCP endpoint](Components/21-mcp.md) served by `stove`
-- **gRPC Mocking** - Mock external gRPC services with [gRPC Mocking](Components/14-grpc-mock.md)
-- **Best Practices** - Read the [Best Practices guide](best-practices.md) for tips on writing effective e2e tests
-- **Troubleshooting** - Hit an issue? Check the [Troubleshooting guide](troubleshooting.md)
-- **Examples** - Browse the [Examples](https://github.com/Trendyol/stove/tree/main/examples) and [Recipes](https://github.com/Trendyol/stove/tree/main/recipes) for complete working projects
+  </div>
+</div>
 
-## Common Patterns
+<div class="stove-pair" markdown="0">
+  <div class="stove-do">
+Configure Stove **once** per suite.
 
-### Keep Containers Running Between Test Runs
+```kotlin
+override suspend fun beforeProject() = Stove().with { ... }.run()
+```
 
-Starting containers takes time. During development, you can <span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">keep them running between test runs</span> to speed things up:
+  </div>
+  <div class="stove-dont">
+Spin Stove up per test.
+
+```kotlin
+@BeforeEach fun setup() = Stove().with { ... }.run()  // very slow
+```
+
+  </div>
+</div>
+
+## Local-loop optimizations
+
+**Keep containers running between runs** during development:
 
 ```kotlin hl_lines="2"
 Stove {
     keepDependenciesRunning()
-}.with {
-    // Your configuration
-}.run()
+}.with { /* ... */ }.run()
 ```
 
-### Using a Custom Container Registry
-
-If you're behind a corporate firewall or need to use a private registry:
+**Custom registry** (firewalls, private mirrors):
 
 ```kotlin
-// Set globally
-DEFAULT_REGISTRY = "your.registry.com"
+DEFAULT_REGISTRY = "your.registry.com"  // global
 
-// Or per component
-kafka {
+kafka {                                  // per component
     KafkaSystemOptions(
-        container = KafkaContainerOptions(
-            registry = "your.registry.com"
-        )
+        container = KafkaContainerOptions(registry = "your.registry.com")
     )
 }
 ```
 
-### Use Unique Test Data
+## Troubleshooting at a glance
 
-To avoid test conflicts, <span data-rn="underline" data-rn-color="#ff9800">generate unique data for each test run</span>:
+| Symptom | Fix |
+|---|---|
+| Docker not found | Start Docker Desktop / colima |
+| Port conflicts | Use port `0` for mocks; let Stove pick |
+| Slow startup | `keepDependenciesRunning()` during dev |
+| Serialization errors | Align `StoveSerde` with your app's mapper |
+| Tests collide | Generate unique IDs per test |
+| Kafka assertion times out | Use [test-friendly Kafka settings](Components/02-kafka.md) |
 
-```kotlin
-test("should create user") {
-    val userId = UUID.randomUUID().toString()
-    val email = "test-${UUID.randomUUID()}@example.com"
-    
-    stove {
-        // Use unique data to avoid conflicts
-    }
-}
-```
+Deeper [troubleshooting guide](troubleshooting.md) and [best practices](best-practices.md).
 
-## Troubleshooting Quick Tips
+## Where to go next
 
-| Problem | Solution |
-|---------|----------|
-| Docker not found | Ensure Docker is running and accessible |
-| Port conflicts | Use dynamic ports or ensure no conflicts |
-| Slow startup | Enable `keepDependenciesRunning()` for development |
-| Serialization errors | Configure `StoveSerde` to match your app's serializer |
-| Test isolation issues | Use unique test data and cleanup functions |
+<div class="grid cards" markdown>
 
-For more help, see the [Troubleshooting Guide](troubleshooting.md).
+-   :material-magic-staff: **Wizard for your stack** · [Open wizard](wizard.md)
+
+-   :material-book-multiple: **Real flows** · [Recipes](recipes/index.md)
+
+-   :material-cog-outline: **Per-framework setup** · [Frameworks](frameworks/index.md)
+
+-   :material-database: **System reference** · [Components](Components/index.md)
+
+-   :material-chart-timeline: **When a test fails** · [Observability story](observability/when-it-fails.md)
+
+-   :material-github: **Working examples** · [GitHub](https://github.com/Trendyol/stove/tree/main/examples)
+
+</div>

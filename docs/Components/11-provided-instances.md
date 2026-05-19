@@ -1,984 +1,294 @@
-# <span data-rn="underline" data-rn-color="#ff9800">Provided Instances</span> (Testcontainer-less Mode)
+# Provided Instances
 
-Stove supports using <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">externally provided infrastructure instances instead of testcontainers</span>. This is particularly useful for:
+Connect Stove to **existing infrastructure** (shared CI databases, dev clusters, staging brokers) instead of spinning Testcontainers. Same DSL. Same assertions. No Docker required.
 
-- **CI/CD pipelines** with shared infrastructure
-- **Reducing startup time** by reusing existing instances
-- **Lower memory/CPU usage** by avoiding container overhead
-- **Working with pre-configured environments**
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Every system options class ships a <code>.provided(...)</code> factory. Swap <code>SystemOptions(...)</code> for <code>SystemOptions.provided(...)</code>, supply connection details, and Stove uses your infra instead of a container. For shared infra, prefix every resource (DB names, topics, indexes) with a unique run ID to prevent collisions.
+</div>
 
-## Overview
+## The pattern
 
-Instead of starting a testcontainer, you can configure Stove to connect to an existing instance using the `.provided(...)` companion function on the options class itself.
-
-## Core Concept
-
-Each system's options class (e.g., `CouchbaseSystemOptions`, `PostgresqlOptions`) has a companion function called `provided(...)` that returns a specialized options subclass configured for external instances.
-
-## Usage Pattern
-
-All systems follow the same pattern:
-
-```kotlin hl_lines="5 15"
-Stove()
-  .with {
-    // Option 1: Container-based (default)
-    systemName {
-      SystemOptions(
-        // System-specific options
-        cleanup = { client -> /* cleanup logic */ },
-        configureExposedConfiguration = { cfg -> listOf("property=${cfg.value}") }
-      )
-    }
-
-    // Option 2: Provided instance using .provided() companion function
-    systemName {
-      SystemOptions.provided(
-        // Connection parameters for external instance
-        runMigrations = true,
-        cleanup = { client -> /* cleanup logic */ },
-        configureExposedConfiguration = { cfg -> listOf("property=${cfg.value}") }
-      )
-    }
-  }
-  .run()
-```
-
-## Supported Systems
-
-### Couchbase
-
-```kotlin hl_lines="24-25"
-// Container-based with cleanup
-Stove()
-  .with {
-    couchbase {
-      CouchbaseSystemOptions(
-        defaultBucket = "myBucket",
-        cleanup = { cluster ->
-          cluster.query("DELETE FROM `myBucket` WHERE type = 'test'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "couchbase.hosts=${cfg.hostsWithPort}",
-            "couchbase.username=${cfg.username}",
-            "couchbase.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    couchbase {
-      CouchbaseSystemOptions.provided(
-        connectionString = "couchbase://localhost:8091",
-        username = "admin",
-        password = "password",
-        defaultBucket = "myBucket",
-        runMigrations = true,
-        cleanup = { cluster ->
-          cluster.query("DELETE FROM `myBucket` WHERE type = 'test'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "couchbase.hosts=${cfg.hostsWithPort}",
-            "couchbase.username=${cfg.username}",
-            "couchbase.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### Cassandra
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>Container mode (default)</h4>
 
 ```kotlin
-// Container-based
-Stove()
-  .with {
-    cassandra {
-      CassandraSystemOptions(
-        keyspace = "my_keyspace",
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.cassandra.contact-points=${cfg.host}:${cfg.port}",
-            "spring.cassandra.local-datacenter=${cfg.datacenter}",
-            "spring.cassandra.keyspace-name=${cfg.keyspace}"
-          )
-        }
-      )
+postgresql {
+  PostgresqlOptions(
+    container = PostgresqlContainerOptions(tag = "16"),
+    configureExposedConfiguration = { cfg ->
+      listOf("spring.datasource.url=${cfg.jdbcUrl}")
     }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    cassandra {
-      CassandraSystemOptions.provided(
-        host = "cassandra-host",
-        port = 9042,
-        datacenter = "datacenter1",
-        keyspace = "my_keyspace",
-        runMigrations = true,
-        cleanup = { session ->
-          session.execute("TRUNCATE my_keyspace.users")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.cassandra.contact-points=${cfg.host}:${cfg.port}",
-            "spring.cassandra.local-datacenter=${cfg.datacenter}",
-            "spring.cassandra.keyspace-name=${cfg.keyspace}"
-          )
-        }
-      )
-    }
-  }
-  .run()
+  )
+}
 ```
 
-### Kafka
+  </div>
+  <div>
+    <h4>Provided instance</h4>
 
 ```kotlin
-// Container-based
-Stove()
-  .with {
-    kafka {
-      KafkaSystemOptions(
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "kafka.bootstrapServers=${cfg.bootstrapServers}",
-            "kafka.interceptorClasses=${cfg.interceptorClass}"
-          )
-        }
-      )
+postgresql {
+  PostgresqlOptions.provided(
+    jdbcUrl = "jdbc:postgresql://shared-db:5432/test",
+    username = "test",
+    password = "test",
+    configureExposedConfiguration = { cfg ->
+      listOf("spring.datasource.url=${cfg.jdbcUrl}")
     }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    kafka {
-      KafkaSystemOptions.provided(
-        bootstrapServers = "localhost:9092",
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "kafka.bootstrapServers=${cfg.bootstrapServers}",
-            "kafka.interceptorClasses=${cfg.interceptorClass}"
-          )
-        }
-      )
-    }
-  }
-  .run()
+  )
+}
 ```
 
-### Redis
+  </div>
+</div>
+
+The rest of your `Stove().with { }` block stays identical. Tests don't know the difference.
+
+## Supported systems
+
+All Stove systems support provided instances. Signatures are similar; check the specific reference page for full details.
+
+| System | Factory | Required args |
+|---|---|---|
+| PostgreSQL | `PostgresqlOptions.provided` | `jdbcUrl`, `username`, `password` |
+| MySQL | `MySqlOptions.provided` | `jdbcUrl`, `username`, `password` |
+| MSSQL | `MsSqlOptions.provided` | `jdbcUrl`, `username`, `password` |
+| MongoDB | `MongodbSystemOptions.provided` | `connectionString` |
+| Couchbase | `CouchbaseSystemOptions.provided` | `bucketName`, `hostsWithPort`, `username`, `password` |
+| Cassandra | `CassandraSystemOptions.provided` | `contactPoints`, `keyspace` |
+| Redis | `RedisSystemOptions.provided` | `url` |
+| Elasticsearch | `ElasticsearchSystemOptions.provided` | `url` |
+| Kafka | `KafkaSystemOptions.provided` | `bootstrapServers` |
+
+Each accepts the same `configureExposedConfiguration` and (where applicable) `cleanup` lambdas as the container mode.
+
+## Cleanup
+
+Container mode auto-cleans (containers die). Provided instances persist across runs. You must clean test data yourself. Every provided options class accepts a `cleanup` lambda that runs on suite teardown.
 
 ```kotlin
-// Container-based
-Stove()
-  .with {
-    redis {
-      RedisOptions(
-        cleanup = { client ->
-          client.connect().sync().flushdb()
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "redis.host=${cfg.host}",
-            "redis.port=${cfg.port}",
-            "redis.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
+postgresql {
+  PostgresqlOptions.provided(
+    jdbcUrl = TestRunContext.jdbcUrl,
+    cleanup = { ops ->
+      ops.execute("DROP SCHEMA IF EXISTS ${TestRunContext.schemaName} CASCADE")
+    },
+    configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+  )
+}
 
-// Provided instance
-Stove()
-  .with {
-    redis {
-      RedisOptions.provided(
-        host = "localhost",
-        port = 6379,
-        password = "password",
-        database = 8,
-        cleanup = { client ->
-          client.connect().sync().flushdb()
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "redis.host=${cfg.host}",
-            "redis.port=${cfg.port}",
-            "redis.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### PostgreSQL
-
-```kotlin
-// Container-based
-Stove()
-  .with {
-    postgresql {
-      PostgresqlOptions(
-        databaseName = "testdb",
-        cleanup = { operations ->
-          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    postgresql {
-      PostgresqlOptions.provided(
-        jdbcUrl = "jdbc:postgresql://localhost:5432/testdb",
-        host = "localhost",
-        port = 5432,
-        databaseName = "testdb",
-        username = "postgres",
-        password = "postgres",
-        runMigrations = true,
-        cleanup = { operations ->
-          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### MySQL
-
-```kotlin
-// Container-based
-Stove()
-  .with {
-    mysql {
-      MySqlOptions(
-        databaseName = "testdb",
-        cleanup = { operations ->
-          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    mysql {
-      MySqlOptions.provided(
-        jdbcUrl = "jdbc:mysql://localhost:3306/testdb",
-        host = "localhost",
-        port = 3306,
-        databaseName = "testdb",
-        username = "root",
-        password = "password",
-        runMigrations = true,
-        cleanup = { operations ->
-          operations.execute("DELETE FROM users WHERE email LIKE '%@test.com'")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### MSSQL
-
-```kotlin
-// Container-based
-Stove()
-  .with {
-    mssql {
-      MsSqlOptions(
-        applicationName = "stove-tests",
-        databaseName = "testdb",
-        userName = "sa",
-        password = "YourStrong@Passw0rd",
-        cleanup = { operations ->
-          operations.execute("DELETE FROM Orders WHERE OrderDate < GETDATE() - 1")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    mssql {
-      MsSqlOptions.provided(
-        jdbcUrl = "jdbc:sqlserver://localhost:1433;databaseName=testdb",
-        host = "localhost",
-        port = 1433,
-        databaseName = "testdb",
-        username = "sa",
-        password = "YourStrong@Passw0rd",
-        runMigrations = true,
-        cleanup = { operations ->
-          operations.execute("DELETE FROM Orders WHERE OrderDate < GETDATE() - 1")
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "spring.datasource.url=${cfg.jdbcUrl}",
-            "spring.datasource.username=${cfg.username}",
-            "spring.datasource.password=${cfg.password}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### MongoDB
-
-```kotlin
-// Container-based
-Stove()
-  .with {
-    mongodb {
-      MongodbSystemOptions(
-        cleanup = { client ->
-          client.getDatabase("testdb").drop()
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "mongodb.uri=${cfg.connectionString}",
-            "mongodb.host=${cfg.host}",
-            "mongodb.port=${cfg.port}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    mongodb {
-      MongodbSystemOptions.provided(
-        connectionString = "mongodb://localhost:27017",
-        host = "localhost",
-        port = 27017,
-        cleanup = { client ->
-          client.getDatabase("testdb").drop()
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "mongodb.uri=${cfg.connectionString}",
-            "mongodb.host=${cfg.host}",
-            "mongodb.port=${cfg.port}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-### Elasticsearch
-
-```kotlin
-// Container-based
-Stove()
-  .with {
-    elasticsearch {
-      ElasticsearchSystemOptions(
-        cleanup = { esClient ->
-          esClient.indices().delete { it.index("test-*") }
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "elasticsearch.host=${cfg.host}",
-            "elasticsearch.port=${cfg.port}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-
-// Provided instance
-Stove()
-  .with {
-    elasticsearch {
-      ElasticsearchSystemOptions.provided(
-        host = "localhost",
-        port = 9200,
-        password = "", // Leave empty if security is disabled
-        runMigrations = true,
-        cleanup = { esClient ->
-          esClient.indices().delete { it.index("test-*") }
-        },
-        configureExposedConfiguration = { cfg ->
-          listOf(
-            "elasticsearch.host=${cfg.host}",
-            "elasticsearch.port=${cfg.port}"
-          )
-        }
-      )
-    }
-  }
-  .run()
-```
-
-## Cleanup Function
-
-The `cleanup` parameter is available for both container-based and provided instance modes. It executes during `close()` before the system is stopped - this ensures cleanup runs after all tests have completed.
-
-### Use Cases
-
-1. **Clear test data** from previous runs
-2. **Reset state** to a known baseline
-3. **Delete test-specific records** that shouldn't persist
-
-### Example with Container Mode and keepDependenciesRunning
-
-The cleanup function is especially useful when using containers with `keepDependenciesRunning`:
-
-```kotlin
-Stove {
-  keepDependenciesRunning()
-}.with {
-  couchbase {
-    CouchbaseSystemOptions(
-      defaultBucket = "myBucket",
-      cleanup = { cluster ->
-        // Clean test data between runs when reusing containers
-        cluster.query("DELETE FROM `myBucket` WHERE type = 'test'")
-      },
-      configureExposedConfiguration = { cfg ->
-        listOf(
-          "couchbase.hosts=${cfg.hostsWithPort}",
-          "couchbase.username=${cfg.username}",
-          "couchbase.password=${cfg.password}"
-        )
+kafka {
+  KafkaSystemOptions.provided(
+    bootstrapServers = "shared-kafka:9092",
+    cleanup = { admin ->
+      val testTopics = admin.listTopics().names().get()
+        .filter { it.startsWith(TestRunContext.topicPrefix) }
+      if (testTopics.isNotEmpty()) {
+        admin.deleteTopics(testTopics).all().get()
       }
-    )
-  }
-}.run()
+    },
+    configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+  )
+}
 ```
 
-## Migration Handling
+## Migrations
 
-When using provided instances, migrations are controlled by the `runMigrations` parameter in the `.provided()` function:
+By default, migrations run only in container mode (you don't want test migrations smashing shared schemas). Opt-in for provided:
 
-- **`runMigrations = true` (default for databases)**: Migrations will run on every test execution
-- **`runMigrations = false` (default for Kafka/Redis)**: Migrations are skipped
-
-```kotlin hl_lines="4 11"
-Stove()
-  .with {
-    postgresql {
-      PostgresqlOptions.provided(
-        jdbcUrl = "jdbc:postgresql://localhost:5432/mydb",
-        host = "localhost",
-        port = 5432,
-        databaseName = "mydb",
-        username = "user",
-        password = "pass",
-        runMigrations = false, // Schema already exists
-        configureExposedConfiguration = { cfg -> listOf(/* ... */) }
-      )
-    }
-  }
-  .run()
+```kotlin
+postgresql {
+  PostgresqlOptions.provided(
+    jdbcUrl = "...",
+    runMigrations = true,   // default: false for provided
+    /* ... */
+  ).migrations { register<CreateTablesMigration>() }
+}
 ```
+
+Apply with care on shared infra.
 
 ## Limitations
 
-When using provided instances, some operations are not available:
+| Feature | Container | Provided |
+|---|---|---|
+| `pause()` / `unpause()` | ✓ | ✗ |
+| `inspect()` for container internals | ✓ | ✗ |
+| Automatic cleanup | ✓ | manual via `cleanup` lambda |
+| `keepDependenciesRunning` | yes (container survives) | n/a (you didn't start it) |
 
-- **`pause()`** - Cannot pause an external instance
-- **`unpause()`** - Cannot unpause an external instance
-- **`inspect()`** - Container inspection not available
+<a id="test-isolation-with-shared-infrastructure"></a>
 
-These methods will log a warning and return without effect when called on a provided instance.
+## Shared infrastructure: isolation pattern
 
-## Complete Example
-
-Here's a complete setup for a CI/CD pipeline using provided instances:
+Parallel CI runs against the same Postgres/Kafka collide without isolation. Solution: **unique resource prefix per run.**
 
 ```kotlin
-class TestSetup : AbstractProjectConfig() {
+object TestRunContext {
+  val runId: String = System.getenv("CI_JOB_ID")
+    ?: UUID.randomUUID().toString().take(8)
+
+  val schemaName  = "test_$runId"
+  val topicPrefix = "test_${runId}_"
+  val indexPrefix = "test_${runId}_"
+  val keyPrefix   = "test:${runId}:"
+}
+```
+
+Wire it everywhere:
+
+=== "PostgreSQL"
+
+    ```kotlin
+    postgresql {
+      PostgresqlOptions.provided(
+        jdbcUrl = "jdbc:postgresql://shared-db:5432/test?currentSchema=${TestRunContext.schemaName}",
+        cleanup = { ops ->
+          ops.execute("DROP SCHEMA IF EXISTS ${TestRunContext.schemaName} CASCADE")
+        },
+        configureExposedConfiguration = { cfg -> listOf(
+          "spring.datasource.url=${cfg.jdbcUrl}"
+        ) }
+      )
+    }
+    ```
+
+=== "Kafka"
+
+    ```kotlin
+    springBoot(withParameters = listOf(
+      "app.kafka.topic.orders=${TestRunContext.topicPrefix}orders",
+      "app.kafka.topic.audit=${TestRunContext.topicPrefix}audit"
+    ))
+
+    kafka {
+      KafkaSystemOptions.provided(
+        bootstrapServers = "shared-kafka:9092",
+        cleanup = { admin ->
+          val topics = admin.listTopics().names().get()
+            .filter { it.startsWith(TestRunContext.topicPrefix) }
+          if (topics.isNotEmpty()) admin.deleteTopics(topics).all().get()
+        },
+        configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+      )
+    }
+    ```
+
+=== "Elasticsearch"
+
+    ```kotlin
+    springBoot(withParameters = listOf(
+      "app.es.index.products=${TestRunContext.indexPrefix}products"
+    ))
+
+    elasticsearch {
+      ElasticsearchSystemOptions.provided(
+        url = "http://shared-es:9200",
+        cleanup = { client ->
+          client.indices().delete { it.index("${TestRunContext.indexPrefix}*") }
+        },
+        configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+      )
+    }
+    ```
+
+=== "Redis"
+
+    ```kotlin
+    springBoot(withParameters = listOf(
+      "app.cache.prefix=${TestRunContext.keyPrefix}"
+    ))
+
+    redis {
+      RedisSystemOptions.provided(
+        url = "redis://shared-redis:6379",
+        cleanup = { client ->
+          val keys = client.keys("${TestRunContext.keyPrefix}*")
+          if (keys.isNotEmpty()) client.del(*keys.toTypedArray())
+        },
+        configureExposedConfiguration = { cfg -> listOf(/* ... */) }
+      )
+    }
+    ```
+
+=== "MongoDB / Couchbase / Cassandra"
+
+    Same idea: prefix collection / bucket / table names, drop in `cleanup`. See each system's reference for the exact API.
+
+### Isolation cheat sheet
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Parallel runs read each other's rows | Same schema/topic/index name | Add `runId` to resource prefix |
+| Cleanup leaves orphans | Cleanup ran but missed a prefix | Log `TestRunContext.runId` at suite start; reconcile during nightly job |
+| Run hangs forever | App writing to prefixed topics that don't exist | Enable broker-level auto-create or pre-create topics in setup |
+
+## Complete CI/CD example
+
+```kotlin
+class CIE2EConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
-    Stove()
-      .with {
-        httpClient {
-          HttpClientSystemOptions(baseUrl = "http://localhost:8080")
-        }
-        bridge()
-        couchbase {
-          CouchbaseSystemOptions.provided(
-            connectionString = System.getenv("COUCHBASE_CONNECTION_STRING"),
-            username = System.getenv("COUCHBASE_USERNAME"),
-            password = System.getenv("COUCHBASE_PASSWORD"),
-            defaultBucket = "app-bucket",
-            runMigrations = true,
-            cleanup = { cluster ->
-              cluster.query("DELETE FROM `app-bucket` WHERE _type = 'test'")
-            },
-            configureExposedConfiguration = { cfg ->
-              listOf(
-                "couchbase.hosts=${cfg.hostsWithPort}",
-                "couchbase.username=${cfg.username}",
-                "couchbase.password=${cfg.password}"
-              )
-            }
-          )
-        }
-        kafka {
-          KafkaSystemOptions.provided(
-            bootstrapServers = System.getenv("KAFKA_BOOTSTRAP_SERVERS"),
-            configureExposedConfiguration = { cfg ->
-              listOf(
-                "kafka.bootstrapServers=${cfg.bootstrapServers}",
-                "kafka.interceptorClasses=${cfg.interceptorClass}"
-              )
-            }
-          )
-        }
-        springBoot(
-          runner = { params ->
-            com.example.Application.run(params)
-          }
+    Stove().with {
+      httpClient {
+        HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+      }
+
+      postgresql {
+        PostgresqlOptions.provided(
+          jdbcUrl = "jdbc:postgresql://shared-db:5432/test?currentSchema=${TestRunContext.schemaName}",
+          username = System.getenv("PG_USER"),
+          password = System.getenv("PG_PASS"),
+          cleanup = { ops ->
+            ops.execute("DROP SCHEMA IF EXISTS ${TestRunContext.schemaName} CASCADE")
+          },
+          configureExposedConfiguration = { cfg -> listOf(
+            "spring.datasource.url=${cfg.jdbcUrl}",
+            "spring.datasource.username=${cfg.username}",
+            "spring.datasource.password=${cfg.password}"
+          ) }
         )
       }
-      .run()
+
+      kafka {
+        KafkaSystemOptions.provided(
+          bootstrapServers = System.getenv("KAFKA_BOOTSTRAP"),
+          cleanup = { admin ->
+            admin.listTopics().names().get()
+              .filter { it.startsWith(TestRunContext.topicPrefix) }
+              .takeIf { it.isNotEmpty() }
+              ?.let { admin.deleteTopics(it).all().get() }
+          },
+          configureExposedConfiguration = { cfg -> listOf(
+            "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}"
+          ) }
+        )
+      }
+
+      springBoot(
+        runner = { params -> com.app.run(params) },
+        withParameters = listOf(
+          "app.kafka.topic.orders=${TestRunContext.topicPrefix}orders"
+        )
+      )
+    }.run()
   }
 
-  override suspend fun afterProject() {
-    Stove.stop()
-  }
+  override suspend fun afterProject() = Stove.stop()
 }
 ```
 
-## Test Isolation with Shared Infrastructure
+## Best practices
 
-!!! warning "Critical: Prevent Test Run Collisions"
+- :white_check_mark: Always log `TestRunContext.runId` at suite start for forensic debugging
+- :white_check_mark: Reconcile orphans nightly (cleanup hooks can fail mid-run)
+- :white_check_mark: Use stable `CI_JOB_ID` over random when available. Easier to trace
+- :x: Don't share a single schema/topic across runs
+- :x: Don't skip cleanup hooks "for speed". Debt compounds
 
-    When using provided instances (shared infrastructure), **multiple test runs can interfere with each other** if they use the same resource names. This is especially important in CI/CD pipelines where parallel builds may run against the same infrastructure.
+## Related
 
-### The Problem
-
-Consider this scenario:
-- Build #1 creates records in `orders` table
-- Build #2 starts while Build #1 is still running
-- Build #2 reads Build #1's test data → **Test failures!**
-- Both builds try to create the same Kafka topic → **Conflicts!**
-
-### The Solution: Unique Resource Prefixes
-
-Generate unique prefixes for each test run and use them for all resource names:
-
-```kotlin
-object TestRunContext {
-    // Unique prefix for this test run
-    val runId: String = System.getenv("CI_JOB_ID") 
-        ?: System.getenv("BUILD_NUMBER")
-        ?: UUID.randomUUID().toString().take(8)
-    
-    // Resource names with unique prefixes
-    val databaseName = "testdb_$runId"
-    val topicPrefix = "test_${runId}_"
-    val indexPrefix = "test_${runId}_"
-    val bucketPrefix = "test_${runId}_"
-    val cacheKeyPrefix = "test:$runId:"
-}
-```
-
-### Implementation by System
-
-#### PostgreSQL / MSSQL - Unique Database
-
-```kotlin
-Stove()
-    .with {
-        postgresql {
-            PostgresqlOptions.provided(
-                jdbcUrl = "jdbc:postgresql://shared-db:5432/${TestRunContext.databaseName}",
-                host = "shared-db",
-                port = 5432,
-                databaseName = TestRunContext.databaseName,
-                username = "postgres",
-                password = "postgres",
-                runMigrations = true,  // Creates tables in unique database
-                cleanup = { ops ->
-                    // Optional: cleanup is less critical with unique database
-                    ops.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf("spring.datasource.url=${cfg.jdbcUrl}")
-                }
-            )
-        }
-        springBoot(
-            withParameters = listOf(
-                "spring.datasource.url=jdbc:postgresql://shared-db:5432/${TestRunContext.databaseName}"
-            )
-        )
-    }
-```
-
-!!! tip "Database Creation"
-    You can create the database using Stove's migration system:
-    ```kotlin
-    class CreateDatabaseMigration : DatabaseMigration<PostgresSqlMigrationContext> {
-        override val order: Int = 0  // Run first
-        
-        override suspend fun execute(connection: PostgresSqlMigrationContext) {
-            connection.operations.execute(
-                "CREATE DATABASE IF NOT EXISTS ${TestRunContext.databaseName}"
-            )
-        }
-    }
-    ```
-
-!!! tip "Multiple Databases"
-    If your application uses multiple databases in production (e.g., separate databases for users, orders, analytics), you can create all of them via migrations and expose separate connection URLs:
-    
-    ```kotlin
-    configureExposedConfiguration = { cfg ->
-        val baseUrl = "jdbc:postgresql://${cfg.host}:${cfg.port}"
-        listOf(
-            "db.users.url=$baseUrl/users_${TestRunContext.runId}",
-            "db.orders.url=$baseUrl/orders_${TestRunContext.runId}",
-            "db.analytics.url=$baseUrl/analytics_${TestRunContext.runId}",
-            // ... common credentials
-        )
-    }
-    ```
-    
-    See [PostgreSQL - Multiple Databases](06-postgresql.md#multiple-databases) for a complete guide.
-
-#### Kafka - Unique Topic Prefix
-
-```kotlin
-Stove()
-    .with {
-        kafka {
-            KafkaSystemOptions.provided(
-                bootstrapServers = "shared-kafka:9092",
-                topicSuffixes = TopicSuffixes(
-                    // These are suffixes for error/retry topics
-                    error = ".error",
-                    retry = ".retry"
-                ),
-                cleanup = { admin ->
-                    // Delete only topics with our prefix
-                    val ourTopics = admin.listTopics().names().get()
-                        .filter { it.startsWith(TestRunContext.topicPrefix) }
-                    if (ourTopics.isNotEmpty()) {
-                        admin.deleteTopics(ourTopics).all().get()
-                    }
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "kafka.bootstrapServers=${cfg.bootstrapServers}",
-                        "kafka.topicPrefix=${TestRunContext.topicPrefix}"
-                    )
-                }
-            )
-        }
-        springBoot(
-            withParameters = listOf(
-                // Application uses this prefix for all topic names
-                "kafka.topic.orders=${TestRunContext.topicPrefix}orders",
-                "kafka.topic.payments=${TestRunContext.topicPrefix}payments",
-                "kafka.topic.notifications=${TestRunContext.topicPrefix}notifications"
-            )
-        )
-    }
-```
-
-#### Elasticsearch - Unique Index Prefix
-
-```kotlin
-Stove()
-    .with {
-        elasticsearch {
-            ElasticsearchSystemOptions.provided(
-                host = "shared-elasticsearch",
-                port = 9200,
-                password = "",
-                runMigrations = true,
-                cleanup = { esClient ->
-                    // Delete only indices with our prefix
-                    esClient.indices().delete { 
-                        it.index("${TestRunContext.indexPrefix}*") 
-                    }
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "elasticsearch.host=${cfg.host}",
-                        "elasticsearch.indexPrefix=${TestRunContext.indexPrefix}"
-                    )
-                }
-            )
-        }
-        springBoot(
-            withParameters = listOf(
-                "elasticsearch.index.products=${TestRunContext.indexPrefix}products",
-                "elasticsearch.index.orders=${TestRunContext.indexPrefix}orders"
-            )
-        )
-    }
-```
-
-#### Couchbase - Unique Document Prefix or Scope
-
-```kotlin
-Stove()
-    .with {
-        couchbase {
-            CouchbaseSystemOptions.provided(
-                connectionString = "couchbase://shared-couchbase:8091",
-                username = "admin",
-                password = "password",
-                defaultBucket = "shared-bucket",
-                runMigrations = true,
-                cleanup = { cluster ->
-                    // Delete only documents with our prefix
-                    cluster.query(
-                        "DELETE FROM `shared-bucket` WHERE META().id LIKE '${TestRunContext.bucketPrefix}%'"
-                    )
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "couchbase.documentPrefix=${TestRunContext.bucketPrefix}"
-                    )
-                }
-            )
-        }
-        springBoot(
-            withParameters = listOf(
-                "couchbase.documentPrefix=${TestRunContext.bucketPrefix}"
-            )
-        )
-    }
-```
-
-#### MongoDB - Unique Database or Collection Prefix
-
-```kotlin
-Stove()
-    .with {
-        mongodb {
-            MongodbSystemOptions.provided(
-                connectionString = "mongodb://shared-mongo:27017",
-                host = "shared-mongo",
-                port = 27017,
-                cleanup = { client ->
-                    // Drop our unique database
-                    client.getDatabase(TestRunContext.databaseName).drop()
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "mongodb.database=${TestRunContext.databaseName}"
-                    )
-                }
-            )
-        }
-        springBoot(
-            withParameters = listOf(
-                "spring.data.mongodb.database=${TestRunContext.databaseName}"
-            )
-        )
-    }
-```
-
-#### Redis - Unique Key Prefix or Database Number
-
-```kotlin
-Stove()
-    .with {
-        redis {
-            // Use unique database number (0-15) or key prefix
-            val redisDb = (TestRunContext.runId.hashCode() and 0xF)  // 0-15
-            
-            RedisOptions.provided(
-                host = "shared-redis",
-                port = 6379,
-                password = "",
-                database = redisDb,
-                cleanup = { client ->
-                    // Flush only our database
-                    client.connect().sync().flushdb()
-                },
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "spring.redis.database=$redisDb"
-                    )
-                }
-            )
-        }
-    }
-```
-
-### Complete CI/CD Example
-
-```kotlin
-object TestRunContext {
-    val runId: String = System.getenv("CI_JOB_ID") 
-        ?: System.getenv("GITHUB_RUN_ID")
-        ?: System.getenv("BUILD_NUMBER")
-        ?: UUID.randomUUID().toString().take(8)
-    
-    val databaseName = "test_$runId"
-    val topicPrefix = "test_${runId}_"
-    val indexPrefix = "test_${runId}_"
-    val keyPrefix = "test:$runId:"
-    
-    init {
-        println("Test Run ID: $runId")
-        println("Database: $databaseName")
-        println("Topic Prefix: $topicPrefix")
-    }
-}
-
-class TestConfig : AbstractProjectConfig() {
-    override suspend fun beforeProject() {
-        Stove()
-            .with {
-                postgresql {
-                    PostgresqlOptions.provided(
-                        jdbcUrl = "jdbc:postgresql://db:5432/${TestRunContext.databaseName}",
-                        databaseName = TestRunContext.databaseName,
-                        // ... other config
-                    )
-                }
-                kafka {
-                    KafkaSystemOptions.provided(
-                        bootstrapServers = "kafka:9092",
-                        cleanup = { admin ->
-                            val topics = admin.listTopics().names().get()
-                                .filter { it.startsWith(TestRunContext.topicPrefix) }
-                            if (topics.isNotEmpty()) admin.deleteTopics(topics).all().get()
-                        },
-                        // ... other config
-                    )
-                }
-                elasticsearch {
-                    ElasticsearchSystemOptions.provided(
-                        host = "elasticsearch",
-                        port = 9200,
-                        cleanup = { es ->
-                            es.indices().delete { it.index("${TestRunContext.indexPrefix}*") }
-                        },
-                        // ... other config
-                    )
-                }
-                springBoot(
-                    runner = { params -> myApp.run(params) },
-                    withParameters = listOf(
-                        "spring.datasource.url=jdbc:postgresql://db:5432/${TestRunContext.databaseName}",
-                        "kafka.topic.orders=${TestRunContext.topicPrefix}orders",
-                        "elasticsearch.index.products=${TestRunContext.indexPrefix}products"
-                    )
-                )
-            }
-            .run()
-    }
-    
-    override suspend fun afterProject() {
-        Stove.stop()
-        // Resources cleaned up by cleanup functions
-    }
-}
-```
-
-### Best Practices for Test Isolation
-
-| Practice | Description |
-|----------|-------------|
-| **Use CI Job ID** | Most CI systems provide unique job/build IDs - use them |
-| **Prefix everything** | <span data-rn="underline" data-rn-color="#ff9800">Database names, topics, indices, keys</span> - all should be unique |
-| **Clean up after** | Use cleanup functions to remove test data |
-| **Short prefixes** | Keep prefixes short but unique (8 chars usually enough) |
-| **Log the prefix** | Print the run ID at test start for debugging |
-| **Application support** | Your app must read resource names from configuration |
-
-### Debugging Isolation Issues
-
-If tests fail intermittently in CI:
-
-1. **Check for hardcoded names:**
-   ```kotlin
-   // ❌ Bad - hardcoded
-   val topic = "orders"
-   
-   // ✅ Good - configurable
-   val topic = config.getString("kafka.topic.orders")
-   ```
-
-2. **Verify cleanup runs:**
-   ```kotlin
-   cleanup = { admin ->
-       println("Cleaning up topics with prefix: ${TestRunContext.topicPrefix}")
-       // ... cleanup code
-   }
-   ```
-
-3. **Check parallel job interference:**
-   ```bash
-   # In CI logs, look for overlapping run IDs
-   grep "Test Run ID" build-*.log
-   ```
+- [Best Practices · shared infra](../best-practices.md#shared-infra-isolation-ci)
+- [Provided Application](19-provided-application.md) for black-box smoke testing
+- Per-system reference: [PostgreSQL](06-postgresql.md), [Kafka](02-kafka.md), [MongoDB](07-mongodb.md), [Redis](09-redis.md), ...

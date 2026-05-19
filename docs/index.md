@@ -1,153 +1,197 @@
-# Stove
+---
+hide:
+  - navigation
+  - toc
+---
 
-Stove is an end-to-end testing framework for JVM applications. It boots your real application together with the dependencies it actually uses, so your tests exercise the real runtime flow instead of a hand-built harness full of mocks.
-
-If your service talks to HTTP APIs, Kafka, databases, Redis, gRPC services, or external providers, Stove lets you bring those pieces into one test setup and assert the full behavior in one place.
-
-Since JVM languages interoperate, your application and tests do not need to use the same language. Write the app in Java, Kotlin, or Scala, and keep the tests consistent on the Stove side.
-
-When running in container mode (the default), Stove uses [Testcontainers](https://github.com/testcontainers/testcontainers-java) under the hood, so <span data-rn="underline" data-rn-color="#ff9800">Docker</span> must be installed. If you use [provided instances](Components/11-provided-instances.md) to connect to existing infrastructure, Docker is not required.
-
-!!! note "Not a Replacement for Unit Tests"
-    Stove is for end-to-end and component tests, not unit tests. Keep unit tests for fast feedback on isolated logic.
-
-## See It Quickly
-
-The core idea is small:
-
-```kotlin
-Stove()
-  .with {
-    httpClient {
-      HttpClientSystemOptions(baseUrl = "http://localhost:8080")
-    }
-
-    kafka {
-      KafkaSystemOptions(...)
-    }
-
-    springBoot(
-      runner = { params -> run(params) },
-      withParameters = listOf("server.port=8080")
-    )
-  }
-  .run()
-
-stove {
-  http {
-    get<String>("/hello") { body ->
-      body shouldContain "hello"
+<div class="stove-hero" markdown="0">
+  <div class="stove-hero-text">
+    <span class="stove-hero-kicker">End-to-end testing, for real</span>
+    <h1>Test the runtime.<br/>Not the mocks.</h1>
+    <p>Stove boots your real application with the real dependencies it talks to. Postgres, Kafka, Redis, gRPC, WireMock, and more. And lets you assert the whole flow in one DSL. JVM-first. Polyglot-ready.</p>
+    <div class="stove-hero-actions">
+      <a class="stove-btn primary" href="#setup-wizard">✨ Launch the wizard</a>
+      <a class="stove-btn" href="getting-started/">Getting started</a>
+      <a class="stove-btn" href="recipes/">Recipes</a>
+      <a class="stove-btn" href="https://github.com/Trendyol/stove">GitHub →</a>
+    </div>
+  </div>
+  <div class="stove-term">
+<span class="stove-term-body"><span class="c">// boot real app + real deps, assert real behavior</span>
+<span class="f">stove</span> {
+  <span class="f">http</span> {
+    <span class="f">post</span>&lt;<span class="f">OrderResponse</span>&gt;(<span class="s">"/orders"</span>, body) {
+      <span class="f">it</span>.<span class="f">status</span> <span class="k">shouldBe</span> <span class="n">201</span>
     }
   }
-
-  kafka {
-    shouldBePublished<String> { it.contains("created") }
+  <span class="f">postgresql</span> {
+    <span class="f">shouldQuery</span>&lt;<span class="f">OrderRow</span>&gt;(
+      query = <span class="s">"SELECT * FROM orders"</span>,
+      mapper = { row -> <span class="f">OrderRow</span>(row.string(<span class="s">"id"</span>)) }
+    ) {
+      <span class="f">it</span>.<span class="f">size</span> <span class="k">shouldBe</span> <span class="n">1</span>
+    }
   }
-}
+  <span class="f">kafka</span> {
+    <span class="f">shouldBePublished</span>&lt;<span class="f">OrderCreated</span>&gt; {
+      <span class="f">actual</span>.<span class="f">userId</span> == <span class="f">userId</span>
+    }
+  }
+}<span class="blink"></span></span>
+  </div>
+</div>
+
+<div class="stove-tldr" markdown>
+<span class="stove-tldr-title">In 30 seconds</span>
+Stove starts your app the way production starts it, hands it real containers (or shared infra), and gives you one DSL to drive HTTP, query databases, mock external calls, assert published events, and verify distributed traces. When a test fails, you get a timeline. Not a stack trace.
+</div>
+
+## What you actually get
+
+<div class="stove-ribbon" markdown="0">
+  <div class="stove-ribbon-item">
+    <div class="icon">🧱</div>
+    <strong>Real dependencies</strong>
+    <p>Testcontainers under the hood, or wire to existing infra without Docker.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🎛️</div>
+    <strong>One DSL, many systems</strong>
+    <p>Same <code>stove { }</code> works across Postgres, Kafka, gRPC, WireMock, Redis, Mongo, ES, more.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🌐</div>
+    <strong>Polyglot AUT</strong>
+    <p>Spring/Ktor/Micronaut/Quarkus, plus Go/Python/Rust via process or container mode.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🛰️</div>
+    <strong>Failures with context</strong>
+    <p>One Gradle plugin (<code>stoveTracing</code>) + dashboard + MCP turn a red test into a call chain, timeline, and agent-readable evidence.</p>
+  </div>
+</div>
+
+## <a id="setup-wizard"></a>Setup wizard
+
+Pick runtime, framework, databases, mocks, observability. Wizard composes a paste-ready Gradle block, `StoveConfig.kt`, and a working sample test. State syncs to the URL; share or bookmark presets.
+
+<div id="stove-wizard" markdown="0">
+  <noscript>
+    <div class="admonition warning">
+      <p class="admonition-title">JavaScript required</p>
+      <p>Wizard needs JavaScript. Follow <a href="getting-started/">Getting Started</a> for manual setup.</p>
+    </div>
+  </noscript>
+</div>
+
+## Pick your path { .stove-centered }
+
+<div class="stove-centered" markdown>
+
+```mermaid
+graph LR
+    A([What are you testing?]) --> B[JVM app]
+    A --> C[Polyglot binary]
+    A --> D[Already-deployed]
+    B --> B1[Spring · Ktor · Micronaut · Quarkus]
+    C --> C1[process mode<br/>goApp · processApp]
+    C --> C2[container mode<br/>any Docker image]
+    D --> D1[providedApplication<br/>black-box smoke]
+    B1 & C1 & C2 & D1 --> Z[Pick systems · add observability · write tests]
 ```
-
-You start the real app, bring up only the dependencies you need, and assert through the surfaces that matter.
-
-## Choose Your Path
-
-<div class="grid cards" markdown>
-
--   **New to Stove**
-
-    Start with the shared setup model and learn the basic DSL once.
-
-    [Getting Started](getting-started.md)
-
--   **Already know your framework**
-
-    Pick the starter that matches your application runtime.
-
-    [Supported Frameworks](frameworks/index.md)
-
--   **Already know your dependencies**
-
-    Add Kafka, PostgreSQL, WireMock, HTTP, tracing, and other components as needed.
-
-    [Components](Components/index.md)
-
--   **Want a working project**
-
-    Open a complete example and adapt it instead of starting from scratch.
-
-    [Examples on GitHub](https://github.com/Trendyol/stove/tree/main/examples)
-
--   **Running without Docker or in CI/CD**
-
-    Use provided instances to connect to existing infrastructure instead of spinning up containers.
-
-    [Provided Instances](Components/11-provided-instances.md)
-
--   **Debugging failures or using AI agents**
-
-    Add the local dashboard, tracing, and MCP so failures come with timelines, spans, snapshots, and compact agent-readable evidence.
-
-    [Dashboard & MCP](Components/18-dashboard.md)
 
 </div>
 
-## Why Stove
+<div class="grid cards stove-cards-center" markdown>
 
-The JVM ecosystem has strong application frameworks, but e2e setup is usually framework-specific and repetitive. Teams end up rebuilding the same boilerplate around containers, startup wiring, ports, config injection, test cleanup, and diagnostics.
+-   :material-magic-staff: **Setup Wizard**
 
-Stove standardizes that workflow:
+    Compose your full setup in clicks.
 
-- start physical dependencies first (via containers or [provided instances](Components/11-provided-instances.md))
-- boot the real application through its actual entrypoint
-- inject container/runtime configuration into the app
-- assert through HTTP, Kafka, gRPC, databases, and tracing
-- keep the same test DSL across frameworks
+    [Open wizard](wizard.md) · <a class="open-in-wizard" data-sys="postgresql,kafka" data-mk="wiremock">Postgres + Kafka + WireMock preset</a>
 
-<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One testing model, multiple JVM stacks.</span>
+-   :material-book-open-page-variant: **Getting Started**
 
-## Supported Frameworks
+    The shared setup model and the DSL, once.
 
-Stove currently ships starters for:
+    [Read tutorial](getting-started.md)
 
-- [Spring Boot](frameworks/spring-boot.md)
-- [Ktor](frameworks/ktor.md)
-- [Micronaut](frameworks/micronaut.md)
-- [Quarkus](frameworks/quarkus.md)
+-   :material-book-multiple: **Recipes**
 
-See the full overview in [Supported Frameworks](frameworks/index.md), including `bridge()` availability and example links.
+    Real flows with full setup + test you can paste.
 
-## What You Can Test
+    [Browse recipes](recipes/index.md)
 
-Stove composes framework starters with pluggable components, so you can match your test environment to your production architecture.
+-   :material-language-kotlin: **JVM frameworks**
 
-- APIs through [HTTP](Components/05-http.md) or [gRPC](Components/12-grpc.md)
-- event flows through [Kafka](Components/02-kafka.md)
-- persistence through [PostgreSQL](Components/06-postgresql.md), [MySQL](Components/16-mysql.md), [MongoDB](Components/07-mongodb.md), [Cassandra](Components/17-cassandra.md), [Redis](Components/09-redis.md), and more
-- external integrations through [WireMock](Components/04-wiremock.md) and [gRPC Mock](Components/14-grpc-mock.md)
-- execution diagnostics through [Reporting](Components/13-reporting.md), [Tracing](Components/15-tracing.md), the [Dashboard](Components/18-dashboard.md), and [MCP](Components/21-mcp.md)
+    Spring Boot · Ktor · Micronaut · Quarkus.
 
-## High Level Architecture
+    [Framework guides](frameworks/index.md)
+
+-   :material-language-go: **Polyglot**
+
+    Go, Python, Node, Rust via process or container mode.
+
+    [Polyglot overview](other-languages/index.md)
+
+-   :material-cloud-check: **Smoke test deployed app**
+
+    Run Stove against an already-running service. Any language.
+
+    [Provided Application](Components/19-provided-application.md)
+
+-   :material-server-network: **No Docker / CI shared infra**
+
+    Connect to existing databases and brokers. Testcontainers off.
+
+    [Provided Instances](Components/11-provided-instances.md)
+
+-   :material-chart-timeline: **When a test fails**
+
+    Scroll story: assertion → console → dashboard → trace → MCP triage.
+
+    [Walk through it](observability/when-it-fails.md)
+
+</div>
+
+## Why Stove exists
+
+JVM frameworks are great. E2E test setup around them is not. Teams keep rebuilding the same boilerplate. Container lifecycle, port wiring, config injection, cleanup, diagnostics. Once per service.
+
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>Without Stove</h4>
+    <ul>
+      <li>Hand-rolled Testcontainers setup per service</li>
+      <li>Mocks where they shouldn't be (the bug hides there)</li>
+      <li>Framework-specific test harness rewritten each time</li>
+      <li>Failures = stack traces, no context</li>
+      <li>Polyglot services need a separate test stack</li>
+    </ul>
+  </div>
+  <div>
+    <h4>With Stove</h4>
+    <ul>
+      <li>Declarative <code>Stove().with { ... }</code> wiring</li>
+      <li>Real DB, real broker, real downstream (mocked at the boundary)</li>
+      <li>One DSL across Spring · Ktor · Micronaut · Quarkus</li>
+      <li>Failures come with timeline, trace tree, MCP evidence</li>
+      <li>Go/Python/Rust apps drop in via process/container mode</li>
+    </ul>
+  </div>
+</div>
+
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One testing model. Many stacks.</span>
+
+## Architecture
 
 ![Stove architecture](./assets/stove_architecture.svg)
 
-## Start Here
-
-1. Read [Getting Started](getting-started.md) for the shared setup.
-2. Open your starter guide under [Supported Frameworks](frameworks/index.md).
-3. Add the components you need from [Components](Components/index.md).
-4. Add [Dashboard](Components/18-dashboard.md) and [MCP](Components/21-mcp.md) when you want local observability or AI-agent triage.
-5. Compare against a real project in [examples](https://github.com/Trendyol/stove/tree/main/examples).
-
-## Building From Source
-
-To build Stove locally you need:
-
-- JDK 17+
-- Docker
-
-Then run:
+## Building from source
 
 ```shell
+# requires JDK 17+ and Docker
 ./gradlew build
 ```
 
-Want the background and motivation? Read the original [Medium article](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5).
+Background and motivation: original [Medium article](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5).

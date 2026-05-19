@@ -1,0 +1,15 @@
+"label": |-
+  Go binary (goApp)
+"gradle":
+- |-
+  com.trendyol:stove-process
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.process.goApp
+"runner": |-
+  goApp {
+    GoAppOptions(
+      sourcePath = "../app",
+      readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+    )
+  }
