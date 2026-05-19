@@ -1,0 +1,19 @@
+"label": |-
+  Tracing (OpenTelemetry)
+"family": |-
+  obs
+"gradle":
+- |-
+  com.trendyol:stove-tracing
+"pluginLine": |-
+  id("com.trendyol.stove.tracing") version "$stoveVersion"
+"pluginBlock": |-
+  stoveTracing {
+    serviceName.set("my-service")
+    testTaskNames.set(listOf("e2eTest"))
+  }
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.tracing.tracing
+"configure": |-
+  tracing { enableSpanReceiver() }

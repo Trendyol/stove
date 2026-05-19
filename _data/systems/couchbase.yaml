@@ -1,0 +1,29 @@
+"label": |-
+  Couchbase
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-couchbase
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.couchbase.*
+"configure": |-
+  couchbase {
+    CouchbaseSystemOptions(
+      bucketName = "testbucket",
+      configureExposedConfiguration = { cfg ->
+        listOf(
+          "couchbase.hosts=${cfg.hostsWithPort}",
+          "couchbase.username=${cfg.username}",
+          "couchbase.password=${cfg.password}"
+        )
+      }
+    )
+  }
+"testDsl": |-
+  couchbase {
+    shouldGet<MyDoc>("doc-id") {
+      it.field shouldBe "value"
+    }
+  }

@@ -1,0 +1,23 @@
+"label": |-
+  WireMock (HTTP mock)
+"family": |-
+  mock
+"gradle":
+- |-
+  com.trendyol:stove-wiremock
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.wiremock.*
+"configure": |-
+  wiremock {
+    WireMockSystemOptions(
+      port = 0,
+      configureExposedConfiguration = { cfg ->
+        listOf("clients.payment.url=${cfg.baseUrl}")
+      }
+    )
+  }
+"testDsl": |-
+  wiremock {
+    mockGet("/inventory/item-1", statusCode = 200, responseBody = mapOf("inStock" to true).some())
+  }

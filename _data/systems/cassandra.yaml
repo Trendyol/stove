@@ -1,0 +1,20 @@
+"label": |-
+  Cassandra
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-cassandra
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.cassandra.*
+"configure": |-
+  cassandra {
+    CassandraSystemOptions(
+      configureExposedConfiguration = { cfg ->
+        listOf("cassandra.contact-points=${cfg.contactPoints}")
+      }
+    )
+  }
+"testDsl": |-
+  cassandra { shouldExecute("SELECT now() FROM system.local") }

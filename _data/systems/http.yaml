@@ -1,0 +1,22 @@
+"label": |-
+  HTTP client
+"family": |-
+  interaction
+"gradle":
+- |-
+  com.trendyol:stove-http
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.http.httpClient
+- |-
+  com.trendyol.stove.testing.e2e.http.HttpClientSystemOptions
+"configure": |-
+  httpClient {
+    HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+  }
+"testDsl": |-
+  http {
+    get<String>("/hello") { body ->
+      body shouldContain "hello"
+    }
+  }

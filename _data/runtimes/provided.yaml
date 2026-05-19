@@ -1,0 +1,12 @@
+"label": |-
+  Already-deployed app
+"gradle": []
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.providedApplication
+"runner": |-
+  providedApplication {
+    ProvidedApplicationOptions(
+      readiness = ReadinessStrategy.HttpGet(url = "https://staging.myapp.com/health")
+    )
+  }

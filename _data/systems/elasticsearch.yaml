@@ -1,0 +1,24 @@
+"label": |-
+  Elasticsearch
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-elasticsearch
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.elasticsearch.*
+"configure": |-
+  elasticsearch {
+    ElasticsearchSystemOptions(
+      configureExposedConfiguration = { cfg ->
+        listOf("elasticsearch.url=${cfg.url}")
+      }
+    )
+  }
+"testDsl": |-
+  elasticsearch {
+    shouldGet<MyDoc>(index = "orders", key = "id") {
+      it.field shouldBe "x"
+    }
+  }

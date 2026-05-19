@@ -1,0 +1,20 @@
+"label": |-
+  Spring Boot
+"gradle":
+- |-
+  com.trendyol:stove-spring
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.springBoot
+"runner": |-
+  springBoot(
+    runner = { params ->
+      {pkg}.run(params) {
+        addTestDependencies {
+          // bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
+          // bean { StoveSerde.jackson.anyByteArraySerde() }
+        }
+      }
+    },
+    withParameters = listOf("server.port=8080")
+  )

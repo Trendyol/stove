@@ -1,0 +1,16 @@
+"label": |-
+  Docker image (container mode)
+"gradle":
+- |-
+  com.trendyol:stove-container
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.container.containerApp
+"runner": |-
+  containerApp {
+    ContainerAppOptions(
+      image = "ghcr.io/your-org/your-app:latest",
+      exposedPorts = listOf(8080),
+      readiness = ReadinessStrategy.HttpGet(path = "/health")
+    )
+  }

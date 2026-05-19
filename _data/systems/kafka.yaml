@@ -1,0 +1,33 @@
+"label": |-
+  Kafka
+"family": |-
+  messaging
+"gradle":
+- |-
+  com.trendyol:stove-kafka
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.messaging.kafka.*
+- |-
+  com.trendyol.stove.testing.e2e.serialization.StoveSerde
+- |-
+  kotlin.time.Duration.Companion.seconds
+"configure": |-
+  kafka {
+    KafkaSystemOptions(
+      serde = StoveSerde.jackson.anyByteArraySerde(),
+      configureExposedConfiguration = { cfg ->
+        listOf(
+          "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}",
+          "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}",
+          "spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}"
+        )
+      }
+    )
+  }
+"testDsl": |-
+  kafka {
+    shouldBePublished<Map<String, Any>> {
+      actual["type"] == "created"
+    }
+  }

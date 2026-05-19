@@ -1,0 +1,20 @@
+"label": |-
+  MySQL
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-mysql
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.database.mysql.*
+"configure": |-
+  mysql {
+    MySqlOptions(
+      configureExposedConfiguration = { cfg ->
+        listOf("spring.datasource.url=${cfg.jdbcUrl}")
+      }
+    )
+  }
+"testDsl": |-
+  mysql { shouldExecute("SELECT 1") }

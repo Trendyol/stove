@@ -1,0 +1,19 @@
+"label": |-
+  Kotest (recommended)
+"gradle":
+- |-
+  com.trendyol:stove-extensions-kotest
+"extensionLine": |-
+  StoveKotestExtension()
+"classBase": |-
+  FunSpec
+"classImport": |-
+  io.kotest.core.spec.style.FunSpec
+"sample": |-
+  class SampleE2ETest : FunSpec({
+    test("end-to-end flow works") {
+      stove {
+  {body}
+      }
+    }
+  })

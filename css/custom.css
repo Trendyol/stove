@@ -1,7 +1,76 @@
 /* Wider content area */
 .md-grid {
-    max-width: 1400px;
+    max-width: 1480px;
     margin-top: 0;
+}
+
+/* Right-side TOC removed globally — it overlapped wide redesigned content.
+   Headings are still anchor-linkable; nav sidebar handles structure. */
+.md-sidebar--secondary { display: none !important; }
+
+/* On full-bleed pages (home, wizard — front-matter hides nav too),
+   widen the grid so wizard's two-column layout doesn't squeeze. */
+.md-main:has(.md-sidebar--primary[hidden]) .md-grid {
+    max-width: 1700px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+/* Small breathing room at top */
+.md-main__inner { margin-top: 0.5rem; }
+[data-md-component="content"] article.md-content__inner { padding-top: 0.6rem; }
+.md-content { min-width: 0; }
+
+/* Polish the card grid Material renders for `<div class="grid cards">` */
+.md-typeset .grid.cards > :is(ul, ol) > li,
+.md-typeset .grid.cards > .card,
+.md-typeset .grid > .card {
+    border-radius: 10px;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.md-typeset .grid.cards > :is(ul, ol) > li:hover,
+.md-typeset .grid.cards > .card:hover,
+.md-typeset .grid > .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--md-primary-fg-color);
+}
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > :is(ul, ol) > li:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Section headings get a subtle underline accent */
+.md-typeset h2 {
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Center alignment helpers */
+.md-typeset h2.stove-centered,
+h2.stove-centered {
+    text-align: center;
+    border-bottom: none;
+}
+.stove-centered {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+.stove-centered .mermaid,
+.stove-centered pre {
+    margin-left: auto;
+    margin-right: auto;
+}
+.stove-centered .mermaid svg {
+    display: block;
+    margin: 0 auto;
+}
+/* Center "Pick your path" card grid items */
+.md-typeset .grid.cards.stove-cards-center {
+    justify-content: center;
+}
+.md-typeset .grid.cards.stove-cards-center > :is(ul, ol) {
+    justify-content: center;
 }
 
 /* Responsive images */
@@ -66,3 +135,1037 @@ code {
     font-size: inherit;
     color: inherit;
 }
+
+/* ===================== Setup Wizard ===================== */
+[x-cloak] { display: none !important; }
+
+.sw-root {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 12px;
+    padding: 1.5rem 1.5rem 1.25rem;
+    background: var(--md-default-bg-color);
+    margin: 1.5rem 0 2.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+[data-md-color-scheme="slate"] .sw-root {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.sw-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    counter-reset: sw;
+}
+.sw-steps li {
+    flex: 1 1 auto;
+    min-width: 8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    opacity: 0.7;
+    transition: all 0.15s;
+}
+.sw-steps li.active {
+    opacity: 1;
+    border-color: var(--md-primary-fg-color);
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+}
+[data-md-color-scheme="slate"] .sw-steps li.active {
+    background: var(--md-accent-fg-color, var(--md-primary-fg-color));
+    color: #ffffff;
+}
+.sw-steps li.done { opacity: 1; }
+.sw-step-num {
+    display: inline-flex;
+    width: 1.4rem; height: 1.4rem;
+    align-items: center; justify-content: center;
+    background: var(--md-default-fg-color--lightest);
+    color: var(--md-default-fg-color);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.7rem;
+}
+.sw-steps li.active .sw-step-num {
+    background: var(--md-primary-bg-color);
+    color: var(--md-primary-fg-color);
+}
+
+.sw-panel h3 { margin-top: 0; }
+
+.sw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 0.7rem;
+    margin: 0.8rem 0 1rem;
+}
+.sw-grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+
+.sw-card {
+    display: block;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    cursor: pointer;
+    background: var(--md-code-bg-color);
+    transition: border-color 0.12s, background 0.12s;
+}
+.sw-card input { margin-right: 0.45rem; vertical-align: middle; }
+.sw-card strong { display: inline; font-size: 0.85rem; }
+.sw-card p { margin: 0.25rem 0 0; font-size: 0.72rem; opacity: 0.8; }
+.sw-card.selected {
+    border-color: var(--md-primary-fg-color);
+    background: var(--md-primary-fg-color--light);
+}
+
+.sw-row {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin: 0.5rem 0 1rem;
+}
+.sw-row label {
+    flex: 1 1 12rem;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+}
+.sw-row input {
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 6px;
+    background: var(--md-code-bg-color);
+    color: inherit;
+    font-family: var(--md-code-font-family);
+    font-size: 0.78rem;
+}
+
+.sw-toggle {
+    display: block;
+    font-size: 0.78rem;
+    margin: 0.4rem 0;
+}
+.sw-toggle input { margin-right: 0.45rem; }
+
+.sw-hint {
+    font-size: 0.74rem;
+    opacity: 0.75;
+    margin: 0.2rem 0 0.6rem;
+}
+
+.sw-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.2rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+.sw-btn {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    background: transparent;
+    color: inherit;
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.sw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.sw-btn.primary {
+    background: var(--md-primary-fg-color);
+    border-color: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+}
+.sw-step-counter { font-size: 0.75rem; opacity: 0.7; }
+
+.sw-output { margin: 1rem 0 1.4rem; }
+.sw-output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+.sw-output-head h4 { margin: 0; font-size: 0.85rem; }
+.sw-copy {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    background: var(--md-code-bg-color);
+    color: inherit;
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+.sw-output pre {
+    margin: 0;
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 32rem;
+}
+
+/* ----- Live preview pane (sticky right rail) ----- */
+.sw-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+    gap: 1.5rem;
+    align-items: start;
+}
+@media (max-width: 1200px) {
+    .sw-layout {
+        grid-template-columns: 1fr;
+    }
+    .sw-preview { display: none; }
+}
+
+.sw-main { min-width: 0; }
+
+.sw-preview-sticky {
+    position: sticky;
+    top: 4.5rem;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 10px;
+    padding: 0.7rem 0.8rem;
+    background: var(--md-code-bg-color);
+    max-height: calc(100vh - 6rem);
+    display: flex;
+    flex-direction: column;
+}
+.sw-preview-stats {
+    display: flex;
+    gap: 0.7rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.7rem;
+    opacity: 0.85;
+    flex-wrap: wrap;
+}
+.sw-preview-stats strong { color: var(--md-primary-fg-color); margin-right: 0.15rem; }
+.sw-preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+.sw-preview-head h4 { margin: 0; font-size: 0.8rem; opacity: 0.8; }
+.sw-preview-code {
+    flex: 1 1 auto;
+    margin: 0 0 0.6rem;
+    overflow: auto;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    padding: 0.6rem;
+    background: var(--md-default-bg-color);
+    border-radius: 6px;
+    border: 1px solid var(--md-default-fg-color--lightest);
+}
+.sw-preview-code code {
+    font-family: var(--md-code-font-family);
+    white-space: pre;
+}
+.sw-preview-go { text-align: center; }
+
+.sw-error {
+    border: 1px solid #c0392b;
+    background: #c0392b22;
+    color: var(--md-default-fg-color);
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+
+.sw-callout {
+    margin-top: 0.9rem;
+    border-left: 3px solid var(--md-primary-fg-color);
+    background: rgba(0, 150, 136, 0.10);
+    padding: 0.55rem 0.8rem;
+    font-size: 0.78rem;
+    border-radius: 0 6px 6px 0;
+}
+.sw-callout strong {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+/* ===================== Dark Kotlin code blocks =====================
+   Apply Darcula-ish dark theme to all .language-kotlin blocks in both
+   light and dark site modes. Matches the KotlinPlayground vibe. */
+.md-typeset .highlight.language-kotlin,
+.md-typeset .highlight.language-kt,
+.md-typeset .language-kotlin .highlight,
+.md-typeset pre > code.language-kotlin {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+    border-radius: 8px;
+}
+.md-typeset .highlight.language-kotlin pre,
+.md-typeset .highlight.language-kt pre,
+.md-typeset .language-kotlin .highlight pre {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+}
+.md-typeset .highlight.language-kotlin code,
+.md-typeset .highlight.language-kt code,
+.md-typeset .language-kotlin .highlight code,
+.md-typeset .language-kotlin > code,
+.md-typeset .language-kt > code {
+    background-color: transparent !important;
+    color: #bcbec4 !important;
+}
+
+/* Pygments token recolor for .language-kotlin only */
+.md-typeset .language-kotlin .k,    /* keyword */
+.md-typeset .language-kotlin .kc,   /* keyword constant (true/false/null) */
+.md-typeset .language-kotlin .kd,   /* keyword declaration (val/var/fun/class) */
+.md-typeset .language-kotlin .kn,   /* keyword namespace (import/package) */
+.md-typeset .language-kotlin .kp,   /* keyword pseudo */
+.md-typeset .language-kotlin .kr,   /* keyword reserved */
+.md-typeset .language-kotlin .kt    /* keyword type */ {
+    color: #cf8e6d !important;       /* darcula orange */
+    font-weight: 600;
+}
+.md-typeset .language-kotlin .s,
+.md-typeset .language-kotlin .s1,
+.md-typeset .language-kotlin .s2,
+.md-typeset .language-kotlin .sb,
+.md-typeset .language-kotlin .sc,
+.md-typeset .language-kotlin .sd,
+.md-typeset .language-kotlin .se,
+.md-typeset .language-kotlin .sh,
+.md-typeset .language-kotlin .si,
+.md-typeset .language-kotlin .sx,
+.md-typeset .language-kotlin .sr {
+    color: #6aab73 !important;       /* darcula green strings */
+}
+.md-typeset .language-kotlin .c,
+.md-typeset .language-kotlin .c1,
+.md-typeset .language-kotlin .cm,
+.md-typeset .language-kotlin .cp,
+.md-typeset .language-kotlin .cs {
+    color: #7a7e85 !important;       /* darcula gray comments */
+    font-style: italic;
+}
+.md-typeset .language-kotlin .m,
+.md-typeset .language-kotlin .mi,
+.md-typeset .language-kotlin .mf,
+.md-typeset .language-kotlin .mh,
+.md-typeset .language-kotlin .mo {
+    color: #2aacb8 !important;       /* darcula blue numbers */
+}
+.md-typeset .language-kotlin .n,    /* name */
+.md-typeset .language-kotlin .nb,   /* builtin */
+.md-typeset .language-kotlin .nv    /* variable */ {
+    color: #bcbec4 !important;
+}
+.md-typeset .language-kotlin .nf {   /* function */
+    color: #56a8f5 !important;
+}
+.md-typeset .language-kotlin .nc {   /* class name */
+    color: #56a8f5 !important;
+}
+.md-typeset .language-kotlin .na {   /* attribute / annotation */
+    color: #b3ae60 !important;
+}
+.md-typeset .language-kotlin .o,    /* operator */
+.md-typeset .language-kotlin .p     /* punctuation */ {
+    color: #bcbec4 !important;
+}
+.md-typeset .language-kotlin .w {    /* whitespace */
+    color: inherit !important;
+}
+/* Highlighted lines (hl_lines="...") stay readable on dark bg */
+.md-typeset .language-kotlin .hll {
+    background-color: rgba(255, 199, 89, 0.10) !important;
+    border-left: 2px solid #cf8e6d;
+}
+/* Line numbers + anchors */
+.md-typeset .language-kotlin .linenos,
+.md-typeset .language-kotlin .linenodiv,
+.md-typeset .language-kotlin .lineno,
+.md-typeset .language-kotlin .normal,
+.md-typeset .language-kotlin .filename {
+    color: #5c5e64 !important;
+    background-color: transparent !important;
+}
+.md-typeset .language-kotlin a.headerlink,
+.md-typeset .language-kotlin .gh {
+    color: #5c5e64 !important;
+}
+/* Copy button keeps its tinting from Material; just nudge contrast */
+.md-typeset .language-kotlin .md-clipboard {
+    color: #7a7e85;
+}
+.md-typeset .language-kotlin .md-clipboard:hover {
+    color: #bcbec4;
+}
+/* Filename / title strip above the block */
+.md-typeset .language-kotlin .filename {
+    background: #2b2d30 !important;
+    border-bottom: 1px solid #1e1f22;
+}
+
+/* Same dark theme for .language-properties (Kotest config etc.) */
+.md-typeset .highlight.language-properties,
+.md-typeset .language-properties .highlight {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+}
+.md-typeset .language-properties .na { color: #56a8f5 !important; }
+.md-typeset .language-properties .s, .md-typeset .language-properties .s2 { color: #6aab73 !important; }
+.md-typeset .language-properties .o { color: #bcbec4 !important; }
+.md-typeset .language-properties .c, .md-typeset .language-properties .c1 { color: #7a7e85 !important; font-style: italic; }
+
+/* Wizard live preview + output panes — same dark theme */
+.sw-preview-code,
+.sw-output pre {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+    border-color: #2b2d30 !important;
+}
+.sw-preview-code code,
+.sw-output pre code {
+    color: #bcbec4 !important;
+    background: transparent !important;
+}
+
+/* Cookbook card code sections */
+.cb-section pre {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+    border-color: #2b2d30 !important;
+}
+.cb-section pre code {
+    color: #bcbec4 !important;
+    background: transparent !important;
+}
+
+/* Anatomy diagram code (annotated explainer block) */
+.stove-anatomy-code {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+    border-color: #2b2d30 !important;
+}
+
+/* Stove pair (do/don't) inline code panels go dark too for consistency */
+.stove-do pre,
+.stove-dont pre {
+    background-color: #1e1f22 !important;
+    color: #bcbec4 !important;
+}
+.stove-do pre code,
+.stove-dont pre code {
+    color: #bcbec4 !important;
+}
+
+/* Stove TLDR + callout already light-tinted; leave them alone.
+   Stove terminal frames stay on #0d1117 (slightly darker, intentional). */
+
+/* ===================== Cookbook ===================== */
+.cb-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 1rem 0 1.5rem;
+}
+#cb-filter {
+    flex: 1 1 18rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    background: var(--md-default-bg-color);
+    color: inherit;
+    font-size: 0.85rem;
+}
+.cb-family-chips {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+.cb-chip {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    background: transparent;
+    color: inherit;
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.72rem;
+    text-transform: lowercase;
+}
+.cb-chip.active {
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    border-color: var(--md-primary-fg-color);
+}
+
+.cb-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+    gap: 1rem;
+}
+.cb-card {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 10px;
+    background: var(--md-default-bg-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: border-color 0.12s, transform 0.12s;
+}
+.cb-card:hover {
+    border-color: var(--md-primary-fg-color);
+    transform: translateY(-2px);
+}
+.cb-card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+    background: var(--md-code-bg-color);
+    flex-wrap: wrap;
+}
+.cb-card-head strong { font-size: 0.95rem; }
+.cb-family-tag {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: var(--md-default-fg-color--lightest);
+    opacity: 0.75;
+}
+.cb-card-id {
+    margin-left: auto;
+    font-size: 0.7rem;
+    opacity: 0.55;
+}
+.cb-card-id code {
+    background: transparent;
+    padding: 0;
+}
+.cb-card-body {
+    padding: 0.6rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    flex: 1;
+}
+.cb-section pre {
+    margin: 0;
+    background: var(--md-code-bg-color);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.68rem;
+    line-height: 1.45;
+    overflow-x: auto;
+    border: 1px solid var(--md-default-fg-color--lightest);
+}
+.cb-section-head {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    opacity: 0.6;
+    margin-bottom: 0.25rem;
+}
+.cb-card-foot {
+    padding: 0.5rem 0.9rem 0.8rem;
+    display: flex;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+/* ----- Open-in-wizard inline button ----- */
+.open-in-wizard {
+    display: inline-block;
+    border: 1px solid var(--md-primary-fg-color);
+    color: var(--md-primary-fg-color) !important;
+    border-radius: 999px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.72rem;
+    text-decoration: none !important;
+    transition: background 0.12s;
+}
+.open-in-wizard:hover {
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color) !important;
+}
+.open-in-wizard::before {
+    content: "✨ ";
+    margin-right: 0.15rem;
+}
+
+/* ----- "When a test fails" scroll story ----- */
+.story {
+    margin: 1.5rem 0 3rem;
+}
+.story-step {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--md-default-fg-color--lightest);
+    opacity: 0.3;
+    transform: translateY(12px);
+    transition: opacity 0.5s, transform 0.5s;
+}
+.story-step.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+.story-step.reverse {
+    grid-template-columns: 1fr 1fr;
+}
+.story-step h3 { margin-top: 0; }
+.story-frame {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--md-code-font-family);
+    font-size: 0.72rem;
+    line-height: 1.45;
+    overflow: auto;
+    border: 1px solid #30363d;
+    white-space: pre;
+}
+.story-frame .err { color: #ff7b72; }
+.story-frame .ok { color: #7ee787; }
+.story-frame .info { color: #79c0ff; }
+.story-frame .dim { color: #8b949e; }
+@media (max-width: 900px) {
+    .story-step { grid-template-columns: 1fr; }
+}
+
+/* ===================== Stove Pattern Library =====================
+   Reusable creative blocks. Apply via class names in raw HTML inside MD.
+*/
+
+/* ---- Hero banner ---- */
+.stove-hero {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem 0 2.5rem;
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+    margin-bottom: 2rem;
+}
+.stove-hero-text h1 {
+    font-size: 2.6rem;
+    line-height: 1.1;
+    margin: 0 0 0.7rem;
+    letter-spacing: -0.02em;
+}
+.stove-hero-text .stove-hero-kicker {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--md-primary-bg-color);
+    background: var(--md-primary-fg-color);
+    padding: 0.28rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 0.7rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+[data-md-color-scheme="slate"] .stove-hero-text .stove-hero-kicker {
+    /* In dark mode, the primary fg gets desaturated; use a stronger accent */
+    color: #ffffff;
+    background: var(--md-accent-fg-color, var(--md-primary-fg-color));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.stove-hero-text p {
+    font-size: 1rem;
+    opacity: 0.85;
+    max-width: 36rem;
+    margin: 0 0 1rem;
+}
+.stove-hero-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.7rem;
+}
+.stove-btn {
+    display: inline-block;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    text-decoration: none !important;
+    font-size: 0.82rem;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    color: inherit !important;
+    background: var(--md-code-bg-color);
+    transition: transform 0.12s, border-color 0.12s;
+}
+.stove-btn:hover { transform: translateY(-1px); border-color: var(--md-primary-fg-color); }
+.stove-btn.primary {
+    background: var(--md-primary-fg-color);
+    border-color: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color) !important;
+}
+@media (max-width: 900px) {
+    .stove-hero { grid-template-columns: 1fr; padding: 1.2rem 0 1.5rem; }
+    .stove-hero-text h1 { font-size: 2rem; }
+}
+
+/* ---- Terminal frame (dark, monospace) ---- */
+.stove-term {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-family: var(--md-code-font-family);
+    font-size: 0.74rem;
+    line-height: 1.55;
+    border: 1px solid #30363d;
+    overflow: auto;
+    white-space: pre;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+.stove-term::before {
+    content: "● ● ●";
+    position: absolute;
+    top: 0.55rem;
+    left: 0.8rem;
+    color: #6e7681;
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+}
+.stove-term-body {
+    margin-top: 0.8rem;
+    display: block;
+}
+.stove-term .k { color: #ff7b72; }       /* keyword */
+.stove-term .s { color: #a5d6ff; }       /* string */
+.stove-term .c { color: #8b949e; font-style: italic; } /* comment */
+.stove-term .f { color: #d2a8ff; }       /* function/identifier */
+.stove-term .n { color: #79c0ff; }       /* number */
+.stove-term .ok { color: #7ee787; }
+.stove-term .err { color: #ff7b72; }
+.stove-term .dim { color: #8b949e; }
+.stove-term .blink {
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    background: #c9d1d9;
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    animation: stove-blink 1.1s steps(1) infinite;
+}
+@keyframes stove-blink { 50% { opacity: 0; } }
+
+/* ---- "In 30 seconds" callout ---- */
+.stove-tldr {
+    border-left: 4px solid var(--md-primary-fg-color);
+    background: var(--md-primary-fg-color--light);
+    padding: 0.9rem 1.1rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0 1.5rem;
+}
+.stove-tldr-title {
+    display: inline-block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: var(--md-primary-bg-color);
+    background: var(--md-primary-fg-color);
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.4rem;
+}
+[data-md-color-scheme="slate"] .stove-tldr-title {
+    color: #ffffff;
+    background: var(--md-accent-fg-color, var(--md-primary-fg-color));
+}
+/* In dark mode the very-light primary tint loses contrast as a background.
+   Use a translucent primary instead so text remains legible. */
+[data-md-color-scheme="slate"] .stove-tldr {
+    background: rgba(0, 150, 136, 0.18);
+}
+.stove-tldr p:last-child { margin-bottom: 0; }
+
+/* ---- Anatomy diagram (annotated code) ---- */
+.stove-anatomy {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    align-items: start;
+}
+.stove-anatomy-code {
+    background: var(--md-code-bg-color);
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-family: var(--md-code-font-family);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+}
+.stove-anatomy-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.stove-note {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 8px;
+    padding: 0.55rem 0.8rem;
+    background: var(--md-default-bg-color);
+    font-size: 0.78rem;
+}
+.stove-note-tag {
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    line-height: 1.4rem;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    font-weight: 700;
+    font-size: 0.7rem;
+    margin-right: 0.45rem;
+}
+.stove-anatomy-code .anchor {
+    display: inline-block;
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    width: 1.05rem;
+    height: 1.05rem;
+    line-height: 1.05rem;
+    text-align: center;
+    vertical-align: middle;
+    margin: 0 0.3rem;
+}
+@media (max-width: 900px) { .stove-anatomy { grid-template-columns: 1fr; } }
+
+/* ---- Do / Don't paired cards ---- */
+.stove-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+}
+.stove-do, .stove-dont {
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid;
+    font-size: 0.85rem;
+}
+.stove-do {
+    border-color: #2ea04344;
+    background: #2ea04314;
+}
+.stove-dont {
+    border-color: #d7393944;
+    background: #d7393914;
+}
+.stove-do::before, .stove-dont::before {
+    display: inline-block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.45rem;
+    margin-right: 0.4rem;
+}
+.stove-do::before {
+    content: "✓ do";
+    background: #2ea043;
+    color: white;
+}
+.stove-dont::before {
+    content: "✗ don't";
+    background: #d73939;
+    color: white;
+}
+.stove-do pre, .stove-dont pre {
+    background: rgba(0,0,0,0.04);
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    margin: 0.4rem 0;
+    overflow-x: auto;
+}
+[data-md-color-scheme="slate"] .stove-do pre,
+[data-md-color-scheme="slate"] .stove-dont pre { background: rgba(0,0,0,0.3); }
+@media (max-width: 800px) { .stove-pair { grid-template-columns: 1fr; } }
+
+/* ---- Step timeline (vertical) ---- */
+.stove-timeline {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 2rem;
+    position: relative;
+}
+.stove-timeline::before {
+    content: "";
+    position: absolute;
+    left: 1.1rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background: var(--md-default-fg-color--lightest);
+}
+.stove-timeline > li {
+    position: relative;
+    padding: 0.4rem 0 1.6rem 3rem;
+}
+.stove-timeline > li::before {
+    counter-increment: stove-step;
+    content: counter(stove-step);
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px var(--md-default-bg-color);
+}
+.stove-timeline { counter-reset: stove-step; }
+.stove-timeline h3 { margin: 0 0 0.4rem; }
+.stove-timeline .stove-step-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    margin-bottom: 0.35rem;
+}
+[data-md-color-scheme="slate"] .stove-timeline .stove-step-tag {
+    background: var(--md-accent-fg-color, var(--md-primary-fg-color));
+    color: #ffffff;
+}
+
+/* ---- Catalog grid (system cards) ---- */
+.stove-catalog {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.9rem;
+    margin: 1rem 0 1.5rem;
+}
+.stove-cat-group {
+    margin: 1.5rem 0;
+}
+.stove-cat-group h3 {
+    margin: 0 0 0.6rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+    border: 0;
+    padding: 0;
+}
+.stove-sys-card {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 10px;
+    padding: 0.8rem 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    background: var(--md-default-bg-color);
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.stove-sys-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--md-primary-fg-color);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+.stove-sys-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.stove-sys-card-head strong { font-size: 0.92rem; }
+.stove-sys-card-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: var(--md-default-fg-color--lightest);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.75;
+}
+.stove-sys-card-desc {
+    font-size: 0.76rem;
+    opacity: 0.82;
+    margin: 0;
+    flex: 1;
+}
+.stove-sys-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+}
+.stove-sys-card-actions a {
+    font-size: 0.72rem;
+    text-decoration: none !important;
+}
+
+/* ---- Side-by-side compare ---- */
+.stove-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+}
+.stove-compare > div {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+}
+.stove-compare h4 { margin: 0 0 0.5rem; }
+@media (max-width: 800px) { .stove-compare { grid-template-columns: 1fr; } }
+
+/* ---- Feature ribbon ---- */
+.stove-ribbon {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.8rem;
+    margin: 1rem 0 1.5rem;
+}
+.stove-ribbon-item {
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    background: linear-gradient(135deg, var(--md-primary-fg-color--light), transparent);
+    border: 1px solid var(--md-default-fg-color--lightest);
+}
+.stove-ribbon-item .icon {
+    font-size: 1.4rem;
+    margin-bottom: 0.3rem;
+}
+.stove-ribbon-item strong { display: block; font-size: 0.92rem; }
+.stove-ribbon-item p { margin: 0.25rem 0 0; font-size: 0.78rem; opacity: 0.82; }

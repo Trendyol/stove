@@ -1,0 +1,22 @@
+"label": |-
+  Redis
+"family": |-
+  database
+"gradle":
+- |-
+  com.trendyol:stove-redis
+"imports":
+- |-
+  com.trendyol.stove.testing.e2e.redis.*
+"configure": |-
+  redis {
+    RedisSystemOptions(
+      configureExposedConfiguration = { cfg ->
+        listOf("spring.data.redis.url=${cfg.url}")
+      }
+    )
+  }
+"testDsl": |-
+  redis {
+    client().connect().sync().get("order:1") shouldNotBe null
+  }

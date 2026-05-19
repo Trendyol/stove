@@ -12,7 +12,7 @@
       
       
       
-        <link rel="next" href="getting-started/">
+        <link rel="next" href="wizard/">
       
       
         
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#stove" class="md-skip">
+        <a href="#what-you-actually-get" class="md-skip">
           Skip to content
         </a>
       
@@ -247,17 +247,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="getting-started/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="wizard/" class="md-tabs__link">
+          
   
   
     
   
-  Getting Started
+  Start
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -275,7 +278,7 @@
   
     
   
-  Supported Frameworks
+  JVM Frameworks
 
         </a>
       </li>
@@ -297,7 +300,7 @@
   
     
   
-  Other Languages & Stacks
+  Polyglot
 
         </a>
       </li>
@@ -319,7 +322,7 @@
   
     
   
-  Components
+  Systems
 
         </a>
       </li>
@@ -332,17 +335,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="writing-custom-systems/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="observability/when-it-fails/" class="md-tabs__link">
+          
   
   
     
   
-  Writing Custom Systems
+  Observability
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -351,17 +357,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="best-practices/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="Components/10-bridge/" class="md-tabs__link">
+          
   
   
     
   
-  Best Practices
+  Concepts
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -370,17 +379,42 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="troubleshooting/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="best-practices/" class="md-tabs__link">
+          
   
   
     
   
-  Troubleshooting
+  Reference
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="recipes/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Recipes
+
+        </a>
+      </li>
+    
   
 
       
@@ -439,7 +473,9 @@
           
             
               
-              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden>
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -485,8 +521,6 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
-      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -529,8 +563,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -539,10 +571,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#see-it-quickly" class="md-nav__link">
+  <a href="#what-you-actually-get" class="md-nav__link">
     <span class="md-ellipsis">
       
-        See It Quickly
+        What you actually get
       
     </span>
   </a>
@@ -550,10 +582,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#choose-your-path" class="md-nav__link">
+  <a href="#setup-wizard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Choose Your Path
+        Setup wizard
       
     </span>
   </a>
@@ -561,10 +593,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-stove" class="md-nav__link">
+  <a href="#pick-your-path" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why Stove
+        Pick your path
       
     </span>
   </a>
@@ -572,10 +604,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-frameworks" class="md-nav__link">
+  <a href="#why-stove-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Supported Frameworks
+        Why Stove exists
       
     </span>
   </a>
@@ -583,32 +615,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-you-can-test" class="md-nav__link">
+  <a href="#architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What You Can Test
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#high-level-architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        High Level Architecture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#start-here" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start Here
+        Architecture
       
     </span>
   </a>
@@ -619,7 +629,7 @@
   <a href="#building-from-source" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Building From Source
+        Building from source
       
     </span>
   </a>
@@ -636,6 +646,152 @@
     
       
       
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cookbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="playground/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Playground
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -657,6 +813,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -706,7 +870,7 @@
   <span class="md-ellipsis">
     
   
-    Supported Frameworks
+    JVM Frameworks
   
 
     
@@ -728,7 +892,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Supported Frameworks
+    JVM Frameworks
   
 
           </label>
@@ -870,6 +1034,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -894,7 +1062,7 @@
   <span class="md-ellipsis">
     
   
-    Other Languages & Stacks
+    Polyglot
   
 
     
@@ -916,7 +1084,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Other Languages & Stacks
+    Polyglot
   
 
           </label>
@@ -1076,6 +1244,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/22-container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container AUT (any language)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/19-provided-application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Application (deployed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1094,38 +1318,6 @@
       
         
           
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
         
       
         
@@ -1164,7 +1356,7 @@
   <span class="md-ellipsis">
     
   
-    Components
+    Systems
   
 
     
@@ -1186,7 +1378,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Components
+    Systems
   
 
           </label>
@@ -1200,43 +1392,49 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="Components/01-couchbase/" class="md-nav__link">
+    
+    
+      
         
-  
-  
-  <span class="md-ellipsis">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
-  
-    Couchbase
-  
-
     
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/02-kafka/" class="md-nav__link">
-        
   
   
   <span class="md-ellipsis">
     
   
-    Kafka
+    Databases
   
 
     
@@ -1244,95 +1442,19 @@
   
   
 
-      </a>
-    </li>
-  
-
-              
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
             
-              
-                
   
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/03-elasticsearch/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Elasticsearch
+    Databases
   
 
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/04-wiremock/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    WireMock
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/05-http/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    HTTP Client
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -1349,258 +1471,6 @@
     
   
     PostgreSQL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/07-mongodb/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    MongoDB
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/08-mssql/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    MSSQL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/09-redis/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Redis
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/10-bridge/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Bridge
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/11-provided-instances/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Provided Instances
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/12-grpc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    gRPC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/13-reporting/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Reporting
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/14-grpc-mock/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    gRPC Mocking
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/15-tracing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Tracing
   
 
     
@@ -1649,6 +1519,90 @@
   
   
     <li class="md-nav__item">
+      <a href="Components/08-mssql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MSSQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/07-mongodb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MongoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/01-couchbase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Couchbase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="Components/17-cassandra/" class="md-nav__link">
         
   
@@ -1657,6 +1611,617 @@
     
   
     Cassandra
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/09-redis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/03-elasticsearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Elasticsearch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Messaging
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/02-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Network
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/05-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/12-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    gRPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mocks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Mocks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/04-wiremock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WireMock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/14-grpc-mock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    gRPC Mock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/20-multiple-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/11-provided-instances/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Instances
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Observability
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="observability/when-it-fails/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    When a Test Fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/13-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Components/15-tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
   
 
     
@@ -1726,6 +2291,71 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
               
                 
   
@@ -1733,14 +2363,14 @@
   
   
     <li class="md-nav__item">
-      <a href="Components/22-container/" class="md-nav__link">
+      <a href="Components/10-bridge/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Container AUT
+    Bridge
   
 
     
@@ -1761,42 +2391,14 @@
   
   
     <li class="md-nav__item">
-      <a href="Components/19-provided-application/" class="md-nav__link">
+      <a href="writing-custom-systems/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Provided Application
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="Components/20-multiple-systems/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Multiple Systems
+    Writing Custom Systems
   
 
     
@@ -1823,15 +2425,37 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="writing-custom-systems/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Writing Custom Systems
+    Reference
   
 
     
@@ -1839,13 +2463,22 @@
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
   
 
-    
-      
-      
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -1870,9 +2503,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -1894,6 +2528,118 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="recipes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Recipes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="recipes/order-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Order Placement Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1926,10 +2672,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -1947,8 +2693,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2087,10 +2833,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -2108,8 +2854,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2358,7 +3104,9 @@
             
             
               
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" hidden>
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -2366,8 +3114,6 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
-  
-    
   
   
     <label class="md-nav__title" for="__toc">
@@ -2377,10 +3123,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#see-it-quickly" class="md-nav__link">
+  <a href="#what-you-actually-get" class="md-nav__link">
     <span class="md-ellipsis">
       
-        See It Quickly
+        What you actually get
       
     </span>
   </a>
@@ -2388,10 +3134,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#choose-your-path" class="md-nav__link">
+  <a href="#setup-wizard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Choose Your Path
+        Setup wizard
       
     </span>
   </a>
@@ -2399,10 +3145,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-stove" class="md-nav__link">
+  <a href="#pick-your-path" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why Stove
+        Pick your path
       
     </span>
   </a>
@@ -2410,10 +3156,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-frameworks" class="md-nav__link">
+  <a href="#why-stove-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Supported Frameworks
+        Why Stove exists
       
     </span>
   </a>
@@ -2421,32 +3167,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-you-can-test" class="md-nav__link">
+  <a href="#architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What You Can Test
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#high-level-architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        High Level Architecture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#start-here" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start Here
+        Architecture
       
     </span>
   </a>
@@ -2457,7 +3181,7 @@
   <a href="#building-from-source" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Building From Source
+        Building from source
       
     </span>
   </a>
@@ -2477,6 +3201,8 @@
               
                 
 
+  
+
 
 
   
@@ -2486,137 +3212,179 @@
               <article class="md-content__inner md-typeset">
                 
                   
+  
+
 
 
   
   
 
 
-<h1 id="stove">Stove<a class="headerlink" href="#stove" title="Permanent link">&para;</a></h1>
-<p>Stove is an end-to-end testing framework for JVM applications. It boots your real application together with the dependencies it actually uses, so your tests exercise the real runtime flow instead of a hand-built harness full of mocks.</p>
-<p>If your service talks to HTTP APIs, Kafka, databases, Redis, gRPC services, or external providers, Stove lets you bring those pieces into one test setup and assert the full behavior in one place.</p>
-<p>Since JVM languages interoperate, your application and tests do not need to use the same language. Write the app in Java, Kotlin, or Scala, and keep the tests consistent on the Stove side.</p>
-<p>When running in container mode (the default), Stove uses <a href="https://github.com/testcontainers/testcontainers-java">Testcontainers</a> under the hood, so <span data-rn="underline" data-rn-color="#ff9800">Docker</span> must be installed. If you use <a href="Components/11-provided-instances/">provided instances</a> to connect to existing infrastructure, Docker is not required.</p>
-<div class="admonition note">
-<p class="admonition-title">Not a Replacement for Unit Tests</p>
-<p>Stove is for end-to-end and component tests, not unit tests. Keep unit tests for fast feedback on isolated logic.</p>
+<div class="stove-hero" markdown="0">
+  <div class="stove-hero-text">
+    <span class="stove-hero-kicker">End-to-end testing, for real</span>
+    <h1>Test the runtime.<br/>Not the mocks.</h1>
+    <p>Stove boots your real application with the real dependencies it talks to. Postgres, Kafka, Redis, gRPC, WireMock, and more. And lets you assert the whole flow in one DSL. JVM-first. Polyglot-ready.</p>
+    <div class="stove-hero-actions">
+      <a class="stove-btn primary" href="#setup-wizard">✨ Launch the wizard</a>
+      <a class="stove-btn" href="getting-started/">Getting started</a>
+      <a class="stove-btn" href="recipes/">Recipes</a>
+      <a class="stove-btn" href="https://github.com/Trendyol/stove">GitHub →</a>
+    </div>
+  </div>
+  <div class="stove-term">
+<span class="stove-term-body"><span class="c">// boot real app + real deps, assert real behavior</span>
+<span class="f">stove</span> {
+  <span class="f">http</span> {
+    <span class="f">post</span>&lt;<span class="f">OrderResponse</span>&gt;(<span class="s">"/orders"</span>, body) {
+      <span class="f">it</span>.<span class="f">status</span> <span class="k">shouldBe</span> <span class="n">201</span>
+    }
+  }
+  <span class="f">postgresql</span> {
+    <span class="f">shouldQuery</span>&lt;<span class="f">OrderRow</span>&gt;(
+      query = <span class="s">"SELECT * FROM orders"</span>,
+      mapper = { row -> <span class="f">OrderRow</span>(row.string(<span class="s">"id"</span>)) }
+    ) {
+      <span class="f">it</span>.<span class="f">size</span> <span class="k">shouldBe</span> <span class="n">1</span>
+    }
+  }
+  <span class="f">kafka</span> {
+    <span class="f">shouldBePublished</span>&lt;<span class="f">OrderCreated</span>&gt; {
+      <span class="f">actual</span>.<span class="f">userId</span> == <span class="f">userId</span>
+    }
+  }
+}<span class="blink"></span></span>
+  </div>
 </div>
-<h2 id="see-it-quickly">See It Quickly<a class="headerlink" href="#see-it-quickly" title="Permanent link">&para;</a></h2>
-<p>The core idea is small:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Stove</span><span class="p">()</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8080&quot;</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="n">KafkaSystemOptions</span><span class="p">(...)</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">springBoot</span><span class="p">(</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">      </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;server.port=8080&quot;</span><span class="p">)</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">)</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="k">get</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;/hello&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">-&gt;</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">      </span><span class="n">body</span><span class="w"> </span><span class="n">shouldContain</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="n">shouldBePublished</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">it</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;created&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="p">}</span>
-</span></code></pre></div>
-<p>You start the real app, bring up only the dependencies you need, and assert through the surfaces that matter.</p>
-<h2 id="choose-your-path">Choose Your Path<a class="headerlink" href="#choose-your-path" title="Permanent link">&para;</a></h2>
-<div class="grid cards">
+
+<div class="stove-tldr">
+<p><span class="stove-tldr-title">In 30 seconds</span>
+Stove starts your app the way production starts it, hands it real containers (or shared infra), and gives you one DSL to drive HTTP, query databases, mock external calls, assert published events, and verify distributed traces. When a test fails, you get a timeline. Not a stack trace.</p>
+</div>
+<h2 id="what-you-actually-get">What you actually get<a class="headerlink" href="#what-you-actually-get" title="Permanent link">&para;</a></h2>
+<div class="stove-ribbon" markdown="0">
+  <div class="stove-ribbon-item">
+    <div class="icon">🧱</div>
+    <strong>Real dependencies</strong>
+    <p>Testcontainers under the hood, or wire to existing infra without Docker.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🎛️</div>
+    <strong>One DSL, many systems</strong>
+    <p>Same <code>stove { }</code> works across Postgres, Kafka, gRPC, WireMock, Redis, Mongo, ES, more.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🌐</div>
+    <strong>Polyglot AUT</strong>
+    <p>Spring/Ktor/Micronaut/Quarkus, plus Go/Python/Rust via process or container mode.</p>
+  </div>
+  <div class="stove-ribbon-item">
+    <div class="icon">🛰️</div>
+    <strong>Failures with context</strong>
+    <p>One Gradle plugin (<code>stoveTracing</code>) + dashboard + MCP turn a red test into a call chain, timeline, and agent-readable evidence.</p>
+  </div>
+</div>
+
+<h2 id="setup-wizard"><a id="setup-wizard"></a>Setup wizard<a class="headerlink" href="#setup-wizard" title="Permanent link">&para;</a></h2>
+<p>Pick runtime, framework, databases, mocks, observability. Wizard composes a paste-ready Gradle block, <code>StoveConfig.kt</code>, and a working sample test. State syncs to the URL; share or bookmark presets.</p>
+<div id="stove-wizard" markdown="0">
+  <noscript>
+    <div class="admonition warning">
+      <p class="admonition-title">JavaScript required</p>
+      <p>Wizard needs JavaScript. Follow <a href="getting-started/">Getting Started</a> for manual setup.</p>
+    </div>
+  </noscript>
+</div>
+
+<h2 class="stove-centered" id="pick-your-path">Pick your path<a class="headerlink" href="#pick-your-path" title="Permanent link">&para;</a></h2>
+<div class="stove-centered">
+<pre class="mermaid"><code>graph LR
+    A([What are you testing?]) --&gt; B[JVM app]
+    A --&gt; C[Polyglot binary]
+    A --&gt; D[Already-deployed]
+    B --&gt; B1[Spring · Ktor · Micronaut · Quarkus]
+    C --&gt; C1[process mode&lt;br/&gt;goApp · processApp]
+    C --&gt; C2[container mode&lt;br/&gt;any Docker image]
+    D --&gt; D1[providedApplication&lt;br/&gt;black-box smoke]
+    B1 &amp; C1 &amp; C2 &amp; D1 --&gt; Z[Pick systems · add observability · write tests]</code></pre>
+</div>
+<div class="grid cards stove-cards-center">
 <ul>
 <li>
-<p><strong>New to Stove</strong></p>
-<p>Start with the shared setup model and learn the basic DSL once.</p>
-<p><a href="getting-started/">Getting Started</a></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.5 9a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5m-3.07-.85L2 20.59 3.41 22 15.85 9.57c-.6-.33-1.09-.82-1.42-1.42M13 5l.63-1.37L15 3l-1.37-.63L13 1l-.62 1.37L11 3l1.38.63zm8 0 .63-1.37L23 3l-1.37-.63L21 1l-.62 1.37L19 3l1.38.63zm0 4-.62 1.37L19 11l1.38.63L21 13l.63-1.37L23 11l-1.37-.63z"/></svg></span> <strong>Setup Wizard</strong></p>
+<p>Compose your full setup in clicks.</p>
+<p><a href="wizard/">Open wizard</a> · <a class="open-in-wizard" data-sys="postgresql,kafka" data-mk="wiremock">Postgres + Kafka + WireMock preset</a></p>
 </li>
 <li>
-<p><strong>Already know your framework</strong></p>
-<p>Pick the starter that matches your application runtime.</p>
-<p><a href="frameworks/">Supported Frameworks</a></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m19 2-5 4.5v11l5-4.5zM6.5 5C4.55 5 2.45 5.4 1 6.5v14.66c0 .25.25.5.5.5.1 0 .15-.07.25-.07 1.35-.65 3.3-1.09 4.75-1.09 1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.31 4.75 1.06.1.05.15.03.25.03.25 0 .5-.25.5-.5V6.5c-.6-.45-1.25-.75-2-1V19c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V6.5C10.55 5.4 8.45 5 6.5 5"/></svg></span> <strong>Getting Started</strong></p>
+<p>The shared setup model and the DSL, once.</p>
+<p><a href="getting-started/">Read tutorial</a></p>
 </li>
 <li>
-<p><strong>Already know your dependencies</strong></p>
-<p>Add Kafka, PostgreSQL, WireMock, HTTP, tracing, and other components as needed.</p>
-<p><a href="Components/">Components</a></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 18H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h1v5l2-1.5L14 7V2h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2m-2 2v2H5a2 2 0 0 1-2-2V6h2v14z"/></svg></span> <strong>Recipes</strong></p>
+<p>Real flows with full setup + test you can paste.</p>
+<p><a href="recipes/">Browse recipes</a></p>
 </li>
 <li>
-<p><strong>Want a working project</strong></p>
-<p>Open a complete example and adapt it instead of starting from scratch.</p>
-<p><a href="https://github.com/Trendyol/stove/tree/main/examples">Examples on GitHub</a></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20L12 12l10 10H2Z"/></svg></span> <strong>JVM frameworks</strong></p>
+<p>Spring Boot · Ktor · Micronaut · Quarkus.</p>
+<p><a href="frameworks/">Framework guides</a></p>
 </li>
 <li>
-<p><strong>Running without Docker or in CI/CD</strong></p>
-<p>Use provided instances to connect to existing infrastructure instead of spinning up containers.</p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.64 10.33-.02-.06.22-.27.12-.08H6.8l.03.08-.18.26-.11.06zm-1.61.98L1 11.26l.22-.29.12-.06h4.9l.05.09-.08.24-.1.07zm2.6.99-.04-.06.16-.28.1-.06H6l.07.07-.02.25-.08.08zm11.15-2.16-1.78.47c-.19.04-.2.05-.34-.11-.16-.18-.27-.29-.5-.4-.66-.34-1.33-.24-1.94.15-.72.48-1.11 1.17-1.1 2.05.01.86.6 1.57 1.45 1.7.73.09 1.34-.17 1.83-.72l.29-.39h-2.07c-.22 0-.27-.14-.2-.32l.55-1.18c.03-.06.11-.17.27-.17h3.44c.15-.5.41-.96.75-1.41.78-1.03 1.73-1.57 3-1.81 1.07-.18 2.13-.07 3.07.57.84.58 1.37 1.36 1.5 2.39.19 1.45-.24 2.63-1.24 3.65-.71.72-1.58 1.17-2.57 1.39l-.86.08c-.98-.02-1.87-.3-2.62-.95-.52-.45-.88-.99-1.06-1.63-.15.24-.27.47-.44.7-.77 1.02-1.78 1.65-3.06 1.8-1.05.16-2.03-.05-2.89-.69-.79-.6-1.26-1.4-1.36-2.39-.14-1.17.2-2.22.91-3.14.76-1 1.77-1.63 3.01-1.86 1-.18 1.97-.06 2.84.52.57.38.97.9 1.24 1.52q.06.135-.12.18m6.11 1.6-.03-.36c-.19-1.06-1.17-1.66-2.19-1.43-1.01.22-1.67.85-1.88 1.86-.19.84.21 1.69.98 2.03.59.26 1.19.22 1.76-.06.84-.43 1.31-1.12 1.36-2.04"/></svg></span> <strong>Polyglot</strong></p>
+<p>Go, Python, Node, Rust via process or container mode.</p>
+<p><a href="other-languages/">Polyglot overview</a></p>
+</li>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19c0 .34.04.67.09 1H6.5c-1.5 0-2.81-.5-3.89-1.57C1.54 17.38 1 16.09 1 14.58q0-1.95 1.17-3.48C3.34 9.57 4 9.43 5.25 9.15c.42-1.53 1.25-2.77 2.5-3.72S10.42 4 12 4c1.95 0 3.6.68 4.96 2.04S19 9.05 19 11c1.15.13 2.1.63 2.86 1.5.51.57.84 1.21 1 1.92A5.9 5.9 0 0 0 19 13c-3.31 0-6 2.69-6 6m4.75.43-1.59-1.59L15 19l2.75 3 4.75-4.75-1.16-1.41z"/></svg></span> <strong>Smoke test deployed app</strong></p>
+<p>Run Stove against an already-running service. Any language.</p>
+<p><a href="Components/19-provided-application/">Provided Application</a></p>
+</li>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7zM4 3h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m5 4h1V5H9zm0 8h1v-2H9zM5 5v2h2V5zm0 8v2h2v-2z"/></svg></span> <strong>No Docker / CI shared infra</strong></p>
+<p>Connect to existing databases and brokers. Testcontainers off.</p>
 <p><a href="Components/11-provided-instances/">Provided Instances</a></p>
 </li>
 <li>
-<p><strong>Debugging failures or using AI agents</strong></p>
-<p>Add the local dashboard, tracing, and MCP so failures come with timelines, spans, snapshots, and compact agent-readable evidence.</p>
-<p><a href="Components/18-dashboard/">Dashboard &amp; MCP</a></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h2v18h18v2H2zm5 8h10v3H7zm4 5h10v3H11zM6 4h16v4h-2V6H8v2H6z"/></svg></span> <strong>When a test fails</strong></p>
+<p>Scroll story: assertion → console → dashboard → trace → MCP triage.</p>
+<p><a href="observability/when-it-fails/">Walk through it</a></p>
 </li>
 </ul>
 </div>
-<h2 id="why-stove">Why Stove<a class="headerlink" href="#why-stove" title="Permanent link">&para;</a></h2>
-<p>The JVM ecosystem has strong application frameworks, but e2e setup is usually framework-specific and repetitive. Teams end up rebuilding the same boilerplate around containers, startup wiring, ports, config injection, test cleanup, and diagnostics.</p>
-<p>Stove standardizes that workflow:</p>
-<ul>
-<li>start physical dependencies first (via containers or <a href="Components/11-provided-instances/">provided instances</a>)</li>
-<li>boot the real application through its actual entrypoint</li>
-<li>inject container/runtime configuration into the app</li>
-<li>assert through HTTP, Kafka, gRPC, databases, and tracing</li>
-<li>keep the same test DSL across frameworks</li>
-</ul>
-<p><span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One testing model, multiple JVM stacks.</span></p>
-<h2 id="supported-frameworks">Supported Frameworks<a class="headerlink" href="#supported-frameworks" title="Permanent link">&para;</a></h2>
-<p>Stove currently ships starters for:</p>
-<ul>
-<li><a href="frameworks/spring-boot/">Spring Boot</a></li>
-<li><a href="frameworks/ktor/">Ktor</a></li>
-<li><a href="frameworks/micronaut/">Micronaut</a></li>
-<li><a href="frameworks/quarkus/">Quarkus</a></li>
-</ul>
-<p>See the full overview in <a href="frameworks/">Supported Frameworks</a>, including <code>bridge()</code> availability and example links.</p>
-<h2 id="what-you-can-test">What You Can Test<a class="headerlink" href="#what-you-can-test" title="Permanent link">&para;</a></h2>
-<p>Stove composes framework starters with pluggable components, so you can match your test environment to your production architecture.</p>
-<ul>
-<li>APIs through <a href="Components/05-http/">HTTP</a> or <a href="Components/12-grpc/">gRPC</a></li>
-<li>event flows through <a href="Components/02-kafka/">Kafka</a></li>
-<li>persistence through <a href="Components/06-postgresql/">PostgreSQL</a>, <a href="Components/16-mysql/">MySQL</a>, <a href="Components/07-mongodb/">MongoDB</a>, <a href="Components/17-cassandra/">Cassandra</a>, <a href="Components/09-redis/">Redis</a>, and more</li>
-<li>external integrations through <a href="Components/04-wiremock/">WireMock</a> and <a href="Components/14-grpc-mock/">gRPC Mock</a></li>
-<li>execution diagnostics through <a href="Components/13-reporting/">Reporting</a>, <a href="Components/15-tracing/">Tracing</a>, the <a href="Components/18-dashboard/">Dashboard</a>, and <a href="Components/21-mcp/">MCP</a></li>
-</ul>
-<h2 id="high-level-architecture">High Level Architecture<a class="headerlink" href="#high-level-architecture" title="Permanent link">&para;</a></h2>
+<h2 id="why-stove-exists">Why Stove exists<a class="headerlink" href="#why-stove-exists" title="Permanent link">&para;</a></h2>
+<p>JVM frameworks are great. E2E test setup around them is not. Teams keep rebuilding the same boilerplate. Container lifecycle, port wiring, config injection, cleanup, diagnostics. Once per service.</p>
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>Without Stove</h4>
+    <ul>
+      <li>Hand-rolled Testcontainers setup per service</li>
+      <li>Mocks where they shouldn't be (the bug hides there)</li>
+      <li>Framework-specific test harness rewritten each time</li>
+      <li>Failures = stack traces, no context</li>
+      <li>Polyglot services need a separate test stack</li>
+    </ul>
+  </div>
+  <div>
+    <h4>With Stove</h4>
+    <ul>
+      <li>Declarative <code>Stove().with { ... }</code> wiring</li>
+      <li>Real DB, real broker, real downstream (mocked at the boundary)</li>
+      <li>One DSL across Spring · Ktor · Micronaut · Quarkus</li>
+      <li>Failures come with timeline, trace tree, MCP evidence</li>
+      <li>Go/Python/Rust apps drop in via process/container mode</li>
+    </ul>
+  </div>
+</div>
+
+<p><span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One testing model. Many stacks.</span></p>
+<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <p><img alt="Stove architecture" src="assets/stove_architecture.svg" /></p>
-<h2 id="start-here">Start Here<a class="headerlink" href="#start-here" title="Permanent link">&para;</a></h2>
-<ol>
-<li>Read <a href="getting-started/">Getting Started</a> for the shared setup.</li>
-<li>Open your starter guide under <a href="frameworks/">Supported Frameworks</a>.</li>
-<li>Add the components you need from <a href="Components/">Components</a>.</li>
-<li>Add <a href="Components/18-dashboard/">Dashboard</a> and <a href="Components/21-mcp/">MCP</a> when you want local observability or AI-agent triage.</li>
-<li>Compare against a real project in <a href="https://github.com/Trendyol/stove/tree/main/examples">examples</a>.</li>
-</ol>
-<h2 id="building-from-source">Building From Source<a class="headerlink" href="#building-from-source" title="Permanent link">&para;</a></h2>
-<p>To build Stove locally you need:</p>
-<ul>
-<li>JDK 17+</li>
-<li>Docker</li>
-</ul>
-<p>Then run:</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>./gradlew<span class="w"> </span>build
+<h2 id="building-from-source">Building from source<a class="headerlink" href="#building-from-source" title="Permanent link">&para;</a></h2>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># requires JDK 17+ and Docker</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./gradlew<span class="w"> </span>build
 </span></code></pre></div>
-<p>Want the background and motivation? Read the original <a href="https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5">Medium article</a>.</p>
+<p>Background and motivation: original <a href="https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5">Medium article</a>.</p>
 
 
 
@@ -2624,8 +3392,13 @@
 
 
 
+  
+  
 
 
+
+
+  
 
 
 
@@ -2651,17 +3424,19 @@
   
     
       
+        
+      
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
         
           
-          <a href="getting-started/" class="md-footer__link md-footer__link--next" aria-label="Next: Getting Started">
+          <a href="wizard/" class="md-footer__link md-footer__link--next" aria-label="Next: Setup Wizard">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Getting Started
+                Setup Wizard
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2735,6 +3510,12 @@
         <script src="assets/rough-notation.iife.js"></script>
       
         <script src="js/rough-notation-mkdocs.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+      
+        <script src="js/wizard.js"></script>
+      
+        <script src="js/kotlin-playground-init.js"></script>
       
     
   </body>

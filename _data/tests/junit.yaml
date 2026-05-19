@@ -1,0 +1,20 @@
+"label": |-
+  JUnit 5
+"gradle":
+- |-
+  com.trendyol:stove-extensions-junit
+"extensionLine": !!null |-
+  null
+"classBase": |-
+  BaseE2ETest
+"classImport": !!null |-
+  null
+"sample": |-
+  class SampleE2ETest : BaseE2ETest() {
+    @Test
+    fun `end-to-end flow works`() = runTest {
+      stove {
+  {body}
+      }
+    }
+  }
