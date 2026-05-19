@@ -41,6 +41,8 @@ class LoggingSystemTest : FunSpec({
       records shouldHaveSize 1
       with(records.single()) {
         testId shouldBe "test-logback"
+        scope shouldBe LogScope.RUN
+        correlationSource shouldBe LogCorrelationSource.MDC
         severityText shouldBe "WARN"
         logger shouldBe "app.test.LogbackCapture"
         body shouldContain "token=[REDACTED]"
@@ -100,6 +102,7 @@ class LoggingSystemTest : FunSpec({
 
       record.testId shouldBe "test-direct"
       record.correlationSource shouldBe LogCorrelationSource.STOVE_TEST_CONTEXT
+      record.scope shouldBe LogScope.TEST
       record.truncated shouldBe true
       record.body shouldContain "[REDACTED]"
       record.body shouldNotContain "abcdef1234567890"

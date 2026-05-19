@@ -13,14 +13,12 @@ use serde_json::Value;
 use serde_json::json;
 
 use super::evidence::clip_opt;
-use super::evidence::log_preview;
 use super::evidence::span_preview;
 use crate::mcp::contract::ArgName;
 use crate::mcp::contract::RunStatusValue;
 use crate::mcp::contract::STATUS_ERROR;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
-use crate::storage::models::LogRecord;
 use crate::storage::models::Run;
 use crate::storage::models::RunStatus;
 use crate::storage::models::Span;
@@ -247,63 +245,6 @@ fn compact_event(entry: &Entry) -> Value {
     "action": entry.action,
     "result": entry.result,
     "trace_id": entry.trace_id,
-  })
-}
-
-pub(super) fn log_summary(
-  logs: &[LogRecord],
-  run_id: &str,
-  test_id: &str,
-  max_logs: usize,
-  max_chars: usize,
-) -> Value {
-  let mut level_counts: BTreeMap<String, usize> = BTreeMap::new();
-  let mut logger_counts: BTreeMap<String, usize> = BTreeMap::new();
-  let mut dropped_logs = 0_usize;
-  for log in logs {
-    *level_counts.entry(log.severity_text.clone()).or_insert(0) += 1;
-    *logger_counts.entry(log.logger.clone()).or_insert(0) += 1;
-    if log.correlation_source == "DROPPED_MARKER" {
-      dropped_logs += 1;
-    }
-  }
-
-  let mut noisy_loggers: Vec<(String, usize)> = logger_counts.into_iter().collect();
-  noisy_loggers.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
-
-  let warn_or_higher: Vec<&LogRecord> = logs
-    .iter()
-    .filter(|log| log.severity_number >= 13)
-    .collect();
-  let selected_logs = if max_logs == 0 {
-    Vec::new()
-  } else {
-    warn_or_higher
-      .iter()
-      .rev()
-      .take(max_logs)
-      .copied()
-      .collect::<Vec<_>>()
-      .into_iter()
-      .rev()
-      .collect()
-  };
-
-  json!({
-    "total_logs": logs.len(),
-    "warn_or_error_logs": warn_or_higher.len(),
-    "dropped_logs": dropped_logs,
-    "levels": level_counts,
-    "noisy_loggers": noisy_loggers
-      .into_iter()
-      .take(5)
-      .map(|(logger, count)| json!({ "logger": logger, "count": count }))
-      .collect::<Vec<_>>(),
-    "last_warn_or_error_logs": selected_logs
-      .iter()
-      .map(|log| log_preview(log, max_chars))
-      .collect::<Vec<_>>(),
-    "logs_tool_call": exact_test_tool_call(ToolName::Logs, run_id, test_id),
   })
 }
 

@@ -13,7 +13,7 @@ use crate::storage::models::TestStatus;
 
 pub(super) const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, stove_version, systems";
 pub(super) const SPAN_COLUMNS: &str = "id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace";
-pub(super) const LOG_COLUMNS: &str = "id, run_id, test_id, trace_id, span_id, timestamp, observed_timestamp, severity_text, severity_number, logger, thread, body, exception_type, exception_message, exception_stack_trace, attributes, correlation_source, source, late, truncated";
+pub(super) const LOG_COLUMNS: &str = "id, run_id, test_id, trace_id, span_id, timestamp, observed_timestamp, severity_text, severity_number, logger, thread, body, exception_type, exception_message, exception_stack_trace, attributes, correlation_source, source, scope, late, truncated";
 
 /// Convert empty strings to `None` for optional database fields.
 pub(super) fn non_empty(s: &str) -> Option<&str> {
@@ -115,8 +115,9 @@ pub(super) fn log_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<LogRecor
     attributes: row.get(15)?,
     correlation_source: row.get(16)?,
     source: row.get(17)?,
-    late: row.get(18)?,
-    truncated: row.get(19)?,
+    scope: row.get(18)?,
+    late: row.get(19)?,
+    truncated: row.get(20)?,
   })
 }
 

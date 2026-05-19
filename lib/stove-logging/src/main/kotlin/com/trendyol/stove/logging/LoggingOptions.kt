@@ -37,6 +37,7 @@ data class LoggingSystemOptions(
   }
 }
 
+@Suppress("MagicNumber")
 enum class StoveLogLevel(val severityNumber: Int) {
   TRACE(1),
   DEBUG(5),

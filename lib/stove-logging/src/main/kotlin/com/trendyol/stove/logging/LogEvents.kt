@@ -18,6 +18,7 @@ data class StoveLogRecord(
   val spanId: String? = null,
   val testId: String? = null,
   val correlationSource: LogCorrelationSource = LogCorrelationSource.UNASSIGNED,
+  val scope: LogScope = LogScope.RUN,
   val source: String,
   val truncated: Boolean = false
 )
@@ -36,6 +37,20 @@ enum class LogCorrelationSource {
   TRACE_CONTEXT,
   STOVE_TEST_CONTEXT,
   UNASSIGNED
+}
+
+/**
+ * Capture scope.
+ *
+ * - [RUN]: ambient application/framework log. Shown in the run-level log view only.
+ * - [TEST]: explicitly attributed to a Stove test thread context. May be shown per test.
+ *
+ * Default is [RUN] to avoid attributing the same app log to every test that
+ * happens to run while the app is alive.
+ */
+enum class LogScope {
+  RUN,
+  TEST
 }
 
 interface LogEventListener {

@@ -4,7 +4,6 @@ import { api } from "../api/client";
 import type { Test } from "../api/types";
 import { EntryRow } from "../components/EntryRow";
 import { FlowTab } from "../components/FlowTab";
-import { LogTab } from "../components/LogTab";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
 import { partitionSnapshotsByDetail } from "../utils/snapshot-state";
@@ -52,24 +51,6 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
-  const {
-    data: logs = [],
-    isLoading: logsLoading,
-    error: logsError,
-  } = useQuery({
-    queryKey: ["logs", runId, test.id],
-    queryFn: () => api.getLogs(runId, test.id, { limit: 2000 }),
-    refetchInterval: liveRefetchInterval,
-    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
-  });
-
-  const { data: runLevelLogs = [] } = useQuery({
-    queryKey: ["runLogs", runId],
-    queryFn: () => api.getRunLogs(runId, { limit: 2000 }),
-    refetchInterval: liveRefetchInterval,
-    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
-  });
-
   const { detailedSnapshots, hiddenCount: hiddenSnapshotCount } = useMemo(
     () => partitionSnapshotsByDetail(snapshots),
     [snapshots],
@@ -77,7 +58,6 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
 
   const tabs = [
     { id: "timeline" as Tab, label: `Timeline (${entries.length})`, icon: "\u{1f4cb}" },
-    { id: "logs" as Tab, label: `Logs (${logs.length})`, icon: "\u{2261}" },
     { id: "trace" as Tab, label: `Trace (${spans.length})`, icon: "\u{1f50d}" },
     {
       id: "snapshots" as Tab,
@@ -122,18 +102,6 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
             <QueryErrorMessage error={spansError} fallback="Failed to load traces" />
           ) : (
             <SpanTree spans={spans} />
-          ))}
-        {tab === "logs" &&
-          (logsLoading ? (
-            <div className="text-[var(--stove-text-secondary)] text-sm p-4">Loading logs...</div>
-          ) : logsError ? (
-            <QueryErrorMessage error={logsError} fallback="Failed to load logs" />
-          ) : (
-            <LogTab
-              logs={logs}
-              runLevelLogs={runLevelLogs}
-              onOpenTraceTab={() => setTab("trace")}
-            />
           ))}
         {tab === "snapshots" &&
           (snapshotsLoading ? (

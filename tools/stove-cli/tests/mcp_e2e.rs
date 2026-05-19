@@ -189,10 +189,9 @@ async fn failure_detail_includes_timeline_trace_and_snapshot_summaries() {
   assert_eq!(content["timeline_summary"]["failed_entries"], 1);
   assert_eq!(content["trace_summary"]["trace_status"], "correlated");
   assert_eq!(content["trace_summary"]["exception_spans"], 1);
-  assert_eq!(content["log_summary"]["warn_or_error_logs"], 2);
-  assert_eq!(
-    content["log_summary"]["last_warn_or_error_logs"][1]["message"],
-    "payment declined"
+  assert!(
+    content.get("log_summary").is_none(),
+    "failure_detail no longer surfaces log_summary; use stove_logs instead"
   );
   assert_eq!(content["snapshot_summaries"][0]["system"], "Kafka");
   assert_eq!(

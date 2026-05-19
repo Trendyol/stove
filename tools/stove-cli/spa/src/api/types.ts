@@ -100,6 +100,8 @@ export interface Snapshot {
   summary: string;
 }
 
+export type LogScope = "RUN" | "TEST";
+
 export interface LogRecord {
   id: LiveRecordId;
   run_id: string;
@@ -119,6 +121,7 @@ export interface LogRecord {
   attributes: string | null;
   correlation_source: string;
   source: string;
+  scope: LogScope;
   late: boolean;
   truncated: boolean;
 }
@@ -215,6 +218,7 @@ export interface LiveLogRecordedPayload {
   attributes: string | null;
   correlation_source: string;
   source: string;
+  scope: LogScope;
   late: boolean;
   truncated: boolean;
 }

@@ -22,6 +22,7 @@ struct ToolSpec {
 }
 
 impl ToolSpec {
+  #[allow(clippy::too_many_lines)]
   fn for_tool(tool: ToolName) -> Self {
     match tool {
       ToolName::Apps => Self {

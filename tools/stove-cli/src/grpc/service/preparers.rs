@@ -338,6 +338,7 @@ pub(super) fn prepare_log_recorded(
     && state
       .ended_tests
       .contains(&(run_id.to_string(), event.test_id.clone()));
+  let scope = normalize_scope(&event.scope);
   let log = NewLogRecord {
     run_id: run_id.to_string(),
     test_id: event.test_id.clone(),
@@ -356,6 +357,7 @@ pub(super) fn prepare_log_recorded(
     attributes: attributes.clone(),
     correlation_source: event.correlation_source.clone(),
     source: event.source.clone(),
+    scope: scope.clone(),
     late,
     truncated: event.truncated,
   };
@@ -382,6 +384,7 @@ pub(super) fn prepare_log_recorded(
         attributes: non_empty(&attributes),
         correlation_source: event.correlation_source.clone(),
         source: event.source.clone(),
+        scope,
         late,
         truncated: event.truncated,
       }),
@@ -389,6 +392,13 @@ pub(super) fn prepare_log_recorded(
     persisted: PersistedDashboardEvent::LogRecorded(log),
     flush: FlushBehavior::Deferred,
   })
+}
+
+fn normalize_scope(raw: &str) -> String {
+  match raw.trim().to_ascii_uppercase().as_str() {
+    "TEST" => "TEST".to_string(),
+    _ => "RUN".to_string(),
+  }
 }
 
 pub(super) fn prepare_logs_dropped(
@@ -428,6 +438,7 @@ pub(super) fn prepare_logs_dropped(
     attributes: attributes.clone(),
     correlation_source: "DROPPED_MARKER".to_string(),
     source: "stove".to_string(),
+    scope: "RUN".to_string(),
     late,
     truncated: false,
   };

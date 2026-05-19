@@ -1,6 +1,7 @@
 import { VersionMismatchBanner } from "./components/VersionMismatchBanner";
 import { useAppData } from "./hooks/useAppData";
 import { Header } from "./layout/Header";
+import { RunDetail } from "./layout/RunDetail";
 import { Sidebar } from "./layout/Sidebar";
 import { TestDetail } from "./layout/TestDetail";
 
@@ -11,11 +12,13 @@ export default function App() {
     latestRun,
     tests,
     selectedTest,
+    selectedView,
     liveConnected,
     mismatchedApps,
     versionMismatchSummary,
     selectApp,
     selectTest,
+    selectRunView,
   } = useAppData();
 
   return (
@@ -32,8 +35,12 @@ export default function App() {
           tests={tests}
           selectedTestId={selectedTest?.id ?? null}
           onSelectTest={selectTest}
+          selectedView={selectedView}
+          onSelectRunView={selectRunView}
         />
-        {latestRun && selectedTest ? (
+        {latestRun && selectedView === "run" ? (
+          <RunDetail run={latestRun} tests={tests} liveConnected={liveConnected} />
+        ) : latestRun && selectedTest ? (
           <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
         ) : (
           <div className="flex-1 flex items-center justify-center text-[var(--stove-text-muted)] text-sm">

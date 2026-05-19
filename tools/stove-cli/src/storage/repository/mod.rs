@@ -231,6 +231,10 @@ impl Repository {
       filters.push("thread = ?".to_string());
       params.push(rusqlite::types::Value::Text(thread.to_string()));
     }
+    if let Some(scope) = query.scope.as_deref().filter(|value| !value.is_empty()) {
+      filters.push("scope = ?".to_string());
+      params.push(rusqlite::types::Value::Text(scope.to_ascii_uppercase()));
+    }
     if let Some(search) = query.q.as_deref().filter(|value| !value.is_empty()) {
       filters.push("(body LIKE ? OR logger LIKE ? OR thread LIKE ? OR exception_message LIKE ? OR attributes LIKE ?)".to_string());
       let value = rusqlite::types::Value::Text(format!("%{search}%"));
@@ -247,7 +251,7 @@ impl Repository {
       params.push(rusqlite::types::Value::Integer(cursor));
     }
     params.push(rusqlite::types::Value::Integer(
-      query.limit.clamp(1, 2_000) as i64,
+      i64::try_from(query.limit.clamp(1, 2_000)).unwrap_or(2_000),
     ));
     let sql = format!(
       "SELECT {LOG_COLUMNS} FROM logs WHERE {} ORDER BY timestamp, id LIMIT ?",

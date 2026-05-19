@@ -188,6 +188,7 @@ class DashboardSystem(
           .setCorrelationSource(record.correlationSource.name)
           .setSource(record.source)
           .setTruncated(record.truncated)
+          .setScope(record.scope.name)
           .build()
       }
     )

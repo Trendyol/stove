@@ -16,6 +16,7 @@ type LogParams = {
   logger?: string;
   thread?: string;
   q?: string;
+  scope?: string;
   cursor?: number;
   limit?: number;
 };

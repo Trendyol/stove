@@ -94,10 +94,6 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         ["snapshots", event.run_id, event.payload.test_id],
         (snapshots) => snapshots ?? [],
       );
-      queryClient.setQueryData<LogRecord[]>(
-        ["logs", event.run_id, event.payload.test_id],
-        (logs) => logs ?? [],
-      );
       queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) => logs ?? []);
       break;
     }
@@ -213,19 +209,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         attributes: event.payload.attributes,
         correlation_source: event.payload.correlation_source,
         source: event.payload.source,
+        scope: event.payload.scope,
         late: event.payload.late,
         truncated: event.payload.truncated,
       };
 
-      if (log.test_id) {
-        queryClient.setQueryData<LogRecord[]>(["logs", event.run_id, log.test_id], (logs) =>
-          appendLogs(logs, log),
-        );
-      } else {
-        queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) =>
-          appendLogs(logs, log),
-        );
-      }
+      queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) =>
+        appendLogs(logs, log),
+      );
       if (log.trace_id) {
         queryClient.setQueryData<LogRecord[]>(["traceLogs", log.trace_id], (logs) =>
           appendLogs(logs, log),
@@ -256,19 +247,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         }),
         correlation_source: "DROPPED_MARKER",
         source: "stove-cli",
+        scope: "RUN",
         late: false,
         truncated: false,
       };
 
-      if (marker.test_id) {
-        queryClient.setQueryData<LogRecord[]>(["logs", event.run_id, marker.test_id], (logs) =>
-          appendLogs(logs, marker),
-        );
-      } else {
-        queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) =>
-          appendLogs(logs, marker),
-        );
-      }
+      queryClient.setQueryData<LogRecord[]>(["runLogs", event.run_id], (logs) =>
+        appendLogs(logs, marker),
+      );
       break;
     }
   }
@@ -282,7 +268,6 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
     queryClient.invalidateQueries({ queryKey: ["snapshots", runId] });
-    queryClient.invalidateQueries({ queryKey: ["logs", runId] });
     queryClient.invalidateQueries({ queryKey: ["runLogs", runId] });
   } else {
     queryClient.invalidateQueries();

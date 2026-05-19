@@ -139,6 +139,6 @@ class StoveJUnitExtension :
 
   private companion object {
     val NAMESPACE: ExtensionContext.Namespace = ExtensionContext.Namespace.create(StoveJUnitExtension::class.java)
-    val MDC_KEY = "stove-mdc"
+    const val MDC_KEY = "stove-mdc"
   }
 }

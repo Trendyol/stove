@@ -186,6 +186,7 @@ pub struct LogRecord {
   pub attributes: Option<String>,
   pub correlation_source: String,
   pub source: String,
+  pub scope: String,
   pub late: bool,
   pub truncated: bool,
 }
@@ -229,7 +230,7 @@ pub struct NewSpan {
 }
 
 /// Data required to save a new captured log record.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct NewLogRecord {
   pub run_id: String,
   pub test_id: String,
@@ -248,8 +249,36 @@ pub struct NewLogRecord {
   pub attributes: String,
   pub correlation_source: String,
   pub source: String,
+  pub scope: String,
   pub late: bool,
   pub truncated: bool,
+}
+
+impl Default for NewLogRecord {
+  fn default() -> Self {
+    Self {
+      run_id: String::new(),
+      test_id: String::new(),
+      trace_id: String::new(),
+      span_id: String::new(),
+      timestamp: String::new(),
+      observed_timestamp: String::new(),
+      severity_text: String::new(),
+      severity_number: 0,
+      logger: String::new(),
+      thread: String::new(),
+      body: String::new(),
+      exception_type: String::new(),
+      exception_message: String::new(),
+      exception_stack_trace: String::new(),
+      attributes: String::new(),
+      correlation_source: String::new(),
+      source: String::new(),
+      scope: "RUN".to_string(),
+      late: false,
+      truncated: false,
+    }
+  }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -259,6 +288,7 @@ pub struct LogQuery {
   pub logger: Option<String>,
   pub thread: Option<String>,
   pub q: Option<String>,
+  pub scope: Option<String>,
   pub cursor: Option<i64>,
   pub limit: usize,
 }

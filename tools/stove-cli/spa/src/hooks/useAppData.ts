@@ -7,10 +7,13 @@ import { EVENT_TYPE, type LiveDashboardEvent } from "../api/types";
 import { isRunning } from "../utils/status";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 
+export type SelectedView = "run" | "test";
+
 export function useAppData() {
   const queryClient = useQueryClient();
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [selectedView, setSelectedView] = useState<SelectedView>("test");
 
   const handleLiveEvent = useCallback(
     (event: LiveDashboardEvent) => {
@@ -87,13 +90,21 @@ export function useAppData() {
     latestRun,
     tests,
     selectedTest,
+    selectedView,
     liveConnected,
     mismatchedApps,
     versionMismatchSummary,
     selectApp: (name: string) => {
       setSelectedApp(name);
       setSelectedTestId(null);
+      setSelectedView("test");
     },
-    selectTest: setSelectedTestId,
+    selectTest: (testId: string) => {
+      setSelectedTestId(testId);
+      setSelectedView("test");
+    },
+    selectRunView: () => {
+      setSelectedView("run");
+    },
   };
 }

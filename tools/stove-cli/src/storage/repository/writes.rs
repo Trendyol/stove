@@ -368,7 +368,7 @@ fn save_snapshot_on(
 
 fn save_log_on(conn: &rusqlite::Connection, log: &NewLogRecord) -> Result<()> {
   conn.execute(
-    "INSERT INTO logs (run_id, test_id, trace_id, span_id, timestamp, observed_timestamp, severity_text, severity_number, logger, thread, body, exception_type, exception_message, exception_stack_trace, attributes, correlation_source, source, late, truncated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+    "INSERT INTO logs (run_id, test_id, trace_id, span_id, timestamp, observed_timestamp, severity_text, severity_number, logger, thread, body, exception_type, exception_message, exception_stack_trace, attributes, correlation_source, source, scope, late, truncated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
     rusqlite::params![
       log.run_id,
       non_empty(&log.test_id),
@@ -387,6 +387,7 @@ fn save_log_on(conn: &rusqlite::Connection, log: &NewLogRecord) -> Result<()> {
       non_empty(&log.attributes),
       log.correlation_source,
       log.source,
+      log.scope,
       log.late,
       log.truncated
     ],

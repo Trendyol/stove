@@ -32,6 +32,8 @@ interface SidebarProps {
   tests: Test[];
   selectedTestId: string | null;
   onSelectTest: (testId: string) => void;
+  selectedView: "run" | "test";
+  onSelectRunView: () => void;
 }
 
 export function Sidebar({
@@ -43,6 +45,8 @@ export function Sidebar({
   tests,
   selectedTestId,
   onSelectTest,
+  selectedView,
+  onSelectRunView,
 }: SidebarProps) {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -109,6 +113,24 @@ export function Sidebar({
         onSelectApp={onSelectApp}
       />
       {run && <RunSummary run={run} tests={tests} />}
+      {run && (
+        <button
+          type="button"
+          onClick={onSelectRunView}
+          aria-current={selectedView === "run" ? "page" : undefined}
+          className={`mx-3 mt-2 mb-1 px-3 py-2 text-xs rounded border text-left flex items-center justify-between cursor-pointer transition-colors ${
+            selectedView === "run"
+              ? "border-amber-500 bg-amber-500/10 text-amber-200"
+              : "border-stove-border text-[var(--stove-text-secondary)] hover:text-[var(--stove-text)] hover:border-stove-border/80"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <span aria-hidden="true">≡</span>
+            <span>Run logs</span>
+          </span>
+          <span className="text-[10px] uppercase tracking-wide opacity-70">all tests</span>
+        </button>
+      )}
       <TestFilters
         filter={filter}
         onFilterChange={setFilter}
@@ -118,7 +140,7 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto">
         <TestTree
           tests={filteredTests}
-          selectedTestId={selectedTestId}
+          selectedTestId={selectedView === "test" ? selectedTestId : null}
           onSelectTest={onSelectTest}
         />
       </div>

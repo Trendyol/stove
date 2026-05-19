@@ -54,7 +54,7 @@ internal class LoggingSystem(
     Log4j2Installer.uninstall()
     running.set(false)
     queue.offer(Signal.Stop)
-    worker?.join(3_000)
+    worker?.join(WORKER_JOIN_TIMEOUT_MS)
     stove.removeFailureReportContributor(this)
   }
 
@@ -185,10 +185,25 @@ internal class LoggingSystem(
       spanId = correlation.spanId,
       testId = correlation.testId,
       correlationSource = correlation.source,
+      scope = scopeFor(correlation),
       source = log.source,
       truncated = messageTruncated || stackTruncated
     )
   }
+
+  /**
+   * Conservative attribution: a log is TEST-scoped only when it was captured on
+   * a thread that explicitly registered itself as the test runner via
+   * [StoveTestContextHolder]. Ambient propagation (OTel baggage, inherited MDC,
+   * trace context) keeps RUN scope so application logs that fire on every test
+   * do not get attributed to whichever test happens to be active.
+   */
+  private fun scopeFor(correlation: Correlation): LogScope =
+    if (correlation.source == LogCorrelationSource.STOVE_TEST_CONTEXT && correlation.testId != null) {
+      LogScope.TEST
+    } else {
+      LogScope.RUN
+    }
 
   private fun resolveCorrelation(mdc: Map<String, String>): Correlation {
     val spanContext = runCatching { Span.current().spanContext }.getOrNull()
@@ -259,6 +274,7 @@ internal class LoggingSystem(
   companion object {
     private const val DROP_MARKER_INTERVAL = 1_000L
     private const val FAILURE_REPORT_LOG_LIMIT = 50
+    private const val WORKER_JOIN_TIMEOUT_MS = 3_000L
     private const val REDACTED = "[REDACTED]"
     private val SECRET_PATTERNS = listOf(
       Regex("(?i)(authorization|password|secret|token|apiKey|api_key|cookie)\\s*[:=]\\s*\\S+")

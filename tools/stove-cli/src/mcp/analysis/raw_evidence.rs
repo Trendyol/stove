@@ -94,35 +94,7 @@ impl Analyzer {
         json!({ "kind": RawEvidenceKind::Snapshot.as_str(), "evidence": snapshot_detail(&snapshot, None, budget.raw_string_chars) })
       }
       Some(RawEvidenceKind::Log) => {
-        let query = LogQuery {
-          limit: 2_000,
-          ..LogQuery::default()
-        };
-        let logs = if let Some(trace_id) = args.trace_id.as_deref() {
-          self
-            .repository
-            .get_logs_for_trace(trace_id, &query)
-            .map_err(display_error)?
-        } else {
-          let run_id = args.run_id.as_deref().ok_or_else(|| {
-            "raw log lookup requires trace_id or run_id + optional test_id".to_string()
-          })?;
-          if let Some(test_id) = args.test_id.as_deref() {
-            self
-              .repository
-              .get_logs_for_test(run_id, test_id, &query)
-              .map_err(display_error)?
-          } else {
-            self
-              .repository
-              .get_logs_for_run(run_id, &query)
-              .map_err(display_error)?
-          }
-        };
-        let log = logs
-          .into_iter()
-          .find(|log| log.id == args.id)
-          .ok_or_else(|| format!("log {} was not found", args.id))?;
+        let log = self.fetch_raw_log(&args)?;
         json!({ "kind": RawEvidenceKind::Log.as_str(), "evidence": log_preview(&log, budget.raw_string_chars) })
       }
       None => {
@@ -140,5 +112,40 @@ impl Analyzer {
       json!({ "raw_evidence": evidence, "fallback": fallback_message() }),
       "Raw Stove evidence",
     ))
+  }
+
+  fn fetch_raw_log(
+    &self,
+    args: &RawEvidenceArgs,
+  ) -> Result<crate::storage::models::LogRecord, String> {
+    let query = LogQuery {
+      limit: 2_000,
+      ..LogQuery::default()
+    };
+    let logs = if let Some(trace_id) = args.trace_id.as_deref() {
+      self
+        .repository
+        .get_logs_for_trace(trace_id, &query)
+        .map_err(display_error)?
+    } else {
+      let run_id = args.run_id.as_deref().ok_or_else(|| {
+        "raw log lookup requires trace_id or run_id + optional test_id".to_string()
+      })?;
+      if let Some(test_id) = args.test_id.as_deref() {
+        self
+          .repository
+          .get_logs_for_test(run_id, test_id, &query)
+          .map_err(display_error)?
+      } else {
+        self
+          .repository
+          .get_logs_for_run(run_id, &query)
+          .map_err(display_error)?
+      }
+    };
+    logs
+      .into_iter()
+      .find(|log| log.id == args.id)
+      .ok_or_else(|| format!("log {} was not found", args.id))
   }
 }

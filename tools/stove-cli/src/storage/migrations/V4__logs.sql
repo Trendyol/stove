@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS logs (
     attributes TEXT,
     correlation_source TEXT NOT NULL,
     source TEXT NOT NULL,
+    scope TEXT NOT NULL DEFAULT 'RUN',
     late INTEGER NOT NULL DEFAULT 0,
     truncated INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (run_id) REFERENCES runs(id)
@@ -26,3 +27,4 @@ CREATE INDEX IF NOT EXISTS idx_logs_run_test_timestamp ON logs(run_id, test_id, 
 CREATE INDEX IF NOT EXISTS idx_logs_run_trace ON logs(run_id, trace_id);
 CREATE INDEX IF NOT EXISTS idx_logs_run_level ON logs(run_id, severity_number);
 CREATE INDEX IF NOT EXISTS idx_logs_run_logger ON logs(run_id, logger);
+CREATE INDEX IF NOT EXISTS idx_logs_run_scope ON logs(run_id, scope);

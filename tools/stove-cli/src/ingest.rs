@@ -199,6 +199,7 @@ pub struct LiveLogRecordedPayload {
   pub attributes: Option<String>,
   pub correlation_source: String,
   pub source: String,
+  pub scope: String,
   pub late: bool,
   pub truncated: bool,
 }

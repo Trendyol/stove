@@ -111,6 +111,7 @@ message LogRecordedEvent {
   string correlation_source = 15;
   string source = 16;
   bool truncated = 17;
+  string scope = 18;
 }
 
 message LogsDroppedEvent {

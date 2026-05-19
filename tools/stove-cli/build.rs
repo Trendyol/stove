@@ -3,16 +3,17 @@ use std::process::Command;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ── Proto codegen ──────────────────────────────────────────────
+  let protos = [
+    "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_events.proto",
+    "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_service.proto",
+  ];
+  for proto in &protos {
+    println!("cargo:rerun-if-changed={proto}");
+  }
   tonic_prost_build::configure()
     .build_server(true)
     .build_client(false)
-    .compile_protos(
-      &[
-        "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_events.proto",
-        "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_service.proto",
-      ],
-      &["../../lib/stove-dashboard-api/src/main/proto/"],
-    )?;
+    .compile_protos(&protos, &["../../lib/stove-dashboard-api/src/main/proto/"])?;
 
   // ── Version from gradle.properties ─────────────────────────────
   let gradle_props = std::fs::read_to_string("../../gradle.properties")

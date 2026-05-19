@@ -232,6 +232,7 @@ fn log_recorded_event(
         correlation_source: "MDC".to_string(),
         source: "logback".to_string(),
         truncated: false,
+        scope: "RUN".to_string(),
       },
     )),
   }

@@ -11,6 +11,7 @@ pub struct LogsQueryParams {
   logger: Option<String>,
   thread: Option<String>,
   q: Option<String>,
+  scope: Option<String>,
   cursor: Option<i64>,
   limit: Option<usize>,
 }
@@ -23,6 +24,7 @@ impl From<LogsQueryParams> for LogQuery {
       logger: value.logger,
       thread: value.thread,
       q: value.q,
+      scope: value.scope,
       cursor: value.cursor,
       limit: value.limit.unwrap_or(500).clamp(1, 2_000),
     }
