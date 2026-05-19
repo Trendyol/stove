@@ -25,3 +25,16 @@
   postgresql {
     shouldExecute("SELECT 1")
   }
+"configureProvided": |-
+  postgresql {
+    PostgresqlOptions.provided(
+      jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",   // TODO real URL
+      username = System.getenv("PG_USER"),
+      password = System.getenv("PG_PASS"),
+      cleanup = { ops ->
+        // Optional: clean only your prefixed rows
+        ops.execute("DELETE FROM orders WHERE test_run = '${TestRunContext.runId}'")
+      },
+      configureExposedConfiguration = { cfg -> emptyList() }   // app already configured
+    )
+  }

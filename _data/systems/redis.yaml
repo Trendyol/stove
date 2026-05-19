@@ -20,3 +20,10 @@
   redis {
     client().connect().sync().get("order:1") shouldNotBe null
   }
+"configureProvided": |-
+  redis {
+    RedisOptions.provided(
+      url = "redis://staging-redis:6379",
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

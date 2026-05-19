@@ -231,19 +231,24 @@ ${depLines}
         if (test.extensionLine) imports.add("com.trendyol.stove.testing.e2e.standalone.kotest.StoveKotestExtension");
         const importBlock = Array.from(imports).sort().map((i) => `import ${i}`).join("\n");
 
+        // Provided mode: prefer e.configureProvided over e.configure when available
+        const useProvided = s.runtime === "provided";
         const systemBlocks = entries
-          .map((e) => fill(e.configure, { pkg: s.pkg }))
+          .map((e) => {
+            const tpl = useProvided && e.configureProvided ? e.configureProvided : e.configure;
+            return fill(tpl, { pkg: s.pkg });
+          })
           .filter(Boolean)
-          .map((c) => indent(dedent(c), "        "))
+          .map((c) => indent(dedent(c), "      "))
           .join("\n\n");
 
         const runnerBlock = runner
-          ? indent(dedent(fill(runner.runner, { pkg: s.pkg })), "        ")
-          : "        // configure your application runner here";
+          ? indent(dedent(fill(runner.runner, { pkg: s.pkg })), "      ")
+          : "      // configure your application runner here";
 
         const extensionsLine = test.extensionLine
-          ? `    override val extensions: List<Extension> = listOf(${test.extensionLine})`
-          : "    // JUnit: extend BaseE2ETest in your test classes";
+          ? `  override val extensions: List<Extension> = listOf(${test.extensionLine})`
+          : "  // JUnit: extend BaseE2ETest in your test classes";
 
         return `package ${s.pkg}.e2e.setup
 
@@ -252,19 +257,15 @@ ${importBlock}
 class StoveConfig : AbstractProjectConfig() {
 ${extensionsLine}
 
-    override suspend fun beforeProject() {
-        Stove()
-            .with {
+  override suspend fun beforeProject() {
+    Stove().with {
 ${systemBlocks}
 
 ${runnerBlock}
-            }
-            .run()
-    }
+    }.run()
+  }
 
-    override suspend fun afterProject() {
-        Stove.stop()
-    }
+  override suspend fun afterProject() = Stove.stop()
 }`;
       },
 
@@ -320,6 +321,19 @@ ${fill(test.sample, { body })}`;
           btn.textContent = "copied!";
           setTimeout(() => (btn.textContent = orig), 1200);
         });
+      },
+
+      /** Syntax-highlight `code` for `lang` via Prism.js if available;
+       *  otherwise return HTML-escaped plain text. Always safe to set via x-html. */
+      hl(code, lang) {
+        if (code == null) return "";
+        const target = (lang || "kotlin").toLowerCase();
+        if (window.Prism && Prism.languages && Prism.languages[target]) {
+          return Prism.highlight(String(code), Prism.languages[target], target);
+        }
+        return String(code).replace(/[&<>]/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])
+        );
       },
 
       shareUrl() {
@@ -395,6 +409,12 @@ ${fill(test.sample, { body })}`;
                 <p>Smoke test a remote service. Black-box.</p>
               </label>
             </div>
+            <div class="sw-callout" x-show="state.runtime === 'provided'">
+              <strong>🛰️ This switches Stove into Provided Instances mode.</strong>
+              Every database, broker, and cache you pick will use <code>SystemOptions.provided(...)</code> instead of spinning a Testcontainer. You'll supply real connection URLs (staging Postgres, staging Kafka, ...). <a href="../Components/11-provided-instances/" target="_blank">Read the provided-instances guide ↗</a> for isolation patterns on shared infra.
+              <br><br>
+              Bridge (<code>using&lt;T&gt;</code>) won't be available either. Verify side effects through HTTP/DB/Kafka assertions only.
+            </div>
           </section>
 
           <!-- Step 1 -->
@@ -465,6 +485,10 @@ ${fill(test.sample, { body })}`;
           <section class="sw-panel" x-show="step === 3">
             <h3>Physical dependencies</h3>
             <p class="sw-hint">Pick the databases, brokers, and clients your app actually uses.</p>
+            <div class="sw-callout" x-show="state.runtime === 'provided'">
+              <strong>Provided mode: connection details required per system.</strong>
+              For staging / remote tests, point each system at the real infrastructure (e.g. <code>jdbc:postgresql://staging-db:5432/myapp</code>). Add a unique prefix per run (schema name, topic prefix, key prefix) so parallel CI jobs don't collide.
+            </div>
             <div class="sw-grid sw-grid-3">
               <template x-for="id in sysIds()" :key="id">
                 <label class="sw-card" :class="{ selected: state.systems.includes(id) }">
@@ -478,6 +502,9 @@ ${fill(test.sample, { body })}`;
               Add <code>bridge()</code> (DI access for setup + verification)
               <span class="sw-hint" x-show="state.framework === 'quarkus'">Bridge is not supported on Quarkus yet.</span>
             </label>
+            <p class="sw-hint" x-show="state.runtime === 'provided' || state.runtime === 'process' || state.runtime === 'container'">
+              Bridge is JVM-in-process only. Unavailable for <span x-text="state.runtime"></span> runtime.
+            </p>
             <label class="sw-toggle">
               <input type="checkbox" x-model="state.keyed">
               Register multiple instances of the same system (keyed systems)
@@ -521,6 +548,19 @@ ${fill(test.sample, { body })}`;
           <section class="sw-panel" x-show="step === 6">
             <h3>Your Stove setup</h3>
 
+            <div class="sw-provided-banner" x-show="state.runtime === 'provided'">
+              <div class="sw-gradle-banner-head">
+                <span class="sw-gradle-icon">🛰️</span>
+                <strong>Provided Instances mode</strong>
+              </div>
+              <p>
+                The output below uses container-mode <code>SystemOptions(...)</code> for readability. <strong>For staging / remote testing, swap each to <code>SystemOptions.provided(...)</code></strong> and pass real connection details (jdbcUrl, bootstrapServers, etc.). Add a per-run prefix for safety on shared infra.
+              </p>
+              <p>
+                Full per-system <code>.provided(...)</code> signatures and an isolation pattern: <a href="../Components/11-provided-instances/" target="_blank">Provided Instances guide ↗</a>.
+              </p>
+            </div>
+
             <div class="sw-gradle-banner">
               <div class="sw-gradle-banner-head">
                 <span class="sw-gradle-icon">🐘</span>
@@ -549,7 +589,7 @@ ${fill(test.sample, { body })}`;
                 <h4><span class="sw-output-tag">Gradle Kotlin DSL</span> build.gradle.kts</h4>
                 <button class="sw-copy" @click="copy(renderGradle(), $event.target)">copy</button>
               </div>
-              <pre><code class="language-kotlin" x-text="renderGradle()"></code></pre>
+              <pre><code class="language-kotlin" x-html="hl(renderGradle(), 'kotlin')"></code></pre>
             </div>
 
             <div class="sw-output">
@@ -557,7 +597,7 @@ ${fill(test.sample, { body })}`;
                 <h4>StoveConfig.kt</h4>
                 <button class="sw-copy" @click="copy(renderStoveConfig(), $event.target)">copy</button>
               </div>
-              <pre><code class="language-kotlin" x-text="renderStoveConfig()"></code></pre>
+              <pre><code class="language-kotlin" x-html="hl(renderStoveConfig(), 'kotlin')"></code></pre>
             </div>
 
             <div class="sw-output" x-show="renderKotestProps()">
@@ -565,7 +605,7 @@ ${fill(test.sample, { body })}`;
                 <h4>src/test-e2e/resources/kotest.properties</h4>
                 <button class="sw-copy" @click="copy(renderKotestProps(), $event.target)">copy</button>
               </div>
-              <pre><code x-text="renderKotestProps()"></code></pre>
+              <pre><code class="language-properties" x-html="hl(renderKotestProps(), 'properties')"></code></pre>
             </div>
 
             <div class="sw-output">
@@ -573,7 +613,7 @@ ${fill(test.sample, { body })}`;
                 <h4>SampleE2ETest.kt</h4>
                 <button class="sw-copy" @click="copy(renderSampleTest(), $event.target)">copy</button>
               </div>
-              <pre><code class="language-kotlin" x-text="renderSampleTest()"></code></pre>
+              <pre><code class="language-kotlin" x-html="hl(renderSampleTest(), 'kotlin')"></code></pre>
             </div>
           </section>
 
@@ -597,7 +637,7 @@ ${fill(test.sample, { body })}`;
               <h4>Live preview</h4>
               <button class="sw-copy" @click="copy(renderStoveConfig(), $event.target)">copy</button>
             </div>
-            <pre class="sw-preview-code"><code x-text="renderStoveConfig()"></code></pre>
+            <pre class="sw-preview-code"><code class="language-kotlin" x-html="hl(renderStoveConfig(), 'kotlin')"></code></pre>
             <a class="sw-btn primary sw-preview-go" @click.prevent="goto(6)" x-show="step !== 6">Jump to full output →</a>
           </div>
         </aside>

@@ -18,3 +18,12 @@
   }
 "testDsl": |-
   mssql { shouldExecute("SELECT 1") }
+"configureProvided": |-
+  mssql {
+    MsSqlOptions.provided(
+      jdbcUrl = "jdbc:sqlserver://staging-mssql:1433;databaseName=myapp",
+      username = System.getenv("MSSQL_USER"),
+      password = System.getenv("MSSQL_PASS"),
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

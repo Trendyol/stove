@@ -605,7 +605,8 @@ code {
 }
 
 /* Gradle banner at top of wizard output step */
-.sw-gradle-banner {
+.sw-gradle-banner,
+.sw-provided-banner {
     border: 1px solid var(--md-primary-fg-color);
     background: linear-gradient(135deg,
         rgba(0, 150, 136, 0.10) 0%,
@@ -614,6 +615,13 @@ code {
     padding: 0.9rem 1.1rem;
     margin: 0.8rem 0 1.2rem;
 }
+.sw-provided-banner {
+    border-color: #56a8f5;
+    background: linear-gradient(135deg,
+        rgba(86, 168, 245, 0.12) 0%,
+        rgba(86, 168, 245, 0.04) 100%);
+}
+.sw-provided-banner p + p { margin-top: 0.5rem; }
 .sw-gradle-banner-head {
     display: flex;
     align-items: center;
@@ -758,6 +766,102 @@ code {
 .md-typeset .language-kotlin .filename {
     background: #2b2d30 !important;
     border-bottom: 1px solid #1e1f22;
+}
+
+/* Prism.js token mapping → same darcula palette as Material's pygments tokens.
+   Covers any element with .language-kotlin (wizard live preview, cookbook,
+   anywhere we call hl(code, "kotlin")). */
+.md-typeset .language-kotlin .token.keyword,
+.sw-output .language-kotlin .token.keyword,
+.cb-section .language-kotlin .token.keyword,
+.sw-preview-code.language-kotlin .token.keyword,
+.sw-preview-code .language-kotlin .token.keyword,
+pre.language-kotlin .token.keyword,
+code.language-kotlin .token.keyword {
+    color: #cf8e6d !important;
+    font-weight: 600;
+}
+.md-typeset .language-kotlin .token.string,
+.md-typeset .language-kotlin .token.regex,
+.cb-section .language-kotlin .token.string,
+.sw-output .language-kotlin .token.string,
+.sw-preview-code .language-kotlin .token.string,
+pre.language-kotlin .token.string,
+code.language-kotlin .token.string {
+    color: #6aab73 !important;
+}
+.md-typeset .language-kotlin .token.comment,
+.cb-section .language-kotlin .token.comment,
+.sw-output .language-kotlin .token.comment,
+.sw-preview-code .language-kotlin .token.comment,
+pre.language-kotlin .token.comment,
+code.language-kotlin .token.comment {
+    color: #7a7e85 !important;
+    font-style: italic;
+}
+.md-typeset .language-kotlin .token.number,
+.cb-section .language-kotlin .token.number,
+.sw-output .language-kotlin .token.number,
+.sw-preview-code .language-kotlin .token.number,
+pre.language-kotlin .token.number,
+code.language-kotlin .token.number {
+    color: #2aacb8 !important;
+}
+.md-typeset .language-kotlin .token.function,
+.cb-section .language-kotlin .token.function,
+.sw-output .language-kotlin .token.function,
+.sw-preview-code .language-kotlin .token.function,
+pre.language-kotlin .token.function,
+code.language-kotlin .token.function {
+    color: #56a8f5 !important;
+}
+.md-typeset .language-kotlin .token.class-name,
+.cb-section .language-kotlin .token.class-name,
+.sw-output .language-kotlin .token.class-name,
+.sw-preview-code .language-kotlin .token.class-name,
+pre.language-kotlin .token.class-name,
+code.language-kotlin .token.class-name {
+    color: #56a8f5 !important;
+}
+.md-typeset .language-kotlin .token.annotation,
+.md-typeset .language-kotlin .token.atrule,
+.cb-section .language-kotlin .token.annotation,
+.sw-output .language-kotlin .token.annotation,
+.sw-preview-code .language-kotlin .token.annotation,
+pre.language-kotlin .token.annotation,
+code.language-kotlin .token.annotation {
+    color: #b3ae60 !important;
+}
+.md-typeset .language-kotlin .token.operator,
+.md-typeset .language-kotlin .token.punctuation,
+.cb-section .language-kotlin .token.operator,
+.cb-section .language-kotlin .token.punctuation,
+.sw-output .language-kotlin .token.operator,
+.sw-output .language-kotlin .token.punctuation,
+.sw-preview-code .language-kotlin .token.operator,
+.sw-preview-code .language-kotlin .token.punctuation,
+pre.language-kotlin .token.operator,
+pre.language-kotlin .token.punctuation,
+code.language-kotlin .token.operator,
+code.language-kotlin .token.punctuation {
+    color: #bcbec4 !important;
+}
+.md-typeset .language-kotlin .token.boolean,
+.md-typeset .language-kotlin .token.constant {
+    color: #cf8e6d !important;
+}
+/* Properties grammar (Kotest config) */
+.md-typeset .language-properties .token.attr-name,
+.sw-output .language-properties .token.attr-name {
+    color: #56a8f5 !important;
+}
+.md-typeset .language-properties .token.attr-value,
+.sw-output .language-properties .token.attr-value {
+    color: #6aab73 !important;
+}
+.md-typeset .language-properties .token.comment {
+    color: #7a7e85 !important;
+    font-style: italic;
 }
 
 /* Same dark theme for .language-properties (Kotest config etc.) */

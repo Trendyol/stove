@@ -22,3 +22,10 @@
       it.field shouldBe "x"
     }
   }
+"configureProvided": |-
+  elasticsearch {
+    ElasticsearchSystemOptions.provided(
+      url = "http://staging-es:9200",
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

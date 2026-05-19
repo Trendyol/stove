@@ -22,3 +22,10 @@
       it.status shouldBe "CREATED"
     }
   }
+"configureProvided": |-
+  mongodb {
+    MongodbSystemOptions.provided(
+      connectionString = "mongodb://staging-mongo:27017/myapp",
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

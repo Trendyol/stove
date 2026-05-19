@@ -27,3 +27,13 @@
       it.field shouldBe "value"
     }
   }
+"configureProvided": |-
+  couchbase {
+    CouchbaseSystemOptions.provided(
+      bucketName = "myapp",
+      hostsWithPort = "staging-couchbase:8091",
+      username = System.getenv("CB_USER"),
+      password = System.getenv("CB_PASS"),
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

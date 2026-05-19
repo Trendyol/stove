@@ -18,3 +18,11 @@
   }
 "testDsl": |-
   cassandra { shouldExecute("SELECT now() FROM system.local") }
+"configureProvided": |-
+  cassandra {
+    CassandraSystemOptions.provided(
+      contactPoints = listOf("staging-cassandra:9042"),
+      keyspace = "myapp",
+      configureExposedConfiguration = { cfg -> emptyList() }
+    )
+  }

@@ -20,3 +20,7 @@
       body shouldContain "hello"
     }
   }
+"configureProvided": |-
+  httpClient {
+    HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")   // remote AUT
+  }
