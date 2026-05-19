@@ -37,8 +37,7 @@ hide:
       <span class="f">actual</span>.<span class="f">userId</span> == <span class="f">userId</span>
     }
   }
-}<span class="blink"></span></span>
-  </div>
+}<span class="blink"></span></span></div>
 </div>
 
 <div class="stove-tldr" markdown>
