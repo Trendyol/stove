@@ -1176,10 +1176,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-container-mode-go-specific-summary" class="md-nav__link">
+  <a href="#why-container-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why container mode (Go-specific summary)
+        Why container mode
       
     </span>
   </a>
@@ -1187,10 +1187,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-this-guide-adds-on-top-of-process-mode" class="md-nav__link">
+  <a href="#whats-different-from-process-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What this guide adds on top of Process Mode
+        What's different from process mode
       
     </span>
   </a>
@@ -1198,10 +1198,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-dockerfile-for-the-showcase" class="md-nav__link">
+  <a href="#optional-reference-dockerfile" class="md-nav__link">
     <span class="md-ellipsis">
       
-        (Optional) Dockerfile for the showcase
+        (Optional) Reference Dockerfile
       
     </span>
   </a>
@@ -1212,19 +1212,19 @@
   <a href="#gradle-setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gradle Setup
+        Gradle setup
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Gradle Setup">
+    <nav class="md-nav" aria-label="Gradle setup">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#optional-local-build-convenience" class="md-nav__link">
     <span class="md-ellipsis">
       
-        (Optional) Local build convenience
+        (Optional) local-build convenience
       
     </span>
   </a>
@@ -1237,10 +1237,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#stove-configuration-go-specifics" class="md-nav__link">
+  <a href="#stoveconfigkt-go-specifics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Stove Configuration (Go specifics)
+        StoveConfig.kt (Go specifics)
       
     </span>
   </a>
@@ -1274,6 +1274,17 @@
     <span class="md-ellipsis">
       
         Dashboard &amp; MCP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfalls
       
     </span>
   </a>
@@ -3187,10 +3198,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-container-mode-go-specific-summary" class="md-nav__link">
+  <a href="#why-container-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why container mode (Go-specific summary)
+        Why container mode
       
     </span>
   </a>
@@ -3198,10 +3209,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-this-guide-adds-on-top-of-process-mode" class="md-nav__link">
+  <a href="#whats-different-from-process-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What this guide adds on top of Process Mode
+        What's different from process mode
       
     </span>
   </a>
@@ -3209,10 +3220,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-dockerfile-for-the-showcase" class="md-nav__link">
+  <a href="#optional-reference-dockerfile" class="md-nav__link">
     <span class="md-ellipsis">
       
-        (Optional) Dockerfile for the showcase
+        (Optional) Reference Dockerfile
       
     </span>
   </a>
@@ -3223,19 +3234,19 @@
   <a href="#gradle-setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gradle Setup
+        Gradle setup
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Gradle Setup">
+    <nav class="md-nav" aria-label="Gradle setup">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#optional-local-build-convenience" class="md-nav__link">
     <span class="md-ellipsis">
       
-        (Optional) Local build convenience
+        (Optional) local-build convenience
       
     </span>
   </a>
@@ -3248,10 +3259,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#stove-configuration-go-specifics" class="md-nav__link">
+  <a href="#stoveconfigkt-go-specifics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Stove Configuration (Go specifics)
+        StoveConfig.kt (Go specifics)
       
     </span>
   </a>
@@ -3285,6 +3296,17 @@
     <span class="md-ellipsis">
       
         Dashboard &amp; MCP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfalls
       
     </span>
   </a>
@@ -3388,57 +3410,52 @@
   
 
 
-<h1 id="go-container-mode">Go. Container Mode<a class="headerlink" href="#go-container-mode" title="Permanent link">&para;</a></h1>
-<p>Run the Go application as a Docker image instead of a host binary using <code>stove-container</code> and the <code>containerApp()</code> DSL. This gives you <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">image-level parity with what you ship to production</span>. Same Dockerfile, same entrypoint, same runtime. Without changing a single line of Stove test code.</p>
-<p>For fast iteration without an image, see <a href="../go-process/">Process Mode</a>. The same Kotlin tests run against either.</p>
-<p>This page is the <strong>Go-specific recipe</strong>. For the language-agnostic <code>stove-container</code> reference. Full DSL contract, image-source patterns, networking strategies, <code>configureContainer</code>, <code>beforeStarted</code>, troubleshooting matrix. See <a href="../../Components/22-container/">Container AUT (<code>stove-container</code>)</a>. The Go showcase below uses that module; it does not redefine it.</p>
-<h2 id="why-container-mode-go-specific-summary">Why container mode (Go-specific summary)<a class="headerlink" href="#why-container-mode-go-specific-summary" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Concern</th>
-<th>Process mode</th>
-<th>Container mode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Iteration speed</strong></td>
-<td>Fast. <code>go build</code> only</td>
-<td>Slower. Image build (or fetch from registry)</td>
-</tr>
-<tr>
-<td><strong>Production parity</strong></td>
-<td>Approximate (host runtime)</td>
-<td>Exact (the artifact you ship)</td>
-</tr>
-<tr>
-<td><strong>Glibc / Alpine differences</strong></td>
-<td>Hidden</td>
-<td>Surfaced</td>
-</tr>
-<tr>
-<td><strong>CI/CD validation</strong></td>
-<td>Indirect</td>
-<td>Direct</td>
-</tr>
-</tbody>
-</table>
-<p>Use container mode in CI to catch image-only regressions (missing CA certs, wrong base image, locale issues, glibc/musl drift). Keep process mode for the inner debug loop.</p>
-<h2 id="what-this-guide-adds-on-top-of-process-mode">What this guide adds on top of Process Mode<a class="headerlink" href="#what-this-guide-adds-on-top-of-process-mode" title="Permanent link">&para;</a></h2>
-<p>The Go application code, OpenTelemetry setup, Kafka bridge integration, and Stove test DSL are identical to <a href="../go-process/">Process Mode</a>. Container mode only changes:</p>
+<h1 id="go-container-mode">Go · Container Mode<a class="headerlink" href="#go-container-mode" title="Permanent link">&para;</a></h1>
+<p>Run the Go app as a Docker image instead of a host binary. <code>stove-container</code> + <code>containerApp()</code>. Image-level parity with what you ship. Same Dockerfile, same entrypoint, same runtime. No Stove test code changes.</p>
+<p>For fast iteration without an image, see <a href="../go-process/">Process Mode</a>. Same Kotlin tests run against either.</p>
+<div class="stove-tldr">
+<p><span class="stove-tldr-title">In 30 seconds</span>
+This page is the <strong>Go-specific recipe</strong>. The language-agnostic <code>stove-container</code> reference (full DSL, image-source patterns, networking, troubleshooting) lives at <a href="../../Components/22-container/">Container AUT</a>. Build the image however you build it (CI / registry / local Docker). Pass the tag to Stove. Reuse your process-mode StoveConfig with one branch.</p>
+</div>
+<h2 id="why-container-mode">Why container mode<a class="headerlink" href="#why-container-mode" title="Permanent link">&para;</a></h2>
+<div class="stove-compare" markdown="0">
+  <div>
+    <h4>Process mode</h4>
+    <ul>
+      <li>Fast. <code>go build</code> only</li>
+      <li>Approximate prod parity (host runtime)</li>
+      <li>Glibc/Alpine drift hidden</li>
+      <li>Indirect CI validation</li>
+      <li>Best for inner debug loop</li>
+    </ul>
+  </div>
+  <div>
+    <h4>Container mode</h4>
+    <ul>
+      <li>Slower. Image build (or fetch)</li>
+      <li>Exact prod parity (the artifact you ship)</li>
+      <li>Glibc/musl + locale + CA-cert issues surface</li>
+      <li>Direct CI validation</li>
+      <li>Best for pre-merge gating</li>
+    </ul>
+  </div>
+</div>
+
+<p>Use container mode in CI to catch image-only regressions: missing CA certs, wrong base image, locale issues, glibc/musl drift. Keep process mode for the inner debug loop.</p>
+<h2 id="whats-different-from-process-mode">What's different from process mode<a class="headerlink" href="#whats-different-from-process-mode" title="Permanent link">&para;</a></h2>
+<p>Go application code, OpenTelemetry setup, Kafka bridge integration, Stove test DSL are <strong>identical</strong> to <a href="../go-process/">Process Mode</a>. Container mode only changes:</p>
 <ol>
-<li><strong>AUT runner</strong>. <code>containerApp(...)</code> instead of <code>goApp(...)</code> (see the <a href="../../Components/22-container/">container component page</a>)</li>
-<li><strong>Image source</strong>. A tagged image, from CI / a registry / or an optional local build</li>
-<li><strong>(Optional) Coverage volume</strong>. Bind-mount a host directory into the container so coverage data survives container removal</li>
+<li><strong>AUT runner</strong>. <code>containerApp(...)</code> instead of <code>goApp(...)</code> (see <a href="../../Components/22-container/">container component page</a>)</li>
+<li><strong>Image source</strong>. A tagged image. CI / registry / optional local build</li>
+<li><strong>(Optional) Coverage volume</strong>. Bind-mount a host dir into the container so coverage data survives container removal</li>
 </ol>
-<p>The Kotlin tests, the Stove DSL, the Stove systems, and the Go source code do not change.</p>
+<p>Kotlin tests, Stove DSL, Stove systems, Go source. Untouched.</p>
 <div class="admonition info">
 <p class="admonition-title">Image build is not Stove's job</p>
-<p><code>containerApp(...)</code> only needs an image reference. Use whatever your CI already produced, pull from a registry, or wire an optional local Gradle build task. See <a href="../../Components/22-container/#image-source-patterns">image source patterns</a> for the three options. The Dockerfile and <code>buildContainerImage</code> task below are the <em>recipe's</em> convenience for being self-contained, not a requirement.</p>
+<p><code>containerApp(...)</code> only needs an image reference. Point it at your CI-produced tag, pull from a registry, or build locally. See <a href="../../Components/22-container/#image-source-patterns">image source patterns</a> for the three options.</p>
 </div>
-<h2 id="optional-dockerfile-for-the-showcase">(Optional) Dockerfile for the showcase<a class="headerlink" href="#optional-dockerfile-for-the-showcase" title="Permanent link">&para;</a></h2>
-<p>The recipe includes a Dockerfile so the repo is self-contained. In a real Go project, this is whatever your team already ships to production.</p>
+<h2 id="optional-reference-dockerfile">(Optional) Reference Dockerfile<a class="headerlink" href="#optional-reference-dockerfile" title="Permanent link">&para;</a></h2>
+<p>Your production Dockerfile works as-is. The one below is a minimal example if you're starting fresh.</p>
 <div class="language-dockerfile highlight"><span class="filename">Dockerfile.container</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">golang:1.26.2</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">build</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">WORKDIR</span><span class="w"> </span><span class="s">/workspace</span>
@@ -3456,9 +3473,9 @@
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="k">EXPOSE</span><span class="w"> </span><span class="s">8090</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="k">ENTRYPOINT</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/app/go-showcase&quot;</span><span class="p">]</span>
 </span></code></pre></div>
-<p>The <code>GO_BUILD_FLAGS</code> build-arg is what threads <code>-cover</code> through the Docker build when coverage is enabled (process mode does this with <code>go build -cover</code> directly).</p>
-<h2 id="gradle-setup">Gradle Setup<a class="headerlink" href="#gradle-setup" title="Permanent link">&para;</a></h2>
-<p>The minimum: a <code>Test</code> task that knows the image tag. The image can come from anywhere.</p>
+<p><code>GO_BUILD_FLAGS</code> build-arg threads <code>-cover</code> through the Docker build when coverage is on (process mode does this directly via <code>go build -cover</code>).</p>
+<h2 id="gradle-setup">Gradle setup<a class="headerlink" href="#gradle-setup" title="Permanent link">&para;</a></h2>
+<p>Minimum: a <code>Test</code> task that knows the image tag. Image can come from anywhere.</p>
 <div class="language-kotlin highlight"><span class="filename">build.gradle.kts</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Resolve the image tag in priority order: env var → Gradle property → local fallback</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">val</span><span class="w"> </span><span class="nv">containerImage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">environmentVariable</span><span class="p">(</span><span class="s">&quot;APP_IMAGE&quot;</span><span class="p">)</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p">.</span><span class="na">orElse</span><span class="p">(</span><span class="n">providers</span><span class="p">.</span><span class="na">gradleProperty</span><span class="p">(</span><span class="s">&quot;app.image&quot;</span><span class="p">))</span>
@@ -3473,56 +3490,37 @@
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;kafka.library&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sarama&quot;</span><span class="p">)</span>
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>In CI, point <code>APP_IMAGE</code> (or <code>-Papp.image=...</code>) at the tag your image-build job just produced. No <code>dependsOn("buildContainerImage")</code> needed. Stove just runs whatever is at that tag.</p>
-<h3 id="optional-local-build-convenience">(Optional) Local build convenience<a class="headerlink" href="#optional-local-build-convenience" title="Permanent link">&para;</a></h3>
-<p>If you also want a one-command local-build path, wire the Docker build as a separate task and add a <em>separate</em> test task that depends on it. Keep the CI-tag path untouched.</p>
+<p>In CI, point <code>APP_IMAGE</code> (or <code>-Papp.image=...</code>) at the tag your image-build job just produced. No <code>dependsOn("buildContainerImage")</code>. Stove just runs whatever is at that tag.</p>
+<h3 id="optional-local-build-convenience">(Optional) local-build convenience<a class="headerlink" href="#optional-local-build-convenience" title="Permanent link">&para;</a></h3>
+<p>Add a second test task that builds the image locally and runs against it. Keeps the CI-tag path untouched.</p>
 <div class="language-kotlin highlight"><span class="filename">build.gradle.kts</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">dockerExecutable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">environmentVariable</span><span class="p">(</span><span class="s">&quot;DOCKER_EXECUTABLE&quot;</span><span class="p">).</span><span class="na">getOrElse</span><span class="p">(</span><span class="s">&quot;docker&quot;</span><span class="p">)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kd">val</span><span class="w"> </span><span class="nv">coverageEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">gradleProperty</span><span class="p">(</span><span class="s">&quot;go.coverage&quot;</span><span class="p">)</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">it</span><span class="p">.</span><span class="na">toBoolean</span><span class="p">()</span><span class="w"> </span><span class="p">}.</span><span class="na">getOrElse</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kd">val</span><span class="w"> </span><span class="nv">localImageTag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;stove-go-showcase-container:local&quot;</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;buildContainerImage&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Optional convenience: builds the Go showcase Docker image locally.&quot;</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;goModTidy&quot;</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">buildFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coverageEnabled</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;-cover&quot;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s">&quot;&quot;</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="n">commandLine</span><span class="p">(</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">        </span><span class="n">dockerExecutable</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">,</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">        </span><span class="s">&quot;--file&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">projectDir</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="s">&quot;Dockerfile.container&quot;</span><span class="p">).</span><span class="na">absolutePath</span><span class="p">,</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="s">&quot;--tag&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">localImageTag</span><span class="p">,</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="s">&quot;--build-arg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;GO_BUILD_FLAGS=</span><span class="si">$</span><span class="n">buildFlags</span><span class="s">&quot;</span><span class="p">,</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">        </span><span class="n">projectDir</span><span class="p">.</span><span class="na">absolutePath</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="p">)</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="n">project</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="s">&quot;Dockerfile.container&quot;</span><span class="p">))</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="na">files</span><span class="p">(</span><span class="n">fileTree</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">include</span><span class="p">(</span><span class="s">&quot;*.go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.mod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.sum&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="n">outputs</span><span class="p">.</span><span class="na">upToDateWhen</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1">// Docker is the source of truth</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="p">}</span>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
-</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;removeContainerImage&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Removes the locally-built image.&quot;</span>
-</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
-</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">    </span><span class="n">commandLine</span><span class="p">(</span><span class="n">dockerExecutable</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;image&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;rm&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">localImageTag</span><span class="p">)</span>
-</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="n">isIgnoreExitValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="p">}</span>
-</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>
-</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1">// Local-build path. only this task triggers a build</span>
-</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest-container-local&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Builds the image locally and runs container e2e tests.&quot;</span>
-</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;verification&quot;</span>
-</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">    </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;buildContainerImage&quot;</span><span class="p">)</span>
-</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">    </span><span class="n">useJUnitPlatform</span><span class="p">()</span>
-</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">    </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.aut.mode&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;container&quot;</span><span class="p">)</span>
-</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="w">    </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.app.container.image&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">localImageTag</span><span class="p">)</span>
-</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">    </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;kafka.library&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sarama&quot;</span><span class="p">)</span>
-</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coverageEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-40"><a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="w">        </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.cover.dir&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">goCoverDirPath</span><span class="p">)</span>
-</span><span id="__span-2-41"><a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="w">        </span><span class="n">outputs</span><span class="p">.</span><span class="na">cacheIf</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-2-42"><a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-2-43"><a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="p">}</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kd">val</span><span class="w"> </span><span class="nv">localImageTag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my-service:local&quot;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Exec</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;buildContainerImage&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Builds the application image locally.&quot;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="n">commandLine</span><span class="p">(</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="n">dockerExecutable</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="s">&quot;--file&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">projectDir</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="s">&quot;Dockerfile&quot;</span><span class="p">).</span><span class="na">absolutePath</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="s">&quot;--tag&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">localImageTag</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="n">projectDir</span><span class="p">.</span><span class="na">absolutePath</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="n">project</span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="s">&quot;Dockerfile&quot;</span><span class="p">))</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="na">files</span><span class="p">(</span><span class="n">fileTree</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">include</span><span class="p">(</span><span class="s">&quot;*.go&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.mod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;go.sum&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="n">outputs</span><span class="p">.</span><span class="na">upToDateWhen</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1">// Docker is the source of truth</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="p">}</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="n">tasks</span><span class="p">.</span><span class="na">register</span><span class="o">&lt;</span><span class="n">Test</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;e2eTest-container-local&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Builds the image locally and runs container e2e tests.&quot;</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;verification&quot;</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="n">dependsOn</span><span class="p">(</span><span class="s">&quot;buildContainerImage&quot;</span><span class="p">)</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">    </span><span class="n">useJUnitPlatform</span><span class="p">()</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">    </span><span class="n">systemProperty</span><span class="p">(</span><span class="s">&quot;go.app.container.image&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">localImageTag</span><span class="p">)</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="p">}</span>
 </span></code></pre></div>
-<p><code>buildContainerImage</code> is intentionally not cached. Docker is the source of truth for image freshness. The CI test task (<code>e2eTest-container</code>) does <strong>not</strong> depend on it.</p>
-<h2 id="stove-configuration-go-specifics">Stove Configuration (Go specifics)<a class="headerlink" href="#stove-configuration-go-specifics" title="Permanent link">&para;</a></h2>
-<p>A single <code>StoveConfig.kt</code> can serve both modes by branching on a system property. The infrastructure systems (PostgreSQL, Kafka, tracing, dashboard) are identical to process mode. Only the AUT runner block changes:</p>
+<p><code>buildContainerImage</code> isn't cached. Docker is the source of truth for image freshness. The CI task (<code>e2eTest-container</code>) does <strong>not</strong> depend on it. CI builds the image elsewhere and passes the tag.</p>
+<h2 id="stoveconfigkt-go-specifics"><code>StoveConfig.kt</code> (Go specifics)<a class="headerlink" href="#stoveconfigkt-go-specifics" title="Permanent link">&para;</a></h2>
+<p>A single <code>StoveConfig.kt</code> serves both modes by branching on a system property. Infrastructure systems (PostgreSQL, Kafka, tracing, dashboard) are identical to process mode. Only the AUT runner block changes:</p>
 <div class="language-kotlin highlight"><span class="filename">StoveConfig.kt</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">containerApp</span><span class="p">(</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;go.app.container.image&quot;</span><span class="p">),</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ContainerTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span>
@@ -3533,11 +3531,11 @@
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="p">),</span>
 </span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="c1">// Stove → Go env var mapping (same keys as process mode)</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="s">&quot;database.host&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_HOST&quot;</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">        </span><span class="s">&quot;database.port&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_PORT&quot;</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">        </span><span class="s">&quot;database.name&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_NAME&quot;</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="s">&quot;database.username&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_USER&quot;</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="s">&quot;database.password&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_PASS&quot;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="s">&quot;database.host&quot;</span><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_HOST&quot;</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">        </span><span class="s">&quot;database.port&quot;</span><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_PORT&quot;</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">        </span><span class="s">&quot;database.name&quot;</span><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_NAME&quot;</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="s">&quot;database.username&quot;</span><span class="w">    </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_USER&quot;</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="s">&quot;database.password&quot;</span><span class="w">    </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_PASS&quot;</span>
 </span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">        </span><span class="s">&quot;kafka.bootstrapServers&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;KAFKA_BROKERS&quot;</span>
 </span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;OTEL_EXPORTER_OTLP_ENDPOINT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;localhost:</span><span class="si">$</span><span class="n">OTLP_PORT</span><span class="s">&quot;</span><span class="p">)</span>
 </span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">        </span><span class="n">env</span><span class="p">(</span><span class="s">&quot;KAFKA_LIBRARY&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;kafka.library&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">&quot;sarama&quot;</span><span class="p">)</span>
@@ -3552,32 +3550,25 @@
 </span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>For the full list of <code>containerApp</code> parameters, <code>ContainerTarget</code> variants, networking strategies (<code>host</code> vs port-binding), and <code>configureContainer</code> capabilities, see the <a href="../../Components/22-container/">container component page</a>.</p>
+<p>Full <code>containerApp</code> reference (<code>ContainerTarget</code> variants, networking strategies, <code>configureContainer</code> capabilities): <a href="../../Components/22-container/">container component page</a>.</p>
 <h2 id="running">Running<a class="headerlink" href="#running" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># CI / registry image. pass the tag in</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>./gradlew<span class="w"> </span>e2eTest-container<span class="w"> </span>-Papp.image<span class="o">=</span>ghcr.io/acme/go-showcase:sha-abc123
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># CI / registry image: pass the tag in</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>./gradlew<span class="w"> </span>e2eTest-container<span class="w"> </span>-Papp.image<span class="o">=</span>ghcr.io/your-org/my-service:sha-abc123
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># or</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nv">APP_IMAGE</span><span class="o">=</span>ghcr.io/acme/go-showcase:sha-abc123<span class="w"> </span>./gradlew<span class="w"> </span>e2eTest-container
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nv">APP_IMAGE</span><span class="o">=</span>ghcr.io/your-org/my-service:sha-abc123<span class="w"> </span>./gradlew<span class="w"> </span>e2eTest-container
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Optional local-build path (only when you wired buildContainerImage)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Optional local-build path (when buildContainerImage is wired)</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>./gradlew<span class="w"> </span>e2eTest-container-local
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># Container e2e with Go coverage</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>./gradlew<span class="w"> </span>e2eTest-containerWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># Remove the locally-built image when done</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>./gradlew<span class="w"> </span>removeContainerImage
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># Use locally-published Stove artifacts (e.g. before a snapshot release)</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>./gradlew<span class="w"> </span>e2eTest-container<span class="w"> </span>-PuseMavenLocal<span class="o">=</span><span class="nb">true</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># With Go coverage</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>./gradlew<span class="w"> </span>e2eTest-container<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
 </span></code></pre></div>
-<p>By default the recipe resolves Stove from Maven Central + Sonatype snapshots so CI validates the same published path that users consume. <code>mavenLocal()</code> is opt-in.</p>
 <p><a id="code-coverage"></a></p>
 <h2 id="code-coverage-go-specific">Code Coverage (Go-specific)<a class="headerlink" href="#code-coverage-go-specific" title="Permanent link">&para;</a></h2>
 <p>Container coverage works the same way as <a href="../go-process/#code-coverage">process mode</a>, with two extra wiring details unique to Go-in-a-container:</p>
 <ol>
-<li>The <code>Dockerfile</code> passes <code>${GO_BUILD_FLAGS}</code> so <code>-cover</code> reaches the build inside the image</li>
-<li>The host coverage directory is bind-mounted into the container so data survives container teardown</li>
+<li>Dockerfile passes <code>${GO_BUILD_FLAGS}</code> so <code>-cover</code> reaches the build inside the image</li>
+<li>Host coverage directory is bind-mounted into the container so data survives teardown</li>
 </ol>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// In StoveConfig.kt</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kd">private</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">COVERAGE_DIR_IN_CONTAINER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/tmp/go-coverage&quot;</span>
@@ -3601,21 +3592,52 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./gradlew<span class="w"> </span>e2eTest-containerWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># HTML report at build/go-coverage/coverage.html</span>
 </span></code></pre></div>
-<p><code>signal.Ignore(syscall.SIGPIPE)</code> in <code>main()</code> matters here too. Stove sends SIGTERM to stop the container, and Go must finish flushing coverage data before the process dies.</p>
+<p><code>signal.Ignore(syscall.SIGPIPE)</code> in <code>main()</code> matters here too. Stove sends SIGTERM to stop the container; Go must finish flushing coverage data before the process dies.</p>
 <h2 id="dashboard-mcp">Dashboard &amp; MCP<a class="headerlink" href="#dashboard-mcp" title="Permanent link">&para;</a></h2>
-<p>Container mode emits to the <a href="../../Components/18-dashboard/">Stove Dashboard</a> and the <a href="../../Components/21-mcp/">MCP server</a> the same way process mode does. The <code>appName</code> you set in <code>DashboardSystemOptions</code> is the only label MCP needs to find the right runs:</p>
+<p>Container mode emits to the <a href="../../Components/18-dashboard/">Dashboard</a> and <a href="../../Components/21-mcp/">MCP server</a> the same way process mode does. The <code>appName</code> you set in <code>DashboardSystemOptions</code> is the only label MCP needs to find runs:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Agent calls stove_failures
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  → finds failed runs for app_name=go-showcase
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  → calls stove_failure_detail with run_id + test_id
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  → drills into stove_trace to see Go spans
 </span></code></pre></div>
-<p>Because tracing is <code>traceparent</code>-correlated, a Go span captured inside the container shows up in the same trace tree as the originating Stove HTTP call. No additional plumbing required.</p>
+<p>Tracing is <code>traceparent</code>-correlated, so a Go span captured inside the container shows up in the same trace tree as the originating Stove HTTP call. No extra plumbing.</p>
+<h2 id="pitfalls">Pitfalls<a class="headerlink" href="#pitfalls" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Image not found</td>
+<td>Tag mismatch; verify <code>APP_IMAGE</code> or <code>-Papp.image=...</code></td>
+</tr>
+<tr>
+<td>Container exits immediately</td>
+<td>Entrypoint blocks? Check <code>docker logs &lt;id&gt;</code></td>
+</tr>
+<tr>
+<td>Coverage file empty</td>
+<td>Bind-mount missing, or SIGPIPE killed Go before flush; ensure <code>signal.Ignore(syscall.SIGPIPE)</code></td>
+</tr>
+<tr>
+<td>Tests can't reach app</td>
+<td><code>withNetworkMode("host")</code> only works on Linux; on macOS/Windows use port binding (<code>bindHostPort = true</code>)</td>
+</tr>
+<tr>
+<td>Env var ignored</td>
+<td>Verify Go reads that exact variable name</td>
+</tr>
+</tbody>
+</table>
 <h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Container component page (DSL contract, networking, troubleshooting): <a href="../../Components/22-container/">Container AUT (<code>stove-container</code>)</a></li>
+<li><a href="../../Components/22-container/">Container AUT (<code>stove-container</code>)</a>. DSL contract, networking, troubleshooting</li>
 <li>Container module source: <code>starters/container/stove-container/</code></li>
-<li>Full working example (process <strong>and</strong> container modes in one repo): <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>recipes/process/golang/go-showcase</code></a></li>
-<li>Bridge library source: <a href="https://github.com/Trendyol/stove/tree/main/go/stove-kafka"><code>go/stove-kafka</code></a></li>
+<li>Full working example: <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>recipes/process/golang/go-showcase</code></a></li>
+<li>Bridge library: <a href="https://github.com/Trendyol/stove/tree/main/go/stove-kafka"><code>go/stove-kafka</code></a></li>
 <li>Component docs: <a href="../../Components/18-dashboard/">Dashboard</a> · <a href="../../Components/21-mcp/">MCP</a> · <a href="../../Components/15-tracing/">Tracing</a></li>
 </ul>
 
@@ -3758,6 +3780,8 @@
         <script src="../../js/wizard.js"></script>
       
         <script src="../../js/kotlin-playground-init.js"></script>
+      
+        <script src="../../js/stove-flow.js"></script>
       
     
   </body>

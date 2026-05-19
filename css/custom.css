@@ -290,6 +290,198 @@ code {
 }
 .sw-step-counter { font-size: 0.75rem; opacity: 0.7; }
 
+/* Share link as a button row instead of inline URL */
+.sw-share {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0.8rem 0 1.2rem;
+}
+.sw-share p {
+    margin: 0;
+    flex: 1 1 100%;
+    opacity: 0.85;
+    font-size: 0.85rem;
+}
+.sw-share-btn {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.9rem;
+}
+.sw-share-open {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    text-decoration: none;
+}
+.sw-share-open:hover { opacity: 1; }
+
+/* ===================== Stove Flow widget ===================== */
+.stove-flow { margin: 1.5rem 0 2rem; }
+.sf-frame {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 12px;
+    background: var(--md-default-bg-color);
+    overflow: hidden;
+}
+.sf-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+    background: #1e1f22;
+    color: #bcbec4;
+    flex-wrap: wrap;
+}
+.sf-title {
+    font-family: var(--md-code-font-family);
+    font-size: 0.78rem;
+    background: transparent;
+    padding: 0;
+}
+.sf-controls { display: flex; align-items: center; gap: 0.4rem; }
+.sf-btn {
+    background: #2b2d30;
+    color: #bcbec4;
+    border: 1px solid #3d4046;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.72rem;
+}
+.sf-btn:hover { background: #34373c; }
+.sf-loop {
+    font-size: 0.7rem;
+    color: #bcbec4;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.4rem;
+}
+.sf-caption {
+    margin: 0;
+    padding: 0.8rem 1rem 0;
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+.sf-stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.2rem;
+    padding: 2.2rem 1.2rem 2rem;
+    min-height: 9rem;
+}
+.sf-actor {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 10px;
+    background: var(--md-code-bg-color);
+    padding: 1rem 0.9rem;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    z-index: 1;
+}
+.sf-actor.active {
+    border-color: var(--md-primary-fg-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,150,136,0.25);
+}
+.sf-actor-name {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+}
+.sf-actor-sub {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.65;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+}
+.sf-packet {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-family: var(--md-code-font-family);
+    font-size: 0.72rem;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    transition: opacity 0.18s;
+    z-index: 5;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sf-packet.visible { opacity: 1; }
+.sf-packet[data-tone="request"] { background: #2aacb8; color: #ffffff; }
+.sf-packet[data-tone="produce"] { background: #d2a8ff; color: #1e1f22; }
+.sf-packet[data-tone="deliver"] { background: #79c0ff; color: #1e1f22; }
+.sf-packet[data-tone="bridge"]  { background: #b3ae60; color: #1e1f22; }
+.sf-packet[data-tone="match"]   { background: #7ee787; color: #1e1f22; }
+
+.sf-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 1rem 1rem;
+    border-top: 1px dashed var(--md-default-fg-color--lightest);
+    counter-reset: sf-step;
+}
+.sf-steps li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.4rem 0;
+    opacity: 0.55;
+    transition: opacity 0.2s;
+    border-left: 3px solid transparent;
+    padding-left: 0.6rem;
+}
+.sf-steps li.active {
+    opacity: 1;
+    border-left-color: var(--md-primary-fg-color);
+}
+.sf-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background: var(--md-default-fg-color--lightest);
+    color: var(--md-default-fg-color);
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.sf-steps li.active .sf-step-num {
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+}
+.sf-step-text {
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+.sf-error {
+    padding: 1rem;
+    border: 1px solid #c0392b;
+    background: #c0392b22;
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+@media (max-width: 700px) {
+    .sf-stage {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+}
+
 .sw-output { margin: 1rem 0 1.4rem; }
 .sw-output-head {
     display: flex;
@@ -297,7 +489,23 @@ code {
     justify-content: space-between;
     margin-bottom: 0.3rem;
 }
-.sw-output-head h4 { margin: 0; font-size: 0.85rem; }
+.sw-output-head h4 {
+    margin: 0;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.sw-output-tag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+}
 .sw-copy {
     border: 1px solid var(--md-default-fg-color--lightest);
     background: var(--md-code-bg-color);
@@ -394,6 +602,45 @@ code {
 .sw-callout strong {
     display: block;
     margin-bottom: 0.2rem;
+}
+
+/* Gradle banner at top of wizard output step */
+.sw-gradle-banner {
+    border: 1px solid var(--md-primary-fg-color);
+    background: linear-gradient(135deg,
+        rgba(0, 150, 136, 0.10) 0%,
+        rgba(0, 150, 136, 0.04) 100%);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.8rem 0 1.2rem;
+}
+.sw-gradle-banner-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+.sw-gradle-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+.sw-gradle-banner-head strong { font-size: 0.95rem; }
+.sw-gradle-banner p {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+.sw-gradle-banner pre {
+    margin: 0.6rem 0 0;
+    background: #1e1f22;
+    color: #bcbec4;
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.78rem;
+}
+.sw-gradle-banner pre code {
+    background: transparent;
+    color: inherit;
 }
 
 /* ===================== Dark Kotlin code blocks =====================
@@ -568,6 +815,52 @@ code {
 
 /* Stove TLDR + callout already light-tinted; leave them alone.
    Stove terminal frames stay on #0d1117 (slightly darker, intentional). */
+
+/* ===================== Emoji-led checklists =====================
+   When a list item starts with an emoji (✓ / ✗ / ⚠ etc.), drop the default
+   bullet so the emoji acts as the bullet. Keeps "What you get / What it
+   does NOT do" sections visually aligned across pages. */
+.md-typeset ul li:has(> img.twemoji:first-child),
+.md-typeset ol li:has(> img.twemoji:first-child),
+.md-typeset ul li:has(> .twemoji:first-child),
+.md-typeset ol li:has(> .twemoji:first-child) {
+    list-style: none;
+}
+.md-typeset ul:has(> li > img.twemoji:first-child),
+.md-typeset ol:has(> li > img.twemoji:first-child) {
+    padding-left: 0;
+    margin-left: 0;
+}
+.md-typeset li > img.twemoji:first-child,
+.md-typeset li > .twemoji:first-child {
+    display: inline-block;
+    width: 1.05em;
+    height: 1.05em;
+    margin-right: 0.55em;
+    vertical-align: -0.18em;
+}
+/* Tighter line spacing in emoji checklists */
+.md-typeset ul:has(> li > img.twemoji:first-child) > li,
+.md-typeset ol:has(> li > img.twemoji:first-child) > li {
+    margin-bottom: 0.35rem;
+}
+/* Optional explicit opt-in class for the same effect (works without :has) */
+.md-typeset .stove-checklist {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+}
+.md-typeset .stove-checklist li {
+    margin-bottom: 0.35rem;
+}
+.md-typeset .stove-checklist li > img.twemoji:first-child,
+.md-typeset .stove-checklist li > .twemoji:first-child {
+    display: inline-block;
+    width: 1.05em;
+    height: 1.05em;
+    margin-right: 0.55em;
+    vertical-align: -0.18em;
+}
 
 /* ===================== Cookbook ===================== */
 .cb-controls {

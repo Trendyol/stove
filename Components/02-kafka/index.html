@@ -3649,6 +3649,9 @@
 </span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="p">}</span>
 </span></code></pre></div>
+<p>How it works under the hood:</p>
+<div class="stove-flow" data-scenario="shouldBePublished"></div>
+
 <h3 id="asserting-consumed-spring-integration">Asserting consumed (Spring integration)<a class="headerlink" href="#asserting-consumed-spring-integration" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
@@ -3660,6 +3663,9 @@
 </span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">}</span>
 </span></code></pre></div>
+<p>How <code>shouldBeConsumed</code> flows across test, broker, app, and bridge:</p>
+<div class="stove-flow" data-scenario="shouldBeConsumed"></div>
+
 <h3 id="testing-retry-failure-paths">Testing retry / failure paths<a class="headerlink" href="#testing-retry-failure-paths" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span>
@@ -3869,6 +3875,8 @@
         <script src="../../js/wizard.js"></script>
       
         <script src="../../js/kotlin-playground-init.js"></script>
+      
+        <script src="../../js/stove-flow.js"></script>
       
     
   </body>
