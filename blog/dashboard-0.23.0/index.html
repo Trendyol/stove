@@ -2718,10 +2718,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-add-the-test-dependency-and-tracing-plugin" class="md-nav__link">
+  <a href="#2-add-dashboard-and-tracing-if-you-want-span-trees" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2) Add the test dependency and tracing plugin
+        2) Add Dashboard, and tracing if you want span trees
       
     </span>
   </a>
@@ -3205,10 +3205,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-add-the-test-dependency-and-tracing-plugin" class="md-nav__link">
+  <a href="#2-add-dashboard-and-tracing-if-you-want-span-trees" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2) Add the test dependency and tracing plugin
+        2) Add Dashboard, and tracing if you want span trees
       
     </span>
   </a>
@@ -3366,16 +3366,16 @@
 
 
 <h1 id="stove-dashboard-in-0230-see-your-e2e-runs-live">Stove Dashboard in 0.23.0: See Your E2E Runs Live<a class="headerlink" href="#stove-dashboard-in-0230-see-your-e2e-runs-live" title="Permanent link">&para;</a></h1>
-<p>End-to-end tests usually answer one question: pass or fail. When they fail, you jump between logs, traces, and broker/db tools to understand what happened.</p>
-<p>As of <strong>Stove 0.23.0</strong>, you can use <strong>Stove Dashboard</strong> and the <strong><code>stove</code> CLI</strong> to watch test execution in a local dashboard while tests are running.</p>
-<p>Dashboard gives you:</p>
+<p>End-to-end tests usually answer one question first: pass or fail. When they fail, the useful evidence is spread across the assertion output, application logs, traces, broker tools, and database clients.</p>
+<p>As of <strong>Stove 0.23.0</strong>, <strong>Stove Dashboard</strong> and the <strong><code>stove</code> CLI</strong> give those registered Stove systems a local place to stream their evidence while the suite is running.</p>
+<p>Dashboard can show:</p>
 <ul>
 <li>a real-time timeline of test actions</li>
-<li>distributed trace trees linked to tests</li>
-<li>state snapshots across systems</li>
+<li>distributed trace trees linked to tests, when tracing is enabled</li>
+<li>state snapshots from registered systems</li>
 <li>persistent run history in SQLite</li>
 </ul>
-<p>Instead of treating failures as black boxes, you can inspect the full story in one place.</p>
+<p>It does not replace assertions, logs, or tracing setup. It gives you one place to correlate them during local debugging.</p>
 <p align="center">
   <video width="900" controls>
     <source src="../../assets/stove_dashboard.webm" type="video/webm" />
@@ -3390,7 +3390,7 @@
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>stove
 </span></code></pre></div>
 <p>By default, the dashboard is at <code>http://localhost:4040</code> and gRPC receiver is at <code>localhost:4041</code>.</p>
-<h3 id="2-add-the-test-dependency-and-tracing-plugin">2) Add the test dependency and tracing plugin<a class="headerlink" href="#2-add-the-test-dependency-and-tracing-plugin" title="Permanent link">&para;</a></h3>
+<h3 id="2-add-dashboard-and-tracing-if-you-want-span-trees">2) Add Dashboard, and tracing if you want span trees<a class="headerlink" href="#2-add-dashboard-and-tracing-if-you-want-span-trees" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// build.gradle.kts</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">plugins</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="n">id</span><span class="p">(</span><span class="s">&quot;com.trendyol.stove.tracing&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="s">&quot;</span><span class="si">$</span><span class="n">stoveVersion</span><span class="s">&quot;</span>
@@ -3406,14 +3406,15 @@
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">&quot;product-api&quot;</span><span class="p">)</span>
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>The tracing Gradle plugin attaches the OpenTelemetry agent to your test tasks, which is required for the dashboard's trace view.</p>
+<p>The dashboard dependency streams Stove timeline entries and snapshots to the CLI. The trace view also needs <code>stove-tracing</code> plus the tracing Gradle plugin for in-process JVM apps. Process and container apps can appear in the same dashboard, but they must export OpenTelemetry spans to the receiver themselves.</p>
 <h3 id="3-register-dashboard-in-stove-config">3) Register Dashboard in Stove config<a class="headerlink" href="#3-register-dashboard-in-stove-config" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;product-api&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// recommended for trace view</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="c1">// other systems: http, kafka, postgresql, wiremock...</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="c1">// runner goes last: springBoot, ktor, processApp, containerApp, ...</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <h3 id="4-run-tests-and-open-dashboard">4) Run tests and open dashboard<a class="headerlink" href="#4-run-tests-and-open-dashboard" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./gradlew<span class="w"> </span><span class="nb">test</span>
@@ -3427,7 +3428,7 @@
 <li><strong>Snapshots:</strong> confirm system state around the failure boundary.</li>
 <li><strong>Kafka Explorer:</strong> verify published/consumed message counts and payloads.</li>
 </ol>
-<p>This gives you both sides of the picture: test-level assertions and application-level execution details.</p>
+<p>This gives you both sides of the picture: test-level evidence from Stove systems and application-level execution details from tracing.</p>
 <h2 id="daily-workflow-that-works-well">Daily Workflow That Works Well<a class="headerlink" href="#daily-workflow-that-works-well" title="Permanent link">&para;</a></h2>
 <p>Use Dashboard as a local companion while iterating:</p>
 <ol>
@@ -3437,7 +3438,7 @@
 <li>Inspect changes immediately in Timeline/Trace views</li>
 <li>Use Reporting + Tracing in CI; use Dashboard primarily for local debugging speed</li>
 </ol>
-<p>Dashboard is fault-tolerant by design. If CLI is not running, tests continue normally and Dashboard emission auto-degrades without breaking test execution.</p>
+<p>Dashboard is fault-tolerant by design. If the CLI is not running, tests continue normally and Dashboard emission disables itself for the rest of the suite instead of breaking test execution.</p>
 <h2 id="minimal-end-to-end-example">Minimal End-to-End Example<a class="headerlink" href="#minimal-end-to-end-example" title="Permanent link">&para;</a></h2>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">StoveConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span>
@@ -3446,12 +3447,17 @@
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;spring-example&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="c1">// other systems...</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="p">}</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">        </span><span class="c1">// AUT runner goes last</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">        </span><span class="n">springBoot</span><span class="p">(</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">          </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="na">example</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">          </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;server.port=8080&quot;</span><span class="p">)</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Stove</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>You keep writing tests exactly as before; Dashboard captures entries/spans/snapshots automatically.</p>
+<p>You keep writing the same Stove tests. The dashboard system captures entries from registered Stove systems, spans when tracing is enabled, and snapshots when systems provide them.</p>
 <h2 id="troubleshooting-quick-checks">Troubleshooting Quick Checks<a class="headerlink" href="#troubleshooting-quick-checks" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>UI stuck at waiting state:</strong> ensure <code>stove</code> is running before tests.</li>

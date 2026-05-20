@@ -2723,10 +2723,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#coverage-from-black-box-tests" class="md-nav__link">
+  <a href="#coverage-from-processcontainer-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Coverage from black-box tests
+        Coverage from process/container tests
       
     </span>
   </a>
@@ -3271,10 +3271,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#coverage-from-black-box-tests" class="md-nav__link">
+  <a href="#coverage-from-processcontainer-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Coverage from black-box tests
+        Coverage from process/container tests
       
     </span>
   </a>
@@ -3432,17 +3432,17 @@
 
 
 <h1 id="stove-0240-going-polyglot-and-an-mcp-for-ai-triage">Stove 0.24.0 — Going Polyglot, and an MCP for AI Triage<a class="headerlink" href="#stove-0240-going-polyglot-and-an-mcp-for-ai-triage" title="Permanent link">&para;</a></h1>
-<p>Stove started as a JVM end-to-end testing framework. Spring Boot, Ktor, Quarkus, Micronaut — spin them up with real PostgreSQL, real Kafka, real WireMock, then assert the whole flow with one Kotlin DSL. That core hasn't changed. What 0.24.0 changes is who gets to play.</p>
-<p>This release pushes on five things at once: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Go becomes a first-class application under test</span>, <span data-rn="underline" data-rn-color="#009688">any container image can be the AUT</span>, the framework starter is no longer required (test against an already-deployed app), one system type can have many keyed instances (verify across services), and the <span data-rn="underline" data-rn-color="#ff9800"><code>stove</code> CLI grows an MCP endpoint</span> so AI agents can triage failed runs without scraping logs.</p>
+<p>Stove started as a JVM end-to-end testing framework. Spring Boot, Ktor, Quarkus, Micronaut — start the application under test, start real PostgreSQL, Kafka, WireMock, and other systems, then assert the flow with one Kotlin test DSL. That core stays in place. What 0.24.0 changes is how the application under test can be started or targeted.</p>
+<p>This release pushes on five things at once: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Go can be a first-class application under test</span>, <span data-rn="underline" data-rn-color="#009688">container images can be targeted as AUTs</span>, the framework runner is no longer required for already-running apps, one system type can have many keyed instances, and the <span data-rn="underline" data-rn-color="#ff9800"><code>stove</code> CLI grows an MCP endpoint</span> so AI agents can inspect failed runs through structured data instead of scraping logs.</p>
 <h2 id="why-polyglot-why-now">Why polyglot, why now<a class="headerlink" href="#why-polyglot-why-now" title="Permanent link">&para;</a></h2>
 <p>Microservice fleets are not monolingual. The order service might be Spring Boot, the inventory service Go, the recommender Python, the edge router Rust. If your e2e framework only covers the JVM, every non-JVM service either gets its own bespoke harness or doesn't get end-to-end tested at all. Both are bad outcomes.</p>
-<p>The interesting question isn't "how do we add a Go runner?" It's "what's actually language-specific about an end-to-end test?" The answer turns out to be: very little. The Stove DSL — <code>http {}</code>, <code>postgresql {}</code>, <code>kafka {}</code>, <code>tracing {}</code>, <code>dashboard {}</code> — is about the <em>contract</em>: what went over the wire, what's in the database, what spans appeared. The language of the application under test is an implementation detail.</p>
-<p>So 0.24.0 splits AUT lifecycle from test logic. Two new starters, the test surface unchanged:</p>
+<p>The interesting question isn't "how do we add a Go runner?" It's "what's actually language-specific about an end-to-end test?" A lot of the test surface is not language-specific at all. The Stove DSL — <code>http {}</code>, <code>postgresql {}</code>, <code>kafka {}</code>, <code>tracing {}</code>, <code>dashboard {}</code> — is about the external contract: what went over the wire, what's in the database, what messages were observed, what spans were exported. The language matters at the runner and instrumentation boundary.</p>
+<p>So 0.24.0 splits AUT lifecycle from test logic. Two new AUT runners handle the process/container side while the assertion surface stays close to the JVM starters:</p>
 <ul>
 <li><strong><code>stove-process</code></strong> runs your app as a host binary. Fast iteration, easy debugging.</li>
 <li><strong><code>stove-container</code></strong> runs your app as a Docker image. CI parity with the artifact you ship.</li>
 </ul>
-<p>Both work for any language. Both pass infrastructure config the same way (<code>envMapper</code> / <code>argsMapper</code>). Both ride the same readiness model. The Kotlin tests don't care which one is in play.</p>
+<p>Both can target any language that can read mapped configuration, expose a readiness signal, and connect to the infrastructure Stove started. <code>envMapper</code> and <code>argsMapper</code> pass system-derived values into the AUT, and the same readiness model decides when tests can start.</p>
 <h2 id="a-tour-go-on-stove">A tour: Go on Stove<a class="headerlink" href="#a-tour-go-on-stove" title="Permanent link">&para;</a></h2>
 <p>Go gets the deepest treatment because it's the showcase language. The <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>go-showcase</code></a> recipe is an HTTP + PostgreSQL + Kafka service. Same <code>StoveConfig.kt</code> runs the binary directly <em>or</em> runs it inside a Docker container, branched on a single system property.</p>
 <h3 id="the-go-side">The Go side<a class="headerlink" href="#the-go-side" title="Permanent link">&para;</a></h3>
@@ -3453,7 +3453,7 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="nx">json</span><span class="p">.</span><span class="nx">NewDecoder</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">Body</span><span class="p">).</span><span class="nx">Decode</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">req</span><span class="p">)</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="nx">product</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">Product</span><span class="p">{</span><span class="nx">ID</span><span class="p">:</span><span class="w"> </span><span class="nx">uuid</span><span class="p">.</span><span class="nx">New</span><span class="p">().</span><span class="nx">String</span><span class="p">(),</span><span class="w"> </span><span class="nx">Name</span><span class="p">:</span><span class="w"> </span><span class="nx">req</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span><span class="w"> </span><span class="nx">Price</span><span class="p">:</span><span class="w"> </span><span class="nx">req</span><span class="p">.</span><span class="nx">Price</span><span class="p">}</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nx">insertProduct</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">Context</span><span class="p">(),</span><span class="w"> </span><span class="nx">db</span><span class="p">,</span><span class="w"> </span><span class="nx">product</span><span class="p">)</span><span class="w">  </span><span class="c1">// otelsql traces this automatically</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nx">insertProduct</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">Context</span><span class="p">(),</span><span class="w"> </span><span class="nx">db</span><span class="p">,</span><span class="w"> </span><span class="nx">product</span><span class="p">)</span><span class="w">  </span><span class="c1">// otelsql emits spans for this call</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="nx">producer</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">            </span><span class="nx">event</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">ProductCreatedEvent</span><span class="p">{</span><span class="nx">ID</span><span class="p">:</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">ID</span><span class="p">,</span><span class="w"> </span><span class="nx">Name</span><span class="p">:</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span><span class="w"> </span><span class="nx">Price</span><span class="p">:</span><span class="w"> </span><span class="nx">product</span><span class="p">.</span><span class="nx">Price</span><span class="p">}</span>
@@ -3464,7 +3464,7 @@
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>The Stove HTTP client sends a <code>traceparent</code> header. <code>otelhttp</code> extracts it. Spans created in the Go app share the originating test's trace ID. No glue code, no manual correlation.</p>
+<p>The Stove HTTP client sends a <code>traceparent</code> header. <code>otelhttp</code> extracts it. Spans created in the Go app share the originating test's trace ID. The Go app still owns its OpenTelemetry SDK setup, but it does not need per-test correlation code.</p>
 <h3 id="the-kotlin-side">The Kotlin side<a class="headerlink" href="#the-kotlin-side" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;create product, verify HTTP, DB, Kafka, traces&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
@@ -3500,7 +3500,7 @@
 </span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>If you removed the file path, you couldn't tell from this test that the AUT is in Go. That's the point.</p>
+<p>If you removed the file path, you couldn't tell from this test that the AUT is in Go. That's the point: the assertions target external behaviour. The Go-specific work lives in runner configuration, OpenTelemetry setup, and Kafka observation.</p>
 <h3 id="kafka-in-three-flavors">Kafka, in three flavors<a class="headerlink" href="#kafka-in-three-flavors" title="Permanent link">&para;</a></h3>
 <p><code>shouldBePublished&lt;T&gt;</code> and <code>shouldBeConsumed&lt;T&gt;</code> need an observation point on the broker side. For JVM apps, Stove uses Kafka client interceptors. For Go, 0.24.0 ships <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka"><code>stove-kafka</code></a>, a small Go library that forwards produced/consumed/committed messages over gRPC to Stove's observer.</p>
 <p>The bridge is library-agnostic at its core. First-party integrations exist for the three Go Kafka clients people actually use:</p>
@@ -3514,18 +3514,18 @@
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nx">bridge</span><span class="p">.</span><span class="nx">ReportConsumed</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span><span class="w">  </span><span class="o">&amp;</span><span class="nx">stovekafka</span><span class="p">.</span><span class="nx">ConsumedMessage</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nx">bridge</span><span class="p">.</span><span class="nx">ReportCommitted</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span><span class="w"> </span><span class="nx">topic</span><span class="p">,</span><span class="w"> </span><span class="nx">partition</span><span class="p">,</span><span class="w"> </span><span class="nx">offset</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 </span></code></pre></div>
-<p>In production, <code>STOVE_KAFKA_BRIDGE_PORT</code> is unset, <code>NewBridgeFromEnv()</code> returns nil, and every method becomes a no-op. <strong>Zero overhead in prod, full assertion fidelity in tests.</strong></p>
-<h3 id="coverage-from-black-box-tests">Coverage from black-box tests<a class="headerlink" href="#coverage-from-black-box-tests" title="Permanent link">&para;</a></h3>
-<p>A nice side-effect of standardizing on <code>stove-process</code> and <code>stove-container</code>: Go 1.20+ integration coverage just works. Build with <code>go build -cover</code>, set <code>GOCOVERDIR</code>, and Go writes coverage data on graceful shutdown. Stove already sends SIGTERM and waits for clean exit — exactly the lifecycle Go's coverage tooling expects.</p>
+<p>In production, <code>STOVE_KAFKA_BRIDGE_PORT</code> is unset, <code>NewBridgeFromEnv()</code> returns nil, and every method becomes a no-op. In tests, the same bridge gives Stove the observation point needed for <code>shouldBePublished&lt;T&gt;</code> and <code>shouldBeConsumed&lt;T&gt;</code>.</p>
+<h3 id="coverage-from-processcontainer-tests">Coverage from process/container tests<a class="headerlink" href="#coverage-from-processcontainer-tests" title="Permanent link">&para;</a></h3>
+<p>A useful side-effect of standardizing on <code>stove-process</code> and <code>stove-container</code>: Go 1.20+ integration coverage fits this lifecycle. Build with <code>go build -cover</code>, set <code>GOCOVERDIR</code>, and Go writes coverage data on graceful shutdown. Stove sends SIGTERM and waits for clean exit, which is the shutdown path Go's coverage tooling expects.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./gradlew<span class="w"> </span>e2eTestWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./gradlew<span class="w"> </span>e2eTest-containerWithCoverage<span class="w"> </span>-Pgo.coverage<span class="o">=</span><span class="nb">true</span>
 </span></code></pre></div>
 <p>Per-function summary, HTML report. One catch worth a paragraph: when Go runs under Java's <code>ProcessBuilder</code>, the stdout pipe can close before the process exits. Log writes to that closed pipe trigger SIGPIPE — Go dies before flushing coverage. The fix is one line in <code>main()</code>:</p>
 <div class="language-go highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nx">signal</span><span class="p">.</span><span class="nx">Ignore</span><span class="p">(</span><span class="nx">syscall</span><span class="p">.</span><span class="nx">SIGPIPE</span><span class="p">)</span>
 </span></code></pre></div>
-<p>That's it. No framework changes were needed for coverage; it's a Gradle concern, an env var, and an existing graceful-shutdown signal.</p>
+<p>That's it. No Stove framework changes were needed for coverage; it's a Gradle concern, an env var, and an existing graceful-shutdown signal.</p>
 <h2 id="container-mode-is-not-just-for-go">Container mode is not just for Go<a class="headerlink" href="#container-mode-is-not-just-for-go" title="Permanent link">&para;</a></h2>
-<p><code>stove-container</code> is <strong>language-agnostic</strong>. Anything that ships in an image works — Go, Python, Node.js, Rust, .NET, even your existing JVM artifact when you want to test the actual deployed binary instead of the in-process bean graph.</p>
+<p><code>stove-container</code> is <strong>language-agnostic</strong> at the runner boundary. Any image can be a target when it exposes a network surface, has a readiness signal, and can receive mapped configuration — Go, Python, Node.js, Rust, .NET, even your existing JVM artifact when you want to test the deployed binary instead of the in-process bean graph.</p>
 <p>One thing worth being explicit about: <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">building the image is not Stove's job</span>. <code>containerApp(...)</code> only needs an image reference. Where it comes from is your call:</p>
 <ul>
 <li>A tag your CI just produced (<code>-Papp.image=ghcr.io/acme/app:sha-abc</code>)</li>
@@ -3548,7 +3548,7 @@
 </span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="p">)</span>
 </span></code></pre></div>
 <p><code>configureContainer { ... }</code> exposes the underlying Testcontainers <code>GenericContainer</code>, so anything Testcontainers can do — bind mounts, network mode, log consumers, capabilities — is available without bespoke API surface.</p>
-<p>A common pattern: <code>e2eTest</code> runs process mode for daily local development; <code>e2eTest-container</code> runs container mode in CI against the image the build job just published. Same StoveConfig, same tests, branched on a system property.</p>
+<p>A common pattern: <code>e2eTest</code> runs process mode for daily local development; <code>e2eTest-container</code> runs container mode in CI against the image the build job just published. The assertions can stay the same while the runner block, env mapping, and readiness settings branch on a system property.</p>
 <h2 id="black-box-mode-testing-apps-stove-didnt-start">Black-box mode: testing apps Stove didn't start<a class="headerlink" href="#black-box-mode-testing-apps-stove-didnt-start" title="Permanent link">&para;</a></h2>
 <p>Polyglot AUT is one half of "Stove doesn't have to own the app." The other half is <code>providedApplication()</code> — telling Stove the application is already running somewhere, and you just want to run your tests against it.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
@@ -3569,8 +3569,8 @@
 </span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
-<p>Same Stove DSL. Same assertions. No <code>springBoot()</code> / <code>ktor()</code> / <code>goApp()</code> block. Stove waits for the deployed health check, then runs your tests against the live URL — and verifies side effects in the actual database / Kafka / Redis the deployed app uses (via <code>*.provided(...)</code> factories on each system).</p>
-<p>The use case is post-deployment smoke testing: the e2e tests you already wrote can double as a CI/CD gate that hits staging immediately after a release. Same code, same intent, different infrastructure.</p>
+<p>The same Stove assertion DSL is available for the external surfaces you configure. There is no <code>springBoot()</code> / <code>ktor()</code> / <code>goApp()</code> block, and Stove does not boot the app or inject properties, env vars, or command-line arguments into it. Stove waits for the deployed health check, then runs your tests against the live URL and any provided infrastructure you explicitly point at with <code>*.provided(...)</code> factories.</p>
+<p>The use case is post-deployment smoke testing: the e2e tests you already wrote can double as a CI/CD gate that hits staging immediately after a release. The test intent stays the same; the configuration changes from Stove-started infrastructure to externally provided endpoints.</p>
 <h2 id="multiple-instances-of-the-same-system-with-keys">Multiple instances of the same system, with keys<a class="headerlink" href="#multiple-instances-of-the-same-system-with-keys" title="Permanent link">&para;</a></h2>
 <p>Microservice integration tests usually need to talk to more than one downstream service, or verify state in more than one database. 0.24.0 adds <strong>keyed system registration</strong> for that:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">object</span><span class="w"> </span><span class="nc">OrderService</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
@@ -3592,11 +3592,11 @@
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">postgresql</span><span class="p">(</span><span class="n">AnalyticsDb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shouldQuery</span><span class="o">&lt;</span><span class="n">AnalyticsEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <p>Keys are Kotlin <code>object</code>s — compile-time-safe, IDE-autocompleted, refactor-safe. Default and keyed instances of the same type coexist independently. Reports and traces label keyed calls (<code>HTTP [OrderService] &gt; GET /api/orders/123</code>) so it's clear which service did what.</p>
-<p>This pairs naturally with <code>providedApplication()</code>. A single Stove config can wire your app's API, three downstream services, two shared databases, and a Kafka cluster — all already running in staging — and a single Kotlin test asserts behaviour across all of them.</p>
+<p>This pairs naturally with <code>providedApplication()</code>. A single Stove config can point at your app's API, three downstream services, two shared databases, and a Kafka cluster — all already running in staging — and a single Kotlin test can assert behaviour across those configured surfaces.</p>
 <h2 id="mcp-failure-triage-for-ai-agents">MCP — failure triage for AI agents<a class="headerlink" href="#mcp-failure-triage-for-ai-agents" title="Permanent link">&para;</a></h2>
 <p>The other big addition in 0.24.0 has nothing to do with non-JVM apps and everything to do with how people debug failed e2e runs in 2026.</p>
 <p>If you're using an AI agent in your editor or CI bot, you've probably watched it try to triage a failed test by reading the entire stdout, then the entire stderr, then <code>tail</code>-ing logs, then guessing at trace IDs. It works, but it burns tokens proportional to log size, and it hallucinates when names are ambiguous.</p>
-<p>The Stove dashboard already records every run — timeline, traces, snapshots, Kafka message counts — in a local SQLite database. 0.24.0 adds a <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> endpoint on the same <code>stove</code> CLI that exposes that data as structured tools:</p>
+<p>When <code>dashboard { }</code> is enabled and the CLI is running, Stove records the evidence it receives from registered systems in a local SQLite database: timeline entries, snapshots, traces when tracing is enabled and spans are exported, and Kafka evidence when Kafka observation is configured. 0.24.0 adds a <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> endpoint on the same <code>stove</code> CLI that exposes that data as structured tools:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>$ stove
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Stove CLI v0.24.0 running
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>UI:   http://localhost:4040
@@ -3620,16 +3620,16 @@
 <p><strong><code>run_id + test_id</code> is the only authoritative test selector.</strong> Apps and runs can contain duplicate test names; an agent inferring "OrderTest::should create order" from a phrase will eventually hit the wrong run. Every tool result includes the next call's exact arguments — agents follow links, they don't construct queries.</p>
 </li>
 <li>
-<p><strong>Loopback only.</strong> The <code>/mcp</code> endpoint accepts only localhost <code>Host</code>/<code>Origin</code> headers and rejects anything else. This blocks DNS rebinding from a malicious page in your browser. Safe to leave running on a dev machine; not exposed externally.</p>
+<p><strong>Loopback only.</strong> The <code>/mcp</code> endpoint accepts only localhost <code>Host</code>/<code>Origin</code> headers and rejects anything else. This blocks DNS rebinding from a malicious page in your browser. It is designed for local development, not for exposing as a shared service.</p>
 </li>
 </ol>
 <p>If MCP is unavailable, agents fall back to normal test output and logs — it's an optimization, not a dependency.</p>
 <h2 id="putting-it-together">Putting it together<a class="headerlink" href="#putting-it-together" title="Permanent link">&para;</a></h2>
 <p>Stove 0.24.0 is one consistent picture, even though the changes touch four different surfaces:</p>
 <ul>
-<li>A test that drives a Go service through HTTP, asserts on PostgreSQL state, validates Kafka messages, and traces the call chain — using the exact same DSL that drives the Spring Boot service next door.</li>
-<li>The same test running against a host binary in your IDE for fast feedback, then against a real Docker image in CI for production parity, with one <code>-Daut.mode</code> flip.</li>
-<li>When something fails, the dashboard shows you what happened. When the agent in your editor wants to help, it asks the dashboard via MCP instead of inhaling logs.</li>
+<li>A test that drives a Go service through HTTP, asserts on PostgreSQL state, validates Kafka messages, and traces the call chain through the same external-surface DSL that drives the Spring Boot service next door.</li>
+<li>The same assertions running against a host binary in your IDE for fast feedback, then against a Docker image in CI, with runner configuration selected by <code>-Daut.mode</code>.</li>
+<li>When something fails, the dashboard shows the evidence it received. When the agent in your editor wants to help, it can ask the dashboard via MCP instead of reading unstructured logs first.</li>
 </ul>
 <p>Three integrations, one feedback loop. That's the release.</p>
 <hr />
