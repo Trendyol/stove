@@ -1,12 +1,12 @@
 # Spring Boot
 
-The flagship Stove starter. First-class `bridge()` support, deepest integration, biggest example set.
+The most complete JVM starter in Stove. It starts the real Spring Boot application, supports `bridge()` for DI access, and has the largest example set.
 
 <a class="open-in-wizard" data-fw="spring-boot" data-sys="http,postgresql,kafka">Open Spring + Postgres + Kafka in wizard</a>
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Three pieces</span>
-1) Add <code>stove-spring</code>. 2) Extract <code>run(args)</code> from your <code>main</code>. 3) Pass it to <code>springBoot(runner = ...)</code>.
+1) Add <code>stove-spring</code>. 2) Extract <code>run(args)</code> from your <code>main</code>. 3) Register systems first, then pass the runner to <code>springBoot(runner = ...)</code>.
 </div>
 
 ## Anatomy of a Spring Boot setup
@@ -32,7 +32,7 @@ springBoot( <span class="anchor">1</span>
     <div class="stove-note"><span class="stove-note-tag">1</span><strong><code>springBoot { }</code></strong> registers Spring as the AUT runner inside <code>Stove().with { }</code>.</div>
     <div class="stove-note"><span class="stove-note-tag">2</span><strong><code>runner</code></strong> calls your extracted <code>run(args)</code>. Same path production uses.</div>
     <div class="stove-note"><span class="stove-note-tag">3</span><strong><code>addTestDependencies</code></strong> registers test-only beans (Kafka interceptor, custom serde). Use <code>addTestDependencies4x</code> for Spring Boot 4.x.</div>
-    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>withParameters</code></strong> hands properties to <code>SpringApplication</code> before boot.</div>
+    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>withParameters</code></strong> adds static startup properties. Runtime values from systems still come from each system's <code>configureExposedConfiguration</code>.</div>
   </div>
 </div>
 
@@ -97,7 +97,7 @@ Full bean registration details: [Kafka](../Components/02-kafka.md), [Bridge](../
 - :white_check_mark: Real Spring Boot startup, real `@Bean` graph
 - :white_check_mark: `bridge()`. `using<MyRepository> { ... }` reads/writes via real DI
 - :white_check_mark: Component access to all Stove systems
-- :white_check_mark: Auto-config of test-only beans (Kafka interceptor, custom serde)
+- :white_check_mark: Test-only bean registration for Kafka interceptors, custom serde, clocks, or fakes
 
 ## Common pitfalls
 

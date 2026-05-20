@@ -1,6 +1,6 @@
 # Redis
 
-Real Redis in a container or wired to an existing instance. Direct Lettuce client access. Sync, async, reactive. Full Redis data-structure support (strings, hashes, lists, sets, sorted sets, pub/sub, transactions).
+Real Redis in a container or wired to an existing instance. Stove exposes direct Lettuce client access, so tests can use the same Redis primitives your app depends on: strings, hashes, lists, sets, sorted sets, pub/sub, and transactions.
 
 <a class="open-in-wizard" data-sys="redis">Open in setup wizard</a>
 
@@ -8,7 +8,7 @@ Real Redis in a container or wired to an existing instance. Direct Lettuce clien
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Register <code>redis { RedisOptions(...) }</code>. Inside <code>stove { redis { } }</code>, call <code>client().connect().sync()</code> for the Lettuce sync API. Same client supports async (<code>.async()</code>) and pub/sub (<code>client().connectPubSub()</code>). No high-level Stove DSL.  raw Lettuce is the API.
+Register <code>redis { RedisOptions(...) }</code>. Inside <code>stove { redis { } }</code>, call <code>client().connect().sync()</code> for the Lettuce sync API. The same client supports async (<code>.async()</code>) and pub/sub (<code>client().connectPubSub()</code>). There is no high-level Redis assertion DSL; raw Lettuce is the API.
 </div>
 
 ## Configure

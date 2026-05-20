@@ -1,6 +1,6 @@
 # Kafka
 
-Real Kafka in a container (or wire to existing cluster). Publish, consume, assert published events with time bounds, capture in-flight messages, simulate failures.
+Real Kafka in a container or an existing cluster. Publish from tests, read directly with test consumers, and assert app-produced or app-consumed messages when the Stove Kafka bridge is wired into the AUT.
 
 <a class="open-in-wizard" data-sys="kafka">Open in setup wizard</a>
 
@@ -8,12 +8,12 @@ Real Kafka in a container (or wire to existing cluster). Publish, consume, asser
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Two modes</span>
-<strong>Standalone</strong> (<code>stove-kafka</code>). Plain Kafka client, works with any framework. <strong>Spring integration</strong> (<code>stove-spring-kafka</code>). Extra assertions for Spring's Kafka listeners. Both rely on the <em>Stove Kafka bridge interceptor</em> being wired into your app's producer/consumer so Stove can see what your code publishes and consumes.
+<strong>Standalone</strong> (<code>stove-kafka</code>). Plain Kafka client, works with any framework. <strong>Spring integration</strong> (<code>stove-spring-kafka</code>). Extra assertions for Spring's Kafka listeners. Assertions such as <code>shouldBePublished</code> and <code>shouldBeConsumed</code> rely on the Stove Kafka bridge being wired into your app's producer/consumer path so Stove can observe what the AUT publishes and consumes.
 </div>
 
 ## Bridge interceptor (required)
 
-Stove can only assert messages it can see. The bridge interceptor must be on your app's producer + consumer interceptor list.
+Stove can only assert app-side Kafka activity it can observe. For JVM Kafka clients, put the bridge interceptor on your app's producer and consumer interceptor lists. For non-JVM apps, use the language-specific bridge or report equivalent producer/consumer events yourself.
 
 ```kotlin
 // expose Stove's interceptor class via property
@@ -22,7 +22,7 @@ Stove can only assert messages it can see. The bridge interceptor must be on you
 "kafka.interceptorClasses=com.trendyol.stove.standalone.kafka.intercepting.StoveKafkaBridge"
 ```
 
-The `kafka.interceptorClasses` *prefix* is whatever your app reads. Mirror your app's property names.
+The `kafka.interceptorClasses` *prefix* is whatever your app reads. Mirror your app's property names; Stove does not rewrite application configuration keys for you.
 
 ## Standalone setup
 
@@ -95,7 +95,7 @@ Register the interceptor bean for the AUT:
 
 ## Test-friendly settings
 
-Default Kafka client settings are tuned for production throughput, not test speed. Without overrides, `shouldBePublished` / `shouldBeConsumed` *will* flake or timeout.
+Default Kafka client settings are tuned for production throughput, not test feedback. Without test-specific batching, offset, and commit settings, `shouldBePublished` / `shouldBeConsumed` can flake or time out.
 
 ```properties
 # producer

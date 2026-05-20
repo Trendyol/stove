@@ -1,6 +1,6 @@
 # Multiple Systems (Keyed)
 
-Default: one instance per system type. Need more? Register multiple instances of the same type with typed keys. Useful for microservice integration, multiple databases, multi-cluster Kafka, cross-service verification.
+Default: one instance per system type. Need more? Register multiple instances of the same type with typed keys. This is useful for microservice integration, multiple databases, multi-cluster Kafka, and cross-service verification.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
@@ -27,7 +27,7 @@ object InventoryService : SystemKey
 
 ## Register keyed instances
 
-Pass the key as the first arg. Everything else is identical to the single-instance API. Default + keyed instances coexist.
+Pass the key as the first arg. Options and validation APIs match the single-instance API. Default and keyed instances can coexist.
 
 ```kotlin
 Stove().with {
@@ -36,7 +36,7 @@ Stove().with {
     PostgresqlOptions(/* ... */)
   }
 
-  // Keyed instances. separate containers, ports, state
+  // Keyed instances: separate containers, ports, and state
   postgresql(AppDb) {
     PostgresqlOptions(
       databaseName = "app",
@@ -69,7 +69,7 @@ Stove().with {
 
 ## Use keys in tests
 
-Same DSL, just pass the key:
+Use the same validation DSL and pass the key to target the right instance:
 
 ```kotlin
 stove {
@@ -93,13 +93,13 @@ stove {
 
 ## Supported systems
 
-All systems support keyed registration:
+The built-in systems below support keyed registration:
 
 `postgresql · mysql · mssql · mongodb · couchbase · cassandra · redis · elasticsearch · kafka · httpClient · grpc · grpcMock · wiremock`
 
-## Combine with `providedApplication`
+## Combine with remote services
 
-For microservice integration tests where you don't own all the AUTs:
+For microservice integration tests where your AUT runs locally but dependencies are already deployed, key the remote endpoints:
 
 ```kotlin
 Stove().with {

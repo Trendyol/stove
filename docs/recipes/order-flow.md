@@ -1,6 +1,6 @@
 # Recipe: Order Placement Flow
 
-Test a complete order placement: client calls `POST /orders`, app validates inventory through a third-party HTTP service, persists the order, then publishes an `OrderCreated` event to Kafka. All four surfaces (HTTP in, HTTP out, DB, Kafka out) covered in one test.
+Test a complete order placement: client calls `POST /orders`, app validates inventory through a third-party HTTP service, persists the order, then publishes an `OrderCreated` event to Kafka. The test covers four external surfaces: HTTP in, HTTP out, DB state, and Kafka out.
 
 <a class="open-in-wizard" data-sys="http,postgresql,kafka" data-mk="wiremock" data-fw="spring-boot">Open this setup in the wizard</a> · <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase" target="_blank">Source on GitHub ↗</a>
 
@@ -13,7 +13,7 @@ Test a complete order placement: client calls `POST /orders`, app validates inve
 | Persistence | [PostgreSQL](../Components/06-postgresql.md) | verify the order row |
 | Messaging | [Kafka](../Components/02-kafka.md) | assert the `OrderCreated` event |
 
-Optional but recommended: [Tracing](../Components/15-tracing.md) and [Dashboard](../Components/18-dashboard.md). When this test fails you'll get a full call chain + timeline.
+Optional but recommended: [Tracing](../Components/15-tracing.md) and [Dashboard](../Components/18-dashboard.md). When enabled, they add a call chain and timeline to failures.
 
 ## What success looks like
 
@@ -193,7 +193,7 @@ class OrderFlowE2ETest : FunSpec({
 
 === "Ktor"
 
-    Replace the runner block:
+    Replace the runner block and keep the same system registrations:
 
     ```kotlin
     ktor(
@@ -222,7 +222,7 @@ class OrderFlowE2ETest : FunSpec({
 
 === "Go (process mode)"
 
-    Replace `stove-spring` with `stove-process`, configure Kafka via the [Go bridge](../other-languages/go.md), compile the Go binary before the test task, and pass its path as `go.app.binary`:
+    Replace `stove-spring` with `stove-process`, configure Kafka via the [Go bridge](../other-languages/go.md), compile the Go binary before the test task, pass its path as `go.app.binary`, and map system configuration into env vars or CLI args:
 
     ```kotlin
     goApp(
@@ -248,4 +248,4 @@ class OrderFlowE2ETest : FunSpec({
     Confirm the table name matches your migrations. If you use Flyway, register migrations in `PostgresqlOptions.migrations { register<InitialMigration>() }`.
 
 !!! tip "Diagnosing failures"
-    With tracing + dashboard on, a failure shows the full call chain. See [When a test fails](../observability/when-it-fails.md).
+    With tracing and dashboard configured, a failure can show the call chain and timeline. See [When a test fails](../observability/when-it-fails.md).

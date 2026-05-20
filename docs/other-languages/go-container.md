@@ -1,12 +1,12 @@
 # Go · Container Mode
 
-Run the Go app as a Docker image instead of a host binary. `stove-container` + `containerApp()`. Image-level parity with what you ship. Same Dockerfile, same entrypoint, same runtime. No Stove test code changes.
+Run the Go app as a Docker image instead of a host binary with `stove-container` + `containerApp()`. This validates the Dockerfile, entrypoint, base image, and runtime environment you plan to ship.
 
-For fast iteration without an image, see [Process Mode](go-process.md). Same Kotlin tests run against either.
+For fast iteration without an image, see [Process Mode](go-process.md). The same Kotlin tests can run against either mode when your `StoveConfig` switches only the AUT runner.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-This page is the <strong>Go-specific recipe</strong>. The language-agnostic <code>stove-container</code> reference (full DSL, image-source patterns, networking, troubleshooting) lives at <a href="../../Components/22-container/">Container AUT</a>. Build the image however you build it (CI / registry / local Docker). Pass the tag to Stove. Reuse your process-mode StoveConfig with one branch.
+This page is the <strong>Go-specific recipe</strong>. The language-agnostic <code>stove-container</code> reference (full DSL, image-source patterns, networking, troubleshooting) lives at <a href="../../Components/22-container/">Container AUT</a>. Build the image however you build it (CI / registry / local Docker). Pass the tag to Stove. Reuse your process-mode StoveConfig with one runner branch.
 </div>
 
 ## Why container mode
@@ -26,7 +26,7 @@ This page is the <strong>Go-specific recipe</strong>. The language-agnostic <cod
     <h4>Container mode</h4>
     <ul>
       <li>Slower. Image build (or fetch)</li>
-      <li>Exact prod parity (the artifact you ship)</li>
+      <li>Closer prod parity (the artifact you ship)</li>
       <li>Glibc/musl + locale + CA-cert issues surface</li>
       <li>Direct CI validation</li>
       <li>Best for pre-merge gating</li>
@@ -38,13 +38,13 @@ Use container mode in CI to catch image-only regressions: missing CA certs, wron
 
 ## What's different from process mode
 
-Go application code, OpenTelemetry setup, Kafka bridge integration, Stove test DSL are **identical** to [Process Mode](go-process.md). Container mode only changes:
+Go application code, OpenTelemetry setup, Kafka bridge integration, and Stove test assertions can stay the same as [Process Mode](go-process.md). Container mode changes the AUT launch contract:
 
 1. **AUT runner**. `containerApp(...)` instead of `goApp(...)` (see [container component page](../Components/22-container.md))
 2. **Image source**. A tagged image. CI / registry / optional local build
 3. **(Optional) Coverage volume**. Bind-mount a host dir into the container so coverage data survives container removal
 
-Kotlin tests, Stove DSL, Stove systems, Go source. Untouched.
+Kotlin tests, registered Stove systems, and Go source can stay untouched if your configuration branch only swaps the AUT runner.
 
 !!! info "Image build is not Stove's job"
     `containerApp(...)` only needs an image reference. Point it at your CI-produced tag, pull from a registry, or build locally. See [image source patterns](../Components/22-container.md#image-source-patterns) for the three options.
@@ -140,7 +140,7 @@ containerApp(
         hostPort = APP_PORT,
         internalPort = APP_PORT,
         portEnvVar = "APP_PORT",
-        bindHostPort = false   // host network. no need to bind
+        bindHostPort = false   // host network configured below; no host port binding
     ),
     envProvider = envMapper {
         // Stove → Go env var mapping (same keys as process mode)
@@ -220,7 +220,7 @@ containerApp(
 
 ## Dashboard & MCP
 
-Container mode emits to the [Dashboard](../Components/18-dashboard.md) and [MCP server](../Components/21-mcp.md) the same way process mode does. The `appName` you set in `DashboardSystemOptions` is the only label MCP needs to find runs:
+Container mode emits to the [Dashboard](../Components/18-dashboard.md) and [MCP server](../Components/21-mcp.md) when `dashboard { }` is registered and the `stove` CLI is running. The `appName` you set in `DashboardSystemOptions` is the label MCP uses to find runs:
 
 ```text
 Agent calls stove_failures
@@ -229,7 +229,7 @@ Agent calls stove_failures
   → drills into stove_trace to see Go spans
 ```
 
-Tracing is `traceparent`-correlated, so a Go span captured inside the container shows up in the same trace tree as the originating Stove HTTP call. No extra plumbing.
+Tracing is `traceparent`-correlated when the Go app extracts incoming context and exports to Stove's OTLP endpoint, so a span captured inside the container can show up in the same trace tree as the originating Stove HTTP call.
 
 ## Pitfalls
 

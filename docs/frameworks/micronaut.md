@@ -1,12 +1,12 @@
 # Micronaut
 
-Same Stove DSL, Micronaut bean graph. `bridge()` works out of the box.
+Stove starts the real Micronaut application and exposes the Micronaut bean graph to `bridge()`.
 
 <a class="open-in-wizard" data-fw="micronaut" data-sys="http,postgresql">Open Micronaut + Postgres in wizard</a>
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Tiny diff vs Spring</span>
-The runner is <code>micronaut</code> instead of <code>springBoot</code> and the port property is <code>micronaut.server.port</code>. Everything else is identical.
+The runner is <code>micronaut</code> instead of <code>springBoot</code>, and the port property is <code>micronaut.server.port</code>. Systems and validation DSLs keep the same shape; runner setup and bean registration follow Micronaut conventions.
 </div>
 
 ## Setup
@@ -58,7 +58,7 @@ Stove().with {
 
 - :white_check_mark: Real Micronaut startup + bean graph
 - :white_check_mark: `bridge()` reaches your DI container
-- :white_check_mark: All Stove systems compose unchanged
+- :white_check_mark: Stove systems compose through the same `Stove().with { }` registration model
 
 ## Example
 

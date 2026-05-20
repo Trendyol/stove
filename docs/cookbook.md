@@ -6,11 +6,11 @@ hide:
 
 # Cookbook
 
-Every Stove system, its Gradle dep, its configure block, its test DSL. Searchable. Copy-pastable. Powered by the same `setup.json` the wizard reads.
+Every Stove system, its Gradle dependency, configure block, and test DSL shape. Searchable, copy-adaptable, and powered by the same `setup.json` the wizard reads.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Quick lookup</span>
-Filter by name, family (database, mock, observability), or substring. Each card has copy buttons and a one-click jump into the wizard with that system preselected.
+Filter by name, family (database, mock, observability), or substring. Each card shows the generated snippet and a one-click jump into the wizard with that system preselected.
 </div>
 
 <div id="stove-cookbook" markdown="0">

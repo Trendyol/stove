@@ -1,10 +1,10 @@
 # Reporting
 
-Every Stove test failure ships with a structured execution context. Reporter captures HTTP calls, DB ops, Kafka publishes, WireMock stubs, gRPC interactions. When an assertion goes red, you see what happened before, not a bare stack trace.
+Every Stove test failure ships with structured execution context. The reporter captures activity from registered systems: HTTP calls, DB ops, Kafka observations, WireMock stubs, and gRPC interactions. When an assertion fails, you get the stack trace plus the sequence of system activity that led to it.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Add the Kotest or JUnit extension. Failures print a timeline by default (pretty console). Add <code>reporting { }</code> in <code>Stove().with</code> to control output or capture machine-readable JSON. Pairs naturally with <a href="../15-tracing/">Tracing</a> and the <a href="../18-dashboard/">Dashboard</a>.
+Add the Kotest or JUnit extension. Failures print a timeline by default (pretty console). Add <code>reporting { }</code> in <code>Stove().with</code> to tune output or use machine-readable JSON. Reporting pairs with <a href="../15-tracing/">Tracing</a> and the <a href="../18-dashboard/">Dashboard</a>; it does not require either one.
 </div>
 
 ## Setup
@@ -100,7 +100,7 @@ Stove().with {
 | gRPC | method, request, response, status |
 | System snapshots | per-system state at failure time (Kafka topics, WireMock unmatched, etc.) |
 
-Snapshots make root-cause analysis painless. WireMock snapshot alone tells you when an "unexpected 404" was actually your test hitting an unmocked path.
+Snapshots make root-cause analysis faster. A WireMock snapshot, for example, can show that an "unexpected 404" was the app hitting an unmocked path.
 
 ## Pairs well with
 

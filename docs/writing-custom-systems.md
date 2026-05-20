@@ -1,10 +1,10 @@
 # Writing Custom Systems
 
-Built-in systems cover databases, Kafka, HTTP, gRPC, more. Your app has its own surfaces: job schedulers, domain events, a custom protocol, time control. Wrap them in a Stove system and your tests read like first-class APIs.
+Built-in systems cover databases, Kafka, HTTP, gRPC, and more. Your app may still have its own observable surfaces: job schedulers, domain events, a custom protocol, or time control. Wrap those surfaces in a Stove system when you need reusable setup, assertions, or failure snapshots.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</code> + a lifecycle interface), <strong>DSL extensions</strong> (one for registration, one for validation), optional <strong>bean registration</strong> (if your system needs a hook inside the AUT). That's it.
+Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</code> plus the lifecycle interfaces it needs), <strong>DSL extensions</strong> (one for registration, one for validation), and optional <strong>bean registration</strong> if the system needs a hook inside the AUT.
 </div>
 
 Goal pattern. `tasks { }` is a custom system you wrote:
@@ -31,14 +31,14 @@ test("welcome email after signup") {
 
 ### 1. System class
 
-Implement `PluggedSystem` and pick a lifecycle interface for when your code runs:
+Implement `PluggedSystem` and pick lifecycle interfaces based on when your code must run:
 
 | Interface | When called |
 |---|---|
 | `RunAware` | Before AUT starts (spin up infra) |
 | `AfterRunAware` | After AUT starts |
 | `AfterRunAwareWithContext<T>` | After AUT starts, with DI container (`ApplicationContext`, etc.) |
-| `ExposesConfiguration` | When collecting config to pass to AUT |
+| `ExposesConfiguration` | During setup, after system startup, before a Stove-started AUT runner receives parameters |
 
 Example: a db-scheduler-backed task system that reads from the Spring context.
 
@@ -115,7 +115,7 @@ springBoot(
 )
 ```
 
-That's the entire pattern. Everything else is your domain logic.
+That is the core pattern. Everything else is domain-specific observation and assertion logic.
 
 ## Ideas
 
@@ -228,7 +228,7 @@ class MySystem(
 }
 ```
 
-Stove collects every system's `configuration()` and passes the merged list to your AUT as startup parameters.
+For AUTs started by Stove runners, Stove collects every registered system's `configuration()` after systems start and before the runner is called. The merged `key=value` list is passed to the AUT runner together with static `withParameters`. `providedApplication()` is different: Stove only checks readiness and runs assertions; the already-running app must be configured externally.
 
 ## Extending built-in systems
 

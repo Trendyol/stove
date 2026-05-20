@@ -1,10 +1,10 @@
 # Provided Instances
 
-Connect Stove to **existing infrastructure** (shared CI databases, dev clusters, staging brokers) instead of spinning Testcontainers. Same DSL. Same assertions. No Docker required.
+Connect Stove to **existing infrastructure** such as shared CI databases, dev clusters, or staging brokers instead of spinning Testcontainers. The registered system DSL and assertions stay the same; infrastructure lifecycle and cleanup become your responsibility.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Every system options class ships a <code>.provided(...)</code> factory. Swap <code>SystemOptions(...)</code> for <code>SystemOptions.provided(...)</code>, supply connection details, and Stove uses your infra instead of a container. For shared infra, prefix every resource (DB names, topics, indexes) with a unique run ID to prevent collisions.
+Each listed dependency system options class ships a <code>.provided(...)</code> factory. Swap <code>SystemOptions(...)</code> for <code>SystemOptions.provided(...)</code>, supply connection details, and Stove connects to your infrastructure instead of starting a container. For shared infra, prefix every resource (schemas, topics, indexes, keys) with a unique run ID to prevent collisions.
 </div>
 
 ## The pattern
@@ -44,11 +44,11 @@ postgresql {
   </div>
 </div>
 
-The rest of your `Stove().with { }` block stays identical. Tests don't know the difference.
+The registration shape stays identical, but the operational contract changes: Stove does not create, isolate, pause, or destroy a provided dependency.
 
 ## Supported systems
 
-All Stove systems support provided instances. Signatures are similar; check the specific reference page for full details.
+The built-in dependency systems below support provided instances. Signatures are similar; check the specific reference page for full details and cleanup support.
 
 | System | Factory | Required args |
 |---|---|---|
@@ -66,7 +66,7 @@ Each accepts the same `configureExposedConfiguration` and (where applicable) `cl
 
 ## Cleanup
 
-Container mode auto-cleans (containers die). Provided instances persist across runs. You must clean test data yourself. Every provided options class accepts a `cleanup` lambda that runs on suite teardown.
+Container mode isolates most state by removing containers when Stove stops. Provided instances persist across runs, so you must clean test data yourself. Every provided options class accepts a `cleanup` lambda that runs on suite teardown.
 
 ```kotlin
 postgresql {
@@ -285,7 +285,7 @@ class CIE2EConfig : AbstractProjectConfig() {
 - :white_check_mark: Reconcile orphans nightly (cleanup hooks can fail mid-run)
 - :white_check_mark: Use stable `CI_JOB_ID` over random when available. Easier to trace
 - :x: Don't share a single schema/topic across runs
-- :x: Don't skip cleanup hooks "for speed". Debt compounds
+- :x: Don't skip cleanup hooks "for speed"; shared-state debt compounds
 
 ## Related
 

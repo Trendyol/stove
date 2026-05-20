@@ -1,12 +1,12 @@
 # Quarkus
 
-Same Stove DSL, Quarkus runtime. One caveat: `bridge()` isn't shipped yet. Drive verification through HTTP, DB queries, and Kafka assertions.
+Stove starts the real Quarkus runtime. The main caveat is that `bridge()` is not shipped yet, so verification should go through HTTP, DB queries, Kafka observations, gRPC, or other external systems.
 
 <a class="open-in-wizard" data-fw="quarkus" data-sys="http,postgresql,kafka">Open Quarkus + Postgres + Kafka in wizard</a>
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Quarkus specifics</span>
-1) Keep <code>@QuarkusMain</code> intact. 2) Publish a readiness signal if your app has no HTTP. 3) Bridge unavailable. Use system DSLs (<code>postgresql</code>, <code>kafka</code>, etc.) for state verification.
+1) Keep <code>@QuarkusMain</code> intact. 2) Publish a readiness signal if your app has no HTTP. 3) Bridge is unavailable. Use system DSLs (<code>postgresql</code>, <code>kafka</code>, etc.) for state verification.
 </div>
 
 ## Setup
@@ -76,7 +76,7 @@ Without this, Stove's Kafka interceptor can't attach.
 ## What you get
 
 - :white_check_mark: Real Quarkus startup via the normal `main`
-- :white_check_mark: Tracing, reporting, dashboard, MCP. All integrated
+- :white_check_mark: Tracing, reporting, and dashboard when configured; MCP when the `stove` CLI is running and dashboard data exists
 - :x: Bridge. Not yet (verify through systems)
 
 ## Verification without Bridge

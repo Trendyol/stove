@@ -1,10 +1,10 @@
 # Container AUT (`stove-container`)
 
-Run the AUT as a **Docker image**. Any language, any framework. Image-level parity with what you ship to production.
+Run the AUT as a **Docker image**. Any language, any framework, with the same entrypoint and runtime image you ship.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Replace your framework starter with <code>containerApp(image = "my-app:tag", target = ContainerTarget.Server(...), envProvider = envMapper { ... })</code>. Stove starts the container, waits on a readiness probe, and exposes stable host ports. Image build is <em>your</em> responsibility, not Stove's.
+Replace your framework starter with <code>containerApp(image = "my-app:tag", target = ContainerTarget.Server(...), envProvider = envMapper { ... })</code>. Stove starts the container, maps system configuration into env vars or CLI args, and waits on your readiness probe. Image build is <em>your</em> responsibility, not Stove's.
 </div>
 
 For a host-binary AUT (process mode) see [`stove-process`](../other-languages/index.md). For a Go-specific walkthrough see [Go Container Mode](../other-languages/go-container.md).
@@ -13,10 +13,10 @@ For a host-binary AUT (process mode) see [`stove-process`](../other-languages/in
 
 ## What `stove-container` does
 
-- Pulls / locates the image; wraps it as a Testcontainers `GenericContainer`
+- Pulls or locates the image and wraps it as a Testcontainers `GenericContainer`
 - Maps Stove infrastructure config to env vars (`envMapper`) or CLI args (`argsMapper`)
 - Waits for readiness via your chosen `ReadinessStrategy`
-- Exposes stable host ports for tests
+- Exposes host ports according to `ContainerTarget.Server` and your port-binding strategy
 - Graceful shutdown with force-close fallback
 
 What it does NOT do:
@@ -67,7 +67,7 @@ Stove().with {
 | `ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort = true)` | App listens on a port; readiness probe required |
 | `ContainerTarget.Worker()` | No port; readiness via `Probe` or `FixedDelay` |
 
-`ContainerTarget.Worker(readiness = ...)` accepts no port because workers do not expose a listening socket. Use a stable `hostPort` when tests call the AUT through `localhost`. Use `hostPort = 0` only when tests and readiness do not depend on a fixed localhost port.
+`ContainerTarget.Worker(readiness = ...)` accepts no port because workers do not expose a listening socket. Use a stable `hostPort` when tests call the AUT through `localhost`. Use `hostPort = 0` only when tests can discover the mapped port and readiness does not depend on a fixed localhost URL.
 
 ## Readiness
 
@@ -93,7 +93,7 @@ argsProvider = argsMapper {
 }
 ```
 
-Both can coexist on the same `containerApp`.
+Both can coexist on the same `containerApp`; use the shape your image already supports.
 
 ## Networking gotchas
 
@@ -102,7 +102,7 @@ Both can coexist on the same `containerApp`.
 | `withNetworkMode("host")` | App reaches `localhost:port` directly | Linux only |
 | Port binding (default) | Cross-platform | Stove-managed infra reachable via Testcontainers network alias, not `localhost` |
 
-For port binding, map infra hosts in `envProvider`:
+For port binding, map infrastructure hosts in `envProvider` to values the container can reach:
 
 ```kotlin
 envProvider = envMapper {

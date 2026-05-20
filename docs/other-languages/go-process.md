@@ -13,11 +13,11 @@ A full working example (HTTP + Postgres + Kafka + tracing + coverage) lives at [
 
 ## What your Go app needs
 
-Three things, none Stove-specific in production:
+Three things keep the app testable without changing its production startup path:
 
 1. **Env-driven config.** Read connection details from env vars (your test wires them).
 2. **OpenTelemetry init.** Standard SDK setup. Reads `OTEL_EXPORTER_OTLP_ENDPOINT`. Disabled in prod if unset.
-3. **(Optional) Stove Kafka bridge** if you want `shouldBePublished` / `shouldBeConsumed`.
+3. **Optional Stove Kafka bridge** if you want `shouldBePublished` / `shouldBeConsumed` against app-side Kafka activity. Keep it dormant when the bridge env var is absent.
 
 ### Anatomy of `main()`
 
@@ -48,8 +48,8 @@ func main() {
     <div class="stove-note"><span class="stove-note-tag">1</span><strong>Ignore SIGPIPE</strong>. Stove sends SIGTERM to stop the process; SIGPIPE on a closed stdout pipe would kill Go before graceful shutdown finishes.</div>
     <div class="stove-note"><span class="stove-note-tag">2</span><strong>Env-driven config.</strong> Stove's <code>envMapper</code> populates these before start.</div>
     <div class="stove-note"><span class="stove-note-tag">3</span><strong>OTel init</strong> reads <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>. Production: unset → no tracing. Test: set by Stove → spans flow to dashboard.</div>
-    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>otelsql</code></strong> wraps <code>database/sql</code>. DB spans show up automatically.</div>
-    <div class="stove-note"><span class="stove-note-tag">5</span><strong>Kafka bridge.</strong> Returns nil when <code>STOVE_KAFKA_BRIDGE_PORT</code> isn't set. Nil-safe no-ops. Zero production overhead.</div>
+    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>otelsql</code></strong> wraps <code>database/sql</code>. DB spans show up when your app routes DB calls through the wrapped driver.</div>
+    <div class="stove-note"><span class="stove-note-tag">5</span><strong>Kafka bridge.</strong> Returns nil when <code>STOVE_KAFKA_BRIDGE_PORT</code> isn't set. Make bridge calls nil-safe so production runs do not report to Stove.</div>
     <div class="stove-note"><span class="stove-note-tag">6</span><strong><code>otelhttp</code></strong> extracts <code>traceparent</code> from incoming requests. Go spans tie to the test's trace ID.</div>
   </div>
 </div>
@@ -328,7 +328,7 @@ test("Go app consumes product update events") {
 
 ## Dashboard & MCP
 
-Start `stove`. The Go run streams to `http://localhost:4040` like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the [MCP endpoint](../Components/21-mcp.md). No log scraping.
+Start `stove` and register `dashboard { }` in `Stove().with`. The Go run then streams system events to `http://localhost:4040`: timeline, traces, snapshots, and Kafka explorer. For AI-assisted triage, agents read the same stored data via the [MCP endpoint](../Components/21-mcp.md).
 
 ## How tracing flows
 

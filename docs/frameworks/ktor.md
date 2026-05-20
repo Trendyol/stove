@@ -1,12 +1,12 @@
 # Ktor
 
-Stove starts your real Ktor server. Works with Koin, Ktor-DI, or any custom container via a one-line resolver.
+Stove starts your real Ktor server. It can resolve beans through Koin, Ktor-DI, or a custom resolver when you register `bridge()`.
 
 <a class="open-in-wizard" data-fw="ktor" data-sys="http,postgresql">Open Ktor + Postgres in wizard</a>
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Two knobs</span>
-1) Your <code>run(args, wait = false, ...)</code> returns the started <code>Application</code>. 2) <code>ktor(runner = ...)</code> calls it. Bridge auto-detects Koin vs Ktor-DI; custom containers plug in via a resolver lambda.
+1) Your <code>run(args, wait = false, ...)</code> returns the started <code>Application</code>. 2) <code>ktor(runner = ...)</code> calls it after systems are ready. If you use <code>bridge()</code>, Stove auto-detects Koin vs Ktor-DI; custom containers plug in via a resolver lambda.
 </div>
 
 ## Anatomy
@@ -161,7 +161,7 @@ Full patterns (multi-bean access, value capture, generics): [Bridge reference](.
 ## What you get
 
 - :white_check_mark: Real Netty server, real routing
-- :white_check_mark: `bridge()` for Koin **and** Ktor-DI without config
+- :white_check_mark: `bridge()` for Koin and Ktor-DI when the corresponding plugin is installed normally
 - :white_check_mark: Composes with every Stove system
 - :white_check_mark: Hot-swap DI containers via custom resolver
 

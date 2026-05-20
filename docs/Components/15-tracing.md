@@ -1,10 +1,10 @@
 # Tracing
 
-Test failed. Need to know what happened *inside the app*, not just at the test boundary. Stove's tracing wires OpenTelemetry into your test JVM, attaches the OTel Java Agent to the AUT, and prints the full span tree alongside the failure.
+Test failed. Need to know what happened *inside the app*, not just at the test boundary. Stove tracing starts an OTLP receiver for the suite, correlates spans with the current test, and prints the captured span tree alongside the failure.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Two steps</span>
-1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. Spans from <em>every</em> instrumented library show up in failure reports automatically. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.
+1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. For JVM apps launched by Stove, the plugin can attach the OTel Java Agent; for process/container apps, wire your language's OTel SDK to the exposed endpoint. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.
 </div>
 
 ## Setup
@@ -26,9 +26,9 @@ stoveTracing {
 
 The plugin:
 
-- attaches the OpenTelemetry Java agent to your test JVM (zero code changes to your app)
+- attaches the OpenTelemetry Java agent for in-process JVM test tasks
 - boots an OTLP gRPC receiver on a free port
-- exposes `OTEL_*` env vars to the AUT so spans flow back to the test
+- exposes `OTEL_*` values that runners can pass to the AUT
 - handles agent download + caching
 
 ### 2. Enable span receiver in Stove
@@ -40,7 +40,7 @@ Stove().with {
 }.run()
 ```
 
-That's it. Spans from Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB (and 100+ other libraries the OTel agent supports) show up in the failure report automatically.
+For in-process JVM apps, spans from agent-supported libraries such as Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, and MongoDB can show up in the failure report without application code changes. For separate processes or containers, the app must initialize an OTel SDK/exporter and send spans to the receiver.
 
 !!! info "Why Gradle?"
     The `stoveTracing` plugin handles JVM agent attachment and OTLP wiring per test task. Maven can replicate the receiver setup manually, but the agent-attach + per-task port allocation is plugin-only today.
@@ -55,13 +55,13 @@ That's it. Spans from Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB (a
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🚀</div>
-    <strong>Zero app changes</strong>
-    <p>OTel agent instruments your code at bytecode level. Your production app doesn't even know.</p>
+    <strong>No app changes for JVM agent mode</strong>
+    <p>For in-process JVM apps launched by Stove, the OTel agent instruments supported libraries at bytecode level. Non-JVM apps need SDK wiring.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🔗</div>
     <strong>W3C propagation</strong>
-    <p><code>traceparent</code> headers and Kafka headers carry context across services. Distributed traces work.</p>
+    <p><code>traceparent</code> headers and Kafka headers carry context when your clients and consumers propagate them.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🧪</div>
@@ -134,7 +134,7 @@ Bug found: inventory shows out-of-stock, app published `order.failed.v1` instead
 
 ## Polyglot apps (Go, Python, ...)
 
-For non-JVM AUT, the plugin still boots the OTLP receiver and exposes `OTEL_EXPORTER_OTLP_ENDPOINT` to the AUT. Wire your language's OTel SDK to read it. Spans land in the same trace tree as the test. See [Polyglot overview](../other-languages/index.md).
+For non-JVM AUTs, the plugin still boots the OTLP receiver. Process and container runners can pass the endpoint through env vars or CLI args; your language's OTel SDK must read that endpoint and export spans. Those spans can land in the same trace tree as the test when W3C context propagation is wired. See [Polyglot overview](../other-languages/index.md).
 
 ## Pairs well with
 

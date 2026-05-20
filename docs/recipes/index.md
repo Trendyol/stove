@@ -1,12 +1,12 @@
 # Recipes
 
-End-to-end scenarios that combine multiple systems. Each recipe is a complete, copy-paste setup. Gradle deps, `StoveConfig.kt`, and a runnable test. For a real-world flow.
+End-to-end scenarios that combine multiple systems. Each recipe gives you the Gradle deps, `StoveConfig.kt`, and a runnable test shape for a real-world flow. Treat package names, ports, and app-specific property keys as values to adapt.
 
 Recipes complement the [Setup Wizard](../index.md) (which composes systems) and the [Components reference](../Components/index.md) (which documents each system in isolation).
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Working source on GitHub</span>
-Every recipe on this page is a tightened walkthrough of a project in the Stove repo's <a href="https://github.com/Trendyol/stove/tree/main/recipes" target="_blank"><code>recipes/</code></a> folder. Clone, open in your IDE, run <code>./gradlew e2eTest</code>.
+Every recipe on this page is a tightened walkthrough of a project in the Stove repo's <a href="https://github.com/Trendyol/stove/tree/main/recipes" target="_blank"><code>recipes/</code></a> folder. Clone, open in your IDE, run the documented test task, then adapt the wiring to your application.
 </div>
 
 ## Available recipes
@@ -63,7 +63,7 @@ Don't see your scenario? Jump straight to the working projects.
 
 ## Pattern of a recipe
 
-Every recipe page follows the same shape:
+Every recipe page follows the same review shape:
 
 1. **What you'll test**. The business flow.
 2. **Systems used**. Links to each system's reference page.

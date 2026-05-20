@@ -1,10 +1,10 @@
 # Provided Application (Black-Box)
 
-Skip the local AUT boot. Drive Stove tests against a **remote, already-deployed** application. Any language. Any framework. Same DSL.
+Skip the local AUT boot. Drive Stove tests against a **remote, already-deployed** application. The app can be written in any language; Stove treats it as an already-running black-box endpoint.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <code>goApp</code>) with <code>providedApplication { }</code> + a readiness probe. Wire <code>httpClient</code> to the remote URL. Use <code>.provided(...)</code> on every system pointing at staging infrastructure. Bridge isn't available (different process); verify through systems.
+Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <code>goApp</code>) with <code>providedApplication { }</code> plus an optional readiness probe. Wire <code>httpClient</code> to the remote URL. Use <code>.provided(...)</code> on every system that points at staging infrastructure. Stove does not boot the app or inject configuration; verify through public endpoints and provided systems.
 </div>
 
 ## When to use
@@ -16,7 +16,7 @@ Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <cod
 
 ## Configure
 
-`providedApplication { }` replaces the framework starter in `Stove().with`. HTTP and other systems are configured as usual.
+`providedApplication { }` replaces the framework starter in `Stove().with`. HTTP and other systems are configured as usual, but all application configuration must already exist in the deployed environment.
 
 ```kotlin hl_lines="2 3 4 7 8 9 10 11 12 13"
 Stove().with {
@@ -97,7 +97,7 @@ class TestConfig : AbstractProjectConfig() {
 
 ## Writing tests
 
-Same DSL. No code changes from local e2e tests.
+Use the same registered system DSL where the underlying system can be reached from the test process. DI bridge access through `using<T> { }` is unavailable for `providedApplication()`. Kafka observer assertions such as `shouldBePublished` and `shouldBeConsumed` only work if the remote app is separately configured to report to Stove; otherwise use direct consumers and system assertions.
 
 ```kotlin
 test("create order, verify side effects on staging") {
@@ -138,7 +138,7 @@ test("create order, verify side effects on staging") {
 | `using<T> { }` (Bridge) | ✗ | Remote DI container inaccessible |
 
 !!! warning "Bridge isn't supported"
-    `using<MyService> { }` reaches into the AUT's DI container. Only possible when AUT runs in the same JVM. Provided app gets a clear error.
+    `using<MyService> { }` reaches into the AUT's DI container. That is only possible when the AUT runs in the same JVM. Provided applications get a clear error.
 
 ## Suggested source-set layout
 

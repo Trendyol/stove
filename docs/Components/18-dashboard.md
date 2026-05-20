@@ -1,10 +1,10 @@
 # Dashboard
 
-A local web UI for everything your Stove tests do. Timelines, span trees, snapshots, Kafka explorer. Lives in a SQLite database so runs persist across sessions. Streams live via SSE.
+A local web UI for evidence emitted by registered Stove systems. Timelines, span trees, snapshots, and Kafka explorer views live in a SQLite database so runs persist across sessions. Live updates stream via SSE.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>. Open <code>http://localhost:4040</code>. Done.
+Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.
 </div>
 
 Current CLI versions start the dashboard with bare `stove`; older docs and scripts may still show `stove serve`.
@@ -55,7 +55,7 @@ Stove().with {
 }.run()
 ```
 
-Now every test run streams to the dashboard.
+Now the registered Stove systems stream test events to the dashboard while the CLI is running.
 
 ## What you see
 
@@ -133,7 +133,7 @@ Useful for CI artifact extraction, custom analyzers, or building tooling on top.
 
 -   :material-robot-outline: **[MCP](21-mcp.md)**. Same database, agent-readable.
 
--   :material-text-box-search-outline: **[Reporting](13-reporting.md)**. Console reports + dashboard = full coverage.
+-   :material-text-box-search-outline: **[Reporting](13-reporting.md)**. Console reports plus dashboard history cover complementary debugging surfaces.
 
 -   :material-chart-arc: **[When a test fails](../observability/when-it-fails.md)**. Dashboard is step 3 of the failure flow.
 
