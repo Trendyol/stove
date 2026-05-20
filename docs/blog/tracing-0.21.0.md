@@ -1,16 +1,16 @@
 # Execution Tracing in Stove 0.21.0
 
-If you've spent any time debugging e2e test failures, you know the routine. The test says <span data-rn="box" data-rn-color="#ef5350">"expected 201 but was 500"</span> and you're left reverse-engineering what actually happened. Did the request reach the controller? Did the database reject the write? Did a downstream service return something unexpected? You open the logs, grep for request IDs, cross-reference timestamps, and eventually piece together the story. Twenty minutes later, you have an answer.
+If you've spent any time debugging e2e test failures, you know the routine. The test says <span data-rn="box" data-rn-color="#ef5350">"expected 201 but was 500"</span> and you're left reconstructing what happened inside the application. Did the request reach the controller? Did the database reject the write? Did a downstream service return something unexpected? You open logs, search for request IDs, cross-reference timestamps, and eventually piece together the story.
 
-The fundamental problem is that e2e tests treat the application as a black box. They can tell you the output was wrong, but they have no visibility into the execution path that produced it. For simple flows that's fine. For a request that touches a gRPC service, two REST APIs, a database, and a Kafka topic before returning a response, it's a real productivity drain. In a microservice architecture with multiple integration points, this kind of failure can easily take 30 minutes to diagnose. Multiply that by every flaky test in your CI pipeline, and the cost adds up fast.
+The fundamental problem is that an e2e assertion sits at the test boundary. It can tell you the output was wrong, but it does not automatically show the execution path that produced it. For simple flows that's fine. For a request that touches a gRPC service, two REST APIs, a database, and a Kafka topic before returning a response, that missing path is the expensive part of the diagnosis.
 
-Stove 0.21.0 introduces execution tracing to address this. When a test fails, you get the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">entire call chain</span> of your application: every controller method, every database query, every Kafka message, every HTTP call, with timing and the exact point of failure. The bug might be buried deep in the persistence layer, but the trace pinpoints it without a single grep.
+Stove 0.21.0 introduces execution tracing to address this. When tracing is enabled and the app exports spans, a failing test can include the <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">captured call chain</span>: controller spans, database operations, Kafka operations, HTTP calls, timings, errors, and the point where the trace turned red. The bug might still require source-level debugging, but the trace gives you the first concrete place to look.
 
 ## Stove in 30 Seconds
 
 For those new to [Stove](https://github.com/Trendyol/stove): it's an end-to-end testing framework for the JVM. It spins up your **real application** with **real dependencies** (PostgreSQL, Kafka, MongoDB, Redis, etc. via Testcontainers) and gives you a unified Kotlin DSL for assertions across all of them. It works with Spring Boot, Ktor, Micronaut, and Quarkus. Tests can be written in Kotlin, Java, or Scala.
 
-The key idea: test your entire application stack as it runs in production, not a stripped-down mock version.
+The key idea: start the application under test with realistic infrastructure and assert the observable behaviour, instead of replacing every integration point with a mock.
 
 ## A Real Application: The Spring Showcase
 
@@ -145,7 +145,7 @@ test("The Complete Order Flow - Every Feature in One Test") {
 }
 ```
 
-<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One test covering eight integration points against real infrastructure.</span>
+<span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One test covering eight integration points against Stove-started infrastructure and mocks.</span>
 
 ## Setting Up Tracing
 
@@ -166,7 +166,7 @@ Stove()
 
 ### Step 2: Attach the OpenTelemetry agent in your build
 
-Copy [`StoveTracingConfiguration.kt`](https://github.com/Trendyol/stove/blob/main/buildSrc/src/main/kotlin/com/trendyol/stove/gradle/StoveTracingConfiguration.kt) to your project's `buildSrc/src/main/kotlin/` directory, then add to your `build.gradle.kts`:
+At the original 0.21.0 release, setup used a copied Gradle helper. Current projects should prefer the standalone `com.trendyol.stove.tracing` Gradle plugin described in the [tracing docs](../Components/15-tracing.md). The historical helper setup looked like this:
 
 ```kotlin hl_lines="3-5"
 import com.trendyol.stove.gradle.stoveTracing
@@ -177,12 +177,12 @@ stoveTracing {
 }
 ```
 
-This handles downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs don't conflict.
+That helper handled downloading the OpenTelemetry Java Agent, configuring JVM arguments, attaching the agent to your test tasks, and dynamically assigning ports so parallel test runs didn't conflict.
 
 !!! tip "Gradle Plugin available since 0.21.2"
     Starting with [0.21.2](../release-notes/0.21.2.md), a standalone Gradle plugin is available that eliminates the need to copy this file. See the [0.21.2 release notes](../release-notes/0.21.2.md) for details.
 
-<span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">No code changes to your application are needed.</span> The OpenTelemetry agent instruments 100+ libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) automatically. The `@WithSpan` annotations are optional. They add your own method-level spans on top of what the agent already captures.
+<span data-rn="highlight" data-rn-color="#4caf5044" data-rn-duration="800">For in-process JVM apps, no application code changes are needed for agent-supported libraries.</span> The OpenTelemetry agent instruments many common libraries (Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB, and more) at runtime. The `@WithSpan` annotations are optional. They add your own method-level spans on top of what the agent already captures. Process, container, and non-JVM apps need their own OpenTelemetry SDK/exporter wiring.
 
 ## What Happens When a Test Fails
 
@@ -263,17 +263,17 @@ EXECUTION TRACE (Call Chain)
 │   │       └── db.system: postgresql</code></pre>
 </div>
 
-The fraud, inventory, and payment steps all passed. The failure happened in `OrderService.saveOrderToDatabase`, specifically in `PostgresOrderRepository.save`, with the exception type, message, and stack trace right there. Without tracing, this would have been a 500 error with no context. With tracing, the root cause is <span data-rn="underline" data-rn-color="#009688">immediately visible</span>.
+The fraud, inventory, and payment steps all passed. The failure happened in `OrderService.saveOrderToDatabase`, specifically in `PostgresOrderRepository.save`, with the exception type, message, and stack trace right there. Without tracing, the report would stop much closer to the HTTP 500 boundary. With tracing, the failing operation is <span data-rn="underline" data-rn-color="#009688">visible in context</span>.
 
-## Automatic Trace Propagation
+## Trace Propagation
 
-Stove injects trace headers into every outgoing interaction without any test code changes:
+Stove propagates trace context through the interactions it drives and the supported systems that carry W3C context:
 
 - **HTTP requests** get a `traceparent` header
 - **Kafka messages** get trace headers
 - **gRPC calls** get trace metadata
 
-This is visible in the actual test output. The HTTP request sent by Stove:
+For HTTP, this is visible in the actual test output. The request sent by Stove:
 
 ```
 REQUEST: http://localhost:8024/api/orders
@@ -292,19 +292,19 @@ Request received:
   traceparent: [00-475e686523af0b4ee0433f91a69a6b55-e3f138ac02509a0b-01]
 ```
 
-Same trace ID (`475e686523af0b4ee0433f91a69a6b55`), different span ID. The entire call chain is correlated.
+Same trace ID (`475e686523af0b4ee0433f91a69a6b55`), different span ID. The instrumented parts of the call chain are correlated under the same test trace.
 
 ## Per-Test Trace Isolation
 
-A critical detail: <span data-rn="box" data-rn-color="#009688">every test gets its own trace</span>. Stove generates a unique trace ID at the start of each test and injects it into every outgoing interaction. All spans collected during that test are correlated back to that trace ID and that test alone.
+A critical detail: <span data-rn="box" data-rn-color="#009688">every test gets its own trace</span>. Stove generates a unique trace ID at the start of each test and injects it into supported outgoing interactions. Spans that carry that context are correlated back to that trace ID and that test alone.
 
-This means traces from concurrent or sequential tests never bleed into each other. When a test fails, the execution trace shows *only* what happened during that specific test, not spans from a previous test that happened to use the same Kafka topic or a background job triggered by an earlier request.
+This keeps concurrent or sequential tests from being grouped into one tree by accident. When a test fails, the execution trace is scoped by trace ID, not by shared topic names or timestamps. Background work still needs normal context propagation; if it drops the trace context, Stove cannot infer it later.
 
-This is not something you get for free with OpenTelemetry. In production, a trace starts when a request enters the system. In testing, there's no natural entry point. Stove creates one. It manages the W3C trace context lifecycle (start, propagate, end) per test, ties it to the test identity (`X-Stove-Test-Id` header), and ensures the OTLP receiver maps incoming spans to the correct test. The result is that tracing in Stove is <span data-rn="underline" data-rn-color="#ff9800">deterministic and test-scoped</span>, not a sampling-based best-effort like production tracing.
+This is not something you get for free with OpenTelemetry. In production, a trace often starts when a request enters the system. In testing, the test itself is the entry point. Stove creates that context, propagates it through supported clients, ties it to the test identity (`X-Stove-Test-Id` header), and maps incoming OTLP spans back to the right test. The result is that tracing in Stove is <span data-rn="underline" data-rn-color="#ff9800">deterministic and test-scoped</span> when the app preserves the trace context.
 
 ## Trace Validation DSL
 
-Beyond automatic failure reports, you can actively assert on the execution flow using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it produced the right output:
+Beyond failure reports, you can actively assert on the execution flow using the `tracing { }` DSL. This is useful when you want to verify *how* your application handled a request, not just *that* it produced the right output:
 
 ```kotlin hl_lines="11 12 13 14 17 20 23"
 test("order processing should call all expected services") {
@@ -375,9 +375,9 @@ sequenceDiagram
 
 The architecture:
 
-1. **OpenTelemetry Java Agent** attaches to your application process (configured via Gradle) and instruments 100+ libraries without code changes
+1. **OpenTelemetry Java Agent** attaches to in-process JVM applications launched by Stove and instruments supported libraries without application code changes
 2. **Stove starts an OTLP gRPC receiver** on a dynamically assigned port that collects spans exported by the agent
-3. **W3C `traceparent` headers** are injected into every HTTP, Kafka, and gRPC interaction, correlating all spans back to the originating test
+3. **W3C `traceparent` context** is carried through supported HTTP, Kafka, and gRPC interactions, correlating spans that preserve the context back to the originating test
 4. **On test failure**, the report builder queries the collected spans, builds a hierarchical tree, and renders it alongside the execution report
 5. **Ports are dynamically assigned** so parallel test runs on CI don't conflict
 
@@ -385,8 +385,8 @@ Worth noting: the OTel agent does add some startup overhead to the test JVM (a f
 
 ## Practical Advice
 
-1. **Enable tracing by default.** The overhead is minimal compared to container startup, and the diagnostic value on failure is significant.
-2. **Use `tracing { }` sparingly.** The automatic failure reports cover most debugging needs. Reserve the DSL for cases where you want to assert on the execution flow itself, for example verifying that a cache was hit instead of the database.
+1. **Enable tracing by default where the setup cost is acceptable.** For many JVM e2e suites, the overhead is small compared to container startup, and the diagnostic value on failure is significant.
+2. **Use `tracing { }` sparingly.** Failure reports cover many debugging needs once spans are available. Reserve the DSL for cases where you want to assert on the execution flow itself, for example verifying that a cache was hit instead of the database.
 3. **Start with `shouldNotHaveFailedSpans()`.** The simplest assertion that catches unexpected errors anywhere in the call chain.
 4. **Filter noisy instrumentations.** Some libraries generate a lot of spans. Tune with `disabledInstrumentations`:
 
@@ -413,7 +413,7 @@ dependencies {
 }
 ```
 
-Enable tracing in two steps:
+The shape is still two parts: configure tracing in the build, then enable the receiver in Stove.
 
 ```kotlin hl_lines="3 6"
 // build.gradle.kts

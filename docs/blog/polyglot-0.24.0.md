@@ -1,21 +1,21 @@
 # Stove 0.24.0 — Going Polyglot, and an MCP for AI Triage
 
-Stove started as a JVM end-to-end testing framework. Spring Boot, Ktor, Quarkus, Micronaut — spin them up with real PostgreSQL, real Kafka, real WireMock, then assert the whole flow with one Kotlin DSL. That core hasn't changed. What 0.24.0 changes is who gets to play.
+Stove started as a JVM end-to-end testing framework. Spring Boot, Ktor, Quarkus, Micronaut — start the application under test, start real PostgreSQL, Kafka, WireMock, and other systems, then assert the flow with one Kotlin test DSL. That core stays in place. What 0.24.0 changes is how the application under test can be started or targeted.
 
-This release pushes on five things at once: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Go becomes a first-class application under test</span>, <span data-rn="underline" data-rn-color="#009688">any container image can be the AUT</span>, the framework starter is no longer required (test against an already-deployed app), one system type can have many keyed instances (verify across services), and the <span data-rn="underline" data-rn-color="#ff9800">`stove` CLI grows an MCP endpoint</span> so AI agents can triage failed runs without scraping logs.
+This release pushes on five things at once: <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">Go can be a first-class application under test</span>, <span data-rn="underline" data-rn-color="#009688">container images can be targeted as AUTs</span>, the framework runner is no longer required for already-running apps, one system type can have many keyed instances, and the <span data-rn="underline" data-rn-color="#ff9800">`stove` CLI grows an MCP endpoint</span> so AI agents can inspect failed runs through structured data instead of scraping logs.
 
 ## Why polyglot, why now
 
 Microservice fleets are not monolingual. The order service might be Spring Boot, the inventory service Go, the recommender Python, the edge router Rust. If your e2e framework only covers the JVM, every non-JVM service either gets its own bespoke harness or doesn't get end-to-end tested at all. Both are bad outcomes.
 
-The interesting question isn't "how do we add a Go runner?" It's "what's actually language-specific about an end-to-end test?" The answer turns out to be: very little. The Stove DSL — `http {}`, `postgresql {}`, `kafka {}`, `tracing {}`, `dashboard {}` — is about the *contract*: what went over the wire, what's in the database, what spans appeared. The language of the application under test is an implementation detail.
+The interesting question isn't "how do we add a Go runner?" It's "what's actually language-specific about an end-to-end test?" A lot of the test surface is not language-specific at all. The Stove DSL — `http {}`, `postgresql {}`, `kafka {}`, `tracing {}`, `dashboard {}` — is about the external contract: what went over the wire, what's in the database, what messages were observed, what spans were exported. The language matters at the runner and instrumentation boundary.
 
-So 0.24.0 splits AUT lifecycle from test logic. Two new starters, the test surface unchanged:
+So 0.24.0 splits AUT lifecycle from test logic. Two new AUT runners handle the process/container side while the assertion surface stays close to the JVM starters:
 
 - **`stove-process`** runs your app as a host binary. Fast iteration, easy debugging.
 - **`stove-container`** runs your app as a Docker image. CI parity with the artifact you ship.
 
-Both work for any language. Both pass infrastructure config the same way (`envMapper` / `argsMapper`). Both ride the same readiness model. The Kotlin tests don't care which one is in play.
+Both can target any language that can read mapped configuration, expose a readiness signal, and connect to the infrastructure Stove started. `envMapper` and `argsMapper` pass system-derived values into the AUT, and the same readiness model decides when tests can start.
 
 ## A tour: Go on Stove
 
@@ -32,7 +32,7 @@ func handleCreateProduct(db *sql.DB, producer KafkaProducer) http.HandlerFunc {
         json.NewDecoder(r.Body).Decode(&req)
 
         product := Product{ID: uuid.New().String(), Name: req.Name, Price: req.Price}
-        insertProduct(r.Context(), db, product)  // otelsql traces this automatically
+        insertProduct(r.Context(), db, product)  // otelsql emits spans for this call
 
         if producer != nil {
             event := ProductCreatedEvent{ID: product.ID, Name: product.Name, Price: product.Price}
@@ -44,7 +44,7 @@ func handleCreateProduct(db *sql.DB, producer KafkaProducer) http.HandlerFunc {
 }
 ```
 
-The Stove HTTP client sends a `traceparent` header. `otelhttp` extracts it. Spans created in the Go app share the originating test's trace ID. No glue code, no manual correlation.
+The Stove HTTP client sends a `traceparent` header. `otelhttp` extracts it. Spans created in the Go app share the originating test's trace ID. The Go app still owns its OpenTelemetry SDK setup, but it does not need per-test correlation code.
 
 ### The Kotlin side
 
@@ -84,7 +84,7 @@ test("create product, verify HTTP, DB, Kafka, traces") {
 }
 ```
 
-If you removed the file path, you couldn't tell from this test that the AUT is in Go. That's the point.
+If you removed the file path, you couldn't tell from this test that the AUT is in Go. That's the point: the assertions target external behaviour. The Go-specific work lives in runner configuration, OpenTelemetry setup, and Kafka observation.
 
 ### Kafka, in three flavors
 
@@ -104,11 +104,11 @@ bridge.ReportConsumed(ctx,  &stovekafka.ConsumedMessage{...})
 bridge.ReportCommitted(ctx, topic, partition, offset+1)
 ```
 
-In production, `STOVE_KAFKA_BRIDGE_PORT` is unset, `NewBridgeFromEnv()` returns nil, and every method becomes a no-op. **Zero overhead in prod, full assertion fidelity in tests.**
+In production, `STOVE_KAFKA_BRIDGE_PORT` is unset, `NewBridgeFromEnv()` returns nil, and every method becomes a no-op. In tests, the same bridge gives Stove the observation point needed for `shouldBePublished<T>` and `shouldBeConsumed<T>`.
 
-### Coverage from black-box tests
+### Coverage from process/container tests
 
-A nice side-effect of standardizing on `stove-process` and `stove-container`: Go 1.20+ integration coverage just works. Build with `go build -cover`, set `GOCOVERDIR`, and Go writes coverage data on graceful shutdown. Stove already sends SIGTERM and waits for clean exit — exactly the lifecycle Go's coverage tooling expects.
+A useful side-effect of standardizing on `stove-process` and `stove-container`: Go 1.20+ integration coverage fits this lifecycle. Build with `go build -cover`, set `GOCOVERDIR`, and Go writes coverage data on graceful shutdown. Stove sends SIGTERM and waits for clean exit, which is the shutdown path Go's coverage tooling expects.
 
 ```bash
 ./gradlew e2eTestWithCoverage -Pgo.coverage=true
@@ -121,11 +121,11 @@ Per-function summary, HTML report. One catch worth a paragraph: when Go runs und
 signal.Ignore(syscall.SIGPIPE)
 ```
 
-That's it. No framework changes were needed for coverage; it's a Gradle concern, an env var, and an existing graceful-shutdown signal.
+That's it. No Stove framework changes were needed for coverage; it's a Gradle concern, an env var, and an existing graceful-shutdown signal.
 
 ## Container mode is not just for Go
 
-`stove-container` is **language-agnostic**. Anything that ships in an image works — Go, Python, Node.js, Rust, .NET, even your existing JVM artifact when you want to test the actual deployed binary instead of the in-process bean graph.
+`stove-container` is **language-agnostic** at the runner boundary. Any image can be a target when it exposes a network surface, has a readiness signal, and can receive mapped configuration — Go, Python, Node.js, Rust, .NET, even your existing JVM artifact when you want to test the deployed binary instead of the in-process bean graph.
 
 One thing worth being explicit about: <span data-rn="highlight" data-rn-color="#ff980055" data-rn-duration="800">building the image is not Stove's job</span>. `containerApp(...)` only needs an image reference. Where it comes from is your call:
 
@@ -153,7 +153,7 @@ containerApp(
 
 `configureContainer { ... }` exposes the underlying Testcontainers `GenericContainer`, so anything Testcontainers can do — bind mounts, network mode, log consumers, capabilities — is available without bespoke API surface.
 
-A common pattern: `e2eTest` runs process mode for daily local development; `e2eTest-container` runs container mode in CI against the image the build job just published. Same StoveConfig, same tests, branched on a system property.
+A common pattern: `e2eTest` runs process mode for daily local development; `e2eTest-container` runs container mode in CI against the image the build job just published. The assertions can stay the same while the runner block, env mapping, and readiness settings branch on a system property.
 
 ## Black-box mode: testing apps Stove didn't start
 
@@ -179,9 +179,9 @@ Stove().with {
 }.run()
 ```
 
-Same Stove DSL. Same assertions. No `springBoot()` / `ktor()` / `goApp()` block. Stove waits for the deployed health check, then runs your tests against the live URL — and verifies side effects in the actual database / Kafka / Redis the deployed app uses (via `*.provided(...)` factories on each system).
+The same Stove assertion DSL is available for the external surfaces you configure. There is no `springBoot()` / `ktor()` / `goApp()` block, and Stove does not boot the app or inject properties, env vars, or command-line arguments into it. Stove waits for the deployed health check, then runs your tests against the live URL and any provided infrastructure you explicitly point at with `*.provided(...)` factories.
 
-The use case is post-deployment smoke testing: the e2e tests you already wrote can double as a CI/CD gate that hits staging immediately after a release. Same code, same intent, different infrastructure.
+The use case is post-deployment smoke testing: the e2e tests you already wrote can double as a CI/CD gate that hits staging immediately after a release. The test intent stays the same; the configuration changes from Stove-started infrastructure to externally provided endpoints.
 
 ## Multiple instances of the same system, with keys
 
@@ -212,7 +212,7 @@ postgresql(AnalyticsDb) { shouldQuery<AnalyticsEvent>(/* ... */) { /* ... */ } }
 
 Keys are Kotlin `object`s — compile-time-safe, IDE-autocompleted, refactor-safe. Default and keyed instances of the same type coexist independently. Reports and traces label keyed calls (`HTTP [OrderService] > GET /api/orders/123`) so it's clear which service did what.
 
-This pairs naturally with `providedApplication()`. A single Stove config can wire your app's API, three downstream services, two shared databases, and a Kafka cluster — all already running in staging — and a single Kotlin test asserts behaviour across all of them.
+This pairs naturally with `providedApplication()`. A single Stove config can point at your app's API, three downstream services, two shared databases, and a Kafka cluster — all already running in staging — and a single Kotlin test can assert behaviour across those configured surfaces.
 
 ## MCP — failure triage for AI agents
 
@@ -220,7 +220,7 @@ The other big addition in 0.24.0 has nothing to do with non-JVM apps and everyth
 
 If you're using an AI agent in your editor or CI bot, you've probably watched it try to triage a failed test by reading the entire stdout, then the entire stderr, then `tail`-ing logs, then guessing at trace IDs. It works, but it burns tokens proportional to log size, and it hallucinates when names are ambiguous.
 
-The Stove dashboard already records every run — timeline, traces, snapshots, Kafka message counts — in a local SQLite database. 0.24.0 adds a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on the same `stove` CLI that exposes that data as structured tools:
+When `dashboard { }` is enabled and the CLI is running, Stove records the evidence it receives from registered systems in a local SQLite database: timeline entries, snapshots, traces when tracing is enabled and spans are exported, and Kafka evidence when Kafka observation is configured. 0.24.0 adds a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on the same `stove` CLI that exposes that data as structured tools:
 
 ```text
 $ stove
@@ -249,7 +249,7 @@ Two design decisions worth calling out:
 
 1. **`run_id + test_id` is the only authoritative test selector.** Apps and runs can contain duplicate test names; an agent inferring "OrderTest::should create order" from a phrase will eventually hit the wrong run. Every tool result includes the next call's exact arguments — agents follow links, they don't construct queries.
 
-2. **Loopback only.** The `/mcp` endpoint accepts only localhost `Host`/`Origin` headers and rejects anything else. This blocks DNS rebinding from a malicious page in your browser. Safe to leave running on a dev machine; not exposed externally.
+2. **Loopback only.** The `/mcp` endpoint accepts only localhost `Host`/`Origin` headers and rejects anything else. This blocks DNS rebinding from a malicious page in your browser. It is designed for local development, not for exposing as a shared service.
 
 If MCP is unavailable, agents fall back to normal test output and logs — it's an optimization, not a dependency.
 
@@ -257,9 +257,9 @@ If MCP is unavailable, agents fall back to normal test output and logs — it's 
 
 Stove 0.24.0 is one consistent picture, even though the changes touch four different surfaces:
 
-- A test that drives a Go service through HTTP, asserts on PostgreSQL state, validates Kafka messages, and traces the call chain — using the exact same DSL that drives the Spring Boot service next door.
-- The same test running against a host binary in your IDE for fast feedback, then against a real Docker image in CI for production parity, with one `-Daut.mode` flip.
-- When something fails, the dashboard shows you what happened. When the agent in your editor wants to help, it asks the dashboard via MCP instead of inhaling logs.
+- A test that drives a Go service through HTTP, asserts on PostgreSQL state, validates Kafka messages, and traces the call chain through the same external-surface DSL that drives the Spring Boot service next door.
+- The same assertions running against a host binary in your IDE for fast feedback, then against a Docker image in CI, with runner configuration selected by `-Daut.mode`.
+- When something fails, the dashboard shows the evidence it received. When the agent in your editor wants to help, it can ask the dashboard via MCP instead of reading unstructured logs first.
 
 Three integrations, one feedback loop. That's the release.
 

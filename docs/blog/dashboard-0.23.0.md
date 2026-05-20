@@ -1,17 +1,17 @@
 # Stove Dashboard in 0.23.0: See Your E2E Runs Live
 
-End-to-end tests usually answer one question: pass or fail. When they fail, you jump between logs, traces, and broker/db tools to understand what happened.
+End-to-end tests usually answer one question first: pass or fail. When they fail, the useful evidence is spread across the assertion output, application logs, traces, broker tools, and database clients.
 
-As of **Stove 0.23.0**, you can use **Stove Dashboard** and the **`stove` CLI** to watch test execution in a local dashboard while tests are running.
+As of **Stove 0.23.0**, **Stove Dashboard** and the **`stove` CLI** give those registered Stove systems a local place to stream their evidence while the suite is running.
 
-Dashboard gives you:
+Dashboard can show:
 
 - a real-time timeline of test actions
-- distributed trace trees linked to tests
-- state snapshots across systems
+- distributed trace trees linked to tests, when tracing is enabled
+- state snapshots from registered systems
 - persistent run history in SQLite
 
-Instead of treating failures as black boxes, you can inspect the full story in one place.
+It does not replace assertions, logs, or tracing setup. It gives you one place to correlate them during local debugging.
 
 <p align="center">
   <video width="900" controls>
@@ -32,7 +32,7 @@ stove
 
 By default, the dashboard is at `http://localhost:4040` and gRPC receiver is at `localhost:4041`.
 
-### 2) Add the test dependency and tracing plugin
+### 2) Add Dashboard, and tracing if you want span trees
 
 ```kotlin
 // build.gradle.kts
@@ -51,7 +51,7 @@ stoveTracing {
 }
 ```
 
-The tracing Gradle plugin attaches the OpenTelemetry agent to your test tasks, which is required for the dashboard's trace view.
+The dashboard dependency streams Stove timeline entries and snapshots to the CLI. The trace view also needs `stove-tracing` plus the tracing Gradle plugin for in-process JVM apps. Process and container apps can appear in the same dashboard, but they must export OpenTelemetry spans to the receiver themselves.
 
 ### 3) Register Dashboard in Stove config
 
@@ -61,6 +61,7 @@ Stove()
     dashboard { DashboardSystemOptions(appName = "product-api") }
     tracing { enableSpanReceiver() } // recommended for trace view
     // other systems: http, kafka, postgresql, wiremock...
+    // runner goes last: springBoot, ktor, processApp, containerApp, ...
   }.run()
 ```
 
@@ -81,7 +82,7 @@ When a test fails (or behaves unexpectedly), this sequence is usually the fastes
 3. **Snapshots:** confirm system state around the failure boundary.
 4. **Kafka Explorer:** verify published/consumed message counts and payloads.
 
-This gives you both sides of the picture: test-level assertions and application-level execution details.
+This gives you both sides of the picture: test-level evidence from Stove systems and application-level execution details from tracing.
 
 ## Daily Workflow That Works Well
 
@@ -93,7 +94,7 @@ Use Dashboard as a local companion while iterating:
 4. Inspect changes immediately in Timeline/Trace views
 5. Use Reporting + Tracing in CI; use Dashboard primarily for local debugging speed
 
-Dashboard is fault-tolerant by design. If CLI is not running, tests continue normally and Dashboard emission auto-degrades without breaking test execution.
+Dashboard is fault-tolerant by design. If the CLI is not running, tests continue normally and Dashboard emission disables itself for the rest of the suite instead of breaking test execution.
 
 ## Minimal End-to-End Example
 
@@ -105,13 +106,18 @@ class StoveConfig : AbstractProjectConfig() {
         dashboard { DashboardSystemOptions(appName = "spring-example") }
         tracing { enableSpanReceiver() }
         // other systems...
+        // AUT runner goes last
+        springBoot(
+          runner = { params -> com.example.run(params) },
+          withParameters = listOf("server.port=8080")
+        )
       }.run()
 
   override suspend fun afterProject() = Stove.stop()
 }
 ```
 
-You keep writing tests exactly as before; Dashboard captures entries/spans/snapshots automatically.
+You keep writing the same Stove tests. The dashboard system captures entries from registered Stove systems, spans when tracing is enabled, and snapshots when systems provide them.
 
 ## Troubleshooting Quick Checks
 
