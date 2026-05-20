@@ -5,7 +5,7 @@
   com.trendyol:stove-ktor
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.ktor.ktor
+  com.trendyol.stove.ktor.ktor
 "runner": |-
   ktor(
     runner = { params -> {pkg}.run(params, wait = false) },

@@ -1,392 +1,118 @@
 ---
 name: stove
-description: Use when adding Stove e2e tests to a project, configuring Stove systems (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC, Dashboard), writing tests with the stove {} DSL, enabling OpenTelemetry tracing, writing AbstractProjectConfig, extending Stove with custom systems, setting up smoke tests against remote/deployed applications (providedApplication), registering multiple instances of the same system type (keyed systems with SystemKey), testing non-JVM applications (Go, Python, Rust, Node.js) with processApp()/goApp() from stove-process or containerApp() from stove-container (target/readiness, env/args mapping, image-based AUT), the Stove Kafka bridge library (stove-kafka for Go with IBM/sarama, twmb/franz-go, or segmentio/kafka-go), or collecting Go code coverage from Stove black-box tests (go build -cover, GOCOVERDIR, SIGPIPE handling).
+description: Use when configuring, writing, or debugging Stove end-to-end tests; choosing JVM, process, container, or provided-application runners; wiring Stove systems; enabling tracing, dashboard, or MCP; or extending Stove with custom systems.
 ---
 
-# Setting Up Stove E2E Tests
+# Stove Skill Router
 
-Copy this checklist and track progress:
+Use this file as the entrypoint only. Open the focused guide that matches the user's task, then verify API names against local source/examples before writing code or snippets.
 
-```
-Setup Progress:
-- [ ] Step 1: Create test-e2e source set layout
-- [ ] Step 2: Configure Gradle (BOM, source set, e2eTest task)
-- [ ] Step 3: Extract run() function from application entry point
-- [ ] Step 4: Create StoveConfig (AbstractProjectConfig)
-- [ ] Step 5: Create kotest.properties (Kotest only)
-- [ ] Step 6: Configure systems inside Stove().with { }
-- [ ] Step 7: Configure tracing (optional)
-- [ ] Step 8: Write tests using stove {} DSL
-```
+## First checks
 
-Important: Stove e2e tests are Kotlin-first. Even if your application is Java/Scala, keep e2e tests under `src/test-e2e/kotlin` and write Stove setup/tests in Kotlin.
+1. Identify the application-under-test mode:
+   - JVM in-process: Spring Boot, Ktor, Micronaut, Quarkus.
+   - Host process: Go, Python, Rust, Node.js, or another binary via `processApp` / `goApp`.
+   - Container image: any language via `containerApp`.
+   - Already running app: staging/dev smoke tests via `providedApplication`.
+2. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`.
+3. Identify needed systems: HTTP, databases, Kafka, WireMock, gRPC, tracing, dashboard.
+4. Check local source when uncertain. Current APIs live under `lib/`, `starters/`, `test-extensions/`, and `tools/stove-cli/`.
 
-## Step 1: Project structure
+## Route by task
 
-```
-your-module/src/
-  main/(kotlin|java)/
-  test/(kotlin|java)/
-  test-e2e/
-    kotlin/com/yourcompany/yourapp/e2e/
-      setup/
-        StoveConfig.kt
-        InitialMigration.kt
-      tests/
-        OrderE2ETest.kt
-    resources/
-      kotest.properties
-```
+| User need | Open |
+|---|---|
+| Gradle source sets, BOM, `e2eTest`, local artifact ambiguity | `gradle-config.md` |
+| JVM setup, system options, provided instances (existing infra), keyed systems (`SystemKey`) | `system-setup.md` |
+| Writing `stove {}` assertions and validation DSL | `writing-tests.md` |
+| Go or other non-JVM process mode | `other-languages.md`, then `go-setup.md` for Go |
+| Docker-image AUT / Testcontainers runner | `container.md` |
+| OpenTelemetry setup, Gradle plugin wiring, and trace assertions | `tracing.md`, then `gradle-config.md` for task wiring |
+| Stove CLI dashboard and agent triage over MCP | `mcp.md` |
+| New Stove system implementation | `custom-systems.md` |
+| Integration examples and full flows | `docs/recipes/` |
+| Failure diagnosis and common symptoms | `docs/troubleshooting.md` |
 
-## Step 2: Gradle configuration
+## Current API anchors
 
-For source set registration, e2eTest task, and IDE integration details, see [gradle-config.md](gradle-config.md).
-
-Add dependencies using the BOM:
-
-```kotlin
-dependencies {
-    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
-    testImplementation("com.trendyol:stove")
-    testImplementation("com.trendyol:stove-spring")
-    testImplementation("com.trendyol:stove-extensions-kotest")
-
-    // Add only what you need:
-    testImplementation("com.trendyol:stove-http")
-    testImplementation("com.trendyol:stove-postgres")
-    testImplementation("com.trendyol:stove-mysql")
-    testImplementation("com.trendyol:stove-mssql")
-    testImplementation("com.trendyol:stove-cassandra")
-    testImplementation("com.trendyol:stove-mongodb")
-    testImplementation("com.trendyol:stove-redis")
-    testImplementation("com.trendyol:stove-elasticsearch")
-    testImplementation("com.trendyol:stove-couchbase")
-    testImplementation("com.trendyol:stove-kafka")
-    testImplementation("com.trendyol:stove-spring-kafka")
-    testImplementation("com.trendyol:stove-wiremock")
-    testImplementation("com.trendyol:stove-grpc")
-    testImplementation("com.trendyol:stove-grpc-mock")
-    testImplementation("com.trendyol:stove-tracing")
-    testImplementation("com.trendyol:stove-dashboard")
-    testImplementation("com.trendyol:stove-process")  // non-JVM apps (Go, Python, etc.)
-    testImplementation("com.trendyol:stove-container")  // non-JVM apps as Docker images
-}
-```
-
-For Ktor, replace `stove-spring` with `stove-ktor`. For Quarkus, use `stove-quarkus`. For Micronaut, use `stove-micronaut`. For JUnit, replace `stove-extensions-kotest` with `stove-extensions-junit` and skip Step 5.
-
-If you are unsure about Stove API names/signatures, verify from local downloaded artifacts (Gradle cache or Maven local repo) before writing code. See [gradle-config.md](gradle-config.md#resolve-api-ambiguity-from-local-artifacts).
-
-## Step 3: Extract run()
-
-Stove starts your application from tests. Extract the entry point:
-
-```kotlin
-// src/main/kotlin/.../MyApp.kt
-@SpringBootApplication
-class MyApp
-
-fun main(args: Array<String>) = run(args)
-
-fun run(
-    args: Array<String>,
-    init: SpringApplication.() -> Unit = {}
-): ConfigurableApplicationContext =
-    runApplication<MyApp>(*args) { init() }
-```
-
-## Step 4: StoveConfig
-
-```kotlin
-class StoveConfig : AbstractProjectConfig() {
-    override val extensions: List<Extension> = listOf(StoveKotestExtension())
-
-    override suspend fun beforeProject() {
-        Stove()
-            .with {
-                // Systems go here — see Step 6
-            }.run()
-    }
-
-    override suspend fun afterProject() {
-        Stove.stop()
-    }
-}
-```
-
-For JUnit, see [gradle-config.md](gradle-config.md) for the `BaseE2ETest` pattern.
-
-## Step 5: kotest.properties (Kotest only)
-
-Create `src/test-e2e/resources/kotest.properties`:
-
-```properties
-kotest.framework.config.fqn=com.yourcompany.yourapp.e2e.setup.StoveConfig
-```
-
-## Step 6: Configure systems
-
-Configure inside `Stove().with { }`. For all options per system, see [system-setup.md](system-setup.md).
-
-```kotlin
-Stove()
-    .with {
-        httpClient {
-            HttpClientSystemOptions(baseUrl = "http://localhost:8080")
-        }
-
-        bridge()
-
-        // Optional (requires com.trendyol:stove-tracing)
-        tracing { enableSpanReceiver() }
-
-        wiremock {
-            WireMockSystemOptions(
-                configureExposedConfiguration = { cfg ->
-                    listOf("payment.url=${cfg.baseUrl}")
-                }
-            )
-        }
-
-        postgresql {
-            PostgresqlOptions(
-                databaseName = "testdb",
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "spring.datasource.url=${cfg.jdbcUrl}",
-                        "spring.datasource.username=${cfg.username}",
-                        "spring.datasource.password=${cfg.password}"
-                    )
-                }
-            ).migrations { register<InitialMigration>() }
-        }
-
-        kafka {
-            KafkaSystemOptions(
-                serde = StoveSerde.jackson.anyByteArraySerde(),
-                configureExposedConfiguration = { cfg ->
-                    listOf(
-                        "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}",
-                        "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}",
-                        "spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}"
-                    )
-                }
-            )
-        }
-
-        mongodb {
-            MongodbSystemOptions(
-                databaseOptions = DatabaseOptions(
-                    default = DefaultDatabase(name = "testdb", collection = "orders")
-                ),
-                configureExposedConfiguration = { cfg ->
-                    listOf("spring.data.mongodb.uri=${cfg.connectionString}")
-                }
-            )
-        }
-
-        // Optional: streams test events to stove CLI dashboard
-        dashboard {
-            DashboardSystemOptions(appName = "my-service")
-        }
-
-        // Application runner goes last
-        springBoot(
-            runner = { params ->
-                com.yourcompany.yourapp.run(params) {
-                    addTestDependencies {
-                        bean<TestSystemKafkaInterceptor<*, *>>(isPrimary = true)
-                        bean { StoveSerde.jackson.anyByteArraySerde() }
-                    }
-                }
-            },
-            withParameters = listOf("server.port=8080")
-        )
-    }.run()
-```
-
-For Spring Boot 4.x, use:
-
-```kotlin
-addTestDependencies4x {
-    registerBean<TestSystemKafkaInterceptor<*, *>>(primary = true)
-    registerBean { StoveSerde.jackson.anyByteArraySerde() }
-}
-```
-
-For Ktor:
-
-```kotlin
-ktor(
-    runner = { params -> com.yourcompany.yourapp.run(params, wait = false) },
-    withParameters = listOf("server.port=8080")
-)
-```
-
-For Quarkus:
-
-```kotlin
-quarkus(
-    runner = { params -> com.yourcompany.yourapp.main(params) },
-    withParameters = listOf("quarkus.http.port=8080")
-)
-```
-
-For Micronaut:
-
-```kotlin
-micronaut(
-    runner = { params -> com.yourcompany.yourapp.run(params) },
-    withParameters = listOf("micronaut.server.port=8080")
-)
-```
-
-## Step 7: Tracing (optional)
-
-For full plugin options, buildSrc alternative, and trace validation DSL, see [tracing.md](tracing.md).
-
-```kotlin
-plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
-
-stoveTracing {
-    serviceName.set("my-service")
-    testTaskNames.set(listOf("e2eTest"))
-}
-```
-
-## Step 8: Write tests
-
-For the complete DSL reference (HTTP, PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka, WireMock, gRPC Mock, gRPC Client, Bridge, multi-system examples), see [writing-tests.md](writing-tests.md).
-
-```kotlin
-class OrderE2ETest : FunSpec({
-    test("should create order and publish event") {
-        stove {
-            val userId = "user-${UUID.randomUUID()}"
-
-            wiremock {
-                mockGet("/inventory/item-1", 200, InventoryResponse(true).some())
-            }
-
-            http {
-                postAndExpectBody<OrderResponse>(
-                    uri = "/orders",
-                    body = CreateOrderRequest(userId, 99.99).some()
-                ) { response ->
-                    response.status shouldBe 201
-                }
-            }
-
-            postgresql {
-                shouldQuery<OrderRow>(
-                    query = "SELECT * FROM orders WHERE user_id = '$userId'",
-                    mapper = { row -> OrderRow(row.string("id"), row.string("status")) }
-                ) { it.size shouldBe 1 }
-            }
-
-            kafka {
-                shouldBePublished<OrderCreatedEvent>(10.seconds) {
-                    actual.userId == userId
-                }
-            }
-        }
-    }
-})
-```
-
-## Smoke testing with providedApplication
-
-Stove can test against **already-deployed** applications — any language, any framework. Use `providedApplication()` instead of a JVM runner. See [system-setup.md](system-setup.md#provided-application-smoke-testing) for full details.
+Prefer these shapes unless local source proves otherwise:
 
 ```kotlin
 Stove().with {
-    httpClient { HttpClientSystemOptions(baseUrl = "https://staging.myapp.com") }
-    postgresql(AppDb) {
-        PostgresqlOptions.provided(
-            jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
-            cleanup = { ops -> ops.execute("DELETE FROM orders WHERE test = true") },
-            configureExposedConfiguration = { listOf() }  // no AUT to configure
-        )
-    }
-    providedApplication {
-        ProvidedApplicationOptions(
-            readiness = ReadinessStrategy.HttpGet(url = "https://staging.myapp.com/health")
-        )
-    }
+    // systems first
+    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
+
+    // runner last
+    springBoot(
+        runner = { params -> com.yourcompany.app.run(params) },
+        withParameters = listOf("server.port=8080")
+    )
 }.run()
 ```
-
-Key points:
-- No JVM runner needed — the application is already running
-- Works with any language (Go, Python, .NET, Rust, Node.js, etc.)
-- `Bridge` (DI access) is **not available** — there's no local DI container
-- Use `cleanup` lambdas to manage test data on external infrastructure
-- Optional health check waits for the app to be ready before running tests
-
-## Keyed systems (multiple instances)
-
-Register multiple instances of the same system type using `SystemKey`. See [system-setup.md](system-setup.md#keyed-systems-multiple-instances) and [writing-tests.md](writing-tests.md#keyed-system-tests) for examples.
 
 ```kotlin
-// Define keys as singleton objects
-object AppDb : SystemKey
-object AnalyticsDb : SystemKey
-object PaymentService : SystemKey
-object InventoryService : SystemKey
-
-Stove().with {
-    postgresql(AppDb) {
-        PostgresqlOptions(configureExposedConfiguration = { cfg ->
-            listOf("app.datasource.url=${cfg.jdbcUrl}")
-        })
-    }
-    postgresql(AnalyticsDb) {
-        PostgresqlOptions(configureExposedConfiguration = { cfg ->
-            listOf("analytics.datasource.url=${cfg.jdbcUrl}")
-        })
-    }
-    httpClient(PaymentService) {
-        HttpClientSystemOptions(baseUrl = "https://pay.internal")
-    }
-    springBoot(runner = { params -> run(params) })
-}.run()
+processApp {
+    ProcessApplicationOptions(
+        command = listOf("./build/app"),
+        target = ProcessTarget.Server(
+            port = 8080,
+            portEnvVar = "PORT",
+            readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+        )
+    )
+}
 ```
 
-All systems support keyed registration: PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka (core), WireMock, gRPC, gRPC Mock, HTTP. Each keyed instance gets its own container, port, state storage, and configuration.
-
-## Writing custom Stove systems
-
-Stove is extensible. For the complete pattern with a working db-scheduler example, see [custom-systems.md](custom-systems.md).
-
-## Best practices
-
-- Generate unique IDs per test: `UUID.randomUUID()`
-- Configure Stove once in `AbstractProjectConfig`, never per-test
-- Keep e2e tests in `src/test-e2e/kotlin` (also for Java/Scala applications)
-- If API is ambiguous, inspect local `stove-*.jar` / `stove-*-sources.jar` in Gradle/Maven caches and confirm class/method names before coding
-- Use `port = 0` for WireMock and gRPC Mock (dynamic ports, CI-safe)
-- Test through HTTP endpoints; verify DB state and events as side effects
-- Use `shouldBePublished<Event>(atLeastIn = 10.seconds) { ... }` — never `Thread.sleep`
-- Use `cleanup` lambdas in system options to wipe test data on teardown — essential for provided (external) instances
-- Use `Stove { keepDependenciesRunning() }` locally for faster iteration; disable in CI
-- **AI agent feedback loop**: Enable tracing + reporting. When tests fail, the execution report contains the full call chain, system snapshots, and timeline. AI agents can parse this structured output to understand exactly what went wrong inside the application and iterate on fixes with precise feedback.
-- **Kafka test-friendly settings**: Default Kafka producer/consumer settings are tuned for production throughput, not test speed. Configure `linger.ms=0`, `batch.size=1`, `auto.commit.interval.ms=100`, `auto-offset-reset=earliest`, and enable broker-level auto-topic creation. Without these, `shouldBePublished`/`shouldBeConsumed` assertions will timeout or flake. See [system-setup.md](system-setup.md#test-friendly-kafka-settings) for JVM details and [go-setup.md](go-setup.md) for Go libraries.
-
-## Running tests
-
-```bash
-./gradlew e2eTest
-./gradlew e2eTest --tests "com.myapp.e2e.OrderE2ETest"
+```kotlin
+goApp(
+    binaryPath = System.getProperty("go.app.binary")
+        ?: error("go.app.binary system property not set"),
+    target = ProcessTarget.Server(
+        port = 8080,
+        portEnvVar = "PORT",
+        readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+    )
+)
 ```
 
-## Additional resources
+```kotlin
+containerApp(
+    image = "ghcr.io/acme/app:sha",
+    target = ContainerTarget.Server(
+        hostPort = 8080,
+        internalPort = 8080,
+        portEnvVar = "PORT",
+        readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+    )
+)
+```
 
-- [gradle-config.md](gradle-config.md) — Source set, e2eTest task, IDE integration, artifact list
-- [system-setup.md](system-setup.md) — All system configuration options
-- [writing-tests.md](writing-tests.md) — Complete test DSL reference with examples
-- [tracing.md](tracing.md) — Tracing plugin options and validation DSL
-- [custom-systems.md](custom-systems.md) — Writing your own Stove system
-- [other-languages.md](other-languages.md) — Testing non-JVM apps (Go, Python, Rust, Node.js)
-- [go-setup.md](go-setup.md) — Go-specific setup (process mode focus): HTTP, PostgreSQL, Kafka bridge, OTel tracing, code coverage
-- [container.md](container.md) — Language-agnostic `containerApp(...)` AUT (image source is the user's responsibility, not Stove's)
-- [mcp.md](mcp.md) — Stove CLI MCP endpoint for agent-driven failed-test triage
+```kotlin
+providedApplication {
+    ProvidedApplicationOptions(
+        readiness = ReadinessStrategy.HttpGet(url = "https://staging.example.com/health")
+    )
+}
+```
+
+## Dashboard and MCP defaults
+
+Run the CLI with `stove`.
+
+| Surface | URL / port |
+|---|---|
+| UI / REST / MCP | `http://localhost:4040` |
+| gRPC event ingestion | `localhost:4041` |
+| Database | `~/.stove-dashboard.db` |
+
+In test code, `DashboardSystemOptions.cliHost` defaults to `localhost`; `cliPort` is the gRPC port, so the default is `4041`.
+
+## Guardrails for agents
+
+- Do not use pre-0.20 imports such as `com.trendyol.stove.testing.e2e.*`.
+- Do not use removed runner types such as `ContainerAppOptions`, `ProcessAppOptions`, or `GoAppOptions`.
+- `ReadinessStrategy.HttpGet` takes `url = "..."`, not `path = "..."`.
+- `bridge()` is JVM-framework-specific. Import `com.trendyol.stove.spring.bridge`, `com.trendyol.stove.ktor.bridge`, or `com.trendyol.stove.micronaut.bridge` based on the selected framework.
+- `bridge()` is not supported on Quarkus yet; do not invent `com.trendyol.stove.quarkus.bridge`.
+- Configure `Stove().with { ... }.run()` once in suite setup, usually `beforeProject()`, not inside each test.
+- Keep examples minimal and app-specific. Add only the systems the user actually needs.

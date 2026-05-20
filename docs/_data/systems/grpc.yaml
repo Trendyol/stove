@@ -7,7 +7,7 @@
   com.trendyol:stove-grpc
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.grpc.*
+  com.trendyol.stove.grpc.*
 "configure": |-
   grpc {
     GrpcSystemOptions(host = "localhost", port = 9090)

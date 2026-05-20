@@ -7,9 +7,9 @@
   com.trendyol:stove-http
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.http.httpClient
+  com.trendyol.stove.http.httpClient
 - |-
-  com.trendyol.stove.testing.e2e.http.HttpClientSystemOptions
+  com.trendyol.stove.http.HttpClientSystemOptions
 "configure": |-
   httpClient {
     HttpClientSystemOptions(baseUrl = "http://localhost:8080")

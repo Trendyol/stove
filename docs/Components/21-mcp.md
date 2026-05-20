@@ -4,28 +4,34 @@
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Start <code>stove serve</code>. Point your agent at the MCP endpoint. Agents call <code>stove_failures</code>, <code>stove_failure_detail</code>, <code>stove_trace</code>, <code>stove_snapshot</code> against the same SQLite the <a href="../18-dashboard/">Dashboard</a> reads. Token-aware, read-only, loopback-only.
+Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <code>stove_failures</code>, <code>stove_failure_detail</code>, <code>stove_trace</code>, <code>stove_snapshot</code> against the same SQLite the <a href="../18-dashboard/">Dashboard</a> reads. Token-aware, read-only, loopback-only.
 </div>
 
 ## Discovery
 
-Banner on `stove serve` shows the endpoint:
+Banner on `stove` shows the endpoint:
 
 ```
-stove serve
-─────────────────────────────────────
- Dashboard:  http://localhost:8086
- MCP:        http://localhost:8086/mcp
- SQLite:     ~/.stove/dashboard.sqlite
-─────────────────────────────────────
+stove
+
+Stove CLI v0.24.0 running
+UI:   http://localhost:4040
+REST: http://localhost:4040/api/v1
+MCP:  http://localhost:4040/mcp
+gRPC: localhost:4041
 ```
 
 Or hit `GET /api/v1/meta` for metadata:
 
 ```json
 {
-  "version": "0.24.0",
-  "mcp": { "enabled": true, "path": "/mcp" }
+  "stove_cli_version": "0.24.0",
+  "mcp": {
+    "enabled": true,
+    "transport": "streamable-http",
+    "endpoint": "http://localhost:4040/mcp",
+    "scope": "read-only-test-observability"
+  }
 }
 ```
 
@@ -38,8 +44,8 @@ Or hit `GET /api/v1/meta` for metadata:
     {
       "mcpServers": {
         "stove": {
-          "url": "http://localhost:8086/mcp",
-          "transport": "http"
+          "type": "http",
+          "url": "http://localhost:4040/mcp"
         }
       }
     }
@@ -47,12 +53,14 @@ Or hit `GET /api/v1/meta` for metadata:
 
 === "Cursor / Continue / ..."
 
-    Use the standard MCP HTTP transport. URL = `http://localhost:8086/mcp`.
+    Use the standard Streamable HTTP MCP transport. The URL is `http://localhost:4040/mcp`; the config key may be named `type` or `transport` depending on the client.
 
 ## Tools
 
 | Tool | Returns |
 |---|---|
+| `stove_apps` | apps recorded in the dashboard database |
+| `stove_runs` | runs, filterable by app and status |
 | `stove_failures` | top-N recent failures across all apps/runs, summarized |
 | `stove_failure_detail` | one failure: assertion, system entries, snapshot summary |
 | `stove_timeline` | chronological events for one test |
@@ -102,9 +110,9 @@ Sensitive keys are auto-redacted (passwords, JWTs, common secret patterns).
 
 ## Security
 
-- **Loopback-only.** Bound to `127.0.0.1` by default. Override with `--mcp-host`.
+- **Loopback-only access.** MCP rejects non-loopback clients and non-local `Host` / `Origin` headers.
 - **Read-only.** No mutations. No exec. No file writes.
-- **No outbound calls.** Agent reads what `stove serve` already stored.
+- **No outbound calls.** Agent reads what `stove` already stored.
 
 ## Pairs well with
 
@@ -124,7 +132,7 @@ Sensitive keys are auto-redacted (passwords, JWTs, common secret patterns).
 
 | Symptom | Check |
 |---|---|
-| Agent can't connect | `stove serve` running? Port matches MCP URL? |
+| Agent can't connect | `stove` running? Port matches MCP URL? |
 | `stove_failures` empty | Tests producing events? `dashboard { }` registered in `Stove().with`? |
 | `stove_trace` returns nothing | Tracing enabled? See [Tracing setup](15-tracing.md) |
 | Payloads truncated | Use `mode="full"` for full detail (token cost) |

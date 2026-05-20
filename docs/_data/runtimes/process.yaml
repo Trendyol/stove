@@ -5,11 +5,21 @@
   com.trendyol:stove-process
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.process.processApp
+  com.trendyol.stove.process.processApp
+- |-
+  com.trendyol.stove.process.ProcessApplicationOptions
+- |-
+  com.trendyol.stove.process.ProcessTarget
+- |-
+  com.trendyol.stove.system.ReadinessStrategy
 "runner": |-
   processApp {
-    ProcessAppOptions(
-      binaryPath = "./build/app",
-      readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+    ProcessApplicationOptions(
+      command = listOf("./build/app"),
+      target = ProcessTarget.Server(
+        port = 8080,
+        portEnvVar = "PORT",
+        readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
+      )
     )
   }

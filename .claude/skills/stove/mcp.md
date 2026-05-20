@@ -40,20 +40,22 @@ curl -s http://localhost:4040/api/v1/meta
 }
 ```
 
-## MCP client config (generic)
+## MCP client config
+
+Claude Code uses `type = "http"` for Streamable HTTP MCP servers:
 
 ```json
 {
   "mcpServers": {
     "stove": {
-      "transport": "streamable-http",
+      "type": "http",
       "url": "http://localhost:4040/mcp"
     }
   }
 }
 ```
 
-Exact keys vary by agent runtime. The endpoint URL is the load-bearing value.
+Some clients call the same field `transport` and may accept `streamable-http`. The endpoint URL is the load-bearing value.
 
 ## Agent Workflow (the only correct order)
 

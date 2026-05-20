@@ -3,9 +3,7 @@
 "family": |-
   interaction
 "gradle": []
-"imports":
-- |-
-  com.trendyol.stove.testing.e2e.bridge
+"imports": [] # Framework-specific imports are added by docs/js/wizard.js.
 "configure": |-
   bridge()
 "testDsl": |-

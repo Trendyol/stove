@@ -188,6 +188,16 @@
         return this.state.runtime === "jvm" && this.state.framework !== "quarkus";
       },
 
+      bridgeImportForFramework() {
+        if (!this.bridgeSupportedInJvm()) return null;
+        // Quarkus has no bridge starter today; add it here if one ships.
+        return {
+          "spring-boot": "com.trendyol.stove.spring.bridge",
+          "ktor": "com.trendyol.stove.ktor.bridge",
+          "micronaut": "com.trendyol.stove.micronaut.bridge",
+        }[this.state.framework] || null;
+      },
+
       // -------- rendering --------
       renderGradle() {
         if (!this.data) return "";
@@ -222,13 +232,15 @@ ${depLines}
         const test = this.data.tests[s.test];
 
         const imports = new Set([
-          "com.trendyol.stove.testing.e2e.Stove",
-          "com.trendyol.stove.testing.e2e.standalone.kotest.AbstractProjectConfig",
+          "com.trendyol.stove.system.Stove",
+          "io.kotest.core.config.AbstractProjectConfig",
           "io.kotest.core.extensions.Extension",
         ]);
         entries.forEach((e) => (e.imports || []).forEach((i) => imports.add(i)));
         (runner?.imports || []).forEach((i) => imports.add(i));
-        if (test.extensionLine) imports.add("com.trendyol.stove.testing.e2e.standalone.kotest.StoveKotestExtension");
+        const bridgeImport = this.bridgeImportForFramework();
+        if (bridgeImport && s.framework !== "spring-boot") imports.add(bridgeImport);
+        if (test.extensionLine) imports.add("com.trendyol.stove.extensions.kotest.StoveKotestExtension");
         const importBlock = Array.from(imports).sort().map((i) => `import ${i}`).join("\n");
 
         // Provided mode: prefer e.configureProvided over e.configure when available
@@ -283,7 +295,7 @@ ${runnerBlock}
           .join("\n\n");
 
         const classImports = new Set([
-          "com.trendyol.stove.testing.e2e.standalone.kotest.stove",
+          "com.trendyol.stove.system.stove",
           "io.kotest.matchers.shouldBe",
           "io.kotest.matchers.string.shouldContain",
         ]);

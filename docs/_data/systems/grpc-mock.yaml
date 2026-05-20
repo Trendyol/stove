@@ -7,7 +7,7 @@
   com.trendyol:stove-grpc-mock
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.grpc.mock.*
+  com.trendyol.stove.testing.grpcmock.*
 "configure": |-
   grpcMock {
     GrpcMockSystemOptions(port = 0)

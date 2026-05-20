@@ -5,11 +5,18 @@
   com.trendyol:stove-process
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.process.goApp
+  com.trendyol.stove.process.goApp
+- |-
+  com.trendyol.stove.process.ProcessTarget
+- |-
+  com.trendyol.stove.system.ReadinessStrategy
 "runner": |-
-  goApp {
-    GoAppOptions(
-      sourcePath = "../app",
+  goApp(
+    binaryPath = System.getProperty("go.app.binary")
+      ?: error("go.app.binary system property not set"),
+    target = ProcessTarget.Server(
+      port = 8080,
+      portEnvVar = "PORT",
       readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
     )
-  }
+  )

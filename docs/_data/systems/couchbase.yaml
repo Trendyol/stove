@@ -7,7 +7,7 @@
   com.trendyol:stove-couchbase
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.couchbase.*
+  com.trendyol.stove.couchbase.*
 "configure": |-
   couchbase {
     CouchbaseSystemOptions(

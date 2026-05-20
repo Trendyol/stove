@@ -28,6 +28,11 @@ What it does NOT do:
 ## Configure
 
 ```kotlin
+import com.trendyol.stove.container.ContainerTarget
+import com.trendyol.stove.container.containerApp
+import com.trendyol.stove.system.ReadinessStrategy
+import com.trendyol.stove.system.application.envMapper
+
 Stove().with {
   postgresql { /* ... */ }
   kafka      { /* ... */ }
@@ -37,18 +42,18 @@ Stove().with {
     target = ContainerTarget.Server(
       hostPort = 8090,
       internalPort = 8090,
-      portEnvVar = "APP_PORT"
+      portEnvVar = "APP_PORT",
+      bindHostPort = true,
+      readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8090/health")
     ),
     envProvider = envMapper {
-      // Stove config key -> AUT env var
-      "postgresql.jdbc-url" to "DB_URL"
-      "postgresql.username" to "DB_USER"
-      "postgresql.password" to "DB_PASS"
-      "kafka.bootstrap-servers" to "KAFKA_BROKERS"
+      // Left side must match the keys your systems expose.
+      "database.host" to "DB_HOST"
+      "database.port" to "DB_PORT"
+      "database.name" to "DB_NAME"
+      "kafka.bootstrapServers" to "KAFKA_BROKERS"
     },
-    readiness = ReadinessStrategy.HttpGet(path = "/health"),
     configureContainer = {
-      withNetworkMode("host")   // Linux only; cross-platform = use port binding
       withFileSystemBind("./fixtures", "/app/fixtures")
     }
   )
@@ -62,14 +67,14 @@ Stove().with {
 | `ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort = true)` | App listens on a port; readiness probe required |
 | `ContainerTarget.Worker()` | No port; readiness via `Probe` or `FixedDelay` |
 
-Use `hostPort = 0` for a dynamic, CI-safe port assignment.
+`ContainerTarget.Worker(readiness = ...)` accepts no port because workers do not expose a listening socket. Use a stable `hostPort` when tests call the AUT through `localhost`. Use `hostPort = 0` only when tests and readiness do not depend on a fixed localhost port.
 
 ## Readiness
 
 ```kotlin
-ReadinessStrategy.HttpGet(path = "/health")
-ReadinessStrategy.TcpPort                          // any TCP listener
-ReadinessStrategy.Probe { container -> /* boolean */ }
+ReadinessStrategy.HttpGet(url = "http://localhost:8090/health")
+ReadinessStrategy.TcpPort(port = 8090)             // any TCP listener
+ReadinessStrategy.Probe { /* boolean */ }
 ReadinessStrategy.FixedDelay(5.seconds)            // last resort
 ```
 
@@ -78,13 +83,13 @@ ReadinessStrategy.FixedDelay(5.seconds)            // last resort
 ```kotlin
 // env (most images)
 envProvider = envMapper {
-  "postgresql.jdbc-url" to "DB_URL"
+  "database.host" to "DB_HOST"
 }
 
 // CLI args (some Go / Rust binaries)
 argsProvider = argsMapper {
-  "postgresql.jdbc-url" to "--db-url"
-  "kafka.bootstrap-servers" to "--kafka"
+  "database.host" to "db-host"
+  "kafka.bootstrapServers" to "kafka"
 }
 ```
 
@@ -103,7 +108,7 @@ For port binding, map infra hosts in `envProvider`:
 envProvider = envMapper {
   "postgresql.host" to "DB_HOST"           // ends up = testcontainers alias
   "postgresql.port" to "DB_PORT"
-  "kafka.bootstrap-servers" to "KAFKA"
+  "kafka.bootstrapServers" to "KAFKA"
 }
 ```
 
@@ -129,7 +134,7 @@ Useful for seed data, certificates, schema files.
 containerApp(
   image = "my-app:local",
   /* ... */,
-  beforeStarted = { container -> /* tweak container */ },
+  beforeStarted = { configurations -> /* write config files, seed dirs, etc. */ },
   gracefulShutdownTimeout = 30.seconds
 )
 ```

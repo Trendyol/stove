@@ -7,7 +7,7 @@
   com.trendyol:stove-mssql
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.database.mssql.*
+  com.trendyol.stove.mssql.*
 "configure": |-
   mssql {
     MsSqlOptions(

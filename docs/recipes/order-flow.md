@@ -2,7 +2,7 @@
 
 Test a complete order placement: client calls `POST /orders`, app validates inventory through a third-party HTTP service, persists the order, then publishes an `OrderCreated` event to Kafka. All four surfaces (HTTP in, HTTP out, DB, Kafka out) covered in one test.
 
-<a class="open-in-wizard" data-sys="http,postgresql,kafka" data-mk="wiremock" data-fw="spring-boot">Open this setup in the wizard</a>
+<a class="open-in-wizard" data-sys="http,postgresql,kafka" data-mk="wiremock" data-fw="spring-boot">Open this setup in the wizard</a> · <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase" target="_blank">Source on GitHub ↗</a>
 
 ## Systems used
 
@@ -66,18 +66,18 @@ dependencies {
 ```kotlin
 package com.yourcompany.orders.e2e.setup
 
-import com.trendyol.stove.testing.e2e.Stove
-import com.trendyol.stove.testing.e2e.http.HttpClientSystemOptions
-import com.trendyol.stove.testing.e2e.http.httpClient
-import com.trendyol.stove.testing.e2e.dashboard.*
-import com.trendyol.stove.testing.e2e.database.postgresql.*
-import com.trendyol.stove.testing.e2e.messaging.kafka.*
-import com.trendyol.stove.testing.e2e.serialization.StoveSerde
-import com.trendyol.stove.testing.e2e.springBoot
-import com.trendyol.stove.testing.e2e.standalone.kotest.AbstractProjectConfig
-import com.trendyol.stove.testing.e2e.standalone.kotest.StoveKotestExtension
-import com.trendyol.stove.testing.e2e.tracing.tracing
-import com.trendyol.stove.testing.e2e.wiremock.*
+import com.trendyol.stove.system.Stove
+import com.trendyol.stove.http.HttpClientSystemOptions
+import com.trendyol.stove.http.httpClient
+import com.trendyol.stove.dashboard.*
+import com.trendyol.stove.postgres.*
+import com.trendyol.stove.kafka.*
+import com.trendyol.stove.serialization.StoveSerde
+import com.trendyol.stove.spring.*
+import io.kotest.core.config.AbstractProjectConfig
+import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+import com.trendyol.stove.tracing.tracing
+import com.trendyol.stove.wiremock.*
 import io.kotest.core.extensions.Extension
 
 class StoveConfig : AbstractProjectConfig() {
@@ -222,15 +222,18 @@ class OrderFlowE2ETest : FunSpec({
 
 === "Go (process mode)"
 
-    Replace `stove-spring` with `stove-process`, configure Kafka via the [Go bridge](../other-languages/go.md), and use:
+    Replace `stove-spring` with `stove-process`, configure Kafka via the [Go bridge](../other-languages/go.md), compile the Go binary before the test task, and pass its path as `go.app.binary`:
 
     ```kotlin
-    goApp {
-        GoAppOptions(
-            sourcePath = "../app",
+    goApp(
+        binaryPath = System.getProperty("go.app.binary")
+            ?: error("go.app.binary system property not set"),
+        target = ProcessTarget.Server(
+            port = 8080,
+            portEnvVar = "PORT",
             readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
         )
-    }
+    )
     ```
 
 ## Common pitfalls

@@ -328,7 +328,7 @@ test("Go app consumes product update events") {
 
 ## Dashboard & MCP
 
-Start `stove serve`. The Go run streams to `http://localhost:8086` like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the [MCP endpoint](../Components/21-mcp.md). No log scraping.
+Start `stove`. The Go run streams to `http://localhost:4040` like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the [MCP endpoint](../Components/21-mcp.md). No log scraping.
 
 ## How tracing flows
 

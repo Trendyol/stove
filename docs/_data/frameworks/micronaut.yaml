@@ -5,7 +5,7 @@
   com.trendyol:stove-micronaut
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.micronaut.micronaut
+  com.trendyol.stove.micronaut.micronaut
 "runner": |-
   micronaut(
     runner = { params -> {pkg}.run(params) },

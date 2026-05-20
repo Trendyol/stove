@@ -7,7 +7,7 @@
   com.trendyol:stove-cassandra
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.cassandra.*
+  com.trendyol.stove.cassandra.*
 "configure": |-
   cassandra {
     CassandraSystemOptions(

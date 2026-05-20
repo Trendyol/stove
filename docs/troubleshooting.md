@@ -363,11 +363,11 @@ Deep dive: [Provided Instances · isolation](Components/11-provided-instances.md
 
 | Symptom | Fix |
 |---|---|
-| Dashboard at `http://localhost:8086` empty | `stove serve` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
+| Dashboard at `http://localhost:4040` empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
 | `gRPC disabled` warning in logs | CLI started after tests; restart in correct order |
-| Agent can't connect to MCP | Endpoint is on the CLI, not the test JVM. Verify `http://localhost:8086/api/v1/meta` returns `"mcp": { "enabled": true }` |
+| Agent can't connect to MCP | Endpoint is on the CLI, not the test JVM. Verify `http://localhost:4040/api/v1/meta` returns `"mcp": { "enabled": true }` |
 | `stove_trace` returns nothing | [Tracing](Components/15-tracing.md) not enabled |
-| Disk filling with old run data | `stove serve --clear` to wipe `~/.stove/dashboard.sqlite` |
+| Disk filling with old run data | Run `stove --clear` to wipe stored runs from `~/.stove-dashboard.db` |
 
 MCP isn't required for Stove. It's a token-saver for agents. Falling back to the failure report + console + dashboard works fine.
 

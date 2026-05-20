@@ -3,7 +3,11 @@
 "gradle": []
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.providedApplication
+  com.trendyol.stove.system.providedApplication
+- |-
+  com.trendyol.stove.system.ProvidedApplicationOptions
+- |-
+  com.trendyol.stove.system.ReadinessStrategy
 "runner": |-
   providedApplication {
     ProvidedApplicationOptions(

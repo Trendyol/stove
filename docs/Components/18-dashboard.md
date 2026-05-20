@@ -4,8 +4,10 @@ A local web UI for everything your Stove tests do. Timelines, span trees, snapsh
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-cli</code>, run <code>stove serve</code>, add <code>dashboard { }</code> in <code>Stove().with</code>. Open <code>http://localhost:8086</code>. Done.
+Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>. Open <code>http://localhost:4040</code>. Done.
 </div>
+
+Current CLI versions start the dashboard with bare `stove`; older docs and scripts may still show `stove serve`.
 
 ## Install the CLI
 
@@ -31,10 +33,11 @@ Verify: `stove --version`.
 ## Start the dashboard
 
 ```bash
-stove serve                                  # default port 8086
-stove serve --port 9000 --grpc-port 9001     # override ports
-stove serve --fresh-start                    # wipe DB on start
-stove serve --db ./my-stove.sqlite           # custom DB path
+stove                                  # default UI/REST/MCP port 4040, gRPC port 4041
+stove --port 9000 --grpc-port 9001     # override ports
+stove --fresh-start                    # back up and recreate the DB, then start
+stove --db ./my-stove.sqlite           # custom DB path
+stove --clear                          # clear stored runs and exit
 ```
 
 Open the printed URL. Empty until tests run.
@@ -45,8 +48,8 @@ Open the printed URL. Empty until tests run.
 Stove().with {
     dashboard {
         DashboardSystemOptions(appName = "my-service")
-        // Defaults are fine. Override host/port if you ran `stove serve --port X`:
-        // DashboardSystemOptions(appName = "my-service", cliHost = "localhost", cliPort = 8086)
+        // If you start the CLI with `stove --grpc-port 9001`, match that here:
+        // DashboardSystemOptions(appName = "my-service", cliHost = "localhost", cliPort = 9001)
     }
     // ... other systems + runner
 }.run()
@@ -87,7 +90,7 @@ database
             └── snapshots (system state at failure)
 ```
 
-Runs persist until you `--clear` or `--fresh-start`. Browse old runs to compare regressions.
+Runs persist until you clear or recreate the database. Browse old runs to compare regressions.
 
 ## Fault tolerance
 
@@ -116,11 +119,11 @@ Useful for CI artifact extraction, custom analyzers, or building tooling on top.
 
 | Flag | Default | Notes |
 |---|---|---|
-| `--port` | 8086 | web UI + REST |
-| `--grpc-port` | 8087 | event ingestion |
-| `--db` | `~/.stove/dashboard.sqlite` | persistence path |
-| `--clear` | off | wipe DB before serving |
-| `--fresh-start` | off | wipe + reset all settings |
+| `--port` | 4040 | web UI, REST, and MCP |
+| `--grpc-port` | 4041 | event ingestion from Stove tests |
+| `--db` | `~/.stove-dashboard.db` | persistence path |
+| `--clear` | off | clear stored runs and exit |
+| `--fresh-start` | off | back up and recreate the DB before serving |
 
 ## Pairs well with
 
@@ -140,7 +143,7 @@ Useful for CI artifact extraction, custom analyzers, or building tooling on top.
 
 | Symptom | Check |
 |---|---|
-| Dashboard empty | `stove serve` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
-| Events not arriving | Port mismatch. `cliPort` in `DashboardSystemOptions` must match `--port` |
+| Dashboard empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
+| Events not arriving | Port mismatch. `cliPort` in `DashboardSystemOptions` must match `--grpc-port` |
 | "gRPC disabled" warning | Expected if CLI started after tests; restart in correct order |
-| Disk filling up | `~/.stove/dashboard.sqlite` grows with runs; periodically `stove serve --clear` |
+| Disk filling up | `~/.stove-dashboard.db` grows with runs; periodically run `stove --clear` |

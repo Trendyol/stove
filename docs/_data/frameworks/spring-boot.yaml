@@ -5,7 +5,7 @@
   com.trendyol:stove-spring
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.springBoot
+  com.trendyol.stove.spring.*
 "runner": |-
   springBoot(
     runner = { params ->

@@ -20,9 +20,45 @@ Helpers:
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import yaml
+
+_STALE_SNIPPET_PATTERNS = [
+    (re.compile(r"com\.trendyol\.stove\.testing\.e2e\b"), "pre-0.20 package name"),
+    (re.compile(r"\bContainerAppOptions\b"), "removed container runner API"),
+    (re.compile(r"\bProcessAppOptions\b"), "removed process runner API"),
+    (re.compile(r"\bGoAppOptions\b"), "removed Go runner API"),
+    (re.compile(r"ReadinessStrategy\.HttpGet\s*\(\s*path\s*="), "HttpGet now requires a full url"),
+    (re.compile(r"\bstove\s+serve\b"), "CLI now starts the dashboard with bare `stove`"),
+    (re.compile(r"--port\s+8086\b"), "dashboard HTTP/MCP default port is now 4040"),
+    (re.compile(r"\bcliPort\s*=\s*8086\b"), "DashboardSystemOptions.cliPort is the gRPC port, default 4041"),
+]
+
+
+def _walk_strings(value, path: str = ""):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            child = f"{path}.{key}" if path else str(key)
+            yield from _walk_strings(item, child)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from _walk_strings(item, f"{path}[{index}]")
+    elif isinstance(value, str):
+        yield path, value
+
+
+def _validate_setup_data(data: dict) -> None:
+    errors = []
+    for path, value in _walk_strings(data):
+        for pattern, reason in _STALE_SNIPPET_PATTERNS:
+            if pattern.search(value):
+                errors.append(f"{path}: found /{pattern.pattern}/ ({reason})")
+
+    if errors:
+        joined = "\n  - ".join(errors)
+        raise ValueError(f"Stale Stove docs snippet data:\n  - {joined}")
 
 
 def _read_bucket(data_dir: Path, bucket: str, prefix: str = "") -> dict:
@@ -70,6 +106,7 @@ def define_env(env):
     """mkdocs-macros entry point."""
     docs_dir = Path(env.conf["docs_dir"])
     data = _load(docs_dir)
+    _validate_setup_data(data)
     _emit_setup_json(docs_dir, data)
 
     # Expose merged data under `stove` namespace for Jinja
