@@ -7,7 +7,7 @@
   com.trendyol:stove-dashboard
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.dashboard.*
+  com.trendyol.stove.dashboard.*
 "configure": |-
   dashboard {
     DashboardSystemOptions(appName = "my-service")

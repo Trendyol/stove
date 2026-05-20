@@ -7,7 +7,7 @@
   com.trendyol:stove-elasticsearch
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.elasticsearch.*
+  com.trendyol.stove.elasticsearch.*
 "configure": |-
   elasticsearch {
     ElasticsearchSystemOptions(

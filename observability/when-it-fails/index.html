@@ -3211,7 +3211,7 @@ test(<span class="ok">"order is published after POST /orders"</span>) {
   <div class="story-step">
     <div>
       <h3>3. Dashboard renders the full timeline</h3>
-      <p>If the local dashboard is running, the same execution shows up as a clickable timeline at <code>http://localhost:8086</code>. System snapshots, message payloads, DB rows, all queryable.</p>
+      <p>If the local dashboard is running, the same execution shows up as a clickable timeline at <code>http://localhost:4040</code>. System snapshots, message payloads, DB rows, all queryable.</p>
       <p>Drill into the Kafka panel: <strong>the app published to <code>order.failed.v1</code>, not <code>order.created.v1</code></strong>. Bug found.</p>
     </div>
     <pre class="story-frame"><span class="dim">┌─ Timeline ─────────────────────────────────────┐</span>
@@ -3247,7 +3247,7 @@ test(<span class="ok">"order is published after POST /orders"</span>) {
       <p>The same data is exposed over a loopback MCP endpoint. An agent (Claude Code, Cursor, etc.) can fetch failures and traces directly. No shell-out, no log scraping, no token waste on noisy stdout.</p>
       <p>It returns a focused, actionable diff suggestion in seconds.</p>
     </div>
-    <pre class="story-frame">$ curl localhost:8086/mcp/tools/stove_failure_detail \
+    <pre class="story-frame">$ curl localhost:4040/mcp/tools/stove_failure_detail \
        -d '{"test_id":"OrderE2ETest#order-publish"}'
 
 <span class="ok">{</span>

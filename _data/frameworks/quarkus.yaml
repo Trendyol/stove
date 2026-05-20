@@ -5,7 +5,7 @@
   com.trendyol:stove-quarkus
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.quarkus.quarkus
+  com.trendyol.stove.quarkus.quarkus
 "runner": |-
   quarkus(
     runner = { params -> {pkg}.main(params) },

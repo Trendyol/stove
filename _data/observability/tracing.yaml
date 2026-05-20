@@ -14,6 +14,6 @@
   }
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.tracing.tracing
+  com.trendyol.stove.tracing.tracing
 "configure": |-
   tracing { enableSpanReceiver() }

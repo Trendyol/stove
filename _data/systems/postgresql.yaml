@@ -7,7 +7,7 @@
   com.trendyol:stove-postgres
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.database.postgresql.*
+  com.trendyol.stove.postgres.*
 "configure": |-
   postgresql {
     PostgresqlOptions(

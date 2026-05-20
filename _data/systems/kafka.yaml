@@ -7,9 +7,9 @@
   com.trendyol:stove-kafka
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.messaging.kafka.*
+  com.trendyol.stove.kafka.*
 - |-
-  com.trendyol.stove.testing.e2e.serialization.StoveSerde
+  com.trendyol.stove.serialization.StoveSerde
 - |-
   kotlin.time.Duration.Companion.seconds
 "configure": |-

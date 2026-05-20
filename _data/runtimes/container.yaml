@@ -5,12 +5,18 @@
   com.trendyol:stove-container
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.container.containerApp
+  com.trendyol.stove.container.containerApp
+- |-
+  com.trendyol.stove.container.ContainerTarget
+- |-
+  com.trendyol.stove.system.ReadinessStrategy
 "runner": |-
-  containerApp {
-    ContainerAppOptions(
-      image = "ghcr.io/your-org/your-app:latest",
-      exposedPorts = listOf(8080),
-      readiness = ReadinessStrategy.HttpGet(path = "/health")
+  containerApp(
+    image = "ghcr.io/your-org/your-app:latest",
+    target = ContainerTarget.Server(
+      hostPort = 8080,
+      internalPort = 8080,
+      portEnvVar = "PORT",
+      readiness = ReadinessStrategy.HttpGet(url = "http://localhost:8080/health")
     )
-  }
+  )

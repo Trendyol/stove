@@ -3030,6 +3030,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#browse-the-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browse the source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pattern-of-a-recipe" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3122,16 +3133,58 @@
 <h1 id="recipes">Recipes<a class="headerlink" href="#recipes" title="Permanent link">&para;</a></h1>
 <p>End-to-end scenarios that combine multiple systems. Each recipe is a complete, copy-paste setup. Gradle deps, <code>StoveConfig.kt</code>, and a runnable test. For a real-world flow.</p>
 <p>Recipes complement the <a href="../">Setup Wizard</a> (which composes systems) and the <a href="../Components/">Components reference</a> (which documents each system in isolation).</p>
+<div class="stove-tldr">
+<p><span class="stove-tldr-title">Working source on GitHub</span>
+Every recipe on this page is a tightened walkthrough of a project in the Stove repo's <a href="https://github.com/Trendyol/stove/tree/main/recipes" target="_blank"><code>recipes/</code></a> folder. Clone, open in your IDE, run <code>./gradlew e2eTest</code>.</p>
+</div>
 <h2 id="available-recipes">Available recipes<a class="headerlink" href="#available-recipes" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 20c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2m8-2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m-9.8-3.2v-.1l.9-1.7h7.4c.7 0 1.4-.4 1.7-1l3.9-7-1.7-1-3.9 7h-7L4.3 2H1v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2M18 2.8l-1.4-1.4-4.8 4.8-2.6-2.6L7.8 5l4 4z"/></svg></span> <strong>Order placement flow</strong></p>
 <p>HTTP POST → Postgres write → WireMock external call → Kafka event published.</p>
-<p><a href="order-flow/">Order flow</a></p>
+<p><a href="order-flow/">Walkthrough</a> · <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase">source ↗</a></p>
 </li>
 </ul>
 </div>
+<h2 id="browse-the-source">Browse the source<a class="headerlink" href="#browse-the-source" title="Permanent link">&para;</a></h2>
+<p>Don't see your scenario? Jump straight to the working projects.</p>
+<div class="stove-catalog">
+
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>JVM · Kotlin</strong><span class="stove-sys-card-badge">3 recipes</span></div>
+    <p class="stove-sys-card-desc">Spring showcase (HTTP + Postgres + Kafka + WireMock + tracing), Ktor + Postgres, Ktor + Mongo.</p>
+    <div class="stove-sys-card-actions">
+      <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes" target="_blank">recipes/jvm/kotlin-recipes ↗</a>
+    </div>
+  </div>
+
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>JVM · Java</strong><span class="stove-sys-card-badge">2 recipes</span></div>
+    <p class="stove-sys-card-desc">Spring Boot + Postgres, Quarkus basic. e2e tests written in Kotlin against a Java AUT.</p>
+    <div class="stove-sys-card-actions">
+      <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/java-recipes" target="_blank">recipes/jvm/java-recipes ↗</a>
+    </div>
+  </div>
+
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>JVM · Scala</strong><span class="stove-sys-card-badge">1 recipe</span></div>
+    <p class="stove-sys-card-desc">Spring Boot basic. Scala AUT, Kotlin tests.</p>
+    <div class="stove-sys-card-actions">
+      <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/scala-recipes" target="_blank">recipes/jvm/scala-recipes ↗</a>
+    </div>
+  </div>
+
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>Polyglot · Go</strong><span class="stove-sys-card-badge">process + container</span></div>
+    <p class="stove-sys-card-desc">Full Go showcase: HTTP + Postgres + Kafka (sarama / franz / segmentio) + OTel + dashboard + coverage. Single project, both modes via <code>go.aut.mode</code>.</p>
+    <div class="stove-sys-card-actions">
+      <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang" target="_blank">recipes/process/golang ↗</a>
+    </div>
+  </div>
+
+</div>
+
 <h2 id="pattern-of-a-recipe">Pattern of a recipe<a class="headerlink" href="#pattern-of-a-recipe" title="Permanent link">&para;</a></h2>
 <p>Every recipe page follows the same shape:</p>
 <ol>

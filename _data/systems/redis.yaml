@@ -7,7 +7,7 @@
   com.trendyol:stove-redis
 "imports":
 - |-
-  com.trendyol.stove.testing.e2e.redis.*
+  com.trendyol.stove.redis.*
 "configure": |-
   redis {
     RedisSystemOptions(

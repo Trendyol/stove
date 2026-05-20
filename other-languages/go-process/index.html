@@ -3859,7 +3859,7 @@ func main() {
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./gradlew<span class="w"> </span>e2eTest
 </span></code></pre></div>
 <h2 id="dashboard-mcp">Dashboard &amp; MCP<a class="headerlink" href="#dashboard-mcp" title="Permanent link">&para;</a></h2>
-<p>Start <code>stove serve</code>. The Go run streams to <code>http://localhost:8086</code> like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the <a href="../../Components/21-mcp/">MCP endpoint</a>. No log scraping.</p>
+<p>Start <code>stove</code>. The Go run streams to <code>http://localhost:4040</code> like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the <a href="../../Components/21-mcp/">MCP endpoint</a>. No log scraping.</p>
 <h2 id="how-tracing-flows">How tracing flows<a class="headerlink" href="#how-tracing-flows" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>1. StoveKotestExtension starts a TraceContext before each test
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>2. Stove HTTP client injects `traceparent` into requests

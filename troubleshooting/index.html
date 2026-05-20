@@ -4073,8 +4073,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </thead>
 <tbody>
 <tr>
-<td>Dashboard at <code>http://localhost:8086</code> empty</td>
-<td><code>stove serve</code> running? <code>dashboard { }</code> registered in <code>Stove().with</code>? <code>appName</code> set?</td>
+<td>Dashboard at <code>http://localhost:4040</code> empty</td>
+<td><code>stove</code> running? <code>dashboard { }</code> registered in <code>Stove().with</code>? <code>appName</code> set?</td>
 </tr>
 <tr>
 <td><code>gRPC disabled</code> warning in logs</td>
@@ -4082,7 +4082,7 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </tr>
 <tr>
 <td>Agent can't connect to MCP</td>
-<td>Endpoint is on the CLI, not the test JVM. Verify <code>http://localhost:8086/api/v1/meta</code> returns <code>"mcp": { "enabled": true }</code></td>
+<td>Endpoint is on the CLI, not the test JVM. Verify <code>http://localhost:4040/api/v1/meta</code> returns <code>"mcp": { "enabled": true }</code></td>
 </tr>
 <tr>
 <td><code>stove_trace</code> returns nothing</td>
@@ -4090,7 +4090,7 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </tr>
 <tr>
 <td>Disk filling with old run data</td>
-<td><code>stove serve --clear</code> to wipe <code>~/.stove/dashboard.sqlite</code></td>
+<td>Run <code>stove --clear</code> to wipe stored runs from <code>~/.stove-dashboard.db</code></td>
 </tr>
 </tbody>
 </table>
