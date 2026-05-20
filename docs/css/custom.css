@@ -99,24 +99,7 @@ code {
     font-weight: 600;
 }
 
-/* Code block hl_lines: override default background for RoughNotation */
-.highlight pre .hll {
-    background-color: transparent !important;
-}
-.highlight pre {
-    position: relative;
-}
-/* Clip RoughNotation SVGs that extend beyond code block edges */
-.highlight {
-    overflow: hidden;
-}
-/* Contain annotation SVGs within the code block */
-.highlight pre > svg,
-.highlight code > svg {
-    pointer-events: none;
-}
-
-/* Stove annotated report blocks (RoughNotation) */
+/* Stove annotated report blocks */
 .stove-report pre {
     background: var(--md-code-bg-color);
     color: var(--md-code-fg-color);
@@ -525,11 +508,11 @@ code {
 /* ----- Live preview pane (sticky right rail) ----- */
 .sw-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
-    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(24rem, 34rem);
+    gap: 2rem;
     align-items: start;
 }
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
     .sw-layout {
         grid-template-columns: 1fr;
     }
@@ -542,17 +525,17 @@ code {
     position: sticky;
     top: 4.5rem;
     border: 1px solid var(--md-default-fg-color--lightest);
-    border-radius: 10px;
-    padding: 0.7rem 0.8rem;
+    border-radius: 12px;
+    padding: 1rem 1.05rem;
     background: var(--md-code-bg-color);
-    max-height: calc(100vh - 6rem);
+    max-height: calc(100vh - 5.5rem);
     display: flex;
     flex-direction: column;
 }
 .sw-preview-stats {
     display: flex;
-    gap: 0.7rem;
-    margin-bottom: 0.6rem;
+    gap: 0.9rem;
+    margin-bottom: 0.85rem;
     font-size: 0.7rem;
     opacity: 0.85;
     flex-wrap: wrap;
@@ -562,18 +545,18 @@ code {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.55rem;
 }
 .sw-preview-head h4 { margin: 0; font-size: 0.8rem; opacity: 0.8; }
 .sw-preview-code {
     flex: 1 1 auto;
-    margin: 0 0 0.6rem;
+    margin: 0 0 0.9rem;
     overflow: auto;
-    font-size: 0.68rem;
-    line-height: 1.4;
-    padding: 0.6rem;
+    font-size: 0.72rem;
+    line-height: 1.55;
+    padding: 0.95rem;
     background: var(--md-default-bg-color);
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid var(--md-default-fg-color--lightest);
 }
 .sw-preview-code code {
