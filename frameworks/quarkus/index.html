@@ -3244,11 +3244,11 @@
 
 
 <h1 id="quarkus">Quarkus<a class="headerlink" href="#quarkus" title="Permanent link">&para;</a></h1>
-<p>Same Stove DSL, Quarkus runtime. One caveat: <code>bridge()</code> isn't shipped yet. Drive verification through HTTP, DB queries, and Kafka assertions.</p>
+<p>Stove starts the real Quarkus runtime. The main caveat is that <code>bridge()</code> is not shipped yet, so verification should go through HTTP, DB queries, Kafka observations, gRPC, or other external systems.</p>
 <p><a class="open-in-wizard" data-fw="quarkus" data-sys="http,postgresql,kafka">Open Quarkus + Postgres + Kafka in wizard</a></p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">Quarkus specifics</span>
-1) Keep <code>@QuarkusMain</code> intact. 2) Publish a readiness signal if your app has no HTTP. 3) Bridge unavailable. Use system DSLs (<code>postgresql</code>, <code>kafka</code>, etc.) for state verification.</p>
+1) Keep <code>@QuarkusMain</code> intact. 2) Publish a readiness signal if your app has no HTTP. 3) Bridge is unavailable. Use system DSLs (<code>postgresql</code>, <code>kafka</code>, etc.) for state verification.</p>
 </div>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
@@ -3300,7 +3300,7 @@
 <h2 id="what-you-get">What you get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <ul>
 <li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Real Quarkus startup via the normal <code>main</code></li>
-<li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Tracing, reporting, dashboard, MCP. All integrated</li>
+<li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Tracing, reporting, and dashboard when configured; MCP when the <code>stove</code> CLI is running and dashboard data exists</li>
 <li><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/274c.svg" title=":x:" /> Bridge. Not yet (verify through systems)</li>
 </ul>
 <h2 id="verification-without-bridge">Verification without Bridge<a class="headerlink" href="#verification-without-bridge" title="Permanent link">&para;</a></h2>

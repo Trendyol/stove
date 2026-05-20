@@ -3288,7 +3288,7 @@
 
 
 <h1 id="recipe-order-placement-flow">Recipe: Order Placement Flow<a class="headerlink" href="#recipe-order-placement-flow" title="Permanent link">&para;</a></h1>
-<p>Test a complete order placement: client calls <code>POST /orders</code>, app validates inventory through a third-party HTTP service, persists the order, then publishes an <code>OrderCreated</code> event to Kafka. All four surfaces (HTTP in, HTTP out, DB, Kafka out) covered in one test.</p>
+<p>Test a complete order placement: client calls <code>POST /orders</code>, app validates inventory through a third-party HTTP service, persists the order, then publishes an <code>OrderCreated</code> event to Kafka. The test covers four external surfaces: HTTP in, HTTP out, DB state, and Kafka out.</p>
 <p><a class="open-in-wizard" data-sys="http,postgresql,kafka" data-mk="wiremock" data-fw="spring-boot">Open this setup in the wizard</a> · <a href="https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase" target="_blank">Source on GitHub ↗</a></p>
 <h2 id="systems-used">Systems used<a class="headerlink" href="#systems-used" title="Permanent link">&para;</a></h2>
 <table>
@@ -3322,7 +3322,7 @@
 </tr>
 </tbody>
 </table>
-<p>Optional but recommended: <a href="../../Components/15-tracing/">Tracing</a> and <a href="../../Components/18-dashboard/">Dashboard</a>. When this test fails you'll get a full call chain + timeline.</p>
+<p>Optional but recommended: <a href="../../Components/15-tracing/">Tracing</a> and <a href="../../Components/18-dashboard/">Dashboard</a>. When enabled, they add a call chain and timeline to failures.</p>
 <h2 id="what-success-looks-like">What success looks like<a class="headerlink" href="#what-success-looks-like" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -3488,7 +3488,7 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="ktor" name="__tabbed_1" type="radio" /><input id="micronaut" name="__tabbed_1" type="radio" /><input id="quarkus" name="__tabbed_1" type="radio" /><input id="go-process-mode" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="ktor">Ktor</label><label for="micronaut">Micronaut</label><label for="quarkus">Quarkus</label><label for="go-process-mode">Go (process mode)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<p>Replace the runner block:</p>
+<p>Replace the runner block and keep the same system registrations:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ktor</span><span class="p">(</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="na">yourcompany</span><span class="p">.</span><span class="na">orders</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;server.port=8080&quot;</span><span class="p">)</span>
@@ -3510,7 +3510,7 @@
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
-<p>Replace <code>stove-spring</code> with <code>stove-process</code>, configure Kafka via the <a href="../../other-languages/go/">Go bridge</a>, compile the Go binary before the test task, and pass its path as <code>go.app.binary</code>:</p>
+<p>Replace <code>stove-spring</code> with <code>stove-process</code>, configure Kafka via the <a href="../../other-languages/go/">Go bridge</a>, compile the Go binary before the test task, pass its path as <code>go.app.binary</code>, and map system configuration into env vars or CLI args:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">goApp</span><span class="p">(</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="n">binaryPath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;go.app.binary&quot;</span><span class="p">)</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="o">?:</span><span class="w"> </span><span class="n">error</span><span class="p">(</span><span class="s">&quot;go.app.binary system property not set&quot;</span><span class="p">),</span>
@@ -3539,7 +3539,7 @@
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Diagnosing failures</p>
-<p>With tracing + dashboard on, a failure shows the full call chain. See <a href="../../observability/when-it-fails/">When a test fails</a>.</p>
+<p>With tracing and dashboard configured, a failure can show the call chain and timeline. See <a href="../../observability/when-it-fails/">When a test fails</a>.</p>
 </div>
 
 

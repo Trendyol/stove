@@ -3223,10 +3223,10 @@
 
 
 <h1 id="go">Go<a class="headerlink" href="#go" title="Permanent link">&para;</a></h1>
-<p>Stove treats Go as a <strong>first-class application under test</strong>. Same DSL. Real Postgres. Real Kafka. Real OTel spans flowing into the same trace tree. Real integration coverage on graceful shutdown.</p>
+<p>Stove can run a Go service as the application under test through process or container runners. The Kotlin test DSL keeps the same shape for registered systems; Go-specific work is build wiring, env/arg configuration, OTel SDK setup, and optional Kafka bridge integration.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">Two modes, one DSL</span>
-Process mode runs the Go binary (fast iteration). Container mode runs the production Docker image (CI parity). Same Kotlin tests. Switch with one option.</p>
+Process mode runs the Go binary for fast iteration. Container mode runs a Docker image for artifact-level parity. The same Kotlin tests can target either mode when <code>StoveConfig</code> branches on one option.</p>
 </div>
 <p>Full reference source: <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>recipes/process/golang/go-showcase</code></a>.</p>
 <h2 id="pick-a-mode">Pick a mode<a class="headerlink" href="#pick-a-mode" title="Permanent link">&para;</a></h2>
@@ -3253,13 +3253,13 @@ Process mode runs the Go binary (fast iteration). Container mode runs the produc
   </div>
 </div>
 
-<p>Rule of thumb: start with <strong>process mode</strong> for fast feedback, add <strong>container mode</strong> in CI when you want image-level confidence. Same Kotlin tests run against either.</p>
+<p>Rule of thumb: start with <strong>process mode</strong> for fast feedback, add <strong>container mode</strong> in CI when you want image-level confidence. The runner changes; the external-surface assertions can stay the same.</p>
 <h2 id="what-you-get">What you get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <div class="stove-ribbon" markdown="0">
   <div class="stove-ribbon-item">
     <div class="icon">🧱</div>
-    <strong>Every system works</strong>
-    <p>HTTP, PostgreSQL, Kafka, MongoDB, Redis. Same DSL, no special-casing for Go.</p>
+    <strong>External systems stay testable</strong>
+    <p>HTTP, PostgreSQL, Kafka, MongoDB, Redis, and other registered systems use the same Kotlin-side DSL. The Go app must receive their connection details through env vars or CLI args.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🛰️</div>
@@ -3279,7 +3279,7 @@ Process mode runs the Go binary (fast iteration). Container mode runs the produc
   <div class="stove-ribbon-item">
     <div class="icon">📨</div>
     <strong>Kafka assertions</strong>
-    <p><code>shouldBePublished</code> / <code>shouldBeConsumed</code> via the <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka">stove-kafka</a> bridge. Sarama, franz-go, segmentio, or any client.</p>
+    <p><code>shouldBePublished</code> / <code>shouldBeConsumed</code> via the <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka">stove-kafka</a> bridge. Sarama, franz-go, and segmentio/kafka-go have adapters; other clients can call the core bridge directly.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">📈</div>
@@ -3338,7 +3338,7 @@ Process mode runs the Go binary (fast iteration). Container mode runs the produc
 </tr>
 </tbody>
 </table>
-<p>The Kotlin test side is unchanged. Only the AUT runner and config mapping differ.</p>
+<p>The Kotlin test side keeps the same shape. The AUT runner, config mapping, and language-specific instrumentation are the parts that differ.</p>
 
 
 

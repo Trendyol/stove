@@ -3442,7 +3442,7 @@
 
 
 <h1 id="redis">Redis<a class="headerlink" href="#redis" title="Permanent link">&para;</a></h1>
-<p>Real Redis in a container or wired to an existing instance. Direct Lettuce client access. Sync, async, reactive. Full Redis data-structure support (strings, hashes, lists, sets, sorted sets, pub/sub, transactions).</p>
+<p>Real Redis in a container or wired to an existing instance. Stove exposes direct Lettuce client access, so tests can use the same Redis primitives your app depends on: strings, hashes, lists, sets, sorted sets, pub/sub, and transactions.</p>
 <p><a class="open-in-wizard" data-sys="redis">Open in setup wizard</a></p>
 <div class="admonition example">
 <p class="admonition-title">Redis — wizard-synced snippet</p>
@@ -3470,7 +3470,7 @@
 </div>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Register <code>redis { RedisOptions(...) }</code>. Inside <code>stove { redis { } }</code>, call <code>client().connect().sync()</code> for the Lettuce sync API. Same client supports async (<code>.async()</code>) and pub/sub (<code>client().connectPubSub()</code>). No high-level Stove DSL.  raw Lettuce is the API.</p>
+Register <code>redis { RedisOptions(...) }</code>. Inside <code>stove { redis { } }</code>, call <code>client().connect().sync()</code> for the Lettuce sync API. The same client supports async (<code>.async()</code>) and pub/sub (<code>client().connectPubSub()</code>). There is no high-level Redis assertion DSL; raw Lettuce is the API.</p>
 </div>
 <h2 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>

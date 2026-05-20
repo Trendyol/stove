@@ -3411,11 +3411,11 @@
 
 
 <h1 id="go-container-mode">Go · Container Mode<a class="headerlink" href="#go-container-mode" title="Permanent link">&para;</a></h1>
-<p>Run the Go app as a Docker image instead of a host binary. <code>stove-container</code> + <code>containerApp()</code>. Image-level parity with what you ship. Same Dockerfile, same entrypoint, same runtime. No Stove test code changes.</p>
-<p>For fast iteration without an image, see <a href="../go-process/">Process Mode</a>. Same Kotlin tests run against either.</p>
+<p>Run the Go app as a Docker image instead of a host binary with <code>stove-container</code> + <code>containerApp()</code>. This validates the Dockerfile, entrypoint, base image, and runtime environment you plan to ship.</p>
+<p>For fast iteration without an image, see <a href="../go-process/">Process Mode</a>. The same Kotlin tests can run against either mode when your <code>StoveConfig</code> switches only the AUT runner.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-This page is the <strong>Go-specific recipe</strong>. The language-agnostic <code>stove-container</code> reference (full DSL, image-source patterns, networking, troubleshooting) lives at <a href="../../Components/22-container/">Container AUT</a>. Build the image however you build it (CI / registry / local Docker). Pass the tag to Stove. Reuse your process-mode StoveConfig with one branch.</p>
+This page is the <strong>Go-specific recipe</strong>. The language-agnostic <code>stove-container</code> reference (full DSL, image-source patterns, networking, troubleshooting) lives at <a href="../../Components/22-container/">Container AUT</a>. Build the image however you build it (CI / registry / local Docker). Pass the tag to Stove. Reuse your process-mode StoveConfig with one runner branch.</p>
 </div>
 <h2 id="why-container-mode">Why container mode<a class="headerlink" href="#why-container-mode" title="Permanent link">&para;</a></h2>
 <div class="stove-compare" markdown="0">
@@ -3433,7 +3433,7 @@ This page is the <strong>Go-specific recipe</strong>. The language-agnostic <cod
     <h4>Container mode</h4>
     <ul>
       <li>Slower. Image build (or fetch)</li>
-      <li>Exact prod parity (the artifact you ship)</li>
+      <li>Closer prod parity (the artifact you ship)</li>
       <li>Glibc/musl + locale + CA-cert issues surface</li>
       <li>Direct CI validation</li>
       <li>Best for pre-merge gating</li>
@@ -3443,13 +3443,13 @@ This page is the <strong>Go-specific recipe</strong>. The language-agnostic <cod
 
 <p>Use container mode in CI to catch image-only regressions: missing CA certs, wrong base image, locale issues, glibc/musl drift. Keep process mode for the inner debug loop.</p>
 <h2 id="whats-different-from-process-mode">What's different from process mode<a class="headerlink" href="#whats-different-from-process-mode" title="Permanent link">&para;</a></h2>
-<p>Go application code, OpenTelemetry setup, Kafka bridge integration, Stove test DSL are <strong>identical</strong> to <a href="../go-process/">Process Mode</a>. Container mode only changes:</p>
+<p>Go application code, OpenTelemetry setup, Kafka bridge integration, and Stove test assertions can stay the same as <a href="../go-process/">Process Mode</a>. Container mode changes the AUT launch contract:</p>
 <ol>
 <li><strong>AUT runner</strong>. <code>containerApp(...)</code> instead of <code>goApp(...)</code> (see <a href="../../Components/22-container/">container component page</a>)</li>
 <li><strong>Image source</strong>. A tagged image. CI / registry / optional local build</li>
 <li><strong>(Optional) Coverage volume</strong>. Bind-mount a host dir into the container so coverage data survives container removal</li>
 </ol>
-<p>Kotlin tests, Stove DSL, Stove systems, Go source. Untouched.</p>
+<p>Kotlin tests, registered Stove systems, and Go source can stay untouched if your configuration branch only swaps the AUT runner.</p>
 <div class="admonition info">
 <p class="admonition-title">Image build is not Stove's job</p>
 <p><code>containerApp(...)</code> only needs an image reference. Point it at your CI-produced tag, pull from a registry, or build locally. See <a href="../../Components/22-container/#image-source-patterns">image source patterns</a> for the three options.</p>
@@ -3527,7 +3527,7 @@ This page is the <strong>Go-specific recipe</strong>. The language-agnostic <cod
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">hostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">APP_PORT</span><span class="p">,</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="n">internalPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">APP_PORT</span><span class="p">,</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;APP_PORT&quot;</span><span class="p">,</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="n">bindHostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w">   </span><span class="c1">// host network. no need to bind</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="n">bindHostPort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w">   </span><span class="c1">// host network configured below; no host port binding</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="p">),</span>
 </span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="c1">// Stove → Go env var mapping (same keys as process mode)</span>
@@ -3594,13 +3594,13 @@ This page is the <strong>Go-specific recipe</strong>. The language-agnostic <cod
 </span></code></pre></div>
 <p><code>signal.Ignore(syscall.SIGPIPE)</code> in <code>main()</code> matters here too. Stove sends SIGTERM to stop the container; Go must finish flushing coverage data before the process dies.</p>
 <h2 id="dashboard-mcp">Dashboard &amp; MCP<a class="headerlink" href="#dashboard-mcp" title="Permanent link">&para;</a></h2>
-<p>Container mode emits to the <a href="../../Components/18-dashboard/">Dashboard</a> and <a href="../../Components/21-mcp/">MCP server</a> the same way process mode does. The <code>appName</code> you set in <code>DashboardSystemOptions</code> is the only label MCP needs to find runs:</p>
+<p>Container mode emits to the <a href="../../Components/18-dashboard/">Dashboard</a> and <a href="../../Components/21-mcp/">MCP server</a> when <code>dashboard { }</code> is registered and the <code>stove</code> CLI is running. The <code>appName</code> you set in <code>DashboardSystemOptions</code> is the label MCP uses to find runs:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Agent calls stove_failures
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  → finds failed runs for app_name=go-showcase
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  → calls stove_failure_detail with run_id + test_id
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  → drills into stove_trace to see Go spans
 </span></code></pre></div>
-<p>Tracing is <code>traceparent</code>-correlated, so a Go span captured inside the container shows up in the same trace tree as the originating Stove HTTP call. No extra plumbing.</p>
+<p>Tracing is <code>traceparent</code>-correlated when the Go app extracts incoming context and exports to Stove's OTLP endpoint, so a span captured inside the container can show up in the same trace tree as the originating Stove HTTP call.</p>
 <h2 id="pitfalls">Pitfalls<a class="headerlink" href="#pitfalls" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

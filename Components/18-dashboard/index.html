@@ -3354,10 +3354,10 @@
 
 
 <h1 id="dashboard">Dashboard<a class="headerlink" href="#dashboard" title="Permanent link">&para;</a></h1>
-<p>A local web UI for everything your Stove tests do. Timelines, span trees, snapshots, Kafka explorer. Lives in a SQLite database so runs persist across sessions. Streams live via SSE.</p>
+<p>A local web UI for evidence emitted by registered Stove systems. Timelines, span trees, snapshots, and Kafka explorer views live in a SQLite database so runs persist across sessions. Live updates stream via SSE.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>. Open <code>http://localhost:4040</code>. Done.</p>
+Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.</p>
 </div>
 <p>Current CLI versions start the dashboard with bare <code>stove</code>; older docs and scripts may still show <code>stove serve</code>.</p>
 <h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
@@ -3396,7 +3396,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="c1">// ... other systems + runner</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
-<p>Now every test run streams to the dashboard.</p>
+<p>Now the registered Stove systems stream test events to the dashboard while the CLI is running.</p>
 <h2 id="what-you-see">What you see<a class="headerlink" href="#what-you-see" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
   <div class="stove-sys-card">
@@ -3518,7 +3518,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.5 15.5c0 1.11-.89 2-2 2s-2-.89-2-2 .9-2 2-2 2 .9 2 2m-9-2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.89 2-2-.89-2-2-2M23 15v3c0 .55-.45 1-1 1h-1v1c0 1.11-.89 2-2 2H5a2 2 0 0 1-2-2v-1H2c-.55 0-1-.45-1-1v-3c0-.55.45-1 1-1h1c0-3.87 3.13-7 7-7h1V5.73c-.6-.34-1-.99-1-1.73 0-1.1.9-2 2-2s2 .9 2 2c0 .74-.4 1.39-1 1.73V7h1c3.87 0 7 3.13 7 7h1c.55 0 1 .45 1 1m-2 1h-2v-2c0-2.76-2.24-5-5-5h-4c-2.76 0-5 2.24-5 5v2H3v1h2v3h14v-3h2z"/></svg></span> <strong><a href="../21-mcp/">MCP</a></strong>. Same database, agent-readable.</p>
 </li>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 12c2.5 0 4.5 2 4.5 4.5 0 .88-.25 1.71-.69 2.4l3.08 3.1L21 23.39l-3.12-3.07c-.69.43-1.51.68-2.38.68-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5m0 2a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5M5 3h14c1.11 0 2 .89 2 2v8.03c-.5-.8-1.19-1.49-2-2.03V5H5v14h4.5c.31.75.76 1.42 1.31 2H5c-1.11 0-2-.89-2-2V5c0-1.11.89-2 2-2m2 4h10v2H7zm0 4h5.03c-.8.5-1.49 1.19-2.03 2H7zm0 4h2.17c-.11.5-.17 1-.17 1.5v.5H7z"/></svg></span> <strong><a href="../13-reporting/">Reporting</a></strong>. Console reports + dashboard = full coverage.</p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 12c2.5 0 4.5 2 4.5 4.5 0 .88-.25 1.71-.69 2.4l3.08 3.1L21 23.39l-3.12-3.07c-.69.43-1.51.68-2.38.68-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5m0 2a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5M5 3h14c1.11 0 2 .89 2 2v8.03c-.5-.8-1.19-1.49-2-2.03V5H5v14h4.5c.31.75.76 1.42 1.31 2H5c-1.11 0-2-.89-2-2V5c0-1.11.89-2 2-2m2 4h10v2H7zm0 4h5.03c-.8.5-1.49 1.19-2.03 2H7zm0 4h2.17c-.11.5-.17 1-.17 1.5v.5H7z"/></svg></span> <strong><a href="../13-reporting/">Reporting</a></strong>. Console reports plus dashboard history cover complementary debugging surfaces.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m16.18 19.6-2.01-3.48c.98-.72 1.66-1.84 1.8-3.12H20a8.55 8.55 0 0 1-3.82 6.6M13 7.03V3c4.3.26 7.74 3.7 8 8h-4.03A4.49 4.49 0 0 0 13 7.03M7 12.5c0 .64.13 1.25.38 1.8L3.9 16.31A8.4 8.4 0 0 1 3 12.5C3 7.97 6.54 4.27 11 4v4.03c-2.25.25-4 2.15-4 4.47m4.5 8.5c-2.97 0-5.58-1.5-7.1-3.82l3.48-2.01A4.47 4.47 0 0 0 11.5 17c.64 0 1.25-.13 1.8-.38l2.01 3.48c-1.15.58-2.44.9-3.81.9"/></svg></span> <strong><a href="../../observability/when-it-fails/">When a test fails</a></strong>. Dashboard is step 3 of the failure flow.</p>

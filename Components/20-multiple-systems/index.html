@@ -2043,10 +2043,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#combine-with-providedapplication" class="md-nav__link">
+  <a href="#combine-with-remote-services" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Combine with providedApplication
+        Combine with remote services
       
     </span>
   </a>
@@ -3210,10 +3210,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#combine-with-providedapplication" class="md-nav__link">
+  <a href="#combine-with-remote-services" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Combine with providedApplication
+        Combine with remote services
       
     </span>
   </a>
@@ -3322,7 +3322,7 @@
 
 
 <h1 id="multiple-systems-keyed">Multiple Systems (Keyed)<a class="headerlink" href="#multiple-systems-keyed" title="Permanent link">&para;</a></h1>
-<p>Default: one instance per system type. Need more? Register multiple instances of the same type with typed keys. Useful for microservice integration, multiple databases, multi-cluster Kafka, cross-service verification.</p>
+<p>Default: one instance per system type. Need more? Register multiple instances of the same type with typed keys. This is useful for microservice integration, multiple databases, multi-cluster Kafka, and cross-service verification.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
 Define keys as Kotlin <code>object</code>s implementing <code>SystemKey</code>. Pass the key as the first argument to any system DSL: <code>postgresql(AppDb) { }</code>, <code>kafka(MainCluster) { }</code>, <code>httpClient(PaymentService) { }</code>. Use the same key inside <code>stove { }</code> to target that instance.</p>
@@ -3343,14 +3343,14 @@ Define keys as Kotlin <code>object</code>s implementing <code>SystemKey</code>. 
 <p>Typed keys catch typos at compile time and let IDEs autocomplete usages. Strings would silently bind to "new" instances if misspelled.</p>
 </div>
 <h2 id="register-keyed-instances">Register keyed instances<a class="headerlink" href="#register-keyed-instances" title="Permanent link">&para;</a></h2>
-<p>Pass the key as the first arg. Everything else is identical to the single-instance API. Default + keyed instances coexist.</p>
+<p>Pass the key as the first arg. Options and validation APIs match the single-instance API. Default and keyed instances can coexist.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="c1">// Default, unkeyed Postgres (optional)</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">PostgresqlOptions</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="c1">// Keyed instances. separate containers, ports, state</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="c1">// Keyed instances: separate containers, ports, and state</span>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="n">postgresql</span><span class="p">(</span><span class="n">AppDb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">PostgresqlOptions</span><span class="p">(</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="n">databaseName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;app&quot;</span><span class="p">,</span>
@@ -3381,7 +3381,7 @@ Define keys as Kotlin <code>object</code>s implementing <code>SystemKey</code>. 
 </span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <h2 id="use-keys-in-tests">Use keys in tests<a class="headerlink" href="#use-keys-in-tests" title="Permanent link">&para;</a></h2>
-<p>Same DSL, just pass the key:</p>
+<p>Use the same validation DSL and pass the key to target the right instance:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">postgresql</span><span class="p">(</span><span class="n">AppDb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">shouldExecute</span><span class="p">(</span><span class="s">&quot;INSERT INTO users(id) VALUES (&#39;u1&#39;)&quot;</span><span class="p">)</span>
@@ -3401,10 +3401,10 @@ Define keys as Kotlin <code>object</code>s implementing <code>SystemKey</code>. 
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="supported-systems">Supported systems<a class="headerlink" href="#supported-systems" title="Permanent link">&para;</a></h2>
-<p>All systems support keyed registration:</p>
+<p>The built-in systems below support keyed registration:</p>
 <p><code>postgresql · mysql · mssql · mongodb · couchbase · cassandra · redis · elasticsearch · kafka · httpClient · grpc · grpcMock · wiremock</code></p>
-<h2 id="combine-with-providedapplication">Combine with <code>providedApplication</code><a class="headerlink" href="#combine-with-providedapplication" title="Permanent link">&para;</a></h2>
-<p>For microservice integration tests where you don't own all the AUTs:</p>
+<h2 id="combine-with-remote-services">Combine with remote services<a class="headerlink" href="#combine-with-remote-services" title="Permanent link">&para;</a></h2>
+<p>For microservice integration tests where your AUT runs locally but dependencies are already deployed, key the remote endpoints:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="c1">// Your service runs locally</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="n">springBoot</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="na">app</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>

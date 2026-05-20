@@ -3400,10 +3400,10 @@
 
 
 <h1 id="writing-custom-systems">Writing Custom Systems<a class="headerlink" href="#writing-custom-systems" title="Permanent link">&para;</a></h1>
-<p>Built-in systems cover databases, Kafka, HTTP, gRPC, more. Your app has its own surfaces: job schedulers, domain events, a custom protocol, time control. Wrap them in a Stove system and your tests read like first-class APIs.</p>
+<p>Built-in systems cover databases, Kafka, HTTP, gRPC, and more. Your app may still have its own observable surfaces: job schedulers, domain events, a custom protocol, or time control. Wrap those surfaces in a Stove system when you need reusable setup, assertions, or failure snapshots.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</code> + a lifecycle interface), <strong>DSL extensions</strong> (one for registration, one for validation), optional <strong>bean registration</strong> (if your system needs a hook inside the AUT). That's it.</p>
+Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</code> plus the lifecycle interfaces it needs), <strong>DSL extensions</strong> (one for registration, one for validation), and optional <strong>bean registration</strong> if the system needs a hook inside the AUT.</p>
 </div>
 <p>Goal pattern. <code>tasks { }</code> is a custom system you wrote:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;welcome email after signup&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -3424,7 +3424,7 @@ Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</cod
 </span></code></pre></div>
 <h2 id="the-three-pieces">The three pieces<a class="headerlink" href="#the-three-pieces" title="Permanent link">&para;</a></h2>
 <h3 id="1-system-class">1. System class<a class="headerlink" href="#1-system-class" title="Permanent link">&para;</a></h3>
-<p>Implement <code>PluggedSystem</code> and pick a lifecycle interface for when your code runs:</p>
+<p>Implement <code>PluggedSystem</code> and pick lifecycle interfaces based on when your code must run:</p>
 <table>
 <thead>
 <tr>
@@ -3447,7 +3447,7 @@ Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</cod
 </tr>
 <tr>
 <td><code>ExposesConfiguration</code></td>
-<td>When collecting config to pass to AUT</td>
+<td>During setup, after system startup, before a Stove-started AUT runner receives parameters</td>
 </tr>
 </tbody>
 </table>
@@ -3512,7 +3512,7 @@ Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</cod
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>That's the entire pattern. Everything else is your domain logic.</p>
+<p>That is the core pattern. Everything else is domain-specific observation and assertion logic.</p>
 <h2 id="ideas">Ideas<a class="headerlink" href="#ideas" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
   <div class="stove-sys-card">
@@ -3607,7 +3607,7 @@ Three pieces. <strong>System class</strong> (implements <code>PluggedSystem</cod
 </span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
 </span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Stove collects every system's <code>configuration()</code> and passes the merged list to your AUT as startup parameters.</p>
+<p>For AUTs started by Stove runners, Stove collects every registered system's <code>configuration()</code> after systems start and before the runner is called. The merged <code>key=value</code> list is passed to the AUT runner together with static <code>withParameters</code>. <code>providedApplication()</code> is different: Stove only checks readiness and runs assertions; the already-running app must be configured externally.</p>
 <h2 id="extending-built-in-systems">Extending built-in systems<a class="headerlink" href="#extending-built-in-systems" title="Permanent link">&para;</a></h2>
 <p>Sometimes a full system is overkill. An extension function on an existing system is enough.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nd">@StoveDsl</span>

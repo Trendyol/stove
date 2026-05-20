@@ -3322,11 +3322,11 @@
 
 
 <h1 id="ktor">Ktor<a class="headerlink" href="#ktor" title="Permanent link">&para;</a></h1>
-<p>Stove starts your real Ktor server. Works with Koin, Ktor-DI, or any custom container via a one-line resolver.</p>
+<p>Stove starts your real Ktor server. It can resolve beans through Koin, Ktor-DI, or a custom resolver when you register <code>bridge()</code>.</p>
 <p><a class="open-in-wizard" data-fw="ktor" data-sys="http,postgresql">Open Ktor + Postgres in wizard</a></p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">Two knobs</span>
-1) Your <code>run(args, wait = false, ...)</code> returns the started <code>Application</code>. 2) <code>ktor(runner = ...)</code> calls it. Bridge auto-detects Koin vs Ktor-DI; custom containers plug in via a resolver lambda.</p>
+1) Your <code>run(args, wait = false, ...)</code> returns the started <code>Application</code>. 2) <code>ktor(runner = ...)</code> calls it after systems are ready. If you use <code>bridge()</code>, Stove auto-detects Koin vs Ktor-DI; custom containers plug in via a resolver lambda.</p>
 </div>
 <h2 id="anatomy">Anatomy<a class="headerlink" href="#anatomy" title="Permanent link">&para;</a></h2>
 <div class="stove-anatomy" markdown="0">
@@ -3484,7 +3484,7 @@ ktor( <span class="anchor">1</span>
 <h2 id="what-you-get">What you get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
 <ul>
 <li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Real Netty server, real routing</li>
-<li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> <code>bridge()</code> for Koin <strong>and</strong> Ktor-DI without config</li>
+<li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> <code>bridge()</code> for Koin and Ktor-DI when the corresponding plugin is installed normally</li>
 <li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Composes with every Stove system</li>
 <li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Hot-swap DI containers via custom resolver</li>
 </ul>

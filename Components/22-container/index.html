@@ -3357,19 +3357,19 @@
 
 
 <h1 id="container-aut-stove-container">Container AUT (<code>stove-container</code>)<a class="headerlink" href="#container-aut-stove-container" title="Permanent link">&para;</a></h1>
-<p>Run the AUT as a <strong>Docker image</strong>. Any language, any framework. Image-level parity with what you ship to production.</p>
+<p>Run the AUT as a <strong>Docker image</strong>. Any language, any framework, with the same entrypoint and runtime image you ship.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Replace your framework starter with <code>containerApp(image = "my-app:tag", target = ContainerTarget.Server(...), envProvider = envMapper { ... })</code>. Stove starts the container, waits on a readiness probe, and exposes stable host ports. Image build is <em>your</em> responsibility, not Stove's.</p>
+Replace your framework starter with <code>containerApp(image = "my-app:tag", target = ContainerTarget.Server(...), envProvider = envMapper { ... })</code>. Stove starts the container, maps system configuration into env vars or CLI args, and waits on your readiness probe. Image build is <em>your</em> responsibility, not Stove's.</p>
 </div>
 <p>For a host-binary AUT (process mode) see <a href="../../other-languages/"><code>stove-process</code></a>. For a Go-specific walkthrough see <a href="../../other-languages/go-container/">Go Container Mode</a>.</p>
 <p><a id="image-source-patterns"></a></p>
 <h2 id="what-stove-container-does">What <code>stove-container</code> does<a class="headerlink" href="#what-stove-container-does" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Pulls / locates the image; wraps it as a Testcontainers <code>GenericContainer</code></li>
+<li>Pulls or locates the image and wraps it as a Testcontainers <code>GenericContainer</code></li>
 <li>Maps Stove infrastructure config to env vars (<code>envMapper</code>) or CLI args (<code>argsMapper</code>)</li>
 <li>Waits for readiness via your chosen <code>ReadinessStrategy</code></li>
-<li>Exposes stable host ports for tests</li>
+<li>Exposes host ports according to <code>ContainerTarget.Server</code> and your port-binding strategy</li>
 <li>Graceful shutdown with force-close fallback</li>
 </ul>
 <p>What it does NOT do:</p>
@@ -3429,7 +3429,7 @@ Replace your framework starter with <code>containerApp(image = "my-app:tag", tar
 </tr>
 </tbody>
 </table>
-<p><code>ContainerTarget.Worker(readiness = ...)</code> accepts no port because workers do not expose a listening socket. Use a stable <code>hostPort</code> when tests call the AUT through <code>localhost</code>. Use <code>hostPort = 0</code> only when tests and readiness do not depend on a fixed localhost port.</p>
+<p><code>ContainerTarget.Worker(readiness = ...)</code> accepts no port because workers do not expose a listening socket. Use a stable <code>hostPort</code> when tests call the AUT through <code>localhost</code>. Use <code>hostPort = 0</code> only when tests can discover the mapped port and readiness does not depend on a fixed localhost URL.</p>
 <h2 id="readiness">Readiness<a class="headerlink" href="#readiness" title="Permanent link">&para;</a></h2>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ReadinessStrategy</span><span class="p">.</span><span class="na">HttpGet</span><span class="p">(</span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8090/health&quot;</span><span class="p">)</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ReadinessStrategy</span><span class="p">.</span><span class="na">TcpPort</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8090</span><span class="p">)</span><span class="w">             </span><span class="c1">// any TCP listener</span>
@@ -3448,7 +3448,7 @@ Replace your framework starter with <code>containerApp(image = "my-app:tag", tar
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="s">&quot;kafka.bootstrapServers&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;kafka&quot;</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Both can coexist on the same <code>containerApp</code>.</p>
+<p>Both can coexist on the same <code>containerApp</code>; use the shape your image already supports.</p>
 <h2 id="networking-gotchas">Networking gotchas<a class="headerlink" href="#networking-gotchas" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3471,7 +3471,7 @@ Replace your framework starter with <code>containerApp(image = "my-app:tag", tar
 </tr>
 </tbody>
 </table>
-<p>For port binding, map infra hosts in <code>envProvider</code>:</p>
+<p>For port binding, map infrastructure hosts in <code>envProvider</code> to values the container can reach:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="s">&quot;postgresql.host&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_HOST&quot;</span><span class="w">           </span><span class="c1">// ends up = testcontainers alias</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="s">&quot;postgresql.port&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;DB_PORT&quot;</span>

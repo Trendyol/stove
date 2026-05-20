@@ -3266,10 +3266,10 @@
 
 
 <h1 id="reporting">Reporting<a class="headerlink" href="#reporting" title="Permanent link">&para;</a></h1>
-<p>Every Stove test failure ships with a structured execution context. Reporter captures HTTP calls, DB ops, Kafka publishes, WireMock stubs, gRPC interactions. When an assertion goes red, you see what happened before, not a bare stack trace.</p>
+<p>Every Stove test failure ships with structured execution context. The reporter captures activity from registered systems: HTTP calls, DB ops, Kafka observations, WireMock stubs, and gRPC interactions. When an assertion fails, you get the stack trace plus the sequence of system activity that led to it.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Add the Kotest or JUnit extension. Failures print a timeline by default (pretty console). Add <code>reporting { }</code> in <code>Stove().with</code> to control output or capture machine-readable JSON. Pairs naturally with <a href="../15-tracing/">Tracing</a> and the <a href="../18-dashboard/">Dashboard</a>.</p>
+Add the Kotest or JUnit extension. Failures print a timeline by default (pretty console). Add <code>reporting { }</code> in <code>Stove().with</code> to tune output or use machine-readable JSON. Reporting pairs with <a href="../15-tracing/">Tracing</a> and the <a href="../18-dashboard/">Dashboard</a>; it does not require either one.</p>
 </div>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="kotest" name="__tabbed_1" type="radio" /><input id="junit" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="kotest">Kotest</label><label for="junit">JUnit</label></div>
@@ -3379,7 +3379,7 @@ Add the Kotest or JUnit extension. Failures print a timeline by default (pretty 
 </tr>
 </tbody>
 </table>
-<p>Snapshots make root-cause analysis painless. WireMock snapshot alone tells you when an "unexpected 404" was actually your test hitting an unmocked path.</p>
+<p>Snapshots make root-cause analysis faster. A WireMock snapshot, for example, can show that an "unexpected 404" was the app hitting an unmocked path.</p>
 <h2 id="pairs-well-with">Pairs well with<a class="headerlink" href="#pairs-well-with" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>

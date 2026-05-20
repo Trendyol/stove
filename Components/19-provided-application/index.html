@@ -3325,10 +3325,10 @@
 
 
 <h1 id="provided-application-black-box">Provided Application (Black-Box)<a class="headerlink" href="#provided-application-black-box" title="Permanent link">&para;</a></h1>
-<p>Skip the local AUT boot. Drive Stove tests against a <strong>remote, already-deployed</strong> application. Any language. Any framework. Same DSL.</p>
+<p>Skip the local AUT boot. Drive Stove tests against a <strong>remote, already-deployed</strong> application. The app can be written in any language; Stove treats it as an already-running black-box endpoint.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <code>goApp</code>) with <code>providedApplication { }</code> + a readiness probe. Wire <code>httpClient</code> to the remote URL. Use <code>.provided(...)</code> on every system pointing at staging infrastructure. Bridge isn't available (different process); verify through systems.</p>
+Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <code>goApp</code>) with <code>providedApplication { }</code> plus an optional readiness probe. Wire <code>httpClient</code> to the remote URL. Use <code>.provided(...)</code> on every system that points at staging infrastructure. Stove does not boot the app or inject configuration; verify through public endpoints and provided systems.</p>
 </div>
 <h2 id="when-to-use">When to use<a class="headerlink" href="#when-to-use" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3338,7 +3338,7 @@ Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <cod
 <li><strong>Smoke testing</strong>. Post-deployment checks in CI/CD</li>
 </ul>
 <h2 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
-<p><code>providedApplication { }</code> replaces the framework starter in <code>Stove().with</code>. HTTP and other systems are configured as usual.</p>
+<p><code>providedApplication { }</code> replaces the framework starter in <code>Stove().with</code>. HTTP and other systems are configured as usual, but all application configuration must already exist in the deployed environment.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="hll"><span class="w">  </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span>
 </span></span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="hll"><span class="w">    </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://staging.myapp.com&quot;</span><span class="p">)</span>
@@ -3405,7 +3405,7 @@ Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <cod
 </span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="writing-tests">Writing tests<a class="headerlink" href="#writing-tests" title="Permanent link">&para;</a></h2>
-<p>Same DSL. No code changes from local e2e tests.</p>
+<p>Use the same registered system DSL where the underlying system can be reached from the test process. DI bridge access through <code>using&lt;T&gt; { }</code> is unavailable for <code>providedApplication()</code>. Kafka observer assertions such as <code>shouldBePublished</code> and <code>shouldBeConsumed</code> only work if the remote app is separately configured to report to Stove; otherwise use direct consumers and system assertions.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;create order, verify side effects on staging&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">http</span><span class="w"> </span><span class="p">{</span>
@@ -3471,7 +3471,7 @@ Replace your framework starter (<code>springBoot</code>, <code>ktor</code>, <cod
 </table>
 <div class="admonition warning">
 <p class="admonition-title">Bridge isn't supported</p>
-<p><code>using&lt;MyService&gt; { }</code> reaches into the AUT's DI container. Only possible when AUT runs in the same JVM. Provided app gets a clear error.</p>
+<p><code>using&lt;MyService&gt; { }</code> reaches into the AUT's DI container. That is only possible when the AUT runs in the same JVM. Provided applications get a clear error.</p>
 </div>
 <h2 id="suggested-source-set-layout">Suggested source-set layout<a class="headerlink" href="#suggested-source-set-layout" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>my-service/

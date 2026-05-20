@@ -3164,14 +3164,14 @@
 
 
 <h1 id="when-a-test-fails">When a Test Fails<a class="headerlink" href="#when-a-test-fails" title="Permanent link">&para;</a></h1>
-<p>A Stove test failure is not a stack trace. It's a guided trail from assertion to root cause. Console report, dashboard timeline, span tree, MCP query. Scroll to walk through what happens the moment a test goes red.</p>
+<p>A Stove test failure still has a stack trace, but the useful context is the evidence around it: console report, dashboard timeline, span tree, and optional MCP queries. Scroll to walk through what happens when a test goes red.</p>
 <div class="story" markdown="0">
 
   <div class="story-step">
     <div>
       <h3>1. Assertion fails</h3>
       <p>You wrote a normal Stove test. <code>shouldBePublished</code> times out. The expected Kafka event never showed up.</p>
-      <p class="sw-hint">No special config. The assertion's failure carries everything that follows.</p>
+      <p class="sw-hint">The assertion failure anchors the report. Dashboard, tracing, and MCP add more evidence when enabled.</p>
     </div>
     <pre class="story-frame"><span class="dim">// OrderE2ETest.kt</span>
 test(<span class="ok">"order is published after POST /orders"</span>) {
@@ -3228,7 +3228,7 @@ test(<span class="ok">"order is published after POST /orders"</span>) {
   <div class="story-step reverse">
     <div>
       <h3>4. Trace tree shows the call chain inside the app</h3>
-      <p>OpenTelemetry spans are captured automatically. The trace tree shows exactly where the decision got made. Which controller, which service, which Kafka producer. With timing on each hop.</p>
+      <p>When tracing is enabled and the AUT is instrumented, the trace tree shows where the decision was made: controller, service, Kafka producer, and timing on each hop.</p>
     </div>
     <pre class="story-frame"><span class="info">▾ POST /orders</span>                       42ms
   ├─ OrderController.create        2ms
@@ -3245,7 +3245,7 @@ test(<span class="ok">"order is published after POST /orders"</span>) {
     <div>
       <h3>5. AI agent triages via MCP</h3>
       <p>The same data is exposed over a loopback MCP endpoint. An agent (Claude Code, Cursor, etc.) can fetch failures and traces directly. No shell-out, no log scraping, no token waste on noisy stdout.</p>
-      <p>It returns a focused, actionable diff suggestion in seconds.</p>
+      <p>It can return a focused diagnosis when the stored evidence is sufficient.</p>
     </div>
     <pre class="story-frame">$ curl localhost:4040/mcp/tools/stove_failure_detail \
        -d '{"test_id":"OrderE2ETest#order-publish"}'
@@ -3268,7 +3268,7 @@ test(<span class="ok">"order is published after POST /orders"</span>) {
 <ul>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m3 14 .5.07L8.07 9.5a1.95 1.95 0 0 1 .52-1.91c.78-.79 2.04-.79 2.82 0 .53.52.7 1.26.52 1.91l2.57 2.57.5-.07c.18 0 .35 0 .5.07l3.57-3.57C19 8.35 19 8.18 19 8a2 2 0 0 1 2-2 2 2 0 0 1 2 2 2 2 0 0 1-2 2c-.18 0-.35 0-.5-.07l-3.57 3.57c.07.15.07.32.07.5a2 2 0 0 1-2 2 2 2 0 0 1-2-2l.07-.5-2.57-2.57c-.32.07-.68.07-1 0L4.93 15.5 5 16a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2"/></svg></span> <strong>Tracing</strong></p>
-<p>OpenTelemetry agent attached automatically by the Gradle plugin.</p>
+<p>OpenTelemetry receiver plus JVM agent attachment for in-process JVM apps; non-JVM apps use their language SDK.</p>
 <p><a href="../../Components/15-tracing/">Configure tracing</a> · <a class="open-in-wizard" data-sys="kafka,postgresql" data-mk="wiremock">Try in wizard</a></p>
 </li>
 <li>

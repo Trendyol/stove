@@ -3553,11 +3553,11 @@ Build your Go binary with Gradle. Stove starts it via <code>goApp()</code>, hand
 </div>
 <p>A full working example (HTTP + Postgres + Kafka + tracing + coverage) lives at <a href="https://github.com/Trendyol/stove/tree/main/recipes/process/golang/go-showcase"><code>recipes/process/golang/go-showcase</code></a>.</p>
 <h2 id="what-your-go-app-needs">What your Go app needs<a class="headerlink" href="#what-your-go-app-needs" title="Permanent link">&para;</a></h2>
-<p>Three things, none Stove-specific in production:</p>
+<p>Three things keep the app testable without changing its production startup path:</p>
 <ol>
 <li><strong>Env-driven config.</strong> Read connection details from env vars (your test wires them).</li>
 <li><strong>OpenTelemetry init.</strong> Standard SDK setup. Reads <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>. Disabled in prod if unset.</li>
-<li><strong>(Optional) Stove Kafka bridge</strong> if you want <code>shouldBePublished</code> / <code>shouldBeConsumed</code>.</li>
+<li><strong>Optional Stove Kafka bridge</strong> if you want <code>shouldBePublished</code> / <code>shouldBeConsumed</code> against app-side Kafka activity. Keep it dormant when the bridge env var is absent.</li>
 </ol>
 <h3 id="anatomy-of-main">Anatomy of <code>main()</code><a class="headerlink" href="#anatomy-of-main" title="Permanent link">&para;</a></h3>
 <div class="stove-anatomy" markdown="0">
@@ -3587,8 +3587,8 @@ func main() {
     <div class="stove-note"><span class="stove-note-tag">1</span><strong>Ignore SIGPIPE</strong>. Stove sends SIGTERM to stop the process; SIGPIPE on a closed stdout pipe would kill Go before graceful shutdown finishes.</div>
     <div class="stove-note"><span class="stove-note-tag">2</span><strong>Env-driven config.</strong> Stove's <code>envMapper</code> populates these before start.</div>
     <div class="stove-note"><span class="stove-note-tag">3</span><strong>OTel init</strong> reads <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>. Production: unset → no tracing. Test: set by Stove → spans flow to dashboard.</div>
-    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>otelsql</code></strong> wraps <code>database/sql</code>. DB spans show up automatically.</div>
-    <div class="stove-note"><span class="stove-note-tag">5</span><strong>Kafka bridge.</strong> Returns nil when <code>STOVE_KAFKA_BRIDGE_PORT</code> isn't set. Nil-safe no-ops. Zero production overhead.</div>
+    <div class="stove-note"><span class="stove-note-tag">4</span><strong><code>otelsql</code></strong> wraps <code>database/sql</code>. DB spans show up when your app routes DB calls through the wrapped driver.</div>
+    <div class="stove-note"><span class="stove-note-tag">5</span><strong>Kafka bridge.</strong> Returns nil when <code>STOVE_KAFKA_BRIDGE_PORT</code> isn't set. Make bridge calls nil-safe so production runs do not report to Stove.</div>
     <div class="stove-note"><span class="stove-note-tag">6</span><strong><code>otelhttp</code></strong> extracts <code>traceparent</code> from incoming requests. Go spans tie to the test's trace ID.</div>
   </div>
 </div>
@@ -3859,7 +3859,7 @@ func main() {
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./gradlew<span class="w"> </span>e2eTest
 </span></code></pre></div>
 <h2 id="dashboard-mcp">Dashboard &amp; MCP<a class="headerlink" href="#dashboard-mcp" title="Permanent link">&para;</a></h2>
-<p>Start <code>stove</code>. The Go run streams to <code>http://localhost:4040</code> like any JVM run: timeline, traces, snapshots, Kafka explorer. For AI-assisted triage, agents read the same data via the <a href="../../Components/21-mcp/">MCP endpoint</a>. No log scraping.</p>
+<p>Start <code>stove</code> and register <code>dashboard { }</code> in <code>Stove().with</code>. The Go run then streams system events to <code>http://localhost:4040</code>: timeline, traces, snapshots, and Kafka explorer. For AI-assisted triage, agents read the same stored data via the <a href="../../Components/21-mcp/">MCP endpoint</a>.</p>
 <h2 id="how-tracing-flows">How tracing flows<a class="headerlink" href="#how-tracing-flows" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>1. StoveKotestExtension starts a TraceContext before each test
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>2. Stove HTTP client injects `traceparent` into requests

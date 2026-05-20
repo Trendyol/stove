@@ -3366,10 +3366,10 @@
 
 
 <h1 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h1>
-<p>Test failed. Need to know what happened <em>inside the app</em>, not just at the test boundary. Stove's tracing wires OpenTelemetry into your test JVM, attaches the OTel Java Agent to the AUT, and prints the full span tree alongside the failure.</p>
+<p>Test failed. Need to know what happened <em>inside the app</em>, not just at the test boundary. Stove tracing starts an OTLP receiver for the suite, correlates spans with the current test, and prints the captured span tree alongside the failure.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">Two steps</span>
-1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. Spans from <em>every</em> instrumented library show up in failure reports automatically. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.</p>
+1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. For JVM apps launched by Stove, the plugin can attach the OTel Java Agent; for process/container apps, wire your language's OTel SDK to the exposed endpoint. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.</p>
 </div>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <p><a id="gradle-plugin"></a></p>
@@ -3385,9 +3385,9 @@
 </span></span></code></pre></div>
 <p>The plugin:</p>
 <ul>
-<li>attaches the OpenTelemetry Java agent to your test JVM (zero code changes to your app)</li>
+<li>attaches the OpenTelemetry Java agent for in-process JVM test tasks</li>
 <li>boots an OTLP gRPC receiver on a free port</li>
-<li>exposes <code>OTEL_*</code> env vars to the AUT so spans flow back to the test</li>
+<li>exposes <code>OTEL_*</code> values that runners can pass to the AUT</li>
 <li>handles agent download + caching</li>
 </ul>
 <h3 id="2-enable-span-receiver-in-stove">2. Enable span receiver in Stove<a class="headerlink" href="#2-enable-span-receiver-in-stove" title="Permanent link">&para;</a></h3>
@@ -3396,7 +3396,7 @@
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1">// ... your systems + runner</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
-<p>That's it. Spans from Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, MongoDB (and 100+ other libraries the OTel agent supports) show up in the failure report automatically.</p>
+<p>For in-process JVM apps, spans from agent-supported libraries such as Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, and MongoDB can show up in the failure report without application code changes. For separate processes or containers, the app must initialize an OTel SDK/exporter and send spans to the receiver.</p>
 <div class="admonition info">
 <p class="admonition-title">Why Gradle?</p>
 <p>The <code>stoveTracing</code> plugin handles JVM agent attachment and OTLP wiring per test task. Maven can replicate the receiver setup manually, but the agent-attach + per-task port allocation is plugin-only today.</p>
@@ -3410,13 +3410,13 @@
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🚀</div>
-    <strong>Zero app changes</strong>
-    <p>OTel agent instruments your code at bytecode level. Your production app doesn't even know.</p>
+    <strong>No app changes for JVM agent mode</strong>
+    <p>For in-process JVM apps launched by Stove, the OTel agent instruments supported libraries at bytecode level. Non-JVM apps need SDK wiring.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🔗</div>
     <strong>W3C propagation</strong>
-    <p><code>traceparent</code> headers and Kafka headers carry context across services. Distributed traces work.</p>
+    <p><code>traceparent</code> headers and Kafka headers carry context when your clients and consumers propagate them.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🧪</div>
@@ -3539,7 +3539,7 @@
 </span></code></pre></div>
 <p>Bug found: inventory shows out-of-stock, app published <code>order.failed.v1</code> instead. Walk the entire flow visually in <a href="../../observability/when-it-fails/">When a test fails</a>.</p>
 <h2 id="polyglot-apps-go-python">Polyglot apps (Go, Python, ...)<a class="headerlink" href="#polyglot-apps-go-python" title="Permanent link">&para;</a></h2>
-<p>For non-JVM AUT, the plugin still boots the OTLP receiver and exposes <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> to the AUT. Wire your language's OTel SDK to read it. Spans land in the same trace tree as the test. See <a href="../../other-languages/">Polyglot overview</a>.</p>
+<p>For non-JVM AUTs, the plugin still boots the OTLP receiver. Process and container runners can pass the endpoint through env vars or CLI args; your language's OTel SDK must read that endpoint and export spans. Those spans can land in the same trace tree as the test when W3C context propagation is wired. See <a href="../../other-languages/">Polyglot overview</a>.</p>
 <h2 id="pairs-well-with">Pairs well with<a class="headerlink" href="#pairs-well-with" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>

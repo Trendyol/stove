@@ -3378,10 +3378,10 @@
 
 
 <h1 id="provided-instances">Provided Instances<a class="headerlink" href="#provided-instances" title="Permanent link">&para;</a></h1>
-<p>Connect Stove to <strong>existing infrastructure</strong> (shared CI databases, dev clusters, staging brokers) instead of spinning Testcontainers. Same DSL. Same assertions. No Docker required.</p>
+<p>Connect Stove to <strong>existing infrastructure</strong> such as shared CI databases, dev clusters, or staging brokers instead of spinning Testcontainers. The registered system DSL and assertions stay the same; infrastructure lifecycle and cleanup become your responsibility.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Every system options class ships a <code>.provided(...)</code> factory. Swap <code>SystemOptions(...)</code> for <code>SystemOptions.provided(...)</code>, supply connection details, and Stove uses your infra instead of a container. For shared infra, prefix every resource (DB names, topics, indexes) with a unique run ID to prevent collisions.</p>
+Each listed dependency system options class ships a <code>.provided(...)</code> factory. Swap <code>SystemOptions(...)</code> for <code>SystemOptions.provided(...)</code>, supply connection details, and Stove connects to your infrastructure instead of starting a container. For shared infra, prefix every resource (schemas, topics, indexes, keys) with a unique run ID to prevent collisions.</p>
 </div>
 <h2 id="the-pattern">The pattern<a class="headerlink" href="#the-pattern" title="Permanent link">&para;</a></h2>
 <div class="stove-compare" markdown="0">
@@ -3417,9 +3417,9 @@ Every system options class ships a <code>.provided(...)</code> factory. Swap <co
   </div>
 </div>
 
-<p>The rest of your <code>Stove().with { }</code> block stays identical. Tests don't know the difference.</p>
+<p>The registration shape stays identical, but the operational contract changes: Stove does not create, isolate, pause, or destroy a provided dependency.</p>
 <h2 id="supported-systems">Supported systems<a class="headerlink" href="#supported-systems" title="Permanent link">&para;</a></h2>
-<p>All Stove systems support provided instances. Signatures are similar; check the specific reference page for full details.</p>
+<p>The built-in dependency systems below support provided instances. Signatures are similar; check the specific reference page for full details and cleanup support.</p>
 <table>
 <thead>
 <tr>
@@ -3478,7 +3478,7 @@ Every system options class ships a <code>.provided(...)</code> factory. Swap <co
 </table>
 <p>Each accepts the same <code>configureExposedConfiguration</code> and (where applicable) <code>cleanup</code> lambdas as the container mode.</p>
 <h2 id="cleanup">Cleanup<a class="headerlink" href="#cleanup" title="Permanent link">&para;</a></h2>
-<p>Container mode auto-cleans (containers die). Provided instances persist across runs. You must clean test data yourself. Every provided options class accepts a <code>cleanup</code> lambda that runs on suite teardown.</p>
+<p>Container mode isolates most state by removing containers when Stove stops. Provided instances persist across runs, so you must clean test data yourself. Every provided options class accepts a <code>cleanup</code> lambda that runs on suite teardown.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">postgresql</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">PostgresqlOptions</span><span class="p">.</span><span class="na">provided</span><span class="p">(</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">jdbcUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TestRunContext</span><span class="p">.</span><span class="na">jdbcUrl</span><span class="p">,</span>
@@ -3717,7 +3717,7 @@ Every system options class ships a <code>.provided(...)</code> factory. Swap <co
 <li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Reconcile orphans nightly (cleanup hooks can fail mid-run)</li>
 <li><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:" /> Use stable <code>CI_JOB_ID</code> over random when available. Easier to trace</li>
 <li><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/274c.svg" title=":x:" /> Don't share a single schema/topic across runs</li>
-<li><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/274c.svg" title=":x:" /> Don't skip cleanup hooks "for speed". Debt compounds</li>
+<li><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/274c.svg" title=":x:" /> Don't skip cleanup hooks "for speed"; shared-state debt compounds</li>
 </ul>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
