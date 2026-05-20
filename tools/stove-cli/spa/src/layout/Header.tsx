@@ -1,18 +1,42 @@
+import stoveMarkUrl from "../assets/stove-mark.svg";
 import { useTheme } from "../hooks/useTheme";
 
-export function Header() {
+interface HeaderProps {
+  liveConnected: boolean;
+}
+
+export function Header({ liveConnected }: HeaderProps) {
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="flex items-center justify-between px-4 py-2 border-b border-stove-border bg-stove-surface">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <span className="text-orange-400">&#x1f525;</span>
-        <span className="text-[var(--stove-text-heading)]">Stove</span>
-        <span className="text-[var(--stove-text-muted)] text-xs">v{__STOVE_VERSION__}</span>
+    <header className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-stove-border bg-[var(--stove-panel-strong)] px-4 py-2 shadow-sm">
+      <div className="flex min-w-0 items-center gap-3">
+        <img className="h-9 w-9 shrink-0" src={stoveMarkUrl} alt="" aria-hidden="true" />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-[var(--stove-text-heading)]">
+            Stove Dashboard
+          </span>
+          <span className="block text-[11px] text-[var(--stove-text-secondary)]">
+            v{__STOVE_VERSION__} local evidence stream
+          </span>
+        </span>
       </div>
-      <div className="flex items-center gap-3 text-xs text-[var(--stove-text-secondary)]">
+      <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-[var(--stove-text-secondary)]">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${
+            liveConnected
+              ? "border-emerald-500/25 bg-emerald-500/10 text-[var(--stove-green)]"
+              : "border-amber-500/30 bg-amber-500/10 text-[var(--stove-amber)]"
+          }`}
+          title={liveConnected ? "Live SSE stream connected" : "SSE disconnected; polling APIs"}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${liveConnected ? "bg-green-500" : "bg-amber-500"} animate-pulse-dot`}
+          />
+          {liveConnected ? "Live" : "Polling"}
+        </span>
         <code
-          className="rounded border border-stove-border bg-stove-base px-1.5 py-0.5 font-mono text-[10px] text-[var(--stove-text-secondary)]"
+          className="rounded-full border border-stove-border bg-stove-base px-2.5 py-1 font-mono text-[10px] text-[var(--stove-text-secondary)]"
           title={`MCP endpoint: ${window.location.origin}/mcp`}
         >
           MCP /mcp
@@ -21,7 +45,7 @@ export function Header() {
           href="https://trendyol.github.io/stove/"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-[var(--stove-text)] transition-colors flex items-center gap-1"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-[var(--stove-hover)] hover:text-[var(--stove-text)]"
           title="Documentation"
         >
           <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
@@ -33,7 +57,7 @@ export function Header() {
           href="https://github.com/Trendyol/stove"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-[var(--stove-text)] transition-colors flex items-center gap-1"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-[var(--stove-hover)] hover:text-[var(--stove-text)]"
           title="GitHub"
         >
           <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
@@ -44,7 +68,7 @@ export function Header() {
         <button
           type="button"
           onClick={toggle}
-          className="hover:text-[var(--stove-text)] transition-colors cursor-pointer bg-transparent border-0 text-xs text-[var(--stove-text-secondary)] p-0.5"
+          className="stove-focus-ring cursor-pointer rounded-md border border-stove-border bg-stove-base p-1.5 text-xs text-[var(--stove-text-secondary)] transition-colors hover:bg-[var(--stove-hover)] hover:text-[var(--stove-text)]"
           title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
           {theme === "dark" ? (
@@ -57,11 +81,6 @@ export function Header() {
             </svg>
           )}
         </button>
-        <span className="border-l border-stove-border h-3" />
-        <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-dot" />
-          Connected
-        </span>
       </div>
     </header>
   );

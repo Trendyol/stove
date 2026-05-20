@@ -44,7 +44,7 @@ export function FlowDag({ nodes, edges, onNodeClick, compact }: FlowDagProps) {
 
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-[var(--stove-text-secondary)]">
+      <div className="flex h-full items-center justify-center text-sm text-[var(--stove-text-secondary)]">
         No data to visualize
       </div>
     );
@@ -76,7 +76,7 @@ export function FlowDag({ nodes, edges, onNodeClick, compact }: FlowDagProps) {
         <Panel position="top-right" className="m-3">
           <button
             type="button"
-            className="cursor-pointer rounded border border-stove-border bg-stove-surface px-2.5 py-1.5 text-xs text-[var(--stove-text)] shadow-sm hover:bg-[var(--stove-hover)]"
+            className="stove-focus-ring cursor-pointer rounded-lg border border-stove-border bg-stove-surface px-2.5 py-1.5 text-xs text-[var(--stove-text)] shadow-sm hover:bg-[var(--stove-hover)]"
             onClick={handleCenterView}
           >
             Center View

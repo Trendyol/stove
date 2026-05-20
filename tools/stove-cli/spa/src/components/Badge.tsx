@@ -16,7 +16,7 @@ export function Badge({ status }: BadgeProps) {
     <span
       role="status"
       aria-label={`Status: ${upper}`}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium"
+      className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.04em]"
       style={{ backgroundColor: config.bg, color: config.text }}
     >
       {config.icon}

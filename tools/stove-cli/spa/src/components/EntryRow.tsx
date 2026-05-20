@@ -16,22 +16,29 @@ export function EntryRow({ entry }: EntryRowProps) {
   return (
     <button
       type="button"
-      className="animate-fade-in border-l-2 bg-stove-card rounded-r mb-1 cursor-pointer hover:bg-[var(--stove-hover)] w-full text-left"
-      style={{ borderLeftColor: passed ? "var(--stove-green)" : "var(--stove-red)" }}
+      className="animate-fade-in w-full cursor-pointer rounded-xl border bg-stove-surface text-left shadow-sm transition-all hover:-translate-y-px hover:bg-[var(--stove-hover)] hover:shadow-md"
+      style={{
+        borderColor: "var(--stove-border)",
+        borderLeftColor: passed ? "var(--stove-green)" : "var(--stove-red)",
+        borderLeftWidth: 3,
+      }}
       aria-expanded={expanded}
       onClick={() => setExpanded(!expanded)}
     >
-      <div className="flex items-center gap-2 px-3 py-2 text-sm">
-        <span className="text-[var(--stove-text-secondary)] font-mono text-xs w-24 shrink-0">
+      <div className="flex items-center gap-2 px-3 py-2.5 text-sm">
+        <span className="w-24 shrink-0 font-mono text-xs text-[var(--stove-text-secondary)]">
           {formatTimestamp(entry.timestamp)}
         </span>
         <ResultIcon result={entry.result} />
         <SysBadge system={entry.system} />
-        <span className="text-[var(--stove-text)] truncate">{entry.action}</span>
+        <span className="truncate font-medium text-[var(--stove-text)]">{entry.action}</span>
+        <span className="ml-auto text-[var(--stove-text-muted)]">
+          {expanded ? "Hide" : "Details"}
+        </span>
       </div>
 
       {expanded && (
-        <div className="px-4 pb-3 text-xs font-mono space-y-2 border-t border-stove-border">
+        <div className="space-y-2 border-t border-stove-border bg-stove-base/60 px-4 pb-3 pt-1 font-mono text-xs">
           <EntryDetails entry={entry} />
         </div>
       )}

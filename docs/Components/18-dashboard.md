@@ -9,6 +9,12 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 
 Current CLI versions start the dashboard with bare `stove`; older docs and scripts may still show `stove serve`.
 
+## Preview
+
+The dashboard is useful because the test timeline, trace tree, and system evidence stay linked to the same run instead of living in separate tools.
+
+{{ dashboard_preview() }}
+
 ## Install the CLI
 
 === "Homebrew"

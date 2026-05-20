@@ -19,8 +19,8 @@ export default function App() {
   } = useAppData();
 
   return (
-    <div className="flex flex-col h-screen bg-stove-base text-[var(--stove-text)] font-sans">
-      <Header />
+    <div className="stove-app-shell flex flex-col h-screen text-[var(--stove-text)] font-sans">
+      <Header liveConnected={liveConnected} />
       {versionMismatchSummary ? <VersionMismatchBanner summary={versionMismatchSummary} /> : null}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

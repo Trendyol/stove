@@ -14,8 +14,10 @@ export function TestListItem({ test, selected, onSelect, hideSpec }: TestListIte
     <button
       type="button"
       aria-current={selected ? "true" : undefined}
-      className={`w-full text-left px-3 py-2 cursor-pointer border-l-2 hover:bg-[var(--stove-hover)] ${
-        selected ? "border-l-amber-500 bg-[rgba(245,158,11,0.05)]" : "border-l-transparent"
+      className={`mx-2 my-1 w-[calc(100%-1rem)] cursor-pointer rounded-lg border px-3 py-2 text-left transition-all hover:bg-[var(--stove-hover)] ${
+        selected
+          ? "border-amber-500/60 bg-[var(--stove-amber-bg)] shadow-sm"
+          : "border-transparent bg-transparent"
       }`}
       onClick={onSelect}
     >

@@ -19,15 +19,19 @@ export function SpanTree({ spans }: SpanTreeProps) {
   const totalNeutral = spans.filter((s) => getResultTone(s.status) === "neutral").length;
 
   if (spans.length === 0) {
-    return <div className="text-[var(--stove-text-secondary)] text-sm p-4">No spans recorded</div>;
+    return (
+      <div className="m-4 rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
+        No spans recorded
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-1 p-2">
+    <div className="space-y-1 p-4">
       {tree.map((node) => (
         <SpanNodeView key={node.span.span_id} node={node} depth={0} />
       ))}
-      <div className="mt-3 pt-2 border-t border-stove-border text-xs text-[var(--stove-text-secondary)] flex gap-4">
+      <div className="mt-4 flex gap-4 rounded-xl border border-stove-border bg-stove-surface px-3 py-2 text-xs text-[var(--stove-text-secondary)]">
         <span>{spans.length} spans</span>
         {totalFailed > 0 && <span className="text-[var(--stove-red)]">{totalFailed} failed</span>}
         {totalNeutral > 0 && <span>{totalNeutral} unset</span>}
@@ -56,11 +60,11 @@ function SpanNodeView({ node, depth }: { node: SpanNode; depth: number }) {
   const statusIcon = tone === "failed" ? "\u2717" : tone === "success" ? "\u2713" : "\u2022";
 
   return (
-    <div style={{ marginLeft: depth * 20 }}>
+    <div style={{ marginLeft: depth * 18 }}>
       <button
         type="button"
-        className={`flex items-center gap-2 px-2 py-1 rounded text-sm cursor-pointer hover:bg-[var(--stove-hover)] w-full text-left bg-transparent border-0 ${
-          isError ? "border-l-2 border-red-500 bg-[rgba(248,113,113,0.04)]" : ""
+        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-[var(--stove-hover)] ${
+          isError ? "border-red-500/40 bg-red-500/10" : "border-transparent bg-transparent"
         }`}
         aria-expanded={!collapsed}
         onClick={() => setCollapsed(!collapsed)}

@@ -81,7 +81,7 @@ function renderNodes(
       <button
         type="button"
         key={`group-${nodeKey}`}
-        className="w-full text-left flex items-center gap-1 hover:bg-[var(--stove-hover)] cursor-pointer"
+        className="flex w-full cursor-pointer items-center gap-1 rounded-md text-left transition-colors hover:bg-[var(--stove-hover)]"
         style={{ paddingLeft: `${depth * 12 + 8}px`, paddingTop: "4px", paddingBottom: "4px" }}
         onClick={() => toggle(nodeKey)}
       >
@@ -157,5 +157,5 @@ function StatusDot({ status }: { status: Status }) {
         ? "bg-emerald-400"
         : "bg-blue-400 animate-pulse-dot";
 
-  return <span className={`w-1.5 h-1.5 rounded-full shrink-0 mr-2 ${color}`} />;
+  return <span className={`mr-2 h-1.5 w-1.5 shrink-0 rounded-full ${color}`} />;
 }

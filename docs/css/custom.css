@@ -21,6 +21,45 @@
 [data-md-component="content"] article.md-content__inner { padding-top: 0.6rem; }
 .md-content { min-width: 0; }
 
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+    width: 1.55rem;
+    height: 1.55rem;
+}
+
+/* Shared docs surface colors.
+   Material's primary-light token is too faint in light mode and muddy in dark mode
+   for larger callout surfaces, so these variables keep banners/cards readable. */
+:root {
+    --stove-doc-surface: #ffffff;
+    --stove-doc-surface-muted: #f6f8fb;
+    --stove-doc-border: #d8e0ea;
+    --stove-doc-text: #1f2937;
+    --stove-doc-muted: #5f6b7a;
+    --stove-doc-accent: #0f766e;
+    --stove-doc-accent-strong: #0f766e;
+    --stove-doc-accent-bg: #e7f6f4;
+    --stove-doc-accent-border: rgba(15, 118, 110, 0.22);
+    --stove-doc-accent-chip-bg: #0f766e;
+    --stove-doc-accent-chip-text: #ffffff;
+    --stove-doc-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+[data-md-color-scheme="slate"] {
+    --stove-doc-surface: #0f1724;
+    --stove-doc-surface-muted: #111c2d;
+    --stove-doc-border: rgba(148, 163, 184, 0.18);
+    --stove-doc-text: #d8dee9;
+    --stove-doc-muted: #a4adbb;
+    --stove-doc-accent: #5eead4;
+    --stove-doc-accent-strong: #99f6e4;
+    --stove-doc-accent-bg: rgba(20, 184, 166, 0.13);
+    --stove-doc-accent-border: rgba(94, 234, 212, 0.26);
+    --stove-doc-accent-chip-bg: rgba(20, 184, 166, 0.24);
+    --stove-doc-accent-chip-text: #d5fff7;
+    --stove-doc-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
 /* Polish the card grid Material renders for `<div class="grid cards">` */
 .md-typeset .grid.cards > :is(ul, ol) > li,
 .md-typeset .grid.cards > .card,
@@ -208,8 +247,9 @@ code {
 .sw-card strong { display: inline; font-size: 0.85rem; }
 .sw-card p { margin: 0.25rem 0 0; font-size: 0.72rem; opacity: 0.8; }
 .sw-card.selected {
-    border-color: var(--md-primary-fg-color);
-    background: var(--md-primary-fg-color--light);
+    border-color: var(--stove-doc-accent);
+    background: var(--stove-doc-accent-bg);
+    color: var(--stove-doc-text);
 }
 
 .sw-row {
@@ -576,8 +616,10 @@ code {
 
 .sw-callout {
     margin-top: 0.9rem;
-    border-left: 3px solid var(--md-primary-fg-color);
-    background: rgba(0, 150, 136, 0.10);
+    border: 1px solid var(--stove-doc-accent-border);
+    border-left: 3px solid var(--stove-doc-accent);
+    background: var(--stove-doc-accent-bg);
+    color: var(--stove-doc-text);
     padding: 0.55rem 0.8rem;
     font-size: 0.78rem;
     border-radius: 0 6px 6px 0;
@@ -590,19 +632,18 @@ code {
 /* Gradle banner at top of wizard output step */
 .sw-gradle-banner,
 .sw-provided-banner {
-    border: 1px solid var(--md-primary-fg-color);
-    background: linear-gradient(135deg,
-        rgba(0, 150, 136, 0.10) 0%,
-        rgba(0, 150, 136, 0.04) 100%);
+    border: 1px solid var(--stove-doc-accent-border);
+    background: linear-gradient(135deg, var(--stove-doc-accent-bg), var(--stove-doc-surface));
+    color: var(--stove-doc-text);
     border-radius: 10px;
     padding: 0.9rem 1.1rem;
     margin: 0.8rem 0 1.2rem;
 }
 .sw-provided-banner {
-    border-color: #56a8f5;
+    border-color: rgba(86, 168, 245, 0.34);
     background: linear-gradient(135deg,
         rgba(86, 168, 245, 0.12) 0%,
-        rgba(86, 168, 245, 0.04) 100%);
+        var(--stove-doc-surface) 100%);
 }
 .sw-provided-banner p + p { margin-top: 0.5rem; }
 .sw-gradle-banner-head {
@@ -1249,11 +1290,14 @@ code.language-kotlin .token.punctuation {
 
 /* ---- "In 30 seconds" callout ---- */
 .stove-tldr {
-    border-left: 4px solid var(--md-primary-fg-color);
-    background: var(--md-primary-fg-color--light);
-    padding: 0.9rem 1.1rem;
-    border-radius: 0 8px 8px 0;
+    border: 1px solid var(--stove-doc-accent-border);
+    border-left: 4px solid var(--stove-doc-accent);
+    background: linear-gradient(135deg, var(--stove-doc-accent-bg), var(--stove-doc-surface));
+    color: var(--stove-doc-text);
+    padding: 0.95rem 1.1rem;
+    border-radius: 0 10px 10px 0;
     margin: 1rem 0 1.5rem;
+    box-shadow: var(--stove-doc-shadow);
 }
 .stove-tldr-title {
     display: inline-block;
@@ -1261,21 +1305,14 @@ code.language-kotlin .token.punctuation {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     font-weight: 700;
-    color: var(--md-primary-bg-color);
-    background: var(--md-primary-fg-color);
+    color: var(--stove-doc-accent-chip-text);
+    background: var(--stove-doc-accent-chip-bg);
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     margin-bottom: 0.4rem;
 }
-[data-md-color-scheme="slate"] .stove-tldr-title {
-    color: #ffffff;
-    background: var(--md-accent-fg-color, var(--md-primary-fg-color));
-}
-/* In dark mode the very-light primary tint loses contrast as a background.
-   Use a translucent primary instead so text remains legible. */
-[data-md-color-scheme="slate"] .stove-tldr {
-    background: rgba(0, 150, 136, 0.18);
-}
+.stove-tldr code { background: rgba(15, 118, 110, 0.1); }
+[data-md-color-scheme="slate"] .stove-tldr code { background: rgba(94, 234, 212, 0.12); }
 .stove-tldr p:last-child { margin-bottom: 0; }
 
 /* ---- Anatomy diagram (annotated code) ---- */
@@ -1303,11 +1340,13 @@ code.language-kotlin .token.punctuation {
     gap: 0.6rem;
 }
 .stove-note {
-    border: 1px solid var(--md-default-fg-color--lightest);
+    border: 1px solid var(--stove-doc-border);
     border-radius: 8px;
     padding: 0.55rem 0.8rem;
-    background: var(--md-default-bg-color);
+    background: var(--stove-doc-surface);
+    color: var(--stove-doc-text);
     font-size: 0.78rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 .stove-note-tag {
     display: inline-block;
@@ -1316,16 +1355,16 @@ code.language-kotlin .token.punctuation {
     line-height: 1.4rem;
     text-align: center;
     border-radius: 50%;
-    background: var(--md-primary-fg-color);
-    color: var(--md-primary-bg-color);
+    background: var(--stove-doc-accent-chip-bg);
+    color: var(--stove-doc-accent-chip-text);
     font-weight: 700;
     font-size: 0.7rem;
     margin-right: 0.45rem;
 }
 .stove-anatomy-code .anchor {
     display: inline-block;
-    background: var(--md-primary-fg-color);
-    color: var(--md-primary-bg-color);
+    background: var(--stove-doc-accent-chip-bg);
+    color: var(--stove-doc-accent-chip-text);
     border-radius: 999px;
     font-size: 0.62rem;
     font-weight: 700;
@@ -1469,19 +1508,21 @@ code.language-kotlin .token.punctuation {
     padding: 0;
 }
 .stove-sys-card {
-    border: 1px solid var(--md-default-fg-color--lightest);
+    border: 1px solid var(--stove-doc-border);
     border-radius: 10px;
     padding: 0.8rem 0.95rem;
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    background: var(--md-default-bg-color);
+    background: var(--stove-doc-surface);
+    color: var(--stove-doc-text);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 .stove-sys-card:hover {
     transform: translateY(-2px);
-    border-color: var(--md-primary-fg-color);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    border-color: var(--stove-doc-accent);
+    box-shadow: var(--stove-doc-shadow);
 }
 .stove-sys-card-head {
     display: flex;
@@ -1494,14 +1535,15 @@ code.language-kotlin .token.punctuation {
     font-size: 0.6rem;
     padding: 0.1rem 0.45rem;
     border-radius: 999px;
-    background: var(--md-default-fg-color--lightest);
+    background: var(--stove-doc-surface-muted);
+    color: var(--stove-doc-muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     opacity: 0.75;
 }
 .stove-sys-card-desc {
     font-size: 0.76rem;
-    opacity: 0.82;
+    color: var(--stove-doc-muted);
     margin: 0;
     flex: 1;
 }
@@ -1523,9 +1565,12 @@ code.language-kotlin .token.punctuation {
     margin: 1rem 0 1.5rem;
 }
 .stove-compare > div {
-    border: 1px solid var(--md-default-fg-color--lightest);
+    border: 1px solid var(--stove-doc-border);
     border-radius: 10px;
     padding: 0.9rem 1.1rem;
+    background: var(--stove-doc-surface);
+    color: var(--stove-doc-text);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 .stove-compare h4 { margin: 0 0 0.5rem; }
 @media (max-width: 800px) { .stove-compare { grid-template-columns: 1fr; } }
@@ -1540,12 +1585,656 @@ code.language-kotlin .token.punctuation {
 .stove-ribbon-item {
     border-radius: 10px;
     padding: 0.9rem 1rem;
-    background: linear-gradient(135deg, var(--md-primary-fg-color--light), transparent);
-    border: 1px solid var(--md-default-fg-color--lightest);
+    background: linear-gradient(135deg, var(--stove-doc-accent-bg), var(--stove-doc-surface));
+    border: 1px solid var(--stove-doc-accent-border);
+    color: var(--stove-doc-text);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 .stove-ribbon-item .icon {
     font-size: 1.4rem;
     margin-bottom: 0.3rem;
 }
 .stove-ribbon-item strong { display: block; font-size: 0.92rem; }
-.stove-ribbon-item p { margin: 0.25rem 0 0; font-size: 0.78rem; opacity: 0.82; }
+.stove-ribbon-item p { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--stove-doc-muted); }
+
+/* ---- Static dashboard showcase ---- */
+.stove-dashboard-showcase {
+    --sd-base: #f5f7fb;
+    --sd-surface: #ffffff;
+    --sd-card: #eef2f7;
+    --sd-border: #d8e0ea;
+    --sd-text: #1f2937;
+    --sd-heading: #111827;
+    --sd-muted: #6b7280;
+    --sd-faint: #9ca3af;
+    --sd-blue: #2563eb;
+    --sd-green: #16a34a;
+    --sd-red: #dc2626;
+    --sd-amber: #d97706;
+    --sd-red-bg: rgba(220, 38, 38, 0.1);
+    --sd-amber-bg: rgba(217, 119, 6, 0.1);
+    --sd-hover: rgba(37, 99, 235, 0.07);
+    --sd-panel: rgba(255, 255, 255, 0.82);
+    --sd-panel-strong: rgba(255, 255, 255, 0.96);
+    --sd-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+    --sd-shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+    color: var(--sd-text);
+    margin: 1.2rem 0 2rem;
+}
+
+[data-md-color-scheme="slate"] .stove-dashboard-showcase {
+    --sd-base: #080b12;
+    --sd-surface: #0a0e17;
+    --sd-card: #111827;
+    --sd-border: #1f2a3d;
+    --sd-text: #d1d5db;
+    --sd-heading: #e5e7eb;
+    --sd-muted: #9ca3af;
+    --sd-faint: #6b7280;
+    --sd-blue: #60a5fa;
+    --sd-green: #4ade80;
+    --sd-red: #f87171;
+    --sd-amber: #fbbf24;
+    --sd-red-bg: rgba(127, 29, 29, 0.3);
+    --sd-amber-bg: rgba(120, 53, 15, 0.2);
+    --sd-hover: rgba(96, 165, 250, 0.08);
+    --sd-panel: rgba(10, 14, 23, 0.78);
+    --sd-panel-strong: rgba(13, 19, 31, 0.96);
+    --sd-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+    --sd-shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.22);
+}
+
+.stove-dashboard-shell {
+    overflow: hidden;
+    border: 1px solid var(--sd-border);
+    border-radius: 10px;
+    background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 28rem),
+        radial-gradient(circle at top right, rgba(217, 119, 6, 0.08), transparent 24rem),
+        var(--sd-base);
+    box-shadow: var(--sd-shadow);
+}
+
+.stove-dashboard-topbar {
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid var(--sd-border);
+    background: var(--sd-panel-strong);
+    box-shadow: var(--sd-shadow-soft);
+}
+
+.stove-dashboard-brand,
+.stove-dashboard-toolbar,
+.stove-dashboard-status,
+.stove-dashboard-run,
+.stove-dashboard-app-picker,
+.stove-dashboard-heading,
+.stove-dashboard-heading-actions,
+.stove-dashboard-panel-head,
+.stove-dashboard-metric,
+.stove-dashboard-span {
+    min-width: 0;
+}
+
+.stove-dashboard-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.stove-dashboard-logo {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    display: block;
+    background: url("../assets/stove-mark.svg") center / contain no-repeat;
+}
+
+.stove-dashboard-brand strong,
+.stove-dashboard-heading strong,
+.stove-dashboard-panel-head strong,
+.stove-dashboard-run strong,
+.stove-dashboard-metric strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stove-dashboard-brand em,
+.stove-dashboard-heading em,
+.stove-dashboard-run em,
+.stove-dashboard-metric em {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--sd-muted);
+    font-style: normal;
+    font-size: 0.68rem;
+}
+
+.stove-dashboard-brand strong,
+.stove-dashboard-heading strong {
+    color: var(--sd-heading);
+}
+
+.stove-dashboard-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+}
+
+.stove-dashboard-status {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid rgba(22, 163, 74, 0.25);
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+    color: var(--sd-green);
+    background: rgba(22, 163, 74, 0.1);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.stove-dashboard-pulse {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--sd-green);
+    box-shadow: 0 0 0 0.2rem rgba(22, 163, 74, 0.14);
+}
+
+.stove-dashboard-toolbar code,
+.stove-dashboard-heading-actions code {
+    border: 1px solid var(--sd-border);
+    border-radius: 999px;
+    padding: 0.25rem 0.55rem;
+    color: var(--sd-muted);
+    background: var(--sd-base);
+    font-family: var(--md-code-font-family);
+    font-size: 0.62rem;
+}
+
+.stove-dashboard-body {
+    display: grid;
+    grid-template-columns: minmax(13rem, 0.35fr) minmax(0, 1fr);
+    min-height: 31rem;
+}
+
+.stove-dashboard-sidebar {
+    padding: 0.8rem;
+    border-right: 1px solid var(--sd-border);
+    background: var(--sd-panel);
+    box-shadow: var(--sd-shadow-soft);
+}
+
+.stove-dashboard-label {
+    margin: 0 0 0.35rem;
+    color: var(--sd-faint);
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+}
+
+.stove-dashboard-app-picker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    border: 1px solid var(--sd-border);
+    border-radius: 8px;
+    padding: 0.48rem 0.58rem;
+    background: var(--sd-card);
+    color: var(--sd-heading);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.stove-dashboard-app-picker span {
+    color: var(--sd-muted);
+    font-size: 0.63rem;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.stove-dashboard-run-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.28rem;
+    margin-bottom: 0.62rem;
+}
+
+.stove-dashboard-run-summary span {
+    min-width: 0;
+    border: 1px solid var(--sd-border);
+    border-radius: 8px;
+    padding: 0.38rem 0.25rem;
+    text-align: center;
+    background: var(--sd-base);
+}
+
+.stove-dashboard-run-summary strong {
+    display: block;
+    color: var(--sd-heading);
+    font-family: var(--md-code-font-family);
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.stove-dashboard-run-summary strong.is-fail {
+    color: var(--sd-red);
+}
+
+.stove-dashboard-run-summary em {
+    display: block;
+    margin-top: 0.18rem;
+    color: var(--sd-muted);
+    font-style: normal;
+    font-size: 0.56rem;
+}
+
+.stove-dashboard-filters {
+    display: flex;
+    gap: 0.15rem;
+    margin-bottom: 0.65rem;
+    border: 1px solid var(--sd-border);
+    border-radius: 8px;
+    padding: 0.18rem;
+    background: var(--sd-base);
+}
+
+.stove-dashboard-filters span {
+    flex: 1;
+    border-radius: 6px;
+    padding: 0.25rem 0.38rem;
+    text-align: center;
+    color: var(--sd-muted);
+    font-size: 0.62rem;
+}
+
+.stove-dashboard-filters span.is-active {
+    color: var(--sd-heading);
+    background: var(--sd-surface);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.stove-dashboard-run {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.58rem 0.62rem;
+    margin: 0.42rem 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.stove-dashboard-run.is-active {
+    border-color: rgba(217, 119, 6, 0.45);
+    background: var(--sd-amber-bg);
+    box-shadow: var(--sd-shadow-soft);
+}
+
+.stove-dashboard-run b,
+.stove-dashboard-heading b {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 0.2rem 0.48rem;
+    font-size: 0.58rem;
+    font-family: var(--md-code-font-family);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stove-dashboard-run b.is-pass,
+.stove-dashboard-heading b.is-pass {
+    color: var(--sd-green);
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.2);
+}
+
+.stove-dashboard-run b.is-fail,
+.stove-dashboard-heading b.is-fail {
+    color: var(--sd-red);
+    background: var(--sd-red-bg);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.stove-dashboard-main {
+    min-width: 0;
+    padding: 0.9rem;
+}
+
+.stove-dashboard-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0 0.05rem 0.65rem;
+}
+
+.stove-dashboard-heading > span:first-child {
+    min-width: 0;
+}
+
+.stove-dashboard-heading em {
+    margin-bottom: 0.18rem;
+    color: var(--sd-faint);
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+.stove-dashboard-heading strong {
+    font-size: 0.86rem;
+}
+
+.stove-dashboard-heading-actions {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.45rem;
+}
+
+.stove-dashboard-tabs {
+    display: flex;
+    gap: 0.15rem;
+    margin: 0 0 0.75rem;
+    border: 1px solid var(--sd-border);
+    border-radius: 8px;
+    padding: 0.18rem;
+    background: var(--sd-base);
+}
+
+.stove-dashboard-tabs span {
+    border-radius: 6px;
+    padding: 0.36rem 0.6rem;
+    color: var(--sd-muted);
+    font-size: 0.66rem;
+    font-weight: 600;
+}
+
+.stove-dashboard-tabs span.is-active {
+    color: var(--sd-heading);
+    background: var(--sd-surface);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.stove-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(15rem, 1fr) minmax(15rem, 1.08fr);
+    grid-template-areas:
+        "timeline trace"
+        "evidence evidence";
+    gap: 0.7rem;
+}
+
+.stove-dashboard-panel {
+    min-width: 0;
+    border: 1px solid var(--sd-border);
+    border-radius: 10px;
+    background: var(--sd-surface);
+    box-shadow: var(--sd-shadow-soft);
+    overflow: hidden;
+}
+
+.stove-dashboard-timeline { grid-area: timeline; }
+.stove-dashboard-trace { grid-area: trace; }
+.stove-dashboard-evidence { grid-area: evidence; }
+
+.stove-dashboard-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.6rem;
+    padding: 0.62rem 0.72rem;
+    border-bottom: 1px solid var(--sd-border);
+    background: var(--sd-panel-strong);
+}
+
+.stove-dashboard-panel-head span {
+    overflow: hidden;
+    color: var(--sd-muted);
+    font-size: 0.66rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stove-dashboard-timeline ol {
+    list-style: none;
+    margin: 0;
+    padding: 0.72rem;
+}
+
+.stove-dashboard-timeline li {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.35rem;
+    padding: 0.5rem 0.58rem;
+    border: 1px solid var(--sd-border);
+    border-left-width: 3px;
+    border-left-color: var(--sd-green);
+    border-radius: 10px;
+    background: var(--sd-surface);
+    color: var(--sd-text);
+    box-shadow: 0 1px 5px rgba(15, 23, 42, 0.04);
+}
+
+.stove-dashboard-timeline li + li {
+    margin-top: 0.25rem;
+}
+
+.stove-dashboard-timeline li span {
+    color: var(--sd-muted);
+    font-size: 0.63rem;
+}
+
+.stove-dashboard-timeline li strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+}
+
+.stove-dashboard-timeline li em {
+    color: var(--sd-muted);
+    font-style: normal;
+    font-size: 0.63rem;
+    white-space: nowrap;
+}
+
+.stove-dashboard-timeline li::before {
+    content: "";
+    width: 0.48rem;
+    height: 0.48rem;
+    border-radius: 50%;
+    background: var(--sd-green);
+    box-shadow: 0 0 0 0.18rem rgba(125, 223, 138, 0.12);
+}
+
+.stove-dashboard-timeline li {
+    grid-template-columns: 0.55rem 4.5rem minmax(0, 1fr) auto;
+}
+
+.stove-dashboard-timeline li.is-fail::before {
+    background: var(--sd-red);
+    box-shadow: 0 0 0 0.18rem rgba(251, 113, 133, 0.14);
+}
+
+.stove-dashboard-timeline li.is-selected {
+    border-color: rgba(220, 38, 38, 0.35);
+    border-left-color: var(--sd-red);
+    background: var(--sd-red-bg);
+}
+
+.stove-dashboard-span {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.15rem;
+    margin: 0.48rem 0.62rem;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.stove-dashboard-span span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+}
+
+.stove-dashboard-span em {
+    color: var(--sd-muted);
+    font-style: normal;
+    font-size: 0.63rem;
+    white-space: nowrap;
+}
+
+.stove-dashboard-span.depth-1 { margin-left: 1.4rem; }
+.stove-dashboard-span.depth-2 { margin-left: 2.2rem; }
+.stove-dashboard-span.depth-3 { margin-left: 3rem; }
+
+.stove-dashboard-span.is-fail {
+    border-color: rgba(220, 38, 38, 0.35);
+    background: var(--sd-red-bg);
+}
+
+.stove-dashboard-evidence {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stove-dashboard-evidence .stove-dashboard-panel-head,
+.stove-dashboard-tools {
+    grid-column: 1 / -1;
+}
+
+.stove-dashboard-metric {
+    padding: 0.72rem;
+    border-right: 1px solid var(--sd-border);
+    background: var(--sd-surface);
+}
+
+.stove-dashboard-metric:last-of-type {
+    border-right: 0;
+}
+
+.stove-dashboard-metric span {
+    display: block;
+    color: var(--sd-muted);
+    font-size: 0.63rem;
+}
+
+.stove-dashboard-metric strong {
+    margin: 0.12rem 0;
+    color: var(--sd-blue);
+    font-size: 0.9rem;
+}
+
+.stove-dashboard-metric.is-fail strong {
+    color: var(--sd-red);
+}
+
+.stove-dashboard-tools {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    padding: 0 0.72rem 0.72rem;
+}
+
+.stove-dashboard-tools span {
+    min-width: 0;
+    border: 1px solid rgba(217, 119, 6, 0.32);
+    border-radius: 999px;
+    padding: 0.24rem 0.52rem;
+    color: var(--sd-amber);
+    background: var(--sd-amber-bg);
+    font-family: var(--md-code-font-family);
+    font-size: 0.62rem;
+}
+
+.stove-dashboard-showcase--home {
+    margin-top: 1rem;
+}
+
+@media (max-width: 920px) {
+    .stove-dashboard-body {
+        grid-template-columns: 1fr;
+    }
+
+    .stove-dashboard-sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--sd-border);
+    }
+
+    .stove-dashboard-run {
+        margin-bottom: 0.42rem;
+    }
+}
+
+@media (max-width: 760px) {
+    .stove-dashboard-topbar,
+    .stove-dashboard-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .stove-dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "timeline"
+            "trace"
+            "evidence";
+    }
+
+    .stove-dashboard-timeline li {
+        grid-template-columns: 0.55rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .stove-dashboard-timeline li span,
+    .stove-dashboard-timeline li em {
+        grid-column: 2;
+    }
+
+    .stove-dashboard-timeline li strong {
+        grid-column: 2;
+        white-space: normal;
+    }
+
+    .stove-dashboard-evidence {
+        grid-template-columns: 1fr;
+    }
+
+    .stove-dashboard-metric {
+        border-right: 0;
+        border-bottom: 1px solid var(--sd-border);
+    }
+
+    .stove-dashboard-span.depth-1,
+    .stove-dashboard-span.depth-2,
+    .stove-dashboard-span.depth-3 {
+        margin-left: 0.62rem;
+    }
+}

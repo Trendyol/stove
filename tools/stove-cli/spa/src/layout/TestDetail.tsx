@@ -69,10 +69,10 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="px-4 py-3 border-b border-stove-border bg-stove-surface sticky top-0 z-10">
+      <div className="sticky top-0 z-10 border-b border-stove-border bg-[var(--stove-panel-strong)] px-4 py-3 shadow-sm">
         <TestHeader test={test} />
         {test.error && (
-          <div className="mt-2 px-3 py-2 bg-red-900/20 border border-red-900/30 rounded text-xs text-red-400 font-mono">
+          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-[var(--stove-red)]">
             {test.error}
           </div>
         )}
@@ -81,7 +81,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
 
       <div className={`min-h-0 flex-1 ${tab === "flow" ? "overflow-hidden" : "overflow-y-auto"}`}>
         {tab === "timeline" && (
-          <div className="p-3 space-y-0.5">
+          <div className="p-4 space-y-2">
             {entriesError && (
               <QueryErrorMessage error={entriesError} fallback="Failed to load entries" />
             )}
@@ -89,7 +89,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
               <EntryRow key={entry.id} entry={entry} />
             ))}
             {entries.length === 0 && (
-              <div className="text-[var(--stove-text-secondary)] text-sm p-4">
+              <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
                 No entries recorded
               </div>
             )}
@@ -97,7 +97,9 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
         )}
         {tab === "trace" &&
           (spansLoading ? (
-            <div className="text-[var(--stove-text-secondary)] text-sm p-4">Loading traces...</div>
+            <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
+              Loading traces...
+            </div>
           ) : spansError ? (
             <QueryErrorMessage error={spansError} fallback="Failed to load traces" />
           ) : (
@@ -105,7 +107,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
           ))}
         {tab === "snapshots" &&
           (snapshotsLoading ? (
-            <div className="text-[var(--stove-text-secondary)] text-sm p-4">
+            <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
               Loading snapshots...
             </div>
           ) : snapshotsError ? (
@@ -128,5 +130,9 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
 
 function QueryErrorMessage({ error, fallback }: { error: unknown; fallback: string }) {
   const message = error instanceof Error ? error.message : fallback;
-  return <div className="text-red-400 text-sm p-4">{message}</div>;
+  return (
+    <div className="m-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-[var(--stove-red)]">
+      {message}
+    </div>
+  );
 }

@@ -99,7 +99,7 @@ export function Sidebar({
 
   return (
     <aside
-      className="shrink-0 border-r border-stove-border bg-stove-surface flex flex-col overflow-hidden relative"
+      className="stove-glass-panel relative flex shrink-0 flex-col overflow-hidden border-r border-stove-border"
       style={{ width }}
     >
       <AppPicker
@@ -122,12 +122,12 @@ export function Sidebar({
           onSelectTest={onSelectTest}
         />
       </div>
-      <div className="border-t border-stove-border px-3 py-2">
+      <div className="border-t border-stove-border bg-[var(--stove-panel-strong)] px-3 py-2">
         <button
           type="button"
           onClick={handleClear}
           disabled={clearing}
-          className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-[var(--stove-text-secondary)] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors cursor-pointer disabled:opacity-50 bg-transparent border border-stove-border"
+          className="stove-focus-ring flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-stove-border bg-stove-base px-2 py-1.5 text-xs text-[var(--stove-text-secondary)] transition-colors hover:bg-red-400/10 hover:text-red-400 disabled:opacity-50"
         >
           <svg aria-hidden="true" className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
             <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z" />

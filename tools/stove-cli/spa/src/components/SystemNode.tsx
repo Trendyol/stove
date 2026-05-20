@@ -16,7 +16,7 @@ export function SystemNode({ data }: NodeProps) {
 
   return (
     <div
-      className={`${sizeClass} rounded-lg border bg-stove-card px-3 py-2`}
+      className={`${sizeClass} rounded-xl border bg-stove-card px-3 py-2 shadow-sm`}
       style={{
         borderColor: failed ? "var(--stove-red)" : "var(--stove-border)",
         borderWidth: failed ? 2 : 1,

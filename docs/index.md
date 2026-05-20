@@ -70,6 +70,14 @@ Stove registers the systems your app depends on, then registers one AUT runner. 
   </div>
 </div>
 
+## See the run while it happens
+
+When `dashboard { }` is registered and the `stove` CLI is running, registered systems stream local run evidence into a dashboard you can keep open while iterating. Timeline entries, system snapshots, Kafka observations, and exported spans stay attached to the test that produced them.
+
+{{ dashboard_preview("home") }}
+
+<p><a class="stove-btn" href="Components/18-dashboard/">Open Dashboard docs</a></p>
+
 ## <a id="setup-wizard"></a>Setup wizard
 
 Pick runtime, framework, systems, mocks, and observability. The wizard composes version-aligned Gradle dependencies, `StoveConfig.kt`, and a sample test that exercises the selected systems. State syncs to the URL; share or bookmark presets.

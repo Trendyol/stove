@@ -144,3 +144,15 @@ def define_env(env):
             return ""
         block = "\n".join(f'    testImplementation("{g}")' for g in gradle)
         return f"```kotlin\n{block}\n```"
+
+    @env.macro
+    def dashboard_preview(variant: str = "") -> str:
+        """Render the reusable static dashboard showcase."""
+        snippet = (Path(__file__).parent / "snippets" / "dashboard-preview.html").read_text(encoding="utf-8")
+        if variant:
+            return snippet.replace(
+                'class="stove-dashboard-showcase"',
+                f'class="stove-dashboard-showcase stove-dashboard-showcase--{variant}"',
+                1,
+            )
+        return snippet

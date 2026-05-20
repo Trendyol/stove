@@ -17,7 +17,7 @@ export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps
   if (snapshots.length === 0) {
     return (
       <div className="p-4">
-        <div className="text-sm text-[var(--stove-text-secondary)]">
+        <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
           {hiddenCount > 0 ? "No detailed snapshots captured" : "No snapshots captured"}
         </div>
         <HiddenSnapshotNotice hiddenCount={hiddenCount} className="mt-1" />
@@ -61,7 +61,7 @@ function DetailedSnapshotCard({ snapshot, onOpen }: { snapshot: Snapshot; onOpen
 
   return (
     <div
-      className="flex flex-col gap-3 rounded-xl border border-stove-border bg-stove-surface p-3"
+      className="flex flex-col gap-3 rounded-xl border border-stove-border bg-stove-surface p-3 shadow-sm transition-shadow hover:shadow-md"
       style={{
         borderTopColor: info.color,
         borderTopWidth: 3,
@@ -102,7 +102,7 @@ function DetailedSnapshotCard({ snapshot, onOpen }: { snapshot: Snapshot; onOpen
         )}
         <button
           type="button"
-          className="mt-3 w-full cursor-pointer rounded-md border border-stove-border bg-stove-card px-3 py-2 text-left text-xs font-medium text-[var(--stove-text)] hover:bg-[var(--stove-hover)]"
+          className="stove-focus-ring mt-3 w-full cursor-pointer rounded-md border border-stove-border bg-stove-card px-3 py-2 text-left text-xs font-medium text-[var(--stove-text)] hover:bg-[var(--stove-hover)]"
           onClick={onOpen}
         >
           Open state

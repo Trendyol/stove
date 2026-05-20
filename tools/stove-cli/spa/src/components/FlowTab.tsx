@@ -18,10 +18,10 @@ interface FlowTabProps {
 type FlowMode = "timeline" | "trace";
 
 function modeButtonClass(active: boolean): string {
-  return `px-2.5 py-1 rounded text-xs cursor-pointer border-0 ${
+  return `stove-focus-ring cursor-pointer rounded-md px-2.5 py-1 text-xs border-0 transition-colors ${
     active
-      ? "bg-[var(--stove-blue)] text-white"
-      : "bg-stove-card text-[var(--stove-text-secondary)] hover:text-[var(--stove-text)]"
+      ? "bg-[var(--stove-blue)] text-white shadow-sm"
+      : "bg-transparent text-[var(--stove-text-secondary)] hover:bg-[var(--stove-hover)] hover:text-[var(--stove-text)]"
   }`;
 }
 
@@ -87,13 +87,15 @@ export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabPr
 
   if (entries.length === 0 && spans.length === 0 && snapshots.length === 0) {
     return (
-      <div className="text-[var(--stove-text-secondary)] text-sm p-4">No data to visualize</div>
+      <div className="m-4 rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
+        No data to visualize
+      </div>
     );
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-stove-border shrink-0">
+      <div className="flex shrink-0 items-center gap-1 border-b border-stove-border bg-[var(--stove-panel-strong)] px-3 py-2">
         <button
           type="button"
           className={modeButtonClass(mode === "timeline")}

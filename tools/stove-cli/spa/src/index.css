@@ -17,39 +17,71 @@
 /* ── Theme variables ─────────────────────────────────────────────── */
 
 :root {
-  --stove-base: #f8f9fa;
+  --stove-base: #f5f7fb;
   --stove-surface: #ffffff;
-  --stove-card: #f1f3f5;
-  --stove-border: #dee2e6;
+  --stove-card: #eef2f7;
+  --stove-border: #d8e0ea;
   --stove-text: #1f2937;
   --stove-text-secondary: #6b7280;
   --stove-text-muted: #9ca3af;
   --stove-text-heading: #111827;
-  --stove-hover: rgba(0, 0, 0, 0.04);
+  --stove-hover: rgba(37, 99, 235, 0.07);
   --stove-blue: #2563eb;
+  --stove-blue-soft: rgba(37, 99, 235, 0.1);
   --stove-green: #16a34a;
   --stove-red: #dc2626;
   --stove-amber: #d97706;
   --stove-red-bg: rgba(220, 38, 38, 0.1);
   --stove-amber-bg: rgba(217, 119, 6, 0.1);
+  --stove-panel: rgba(255, 255, 255, 0.82);
+  --stove-panel-strong: rgba(255, 255, 255, 0.96);
+  --stove-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --stove-shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --stove-ring: rgba(37, 99, 235, 0.18);
 }
 
 :root.dark {
   --stove-base: #080b12;
   --stove-surface: #0a0e17;
-  --stove-card: #0d1117;
-  --stove-border: #1e293b;
+  --stove-card: #111827;
+  --stove-border: #1f2a3d;
   --stove-text: #d1d5db;
-  --stove-text-secondary: #6b7280;
-  --stove-text-muted: #4b5563;
+  --stove-text-secondary: #9ca3af;
+  --stove-text-muted: #6b7280;
   --stove-text-heading: #e5e7eb;
-  --stove-hover: rgba(255, 255, 255, 0.02);
+  --stove-hover: rgba(96, 165, 250, 0.08);
   --stove-blue: #60a5fa;
+  --stove-blue-soft: rgba(96, 165, 250, 0.12);
   --stove-green: #4ade80;
   --stove-red: #f87171;
   --stove-amber: #fbbf24;
   --stove-red-bg: rgba(127, 29, 29, 0.3);
   --stove-amber-bg: rgba(120, 53, 15, 0.2);
+  --stove-panel: rgba(10, 14, 23, 0.78);
+  --stove-panel-strong: rgba(13, 19, 31, 0.96);
+  --stove-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+  --stove-shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.22);
+  --stove-ring: rgba(96, 165, 250, 0.22);
+}
+
+/* ── App shell polish ────────────────────────────────────────────── */
+
+.stove-app-shell {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 28rem),
+    radial-gradient(circle at top right, rgba(217, 119, 6, 0.08), transparent 24rem),
+    var(--stove-base);
+}
+
+.stove-glass-panel {
+  background: var(--stove-panel);
+  box-shadow: var(--stove-shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.stove-focus-ring:focus-visible {
+  outline: 2px solid var(--stove-ring);
+  outline-offset: 2px;
 }
 
 /* ── React Flow theme ────────────────────────────────────────────── */

@@ -11,9 +11,16 @@ export function AppPicker({ apps, mismatchedApps, selectedApp, onSelectApp }: Ap
   const mismatchedAppSet = new Set(mismatchedApps);
 
   return (
-    <div className="p-3 border-b border-stove-border">
+    <div className="border-b border-stove-border p-3">
+      <label
+        htmlFor="stove-app-picker"
+        className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--stove-text-muted)]"
+      >
+        Application
+      </label>
       <select
-        className="w-full bg-stove-card border border-stove-border rounded px-2 py-1.5 text-sm text-[var(--stove-text)] focus:outline-none focus:border-blue-500"
+        id="stove-app-picker"
+        className="stove-focus-ring w-full rounded-lg border border-stove-border bg-stove-card px-2.5 py-2 text-sm font-medium text-[var(--stove-text)] shadow-sm focus:border-blue-500"
         value={selectedApp ?? ""}
         onChange={(e) => onSelectApp(e.target.value)}
       >

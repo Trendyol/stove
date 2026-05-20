@@ -13,7 +13,7 @@ export function CapturedStateLane({ snapshots, onSelect }: CapturedStateLaneProp
   }
 
   return (
-    <div className="shrink-0 border-t border-stove-border bg-stove-surface">
+    <div className="shrink-0 border-t border-stove-border bg-[var(--stove-panel-strong)]">
       <div className="flex items-center justify-between px-3 py-2">
         <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--stove-text-muted)]">
           Captured State
@@ -44,7 +44,7 @@ function SnapshotLaneCard({
   return (
     <button
       type="button"
-      className="w-[260px] shrink-0 cursor-pointer rounded-lg border border-stove-border bg-stove-card px-3 py-2 text-left hover:bg-[var(--stove-hover)]"
+      className="w-[260px] shrink-0 cursor-pointer rounded-xl border border-stove-border bg-stove-card px-3 py-2 text-left shadow-sm transition-all hover:-translate-y-px hover:bg-[var(--stove-hover)] hover:shadow-md"
       style={{ borderLeftColor: info.color, borderLeftWidth: 3 }}
       onClick={() => onSelect(snapshot)}
     >

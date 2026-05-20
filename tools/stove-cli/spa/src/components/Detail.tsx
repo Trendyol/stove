@@ -9,9 +9,11 @@ interface DetailProps {
 export function Detail({ label, value, color }: DetailProps) {
   return (
     <div className="mt-2">
-      <span className="text-[var(--stove-text-secondary)]">{label}:</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--stove-text-muted)]">
+        {label}
+      </span>
       <pre
-        className="mt-0.5 p-2 bg-stove-base rounded text-xs whitespace-pre-wrap break-words"
+        className="mt-1 whitespace-pre-wrap break-words rounded-lg border border-stove-border bg-stove-surface p-2.5 text-xs"
         style={{ color: color ?? "var(--stove-text)" }}
       >
         {tryFormatJson(value)}

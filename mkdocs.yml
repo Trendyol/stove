@@ -108,8 +108,8 @@ nav:
       - 0.15.0: release-notes/0.15.0.md
 theme:
   name: material
-  logo: assets/logo.png
-  favicon: assets/logo.png
+  logo: assets/stove-mark.svg
+  favicon: assets/favicon.svg
   features:
     # Navigation
     - navigation.instant

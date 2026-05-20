@@ -16,14 +16,14 @@ export function RunSummary({ run, tests }: RunSummaryProps) {
   const running = hasLiveTests ? tests.filter((t) => isRunning(t.status)).length : 0;
 
   return (
-    <div className="p-3 border-b border-stove-border">
+    <div className="border-b border-stove-border p-3">
       <div className="flex items-center justify-between mb-2">
         <Badge status={run.status} />
         <span className="text-xs text-[var(--stove-text-secondary)] font-mono">
           {formatDuration(run.duration_ms)}
         </span>
       </div>
-      <div className="flex gap-4 text-center">
+      <div className="grid grid-cols-4 gap-1.5 text-center">
         <Stat label="Total" value={total} />
         <Stat label="Running" value={running} color="var(--stove-blue)" />
         <Stat label="Pass" value={passed} color="var(--stove-green)" />
@@ -35,11 +35,11 @@ export function RunSummary({ run, tests }: RunSummaryProps) {
 
 function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <div>
-      <div className="text-lg font-mono font-semibold" style={{ color }}>
+    <div className="rounded-lg border border-stove-border bg-stove-base px-1.5 py-1.5">
+      <div className="font-mono text-base font-semibold leading-none" style={{ color }}>
         {value}
       </div>
-      <div className="text-xs text-[var(--stove-text-secondary)]">{label}</div>
+      <div className="mt-1 text-[10px] text-[var(--stove-text-secondary)]">{label}</div>
     </div>
   );
 }
