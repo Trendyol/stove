@@ -3200,9 +3200,9 @@
 
 <div class="stove-hero" markdown="0">
   <div class="stove-hero-text">
-    <span class="stove-hero-kicker">End-to-end testing, for real</span>
-    <h1>Test the runtime.<br/>Not the mocks.</h1>
-    <p>Stove boots your real application with the real dependencies it talks to. Postgres, Kafka, Redis, gRPC, WireMock, and more. And lets you assert the whole flow in one DSL. JVM-first. Polyglot-ready.</p>
+    <span class="stove-hero-kicker">End-to-end testing against the runtime</span>
+    <h1>Boot the app.<br/>Verify the flow.</h1>
+    <p>Stove starts the application under test, wires the dependencies it talks to, and lets you assert the complete flow in one Kotlin DSL. Postgres, Kafka, Redis, gRPC, WireMock, tracing, and more. JVM-first. Polyglot-ready.</p>
     <div class="stove-hero-actions">
       <a class="stove-btn primary" href="#setup-wizard">✨ Launch the wizard</a>
       <a class="stove-btn" href="getting-started/">Getting started</a>
@@ -3236,34 +3236,34 @@
 
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Stove starts your app the way production starts it, hands it real containers (or shared infra), and gives you one DSL to drive HTTP, query databases, mock external calls, assert published events, and verify distributed traces. When a test fails, you get a timeline. Not a stack trace.</p>
+Stove registers the systems your app depends on, then registers one AUT runner. A system is a dependency, client, mock, or observability module such as HTTP, PostgreSQL, Kafka, WireMock, tracing, or dashboard. An AUT runner starts the app through a framework, process, or container runner, or targets an already-running app with <code>providedApplication()</code>. For framework/process/container runners, Stove passes generated connection details before the app starts; provided applications must already be configured externally. When a test fails, the failure report adds a timeline and system snapshots to the stack trace.</p>
 </div>
 <h2 id="what-you-actually-get">What you actually get<a class="headerlink" href="#what-you-actually-get" title="Permanent link">&para;</a></h2>
 <div class="stove-ribbon" markdown="0">
   <div class="stove-ribbon-item">
     <div class="icon">🧱</div>
     <strong>Real dependencies</strong>
-    <p>Testcontainers under the hood, or wire to existing infra without Docker.</p>
+    <p>Testcontainers by default, or provided instances when existing infrastructure should be reused.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🎛️</div>
     <strong>One DSL, many systems</strong>
-    <p>Same <code>stove { }</code> works across Postgres, Kafka, gRPC, WireMock, Redis, Mongo, ES, more.</p>
+    <p>The same <code>stove { }</code> shape works across Postgres, Kafka, gRPC, WireMock, Redis, MongoDB, Elasticsearch, and custom systems.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🌐</div>
     <strong>Polyglot AUT</strong>
-    <p>Spring/Ktor/Micronaut/Quarkus, plus Go/Python/Rust via process or container mode.</p>
+    <p>Spring, Ktor, Micronaut, and Quarkus runners, plus Go, Python, Rust, Node, and other apps through process or container mode.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🛰️</div>
     <strong>Failures with context</strong>
-    <p>One Gradle plugin (<code>stoveTracing</code>) + dashboard + MCP turn a red test into a call chain, timeline, and agent-readable evidence.</p>
+    <p>Reporting is built in; tracing adds span trees, dashboard stores run evidence, and MCP exposes agent-readable evidence when enabled.</p>
   </div>
 </div>
 
 <h2 id="setup-wizard"><a id="setup-wizard"></a>Setup wizard<a class="headerlink" href="#setup-wizard" title="Permanent link">&para;</a></h2>
-<p>Pick runtime, framework, databases, mocks, observability. Wizard composes a paste-ready Gradle block, <code>StoveConfig.kt</code>, and a working sample test. State syncs to the URL; share or bookmark presets.</p>
+<p>Pick runtime, framework, systems, mocks, and observability. The wizard composes version-aligned Gradle dependencies, <code>StoveConfig.kt</code>, and a sample test that exercises the selected systems. State syncs to the URL; share or bookmark presets.</p>
 <div id="stove-wizard" markdown="0">
   <noscript>
     <div class="admonition warning">
@@ -3274,7 +3274,7 @@ Stove starts your app the way production starts it, hands it real containers (or
 </div>
 
 <h2 id="why-stove-exists">Why Stove exists<a class="headerlink" href="#why-stove-exists" title="Permanent link">&para;</a></h2>
-<p>JVM frameworks are great. E2E test setup around them is not. Teams keep rebuilding the same boilerplate. Container lifecycle, port wiring, config injection, cleanup, diagnostics. Once per service.</p>
+<p>JVM frameworks solve application startup well, but e2e suites still need the same surrounding mechanics in every service: dependency lifecycle, dynamic ports, runtime configuration, application boot, cleanup, and diagnostics.</p>
 <div class="stove-compare" markdown="0">
   <div>
     <h4>Without Stove</h4>
@@ -3282,17 +3282,17 @@ Stove starts your app the way production starts it, hands it real containers (or
       <li>Hand-rolled Testcontainers setup per service</li>
       <li>Mocks where they shouldn't be (the bug hides there)</li>
       <li>Framework-specific test harness rewritten each time</li>
-      <li>Failures = stack traces, no context</li>
-      <li>Polyglot services need a separate test stack</li>
+      <li>Stack traces without the system timeline</li>
+      <li>Separate test harnesses for polyglot services</li>
     </ul>
   </div>
   <div>
     <h4>With Stove</h4>
     <ul>
       <li>Declarative <code>Stove().with { ... }</code> wiring</li>
-      <li>Real DB, real broker, real downstream (mocked at the boundary)</li>
+      <li>Real DB, real broker, and external services mocked only at the network boundary</li>
       <li>One DSL across Spring · Ktor · Micronaut · Quarkus</li>
-      <li>Failures come with timeline, trace tree, MCP evidence</li>
+      <li>Failures include timeline and snapshots; tracing, dashboard, and MCP add deeper evidence when enabled</li>
       <li>Go/Python/Rust apps drop in via process/container mode</li>
     </ul>
   </div>

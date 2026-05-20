@@ -3142,17 +3142,20 @@
 
 
 <h1 id="jvm-frameworks">JVM Frameworks<a class="headerlink" href="#jvm-frameworks" title="Permanent link">&para;</a></h1>
-<p>Same Stove. Same DSL. Different runner. Pick the starter that matches your app's framework. Every other moving part stays identical.</p>
+<p>The Stove lifecycle is the same across JVM frameworks: register systems, expose their configuration, start the
+application under test, then run assertions through <code>stove { }</code>. The framework starter only changes how the app is
+booted.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">What changes between starters</span>
-Only the <strong>runner block</strong> (how Stove boots your app). Component config, test DSL, observability. All identical across Spring · Ktor · Micronaut · Quarkus.</p>
+Runner startup, readiness behavior, DI/test-dependency hooks, and bridge support differ by framework. System modules,
+the assertion DSL, reporting, tracing, dashboard, and MCP keep the same shape across Spring · Ktor · Micronaut · Quarkus.</p>
 </div>
 <h2 id="the-four-starters">The four starters<a class="headerlink" href="#the-four-starters" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Spring Boot</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
-    <p class="stove-sys-card-desc"><code>runApplication(...)</code> wrapped in <code>run(args)</code>. First-class Stove integration.</p>
+    <p class="stove-sys-card-desc"><code>runApplication(...)</code> wrapped in <code>run(args)</code>; optional bridge access to the Spring context.</p>
     <div class="stove-sys-card-actions">
       <a href="spring-boot/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/spring-example">Example</a>
@@ -3162,7 +3165,7 @@ Only the <strong>runner block</strong> (how Stove boots your app). Component con
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Ktor</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
-    <p class="stove-sys-card-desc"><code>embeddedServer(...)</code> wrapped in <code>run(args)</code>. Koin or Ktor-DI.</p>
+    <p class="stove-sys-card-desc"><code>embeddedServer(...)</code> wrapped in <code>run(args)</code>; bridge support for Koin or Ktor-DI.</p>
     <div class="stove-sys-card-actions">
       <a href="ktor/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/ktor-example">Example</a>
@@ -3172,7 +3175,7 @@ Only the <strong>runner block</strong> (how Stove boots your app). Component con
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Micronaut</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
-    <p class="stove-sys-card-desc"><code>ApplicationContext</code> startup wrapped in <code>run(args)</code>.</p>
+    <p class="stove-sys-card-desc"><code>ApplicationContext</code> startup wrapped in <code>run(args)</code>; bridge access to Micronaut beans.</p>
     <div class="stove-sys-card-actions">
       <a href="micronaut/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/micronaut-example">Example</a>
@@ -3182,7 +3185,7 @@ Only the <strong>runner block</strong> (how Stove boots your app). Component con
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Quarkus</strong><span class="stove-sys-card-badge">Bridge ✗</span></div>
-    <p class="stove-sys-card-desc"><code>@QuarkusMain</code> plus <code>Quarkus.run(*args)</code>. Needs readiness signal.</p>
+    <p class="stove-sys-card-desc"><code>@QuarkusMain</code> plus <code>Quarkus.run(*args)</code>; use readiness because bridge is not available.</p>
     <div class="stove-sys-card-actions">
       <a href="quarkus/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/quarkus-example">Example</a>
@@ -3239,7 +3242,7 @@ Only the <strong>runner block</strong> (how Stove boots your app). Component con
   </div>
 </div>
 
-<p>Everything around it. <code>httpClient</code>, <code>postgresql</code>, <code>kafka</code>, <code>wiremock</code>, <code>tracing</code>. Looks the same.</p>
+<p>Everything around the runner stays the same: <code>httpClient</code>, <code>postgresql</code>, <code>kafka</code>, <code>wiremock</code>, <code>tracing</code>, reporting, and test assertions.</p>
 <h2 id="bridge-availability">Bridge availability<a class="headerlink" href="#bridge-availability" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3253,17 +3256,17 @@ Only the <strong>runner block</strong> (how Stove boots your app). Component con
 <tr>
 <td>Spring Boot</td>
 <td>✓</td>
-<td><code>ApplicationContext</code> access wired in</td>
+<td>exposes the running <code>ApplicationContext</code></td>
 </tr>
 <tr>
 <td>Ktor</td>
 <td>✓</td>
-<td>Koin or Ktor-DI container exposed</td>
+<td>exposes the selected Koin or Ktor-DI container</td>
 </tr>
 <tr>
 <td>Micronaut</td>
 <td>✓</td>
-<td><code>ApplicationContext</code> access wired in</td>
+<td>exposes the running <code>ApplicationContext</code></td>
 </tr>
 <tr>
 <td>Quarkus</td>
@@ -3275,7 +3278,7 @@ Only the <strong>runner block</strong> (how Stove boots your app). Component con
 <p>For Quarkus, drive verification through HTTP, DB queries, and Kafka assertions instead of <code>using&lt;T&gt; { ... }</code>.</p>
 <h2 id="what-stays-identical">What stays identical<a class="headerlink" href="#what-stays-identical" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>Stove()</code> lifecycle, <code>with { }</code> registration</li>
+<li><code>Stove()</code> lifecycle and <code>with { }</code> registration order</li>
 <li>every system module (<code>stove-postgres</code>, <code>stove-kafka</code>, <code>stove-wiremock</code>, ...)</li>
 <li>the test DSL: <code>stove { http { } postgresql { } kafka { } }</code></li>
 <li><a href="../Components/13-reporting/">reporting</a>, <a href="../Components/15-tracing/">tracing</a>, <a href="../Components/18-dashboard/">dashboard</a>, <a href="../Components/21-mcp/">MCP</a></li>

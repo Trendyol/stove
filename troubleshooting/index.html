@@ -3632,10 +3632,13 @@
 
 
 <h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
-<p>Symptom-driven index. Skim the tables. Click into the section for a fix.</p>
+<p>Use this page from the symptom back to the runtime boundary that failed: Docker, dependency startup, application boot,
+configuration injection, serializers, async assertions, or observability.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">Read the failure report first</span>
-With the Kotest or JUnit extension registered, failures already carry the timeline (HTTP calls, DB ops, Kafka publishes, WireMock matches) right above the assertion. Most issues become obvious there. If they don't, this page covers the rest.</p>
+With the Kotest or JUnit extension registered, failures include the Stove timeline (HTTP calls, database operations,
+Kafka observations, WireMock matches) above the assertion failure. Check that report first; it usually identifies which
+system saw the last successful operation.</p>
 </div>
 <h2 id="quick-lookup">Quick lookup<a class="headerlink" href="#quick-lookup" title="Permanent link">&para;</a></h2>
 <table>
@@ -3721,8 +3724,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 <td>Most common</td>
 </tr>
 <tr>
-<td><code>docker info</code> works on the same shell?</td>
-<td>Daemon reachable check</td>
+<td>Run <code>docker info</code> from the same shell that runs Gradle</td>
+<td>Confirms the daemon is reachable from the test process</td>
 </tr>
 <tr>
 <td>Use <a href="../Components/11-provided-instances/">Provided Instances</a></td>
@@ -3788,8 +3791,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 <td>Pre-pull in CI cache step</td>
 </tr>
 <tr>
-<td>Init time</td>
-<td>Increase <code>startup timeout</code> per system, or <code>keepDependenciesRunning()</code> locally</td>
+<td>Dependency initialization time</td>
+<td>Increase startup timeout per system, or use <code>keepDependenciesRunning()</code> locally</td>
 </tr>
 <tr>
 <td>Health check slow</td>
@@ -3815,15 +3818,15 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 <tbody>
 <tr>
 <td>Spring <code>BeanCreationException</code></td>
-<td>Real config issue. Read the cause, fix the bean</td>
+<td>Treat it as an application configuration error; inspect the root cause and fix the bean</td>
 </tr>
 <tr>
 <td><code>port already in use</code></td>
-<td>App's port matches another service; pass a different <code>server.port=</code> via <code>withParameters</code></td>
+<td>The app's port matches another process; pass a different <code>server.port=</code> via <code>withParameters</code></td>
 </tr>
 <tr>
-<td><code>runner =</code> never returns</td>
-<td>Did you pass <code>wait = false</code> for Ktor / forget <code>Quarkus.run(*args)</code> style?</td>
+<td>Runner never reaches readiness</td>
+<td>For Ktor, start with <code>wait = false</code>; for Quarkus, use the documented <code>Quarkus.run(*args)</code> startup pattern and readiness signal</td>
 </tr>
 </tbody>
 </table>
@@ -3857,11 +3860,11 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 <h2 id="assertion-timeouts">Assertion timeouts<a class="headerlink" href="#assertion-timeouts" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Timed out waiting for condition
 </span></code></pre></div>
-<p>Five things to check:</p>
+<p>Check the boundary where Stove expected to observe progress:</p>
 <ol>
 <li><strong>The operation actually triggers.</strong> Add a <code>println</code> or <code>using&lt;X&gt; { ... }</code> inspection to confirm the code path fires.</li>
 <li><strong>Async work has time to complete.</strong> Default Stove timeouts are 5–10 seconds; increase per assertion if your async is slow.</li>
-<li><strong>Interceptor / bridge is registered.</strong> Without it, Stove sees nothing. See <a href="#kafka-assertions-silent">Kafka assertions silent</a> below.</li>
+<li><strong>Interceptor / bridge is registered.</strong> Without the capture mechanism, Stove can drive the app but cannot observe the event. See <a href="#kafka-assertions-silent">Kafka assertions silent</a> below.</li>
 <li><strong>Topic / collection / table names match production.</strong> Off-by-one names = silent miss.</li>
 <li><strong>App's offsets aren't behind.</strong> Add <code>auto-offset-reset=earliest</code> for fresh consumers.</li>
 </ol>
@@ -3870,7 +3873,7 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>MismatchedInputException: Cannot deserialize
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Field is unexpectedly null
 </span></code></pre></div>
-<p>Stove's serde and your app's <code>ObjectMapper</code> must agree. Align them:</p>
+<p>Stove's serde and your app's <code>ObjectMapper</code> must agree across HTTP, Kafka, and mocks. Align them:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">mapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ObjectMapper</span><span class="p">().</span><span class="na">apply</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">registerModule</span><span class="p">(</span><span class="n">KotlinModule</span><span class="p">.</span><span class="na">Builder</span><span class="p">().</span><span class="na">build</span><span class="p">())</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="n">registerModule</span><span class="p">(</span><span class="n">JavaTimeModule</span><span class="p">())</span>
@@ -3974,7 +3977,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>Test timeout when calling mocked endpoint
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>Mock not found / unexpected request
 </span></code></pre></div>
-<p><strong>Almost always:</strong> your app's external service URL doesn't point at WireMock.</p>
+<p>Most WireMock failures are configuration failures: the application under test is still calling the real URL, or a fixed
+test URL, instead of the WireMock base URL exposed by Stove.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="n">WireMockSystemOptions</span><span class="p">(</span>
@@ -4020,7 +4024,7 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </tr>
 <tr>
 <td>Async write hasn't landed</td>
-<td>Use a polling assertion, not an immediate read</td>
+<td>Use a Stove polling assertion, not an immediate raw client read</td>
 </tr>
 <tr>
 <td>Test cleanup ran early</td>
@@ -4037,7 +4041,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>Data from another test run appears
 </span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>&quot;Topic already exists&quot; / &quot;Index already exists&quot;
 </span></code></pre></div>
-<p>Cause: multiple test runs sharing the same resource names. Fix with <strong>unique resource prefixes per run.</strong></p>
+<p>Cause: multiple test runs share resource names. Fix with <strong>unique resource prefixes per run</strong> and pass those names into
+the application configuration.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kd">object</span><span class="w"> </span><span class="nc">TestRunContext</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="nv">runId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">&quot;CI_JOB_ID&quot;</span><span class="p">)</span>
 </span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span><span class="o">?:</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">().</span><span class="na">take</span><span class="p">(</span><span class="m">8</span><span class="p">)</span>
@@ -4061,7 +4066,7 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">    </span><span class="o">?.</span><span class="na">let</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">admin</span><span class="p">.</span><span class="na">deleteTopics</span><span class="p">(</span><span class="nb">it</span><span class="p">).</span><span class="na">all</span><span class="p">().</span><span class="na">get</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Always log the run ID at suite start. Forensic debugging gets a 10x lift.</p>
+<p>Always log the run ID at suite start so CI failures can be mapped back to the exact resources created by that run.</p>
 <p>Deep dive: <a href="../Components/11-provided-instances/#shared-infrastructure-isolation-pattern">Provided Instances · isolation</a>.</p>
 <h2 id="dashboard-mcp">Dashboard + MCP<a class="headerlink" href="#dashboard-mcp" title="Permanent link">&para;</a></h2>
 <table>
@@ -4074,11 +4079,11 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 <tbody>
 <tr>
 <td>Dashboard at <code>http://localhost:4040</code> empty</td>
-<td><code>stove</code> running? <code>dashboard { }</code> registered in <code>Stove().with</code>? <code>appName</code> set?</td>
+<td><code>stove</code> CLI running? <code>dashboard { }</code> registered in <code>Stove().with</code>? <code>appName</code> set?</td>
 </tr>
 <tr>
 <td><code>gRPC disabled</code> warning in logs</td>
-<td>CLI started after tests; restart in correct order</td>
+<td>CLI started after tests; start the CLI before the test suite</td>
 </tr>
 <tr>
 <td>Agent can't connect to MCP</td>
@@ -4094,7 +4099,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </tr>
 </tbody>
 </table>
-<p>MCP isn't required for Stove. It's a token-saver for agents. Falling back to the failure report + console + dashboard works fine.</p>
+<p>MCP is optional. It gives agents a structured way to read the same failure evidence humans see in the console and
+dashboard.</p>
 <h2 id="migrating-versions">Migrating versions<a class="headerlink" href="#migrating-versions" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4132,7 +4138,8 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 </tr>
 </tbody>
 </table>
-<p>Pin everything to one version. Mismatched modules cause confusing class-load errors.</p>
+<p>Pin the BOM, all <code>com.trendyol:stove-*</code> dependencies, the tracing Gradle plugin, and <code>stove-cli</code> to one Stove version.
+Mixed versions are a common cause of class-load errors and empty dashboard data.</p>
 <h2 id="common-faq">Common FAQ<a class="headerlink" href="#common-faq" title="Permanent link">&para;</a></h2>
 <details class="question">
 <summary>Can I use Stove with Java?</summary>
@@ -4184,7 +4191,7 @@ With the Kotest or JUnit extension registered, failures already carry the timeli
 <ul>
 <li>Docker running and reachable (or <a href="../Components/11-provided-instances/">Provided Instances</a> wired)</li>
 <li>One pinned Stove version across BOM + every dep</li>
-<li>App's <code>run(args)</code> extracted and exposed</li>
+<li>App's reusable <code>run(args)</code> entrypoint extracted and exposed</li>
 <li>Test config injected via <code>withParameters</code> / <code>configureExposedConfiguration</code></li>
 <li>Serializers aligned (Stove serde === app <code>ObjectMapper</code>)</li>
 <li>Kafka interceptor registered as bean + <code>kafka.interceptorClasses</code> property mapped</li>

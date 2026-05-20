@@ -3228,28 +3228,31 @@
 
 
 <h1 id="polyglot">Polyglot<a class="headerlink" href="#polyglot" title="Permanent link">&para;</a></h1>
-<p>Stove's testing model isn't JVM-only. Any app that speaks HTTP, databases, and messaging fits. Go, Python, Rust, Node, .NET. Pick how the app starts: as a host binary (fast iteration) or as a Docker image (CI parity).</p>
+<p>Stove's testing model is not limited to JVM applications. If an application can be started as a process, a container, or
+an already-running endpoint, Stove can drive it through external systems such as HTTP, gRPC, databases, Kafka, WireMock,
+and tracing. Go, Python, Rust, Node, and .NET follow the same runtime pattern; the language-specific work is reading
+configuration and exporting telemetry.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">Same DSL, different runner</span>
-<code>stove { http { } postgresql { } kafka { } tracing { } }</code> looks identical. Only the AUT runner changes. Bridge is unavailable. Verify through systems.</p>
+<code>stove { http { } postgresql { } kafka { } tracing { } }</code> keeps the same shape for registered systems. The application-under-test (AUT) runner changes to <code>processApp()</code>, <code>goApp()</code>, <code>containerApp()</code>, or <code>providedApplication()</code>. Process and container runners map system configuration into env vars or CLI args before startup. <code>providedApplication()</code> targets an app that is already running and externally configured; Stove checks readiness and runs assertions against configured endpoints and provided infrastructure. Bridge is unavailable because the app runs outside the test JVM.</p>
 </div>
 <h2 id="two-ways-to-run-the-app">Two ways to run the app<a class="headerlink" href="#two-ways-to-run-the-app" title="Permanent link">&para;</a></h2>
 <div class="stove-compare" markdown="0">
   <div>
     <h4>🏃 <code>stove-process</code></h4>
-    <p>Run a host binary (<code>goApp()</code> / <code>processApp()</code>). Fastest inner loop. Compile and go.</p>
+    <p>Run a host binary (<code>goApp()</code> / <code>processApp()</code>). Fastest inner loop when local runtime drift is acceptable.</p>
     <ul>
       <li>Quick to iterate</li>
       <li>Zero infra beyond your compiler</li>
-      <li>Approximate prod parity (host runtime)</li>
+      <li>Approximate production parity (host runtime)</li>
       <li>Best for dev + smoke tests</li>
     </ul>
   </div>
   <div>
     <h4>🐳 <code>stove-container</code></h4>
-    <p>Run any Docker image (<code>containerApp()</code>). CI-grade parity with what you ship.</p>
+    <p>Run any Docker image (<code>containerApp()</code>). Stronger parity with the artifact you ship.</p>
     <ul>
-      <li>Exact production parity</li>
+      <li>Production-image parity</li>
       <li>Image build per run</li>
       <li>Best for pre-merge + release validation</li>
       <li>Language-agnostic</li>
@@ -3270,13 +3273,15 @@
     S --&gt;|HTTP / gRPC asserts| APP
     S --&gt;|DB asserts| PG
     S --&gt;|trace asserts| T</code></pre>
-<p>Stove launches infra, hands your app the connection details (env vars / CLI args), and runs the standard DSL against it.</p>
+<p>For process and container runners, Stove launches infrastructure, maps connection details into environment variables or
+CLI arguments, waits for readiness, and runs the standard DSL against the AUT. With <code>providedApplication()</code>, Stove does
+not start the app or inject configuration; the app must already be configured to reach the same provided infrastructure.</p>
 <h2 id="language-requirements">Language requirements<a class="headerlink" href="#language-requirements" title="Permanent link">&para;</a></h2>
-<p>Any language that can:</p>
+<p>Any language can work if the AUT can:</p>
 <ol>
 <li><strong>Read env vars</strong> (or CLI args) for DB URLs, ports, credentials</li>
 <li><strong>Expose readiness</strong>. HTTP <code>/health</code> (preferred), TCP probe, custom probe, fixed delay</li>
-<li><strong>Handle SIGTERM</strong>. For clean teardown and Go integration coverage flush</li>
+<li><strong>Handle SIGTERM</strong>. Needed for clean teardown and, for Go, integration coverage flush</li>
 </ol>
 <h2 id="languages-we-walk-through">Languages we walk through<a class="headerlink" href="#languages-we-walk-through" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
@@ -3291,7 +3296,9 @@
   </div>
 </div>
 
-<p>Python, Rust, Node, .NET follow the same shape. Pick <code>processApp</code> (or <code>containerApp</code>) and your language's OTel SDK. Open an issue if you want a dedicated walkthrough.</p>
+<p>Python, Rust, Node, and .NET follow the same shape. Pick <code>processApp()</code> or <code>containerApp()</code>, map the configuration your
+app needs, and use that language's OpenTelemetry SDK if you want trace assertions. Open an issue if you want a dedicated
+walkthrough.</p>
 <h2 id="process-vs-container-at-a-glance">Process vs container at a glance<a class="headerlink" href="#process-vs-container-at-a-glance" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3418,14 +3425,20 @@
 </span></span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="hll"><span class="w">    </span><span class="n">testTaskNames</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;e2eTest&quot;</span><span class="p">))</span><span class="w">   </span><span class="c1">// and &quot;e2eTest-container&quot;, etc.</span>
 </span></span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Then instrument your app with your language's OTel SDK. Stove correlates spans back to the test via W3C <code>traceparent</code>. JVM apps get the agent attached automatically; non-JVM apps just need to read the OTLP endpoint from the standard env vars.</p>
+<p>Then instrument your app with your language's OTel SDK. Stove correlates spans back to the test via W3C <code>traceparent</code>.
+JVM apps can use the Java agent; non-JVM apps need explicit SDK instrumentation and must read the OTLP endpoint from the
+standard env vars.</p>
 <h3 id="3-write-tests-with-the-standard-dsl">3. Write tests with the standard DSL<a class="headerlink" href="#3-write-tests-with-the-standard-dsl" title="Permanent link">&para;</a></h3>
-<p><code>http { }</code>, <code>postgresql { }</code>, <code>kafka { }</code>, <code>tracing { }</code>, <code>dashboard { }</code>. Identical to JVM tests.</p>
+<p><code>http { }</code>, <code>postgresql { }</code>, <code>kafka { }</code>, and <code>tracing { }</code> use the same Stove test DSL as JVM tests, as long as the
+corresponding systems are registered and the AUT is configured to talk to them. Dashboard and MCP are observability and
+access surfaces; they record or expose run evidence but are not assertion blocks.</p>
 <h2 id="what-you-cant-do">What you can't do<a class="headerlink" href="#what-you-cant-do" title="Permanent link">&para;</a></h2>
 <ul>
 <li><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/274c.svg" title=":x:" /> <strong>No <code>bridge()</code> / <code>using&lt;T&gt; { }</code></strong>. Different process / container.</li>
 </ul>
-<p>Everything else works: HTTP/gRPC, DB queries, Kafka assertions (<code>shouldBePublished</code>, <code>shouldBeConsumed</code>), tracing, WireMock, Dashboard, MCP.</p>
+<p>External-surface assertions still work: HTTP/gRPC, database queries, WireMock, and tracing. Kafka assertions such as
+<code>shouldBePublished</code> and <code>shouldBeConsumed</code> require a Stove Kafka bridge or equivalent client instrumentation in the
+non-JVM app. Dashboard and MCP can expose the resulting evidence when enabled.</p>
 <div class="admonition info">
 <p class="admonition-title">Kafka assertions for non-JVM apps</p>
 <p>Stove ships bridge libraries to expose <code>shouldBeConsumed</code> / <code>shouldBePublished</code> for non-JVM apps. The <a href="https://github.com/trendyol/stove/tree/main/go/stove-kafka"><code>stove-kafka</code></a> Go library supports IBM/sarama (interceptors), twmb/franz-go (hooks), and segmentio/kafka-go (helpers). The library-agnostic core lets you wire any other client (e.g. confluent-kafka-go).</p>
@@ -3435,7 +3448,7 @@
 <li><a href="go/">Go overview</a>. Pick the right mode for your project</li>
 <li><a href="go-process/">Go Process Mode</a>. Full walkthrough (HTTP + PG + Kafka + OTel + coverage)</li>
 <li><a href="go-container/">Go Container Mode</a>. Production-image parity</li>
-<li><a href="../Components/19-provided-application/">Provided Application</a>. Already-deployed apps (black-box)</li>
+<li><a href="../Components/19-provided-application/">Provided Application</a>. Already-running apps (black-box)</li>
 <li><a href="../Components/18-dashboard/">Dashboard</a> · <a href="../Components/21-mcp/">MCP</a>. Observability</li>
 <li><a href="../writing-custom-systems/">Custom systems</a>. Extend Stove</li>
 </ul>

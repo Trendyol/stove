@@ -3388,10 +3388,15 @@
 
 
 <h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<p>Boot your real app with real dependencies in five steps. Each step shows what changes, why it matters, and how to verify it worked.</p>
+<p>Boot the application under test with the dependencies it actually talks to. These five steps show the minimum wiring,
+where Stove takes over the runtime lifecycle, and how to verify the setup before adding more systems.</p>
+<p>Terminology used below: <strong>AUT</strong> means application under test; a <strong>system</strong> is a Stove module registered in
+<code>Stove().with { ... }</code>, such as HTTP, PostgreSQL, Kafka, WireMock, tracing, or dashboard; an <strong>AUT runner</strong> registers
+how Stove starts or targets the app; <strong>provided</strong> means Stove connects to existing infrastructure instead of starting a
+Testcontainer; <strong>bridge</strong> means optional DI-container access for supported JVM frameworks.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">If you'd rather click</span>
-The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>StoveConfig.kt</code>, and a runnable sample test from your selections. This page is the manual path with the <em>why</em>.</p>
+The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>StoveConfig.kt</code>, and a runnable sample test from your selections. This page is the manual path and explains the lifecycle behind the generated code.</p>
 </div>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <div class="stove-ribbon" markdown="0">
@@ -3426,7 +3431,7 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 <li>
 <p><span class="stove-step-tag">deps</span></p>
 <h3 id="add-the-minimum-dependencies">Add the minimum dependencies<a class="headerlink" href="#add-the-minimum-dependencies" title="Permanent link">&para;</a></h3>
-<p>Start with the smallest set that proves the wiring works: BOM + core + one starter + one test extension + <code>stove-http</code>. Add more later.</p>
+<p>Start with the smallest set that proves the wiring works: BOM + core + one AUT runner + one test extension + <code>stove-http</code>. Add database, messaging, mocks, and observability modules only when the app actually uses them.</p>
 <div class="admonition tip">
 <p class="admonition-title">Gradle recommended</p>
 <p>All examples use Gradle (Kotlin DSL). Maven works for Stove dependencies; the <strong><code>stoveTracing</code></strong> Gradle plugin is the easiest path to OTel tracing and is the recommended setup for observability.</p>
@@ -3443,7 +3448,7 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 <p class="admonition-title">Version alignment</p>
 <p>Keep the BOM, every <code>com.trendyol:stove-*</code>, and <code>stove-cli</code> (if you use the dashboard) on the same version. Check <a href="https://github.com/Trendyol/stove/releases">Releases</a>.</p>
 </div>
-<p>Components are á-la-carte. Add what you actually use:</p>
+<p>Systems are á-la-carte. Each dependency adds one DSL block and, when needed, one options object for container/provided runtime configuration:</p>
 <table>
 <thead>
 <tr>
@@ -3476,7 +3481,7 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 </table>
 <div class="admonition tip">
 <p class="admonition-title">Enable tracing with the Gradle plugin</p>
-<p><code>stove-tracing</code> is wired by the <strong><code>com.trendyol.stove.tracing</code></strong> Gradle plugin. It attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT. Zero app-code changes.</p>
+<p><code>stove-tracing</code> is wired by the <strong><code>com.trendyol.stove.tracing</code></strong> Gradle plugin. For in-process JVM applications launched by Stove, it attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT without application-code changes.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">plugins</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="p">(</span><span class="s">&quot;com.trendyol.stove.tracing&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="s">&quot;</span><span class="si">$</span><span class="n">stoveVersion</span><span class="s">&quot;</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
@@ -3490,7 +3495,7 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 <li>
 <p><span class="stove-step-tag">app</span></p>
 <h3 id="expose-a-reusable-entrypoint">Expose a reusable entrypoint<a class="headerlink" href="#expose-a-reusable-entrypoint" title="Permanent link">&para;</a></h3>
-<p>Stove boots your app from tests. Extract startup into a <code>run(args)</code> function that both <code>main</code> and Stove can call.</p>
+<p>Stove boots your app from tests. Extract startup into a reusable <code>run(args)</code> function so production <code>main</code> and the Stove runner execute the same startup path.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="spring-boot" name="__tabbed_1" type="radio" /><input id="ktor-koin" name="__tabbed_1" type="radio" /><input id="ktor-ktor-di" name="__tabbed_1" type="radio" /><input id="micronaut" name="__tabbed_1" type="radio" /><input id="quarkus" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="spring-boot">Spring Boot</label><label for="ktor-koin">Ktor (Koin)</label><label for="ktor-ktor-di">Ktor (Ktor-DI)</label><label for="micronaut">Micronaut</label><label for="quarkus">Quarkus</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3582,7 +3587,12 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 <p><span class="stove-step-tag">config</span>
 <a id="step-3-create-test-configuration"></a></p>
 <h3 id="configure-stove-once-per-suite">Configure Stove once per suite<a class="headerlink" href="#configure-stove-once-per-suite" title="Permanent link">&para;</a></h3>
-<p>Put e2e tests in a dedicated <code>src/test-e2e/</code> source set (<a href="../best-practices/#use-dedicated-source-set-for-e2e-tests">why</a>). <code>AbstractProjectConfig.beforeProject()</code> runs once for the entire suite. Set up Stove there, tear it down in <code>afterProject()</code>.</p>
+<p>Put e2e tests in a dedicated <code>src/test-e2e/</code> source set (<a href="../best-practices/#use-dedicated-source-set-for-e2e-tests">why</a>). <code>AbstractProjectConfig.beforeProject()</code> runs once for the entire suite. Register the systems your app talks to, then register one AUT runner last, and tear Stove down in <code>afterProject()</code>.</p>
+<p>At runtime, <code>Stove().with { ... }.run()</code> starts registered systems, collects their exposed configuration, starts the application under test with those properties/arguments, and leaves the suite ready for test bodies to call <code>stove { ... }</code>. <code>Stove.stop()</code> in <code>afterProject()</code> tears down the application and systems.</p>
+<div class="admonition note">
+<p class="admonition-title">System-derived config vs static runner parameters</p>
+<p>Use <code>configureExposedConfiguration</code> for values Stove only knows at runtime: container host/port, generated credentials, WireMock base URL, Kafka bootstrap servers, and interceptor classes. Use <code>withParameters</code> for static application settings such as <code>server.port=8080</code> or logging levels. This applies to framework/process/container runners. A <code>providedApplication()</code> target is already running, so Stove cannot inject environment variables, CLI args, or application properties into it; configure that app externally before the suite starts.</p>
+</div>
 <div class="admonition info">
 <p class="admonition-title">Kotest 6.x discovery</p>
 <p><code>AbstractProjectConfig</code> is <strong>not</strong> auto-scanned in Kotest 6.x. Add <code>src/test-e2e/resources/kotest.properties</code>:
@@ -3641,7 +3651,7 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 <li>
 <p><span class="stove-step-tag">first test</span></p>
 <h3 id="write-the-first-assertion">Write the first assertion<a class="headerlink" href="#write-the-first-assertion" title="Permanent link">&para;</a></h3>
-<p>The DSL is <code>stove { http { ... } }</code>. Read the result, assert against it. That's it.</p>
+<p>The DSL is <code>stove { http { ... } }</code>. The block uses the HTTP system registered during suite startup, sends the request to the application under test, and gives you the decoded response for assertions.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="kotest_1" name="__tabbed_3" type="radio" /><input id="junit_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="kotest_1">Kotest</label><label for="junit_1">JUnit</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3681,7 +3691,7 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 <li>
 <p><span class="stove-step-tag">grow</span></p>
 <h3 id="add-the-systems-your-app-actually-uses">Add the systems your app actually uses<a class="headerlink" href="#add-the-systems-your-app-actually-uses" title="Permanent link">&para;</a></h3>
-<p>The same <code>.with { }</code> block composes more systems. Below: HTTP in, Kafka events, Couchbase persistence, WireMock for outbound calls, and <code>bridge()</code> for DI access.</p>
+<p>The same <code>.with { }</code> block composes more systems. Each system can expose runtime values such as host, port, credentials, or interceptor classes; the runner receives those values before the app boots. Below: HTTP in, Kafka events, Couchbase persistence, WireMock for outbound calls, and <code>bridge()</code> for DI access on supported JVM frameworks.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="n">httpClient</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://localhost:8080&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="hll">
@@ -3702,15 +3712,22 @@ The <a href="../wizard/">Setup Wizard</a> generates the dependency block, <code>
 </span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">        </span><span class="p">)</span>
 </span><span id="__span-13-20"><a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-13-21"><a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>
-</span><span id="__span-13-22"><a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">    </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">WireMockSystemOptions</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-13-23"><a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">    </span><span class="n">bridge</span><span class="p">()</span><span class="w">  </span><span class="c1">// DI access for setup + verification</span>
-</span><span id="__span-13-24"><a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a>
-</span><span id="__span-13-25"><a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">    </span><span class="n">springBoot</span><span class="p">(</span>
-</span><span id="__span-13-26"><a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">        </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="na">myapp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-13-27"><a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="hll"><span class="w">        </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;server.port=8080&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;external.service.url=http://localhost:9090&quot;</span><span class="p">)</span>
-</span></span><span id="__span-13-28"><a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">    </span><span class="p">)</span>
-</span><span id="__span-13-29"><a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-13-21"><a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="hll">
+</span></span><span id="__span-13-22"><a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">    </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-23"><a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">        </span><span class="n">WireMockSystemOptions</span><span class="p">(</span>
+</span><span id="__span-13-24"><a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="w">            </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span>
+</span><span id="__span-13-25"><a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">            </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-13-26"><a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">                </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;external.service.url=</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">baseUrl</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span id="__span-13-27"><a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-13-28"><a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-13-29"><a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="hll"><span class="w">    </span><span class="p">}</span>
+</span></span><span id="__span-13-30"><a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="w">    </span><span class="n">bridge</span><span class="p">()</span><span class="w">  </span><span class="c1">// DI access for setup + verification</span>
+</span><span id="__span-13-31"><a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>
+</span><span id="__span-13-32"><a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="hll"><span class="w">    </span><span class="n">springBoot</span><span class="p">(</span>
+</span></span><span id="__span-13-33"><a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="w">        </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="na">myapp</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-13-34"><a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="w">        </span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;server.port=8080&quot;</span><span class="p">)</span>
+</span><span id="__span-13-35"><a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-13-36"><a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <p>Then assert across systems in one test:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;creating an order persists, calls payment, and publishes event&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -3754,7 +3771,7 @@ Generate unique IDs per test run.
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">userId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;user-</span><span class="si">${</span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">()</span><span class="si">}</span><span class="s">&quot;</span>
 </span></code></pre></div>
 
-No collisions, parallel-safe, works against shared infra.
+No collisions, parallel-safe, and compatible with shared infrastructure.
   </div>
   <div class="stove-dont">
 Hard-code identifiers.
@@ -3767,7 +3784,7 @@ Hard-code identifiers.
 
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
-Wait with timeout, not sleep.
+Use Stove's time-bounded assertions instead of sleeping.
 
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">shouldBePublished</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">actual</span><span class="p">.</span><span class="na">userId</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">userId</span>
@@ -3787,14 +3804,14 @@ Block the thread.
 
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
-Configure Stove **once** per suite.
+Configure Stove **once** per suite so containers, clients, and the application are reused for all tests in that suite.
 
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 
   </div>
   <div class="stove-dont">
-Spin Stove up per test.
+Start Stove per test.
 
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nd">@BeforeEach</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">setup</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span><span class="w">  </span><span class="c1">// very slow</span>
 </span></code></pre></div>
@@ -3803,7 +3820,7 @@ Spin Stove up per test.
 </div>
 
 <h2 id="local-loop-optimizations">Local-loop optimizations<a class="headerlink" href="#local-loop-optimizations" title="Permanent link">&para;</a></h2>
-<p><strong>Keep containers running between runs</strong> during development:</p>
+<p><strong>Keep containers running between local runs</strong> during development:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">Stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="hll"><span class="w">    </span><span class="n">keepDependenciesRunning</span><span class="p">()</span>
 </span></span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="p">}.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
@@ -3836,7 +3853,7 @@ Spin Stove up per test.
 </tr>
 <tr>
 <td>Slow startup</td>
-<td><code>keepDependenciesRunning()</code> during dev</td>
+<td><code>keepDependenciesRunning()</code> during local development</td>
 </tr>
 <tr>
 <td>Serialization errors</td>

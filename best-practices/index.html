@@ -2685,10 +2685,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parallel-safe-by-default-only-if-data-is-unique" class="md-nav__link">
+  <a href="#parallel-safe-only-when-data-is-unique" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parallel-safe by default. Only if data is unique
+        Parallel-safe only when data is unique
       
     </span>
   </a>
@@ -3655,10 +3655,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parallel-safe-by-default-only-if-data-is-unique" class="md-nav__link">
+  <a href="#parallel-safe-only-when-data-is-unique" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parallel-safe by default. Only if data is unique
+        Parallel-safe only when data is unique
       
     </span>
   </a>
@@ -3822,14 +3822,15 @@
 
 
 <h1 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h1>
-<p>Hard-won patterns from real Stove suites. Not rules. Defaults that pay off.</p>
+<p>Patterns that keep Stove suites fast, diagnosable, and safe to run repeatedly. Treat them as defaults unless your
+runtime or CI environment gives you a concrete reason to diverge.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">The short list</span>
-Dedicated e2e source set · Stove configured once · unique IDs per run · time-bounded waits (no sleep) · mock external boundaries · align serializers · be specific in assertions · clean up shared infra.</p>
+Dedicated e2e source set · Stove configured once per suite · unique IDs per run · time-bounded waits · external services mocked at the boundary · aligned serializers · specific assertions · cleanup for shared infrastructure.</p>
 </div>
 <h2 id="test-organization">Test organization<a class="headerlink" href="#test-organization" title="Permanent link">&para;</a></h2>
 <h3 id="use-a-dedicated-source-set"><a id="use-dedicated-source-set-for-e2e-tests"></a>Use a dedicated source set<a class="headerlink" href="#use-a-dedicated-source-set" title="Permanent link">&para;</a></h3>
-<p>Put e2e tests in <code>src/test-e2e/</code> so they don't slow down unit tests and can run independently in CI.</p>
+<p>Put e2e tests in <code>src/test-e2e/</code> so unit tests keep their fast feedback loop and CI can run the e2e suite as a separate verification task.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>src/
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── main/kotlin/
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── test/kotlin/                  unit tests
@@ -3868,7 +3869,7 @@ Dedicated e2e source set · Stove configured once · unique IDs per run · time-
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>./gradlew<span class="w"> </span>e2eTest<span class="w">       </span><span class="c1"># e2e only</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>./gradlew<span class="w"> </span><span class="nb">test</span><span class="w"> </span>e2eTest<span class="w">  </span><span class="c1"># both</span>
 </span></code></pre></div>
-<p>Benefits: isolated runs, CI parallelism, per-suite JVM tuning, clear boundaries.</p>
+<p>Benefits: isolated Gradle task, CI parallelism, separate JVM tuning, and a clear boundary between unit tests and runtime tests.</p>
 <h3 id="configure-stove-once-not-per-test">Configure Stove once, not per test<a class="headerlink" href="#configure-stove-once-not-per-test" title="Permanent link">&para;</a></h3>
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
@@ -3891,7 +3892,7 @@ Dedicated e2e source set · Stove configured once · unique IDs per run · time-
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">})</span>
 </span></code></pre></div>
 
-Per-test setup re-spins containers. Minutes lost.
+Per-test setup starts a new dependency graph and application runtime. That is slower and makes failures harder to compare.
 
   </div>
 </div>
@@ -3934,7 +3935,9 @@ Per-test setup re-spins containers. Minutes lost.
 </span></code></pre></div>
 <p>See <a href="../Components/11-provided-instances/#test-isolation-with-shared-infrastructure">Provided Instances · isolation</a> for per-system patterns.</p>
 <h3 id="cleanup-hooks">Cleanup hooks<a class="headerlink" href="#cleanup-hooks" title="Permanent link">&para;</a></h3>
-<p>Each system options block accepts <code>cleanup</code>. Use it on shared infra; optional for ephemeral containers.</p>
+<p>Database, messaging, cache, and other stateful system options expose <code>cleanup</code> where supported. Stove calls cleanup when
+the suite stops, before the system runtime is disposed. Use it on shared infrastructure; for disposable Testcontainers,
+unique test data is often enough.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">couchbase</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">CouchbaseSystemOptions</span><span class="p">(</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">defaultBucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;bucket&quot;</span><span class="p">,</span>
@@ -3958,7 +3961,7 @@ Per-test setup re-spins containers. Minutes lost.
 </span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="test-data-builders">Test data builders<a class="headerlink" href="#test-data-builders" title="Permanent link">&para;</a></h3>
-<p>Centralize defaults so every test reads as the <em>intent</em>, not the setup.</p>
+<p>Centralize defaults so each test reads as the behavior being exercised, not the object construction needed to reach it.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kd">object</span><span class="w"> </span><span class="nc">TestData</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="kd">fun</span><span class="w"> </span><span class="nf">user</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">(),</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Test User&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">=</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="n">User</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;</span><span class="si">$</span><span class="n">id</span><span class="s">@example.com&quot;</span><span class="p">)</span>
@@ -3984,7 +3987,7 @@ Per-test setup re-spins containers. Minutes lost.
 
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">postAndExpectBodilessResponse</span><span class="p">(</span><span class="s">&quot;/orders&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="nb">it</span><span class="p">.</span><span class="na">status</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">201</span><span class="w">   </span><span class="c1">// tells you nothing</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="nb">it</span><span class="p">.</span><span class="na">status</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="m">201</span><span class="w">   </span><span class="c1">// proves the route responded, not that the flow completed</span>
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="p">}</span>
 </span></code></pre></div>
@@ -3993,7 +3996,7 @@ Per-test setup re-spins containers. Minutes lost.
 </div>
 
 <h3 id="verify-side-effects-not-just-the-response">Verify side effects, not just the response<a class="headerlink" href="#verify-side-effects-not-just-the-response" title="Permanent link">&para;</a></h3>
-<p>A complete flow: request → DB row → published event → search index → cache.</p>
+<p>A useful e2e assertion follows the observable side effects of the use case: request -&gt; DB row -&gt; published event -&gt; search index -&gt; cache.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;order is fully processed&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="nv">orderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
 </span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
@@ -4074,7 +4077,7 @@ Per-test setup re-spins containers. Minutes lost.
 
 Call real third-party services in tests.
 
-Flaky, slow, costs money, can't simulate edge cases.
+This makes tests slower, less deterministic, and unable to simulate failure modes on demand.
 
   </div>
 </div>
@@ -4107,7 +4110,7 @@ Flaky, slow, costs money, can't simulate edge cases.
 </span><span id="__span-16-25"><a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="external-urls-must-be-configurable">External URLs must be configurable<a class="headerlink" href="#external-urls-must-be-configurable" title="Permanent link">&para;</a></h3>
-<p>WireMock can't intercept hardcoded URLs.</p>
+<p>WireMock can only stand in for an external service if the application reads the service URL from configuration.</p>
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
 
@@ -4139,7 +4142,9 @@ Test wires both to WireMock:
 </div>
 
 <h2 id="serialization">Serialization<a class="headerlink" href="#serialization" title="Permanent link">&para;</a></h2>
-<p>Stove's serde must match your app's. Mismatched mappers = mysterious null fields.</p>
+<p>Stove's serializers must match the application's serializers. If HTTP, Kafka, or WireMock use a different mapper from
+the app, failures often show up as null fields, unknown properties, or date/time parsing errors instead of clear domain
+errors.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">mapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ObjectMapper</span><span class="p">().</span><span class="na">apply</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="n">registerModule</span><span class="p">(</span><span class="n">JavaTimeModule</span><span class="p">())</span>
 </span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="n">disable</span><span class="p">(</span><span class="n">DeserializationFeature</span><span class="p">.</span><span class="na">FAIL_ON_UNKNOWN_PROPERTIES</span><span class="p">)</span>
@@ -4173,7 +4178,7 @@ Test wires both to WireMock:
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="hll"><span class="w">  </span><span class="n">keepDependenciesRunning</span><span class="p">()</span>
 </span></span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="p">}.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
-<p>Disable in CI for clean runs.</p>
+<p>Disable this in CI when each job should start from a clean dependency runtime.</p>
 <h3 id="configure-realistic-timeouts">Configure realistic timeouts<a class="headerlink" href="#configure-realistic-timeouts" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">http</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="n">HttpClientSystemOptions</span><span class="p">(</span><span class="n">baseUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">30.</span><span class="n">seconds</span><span class="p">)</span>
@@ -4185,8 +4190,9 @@ Test wires both to WireMock:
 </span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="p">}</span>
 </span></code></pre></div>
-<h3 id="parallel-safe-by-default-only-if-data-is-unique">Parallel-safe by default. Only if data is unique<a class="headerlink" href="#parallel-safe-by-default-only-if-data-is-unique" title="Permanent link">&para;</a></h3>
-<p>Already covered above. Same rule scales to parallel test execution.</p>
+<h3 id="parallel-safe-only-when-data-is-unique">Parallel-safe only when data is unique<a class="headerlink" href="#parallel-safe-only-when-data-is-unique" title="Permanent link">&para;</a></h3>
+<p>Parallel execution is safe when tests do not share identifiers, topics, schemas, indexes, or mutable in-memory state.
+Use per-test IDs locally and per-run prefixes on shared infrastructure.</p>
 <h2 id="debugging-tools">Debugging tools<a class="headerlink" href="#debugging-tools" title="Permanent link">&para;</a></h2>
 <p><strong>Verbose logging</strong> when you need it:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">springBoot</span><span class="p">(</span><span class="n">withParameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span>
