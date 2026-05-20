@@ -20,7 +20,7 @@
         
       
       
-      <link rel="icon" href="../../assets/logo.png">
+      <link rel="icon" href="../../assets/favicon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
@@ -94,7 +94,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/stove-mark.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -488,7 +488,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/stove-mark.svg" alt="logo">
 
     </a>
     Stove
@@ -2198,6 +2198,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-cli" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3176,6 +3187,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-cli" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3360,6 +3382,175 @@
 Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.</p>
 </div>
 <p>Current CLI versions start the dashboard with bare <code>stove</code>; older docs and scripts may still show <code>stove serve</code>.</p>
+<h2 id="preview">Preview<a class="headerlink" href="#preview" title="Permanent link">&para;</a></h2>
+<p>The dashboard is useful because the test timeline, trace tree, and system evidence stay linked to the same run instead of living in separate tools.</p>
+<div class="stove-dashboard-showcase" aria-label="Static Stove Dashboard preview showing a failed order flow with timeline, trace tree, and system evidence">
+  <div class="stove-dashboard-shell">
+    <div class="stove-dashboard-topbar">
+      <div class="stove-dashboard-brand">
+        <span class="stove-dashboard-logo" aria-hidden="true"></span>
+        <span>
+          <strong>Stove Dashboard</strong>
+          <em>v0.24.0 local evidence stream</em>
+        </span>
+      </div>
+      <div class="stove-dashboard-toolbar">
+        <span class="stove-dashboard-status">
+          <span class="stove-dashboard-pulse"></span>
+          <span>Live</span>
+        </span>
+        <code>MCP /mcp</code>
+      </div>
+    </div>
+
+    <div class="stove-dashboard-body">
+      <aside class="stove-dashboard-sidebar">
+        <div class="stove-dashboard-label">Application</div>
+        <div class="stove-dashboard-app-picker">order-service <span>12 runs</span></div>
+
+        <div class="stove-dashboard-run-summary">
+          <span><strong>8</strong><em>Total</em></span>
+          <span><strong>0</strong><em>Running</em></span>
+          <span><strong>7</strong><em>Pass</em></span>
+          <span><strong class="is-fail">1</strong><em>Fail</em></span>
+        </div>
+
+        <div class="stove-dashboard-filters">
+          <span class="is-active">All</span>
+          <span>Pass</span>
+          <span>Fail</span>
+        </div>
+
+        <div class="stove-dashboard-run is-active">
+          <span>
+            <strong>OrderFlowTest</strong>
+            <em>create order publishes event</em>
+          </span>
+          <b class="is-fail">failed</b>
+        </div>
+        <div class="stove-dashboard-run">
+          <span>
+            <strong>InventoryFlowTest</strong>
+            <em>reserves stock</em>
+          </span>
+          <b class="is-pass">passed</b>
+        </div>
+        <div class="stove-dashboard-run">
+          <span>
+            <strong>SmokeTest</strong>
+            <em>health endpoint responds</em>
+          </span>
+          <b class="is-pass">passed</b>
+        </div>
+      </aside>
+
+      <main class="stove-dashboard-main">
+        <div class="stove-dashboard-heading">
+          <span>
+            <em>OrderFlowTest</em>
+            <strong>create order publishes event</strong>
+          </span>
+          <span class="stove-dashboard-heading-actions">
+            <b class="is-fail">failed</b>
+            <code>412 ms</code>
+          </span>
+        </div>
+
+        <div class="stove-dashboard-tabs">
+          <span class="is-active">Timeline (4)</span>
+          <span>Trace (5)</span>
+          <span>Snapshots (3)</span>
+          <span>Flow</span>
+        </div>
+
+        <div class="stove-dashboard-grid">
+          <section class="stove-dashboard-panel stove-dashboard-timeline">
+            <div class="stove-dashboard-panel-head">
+              <strong>Timeline</strong>
+              <span>412 ms</span>
+            </div>
+            <ol>
+              <li class="is-ok">
+                <span>HTTP</span>
+                <strong>POST /orders</strong>
+                <em>201 / 42 ms</em>
+              </li>
+              <li class="is-ok">
+                <span>PostgreSQL</span>
+                <strong>insert orders</strong>
+                <em>18 ms</em>
+              </li>
+              <li class="is-ok">
+                <span>Kafka</span>
+                <strong>order.created published</strong>
+                <em>partition 0</em>
+              </li>
+              <li class="is-selected is-fail">
+                <span>HTTP</span>
+                <strong>POST /payment/charge</strong>
+                <em>500 / 117 ms</em>
+              </li>
+            </ol>
+          </section>
+
+          <section class="stove-dashboard-panel stove-dashboard-trace">
+            <div class="stove-dashboard-panel-head">
+              <strong>Trace tree</strong>
+              <span>traceparent linked</span>
+            </div>
+            <div class="stove-dashboard-span depth-0 is-ok">
+              <span>test: create order</span>
+              <em>412 ms</em>
+            </div>
+            <div class="stove-dashboard-span depth-1 is-ok">
+              <span>HTTP POST /orders</span>
+              <em>405 ms</em>
+            </div>
+            <div class="stove-dashboard-span depth-2 is-ok">
+              <span>OrderService.place</span>
+              <em>318 ms</em>
+            </div>
+            <div class="stove-dashboard-span depth-3 is-fail">
+              <span>PaymentClient.charge</span>
+              <em>gateway timeout</em>
+            </div>
+            <div class="stove-dashboard-span depth-3 is-ok">
+              <span>Kafka send order.created</span>
+              <em>9 ms</em>
+            </div>
+          </section>
+
+          <section class="stove-dashboard-panel stove-dashboard-evidence">
+            <div class="stove-dashboard-panel-head">
+              <strong>System evidence</strong>
+              <span>captured at failure</span>
+            </div>
+            <div class="stove-dashboard-metric">
+              <span>Kafka</span>
+              <strong>1 message</strong>
+              <em>order.created</em>
+            </div>
+            <div class="stove-dashboard-metric">
+              <span>PostgreSQL</span>
+              <strong>1 row</strong>
+              <em>orders.status = PENDING</em>
+            </div>
+            <div class="stove-dashboard-metric is-fail">
+              <span>HTTP</span>
+              <strong>500</strong>
+              <em>payment gateway timeout</em>
+            </div>
+            <div class="stove-dashboard-tools">
+              <span>MCP: stove_failure_detail</span>
+              <span>MCP: stove_trace</span>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
 <h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="homebrew" name="__tabbed_1" type="radio" /><input id="curl" name="__tabbed_1" type="radio" /><input id="manual" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="homebrew">Homebrew</label><label for="curl">curl</label><label for="manual">Manual</label></div>
 <div class="tabbed-content">
