@@ -593,17 +593,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pick-your-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pick your path
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#why-stove-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3145,17 +3134,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pick-your-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pick your path
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#why-stove-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3295,62 +3273,6 @@ Stove starts your app the way production starts it, hands it real containers (or
   </noscript>
 </div>
 
-<h2 class="stove-centered" id="pick-your-path">Pick your path<a class="headerlink" href="#pick-your-path" title="Permanent link">&para;</a></h2>
-<div class="stove-centered">
-<pre class="mermaid"><code>graph LR
-    A([What are you testing?]) --&gt; B[JVM app]
-    A --&gt; C[Polyglot binary]
-    A --&gt; D[Already-deployed]
-    B --&gt; B1[Spring · Ktor · Micronaut · Quarkus]
-    C --&gt; C1[process mode&lt;br/&gt;goApp · processApp]
-    C --&gt; C2[container mode&lt;br/&gt;any Docker image]
-    D --&gt; D1[providedApplication&lt;br/&gt;black-box smoke]
-    B1 &amp; C1 &amp; C2 &amp; D1 --&gt; Z[Pick systems · add observability · write tests]</code></pre>
-</div>
-<div class="grid cards stove-cards-center">
-<ul>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.5 9a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5m-3.07-.85L2 20.59 3.41 22 15.85 9.57c-.6-.33-1.09-.82-1.42-1.42M13 5l.63-1.37L15 3l-1.37-.63L13 1l-.62 1.37L11 3l1.38.63zm8 0 .63-1.37L23 3l-1.37-.63L21 1l-.62 1.37L19 3l1.38.63zm0 4-.62 1.37L19 11l1.38.63L21 13l.63-1.37L23 11l-1.37-.63z"/></svg></span> <strong>Setup Wizard</strong></p>
-<p>Compose your full setup in clicks.</p>
-<p><a href="wizard/">Open wizard</a> · <a class="open-in-wizard" data-sys="postgresql,kafka" data-mk="wiremock">Postgres + Kafka + WireMock preset</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m19 2-5 4.5v11l5-4.5zM6.5 5C4.55 5 2.45 5.4 1 6.5v14.66c0 .25.25.5.5.5.1 0 .15-.07.25-.07 1.35-.65 3.3-1.09 4.75-1.09 1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.31 4.75 1.06.1.05.15.03.25.03.25 0 .5-.25.5-.5V6.5c-.6-.45-1.25-.75-2-1V19c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V6.5C10.55 5.4 8.45 5 6.5 5"/></svg></span> <strong>Getting Started</strong></p>
-<p>The shared setup model and the DSL, once.</p>
-<p><a href="getting-started/">Read tutorial</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 18H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h1v5l2-1.5L14 7V2h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2m-2 2v2H5a2 2 0 0 1-2-2V6h2v14z"/></svg></span> <strong>Recipes</strong></p>
-<p>Real flows with full setup + test you can paste.</p>
-<p><a href="recipes/">Browse recipes</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20L12 12l10 10H2Z"/></svg></span> <strong>JVM frameworks</strong></p>
-<p>Spring Boot · Ktor · Micronaut · Quarkus.</p>
-<p><a href="frameworks/">Framework guides</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.64 10.33-.02-.06.22-.27.12-.08H6.8l.03.08-.18.26-.11.06zm-1.61.98L1 11.26l.22-.29.12-.06h4.9l.05.09-.08.24-.1.07zm2.6.99-.04-.06.16-.28.1-.06H6l.07.07-.02.25-.08.08zm11.15-2.16-1.78.47c-.19.04-.2.05-.34-.11-.16-.18-.27-.29-.5-.4-.66-.34-1.33-.24-1.94.15-.72.48-1.11 1.17-1.1 2.05.01.86.6 1.57 1.45 1.7.73.09 1.34-.17 1.83-.72l.29-.39h-2.07c-.22 0-.27-.14-.2-.32l.55-1.18c.03-.06.11-.17.27-.17h3.44c.15-.5.41-.96.75-1.41.78-1.03 1.73-1.57 3-1.81 1.07-.18 2.13-.07 3.07.57.84.58 1.37 1.36 1.5 2.39.19 1.45-.24 2.63-1.24 3.65-.71.72-1.58 1.17-2.57 1.39l-.86.08c-.98-.02-1.87-.3-2.62-.95-.52-.45-.88-.99-1.06-1.63-.15.24-.27.47-.44.7-.77 1.02-1.78 1.65-3.06 1.8-1.05.16-2.03-.05-2.89-.69-.79-.6-1.26-1.4-1.36-2.39-.14-1.17.2-2.22.91-3.14.76-1 1.77-1.63 3.01-1.86 1-.18 1.97-.06 2.84.52.57.38.97.9 1.24 1.52q.06.135-.12.18m6.11 1.6-.03-.36c-.19-1.06-1.17-1.66-2.19-1.43-1.01.22-1.67.85-1.88 1.86-.19.84.21 1.69.98 2.03.59.26 1.19.22 1.76-.06.84-.43 1.31-1.12 1.36-2.04"/></svg></span> <strong>Polyglot</strong></p>
-<p>Go, Python, Node, Rust via process or container mode.</p>
-<p><a href="other-languages/">Polyglot overview</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19c0 .34.04.67.09 1H6.5c-1.5 0-2.81-.5-3.89-1.57C1.54 17.38 1 16.09 1 14.58q0-1.95 1.17-3.48C3.34 9.57 4 9.43 5.25 9.15c.42-1.53 1.25-2.77 2.5-3.72S10.42 4 12 4c1.95 0 3.6.68 4.96 2.04S19 9.05 19 11c1.15.13 2.1.63 2.86 1.5.51.57.84 1.21 1 1.92A5.9 5.9 0 0 0 19 13c-3.31 0-6 2.69-6 6m4.75.43-1.59-1.59L15 19l2.75 3 4.75-4.75-1.16-1.41z"/></svg></span> <strong>Smoke test deployed app</strong></p>
-<p>Run Stove against an already-running service. Any language.</p>
-<p><a href="Components/19-provided-application/">Provided Application</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7zM4 3h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m5 4h1V5H9zm0 8h1v-2H9zM5 5v2h2V5zm0 8v2h2v-2z"/></svg></span> <strong>No Docker / CI shared infra</strong></p>
-<p>Connect to existing databases and brokers. Testcontainers off.</p>
-<p><a href="Components/11-provided-instances/">Provided Instances</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h2v18h18v2H2zm5 8h10v3H7zm4 5h10v3H11zM6 4h16v4h-2V6H8v2H6z"/></svg></span> <strong>When a test fails</strong></p>
-<p>Scroll story: assertion → console → dashboard → trace → MCP triage.</p>
-<p><a href="observability/when-it-fails/">Walk through it</a></p>
-</li>
-</ul>
-</div>
 <h2 id="why-stove-exists">Why Stove exists<a class="headerlink" href="#why-stove-exists" title="Permanent link">&para;</a></h2>
 <p>JVM frameworks are great. E2E test setup around them is not. Teams keep rebuilding the same boilerplate. Container lifecycle, port wiring, config injection, cleanup, diagnostics. Once per service.</p>
 <div class="stove-compare" markdown="0">
