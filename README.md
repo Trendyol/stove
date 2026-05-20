@@ -1,8 +1,8 @@
 <h1 align="center">Stove</h1>
 
 <p align="center">
-  End-to-end testing framework for the JVM.<br/>
-  Test your application against real infrastructure with a unified Kotlin DSL.
+  Kotlin-first end-to-end testing for JVM and polyglot applications.<br/>
+  Boot the application under test, wire real dependencies, and assert the full runtime flow from one DSL.
 </p>
 
 <p align="center">
@@ -47,33 +47,40 @@ stove {
 
 ## Why Stove?
 
-The JVM ecosystem has excellent frameworks for building applications, but e2e testing remains fragmented. Testcontainers
-handles infrastructure, but you still write boilerplate for configuration, app startup, and assertions. Differently for
-each framework.
+The JVM ecosystem has mature frameworks for building applications, but end-to-end test setup is still fragmented.
+Testcontainers can start infrastructure, but most teams still write their own lifecycle code for container startup,
+runtime configuration, application boot, cleanup, and assertions. That boilerplate usually looks different for every
+framework.
 
-Stove explores how the testing experience on the JVM can be improved by unifying assertions and the supporting
-infrastructure. It creates a concise and expressive testing DSL by leveraging Kotlin's unique language features.
+Stove puts those pieces behind one lifecycle. You register the systems your app talks to, then register one AUT runner.
+Stove starts or connects to the systems, exposes their runtime configuration to framework/process/container AUT runners,
+boots or targets the application under test (AUT), and gives your tests a single Kotlin DSL for driving and verifying the flow.
+A system is a Stove dependency, client, mock, or observability module such as HTTP, PostgreSQL, Kafka, WireMock, tracing,
+or dashboard. An AUT runner registers how Stove starts or targets the app.
 
-Stove works with Java, Kotlin, and Scala applications across Spring Boot, Ktor, Micronaut, and Quarkus. Because tests are
-framework-agnostic, teams can migrate between stacks without rewriting test code. It empowers developers to write clear
-assertions even for code that is traditionally hard to test (async flows, message consumers, database side effects).
+Stove works with Java, Kotlin, and Scala applications across Spring Boot, Ktor, Micronaut, and Quarkus. The same test DSL
+also supports non-JVM applications through process/container runners, or targets already-running applications with
+`providedApplication()`. Because assertions are system-oriented rather than framework-specific, teams can verify HTTP
+APIs, async message flows, database side effects, external service calls, and traces without rewriting the test model for
+each stack.
 
 **What Stove does:**
 
-- Starts containers via Testcontainers or connect **provided** infra (PostgreSQL, MySQL, Kafka, etc.)
-- Launches your **actual** application with test configuration
-- Exposes a unified DSL for assertions across all components
-- Provides access to your DI container from tests
-- Debug your entire use case with one click (breakpoints work everywhere)
-- Get code coverage from e2e test execution
-- Supports Spring Boot, Ktor, Micronaut, Quarkus
+- Starts dependencies with Testcontainers or connects to **provided** infrastructure (existing PostgreSQL, MySQL, Kafka, etc.)
+- Passes generated connection details to framework, process, or container runners before the AUT starts
+- Starts your **actual** application through a framework, process, or container runner, or targets an already-running app with `providedApplication()`
+- Exposes one DSL for HTTP, database, Kafka, WireMock, gRPC, tracing, and custom-system assertions; dashboard adds reporting evidence when enabled
+- Provides DI-container access for supported JVM frameworks via `bridge()` and `using<T> { ... }`
+- For in-process JVM runners, keeps breakpoints and e2e coverage in the same runtime path your use case follows
+- Supports Spring Boot, Ktor, Micronaut, Quarkus, and non-JVM apps through process/container modes
 - Extensible architecture for adding new components and
   frameworks ([Writing Custom Systems](https://trendyol.github.io/stove/writing-custom-systems/))
 
 ## Dashboard (New in 0.23.0)
 
-Stove Dashboard introduces a local real-time dashboard for end-to-end test runs. It captures HTTP calls, Kafka activity,
-database assertions, and traces in one place so you can inspect successful and failed runs with full context.
+Stove Dashboard is a local UI and API for end-to-end test runs. When the `stove` CLI is running and `dashboard { }` is
+registered, it receives events from your test JVM, stores run data in SQLite, and shows timelines, system snapshots, and
+traces in one place. Trace data still requires the tracing setup shown below.
 
 https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 
@@ -157,7 +164,7 @@ dependencies {
 > }
 > ```
 
-**2. Configure Stove** (runs once before all tests)
+**2. Configure Stove** (runs once before the e2e suite)
 
 ```kotlin
 class StoveConfig : AbstractProjectConfig() {
@@ -220,7 +227,8 @@ test("should process order") {
 
 ## Writing Tests
 
-All assertions happen inside `stove { }`. Each component has its own DSL block.
+All assertions happen inside `stove { }`. Each block resolves the system registered in `Stove().with { ... }`, so test
+code stays focused on the behavior under test instead of client construction or container plumbing.
 
 ### HTTP
 
@@ -276,7 +284,8 @@ wiremock {
 
 ### Application Beans
 
-Access your DI container directly via `bridge()`:
+For supported JVM frameworks, `bridge()` exposes the application DI container so a test can inspect or call beans after
+driving the public API:
 
 ```kotlin
 using<OrderService> { processOrder(orderId) }
@@ -287,7 +296,8 @@ using<UserRepo, EmailService> { userRepo, emailService ->
 
 ### Reporting
 
-When tests fail, Stove automatically enriches exceptions with a detailed execution report showing exactly what happened:
+When the Kotest or JUnit extension is registered, Stove enriches failures with an execution report. The report records
+the timeline of Stove operations and the latest snapshots each system can provide:
 
 <details>
 <summary><strong>Example Report</strong></summary>
@@ -400,7 +410,8 @@ Stove(
 
 ### Tracing
 
-When a test fails, see the **entire execution call chain** inside your application — every controller, service, database query, and Kafka message — powered by OpenTelemetry:
+When tracing is enabled, failed tests can show the **execution call chain** inside your application: controllers,
+services, database calls, Kafka publish/consume spans, and the failure point, powered by OpenTelemetry:
 
 ```
 EXECUTION TRACE (Call Chain)
@@ -435,7 +446,9 @@ tracing {
 }
 ```
 
-No code changes to your application required. The OpenTelemetry agent instruments 100+ libraries automatically.
+For in-process JVM applications launched by Stove with the tracing Gradle plugin, no application-code changes are
+required. The plugin attaches the OpenTelemetry Java agent to the test JVM and configures the agent endpoint for the
+application under test.
 
 ### AI Agent Integration
 
@@ -506,7 +519,7 @@ quarkus(
 
 ### Container Reuse
 
-Speed up local development by keeping containers running between test runs:
+Speed up local development by keeping reusable dependency containers running between test runs:
 
 ```kotlin
 Stove { keepDependenciesRunning() }.with { ... }
@@ -514,7 +527,7 @@ Stove { keepDependenciesRunning() }.with { ... }
 
 ### Cleanup
 
-Run cleanup logic after tests complete:
+Run cleanup logic when Stove stops at suite teardown:
 
 ```kotlin
 postgresql {
@@ -530,7 +543,7 @@ Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, El
 
 ### Migrations
 
-Run database migrations before tests start:
+Run system migrations during suite startup before the application under test receives dependency configuration:
 
 ```kotlin
 postgresql {
@@ -546,7 +559,7 @@ Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, El
 
 ### Provided Instances
 
-Connect to existing infrastructure instead of starting containers (useful for CI/CD):
+Connect to existing infrastructure instead of starting Testcontainers (useful when CI already provides shared services):
 
 ```kotlin
 postgresql { PostgresqlOptions.provided(jdbcUrl = "jdbc:postgresql://ci-db:5432/test", ...) }

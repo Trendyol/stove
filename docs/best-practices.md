@@ -1,17 +1,18 @@
 # Best Practices
 
-Hard-won patterns from real Stove suites. Not rules. Defaults that pay off.
+Patterns that keep Stove suites fast, diagnosable, and safe to run repeatedly. Treat them as defaults unless your
+runtime or CI environment gives you a concrete reason to diverge.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">The short list</span>
-Dedicated e2e source set · Stove configured once · unique IDs per run · time-bounded waits (no sleep) · mock external boundaries · align serializers · be specific in assertions · clean up shared infra.
+Dedicated e2e source set · Stove configured once per suite · unique IDs per run · time-bounded waits · external services mocked at the boundary · aligned serializers · specific assertions · cleanup for shared infrastructure.
 </div>
 
 ## Test organization
 
 ### <a id="use-dedicated-source-set-for-e2e-tests"></a>Use a dedicated source set
 
-Put e2e tests in `src/test-e2e/` so they don't slow down unit tests and can run independently in CI.
+Put e2e tests in `src/test-e2e/` so unit tests keep their fast feedback loop and CI can run the e2e suite as a separate verification task.
 
 ```
 src/
@@ -58,7 +59,7 @@ idea {
 ./gradlew test e2eTest  # both
 ```
 
-Benefits: isolated runs, CI parallelism, per-suite JVM tuning, clear boundaries.
+Benefits: isolated Gradle task, CI parallelism, separate JVM tuning, and a clear boundary between unit tests and runtime tests.
 
 ### Configure Stove once, not per test
 
@@ -85,7 +86,7 @@ class MyTest : FunSpec({
 })
 ```
 
-Per-test setup re-spins containers. Minutes lost.
+Per-test setup starts a new dependency graph and application runtime. That is slower and makes failures harder to compare.
 
   </div>
 </div>
@@ -138,7 +139,9 @@ See [Provided Instances · isolation](Components/11-provided-instances.md#test-i
 
 ### Cleanup hooks
 
-Each system options block accepts `cleanup`. Use it on shared infra; optional for ephemeral containers.
+Database, messaging, cache, and other stateful system options expose `cleanup` where supported. Stove calls cleanup when
+the suite stops, before the system runtime is disposed. Use it on shared infrastructure; for disposable Testcontainers,
+unique test data is often enough.
 
 ```kotlin
 couchbase {
@@ -166,7 +169,7 @@ kafka {
 
 ### Test data builders
 
-Centralize defaults so every test reads as the *intent*, not the setup.
+Centralize defaults so each test reads as the behavior being exercised, not the object construction needed to reach it.
 
 ```kotlin
 object TestData {
@@ -199,7 +202,7 @@ http {
 ```kotlin
 http {
   postAndExpectBodilessResponse("/orders", body) {
-    it.status shouldBe 201   // tells you nothing
+    it.status shouldBe 201   // proves the route responded, not that the flow completed
   }
 }
 ```
@@ -209,7 +212,7 @@ http {
 
 ### Verify side effects, not just the response
 
-A complete flow: request → DB row → published event → search index → cache.
+A useful e2e assertion follows the observable side effects of the use case: request -> DB row -> published event -> search index -> cache.
 
 ```kotlin hl_lines="5 14 22 29 36"
 test("order is fully processed") {
@@ -299,7 +302,7 @@ http { /* drive your app */ }
 
 Call real third-party services in tests.
 
-Flaky, slow, costs money, can't simulate edge cases.
+This makes tests slower, less deterministic, and unable to simulate failure modes on demand.
 
   </div>
 </div>
@@ -336,7 +339,7 @@ test("retry on transient 503s") {
 
 ### External URLs must be configurable
 
-WireMock can't intercept hardcoded URLs.
+WireMock can only stand in for an external service if the application reads the service URL from configuration.
 
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
@@ -373,7 +376,9 @@ class PaymentClient {
 
 ## Serialization
 
-Stove's serde must match your app's. Mismatched mappers = mysterious null fields.
+Stove's serializers must match the application's serializers. If HTTP, Kafka, or WireMock use a different mapper from
+the app, failures often show up as null fields, unknown properties, or date/time parsing errors instead of clear domain
+errors.
 
 ```kotlin
 val mapper = ObjectMapper().apply {
@@ -414,7 +419,7 @@ Stove {
 }.with { /* ... */ }.run()
 ```
 
-Disable in CI for clean runs.
+Disable this in CI when each job should start from a clean dependency runtime.
 
 ### Configure realistic timeouts
 
@@ -430,9 +435,10 @@ kafka {
 }
 ```
 
-### Parallel-safe by default. Only if data is unique
+### Parallel-safe only when data is unique
 
-Already covered above. Same rule scales to parallel test execution.
+Parallel execution is safe when tests do not share identifiers, topics, schemas, indexes, or mutable in-memory state.
+Use per-test IDs locally and per-run prefixes on shared infrastructure.
 
 ## Debugging tools
 

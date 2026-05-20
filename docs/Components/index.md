@@ -1,10 +1,14 @@
 # Systems
 
-Stove is pluggable. Each physical dependency, mock, or observability surface is a separate module. Add only what your test touches. Default mode uses [Testcontainers](https://testcontainers.com/); flip to [Provided Instances](11-provided-instances.md) to wire to existing infra (no Docker required).
+Stove is pluggable. Each dependency, test-side client, mock, and observability surface is a separate system module. AUT
+runners are registered separately to start or target the application under test. Add only what your tests need. Default mode uses [Testcontainers](https://testcontainers.com/); switch to
+[Provided Instances](11-provided-instances.md) when the infrastructure already exists or Docker is unavailable.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Most teams start small</span>
-Two to four systems gets you a useful suite. One starter (Spring/Ktor/Micronaut/Quarkus) plus the surface your app actually has. HTTP, your DB, maybe Kafka, maybe WireMock. Add observability when failures start hurting.
+Two to four systems usually gets a useful first suite: one driver such as HTTP or gRPC, and the stateful systems the use
+case touches. Then register one AUT runner. Add tracing and dashboard when failure diagnosis needs more than console
+output.
 </div>
 
 ## Pick a starting set
@@ -16,7 +20,7 @@ Two to four systems gets you a useful suite. One starter (Spring/Ktor/Micronaut/
 | Service calling external API | `stove-http` + `stove-wiremock` |
 | gRPC service | `stove-grpc` + `stove-grpc-mock` |
 | Stateful service with caching | your DB + `stove-redis` |
-| Deployed service (any language) | `stove-http` + `stove-postgres` + `providedApplication()` |
+| Already-running service (any language) | `stove-http` + any provided dependencies + `providedApplication()` |
 
 Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresql,kafka" data-mk="wiremock">open with Postgres + Kafka + WireMock</a>.
 
@@ -113,7 +117,7 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
 <div class="stove-catalog">
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>HTTP Client</strong><span class="stove-sys-card-badge">Drive</span></div>
-    <p class="stove-sys-card-desc">Drive your app's REST API like a real client.</p>
+    <p class="stove-sys-card-desc">Drive your app's HTTP API and assert decoded responses.</p>
     <div class="stove-sys-card-actions">
       <a href="05-http/">Reference</a>
       <a class="open-in-wizard" data-sys="http">→ wizard</a>
@@ -121,7 +125,7 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
   </div>
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>gRPC Client</strong><span class="stove-sys-card-badge">Drive</span></div>
-    <p class="stove-sys-card-desc">Call your gRPC services with Wire and grpc-kotlin.</p>
+    <p class="stove-sys-card-desc">Call your gRPC services with Wire and grpc-kotlin clients.</p>
     <div class="stove-sys-card-actions">
       <a href="12-grpc/">Reference</a>
       <a class="open-in-wizard" data-sys="grpc">→ wizard</a>
@@ -157,17 +161,17 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
 <div class="stove-catalog">
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Reporting</strong><span class="stove-sys-card-badge">Console</span></div>
-    <p class="stove-sys-card-desc">Pretty console + JSON failure reports with execution context.</p>
+    <p class="stove-sys-card-desc">Console and JSON failure reports with timelines and system snapshots.</p>
     <div class="stove-sys-card-actions"><a href="13-reporting/">Reference</a></div>
   </div>
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Tracing</strong><span class="stove-sys-card-badge">OTel</span></div>
-    <p class="stove-sys-card-desc">OpenTelemetry agent + span tree. Full call chain on failure.</p>
+    <p class="stove-sys-card-desc">OpenTelemetry spans and validation DSL for application call chains.</p>
     <div class="stove-sys-card-actions"><a href="15-tracing/">Reference</a></div>
   </div>
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Dashboard</strong><span class="stove-sys-card-badge">Local UI</span></div>
-    <p class="stove-sys-card-desc">SQLite-backed web UI for timelines, traces, snapshots.</p>
+    <p class="stove-sys-card-desc">SQLite-backed local UI for timelines, traces, and snapshots.</p>
     <div class="stove-sys-card-actions"><a href="18-dashboard/">Reference</a></div>
   </div>
   <div class="stove-sys-card">
@@ -183,7 +187,7 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
 <div class="stove-catalog">
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Bridge</strong><span class="stove-sys-card-badge">DI access</span></div>
-    <p class="stove-sys-card-desc">Reach into the app's DI container. Repos, services, beans.</p>
+    <p class="stove-sys-card-desc">Reach into supported JVM DI containers for setup and verification.</p>
     <div class="stove-sys-card-actions"><a href="10-bridge/">Reference</a></div>
   </div>
   <div class="stove-sys-card">
@@ -193,7 +197,7 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
   </div>
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Provided Application</strong><span class="stove-sys-card-badge">Black-box</span></div>
-    <p class="stove-sys-card-desc">Test an already-deployed app. Any language, any framework.</p>
+    <p class="stove-sys-card-desc">Test an already-running app as a black-box target.</p>
     <div class="stove-sys-card-actions"><a href="19-provided-application/">Reference</a></div>
   </div>
   <div class="stove-sys-card">
@@ -211,7 +215,7 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
 
 ## Every system shares the same shape
 
-Once you've configured one, the others feel familiar.
+Once you configure one system, the lifecycle is the same for the rest.
 
 <div class="stove-anatomy" markdown="0">
   <div class="stove-anatomy-code">
@@ -233,10 +237,10 @@ componentName <span class="anchor">1</span> {
 }
   </div>
   <div class="stove-anatomy-notes">
-    <div class="stove-note"><span class="stove-note-tag">1</span><strong>DSL block</strong> registers the system in Stove's lifecycle.</div>
-    <div class="stove-note"><span class="stove-note-tag">2</span><strong>Container options</strong> pin image + tag, or swap to <code>.provided(...)</code> for existing infra.</div>
-    <div class="stove-note"><span class="stove-note-tag">3</span><strong>Exposed config</strong> hands runtime values (host, port, URL) to your app as properties before it boots.</div>
-    <div class="stove-note"><span class="stove-note-tag">4</span><strong>Cleanup</strong> wipes test data between runs. Essential for shared infra.</div>
+    <div class="stove-note"><span class="stove-note-tag">1</span><strong>DSL block</strong> registers the system before the suite starts.</div>
+    <div class="stove-note"><span class="stove-note-tag">2</span><strong>Runtime options</strong> pin a container image and tag, or switch to <code>.provided(...)</code> for existing infrastructure.</div>
+    <div class="stove-note"><span class="stove-note-tag">3</span><strong>Exposed config</strong> converts runtime values (host, port, URL, credentials) into properties before the app boots.</div>
+    <div class="stove-note"><span class="stove-note-tag">4</span><strong>Cleanup</strong> removes test data when Stove stops. Essential for shared infrastructure.</div>
   </div>
 </div>
 
@@ -245,7 +249,7 @@ componentName <span class="anchor">1</span> {
 <div class="stove-compare" markdown="0">
   <div>
     <h4>Container mode (default)</h4>
-    <p>Stove spins Testcontainers. Best for local dev and CI runners with Docker.</p>
+    <p>Stove starts Testcontainers. Best for local development and CI runners with Docker.</p>
 
 ```kotlin
 kafka {
@@ -259,7 +263,7 @@ kafka {
   </div>
   <div>
     <h4>Provided instance</h4>
-    <p>Connect to existing infra. Best when Docker isn't available or your CI already runs shared Kafka/Postgres.</p>
+    <p>Connect to existing infrastructure. Best when Docker isn't available or CI already runs shared Kafka/Postgres.</p>
 
 ```kotlin
 kafka {
@@ -277,7 +281,8 @@ See [Provided Instances](11-provided-instances.md) for prefixing strategies that
 
 ## Migrations and cleanup
 
-Databases support migrations and per-system cleanup hooks. Migrations run before the suite; cleanup runs between tests.
+Databases and other stateful systems support migrations and per-system cleanup hooks. Migrations run during suite
+startup before the application receives dependency configuration; cleanup runs when Stove stops at suite teardown.
 
 ```kotlin
 class CreateTablesMigration : DatabaseMigration<PostgresSqlMigrationContext> {

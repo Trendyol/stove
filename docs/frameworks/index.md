@@ -1,10 +1,13 @@
 # JVM Frameworks
 
-Same Stove. Same DSL. Different runner. Pick the starter that matches your app's framework. Every other moving part stays identical.
+The Stove lifecycle is the same across JVM frameworks: register systems, expose their configuration, start the
+application under test, then run assertions through `stove { }`. The framework starter only changes how the app is
+booted.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">What changes between starters</span>
-Only the **runner block** (how Stove boots your app). Component config, test DSL, observability. All identical across Spring · Ktor · Micronaut · Quarkus.
+Runner startup, readiness behavior, DI/test-dependency hooks, and bridge support differ by framework. System modules,
+the assertion DSL, reporting, tracing, dashboard, and MCP keep the same shape across Spring · Ktor · Micronaut · Quarkus.
 </div>
 
 ## The four starters
@@ -13,7 +16,7 @@ Only the **runner block** (how Stove boots your app). Component config, test DSL
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Spring Boot</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
-    <p class="stove-sys-card-desc"><code>runApplication(...)</code> wrapped in <code>run(args)</code>. First-class Stove integration.</p>
+    <p class="stove-sys-card-desc"><code>runApplication(...)</code> wrapped in <code>run(args)</code>; optional bridge access to the Spring context.</p>
     <div class="stove-sys-card-actions">
       <a href="spring-boot/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/spring-example">Example</a>
@@ -23,7 +26,7 @@ Only the **runner block** (how Stove boots your app). Component config, test DSL
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Ktor</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
-    <p class="stove-sys-card-desc"><code>embeddedServer(...)</code> wrapped in <code>run(args)</code>. Koin or Ktor-DI.</p>
+    <p class="stove-sys-card-desc"><code>embeddedServer(...)</code> wrapped in <code>run(args)</code>; bridge support for Koin or Ktor-DI.</p>
     <div class="stove-sys-card-actions">
       <a href="ktor/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/ktor-example">Example</a>
@@ -33,7 +36,7 @@ Only the **runner block** (how Stove boots your app). Component config, test DSL
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Micronaut</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
-    <p class="stove-sys-card-desc"><code>ApplicationContext</code> startup wrapped in <code>run(args)</code>.</p>
+    <p class="stove-sys-card-desc"><code>ApplicationContext</code> startup wrapped in <code>run(args)</code>; bridge access to Micronaut beans.</p>
     <div class="stove-sys-card-actions">
       <a href="micronaut/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/micronaut-example">Example</a>
@@ -43,7 +46,7 @@ Only the **runner block** (how Stove boots your app). Component config, test DSL
 
   <div class="stove-sys-card">
     <div class="stove-sys-card-head"><strong>Quarkus</strong><span class="stove-sys-card-badge">Bridge ✗</span></div>
-    <p class="stove-sys-card-desc"><code>@QuarkusMain</code> plus <code>Quarkus.run(*args)</code>. Needs readiness signal.</p>
+    <p class="stove-sys-card-desc"><code>@QuarkusMain</code> plus <code>Quarkus.run(*args)</code>; use readiness because bridge is not available.</p>
     <div class="stove-sys-card-actions">
       <a href="quarkus/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/quarkus-example">Example</a>
@@ -105,22 +108,22 @@ quarkus(
   </div>
 </div>
 
-Everything around it. `httpClient`, `postgresql`, `kafka`, `wiremock`, `tracing`. Looks the same.
+Everything around the runner stays the same: `httpClient`, `postgresql`, `kafka`, `wiremock`, `tracing`, reporting, and test assertions.
 
 ## Bridge availability
 
 | Framework | Bridge | Why |
 |---|---|---|
-| Spring Boot | ✓ | `ApplicationContext` access wired in |
-| Ktor | ✓ | Koin or Ktor-DI container exposed |
-| Micronaut | ✓ | `ApplicationContext` access wired in |
+| Spring Boot | ✓ | exposes the running `ApplicationContext` |
+| Ktor | ✓ | exposes the selected Koin or Ktor-DI container |
+| Micronaut | ✓ | exposes the running `ApplicationContext` |
 | Quarkus | ✗ | CDI lifecycle integration not yet shipped |
 
 For Quarkus, drive verification through HTTP, DB queries, and Kafka assertions instead of `using<T> { ... }`.
 
 ## What stays identical
 
-- `Stove()` lifecycle, `with { }` registration
+- `Stove()` lifecycle and `with { }` registration order
 - every system module (`stove-postgres`, `stove-kafka`, `stove-wiremock`, ...)
 - the test DSL: `stove { http { } postgresql { } kafka { } }`
 - [reporting](../Components/13-reporting.md), [tracing](../Components/15-tracing.md), [dashboard](../Components/18-dashboard.md), [MCP](../Components/21-mcp.md)

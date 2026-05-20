@@ -1,10 +1,13 @@
 # Troubleshooting
 
-Symptom-driven index. Skim the tables. Click into the section for a fix.
+Use this page from the symptom back to the runtime boundary that failed: Docker, dependency startup, application boot,
+configuration injection, serializers, async assertions, or observability.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Read the failure report first</span>
-With the Kotest or JUnit extension registered, failures already carry the timeline (HTTP calls, DB ops, Kafka publishes, WireMock matches) right above the assertion. Most issues become obvious there. If they don't, this page covers the rest.
+With the Kotest or JUnit extension registered, failures include the Stove timeline (HTTP calls, database operations,
+Kafka observations, WireMock matches) above the assertion failure. Check that report first; it usually identifies which
+system saw the last successful operation.
 </div>
 
 ## Quick lookup
@@ -37,7 +40,7 @@ Could not find a valid Docker environment
 | Fix | When |
 |---|---|
 | Start Docker Desktop / colima / lima | Most common |
-| `docker info` works on the same shell? | Daemon reachable check |
+| Run `docker info` from the same shell that runs Gradle | Confirms the daemon is reachable from the test process |
 | Use [Provided Instances](Components/11-provided-instances.md) | Docker unavailable in CI |
 
 ### Port conflicts
@@ -85,7 +88,7 @@ For CI, prefer [Provided Instances](Components/11-provided-instances.md) to skip
 | Cause | Fix |
 |---|---|
 | Image pull on first run | Pre-pull in CI cache step |
-| Init time | Increase `startup timeout` per system, or `keepDependenciesRunning()` locally |
+| Dependency initialization time | Increase startup timeout per system, or use `keepDependenciesRunning()` locally |
 | Health check slow | Provide an explicit `readinessStrategy` (HTTP / TCP / Probe) |
 
 Keep containers warm during dev:
@@ -104,9 +107,9 @@ Disable in CI for clean runs.
 
 | Symptom | Fix |
 |---|---|
-| Spring `BeanCreationException` | Real config issue. Read the cause, fix the bean |
-| `port already in use` | App's port matches another service; pass a different `server.port=` via `withParameters` |
-| `runner = ` never returns | Did you pass `wait = false` for Ktor / forget `Quarkus.run(*args)` style? |
+| Spring `BeanCreationException` | Treat it as an application configuration error; inspect the root cause and fix the bean |
+| `port already in use` | The app's port matches another process; pass a different `server.port=` via `withParameters` |
+| Runner never reaches readiness | For Ktor, start with `wait = false`; for Quarkus, use the documented `Quarkus.run(*args)` startup pattern and readiness signal |
 
 ### Test bean override doesn't apply
 
@@ -145,11 +148,11 @@ For Ktor, see the [Ktor guide · Bridge auto-detection](frameworks/ktor.md#bridg
 Timed out waiting for condition
 ```
 
-Five things to check:
+Check the boundary where Stove expected to observe progress:
 
 1. **The operation actually triggers.** Add a `println` or `using<X> { ... }` inspection to confirm the code path fires.
 2. **Async work has time to complete.** Default Stove timeouts are 5–10 seconds; increase per assertion if your async is slow.
-3. **Interceptor / bridge is registered.** Without it, Stove sees nothing. See [Kafka assertions silent](#kafka-assertions-silent) below.
+3. **Interceptor / bridge is registered.** Without the capture mechanism, Stove can drive the app but cannot observe the event. See [Kafka assertions silent](#kafka-assertions-silent) below.
 4. **Topic / collection / table names match production.** Off-by-one names = silent miss.
 5. **App's offsets aren't behind.** Add `auto-offset-reset=earliest` for fresh consumers.
 
@@ -161,7 +164,7 @@ MismatchedInputException: Cannot deserialize
 Field is unexpectedly null
 ```
 
-Stove's serde and your app's `ObjectMapper` must agree. Align them:
+Stove's serde and your app's `ObjectMapper` must agree across HTTP, Kafka, and mocks. Align them:
 
 ```kotlin
 val mapper = ObjectMapper().apply {
@@ -263,7 +266,8 @@ Test timeout when calling mocked endpoint
 Mock not found / unexpected request
 ```
 
-**Almost always:** your app's external service URL doesn't point at WireMock.
+Most WireMock failures are configuration failures: the application under test is still calling the real URL, or a fixed
+test URL, instead of the WireMock base URL exposed by Stove.
 
 ```kotlin hl_lines="6 7 8 13 14 15"
 Stove().with {
@@ -310,7 +314,7 @@ Document not found
 | Cause | Fix |
 |---|---|
 | Collection/table name mismatch | Mirror your app's naming exactly |
-| Async write hasn't landed | Use a polling assertion, not an immediate read |
+| Async write hasn't landed | Use a Stove polling assertion, not an immediate raw client read |
 | Test cleanup ran early | Cleanup hooks run in `afterProject`, not between tests; if you need per-test isolation, use unique IDs |
 | Wrong index (ES). Near-real-time delay | `client().indices().refresh()` before the assertion |
 
@@ -322,7 +326,8 @@ Data from another test run appears
 "Topic already exists" / "Index already exists"
 ```
 
-Cause: multiple test runs sharing the same resource names. Fix with **unique resource prefixes per run.**
+Cause: multiple test runs share resource names. Fix with **unique resource prefixes per run** and pass those names into
+the application configuration.
 
 ```kotlin
 object TestRunContext {
@@ -355,7 +360,7 @@ cleanup = { admin ->
 }
 ```
 
-Always log the run ID at suite start. Forensic debugging gets a 10x lift.
+Always log the run ID at suite start so CI failures can be mapped back to the exact resources created by that run.
 
 Deep dive: [Provided Instances · isolation](Components/11-provided-instances.md#shared-infrastructure-isolation-pattern).
 
@@ -363,13 +368,14 @@ Deep dive: [Provided Instances · isolation](Components/11-provided-instances.md
 
 | Symptom | Fix |
 |---|---|
-| Dashboard at `http://localhost:4040` empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
-| `gRPC disabled` warning in logs | CLI started after tests; restart in correct order |
+| Dashboard at `http://localhost:4040` empty | `stove` CLI running? `dashboard { }` registered in `Stove().with`? `appName` set? |
+| `gRPC disabled` warning in logs | CLI started after tests; start the CLI before the test suite |
 | Agent can't connect to MCP | Endpoint is on the CLI, not the test JVM. Verify `http://localhost:4040/api/v1/meta` returns `"mcp": { "enabled": true }` |
 | `stove_trace` returns nothing | [Tracing](Components/15-tracing.md) not enabled |
 | Disk filling with old run data | Run `stove --clear` to wipe stored runs from `~/.stove-dashboard.db` |
 
-MCP isn't required for Stove. It's a token-saver for agents. Falling back to the failure report + console + dashboard works fine.
+MCP is optional. It gives agents a structured way to read the same failure evidence humans see in the console and
+dashboard.
 
 ## Migrating versions
 
@@ -381,7 +387,8 @@ MCP isn't required for Stove. It's a token-saver for agents. Falling back to the
 | `0.22 → 0.23` | Dashboard launched | Opt-in, non-blocking |
 | `0.23 → 0.24` | Polyglot leap (provided app, keyed systems, process/container, Go, MCP) | All additive |
 
-Pin everything to one version. Mismatched modules cause confusing class-load errors.
+Pin the BOM, all `com.trendyol:stove-*` dependencies, the tracing Gradle plugin, and `stove-cli` to one Stove version.
+Mixed versions are a common cause of class-load errors and empty dashboard data.
 
 ## Common FAQ
 
@@ -425,7 +432,7 @@ Pin everything to one version. Mismatched modules cause confusing class-load err
 
 - Docker running and reachable (or [Provided Instances](Components/11-provided-instances.md) wired)
 - One pinned Stove version across BOM + every dep
-- App's `run(args)` extracted and exposed
+- App's reusable `run(args)` entrypoint extracted and exposed
 - Test config injected via `withParameters` / `configureExposedConfiguration`
 - Serializers aligned (Stove serde === app `ObjectMapper`)
 - Kafka interceptor registered as bean + `kafka.interceptorClasses` property mapped

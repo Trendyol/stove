@@ -1,10 +1,16 @@
 # Getting Started
 
-Boot your real app with real dependencies in five steps. Each step shows what changes, why it matters, and how to verify it worked.
+Boot the application under test with the dependencies it actually talks to. These five steps show the minimum wiring,
+where Stove takes over the runtime lifecycle, and how to verify the setup before adding more systems.
+
+Terminology used below: **AUT** means application under test; a **system** is a Stove module registered in
+`Stove().with { ... }`, such as HTTP, PostgreSQL, Kafka, WireMock, tracing, or dashboard; an **AUT runner** registers
+how Stove starts or targets the app; **provided** means Stove connects to existing infrastructure instead of starting a
+Testcontainer; **bridge** means optional DI-container access for supported JVM frameworks.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">If you'd rather click</span>
-The [Setup Wizard](wizard.md) generates the dependency block, `StoveConfig.kt`, and a runnable sample test from your selections. This page is the manual path with the *why*.
+The [Setup Wizard](wizard.md) generates the dependency block, `StoveConfig.kt`, and a runnable sample test from your selections. This page is the manual path and explains the lifecycle behind the generated code.
 </div>
 
 ## Prerequisites
@@ -43,7 +49,7 @@ The [Setup Wizard](wizard.md) generates the dependency block, `StoveConfig.kt`, 
 <span class="stove-step-tag">deps</span>
 ### Add the minimum dependencies
 
-Start with the smallest set that proves the wiring works: BOM + core + one starter + one test extension + `stove-http`. Add more later.
+Start with the smallest set that proves the wiring works: BOM + core + one AUT runner + one test extension + `stove-http`. Add database, messaging, mocks, and observability modules only when the app actually uses them.
 
 !!! tip "Gradle recommended"
     All examples use Gradle (Kotlin DSL). Maven works for Stove dependencies; the **`stoveTracing`** Gradle plugin is the easiest path to OTel tracing and is the recommended setup for observability.
@@ -61,7 +67,7 @@ dependencies {
 !!! info "Version alignment"
     Keep the BOM, every `com.trendyol:stove-*`, and `stove-cli` (if you use the dashboard) on the same version. Check [Releases](https://github.com/Trendyol/stove/releases).
 
-Components are á-la-carte. Add what you actually use:
+Systems are á-la-carte. Each dependency adds one DSL block and, when needed, one options object for container/provided runtime configuration:
 
 | Module | Use for |
 |---|---|
@@ -72,7 +78,7 @@ Components are á-la-carte. Add what you actually use:
 | `stove-tracing`, `stove-dashboard` | observability |
 
 !!! tip "Enable tracing with the Gradle plugin"
-    `stove-tracing` is wired by the **`com.trendyol.stove.tracing`** Gradle plugin. It attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT. Zero app-code changes.
+    `stove-tracing` is wired by the **`com.trendyol.stove.tracing`** Gradle plugin. For in-process JVM applications launched by Stove, it attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT without application-code changes.
 
     ```kotlin
     plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
@@ -91,7 +97,7 @@ Components are á-la-carte. Add what you actually use:
 <span class="stove-step-tag">app</span>
 ### Expose a reusable entrypoint
 
-Stove boots your app from tests. Extract startup into a `run(args)` function that both `main` and Stove can call.
+Stove boots your app from tests. Extract startup into a reusable `run(args)` function so production `main` and the Stove runner execute the same startup path.
 
 === "Spring Boot"
 
@@ -193,7 +199,12 @@ Stove boots your app from tests. Extract startup into a `run(args)` function tha
 <a id="step-3-create-test-configuration"></a>
 ### Configure Stove once per suite
 
-Put e2e tests in a dedicated `src/test-e2e/` source set ([why](best-practices.md#use-dedicated-source-set-for-e2e-tests)). `AbstractProjectConfig.beforeProject()` runs once for the entire suite. Set up Stove there, tear it down in `afterProject()`.
+Put e2e tests in a dedicated `src/test-e2e/` source set ([why](best-practices.md#use-dedicated-source-set-for-e2e-tests)). `AbstractProjectConfig.beforeProject()` runs once for the entire suite. Register the systems your app talks to, then register one AUT runner last, and tear Stove down in `afterProject()`.
+
+At runtime, `Stove().with { ... }.run()` starts registered systems, collects their exposed configuration, starts the application under test with those properties/arguments, and leaves the suite ready for test bodies to call `stove { ... }`. `Stove.stop()` in `afterProject()` tears down the application and systems.
+
+!!! note "System-derived config vs static runner parameters"
+    Use `configureExposedConfiguration` for values Stove only knows at runtime: container host/port, generated credentials, WireMock base URL, Kafka bootstrap servers, and interceptor classes. Use `withParameters` for static application settings such as `server.port=8080` or logging levels. This applies to framework/process/container runners. A `providedApplication()` target is already running, so Stove cannot inject environment variables, CLI args, or application properties into it; configure that app externally before the suite starts.
 
 !!! info "Kotest 6.x discovery"
     `AbstractProjectConfig` is **not** auto-scanned in Kotest 6.x. Add `src/test-e2e/resources/kotest.properties`:
@@ -255,7 +266,7 @@ Put e2e tests in a dedicated `src/test-e2e/` source set ([why](best-practices.md
 <span class="stove-step-tag">first test</span>
 ### Write the first assertion
 
-The DSL is `stove { http { ... } }`. Read the result, assert against it. That's it.
+The DSL is `stove { http { ... } }`. The block uses the HTTP system registered during suite startup, sends the request to the application under test, and gives you the decoded response for assertions.
 
 === "Kotest"
 
@@ -301,9 +312,9 @@ Run it:
 <span class="stove-step-tag">grow</span>
 ### Add the systems your app actually uses
 
-The same `.with { }` block composes more systems. Below: HTTP in, Kafka events, Couchbase persistence, WireMock for outbound calls, and `bridge()` for DI access.
+The same `.with { }` block composes more systems. Each system can expose runtime values such as host, port, credentials, or interceptor classes; the runner receives those values before the app boots. Below: HTTP in, Kafka events, Couchbase persistence, WireMock for outbound calls, and `bridge()` for DI access on supported JVM frameworks.
 
-```kotlin hl_lines="3 8 16 27 30"
+```kotlin hl_lines="3 8 16 21 29 32"
 Stove().with {
     httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
 
@@ -325,12 +336,19 @@ Stove().with {
         )
     }
 
-    wiremock { WireMockSystemOptions(port = 0) }
+    wiremock {
+        WireMockSystemOptions(
+            port = 0,
+            configureExposedConfiguration = { cfg ->
+                listOf("external.service.url=${cfg.baseUrl}")
+            }
+        )
+    }
     bridge()  // DI access for setup + verification
 
     springBoot(
         runner = { params -> com.myapp.run(params) },
-        withParameters = listOf("server.port=8080", "external.service.url=http://localhost:9090")
+        withParameters = listOf("server.port=8080")
     )
 }.run()
 ```
@@ -384,7 +402,7 @@ Generate unique IDs per test run.
 val userId = "user-${UUID.randomUUID()}"
 ```
 
-No collisions, parallel-safe, works against shared infra.
+No collisions, parallel-safe, and compatible with shared infrastructure.
   </div>
   <div class="stove-dont">
 Hard-code identifiers.
@@ -398,7 +416,7 @@ val userId = "user-1"  // collides on re-run
 
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
-Wait with timeout, not sleep.
+Use Stove's time-bounded assertions instead of sleeping.
 
 ```kotlin
 shouldBePublished<E> {
@@ -420,7 +438,7 @@ kafka { shouldBePublished<E>(...) }
 
 <div class="stove-pair" markdown="0">
   <div class="stove-do">
-Configure Stove **once** per suite.
+Configure Stove **once** per suite so containers, clients, and the application are reused for all tests in that suite.
 
 ```kotlin
 override suspend fun beforeProject() = Stove().with { ... }.run()
@@ -428,7 +446,7 @@ override suspend fun beforeProject() = Stove().with { ... }.run()
 
   </div>
   <div class="stove-dont">
-Spin Stove up per test.
+Start Stove per test.
 
 ```kotlin
 @BeforeEach fun setup() = Stove().with { ... }.run()  // very slow
@@ -439,7 +457,7 @@ Spin Stove up per test.
 
 ## Local-loop optimizations
 
-**Keep containers running between runs** during development:
+**Keep containers running between local runs** during development:
 
 ```kotlin hl_lines="2"
 Stove {
@@ -465,7 +483,7 @@ kafka {                                  // per component
 |---|---|
 | Docker not found | Start Docker Desktop / colima |
 | Port conflicts | Use port `0` for mocks; let Stove pick |
-| Slow startup | `keepDependenciesRunning()` during dev |
+| Slow startup | `keepDependenciesRunning()` during local development |
 | Serialization errors | Align `StoveSerde` with your app's mapper |
 | Tests collide | Generate unique IDs per test |
 | Kafka assertion times out | Use [test-friendly Kafka settings](Components/02-kafka.md) |

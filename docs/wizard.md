@@ -14,6 +14,9 @@ Answer a few questions and the wizard composes a complete Stove setup for your p
 
 The wizard runs entirely in your browser. Nothing is sent anywhere. Your selections are reflected in the URL, so you can share or bookmark a configuration.
 
+!!! note "Review before pasting"
+    The generated setup is a starting point. Before committing it, review package names, imports, your application runner, fixed ports, property names, and version alignment between the Stove BOM, `stoveTracing` plugin, Stove dependencies, and `stove-cli`.
+
 <div id="stove-wizard" markdown="0">
   <noscript>
     <div class="admonition warning">
