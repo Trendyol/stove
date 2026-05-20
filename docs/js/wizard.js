@@ -89,6 +89,12 @@
         this.loadFromUrl();
         this.$watch("state", () => this.syncUrl(), { deep: true });
         this.$watch("step", () => this.syncUrl());
+        // Provided mode: mocks are meaningless against a deployed AUT, clear them.
+        this.$watch("state.runtime", (newRt) => {
+          if (newRt === "provided" && this.state.mocks.length) {
+            this.state.mocks = [];
+          }
+        });
         // Canonicalize URL immediately so shareUrl() reflects defaults,
         // not the bare /wizard/ a first-time visitor lands on.
         this.syncUrl();
@@ -175,7 +181,10 @@
         const s = this.state;
         const out = [];
         s.systems.forEach((id) => this.data.systems?.[id] && out.push({ id, kind: "system", ...this.data.systems[id] }));
-        s.mocks.forEach((id) => this.data.systems?.[id] && out.push({ id, kind: "mock", ...this.data.systems[id] }));
+        // Provided mode skips mocks: deployed AUT can't have its outbound calls intercepted.
+        if (s.runtime !== "provided") {
+          s.mocks.forEach((id) => this.data.systems?.[id] && out.push({ id, kind: "mock", ...this.data.systems[id] }));
+        }
         s.obs.forEach((id) => this.data.observability?.[id] && out.push({ id, kind: "obs", ...this.data.observability[id] }));
         if (s.bridge && this.bridgeSupportedInJvm()) {
           const b = this.data.systems["sys.bridge"];
@@ -526,15 +535,27 @@ ${fill(test.sample, { body })}`;
           <!-- Step 4 -->
           <section class="sw-panel" x-show="step === 4">
             <h3>External surfaces to mock</h3>
-            <p class="sw-hint">Mock third-party HTTP and gRPC services your app calls out to.</p>
-            <div class="sw-grid">
-              <template x-for="id in mockIds()" :key="id">
-                <label class="sw-card" :class="{ selected: state.mocks.includes(id) }">
-                  <input type="checkbox" :checked="state.mocks.includes(id)" @change="toggle(state.mocks, id)">
-                  <strong x-text="data.systems[id].label"></strong>
-                </label>
-              </template>
-            </div>
+
+            <template x-if="state.runtime === 'provided'">
+              <div class="sw-callout">
+                <strong>🛰️ Skip this step for provided mode.</strong>
+                A deployed AUT already has its real downstream wiring. WireMock / gRPC Mock can't intercept its outbound calls. Use the actual staging dependencies (or stub them at the network edge of staging, not the test).
+              </div>
+            </template>
+
+            <template x-if="state.runtime !== 'provided'">
+              <div>
+                <p class="sw-hint">Mock third-party HTTP and gRPC services your app calls out to.</p>
+                <div class="sw-grid">
+                  <template x-for="id in mockIds()" :key="id">
+                    <label class="sw-card" :class="{ selected: state.mocks.includes(id) }">
+                      <input type="checkbox" :checked="state.mocks.includes(id)" @change="toggle(state.mocks, id)">
+                      <strong x-text="data.systems[id].label"></strong>
+                    </label>
+                  </template>
+                </div>
+              </div>
+            </template>
           </section>
 
           <!-- Step 5 -->
@@ -549,10 +570,17 @@ ${fill(test.sample, { body })}`;
                 </label>
               </template>
             </div>
-            <div class="sw-callout" x-show="state.obs.includes('obs.tracing')">
+            <div class="sw-callout" x-show="state.obs.includes('obs.tracing') && state.runtime !== 'provided'">
               <strong>🐘 Gradle required for tracing.</strong>
               The <code>stoveTracing</code> plugin attaches the OpenTelemetry Java agent, runs the OTLP receiver, allocates a per-task port, and exposes the endpoint to your AUT via env vars. <strong>Zero app-code changes.</strong>
               Maven users would need to wire all of that manually. If you're on Maven, this is the moment to consider switching. <code>gradle init --type pom</code> gets you most of the way there.
+            </div>
+
+            <div class="sw-callout" x-show="state.obs.includes('obs.tracing') && state.runtime === 'provided'">
+              <strong>⚠️ Tracing has limited value for provided mode.</strong>
+              The <code>stoveTracing</code> plugin instruments the JVM that runs your AUT. With <code>providedApplication</code> the AUT runs remotely, so the agent can't attach. Spans only reach Stove if the remote app is <em>already</em> OTel-instrumented and exports to a Stove-reachable OTLP endpoint.
+              <br><br>
+              For most provided-mode tests, <strong>Reporting + Dashboard + MCP</strong> are enough. They show Stove's own actions (HTTP calls, DB queries, Kafka publishes) without needing the AUT's spans.
             </div>
           </section>
 
