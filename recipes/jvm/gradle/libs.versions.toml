@@ -21,7 +21,7 @@ kafka = "4.2.0"
 kafka-kotlin = "0.4.1"
 
 # Logging
-slf4j = "2.0.17"
+slf4j = "2.0.18"
 kotlinLogging = "8.0.02"
 
 # Ktor
