@@ -22,7 +22,7 @@ kafka-kotlin = "0.4.1"
 
 # Logging
 slf4j = "2.0.18"
-kotlinLogging = "8.0.02"
+kotlinLogging = "8.0.4"
 
 # Ktor
 ktor = "3.4.3"
@@ -32,7 +32,7 @@ koin = "4.2.1"
 mongodb = "5.8.0"
 
 # Tooling
-spotless = "8.4.0"
+spotless = "8.6.0"
 detekt = "1.23.8"
 lombok = "1.18.46"
 
@@ -42,7 +42,7 @@ kediatr = "4.3.0"
 
 # OpenTelemetry
 opentelemetry = "1.62.0"
-opentelemetry-instrumentation = "2.27.0"
+opentelemetry-instrumentation = "2.28.1"
 
 # gRPC
 grpc = "1.81.0"
@@ -51,14 +51,14 @@ protobuf = "4.35.0"
 protobuf-plugin = "0.10.0"
 
 # db-scheduler
-db-scheduler = "16.8.1"
+db-scheduler = "16.11.0"
 
 # Testing
 stove = "1.0.0.529-SNAPSHOT"
 kotest = "6.1.11"
 exposed = "1.2.0"
 postgresql = "42.7.11"
-flyway = "12.6.0"
+flyway = "12.7.0"
 
 [libraries]
 # Kotlin

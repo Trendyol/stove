@@ -30,7 +30,7 @@ tower-http = { version = "0.6", features = ["cors"] }
 tokio-stream = { version = "0.1", features = ["sync"] }
 
 # Database
-rusqlite = { version = "0.39", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 
 # Serialization
