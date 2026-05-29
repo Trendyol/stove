@@ -52,6 +52,24 @@
     },
     {
       "matchDepNames": [
+        "/org.jetbrains.kotlinx:.*/"
+      ],
+      "groupName": "kotlinx"
+    },
+    {
+      "matchDepNames": [
+        "/org.jetbrains.exposed:.*/"
+      ],
+      "groupName": "exposed"
+    },
+    {
+      "matchDepNames": [
+        "/io.ktor:.*/"
+      ],
+      "groupName": "ktor"
+    },
+    {
+      "matchDepNames": [
         "/.*springframework.*/"
       ],
       "matchUpdateTypes": ["major"],
