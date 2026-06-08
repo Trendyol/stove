@@ -14,7 +14,7 @@ spring-kafka = "3.3.15"
 arrow = "2.2.2.1"
 
 # Jackson
-jackson = "2.21"
+jackson = "2.22"
 
 # Kafka
 kafka = "4.3.0"
