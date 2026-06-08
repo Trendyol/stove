@@ -86,6 +86,8 @@ github.com/trendyol/stove/go/stove-kafka v0.0.0-20260511094143-5fae367ca053 h1:z
 github.com/trendyol/stove/go/stove-kafka v0.0.0-20260511094143-5fae367ca053/go.mod h1:LlJxOgdy8NlPub93cxvFNBOev22rlXna/nM3t0N2TxM=
 github.com/trendyol/stove/go/stove-kafka v0.0.0-20260520152331-d533ff31e92b h1:mZbtioFv0DR9zYghtESaL1Q5kmVRjNTxv41p7M4oX6c=
 github.com/trendyol/stove/go/stove-kafka v0.0.0-20260520152331-d533ff31e92b/go.mod h1:LlJxOgdy8NlPub93cxvFNBOev22rlXna/nM3t0N2TxM=
+github.com/trendyol/stove/go/stove-kafka v0.0.0-20260601131736-991f9508e3e9 h1:Dw9Dv36+9Q1Zf3LmhYJoNoEge19I2pdLEE3KObj4orM=
+github.com/trendyol/stove/go/stove-kafka v0.0.0-20260601131736-991f9508e3e9/go.mod h1:SJ+DPH8AblH2gVtCyx/RX20rtaFTnSIFV/JPYaAdnCU=
 github.com/twmb/franz-go v1.21.0 h1:J3uB/poWgHD6VIilER2uCPFAZHDRXVFT+11pBgRKod4=
 github.com/twmb/franz-go v1.21.0/go.mod h1:1o+jj5oRbItsIMoE+DGpfJIcPcPtDdtkcNFPj4bWNwU=
 github.com/twmb/franz-go v1.21.1 h1:sp17bMRLz6OB/w+7vHtBadHGIQVymzQHwvRbEKe5c4I=
