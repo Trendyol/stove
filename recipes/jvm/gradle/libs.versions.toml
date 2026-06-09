@@ -41,7 +41,7 @@ hoplite = "2.9.0"
 kediatr = "4.3.0"
 
 # OpenTelemetry
-opentelemetry = "1.62.0"
+opentelemetry = "1.63.0"
 opentelemetry-instrumentation = "2.28.1"
 
 # gRPC
