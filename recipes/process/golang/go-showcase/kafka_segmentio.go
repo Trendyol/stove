@@ -69,8 +69,9 @@ func initSegmentioKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.
 				log.Printf("segmentio reader error: %v", err)
 				continue
 			}
-			segmentio.ReportRead(ctx, bridge, msg)
-			handleProductUpdate(db, msg.Value)
+			if handleProductUpdate(db, msg.Value) {
+				segmentio.ReportRead(ctx, bridge, msg)
+			}
 		}
 	}()
 

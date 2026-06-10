@@ -40,9 +40,6 @@ func initSaramaKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.Bri
 	config.Producer.Interceptors = []sarama.ProducerInterceptor{
 		&stovesarama.ProducerInterceptor{Bridge: bridge},
 	}
-	config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
-		&stovesarama.ConsumerInterceptor{Bridge: bridge},
-	}
 
 	producer, err := sarama.NewSyncProducer(brokerList, config)
 	if err != nil {
@@ -56,7 +53,7 @@ func initSaramaKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.Bri
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	handler := &saramaUpdateHandler{db: db}
+	handler := &saramaUpdateHandler{db: db, bridge: bridge}
 
 	go func() {
 		for {
@@ -80,7 +77,8 @@ func initSaramaKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.Bri
 }
 
 type saramaUpdateHandler struct {
-	db *sql.DB
+	db     *sql.DB
+	bridge *stovekafka.Bridge
 }
 
 func (h *saramaUpdateHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
@@ -88,8 +86,27 @@ func (h *saramaUpdateHandler) Cleanup(_ sarama.ConsumerGroupSession) error { ret
 
 func (h *saramaUpdateHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		handleProductUpdate(h.db, msg.Value)
-		session.MarkMessage(msg, "")
+		if handleProductUpdate(h.db, msg.Value) {
+			session.MarkMessage(msg, "")
+			reportConsumed(
+				context.Background(),
+				h.bridge,
+				msg.Topic,
+				string(msg.Key),
+				msg.Value,
+				msg.Partition,
+				msg.Offset,
+				saramaConsumedHeaders(msg.Headers),
+			)
+		}
 	}
 	return nil
+}
+
+func saramaConsumedHeaders(headers []*sarama.RecordHeader) map[string]string {
+	m := make(map[string]string, len(headers))
+	for _, h := range headers {
+		m[string(h.Key)] = string(h.Value)
+	}
+	return m
 }

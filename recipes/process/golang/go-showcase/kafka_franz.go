@@ -52,7 +52,6 @@ func initFranzKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.Brid
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 		kgo.AutoCommitInterval(100*time.Millisecond),
 		kgo.AllowAutoTopicCreation(),
-		kgo.WithHooks(hook),
 	)
 	if err != nil {
 		producerClient.Close()
@@ -69,7 +68,18 @@ func initFranzKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.Brid
 			}
 			fetches.EachRecord(func(r *kgo.Record) {
 				if r.Topic == topicProductUpdate {
-					handleProductUpdate(db, r.Value)
+					if handleProductUpdate(db, r.Value) {
+						reportConsumed(
+							context.Background(),
+							bridge,
+							r.Topic,
+							string(r.Key),
+							r.Value,
+							r.Partition,
+							r.Offset,
+							franzConsumedHeaders(r.Headers),
+						)
+					}
 				}
 			})
 		}
@@ -83,4 +93,12 @@ func initFranzKafka(brokers, groupID string, db *sql.DB, bridge *stovekafka.Brid
 
 	log.Printf("Kafka (franz-go) initialized")
 	return &franzProducer{client: producerClient}, stop, nil
+}
+
+func franzConsumedHeaders(headers []kgo.RecordHeader) map[string]string {
+	m := make(map[string]string, len(headers))
+	for _, h := range headers {
+		m[h.Key] = string(h.Value)
+	}
+	return m
 }

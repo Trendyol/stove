@@ -97,7 +97,8 @@ class GoShowcaseTest :
         // 4. Verify traces — spans are auto-created by otelhttp middleware and otelsql driver
         tracing {
           waitForSpans(4, 5000)
-          shouldContainSpan("http.request")
+          shouldContainSpan("POST /api/products")
+          shouldContainSpan("GET /api/products/{id}")
           shouldNotHaveFailedSpans()
           spanCountShouldBeAtLeast(4)
           executionTimeShouldBeLessThan(30.seconds)
@@ -135,7 +136,8 @@ class GoShowcaseTest :
 
         tracing {
           waitForSpans(4, 5000)
-          shouldContainSpan("http.request")
+          shouldContainSpan("POST /api/products")
+          shouldContainSpan("GET /api/products")
           shouldNotHaveFailedSpans()
         }
       }

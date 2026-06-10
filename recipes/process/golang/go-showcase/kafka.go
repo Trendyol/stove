@@ -56,14 +56,40 @@ func initKafka(library, brokers string, db *sql.DB, bridge *stovekafka.Bridge) (
 }
 
 // handleProductUpdate is shared consumer logic for all Kafka libraries.
-func handleProductUpdate(db *sql.DB, value []byte) {
+func handleProductUpdate(db *sql.DB, value []byte) bool {
 	var event ProductUpdateEvent
 	if err := json.Unmarshal(value, &event); err != nil {
 		log.Printf("failed to unmarshal update event: %v", err)
-		return
+		return false
 	}
 
 	if err := updateProduct(context.Background(), db, event.ID, event.Name, event.Price); err != nil {
 		log.Printf("failed to update product %s: %v", event.ID, err)
+		return false
 	}
+	return true
+}
+
+func reportConsumed(
+	ctx context.Context,
+	bridge *stovekafka.Bridge,
+	topic string,
+	key string,
+	value []byte,
+	partition int32,
+	offset int64,
+	headers map[string]string,
+) {
+	if bridge == nil {
+		return
+	}
+	_ = bridge.ReportConsumed(ctx, &stovekafka.ConsumedMessage{
+		Topic:     topic,
+		Key:       key,
+		Value:     value,
+		Partition: partition,
+		Offset:    offset,
+		Headers:   headers,
+	})
+	_ = bridge.ReportCommitted(ctx, topic, partition, offset+1)
 }
