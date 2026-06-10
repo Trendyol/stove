@@ -1,4 +1,4 @@
-FROM golang:1.26.3 AS build
+FROM golang:1.26.4 AS build
 
 WORKDIR /workspace
 COPY go.mod go.sum ./
@@ -8,7 +8,7 @@ COPY *.go ./
 ARG GO_BUILD_FLAGS=""
 RUN CGO_ENABLED=0 GOOS=linux go build ${GO_BUILD_FLAGS} -o /out/go-showcase .
 
-FROM alpine:3.23
+FROM alpine:3.24
 WORKDIR /app
 COPY --from=build /out/go-showcase /app/go-showcase
 
