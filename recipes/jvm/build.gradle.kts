@@ -93,7 +93,6 @@ subprojects {
         allWarningsAsErrors = true
         freeCompilerArgs.addAll(
           "-Xjsr305=strict",
-          "-Xcontext-parameters",
           "-Xsuppress-version-warnings"
         )
       }
