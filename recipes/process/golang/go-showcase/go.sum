@@ -66,6 +66,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/trendyol/stove/go/stove-kafka v0.0.0-20260610163023-89358157852e h1:4jQ7cYyUuLGzrj/7vn8hEQ8I7fvYc/d3KRs33pw27LA=
 github.com/trendyol/stove/go/stove-kafka v0.0.0-20260610163023-89358157852e/go.mod h1:SJ+DPH8AblH2gVtCyx/RX20rtaFTnSIFV/JPYaAdnCU=
+github.com/trendyol/stove/go/stove-kafka v0.0.0-20260612110125-d36f1f7dd3bb h1:Fdt7te/4tt/Lpsa74pDTG8PbzHwFWxIk30lpzwRHX1s=
+github.com/trendyol/stove/go/stove-kafka v0.0.0-20260612110125-d36f1f7dd3bb/go.mod h1:pjHSoH4sxa0BCEDpGQ+uCZ1yq03IaiBbXkXNoBBVJMk=
 github.com/twmb/franz-go v1.21.3 h1:q9Mo8ri+OwBQBjKqrerNCqNWJlJnUDe2qnYsj2V3hdI=
 github.com/twmb/franz-go v1.21.3/go.mod h1:rfoMTnVk7107fhTGxfEKIHP/e7tPe6oyij/ywzO0czk=
 github.com/twmb/franz-go/pkg/kmsg v1.13.1 h1:fG5kItwysTk5UXqVwb64EpQEy3TydF3vYYK21nUQ+bI=
