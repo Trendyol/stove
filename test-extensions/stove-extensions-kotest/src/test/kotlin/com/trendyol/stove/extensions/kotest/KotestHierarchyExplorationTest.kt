@@ -222,7 +222,7 @@ class DescribeSpecHierarchyTest : DescribeSpec({
       // testParts() returns raw names without prefixes
       mine.testParts shouldContainExactly listOf("OrderService", "should create order")
       // displayPath includes "Describe: " prefix for describe blocks
-      mine.displayPath shouldContainExactly listOf("Describe: OrderService", "should create order")
+      mine.displayPath shouldContainExactly listOf("Describe: OrderService", "It: should create order")
       mine.type shouldBe TestType.Test
       mine.hasParent shouldBe true
       mine.parentType shouldBe TestType.Container
@@ -239,7 +239,7 @@ class DescribeSpecHierarchyTest : DescribeSpec({
         mine.displayPath shouldContainExactly listOf(
           "Describe: OrderService",
           "Describe: with invalid input",
-          "should fail validation"
+          "It: should fail validation"
         )
       }
     }
