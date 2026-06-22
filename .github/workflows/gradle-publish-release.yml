@@ -54,8 +54,33 @@ jobs:
 
       - name: Tag Go stove-kafka module
         run: |
-          git tag "go/stove-kafka/v${{ env.JRELEASER_PROJECT_VERSION }}"
-          git push origin "go/stove-kafka/v${{ env.JRELEASER_PROJECT_VERSION }}"
+          set -euo pipefail
+          version="${{ env.JRELEASER_PROJECT_VERSION }}"
+          module_dir="go/stove-kafka"
+          # Tag format for a module in a subdirectory is "<subdir>/vX.Y.Z" for every
+          # major version — the prefix is the directory, not the module path.
+          tag="${module_dir}/v${version}"
+
+          # Go's major-version rule: from v2 onward the module path itself must carry a
+          # "/vN" suffix (github.com/.../stove-kafka/v2). If the released major version is
+          # >= 2 but go.mod does not declare the matching suffix, the tag would resolve to
+          # an unbuildable module — fail loudly instead of publishing a broken tag.
+          major="${version%%.*}"
+          module_path="$(awk '/^module /{print $2; exit}' "${module_dir}/go.mod")"
+          if [ "${major}" -ge 2 ]; then
+            case "${module_path}" in
+              */v"${major}") : ;;
+              *)
+                echo "::error::Releasing v${version} but ${module_dir}/go.mod declares '${module_path}'." \
+                     "For major version ${major}, the module path must end with '/v${major}'." \
+                     "Update the module path and importers before tagging."
+                exit 1
+                ;;
+            esac
+          fi
+
+          git tag "${tag}"
+          git push origin "${tag}"
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
 
