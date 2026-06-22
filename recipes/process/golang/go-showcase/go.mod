@@ -17,11 +17,6 @@ require (
 	google.golang.org/grpc v1.81.1
 )
 
-// stove-kafka lives in this repo; build the showcase against the in-repo source
-// instead of a remote pseudo-version so Renovate does not open a digest-bump PR
-// on every commit to the repository.
-replace github.com/trendyol/stove/go/stove-kafka => ../../../../go/stove-kafka
-
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

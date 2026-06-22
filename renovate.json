@@ -101,7 +101,7 @@
       ]
     },
     {
-      "description": "stove-kafka is an in-repo Go module consumed via a local replace directive; never open digest/pseudo-version bump PRs for it",
+      "description": "stove-kafka is an in-repo Go module; it is tagged at release time (go/stove-kafka/vX.Y.Z), so never open digest/pseudo-version bump PRs for it",
       "matchManagers": [
         "gomod"
       ],
