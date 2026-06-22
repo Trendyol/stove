@@ -99,6 +99,16 @@
       "matchPackageNames": [
         "/com.trendyol:stove.*/"
       ]
+    },
+    {
+      "description": "stove-kafka is an in-repo Go module consumed via a local replace directive; never open digest/pseudo-version bump PRs for it",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/trendyol/stove/go/stove-kafka"
+      ],
+      "enabled": false
     }
   ]
 }
