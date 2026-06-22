@@ -1,6 +1,6 @@
 [versions]
 stove = "1.0.0.533-SNAPSHOT"
-kotest = "6.1.11"
+kotest = "6.2.1"
 
 [libraries]
 stove-bom = { module = "com.trendyol:stove-bom", version.ref = "stove" }

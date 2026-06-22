@@ -1,5 +1,5 @@
 [versions]
-kotest = "6.1.11"
+kotest = "6.2.1"
 
 [libraries]
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
@@ -7,4 +7,4 @@ kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", versio
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 
 [plugins]
-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.36.0" }
+maven-publish = { id = "com.vanniktech.maven.publish", version = "0.37.0" }

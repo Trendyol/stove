@@ -24,7 +24,7 @@ prost-types = "0.14"
 
 # HTTP server (serves REST API + SPA to browser)
 axum = { version = "0.8", features = ["json"] }
-tower-http = { version = "0.6", features = ["cors"] }
+tower-http = { version = "0.7", features = ["cors"] }
 
 # SSE (live updates to browser)
 tokio-stream = { version = "0.1", features = ["sync"] }
