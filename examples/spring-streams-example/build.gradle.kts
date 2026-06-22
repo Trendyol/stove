@@ -10,6 +10,12 @@ plugins {
   application
 }
 
+// The Spring Boot BOM pins kotlin-coroutines to an older version (e.g. 1.8.1) that lacks
+// runBlockingK, which the Kotlin compiler emits for runBlocking{} when compiling against
+// kotlinx-coroutines 1.11. Override the BOM property so the runtime matches what stove was
+// compiled against, otherwise tests fail with NoSuchMethodError on BuildersKt.runBlockingK.
+extra["kotlin-coroutines.version"] = libs.versions.kotlinx.asProvider().get()
+
 dependencies {
   implementation(libs.spring.boot.three)
   implementation(libs.spring.boot.three.autoconfigure)
@@ -29,7 +35,6 @@ dependencies {
   testImplementation(projects.stove.lib.stoveTracing)
   testImplementation(projects.stove.lib.stoveDashboard)
   testImplementation(projects.stove.starters.spring.stoveSpring)
-  testImplementation(libs.kotlinx.core)
   testImplementation(libs.testcontainers.kafka)
 }
 

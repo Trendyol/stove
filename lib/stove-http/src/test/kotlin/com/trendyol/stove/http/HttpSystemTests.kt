@@ -261,13 +261,13 @@ class HttpSystemTests :
             req.withMultipartRequestBody(
               aMultipart()
                 .matchingType(MultipartValuePattern.MatchingType.ANY)
-                .withHeader("Content-Disposition", equalTo("form-data; name=name"))
+                .withHeader("Content-Disposition", equalTo("form-data; name=\"name\""))
                 .withBody(equalTo(expectedPostDtoName))
             )
             req.withMultipartRequestBody(
               aMultipart()
                 .matchingType(MultipartValuePattern.MatchingType.ANY)
-                .withHeader("Content-Disposition", equalTo("form-data; name=file; filename=file.png"))
+                .withHeader("Content-Disposition", equalTo("form-data; name=\"file\"; filename=file.png"))
                 .withBody(equalTo("file"))
             )
             req.willReturn(aResponse().withStatus(200).withBody("hoi!"))
