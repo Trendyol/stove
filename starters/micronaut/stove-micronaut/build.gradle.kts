@@ -10,7 +10,6 @@ dependencies {
 
 dependencies {
   testImplementation(projects.testExtensions.stoveExtensionsKotest)
-  testImplementation(libs.micronaut.test.kotest)
   kspTest(platform(libs.micronaut.platform))
   kspTest(libs.micronaut.inject.kotlin)
 }
