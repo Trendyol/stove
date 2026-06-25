@@ -6,7 +6,7 @@ require (
 	github.com/IBM/sarama v1.50.3
 	github.com/google/uuid v1.6.0
 	github.com/segmentio/kafka-go v0.4.51
-	github.com/twmb/franz-go v1.21.3
+	github.com/twmb/franz-go v1.21.4
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )
