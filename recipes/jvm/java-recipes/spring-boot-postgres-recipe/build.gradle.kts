@@ -1,19 +1,19 @@
 plugins {
-  alias(libs.plugins.spring.boot)
+  alias(libs.plugins.spring.boot.three)
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.dependencyManagement)
 }
 
 dependencies {
-  implementation(libs.spring.boot.webflux)
-  implementation(libs.spring.boot.autoconfigure)
-  implementation(libs.spring.boot.kafka)
-  implementation(libs.spring.boot.data.r2dbc)
+  implementation(libs.spring.boot.three.webflux)
+  implementation(libs.spring.boot.three.autoconfigure)
+  implementation(libs.spring.boot.three.kafka)
+  implementation(libs.spring.boot.three.data.r2dbc)
   implementation(libs.postgresql.r2dbc)
   implementation(libs.postgresql)
   implementation(projects.shared.application)
   implementation(rootProject.projects.shared.domain)
-  annotationProcessor(libs.spring.boot.annotationProcessor)
+  annotationProcessor(libs.spring.boot.three.annotationProcessor)
 }
 
 dependencies {

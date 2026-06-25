@@ -5,7 +5,7 @@ dependencies {
   implementation(libs.ktor.server.netty.jvm)
   implementation(libs.ktor.server.content.negotiation.jvm)
   implementation(libs.ktor.server.statuspages)
-  implementation(libs.ktor.server.callLogging)
+  implementation(libs.ktor.server.call.logging)
   implementation(libs.ktor.server.callId)
   implementation(libs.ktor.server.conditionalHeaders)
   implementation(libs.ktor.server.cors)

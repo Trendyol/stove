@@ -17,6 +17,7 @@ dependencies {
 
 micronaut {
   version(libs.versions.micronaut.platform.get())
+  testRuntime("kotest6")
   processing {
     incremental(true)
     annotations("com.trendyol.stove.*")

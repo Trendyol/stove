@@ -6,15 +6,15 @@ plugins {
 
 dependencies {
   // Spring Boot
-  implementation(libs.spring.boot.webflux)
-  implementation(libs.spring.boot.autoconfigure)
-  implementation(libs.spring.boot.data.r2dbc)
-  implementation(libs.spring.boot.kafka)
+  implementation(libs.spring.boot.three.webflux)
+  implementation(libs.spring.boot.three.autoconfigure)
+  implementation(libs.spring.boot.three.data.r2dbc)
+  implementation(libs.spring.boot.three.kafka)
 
   // Database
   implementation(libs.postgresql.r2dbc)
   implementation(libs.r2dbc.pool)
-  implementation(libs.spring.boot.starter.jdbc) // Required for db-scheduler
+  implementation(libs.spring.boot.three.starter.jdbc) // Required for db-scheduler
   implementation(libs.postgresql) // JDBC driver for db-scheduler
 
   // Scheduling
@@ -40,7 +40,7 @@ dependencies {
   implementation(libs.grpc.kotlin.stub)
   implementation(libs.protobuf.kotlin)
 
-  annotationProcessor(libs.spring.boot.annotationProcessor)
+  annotationProcessor(libs.spring.boot.three.annotationProcessor)
 }
 
 dependencies {

@@ -20,7 +20,7 @@ subprojects {
     plugin("kotlin")
   }
 
-  extra["kotlin-coroutines.version"] = rootProject.libs.versions.kotlinx.get()
+  extra["kotlin-coroutines.version"] = rootProject.libs.versions.kotlinx.asProvider().get()
 
   detekt {
     buildUponDefaultConfig = true

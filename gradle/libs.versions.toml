@@ -12,6 +12,7 @@ spring-kafka-3x = "3.3.16"
 spring-kafka-4x = "4.1.0"
 couchbase = "3.12.0"
 jackson = "2.22.0"
+jackson-annotations = "2.22"
 jackson3 = "3.2.0"
 arrow = "2.2.3"
 io-reactor = "3.8.6"
@@ -54,6 +55,15 @@ opentelemetry-semconv = "1.42.0"
 opentelemetry-instrumentation = "2.29.0"
 bytebuddy = "1.18.10"
 mordant = "3.0.2"
+
+# Recipes
+stove = "1.0.0.535-SNAPSHOT"
+scala2x = "2.13.18"
+kotlinLogging = "8.0.4"
+kediatr = "4.3.0"
+db-scheduler = "16.12.0"
+flyway = "12.9.0"
+lombok = "1.18.46"
 
 [libraries]
 # exposed
@@ -253,6 +263,54 @@ kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", versio
 kotest-assertions-core = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-arrow = { module = "io.kotest:kotest-assertions-arrow", version.ref = "kotest" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+
+### Recipes (consumed by recipes/jvm and recipes/process via the root catalog)
+stove-bom = { module = "com.trendyol:stove-bom", version.ref = "stove" }
+scala2-library = { module = "org.scala-lang:scala-library", version.ref = "scala2x" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+kotlinFpUtil = { module = "it.czerwinski:kotlin-util", version = "2.1.0" }
+kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
+hoplite = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
+kediatr-koin = { module = "com.trendyol:kediatr-koin-starter", version.ref = "kediatr" }
+db-scheduler-spring-boot-starter = { module = "com.github.kagkarlsson:db-scheduler-spring-boot-starter", version.ref = "db-scheduler" }
+mongodb-bson-kotlin = { module = "org.mongodb:bson-kotlin", version.ref = "mongodb" }
+opentelemetry-extension-kotlin = { module = "io.opentelemetry:opentelemetry-extension-kotlin", version.ref = "opentelemetry" }
+spring-boot-three-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "spring-boot-3x" }
+
+# Recipes - exposed (additional accessors; exposed-java-time above also serves libs.exposed.javaTime)
+exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+
+# Recipes - flyway / r2dbc
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.2.RELEASE" }
+r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
+
+# Recipes - gRPC / protobuf (additional accessors)
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
+grpc-netty = { module = "io.grpc:grpc-netty-shaded", version.ref = "io-grpc" }
+grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
+protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "google-protobuf" }
+
+# Recipes - Ktor (additional accessors)
+ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-netty-jvm = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm", version.ref = "ktor" }
+ktor-server-config-yml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor" }
+ktor-server-statuspages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-autoHeadResponse = { module = "io.ktor:ktor-server-auto-head-response", version.ref = "ktor" }
+ktor-server-cachingHeaders = { module = "io.ktor:ktor-server-caching-headers", version.ref = "ktor" }
+ktor-server-callId = { module = "io.ktor:ktor-server-call-id-jvm", version.ref = "ktor" }
+ktor-server-conditionalHeaders = { module = "io.ktor:ktor-server-conditional-headers", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
+ktor-server-defaultHeaders = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
+ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version = "5.7.0" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 
 [plugins]
 allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

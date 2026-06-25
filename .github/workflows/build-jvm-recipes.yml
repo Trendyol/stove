@@ -5,10 +5,14 @@ on:
     branches: [main]
     paths:
       - 'recipes/jvm/**'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/build-jvm-recipes.yml'
   pull_request:
     branches: [main]
     paths:
       - 'recipes/jvm/**'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/build-jvm-recipes.yml'
 
 # Cancel in-progress runs for the same branch
 concurrency:

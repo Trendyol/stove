@@ -1,9 +1,0 @@
-[versions]
-stove = "1.0.0.535-SNAPSHOT"
-kotest = "6.2.1"
-
-[libraries]
-stove-bom = { module = "com.trendyol:stove-bom", version.ref = "stove" }
-kotest-runner-junit6 = { module = "io.kotest:kotest-runner-junit6-jvm", version.ref = "kotest" }
-kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }

@@ -32,8 +32,17 @@ dependencyResolutionManagement {
   }
 
   versionCatalogs {
+    create("libs") {
+      from(files("../../../../gradle/libs.versions.toml"))
+    }
     generate("stoveLibs") {
-      fromToml("stove-bom") {
+      from {
+        toml {
+          libraryAliases = listOf("stove-bom")
+          file = file("../../../../gradle/libs.versions.toml")
+        }
+      }
+      using {
         aliasPrefixGenerator = GeneratorConfig.NO_PREFIX
       }
     }
