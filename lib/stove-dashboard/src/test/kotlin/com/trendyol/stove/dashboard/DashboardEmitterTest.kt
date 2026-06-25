@@ -4,12 +4,15 @@ import com.trendyol.stove.dashboard.api.*
 import com.trendyol.stove.dashboard.api.DashboardEventServiceGrpcKt.DashboardEventServiceCoroutineImplBase
 import io.grpc.*
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 
 class DashboardEmitterTest :
   FunSpec({
@@ -34,7 +37,7 @@ class DashboardEmitterTest :
         emitter.tryEmit(event)
 
         // Wait for async drain
-        delay(500)
+        delay(500.milliseconds)
         emitter.close()
 
         received.size shouldBe 2
@@ -59,7 +62,7 @@ class DashboardEmitterTest :
       }
 
       // Wait for the drain loop to process and fail
-      delay(2000)
+      delay(2000.milliseconds)
       emitter.close()
 
       // If we get here without exception, the test passes
@@ -88,7 +91,7 @@ class DashboardEmitterTest :
         firstRequestStarted.await(2, TimeUnit.SECONDS) shouldBe true
         releaseFirstRequest.countDown()
 
-        delay(500)
+        delay(500.milliseconds)
         emitter.close()
 
         received.size shouldBe totalEvents
@@ -97,10 +100,62 @@ class DashboardEmitterTest :
       }
     }
 
+    test("keeps emitting after per-event validation rejections (INVALID_ARGUMENT)") {
+      // The CLI rejects individual events (e.g. unknown test `default`) with INVALID_ARGUMENT.
+      // These are per-event validation errors, not transport outages, so they must NOT trip
+      // the consecutive-failure auto-disable. A subsequent valid event must still be delivered.
+      val received = CopyOnWriteArrayList<DashboardEvent>()
+      val server = startMockServer(received, port = 0) { event ->
+        if (event.runId.startsWith("bad-")) {
+          throw StatusException(Status.INVALID_ARGUMENT.withDescription("unknown test `default`"))
+        }
+      }
+      val port = server.port
+
+      try {
+        val emitter = DashboardEmitter("localhost", port, maxFailures = 2)
+
+        // More consecutive rejections than maxFailures — must not disable the emitter.
+        repeat(5) { index -> emitter.tryEmit(runStartedEvent(index).toBuilder().setRunId("bad-$index").build()) }
+        emitter.tryEmit(runStartedEvent(99).toBuilder().setRunId("good-99").build())
+
+        delay(1000.milliseconds)
+        emitter.close()
+
+        received.map { it.runId } shouldContain "good-99"
+      } finally {
+        server.shutdownNow()
+      }
+    }
+
+    test("auto-disables on consecutive transport failures (UNAVAILABLE)") {
+      val attempts = AtomicInteger(0)
+      val received = CopyOnWriteArrayList<DashboardEvent>()
+      val server = startMockServer(received, port = 0) {
+        attempts.incrementAndGet()
+        throw StatusException(Status.UNAVAILABLE.withDescription("server down"))
+      }
+      val port = server.port
+
+      try {
+        val emitter = DashboardEmitter("localhost", port, maxFailures = 3)
+
+        repeat(10) { index -> emitter.tryEmit(runStartedEvent(index)) }
+
+        delay(1500.milliseconds)
+        emitter.close()
+
+        // Once disabled after maxFailures, no further events are attempted against the server.
+        attempts.get() shouldBe 3
+      } finally {
+        server.shutdownNow()
+      }
+    }
+
     test("close drains queued events before shutting down") {
       val received = CopyOnWriteArrayList<DashboardEvent>()
       val server = startMockServer(received, port = 0) {
-        delay(12)
+        delay(12.milliseconds)
       }
       val port = server.port
 

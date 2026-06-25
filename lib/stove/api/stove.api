@@ -529,7 +529,7 @@ public final class com/trendyol/stove/reporting/StoveReporter {
 public final class com/trendyol/stove/reporting/StoveReporter$Companion {
 }
 
-public final class com/trendyol/stove/reporting/StoveTestContext : kotlin/coroutines/AbstractCoroutineContextElement {
+public final class com/trendyol/stove/reporting/StoveTestContext : kotlin/coroutines/AbstractCoroutineContextElement, kotlinx/coroutines/ThreadContextElement {
 	public static final field Key Lcom/trendyol/stove/reporting/StoveTestContext$Key;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -545,7 +545,11 @@ public final class com/trendyol/stove/reporting/StoveTestContext : kotlin/corout
 	public final fun getTestName ()Ljava/lang/String;
 	public final fun getTestPath ()Ljava/util/List;
 	public fun hashCode ()I
+	public fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Lcom/trendyol/stove/reporting/StoveTestContext;)V
+	public synthetic fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Ljava/lang/Object;)V
 	public fun toString ()Ljava/lang/String;
+	public fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Lcom/trendyol/stove/reporting/StoveTestContext;
+	public synthetic fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/reporting/StoveTestContext$Key : kotlin/coroutines/CoroutineContext$Key {

@@ -12,6 +12,7 @@ import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestType
 import io.kotest.engine.test.TestResult
+import kotlinx.coroutines.withContext
 
 /**
  * Kotest extension that automatically manages test context and enriches test failures
@@ -135,10 +136,13 @@ class StoveKotestExtension : TestCaseExtension {
 private suspend fun <T> StoveReporter.withTestContext(
   ctx: StoveTestContext,
   block: suspend () -> T
-): T {
+): T = withContext(ctx) {
+  // Installing [ctx] as a coroutine context element mirrors it into StoveTestContextHolder
+  // across dispatcher thread switches, so report entries recorded from coroutines that
+  // resumed on another worker thread still resolve the correct test id.
   startTest(ctx)
   TraceContext.start(ctx.testId)
-  return try {
+  try {
     TraceContext.withCurrentPropagation {
       block()
     }

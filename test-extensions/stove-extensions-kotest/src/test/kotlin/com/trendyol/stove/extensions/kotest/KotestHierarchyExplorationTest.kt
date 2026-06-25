@@ -4,6 +4,7 @@ import io.kotest.core.extensions.TestCaseExtension
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestType
@@ -242,6 +243,54 @@ class DescribeSpecHierarchyTest : DescribeSpec({
           "It: should fail validation"
         )
       }
+    }
+  }
+})
+
+// -- ShouldSpec --
+
+private val shouldSpecCaptures = CopyOnWriteArrayList<CapturedTestInfo>()
+
+class ShouldSpecHierarchyTest : ShouldSpec({
+  extensions(HierarchyCaptureExtension(shouldSpecCaptures))
+
+  should("work as a flat test") {
+    val mine = shouldSpecCaptures.first { it.leafName == "work as a flat test" }
+    mine.testParts shouldContainExactly listOf("work as a flat test")
+    mine.displayPath shouldContainExactly listOf("should work as a flat test")
+    mine.type shouldBe TestType.Test
+    mine.hasParent shouldBe false
+    mine.parentType shouldBe null
+    mine.prefix shouldBe "should "
+    mine.specSimpleName shouldBe "ShouldSpecHierarchyTest"
+  }
+
+  context("order creation") {
+    should("create order") {
+      val mine = shouldSpecCaptures.first { it.leafName == "create order" }
+      // testParts() returns raw names without prefixes
+      mine.testParts shouldContainExactly listOf("order creation", "create order")
+      // displayPath includes the style-specific prefixes ("context " for context blocks,
+      // "should " for the leaf)
+      mine.displayPath shouldContainExactly listOf("context order creation", "should create order")
+      mine.type shouldBe TestType.Test
+      mine.hasParent shouldBe true
+      mine.parentType shouldBe TestType.Container
+      mine.prefix shouldBe "should "
+    }
+
+    should("validate order") {
+      val mine = shouldSpecCaptures.first { it.leafName == "validate order" }
+      mine.testParts shouldContainExactly listOf("order creation", "validate order")
+    }
+  }
+
+  // Verify container interception
+  context("container interception check") {
+    should("intercept context containers") {
+      val containers = shouldSpecCaptures.filter { it.type == TestType.Container }
+      val orderCreation = containers.first { it.leafName == "order creation" }
+      orderCreation.testParts shouldContainExactly listOf("order creation")
     }
   }
 })

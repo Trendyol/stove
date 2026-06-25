@@ -38,6 +38,7 @@ class DashboardEmitter(
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
   private val disabled = AtomicBoolean(false)
   private val consecutiveFailures = AtomicInteger(0)
+  private val rejectionLogged = AtomicBoolean(false)
   private val drainJob: Job
 
   init {
@@ -91,12 +92,28 @@ class DashboardEmitter(
       consecutiveFailures.set(0)
       ack
     } catch (e: StatusException) {
-      handleFailure(e, isGrpc = true)
+      if (e.status.code == Status.Code.INVALID_ARGUMENT) {
+        // Per-event validation rejection (e.g. an entry for an unknown/`default` test),
+        // not a transport outage. Drop this single event without counting it toward the
+        // consecutive-failure auto-disable, otherwise a burst of bad events would silently
+        // kill the whole dashboard for the run.
+        handleRejection(e)
+      } else {
+        handleFailure(e, isGrpc = true)
+      }
       null
     } catch (e: Exception) {
       handleFailure(e, isGrpc = false)
       null
     }
+
+  private fun handleRejection(e: StatusException) {
+    // A rejection means the server responded, so the transport is healthy: reset the counter.
+    consecutiveFailures.set(0)
+    if (rejectionLogged.compareAndSet(false, true)) {
+      logger.warn("Dashboard CLI rejected an event: ${e.status.description}. Such events are dropped; tests continue normally.")
+    }
+  }
 
   private fun handleFailure(e: Exception, isGrpc: Boolean) {
     val count = consecutiveFailures.incrementAndGet()
