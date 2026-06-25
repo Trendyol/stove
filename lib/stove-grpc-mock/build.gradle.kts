@@ -11,7 +11,7 @@ dependencies {
 dependencies {
   testImplementation(project(":test-extensions:stove-extensions-kotest"))
   testImplementation(libs.logback.classic)
-  testImplementation(libs.kotest.runner.junit5)
+  testImplementation(libs.kotest.runner.junit6)
   testImplementation(testFixtures(projects.lib.stove))
   testImplementation(projects.lib.stoveGrpc)
   testImplementation(libs.io.grpc.netty)

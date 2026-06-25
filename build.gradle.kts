@@ -83,7 +83,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
   }
   dependencies {
     testImplementation(kotlin("test"))
-    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.runner.junit6)
     testImplementation(libs.kotest.framework.engine)
     testImplementation(libs.kotest.assertions.core)
     detektPlugins(libs.detekt.formatting)

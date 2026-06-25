@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
   testFixturesApi(projects.starters.ktor.stoveKtor)
-  testFixturesApi(libs.kotest.runner.junit5)
+  testFixturesApi(libs.kotest.runner.junit6)
   testFixturesApi(libs.ktor.server.host.common)
 
   // DI systems as compileOnly - version provided by consuming module

@@ -8,7 +8,7 @@ plugins {
 dependencies {
   testFixturesApi(projects.starters.spring.stoveSpring)
   testFixturesApi(projects.starters.spring.stoveSpringKafka)
-  testFixturesApi(libs.kotest.runner.junit5)
+  testFixturesApi(libs.kotest.runner.junit6)
   testFixturesApi(libs.google.protobuf.kotlin)
   testFixturesApi(libs.kafka.streams.protobuf.serde)
 
