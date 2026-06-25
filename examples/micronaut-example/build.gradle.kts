@@ -62,7 +62,7 @@ stoveTracing {
 micronaut {
   version(libs.versions.micronaut.platform.get())
   runtime("netty")
-  testRuntime("kotest5")
+  testRuntime("kotest6")
   processing {
     incremental(true)
     annotations("stove.micronaut.example.*")

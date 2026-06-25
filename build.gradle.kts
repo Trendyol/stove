@@ -124,9 +124,9 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
   }
 
   tasks {
+
     test {
       useJUnitPlatform()
-      // Fail fast on CI to save time
       failFast = runningOnCI
       testlogger {
         setTheme("mocha")
@@ -139,6 +139,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
       }
       jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
     }
+
     kotlin {
       jvmToolchain(17)
       compilerOptions {
