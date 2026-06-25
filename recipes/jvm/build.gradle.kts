@@ -20,6 +20,8 @@ subprojects {
     plugin("kotlin")
   }
 
+  extra["kotlin-coroutines.version"] = rootProject.libs.versions.kotlinx.get()
+
   detekt {
     buildUponDefaultConfig = true
     parallel = true
