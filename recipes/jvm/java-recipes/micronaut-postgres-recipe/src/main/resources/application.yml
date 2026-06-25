@@ -1,0 +1,18 @@
+micronaut:
+  application:
+    name: micronaut-postgres-recipe
+  server:
+    port: 8092
+  http:
+    services:
+      lookup-api:
+        url: http://localhost:7079
+        connect-timeout: 2s
+        read-timeout: 22s
+
+r2dbc:
+  datasources:
+    default:
+      url: r2dbc:postgresql://localhost:5432/stove
+      username: postgres
+      password: postgres

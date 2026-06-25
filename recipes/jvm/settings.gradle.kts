@@ -19,6 +19,7 @@ include(
   "java-recipes",
   "java-recipes:spring-boot-postgres-recipe",
   "java-recipes:quarkus-basic-recipe",
+  "java-recipes:micronaut-postgres-recipe",
   "scala-recipes",
   "scala-recipes:spring-boot-basic-recipe",
   "shared",
