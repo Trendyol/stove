@@ -72,7 +72,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
       <div className="sticky top-0 z-10 border-b border-stove-border bg-[var(--stove-panel-strong)] px-4 py-3 shadow-sm">
         <TestHeader test={test} />
         {test.error && (
-          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-[var(--stove-red)]">
+          <div className="mt-3 truncate rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-[var(--stove-red)]">
             {test.error}
           </div>
         )}
