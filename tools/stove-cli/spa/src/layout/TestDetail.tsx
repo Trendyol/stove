@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { Test } from "../api/types";
 import { EntryRow } from "../components/EntryRow";
+import { ErrorDialog } from "../components/ErrorDialog";
 import { FlowTab } from "../components/FlowTab";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
@@ -20,6 +21,7 @@ interface TestDetailProps {
 
 export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
   const [tab, setTab] = useState<Tab>("timeline");
+  const [errorOpen, setErrorOpen] = useState(false);
   const liveRefetchInterval = isRunning(test.status) && !liveConnected ? 5000 : false;
 
   const { data: entries = [], error: entriesError } = useQuery({
@@ -72,9 +74,17 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
       <div className="sticky top-0 z-10 border-b border-stove-border bg-[var(--stove-panel-strong)] px-4 py-3 shadow-sm">
         <TestHeader test={test} />
         {test.error && (
-          <div className="mt-3 truncate rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-[var(--stove-red)]">
+          <button
+            type="button"
+            onClick={() => setErrorOpen(true)}
+            className="mt-3 block w-full cursor-pointer truncate rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-left font-mono text-xs text-[var(--stove-red)] hover:bg-red-500/20"
+            title="Click to view full error"
+          >
             {test.error}
-          </div>
+          </button>
+        )}
+        {errorOpen && test.error && (
+          <ErrorDialog error={test.error} onClose={() => setErrorOpen(false)} />
         )}
         <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       </div>
