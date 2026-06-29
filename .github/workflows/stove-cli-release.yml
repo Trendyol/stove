@@ -147,6 +147,10 @@ jobs:
             ```
             brew install Trendyol/trendyol-tap/stove
             ```
+            Already installed? Refresh the tap, then upgrade:
+            ```
+            brew update && brew upgrade stove
+            ```
 
             **Shell script (macOS & Linux):**
             ```

@@ -93,6 +93,7 @@ https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 ```bash
 # 1) Install and start the Dashboard CLI
 brew install Trendyol/trendyol-tap/stove
+# upgrade an existing install: brew update && brew upgrade stove
 stove
 
 # 2) Run your tests and open the dashboard

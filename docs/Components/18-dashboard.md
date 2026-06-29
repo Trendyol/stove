@@ -36,6 +36,13 @@ The dashboard is useful because the test timeline, trace tree, and system eviden
 
 Verify: `stove --version`.
 
+Upgrade an existing install (Homebrew caches the tap, so refresh it first):
+
+```bash
+brew update           # refresh the tap manifests so new versions are visible
+brew upgrade stove
+```
+
 ## Start the dashboard
 
 ```bash
