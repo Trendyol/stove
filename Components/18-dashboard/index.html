@@ -3599,23 +3599,27 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </div>
 </div>
 <p>Verify: <code>stove --version</code>.</p>
+<p>Upgrade an existing install (Homebrew caches the tap, so refresh it first):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>brew<span class="w"> </span>update<span class="w">           </span><span class="c1"># refresh the tap manifests so new versions are visible</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>brew<span class="w"> </span>upgrade<span class="w"> </span>stove
+</span></code></pre></div>
 <h2 id="start-the-dashboard">Start the dashboard<a class="headerlink" href="#start-the-dashboard" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>stove<span class="w">                                  </span><span class="c1"># default UI/REST/MCP port 4040, gRPC port 4041</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>stove<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span><span class="w"> </span>--grpc-port<span class="w"> </span><span class="m">9001</span><span class="w">     </span><span class="c1"># override ports</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>stove<span class="w"> </span>--fresh-start<span class="w">                    </span><span class="c1"># back up and recreate the DB, then start</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>stove<span class="w"> </span>--db<span class="w"> </span>./my-stove.sqlite<span class="w">           </span><span class="c1"># custom DB path</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>stove<span class="w"> </span>--clear<span class="w">                          </span><span class="c1"># clear stored runs and exit</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>stove<span class="w">                                  </span><span class="c1"># default UI/REST/MCP port 4040, gRPC port 4041</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>stove<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span><span class="w"> </span>--grpc-port<span class="w"> </span><span class="m">9001</span><span class="w">     </span><span class="c1"># override ports</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>stove<span class="w"> </span>--fresh-start<span class="w">                    </span><span class="c1"># back up and recreate the DB, then start</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>stove<span class="w"> </span>--db<span class="w"> </span>./my-stove.sqlite<span class="w">           </span><span class="c1"># custom DB path</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>stove<span class="w"> </span>--clear<span class="w">                          </span><span class="c1"># clear stored runs and exit</span>
 </span></code></pre></div>
 <p>Open the printed URL. Empty until tests run.</p>
 <h2 id="wire-your-tests">Wire your tests<a class="headerlink" href="#wire-your-tests" title="Permanent link">&para;</a></h2>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my-service&quot;</span><span class="p">)</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="c1">// If you start the CLI with `stove --grpc-port 9001`, match that here:</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="c1">// DashboardSystemOptions(appName = &quot;my-service&quot;, cliHost = &quot;localhost&quot;, cliPort = 9001)</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="c1">// ... other systems + runner</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my-service&quot;</span><span class="p">)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="c1">// If you start the CLI with `stove --grpc-port 9001`, match that here:</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="c1">// DashboardSystemOptions(appName = &quot;my-service&quot;, cliHost = &quot;localhost&quot;, cliPort = 9001)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="c1">// ... other systems + runner</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <p>Now the registered Stove systems stream test events to the dashboard while the CLI is running.</p>
 <h2 id="what-you-see">What you see<a class="headerlink" href="#what-you-see" title="Permanent link">&para;</a></h2>
@@ -3639,13 +3643,13 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </div>
 
 <h2 id="data-model">Data model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>database
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>└── apps (one per appName)
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    └── runs (one per test suite execution)
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        └── tests (one per test case)
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>            ├── entries  (HTTP, DB, Kafka, ...)
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>            ├── spans    (OTel tree)
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>            └── snapshots (system state at failure)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>database
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>└── apps (one per appName)
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    └── runs (one per test suite execution)
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>        └── tests (one per test case)
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>            ├── entries  (HTTP, DB, Kafka, ...)
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>            ├── spans    (OTel tree)
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>            └── snapshots (system state at failure)
 </span></code></pre></div>
 <p>Runs persist until you clear or recreate the database. Browse old runs to compare regressions.</p>
 <h2 id="fault-tolerance">Fault tolerance<a class="headerlink" href="#fault-tolerance" title="Permanent link">&para;</a></h2>
