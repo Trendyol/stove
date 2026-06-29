@@ -1,3 +1,5 @@
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Trendyol/stove/badge)](https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove)
 <p align="center">
   <img src="docs/assets/stove-mark.svg" alt="Stove logo" width="96" height="96"/>
 </p>
