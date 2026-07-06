@@ -9,12 +9,12 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/segmentio/kafka-go v0.4.51
 	github.com/trendyol/stove/go/stove-kafka v0.0.0-20260622074357-4c0623ac06bf
-	github.com/twmb/franz-go v1.21.4
+	github.com/twmb/franz-go v1.21.5
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
 	go.opentelemetry.io/otel/sdk v1.44.0
-	google.golang.org/grpc v1.81.1
+	google.golang.org/grpc v1.82.0
 )
 
 require (

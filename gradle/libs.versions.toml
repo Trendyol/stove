@@ -27,15 +27,15 @@ ktor = "3.5.1"
 koin = "4.2.2"
 quarkus = "3.37.1"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "9.4.2"
+elastic = "9.4.3"
 mongodb = "5.8.0"
 wiremock = "3.13.2"
 testcontainers = "2.0.5"
 cassandra-driver = "4.19.3"
 mysql = "9.7.0"
-spotless = "8.7.0"
+spotless = "8.8.0"
 detekt = "1.23.8"
-wire = "6.4.1"
+wire = "6.4.5"
 io-grpc = "1.82.1"
 io-grpc-kotlin = "1.5.0"
 google-protobuf = "4.35.1"
@@ -53,16 +53,16 @@ ktlint = "1.8.0"
 opentelemetry = "1.63.0"
 opentelemetry-semconv = "1.42.0"
 opentelemetry-instrumentation = "2.29.0"
-bytebuddy = "1.18.10"
+bytebuddy = "1.18.11"
 mordant = "3.0.2"
 
 # Recipes
-stove = "1.0.0.536-SNAPSHOT"
+stove = "1.0.0.537-SNAPSHOT"
 scala2x = "2.13.18"
 kotlinLogging = "8.0.4"
-kediatr = "4.3.0"
+kediatr = "4.4.0"
 db-scheduler = "16.12.0"
-flyway = "12.9.0"
+flyway = "12.10.0"
 lombok = "1.18.46"
 
 [libraries]
@@ -164,12 +164,12 @@ kotliquery = { module = "com.github.seratch:kotliquery", version = "1.9.1" }
 h2Database = { module = "com.h2database:h2", version = "2.4.240" }
 
 # postgres
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.11" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.12" }
 mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
-elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.4.2" }
+elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.4.3" }
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
