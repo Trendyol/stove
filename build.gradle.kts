@@ -96,6 +96,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
 
   spotless {
     kotlin {
+      target("src/**/*.kt")
       ktlint(libs.ktlint.cli.get().version)
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
         .editorConfigOverride(
@@ -110,6 +111,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
     }
 
     kotlinGradle {
+      target("*.gradle.kts")
       ktlint(libs.ktlint.cli.get().version)
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
         .editorConfigOverride(
