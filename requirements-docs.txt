@@ -2,5 +2,5 @@ mkdocs==1.6.1
 mkdocs-material==9.7.6
 mkdocs-awesome-pages-plugin==2.10.1
 mkdocs-macros-plugin==1.5.0
-pymdown-extensions==11.0
+pymdown-extensions==11.0.1
 PyYAML==6.0.3
