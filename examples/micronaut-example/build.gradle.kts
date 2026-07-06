@@ -51,7 +51,7 @@ application {
 graalvmNative.toolchainDetection = false
 
 java {
-  sourceCompatibility = JavaVersion.toVersion("17")
+  sourceCompatibility = JavaVersion.toVersion("25")
 }
 
 stoveTracing {

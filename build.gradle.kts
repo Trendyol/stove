@@ -9,6 +9,10 @@ plugins {
   alias(libs.plugins.detekt)
   alias(libs.plugins.binaryCompatibilityValidator)
   alias(libs.plugins.maven.publish)
+  alias(libs.plugins.micronaut.application) apply false
+  alias(libs.plugins.micronaut.library) apply false
+  alias(libs.plugins.micronaut.aot) apply false
+  alias(libs.plugins.google.ksp) apply false
   idea
   java
 }
@@ -39,6 +43,7 @@ apiValidation {
     "stove-tracing-gradle-plugin",
     "stove-dashboard-api",
     "stove-dashboard",
+    "stove-micronaut",
   )
 }
 kover {
@@ -99,7 +104,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
             "ktlint_standard_class-signature" to "disabled"
           )
         )
-      targetExclude("build/", "generated/", "out/")
+      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
     }
@@ -113,7 +118,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
             "ktlint_standard_class-signature" to "disabled"
           )
         )
-      targetExclude("build/", "generated/", "out/")
+      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
     }
   }
   the<IdeaModel>().apply {
@@ -140,10 +145,23 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
       jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
     }
 
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.toVersion("25"))) {
+      withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+        enabled = false
+      }
+    } else {
+      withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+        jvmTarget = "21"
+      }
+    }
+
     kotlin {
-      jvmToolchain(17)
+      val java25Projects = setOf("stove-micronaut", "micronaut-example")
+      val targetJvm = if (project.name in java25Projects) 25 else 17
+      jvmToolchain(targetJvm)
       compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
+        val targetJvmTarget = if (project.name in java25Projects) JvmTarget.JVM_25 else JvmTarget.JVM_17
+        jvmTarget.set(targetJvmTarget)
         allWarningsAsErrors = true
         freeCompilerArgs.addAll("-Xjsr305=strict")
       }
