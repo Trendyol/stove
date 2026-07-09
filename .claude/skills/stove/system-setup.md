@@ -207,6 +207,7 @@ Stove().with {
     postgresql(AppDb) {
         PostgresqlOptions.provided(
             jdbcUrl = "jdbc:postgresql://staging-db:5432/myapp",
+            host = "staging-db", port = 5432,   // host + port are required
             cleanup = { ops -> ops.execute("DELETE FROM orders WHERE test_data = true") },
             configureExposedConfiguration = { listOf() }
         )
@@ -214,6 +215,7 @@ Stove().with {
     redis(CacheCluster) {
         RedisOptions.provided(
             host = "staging-redis", port = 6379,
+            password = "secret",               // required
             configureExposedConfiguration = { listOf() }
         )
     }
@@ -226,6 +228,8 @@ Stove().with {
 ```
 
 **Important**: `Bridge` (DI access via `using<T>`) is **not available** with `providedApplication()` — there is no local DI container. Use `cleanup` lambdas to manage test data on external infrastructure.
+
+**Kafka in provided mode**: the deployed app has no Stove interceptor/bridge, so sink-based assertions (`shouldBePublished`, `shouldBeConsumed`) won't observe its messages. Use the inflight `consumer(topic) { record -> ... }` API instead — it reads directly from the broker and needs nothing in the AUT (see [writing-tests.md](writing-tests.md#kafka-assertions)).
 
 ## Keyed systems (multiple instances)
 
@@ -309,10 +313,13 @@ Keyed systems work with both Testcontainers and `.provided()` (external) instanc
 postgresql(AppDb) {
     PostgresqlOptions.provided(
         jdbcUrl = "jdbc:postgresql://staging-db:5432/app",
+        host = "staging-db", port = 5432,
         configureExposedConfiguration = { listOf() }
     )
 }
 ```
+
+All `provided()` factories accept `runMigrations: Boolean = true` — migrations run against the external instance by default. Pass `runMigrations = false` for shared infrastructure whose schema is managed elsewhere.
 
 ## HTTP Client
 
@@ -689,6 +696,8 @@ kafka {
 }
 ```
 
+For an externally managed cluster: `KafkaSystemOptions.provided(bootstrapServers = "broker:9092", configureExposedConfiguration = { ... })` — also accepts `cleanup`, `properties`, and `bridgeGrpcServerPort`.
+
 **Application-side requirements (Spring Boot Kafka)**:
 - Inject `RecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
 - Register `TestSystemKafkaInterceptor<*, *>` and a `StoveSerde` bean in test dependencies.
@@ -793,6 +802,8 @@ wiremock {
 ```
 
 All external service URLs must be configurable so they can be pointed to WireMock.
+
+Other options: `removeStubAfterRequestMatched` (auto-remove stubs after match), `afterStubRemoved` and `afterRequest` callbacks, `configure` for raw `WireMockConfiguration` access. Request verification (`shouldHaveBeenCalled`) is in [writing-tests.md](writing-tests.md#wiremock-mocking).
 
 ## gRPC Mock
 
@@ -962,6 +973,11 @@ quarkus(
 ```
 
 Supports both direct main runner and packaged runtime. Configurable startup timeout via `stove.quarkus.startup.timeout.ms` system property (default: 120s).
+
+Quarkus specifics:
+- If the app exposes no HTTP endpoint, publish a readiness signal: set `System.setProperty("stove.quarkus.ready", "true")` from an `@Observes StartupEvent` handler.
+- Kafka interceptors need shared classloading — add to `application.properties`: `quarkus.class-loading.parent-first-artifacts=org.apache.kafka:kafka-clients`. Without it, Stove's Kafka interceptor can't attach.
+- No `bridge()` — verify through system DSLs (HTTP, DB, Kafka) instead of `using<T>`.
 
 ### Micronaut
 

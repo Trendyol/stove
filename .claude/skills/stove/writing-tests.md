@@ -88,6 +88,14 @@ http {
     }
 }
 
+// Full verb surface (GETs take optional queryParams; all take headers + token):
+// get / getResponse / getMany / getBodilessResponse / readJsonStream
+// postAndExpectJson / postAndExpectBody / postAndExpectBodilessResponse
+// putAndExpectJson / putAndExpectBody / putAndExpectBodilessResponse
+// patchAndExpectJson / patchAndExpectBody / patchAndExpectBodilessResponse
+// deleteAndExpectJson / deleteAndExpectBodilessResponse
+// headAndExpectBodilessResponse / postMultipartAndExpectResponse
+
 // Multipart upload
 http {
     postMultipartAndExpectResponse<UploadResponse>(
@@ -407,7 +415,8 @@ kafka {
     }
 }
 
-// Verify consumed (stove-spring-kafka only)
+// Verify consumed — requires the bridge/interceptor wired into the AUT
+// (Spring: TestSystemKafkaInterceptor bean; Go: stove-kafka bridge; other: gRPC observer)
 kafka {
     shouldBeConsumed<OrderCreatedEvent>(atLeastIn = 20.seconds) {
         actual.orderId == orderId
@@ -430,7 +439,7 @@ kafka {
     }
 }
 
-// Verify retries (stove-spring-kafka only)
+// Verify retries (needs retry topic-suffix conventions; bridge required)
 kafka {
     shouldBeRetried<FailingEvent>(atLeastIn = 1.minutes, times = 3) {
         actual.id == "789"
@@ -445,7 +454,41 @@ kafka {
         metadata.headers["correlation-id"] != null
     }
 }
+
+// Peek raw records on a topic (no deserialization to a type)
+kafka {
+    peekPublishedMessages(atLeastIn = 5.seconds, topic = "order-events") { record ->
+        record.key == "order-456"   // return true to stop peeking
+    }
+    // Also: peekConsumedMessages(...), peekCommittedMessages(...)
+}
+
+// Admin operations against the broker
+kafka {
+    adminOperations {
+        createTopics(listOf(NewTopic("audit", 3, 1))).all().get()
+    }
+}
+
+// Inflight consumer (stove-kafka standalone only, like peek*) — a real
+// KafkaConsumer inside the test, reading straight from the broker. Needs NO
+// bridge/interceptor in the AUT, so it works against .provided() clusters
+// (staging/pre-prod) as well as containers.
+kafka {
+    val seen = mutableListOf<ConsumerRecord<String, String>>()
+    consumer<String, String>(
+        topic = "order-events",
+        keepConsumingAtLeastFor = 10.seconds  // poll window (default: 5s)
+    ) { record ->
+        seen += record
+    }
+    seen.map { it.key() } shouldContain orderId
+}
+// Defaults: readOnly = true (no offset commits), autoOffsetReset = "earliest",
+// random groupId per call. Override deserializers/config/groupId as needed.
 ```
+
+`shouldBePublished` / `shouldBeConsumed` / `shouldBeFailed` / `shouldBeRetried` exist in both `stove-kafka` (standalone) and `stove-spring-kafka`. All of them only see what the AUT-side bridge reports: Spring apps register `TestSystemKafkaInterceptor`, Go apps use the `go/stove-kafka` bridge, JVM non-Spring apps put `cfg.interceptorClass` on the client's interceptor list.
 
 ## WireMock mocking
 
@@ -501,6 +544,35 @@ wiremock {
         then { aResponse().withStatus(503) }
         then { aResponse().withStatus(200).withBody(it.serialize(result)) }
     }
+}
+
+// Verify requests reached the mock (call journal is scoped to the current test)
+wiremock {
+    // Called exactly once (default)
+    shouldHaveBeenCalled(RequestMethod.POST, "/payments/charge")
+
+    // With count, headers, query params, partial body matching
+    shouldHaveBeenCalled(
+        method = RequestMethod.POST,
+        url = "/payments/charge",
+        count = exactly(2),
+        requestContaining = mapOf("order.id" to orderId),
+        headers = mapOf("X-Api-Key" to "test"),
+        queryParams = mapOf("retry" to "true")
+    )
+
+    // Raw WireMock RequestPatternBuilder for anything else
+    shouldHaveBeenCalled(exactly(1)) {
+        postRequestedFor(urlEqualTo("/payments/charge"))
+            .withRequestBody(matchingJsonPath("$.amount"))
+    }
+
+    // Negative
+    shouldNotHaveBeenCalled(RequestMethod.DELETE, "/payments/charge")
+
+    // Inspect matching LoggedRequests directly
+    val calls = callsFor(RequestMethod.POST, "/payments/charge")
+    calls.size shouldBe 2
 }
 ```
 
@@ -708,11 +780,16 @@ test("staging smoke test — order flow") {
             }
         }
 
-        // Verify Kafka event on the remote cluster
+        // Verify Kafka event on the remote cluster.
+        // The deployed app has no Stove bridge/interceptor, so sink-based
+        // assertions (shouldBePublished/shouldBeConsumed) won't see its
+        // messages — use the inflight consumer to read from the broker directly.
         kafka {
-            shouldBePublished<OrderCreatedEvent>(10.seconds) {
-                actual.userId == userId
+            var found = false
+            consumer<String, String>(topic = "order-events", keepConsumingAtLeastFor = 10.seconds) { record ->
+                if (record.value().contains(userId)) found = true
             }
+            found shouldBe true
         }
     }
 }

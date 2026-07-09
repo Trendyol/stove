@@ -116,3 +116,11 @@ In test code, `DashboardSystemOptions.cliHost` defaults to `localhost`; `cliPort
 - `bridge()` is not supported on Quarkus yet; do not invent `com.trendyol.stove.quarkus.bridge`.
 - Configure `Stove().with { ... }.run()` once in suite setup, usually `beforeProject()`, not inside each test.
 - Keep examples minimal and app-specific. Add only the systems the user actually needs.
+- Ktor runners must not block: the app's `run` must start the engine with `wait = false` (a blocking main hangs the suite).
+
+## Known runtime pitfalls (0.25.x)
+
+Stove 0.25+ compiles against kotlinx-coroutines 1.11 and Ktor 3.5. Two failure signatures to recognize (full details in `docs/release-notes/0.25.0.md`):
+
+- `NoSuchMethodError: ... BuildersKt.runBlockingK$default` — the test runtime resolved an older coroutines (usually the Spring Boot BOM pinning 1.8.1, which overrides `resolutionStrategy.force`). Fix for Spring dependency-management users: `extra["kotlin-coroutines.version"] = "1.11.0"` in the module's `build.gradle.kts`; otherwise force via `resolutionStrategy.eachDependency`.
+- Multipart stub mismatches — Ktor 3.5 quotes `Content-Disposition` names (`name="file"`). Update exact-match WireMock multipart expectations to the quoted form.

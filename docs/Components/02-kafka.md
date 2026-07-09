@@ -119,7 +119,7 @@ stove {
     publish(
       topic = "orders.created",
       message = OrderCreatedEvent(id = "1"),
-      key = "1",
+      key = "1".some(),
       headers = mapOf("X-Correlation-ID" to "abc")
     )
   }
@@ -132,11 +132,6 @@ stove {
 stove {
   kafka {
     shouldBePublished<OrderCreatedEvent> {
-      actual.id == "1"
-    }
-
-    // Negative assertion: nothing matches in N seconds
-    shouldNotBePublished<OrderFailedEvent> {
       actual.id == "1"
     }
   }
@@ -193,26 +188,53 @@ stove {
 }
 ```
 
-`metadata` exposes `topic`, `partition`, `offset`, `key`, `headers`, `timestamp`.
+`metadata` exposes `topic`, `key`, `headers`.
 
-### Peek the in-flight stream
+### Peek the in-flight stream (standalone)
+
+Observe raw bridge-reported records on a topic without deserializing to a type. The condition receives each record; return `true` to stop peeking:
 
 ```kotlin
 stove {
   kafka {
-    val all = peek<OrderCreatedEvent>(topic = "orders.created", limit = 50)
-    all.map { it.actual.id } shouldContain "1"
+    peekPublishedMessages(atLeastIn = 5.seconds, topic = "orders.created") { record ->
+      record.key == "1"
+    }
+    // Also: peekConsumedMessages(...), peekCommittedMessages(...)
   }
 }
 ```
+
+### Inflight consumer (standalone)
+
+Spin up a real Kafka consumer inside the test, reading directly from the broker. It needs **no bridge or interceptor in the AUT**, which makes it the way to observe app-published messages when the app can't report to Stove — most notably against a [provided cluster](11-provided-instances.md) with a [deployed application](19-provided-application.md) (staging/pre-prod):
+
+```kotlin
+stove {
+  kafka {
+    val seen = mutableListOf<ConsumerRecord<String, String>>()
+    consumer<String, String>(
+      topic = "orders.created",
+      keepConsumingAtLeastFor = 10.seconds  // poll window (default: 5s)
+    ) { record ->
+      seen += record
+    }
+    seen.map { it.key() } shouldContain "1"
+  }
+}
+```
+
+Defaults: `readOnly = true` (no offset commits), `autoOffsetReset = "earliest"`, a random `groupId` per call. Override `keyDeserializer` / `valueDeserializer` / `config` for non-string payloads.
 
 ### Admin operations
 
 ```kotlin
 stove {
   kafka {
-    admin().createTopics(NewTopic("audit", 3, 1))
-    admin().listTopics().names().get() shouldContain "audit"
+    adminOperations {
+      createTopics(listOf(NewTopic("audit", 3, 1))).all().get()
+      listTopics().names().get() shouldContain "audit"
+    }
   }
 }
 ```
