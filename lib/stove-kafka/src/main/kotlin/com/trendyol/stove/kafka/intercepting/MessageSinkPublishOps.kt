@@ -1,9 +1,8 @@
 package com.trendyol.stove.kafka.intercepting
 
-import arrow.core.toOption
-import com.trendyol.stove.kafka.PublishedMessage
-import com.trendyol.stove.messaging.*
-import kotlinx.coroutines.runBlocking
+import com.trendyol.stove.kafka.*
+import com.trendyol.stove.messaging.ParsedMessage
+import com.trendyol.stove.tracing.TraceContext
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -13,19 +12,17 @@ internal interface MessageSinkPublishOps : CommonOps {
     clazz: KClass<T>,
     condition: (message: ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { store.publishedMessages().map { it } }
-    getRecords.waitUntilConditionMet(atLeastIn, "While expecting Publishing of ${clazz.java.simpleName}") {
-      val outcome = deserializeCatching(it.message.toByteArray(), clazz)
-      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), MessageMetadata(it.topic, it.key, it.headers)))
-    }
+    val testId = TraceContext.current()?.testId
+    awaitRecords(
+      within = atLeastIn,
+      subject = "While expecting Publishing of ${clazz.java.simpleName}",
+      testId = testId,
+      query = { store.publishedMessages().filter { it.headers.belongsToTest(testId) } }
+    ) { matches(it.message.toByteArray(), it.metadata(), clazz, condition) }
   }
 
-  fun recordPublishedMessage(record: PublishedMessage): Unit = runBlocking {
+  fun recordPublishedMessage(record: PublishedMessage) {
     store.record(record)
-    logger.info(
-      "Recorded Published Message: {}, testCase: {}",
-      record,
-      record.headers.firstNotNullOf { it.key == "testCase" }
-    )
+    logger.info("Recorded Published Message: {}, testCase: {}", record, record.headers["testCase"])
   }
 }

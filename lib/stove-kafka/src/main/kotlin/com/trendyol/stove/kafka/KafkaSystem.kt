@@ -16,8 +16,7 @@ import io.github.embeddedkafka.*
 import io.grpc.Server
 import io.grpc.netty.NettyServerBuilder
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.selects.*
+import kotlinx.coroutines.flow.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -182,15 +181,11 @@ class KafkaSystem(
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
     val store = sink.store
-    val belongsToTest: (Map<String, String>) -> Boolean = { headers ->
-      val testId = headers[TraceContext.STOVE_TEST_ID_HEADER].toOption()
-      testId.isNone() || testId.isSome { it == currentTestId }
-    }
 
-    val consumed = store.consumedMessages().filter { belongsToTest(it.headers) }
-    val published = store.publishedMessages().filter { belongsToTest(it.headers) }
-    val failed = store.failedMessages().filter { belongsToTest(it.headers) }
-    val retried = store.retriedMessages().filter { belongsToTest(it.headers) }
+    val consumed = store.consumedMessages().filter { it.headers.belongsToTest(currentTestId) }
+    val published = store.publishedMessages().filter { it.headers.belongsToTest(currentTestId) }
+    val failed = store.failedMessages().filter { it.headers.belongsToTest(currentTestId) }
+    val retried = store.retriedMessages().filter { it.headers.belongsToTest(currentTestId) }
     val topicPartitions = consumed.map { it.topic to it.partition }.toSet()
     val committed = store.committedMessages().filter { (it.topic to it.partition) in topicPartitions }
 
@@ -442,76 +437,65 @@ class KafkaSystem(
     atLeastIn: Duration = 5.seconds,
     times: Int = 1,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBeRetried",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Message retried $times time(s) matching condition within $atLeastIn"
+  ) { onMatch ->
     shouldBeRetriedInternal(T::class, atLeastIn, times) { parsed ->
-      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
 
   /**
-   * Waits until the consumed message is seen. This does not mean committed.
+   * Waits until a consumed message on [topic] matches [condition] and returns it.
+   * Seeing a consumed message does not mean it is committed.
    */
-  @Suppress("MagicNumber")
   suspend inline fun peekConsumedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
     crossinline condition: (ConsumedRecord) -> Boolean
-  ) = withTimeout(atLeastIn) {
-    var offset = -1L
-    var loop = true
-    while (loop) {
-      sink.store
-        .consumedMessages()
-        .filter { it.topic == topic && it.offset > offset }
-        .onEach { offset = it.offset }
-        .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
-        .forEach { loop = !condition(it) }
-      delay(100)
-    }
+  ): ConsumedRecord = withTimeout(atLeastIn) {
+    sink.store
+      .consumedRecords()
+      .filter { it.topic == topic }
+      .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
+      .first { condition(it) }
   }
 
   /**
-   * Waits until the committed message is seen with the given condition.
+   * Waits until a committed message on [topic] matches [condition] and returns it.
    */
-  @Suppress("MagicNumber")
   suspend inline fun peekCommittedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
     crossinline condition: (CommittedRecord) -> Boolean
-  ) = withTimeout(atLeastIn) {
-    var offset = -1L
-    var loop = true
-    while (loop) {
-      sink.store
-        .committedMessages()
-        .filter { it.topic == topic && it.offset > offset }
-        .onEach { offset = it.offset }
-        .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
-        .forEach { loop = !condition(it) }
-      delay(100)
-    }
+  ): CommittedRecord = withTimeout(atLeastIn) {
+    sink.store
+      .committedRecords()
+      .filter { it.topic == topic }
+      .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
+      .first { condition(it) }
   }
 
   /**
-   * Waits until the published message is seen with the given condition.
+   * Waits until a published message on [topic] matches [condition] and returns it.
    */
-  @Suppress("MagicNumber")
   suspend inline fun peekPublishedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
     crossinline condition: (PublishedRecord) -> Boolean
-  ) = withTimeout(atLeastIn) {
-    val seenIds = mutableMapOf<String, PublishedMessage>()
-    var loop = true
-    while (loop) {
-      sink.store
-        .publishedMessages()
-        .filter { it.topic == topic && !seenIds.containsKey(it.id) }
-        .onEach { seenIds[it.id] = it }
-        .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
-        .forEach { loop = !condition(it) }
-      delay(100)
-    }
+  ): PublishedRecord = withTimeout(atLeastIn) {
+    sink.store
+      .publishedRecords()
+      .filter { it.topic == topic }
+      .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
+      .first { condition(it) }
   }
 
   /**
@@ -620,8 +604,6 @@ class KafkaSystem(
     }
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-  @Suppress("MagicNumber")
   private suspend fun <K : Any, V : Any> consume(
     autoOffsetReset: String,
     readOnly: Boolean,
@@ -634,27 +616,19 @@ class KafkaSystem(
     keepConsumingAtLeastFor: Duration,
     groupId: String,
     onConsume: suspend (ConsumerRecord<K, V>) -> Unit
-  ) = coroutineScope {
+  ) = withContext(Dispatchers.IO) {
     val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId).apply(config)
-    val c = KafkaConsumer(props, keyDeserializer, valueDeserializer)
-    c.subscribe(listOf(topic))
-    val channel = Channel<ConsumerRecord<K, V>>()
-    val job = launch {
-      while (isActive) {
-        c.poll(pollTimeout.toJavaDuration()).forEach { channel.send(it) }
-        delay(100)
-      }
-    }
-    whileSelect {
-      onTimeout(keepConsumingAtLeastFor) {
-        c.close()
-        job.cancelAndJoin()
-        false
-      }
-      channel.onReceive {
-        onConsume(it)
-        if (!readOnly) c.commitSync()
-        !channel.isClosedForReceive
+    // Every consumer call (poll, commit, close) stays on this coroutine:
+    // KafkaConsumer is not safe for multi-threaded access.
+    KafkaConsumer(props, keyDeserializer, valueDeserializer).use { consumer ->
+      consumer.subscribe(listOf(topic))
+      withTimeoutOrNull(keepConsumingAtLeastFor) {
+        while (isActive) {
+          consumer.poll(pollTimeout.toJavaDuration()).forEach { record ->
+            onConsume(record)
+            if (!readOnly) consumer.commitSync()
+          }
+        }
       }
     }
   }

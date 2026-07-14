@@ -1,44 +1,35 @@
 package com.trendyol.stove.kafka.intercepting
 
-import arrow.core.toOption
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.messaging.*
-import kotlinx.coroutines.runBlocking
+import com.trendyol.stove.messaging.ParsedMessage
+import com.trendyol.stove.tracing.TraceContext
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 internal interface MessageSinkOps :
   MessageSinkPublishOps,
   CommonOps {
-  fun recordConsumed(record: ConsumedMessage): Unit = runBlocking {
+  fun recordConsumed(record: ConsumedMessage) {
     store.record(record)
-    logger.info(
-      "Recorded Consumed Message: {}, testCase: {}",
-      record,
-      record.headers.firstNotNullOf { it.key == "testCase" }
-    )
+    logger.info("Recorded Consumed Message: {}, testCase: {}", record, record.headers["testCase"])
   }
 
-  fun recordRetry(record: ConsumedMessage): Unit = runBlocking {
+  fun recordRetry(record: ConsumedMessage) {
     store.recordRetry(record)
-    logger.info(
-      "Recorded Retried Message: {}, testCase: {}",
-      record,
-      record.headers.firstNotNullOf { it.key == "testCase" }
-    )
+    logger.info("Recorded Retried Message: {}, testCase: {}", record, record.headers["testCase"])
   }
 
-  fun recordCommittedMessage(record: CommittedMessage): Unit = runBlocking {
+  fun recordCommittedMessage(record: CommittedMessage) {
     store.record(record)
     logger.info("Recorded Committed Message:{}", record)
   }
 
-  fun recordAcknowledgedMessage(record: AcknowledgedMessage): Unit = runBlocking {
+  fun recordAcknowledgedMessage(record: AcknowledgedMessage) {
     store.record(record)
     logger.info("Recorded Acknowledged Message:{}", record)
   }
 
-  fun recordError(record: ConsumedMessage): Unit = runBlocking {
+  fun recordError(record: ConsumedMessage) {
     store.recordFailure(record)
     logger.info("Recorded Failed Message: {}", record)
   }
@@ -48,21 +39,19 @@ internal interface MessageSinkOps :
     clazz: KClass<T>,
     condition: (metadata: ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { store.consumedMessages() }
-    getRecords.waitUntilConditionMet(atLeastIn, "While expecting consuming of ${clazz.java.simpleName}") {
-      val outcome = deserializeCatching(it.message.toByteArray(), clazz)
-      outcome.isSuccess &&
-        condition(
-          SuccessfulParsedMessage(
-            outcome.getOrNull().toOption(),
-            it.metadata()
-          )
-        ) &&
+    val testId = TraceContext.current()?.testId
+    awaitRecords(
+      within = atLeastIn,
+      subject = "While expecting consuming of ${clazz.java.simpleName}",
+      testId = testId,
+      query = { store.consumedMessages().filter { it.headers.belongsToTest(testId) } }
+    ) {
+      matches(it.message.toByteArray(), it.metadata(), clazz, condition) &&
         store.isCommitted(it.topic, it.offset, it.partition)
     }
 
-    throwIfFailed(clazz, condition)
-    throwIfRetried(clazz, condition)
+    throwIfFailed(clazz, testId, condition)
+    throwIfRetried(clazz, testId, condition)
   }
 
   suspend fun <T : Any> waitUntilFailed(
@@ -70,22 +59,22 @@ internal interface MessageSinkOps :
     clazz: KClass<T>,
     condition: (ParsedMessage<T>) -> Boolean
   ) {
-    class FailedMessage(
-      val message: ByteArray,
-      val metadata: MessageMetadata
-    )
-
-    val getRecords = {
-      store.failedMessages().map { FailedMessage(it.message.toByteArray(), it.metadata()) } +
+    val testId = TraceContext.current()?.testId
+    awaitRecords(
+      within = atLeastIn,
+      subject = "While expecting Failure of ${clazz.java.simpleName}",
+      testId = testId,
+      query = {
         store
-          .publishedMessages()
-          .filter { topicSuffixes.isErrorTopic(it.topic) }
-          .map { FailedMessage(it.message.toByteArray(), it.metadata()) }
-    }
-    getRecords.waitUntilConditionMet(atLeastIn, "While expecting Failure of ${clazz.java.simpleName}") {
-      val outcome = deserializeCatching(it.message, clazz)
-      outcome.isSuccess && condition(SuccessfulParsedMessage(outcome.getOrNull().toOption(), it.metadata))
-    }
+          .failedMessages()
+          .filter { it.headers.belongsToTest(testId) }
+          .map { it.message.toByteArray() to it.metadata() } +
+          store
+            .publishedMessages()
+            .filter { topicSuffixes.isErrorTopic(it.topic) && it.headers.belongsToTest(testId) }
+            .map { it.message.toByteArray() to it.metadata() }
+      }
+    ) { (payload, metadata) -> matches(payload, metadata, clazz, condition) }
   }
 
   suspend fun <T : Any> waitUntilRetried(
@@ -94,22 +83,15 @@ internal interface MessageSinkOps :
     clazz: KClass<T>,
     condition: (message: ParsedMessage<T>) -> Boolean
   ) {
-    val getRecords = { store.retriedMessages() }
-    val failedFunc = suspend {
-      getRecords.waitUntilConditionMet(atLeastIn, "While expecting Retrying of ${clazz.java.simpleName}") {
-        val outcome = deserializeCatching(it.message.toByteArray(), clazz)
-        outcome.isSuccess &&
-          condition(
-            SuccessfulParsedMessage(
-              outcome.getOrNull().toOption(),
-              MessageMetadata(it.topic, it.key, it.headers)
-            )
-          )
-      }
-    }
-
-    failedFunc.waitUntilCount(atLeastIn, times)
+    val testId = TraceContext.current()?.testId
+    awaitRecords(
+      within = atLeastIn,
+      subject = "While expecting Retrying of ${clazz.java.simpleName}",
+      testId = testId,
+      count = times,
+      query = { store.retriedMessages().filter { it.headers.belongsToTest(testId) } }
+    ) { matches(it.message.toByteArray(), it.metadata(), clazz, condition) }
   }
 
-  override fun dumpMessages(): String = "Sink so far:\n$store"
+  override fun dumpMessages(testId: String?): String = "Sink so far:\n${store.dump(testId)}"
 }

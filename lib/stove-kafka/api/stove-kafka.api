@@ -558,13 +558,25 @@ public final class com/trendyol/stove/kafka/intercepting/GrpcUtils {
 }
 
 public final class com/trendyol/stove/kafka/intercepting/MessageStore {
+	public static final field Companion Lcom/trendyol/stove/kafka/intercepting/MessageStore$Companion;
 	public fun <init> ()V
 	public final fun committedMessages ()Ljava/util/Collection;
+	public final fun committedRecords ()Lkotlinx/coroutines/flow/Flow;
 	public final fun consumedMessages ()Ljava/util/Collection;
+	public final fun consumedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun dump (Ljava/lang/String;)Ljava/lang/String;
 	public final fun failedMessages ()Ljava/util/Collection;
+	public final fun failedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;
+	public final fun getVersion ()Lkotlinx/coroutines/flow/StateFlow;
 	public final fun publishedMessages ()Ljava/util/Collection;
+	public final fun publishedRecords ()Lkotlinx/coroutines/flow/Flow;
 	public final fun retriedMessages ()Ljava/util/Collection;
+	public final fun retriedRecords ()Lkotlinx/coroutines/flow/Flow;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/kafka/intercepting/MessageStore$Companion {
 }
 
 public final class com/trendyol/stove/kafka/intercepting/StoveKafkaBridge : org/apache/kafka/clients/consumer/ConsumerInterceptor, org/apache/kafka/clients/producer/ProducerInterceptor {
@@ -586,15 +598,86 @@ public final class com/trendyol/stove/kafka/intercepting/StoveKafkaObserverGrpcS
 	public fun onPublishedMessage (Lcom/trendyol/stove/kafka/PublishedMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public abstract interface class com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+}
+
+public final class com/trendyol/stove/kafka/intercepting/StoveMessageEvent$Acknowledged : com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+	public fun <init> (Lcom/trendyol/stove/kafka/AcknowledgedMessage;)V
+	public final fun component1 ()Lcom/trendyol/stove/kafka/AcknowledgedMessage;
+	public final fun copy (Lcom/trendyol/stove/kafka/AcknowledgedMessage;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Acknowledged;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Acknowledged;Lcom/trendyol/stove/kafka/AcknowledgedMessage;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Acknowledged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/trendyol/stove/kafka/AcknowledgedMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/kafka/intercepting/StoveMessageEvent$Committed : com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+	public fun <init> (Lcom/trendyol/stove/kafka/CommittedMessage;)V
+	public final fun component1 ()Lcom/trendyol/stove/kafka/CommittedMessage;
+	public final fun copy (Lcom/trendyol/stove/kafka/CommittedMessage;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Committed;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Committed;Lcom/trendyol/stove/kafka/CommittedMessage;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Committed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/trendyol/stove/kafka/CommittedMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/kafka/intercepting/StoveMessageEvent$Consumed : com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+	public fun <init> (Lcom/trendyol/stove/kafka/ConsumedMessage;)V
+	public final fun component1 ()Lcom/trendyol/stove/kafka/ConsumedMessage;
+	public final fun copy (Lcom/trendyol/stove/kafka/ConsumedMessage;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Consumed;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Consumed;Lcom/trendyol/stove/kafka/ConsumedMessage;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Consumed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/trendyol/stove/kafka/ConsumedMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/kafka/intercepting/StoveMessageEvent$Failed : com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+	public fun <init> (Lcom/trendyol/stove/kafka/ConsumedMessage;)V
+	public final fun component1 ()Lcom/trendyol/stove/kafka/ConsumedMessage;
+	public final fun copy (Lcom/trendyol/stove/kafka/ConsumedMessage;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Failed;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Failed;Lcom/trendyol/stove/kafka/ConsumedMessage;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/trendyol/stove/kafka/ConsumedMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/kafka/intercepting/StoveMessageEvent$Published : com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+	public fun <init> (Lcom/trendyol/stove/kafka/PublishedMessage;)V
+	public final fun component1 ()Lcom/trendyol/stove/kafka/PublishedMessage;
+	public final fun copy (Lcom/trendyol/stove/kafka/PublishedMessage;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Published;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Published;Lcom/trendyol/stove/kafka/PublishedMessage;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Published;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/trendyol/stove/kafka/PublishedMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/kafka/intercepting/StoveMessageEvent$Retried : com/trendyol/stove/kafka/intercepting/StoveMessageEvent {
+	public fun <init> (Lcom/trendyol/stove/kafka/ConsumedMessage;)V
+	public final fun component1 ()Lcom/trendyol/stove/kafka/ConsumedMessage;
+	public final fun copy (Lcom/trendyol/stove/kafka/ConsumedMessage;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Retried;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Retried;Lcom/trendyol/stove/kafka/ConsumedMessage;ILjava/lang/Object;)Lcom/trendyol/stove/kafka/intercepting/StoveMessageEvent$Retried;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcom/trendyol/stove/kafka/ConsumedMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/trendyol/stove/kafka/intercepting/StoveMessageSink : com/trendyol/stove/kafka/intercepting/CommonOps, com/trendyol/stove/kafka/intercepting/MessageSinkOps {
 	public fun <init> (Lorg/apache/kafka/clients/admin/Admin;Lcom/trendyol/stove/serialization/StoveSerde;Lcom/trendyol/stove/kafka/TopicSuffixes;)V
+	public fun awaitRecords-ABIMYHs (JLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun deserializeCatching-gIAlu-s ([BLkotlin/reflect/KClass;)Ljava/lang/Object;
-	public fun dumpMessages ()Ljava/lang/String;
+	public fun dumpMessages (Ljava/lang/String;)Ljava/lang/String;
 	public fun getAdminClient ()Lorg/apache/kafka/clients/admin/Admin;
 	public fun getLogger ()Lorg/slf4j/Logger;
 	public fun getSerde ()Lcom/trendyol/stove/serialization/StoveSerde;
 	public fun getStore ()Lcom/trendyol/stove/kafka/intercepting/MessageStore;
 	public fun getTopicSuffixes ()Lcom/trendyol/stove/kafka/TopicSuffixes;
+	public fun matches ([BLcom/trendyol/stove/messaging/MessageMetadata;Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;)Z
 	public final fun onMessageAcknowledged (Lcom/trendyol/stove/kafka/AcknowledgedMessage;)V
 	public final fun onMessageCommitted (Lcom/trendyol/stove/kafka/CommittedMessage;)V
 	public final fun onMessageConsumed (Lcom/trendyol/stove/kafka/ConsumedMessage;)V
@@ -605,11 +688,9 @@ public final class com/trendyol/stove/kafka/intercepting/StoveMessageSink : com/
 	public fun recordError (Lcom/trendyol/stove/kafka/ConsumedMessage;)V
 	public fun recordPublishedMessage (Lcom/trendyol/stove/kafka/PublishedMessage;)V
 	public fun recordRetry (Lcom/trendyol/stove/kafka/ConsumedMessage;)V
-	public fun throwIfFailed (Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;)V
-	public fun throwIfRetried (Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;)V
-	public fun waitUntilConditionMet-WPwdCS8 (Lkotlin/jvm/functions/Function0;JLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun throwIfFailed (Lkotlin/reflect/KClass;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public fun throwIfRetried (Lkotlin/reflect/KClass;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
 	public fun waitUntilConsumed-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun waitUntilCount-dWUq8MI (Lkotlin/jvm/functions/Function1;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun waitUntilFailed-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun waitUntilPublished-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun waitUntilRetried-gRj5Bb8 (JILkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
