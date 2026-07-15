@@ -37,6 +37,10 @@ data class GrpcMockExposedConfiguration(
  *   Defaults to 0, which lets the system pick an available port automatically.
  *   This avoids port conflicts, especially in CI environments.
  * @property removeStubAfterRequestMatched If true, stubs are removed after being matched once.
+ * @property enableHealthService If true, serves the standard `grpc.health.v1.Health` service —
+ *   applications that gate startup on a healthy channel work without extra stubbing.
+ * @property enableReflectionService If true, serves the gRPC reflection service so tools
+ *   like `grpcurl` can inspect the mock.
  * @property afterStubMatched Callback invoked after a stub is matched.
  * @property onRequestReceived Callback invoked for each request received.
  * @property serverBuilder Optional custom server builder configuration.
@@ -45,6 +49,8 @@ data class GrpcMockExposedConfiguration(
 data class GrpcMockSystemOptions(
   val port: Int = 0,
   val removeStubAfterRequestMatched: Boolean = false,
+  val enableHealthService: Boolean = false,
+  val enableReflectionService: Boolean = false,
   val afterStubMatched: AfterStubMatched = { _, _ -> },
   val onRequestReceived: OnRequestReceived = { _, _ -> },
   val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*> = { it },
@@ -58,6 +64,8 @@ data class GrpcMockSystemOptions(
 internal data class GrpcMockContext(
   val port: Int,
   val removeStubAfterRequestMatched: Boolean,
+  val enableHealthService: Boolean,
+  val enableReflectionService: Boolean,
   val afterStubMatched: AfterStubMatched,
   val onRequestReceived: OnRequestReceived,
   val serverBuilder: (ServerBuilder<*>) -> ServerBuilder<*>,
@@ -71,6 +79,8 @@ internal fun Stove.withGrpcMock(options: GrpcMockSystemOptions): Stove =
     GrpcMockContext(
       options.port,
       options.removeStubAfterRequestMatched,
+      options.enableHealthService,
+      options.enableReflectionService,
       options.afterStubMatched,
       options.onRequestReceived,
       options.serverBuilder,
@@ -89,6 +99,8 @@ internal fun Stove.withGrpcMock(key: SystemKey, options: GrpcMockSystemOptions):
     GrpcMockContext(
       options.port,
       options.removeStubAfterRequestMatched,
+      options.enableHealthService,
+      options.enableReflectionService,
       options.afterStubMatched,
       options.onRequestReceived,
       options.serverBuilder,

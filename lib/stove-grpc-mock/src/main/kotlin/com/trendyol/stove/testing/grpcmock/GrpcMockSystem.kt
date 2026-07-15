@@ -12,6 +12,8 @@ import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import io.grpc.*
+import io.grpc.protobuf.services.HealthStatusManager
+import io.grpc.protobuf.services.ProtoReflectionServiceV1
 import io.grpc.stub.ServerCalls
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.*
@@ -23,6 +25,7 @@ import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 
 /**
  * Native gRPC mock server for testing gRPC service integrations.
@@ -115,10 +118,13 @@ class GrpcMockSystem internal constructor(
       stove.addReportListener(reportListener)
       reportListenerRegistered = true
     }
-    server = ctx
+    val builder = ctx
       .serverBuilder(ServerBuilder.forPort(ctx.port))
       .intercept(MetadataCapturingInterceptor)
       .fallbackHandlerRegistry(DynamicHandlerRegistry())
+    if (ctx.enableHealthService) builder.addService(HealthStatusManager().healthService)
+    if (ctx.enableReflectionService) builder.addService(ProtoReflectionServiceV1.newInstance())
+    server = builder
       .build()
       .also { it.start() }
 
@@ -177,11 +183,12 @@ class GrpcMockSystem internal constructor(
     methodName: String,
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    response: Message
+    response: Message,
+    delay: Duration? = null
   ): GrpcMockSystem = registerStub(
     serviceName,
     methodName,
-    StubDefinition.Unary(requestMatcher, metadataMatcher, response),
+    StubDefinition.Unary(requestMatcher, metadataMatcher, response, delay),
     "unary"
   ) { response.toString().take(200).some() }
 
@@ -217,13 +224,15 @@ class GrpcMockSystem internal constructor(
     methodName: String,
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    responses: List<Message>
+    responses: List<Message>,
+    delay: Duration? = null,
+    thenFailWith: Status? = null
   ): GrpcMockSystem {
     require(responses.isNotEmpty()) { "responses must not be empty" }
     return registerStub(
       serviceName,
       methodName,
-      StubDefinition.ServerStream(requestMatcher, metadataMatcher, responses),
+      StubDefinition.ServerStream(requestMatcher, metadataMatcher, responses, delay, thenFailWith),
       "server stream",
       metadata = mapOf("responseCount" to responses.size)
     )
@@ -262,11 +271,12 @@ class GrpcMockSystem internal constructor(
     methodName: String,
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    response: Message
+    response: Message,
+    delay: Duration? = null
   ): GrpcMockSystem = registerStub(
     serviceName,
     methodName,
-    StubDefinition.ClientStream(requestMatcher, metadataMatcher, response),
+    StubDefinition.ClientStream(requestMatcher, metadataMatcher, response, delay),
     "client stream"
   ) { response.toString().take(200).some() }
 
@@ -353,11 +363,13 @@ class GrpcMockSystem internal constructor(
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
     status: Status.Code,
-    message: String = status.name
+    message: String = status.name,
+    trailers: Metadata? = null,
+    delay: Duration? = null
   ): GrpcMockSystem = registerStub(
     serviceName,
     methodName,
-    StubDefinition.Error(requestMatcher, metadataMatcher, Status.fromCode(status), message),
+    StubDefinition.Error(requestMatcher, metadataMatcher, Status.fromCode(status), message, trailers, delay),
     "error",
     metadata = mapOf("status" to status.name, "message" to message)
   )
@@ -378,27 +390,39 @@ class GrpcMockSystem internal constructor(
     method: MethodDescriptor<*, *>,
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    response: Message
+    response: Message,
+    delay: Duration? = null
   ): GrpcMockSystem =
-    mockUnary(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, response)
+    mockUnary(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, response, delay)
 
   /** Mocks a server-streaming RPC identified by its generated [MethodDescriptor]. */
   suspend fun mockServerStream(
     method: MethodDescriptor<*, *>,
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    responses: List<Message>
+    responses: List<Message>,
+    delay: Duration? = null,
+    thenFailWith: Status? = null
   ): GrpcMockSystem =
-    mockServerStream(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, responses)
+    mockServerStream(
+      method.requireServiceName(),
+      method.requireBareMethodName(),
+      requestMatcher,
+      metadataMatcher,
+      responses,
+      delay,
+      thenFailWith
+    )
 
   /** Mocks a client-streaming RPC identified by its generated [MethodDescriptor]. */
   suspend fun mockClientStream(
     method: MethodDescriptor<*, *>,
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    response: Message
+    response: Message,
+    delay: Duration? = null
   ): GrpcMockSystem =
-    mockClientStream(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, response)
+    mockClientStream(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, response, delay)
 
   /** Mocks a bidi-streaming RPC identified by its generated [MethodDescriptor]. */
   suspend fun mockBidiStream(
@@ -414,9 +438,20 @@ class GrpcMockSystem internal constructor(
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
     status: Status.Code,
-    message: String = status.name
+    message: String = status.name,
+    trailers: Metadata? = null,
+    delay: Duration? = null
   ): GrpcMockSystem =
-    mockError(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, status, message)
+    mockError(
+      method.requireServiceName(),
+      method.requireBareMethodName(),
+      requestMatcher,
+      metadataMatcher,
+      status,
+      message,
+      trailers,
+      delay
+    )
 
   private fun MethodDescriptor<*, *>.requireServiceName(): String =
     requireNotNull(serviceName) { "MethodDescriptor has no service name: $fullMethodName" }
@@ -805,25 +840,44 @@ class GrpcMockSystem internal constructor(
   // ==================== Extension Functions ====================
 
   private fun StubDefinition.sendResponse(observer: StreamObserver<ByteArray>) {
+    val delay = when (this) {
+      is StubDefinition.Unary -> delay
+      is StubDefinition.ServerStream -> delay
+      is StubDefinition.ClientStream -> delay
+      is StubDefinition.Error -> delay
+      is StubDefinition.BidiStream -> null
+    }
+    if (delay == null) {
+      dispatchResponse(observer)
+    } else {
+      handlerScope.launch {
+        delay(delay)
+        dispatchResponse(observer)
+      }
+    }
+  }
+
+  private fun StubDefinition.dispatchResponse(observer: StreamObserver<ByteArray>) {
     when (this) {
       is StubDefinition.Unary -> observer.sendSingleAndComplete(response.toByteArray())
-      is StubDefinition.ServerStream -> observer.sendAllAndComplete(responses.map { it.toByteArray() })
+      is StubDefinition.ServerStream -> {
+        responses.forEach { observer.onNext(it.toByteArray()) }
+        thenFailWith?.let { observer.onError(it.asException()) } ?: observer.onCompleted()
+      }
+
       is StubDefinition.ClientStream -> observer.sendSingleAndComplete(response.toByteArray())
       is StubDefinition.Error -> observer.onError(toStatusException())
       is StubDefinition.BidiStream -> observer.sendUnexpectedStubType("non-bidi call")
     }
   }
 
-  private fun StubDefinition.Error.toStatusException(): StatusException =
-    (message?.let { status.withDescription(it) } ?: status).asException()
+  private fun StubDefinition.Error.toStatusException(): StatusException {
+    val describedStatus = message?.let { status.withDescription(it) } ?: status
+    return trailers?.let { StatusException(describedStatus, it) } ?: describedStatus.asException()
+  }
 
   private fun StreamObserver<ByteArray>.sendSingleAndComplete(bytes: ByteArray) {
     onNext(bytes)
-    onCompleted()
-  }
-
-  private fun StreamObserver<ByteArray>.sendAllAndComplete(bytesList: List<ByteArray>) {
-    bytesList.forEach { onNext(it) }
     onCompleted()
   }
 

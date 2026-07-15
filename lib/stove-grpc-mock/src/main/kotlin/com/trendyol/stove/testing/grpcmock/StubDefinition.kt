@@ -5,6 +5,7 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.Status
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Duration
 
 /**
  * Key for identifying a stub in the registry.
@@ -121,29 +122,42 @@ sealed class StubDefinition {
 
   /**
    * Unary RPC: single request -> single response
+   *
+   * @property delay Optional artificial latency before the response is sent — makes
+   *   client deadline (`DEADLINE_EXCEEDED`) testing possible.
    */
   data class Unary(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    val response: Message
+    val response: Message,
+    val delay: Duration? = null
   ) : StubDefinition()
 
   /**
    * Server streaming RPC: single request -> stream of responses
+   *
+   * @property delay Optional artificial latency before the stream starts.
+   * @property thenFailWith When set, the stream emits all [responses] and then fails
+   *   with this status instead of completing — the classic mid-stream failure scenario.
    */
   data class ServerStream(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    val responses: List<Message>
+    val responses: List<Message>,
+    val delay: Duration? = null,
+    val thenFailWith: Status? = null
   ) : StubDefinition()
 
   /**
    * Client streaming RPC: stream of requests -> single response
+   *
+   * @property delay Optional artificial latency before the response is sent.
    */
   data class ClientStream(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    val response: Message
+    val response: Message,
+    val delay: Duration? = null
   ) : StubDefinition()
 
   /**
@@ -158,12 +172,18 @@ sealed class StubDefinition {
 
   /**
    * Error response for any RPC type
+   *
+   * @property trailers Optional error trailers, e.g. carrying `google.rpc.Status` details
+   *   the way real gRPC APIs return structured errors.
+   * @property delay Optional artificial latency before the error is sent.
    */
   data class Error(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
     val status: Status,
-    val message: String? = null
+    val message: String? = null,
+    val trailers: Metadata? = null,
+    val delay: Duration? = null
   ) : StubDefinition()
 }
 
