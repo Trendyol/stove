@@ -1631,6 +1631,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#request-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pause-unpause-container-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3282,6 +3293,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#request-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pause-unpause-container-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3510,8 +3532,14 @@ Register <code>cassandra { CassandraSystemOptions(keyspace, datacenter, ...) }</
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="p">)</span>
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
 </span></code></pre></div>
+<h3 id="request-timeout">Request timeout<a class="headerlink" href="#request-timeout" title="Permanent link">&para;</a></h3>
+<p>Stove gives Cassandra requests 30 seconds by default so DDL can complete on a newly started node. Increase it for slower clusters:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">cassandra</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">CassandraSystemOptions</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">).</span><span class="na">requestTimeout</span><span class="p">(</span><span class="m">60.</span><span class="n">seconds</span><span class="p">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">}</span>
+</span></code></pre></div>
 <h3 id="pause-unpause-container-mode">Pause / unpause (container mode)<a class="headerlink" href="#pause-unpause-container-mode" title="Permanent link">&para;</a></h3>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">cassandra</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pause</span><span class="p">();</span><span class="w"> </span><span class="n">unpause</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">cassandra</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pause</span><span class="p">();</span><span class="w"> </span><span class="n">unpause</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="pitfalls">Pitfalls<a class="headerlink" href="#pitfalls" title="Permanent link">&para;</a></h2>
 <table>
@@ -3525,6 +3553,10 @@ Register <code>cassandra { CassandraSystemOptions(keyspace, datacenter, ...) }</
 <tr>
 <td><code>Cannot achieve consistency level</code></td>
 <td>Replication factor 1 in dev; raise only when you're testing multi-DC</td>
+</tr>
+<tr>
+<td><code>Query timed out</code></td>
+<td>Increase the driver's 30-second default with <code>.requestTimeout(60.seconds)</code></td>
 </tr>
 <tr>
 <td>Query needs <code>ALLOW FILTERING</code></td>
