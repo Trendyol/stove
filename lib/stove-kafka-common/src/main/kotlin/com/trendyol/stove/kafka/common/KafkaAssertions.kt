@@ -86,10 +86,8 @@ class KafkaAssertions<R : KafkaRecord>(
     ) { record -> matches(record, clazz, condition) }
 
     if (failIfConsumedWhileWaitingForFailure) {
-      val failureReason = matching.firstNotNullOfOrNull { it.reason }
-        ?: IllegalStateException("A matching error-topic record was observed")
-      store.consumedMessages().scoped(testId).firstOrNull {
-        matches(it, clazz, condition, reasonOverride = failureReason)
+      store.consumedMessages().scoped(testId).firstOrNull { consumed ->
+        matching.any { failed -> consumed.sameMessageAs(failed) }
       }?.let {
         throw AssertionError("Message was expected to fail, but was consumed successfully: $it \n ${dumpMessages(testId)}")
       }
@@ -141,14 +139,20 @@ class KafkaAssertions<R : KafkaRecord>(
   private fun <T : Any> matches(
     record: R,
     clazz: KClass<T>,
-    condition: (ParsedMessage<T>) -> Boolean,
-    reasonOverride: Throwable? = null
+    condition: (ParsedMessage<T>) -> Boolean
   ): Boolean = deserializeCatching(record.value, clazz)
     .map { value ->
-      val parsed = (record.reason ?: reasonOverride)?.let { FailedParsedMessage(value.some(), record.metadata, it) }
+      val parsed = record.reason?.let { FailedParsedMessage(value.some(), record.metadata, it) }
         ?: SuccessfulParsedMessage(value.some(), record.metadata)
       condition(parsed)
     }.getOrDefault(false)
+
+  private fun KafkaRecord.sameMessageAs(other: KafkaRecord): Boolean =
+    topic == other.topic &&
+      key == other.key &&
+      partition == other.partition &&
+      (offset == null || other.offset == null || offset == other.offset) &&
+      value.contentEquals(other.value)
 
   private fun <T : Any> deserializeCatching(value: ByteArray, clazz: KClass<T>): Result<T> =
     runCatching { serde.deserialize(value, clazz.java) }

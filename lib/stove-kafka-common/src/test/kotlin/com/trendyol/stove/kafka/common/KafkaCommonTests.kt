@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.UUID
@@ -112,10 +113,12 @@ class KafkaCommonTests :
       )
       store.recordFailed(record(event = CommonEvent("shared"), reason = IllegalStateException("boom")))
       store.recordConsumed(record(event = CommonEvent("shared")))
+      var conditionCalls = 0
 
       val failure = shouldThrow<AssertionError> {
         withTimeout(500.milliseconds) {
           assertions.waitUntilFailed(30.seconds, CommonEvent::class) { parsed ->
+            conditionCalls++
             val failed = parsed as FailedParsedMessage<CommonEvent>
             failed.reason.message == "boom" &&
               failed.message.isSome { event -> event.name == "shared" }
@@ -124,6 +127,7 @@ class KafkaCommonTests :
       }
 
       failure.message shouldContain "consumed successfully"
+      conditionCalls shouldBe 1
     }
 
     test("failed assertions expose the transport failure reason") {
@@ -171,5 +175,38 @@ class KafkaCommonTests :
       val dump = store.dump("test-1")
       dump shouldContain "mine"
       dump shouldContain "1 message(s) from other tests hidden"
+    }
+
+    test("dump scopes acknowledgements through published topics and counts hidden acknowledgements") {
+      val store = KafkaMessageStore<DefaultKafkaRecord>()
+      store.recordPublished(
+        record(topic = "mine", headers = mapOf(TraceContext.STOVE_TEST_ID_HEADER to "test-1"))
+      )
+      store.recordAcknowledged(
+        DefaultKafkaRecord(
+          id = "mine-ack",
+          value = byteArrayOf(),
+          metadata = MessageMetadata("mine", "", emptyMap()),
+          partition = 3,
+          offset = 7
+        )
+      )
+      store.recordPublished(
+        record(topic = "theirs", headers = mapOf(TraceContext.STOVE_TEST_ID_HEADER to "test-2"))
+      )
+      store.recordAcknowledged(
+        DefaultKafkaRecord(
+          id = "their-ack",
+          value = byteArrayOf(),
+          metadata = MessageMetadata("theirs", "", emptyMap()),
+          partition = 4,
+          offset = 8
+        )
+      )
+
+      val dump = store.dump("test-1")
+      dump shouldContain "mine-ack"
+      dump shouldNotContain "their-ack"
+      dump shouldContain "2 message(s) from other tests hidden"
     }
   })

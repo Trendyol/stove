@@ -114,6 +114,7 @@ class MessageStore {
   private fun CommittedMessage.toRecord() = DefaultKafkaRecord(
     id = id,
     value = byteArrayOf(),
+    // The stable Wire contract has no headers; KafkaMessageStore scopes commits via consumed records.
     metadata = MessageMetadata(topic, "", emptyMap()),
     partition = partition,
     offset = offset,
@@ -123,6 +124,7 @@ class MessageStore {
   private fun AcknowledgedMessage.toRecord() = DefaultKafkaRecord(
     id = id,
     value = byteArrayOf(),
+    // The stable Wire contract has no headers; KafkaMessageStore scopes acks via published topics.
     metadata = MessageMetadata(topic, "", emptyMap()),
     partition = partition,
     offset = offset,

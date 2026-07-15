@@ -12,10 +12,7 @@ val CoroutineScope.asExecutorService: ExecutorService
 internal class CoroutineExecutorService(
   private val coroutineScope: CoroutineScope
 ) : AbstractExecutorService() {
-  override fun execute(command: Runnable) {
-    if (!coroutineScope.isActive) throw RejectedExecutionException("Coroutine executor is shut down")
-    coroutineScope.launch { command.run() }
-  }
+  override fun execute(command: Runnable) = coroutineScope.launchOrReject(command)
 
   override fun shutdown() {
     coroutineScope.cancel()
@@ -40,8 +37,11 @@ internal class CoroutineExecutorService(
 internal class StoveCoroutineExecutor(
   private val scope: CoroutineScope
 ) : Executor {
-  override fun execute(command: Runnable) {
-    if (!scope.isActive) throw RejectedExecutionException("Coroutine executor is shut down")
-    scope.launch { command.run() }
-  }
+  override fun execute(command: Runnable) = scope.launchOrReject(command)
+}
+
+private fun CoroutineScope.launchOrReject(command: Runnable) {
+  if (!isActive) throw RejectedExecutionException("Coroutine executor is shut down")
+  val task = launch(start = CoroutineStart.LAZY) { command.run() }
+  if (!task.start()) throw RejectedExecutionException("Coroutine executor is shut down")
 }

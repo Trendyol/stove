@@ -80,13 +80,18 @@ class KafkaMessageStore<R : KafkaRecord> {
     val scopedRetried = retriedMessages().filter { it.headers.belongsToTest(testId) }
     val scopedFailed = failedMessages().filter { it.headers.belongsToTest(testId) }
     val topicPartitions = scopedConsumed.map { it.topic to it.partition }.toSet()
+    val publishedTopics = scopedPublished.map { it.topic }.toSet()
     val scopedCommitted = committedMessages().filter { (it.topic to it.partition) in topicPartitions }
-    val scopedAcknowledged = acknowledgedMessages().filter { (it.topic to it.partition) in topicPartitions }
+    // Commit and acknowledgement wire records do not carry headers. Scope them through the
+    // header-bearing records they describe instead of pretending they have their own test id.
+    val scopedAcknowledged = acknowledgedMessages().filter { it.topic in publishedTopics }
 
     val hidden = (consumedMessages().size - scopedConsumed.size) +
       (publishedMessages().size - scopedPublished.size) +
+      (committedMessages().size - scopedCommitted.size) +
       (retriedMessages().size - scopedRetried.size) +
-      (failedMessages().size - scopedFailed.size)
+      (failedMessages().size - scopedFailed.size) +
+      (acknowledgedMessages().size - scopedAcknowledged.size)
 
     val hiddenNote = if (hidden > 0) "\n|($hidden message(s) from other tests hidden)" else ""
     return render(

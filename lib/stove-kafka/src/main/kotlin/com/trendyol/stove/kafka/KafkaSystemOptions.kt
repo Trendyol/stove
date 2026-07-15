@@ -47,7 +47,7 @@ open class KafkaSystemOptions(
   /**
    * The Value serializer that is used to serialize messages.
    */
-  open val valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
+  open val valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(serde),
   /**
    * The options for the Kafka container.
    */
@@ -104,7 +104,7 @@ open class KafkaSystemOptions(
       listenPublishedMessagesFromStove: Boolean = false,
       bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
       serde: StoveSerde<Any, ByteArray> = stoveSerdeRef,
-      valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
+      valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(serde),
       properties: Map<String, Any> = emptyMap(),
       runMigrations: Boolean = true,
       cleanup: suspend (Admin) -> Unit = {},
@@ -141,7 +141,7 @@ class ProvidedKafkaSystemOptions(
   listenPublishedMessagesFromStove: Boolean = false,
   bridgeGrpcServerPort: Int = stoveKafkaBridgePortDefault.toInt(),
   serde: StoveSerde<Any, ByteArray> = stoveSerdeRef,
-  valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(),
+  valueSerializer: Serializer<Any> = StoveKafkaValueSerializer(serde),
   properties: Map<String, Any> = emptyMap(),
   cleanup: suspend (Admin) -> Unit = {},
   /**

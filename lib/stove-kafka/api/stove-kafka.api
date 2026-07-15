@@ -526,6 +526,8 @@ public final class com/trendyol/stove/kafka/StoveKafkaValueDeserializer : org/ap
 
 public final class com/trendyol/stove/kafka/StoveKafkaValueSerializer : org/apache/kafka/common/serialization/Serializer {
 	public fun <init> ()V
+	public fun <init> (Lcom/trendyol/stove/serialization/StoveSerde;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/serialization/StoveSerde;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun serialize (Ljava/lang/String;Ljava/lang/Object;)[B
 }
 

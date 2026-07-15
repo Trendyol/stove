@@ -11,6 +11,13 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
 import kotlinx.coroutines.isActive
 
+private class MarkerSerde(private val marker: String) : StoveSerde<Any, ByteArray> {
+  override fun serialize(value: Any): ByteArray = "$marker:$value".toByteArray()
+
+  override fun <T : Any> deserialize(value: ByteArray, clazz: Class<T>): T =
+    error("MarkerSerde is only used to verify publisher serialization")
+}
+
 class KafkaOptionsTests :
   FunSpec({
 
@@ -106,6 +113,32 @@ class KafkaOptionsTests :
         KafkaContext(EmbeddedKafkaRuntime, explicitOptions, keyName = "keyed").bridgeServerPort shouldBe 31005
       } finally {
         stoveKafkaBridgePortDefault = originalDefault
+      }
+    }
+
+    test("keyed Kafka publishers keep their default serializer bound to their own serde") {
+      val originalSerde = stoveSerdeRef
+      try {
+        val firstSerde = MarkerSerde("first")
+        val secondSerde = MarkerSerde("second")
+        val first = KafkaContext(
+          runtime = EmbeddedKafkaRuntime,
+          options = KafkaSystemOptions(serde = firstSerde, configureExposedConfiguration = { emptyList() }),
+          keyName = "first-system"
+        )
+        val second = KafkaContext(
+          runtime = EmbeddedKafkaRuntime,
+          options = KafkaSystemOptions(serde = secondSerde, configureExposedConfiguration = { emptyList() }),
+          keyName = "second-system"
+        )
+
+        // Simulate the second keyed system running after the first and updating compatibility state.
+        stoveSerdeRef = secondSerde
+
+        String(first.options.valueSerializer.serialize("topic", "payload")) shouldBe "first:payload"
+        String(second.options.valueSerializer.serialize("topic", "payload")) shouldBe "second:payload"
+      } finally {
+        stoveSerdeRef = originalSerde
       }
     }
 

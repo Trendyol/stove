@@ -250,7 +250,8 @@ class KafkaSystem(
     stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>(context.keyName)
 
   override suspend fun beforeRun() {
-    // Keep the public standalone Stove serializers aligned with this system's configured serde.
+    // Compatibility for no-arg serializers created outside KafkaSystemOptions. This system's own
+    // publisher uses the serializer already bound to its options and never reads this global.
     stoveSerdeRef = context.options.serde
   }
 
