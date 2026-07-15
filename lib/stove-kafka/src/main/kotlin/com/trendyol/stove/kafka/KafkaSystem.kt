@@ -179,7 +179,6 @@ class KafkaSystem(
   override val reportSystemName: String = "Kafka" + (context.keyName?.let { " [$it]" } ?: "")
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
-    val store = sink.store
 
     val consumed = store.consumedMessages().filter { it.headers.belongsToTest(currentTestId) }
     val published = store.publishedMessages().filter { it.headers.belongsToTest(currentTestId) }
@@ -245,7 +244,9 @@ class KafkaSystem(
   }
 
   @PublishedApi
-  internal lateinit var sink: StoveMessageSink
+  internal val store: MessageStore = MessageStore()
+  private val recorder = KafkaRecorder(store, context.options.topicSuffixes)
+  private val assertions = KafkaAssertions(store, context.options.serde, context.options.topicSuffixes)
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<KafkaExposedConfiguration> =
     stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>(context.keyName)
@@ -258,7 +259,6 @@ class KafkaSystem(
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
     adminClient = createAdminClient(exposedConfiguration)
-    sink = StoveMessageSink(adminClient, context.options.serde, context.options.topicSuffixes)
     grpcServer = startGrpcServer()
     bridgeRuntime.attach(grpcServer.port)
     bridgePortDiscovery = exposeBridgePortForInJvmDiscovery(context.keyName, grpcServer.port)
@@ -505,7 +505,7 @@ class KafkaSystem(
     topic: String,
     crossinline condition: (ConsumedRecord) -> Boolean
   ): ConsumedRecord = withTimeout(atLeastIn) {
-    sink.store
+    store
       .consumedRecords()
       .filter { it.topic == topic }
       .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
@@ -520,7 +520,7 @@ class KafkaSystem(
     topic: String,
     crossinline condition: (CommittedRecord) -> Boolean
   ): CommittedRecord = withTimeout(atLeastIn) {
-    sink.store
+    store
       .committedRecords()
       .filter { it.topic == topic }
       .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
@@ -535,7 +535,7 @@ class KafkaSystem(
     topic: String,
     crossinline condition: (PublishedRecord) -> Boolean
   ): PublishedRecord = withTimeout(atLeastIn) {
-    sink.store
+    store
       .publishedRecords()
       .filter { it.topic == topic }
       .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
@@ -586,7 +586,7 @@ class KafkaSystem(
   /**
    * Provides access to the message store of the KafkaSystem.
    */
-  fun messageStore(): MessageStore = this.sink.store
+  fun messageStore(): MessageStore = this.store
 
   suspend fun adminOperations(block: suspend Admin.() -> Unit) = block(adminClient)
 
@@ -595,21 +595,21 @@ class KafkaSystem(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilConsumed(atLeastIn, clazz, condition) }
+  ): Unit = coroutineScope { assertions.waitUntilConsumed(atLeastIn, clazz, condition) }
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilFailed(atLeastIn, clazz, condition) }
+  ): Unit = coroutineScope { assertions.waitUntilFailed(atLeastIn, clazz, condition) }
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBePublishedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilPublished(atLeastIn, clazz, condition) }
+  ): Unit = coroutineScope { assertions.waitUntilPublished(atLeastIn, clazz, condition) }
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeRetriedInternal(
@@ -617,7 +617,7 @@ class KafkaSystem(
     atLeastIn: Duration,
     times: Int,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilRetried(atLeastIn, times, clazz, condition) }
+  ): Unit = coroutineScope { assertions.waitUntilRetried(atLeastIn, times, clazz, condition) }
 
   private suspend fun obtainExposedConfiguration(): KafkaExposedConfiguration =
     when {
@@ -728,7 +728,7 @@ class KafkaSystem(
     NettyServerBuilder
       .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), bridgeServerPort))
       .executor(bridgeRuntime.scope.also { it.ensureActive() }.asExecutor)
-      .addService(StoveKafkaObserverGrpcServer(sink))
+      .addService(StoveKafkaObserverGrpcServer(recorder))
       .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
       .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
       .keepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)

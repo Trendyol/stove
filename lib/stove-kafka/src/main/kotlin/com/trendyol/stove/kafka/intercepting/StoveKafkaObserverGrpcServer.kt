@@ -4,7 +4,7 @@ import com.trendyol.stove.kafka.*
 import org.slf4j.*
 
 class StoveKafkaObserverGrpcServer(
-  private val sink: StoveMessageSink
+  private val recorder: KafkaRecorder
 ) : StoveKafkaObserverServiceWireGrpc.StoveKafkaObserverServiceImplBase() {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -15,25 +15,25 @@ class StoveKafkaObserverGrpcServer(
 
   override suspend fun onPublishedMessage(request: PublishedMessage): Reply {
     logger.debug("Received published Kafka message: {}", request)
-    sink.onMessagePublished(request)
+    recorder.onMessagePublished(request)
     return Reply(status = 200)
   }
 
   override suspend fun onConsumedMessage(request: ConsumedMessage): Reply {
     logger.debug("Received consumed Kafka message: {}", request)
-    sink.onMessageConsumed(request)
+    recorder.onMessageConsumed(request)
     return Reply(status = 200)
   }
 
   override suspend fun onCommittedMessage(request: CommittedMessage): Reply {
     logger.debug("Received committed Kafka message: {}", request)
-    sink.onMessageCommitted(request)
+    recorder.onMessageCommitted(request)
     return Reply(status = 200)
   }
 
   override suspend fun onAcknowledgedMessage(request: AcknowledgedMessage): Reply {
     logger.debug("Received acknowledged Kafka message: {}", request)
-    sink.onMessageAcknowledged(request)
+    recorder.onMessageAcknowledged(request)
     return Reply(status = 200)
   }
 }

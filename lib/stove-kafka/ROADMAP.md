@@ -48,7 +48,18 @@ The adopted design is therefore intentionally small:
 4. keep observer state internal—no identity-keyed endpoint getter on `KafkaExposedConfiguration`;
 5. require an explicit cross-language compatibility plan before changing this wire format in the future.
 
-**Follow-up:** `starters/spring/stove-spring-kafka` has its own separate `MessageStore` (still polling, still global dumps) and needs the same treatment.
+### D3 — recorder/assertions composition ✅
+
+The trait-style sharing (`CommonOps`/`MessageSinkOps`/`MessageSinkPublishOps` interfaces mixed into a single `StoveMessageSink`) was replaced by composition split along the two real consumers:
+
+- **`KafkaRecorder(store, topicSuffixes)`** — the write surface. The gRPC observer server depends on this class only; the store's raw record methods stay internal behind it.
+- **`KafkaAssertions(store, serde, topicSuffixes)`** — the signal-driven assertion engine (waits, deserialize-matching, test-id scoping, dumps), with every helper genuinely `private`. Transport-agnostic by construction.
+
+Why: the interfaces had exactly one implementer and zero polymorphic consumers, forced helpers (`awaitRecords`, `deserializeCatching`, `matches`) into the *public* API because interface members cannot be private, and required a dead `adminClient` dependency in the contract (the unit tests needed a reflection `Proxy` to fabricate an `Admin` that must never be called). All of that is gone; the public API surface shrank to four waits + four records, `KafkaSystem`'s store/recorder/assertions became eager `val`s (no lifecycle ordering), and the Proxy hack was deleted from the tests.
+
+This is also the reuse seam for the follow-up below: an integration that records through `KafkaRecorder` into a `MessageStore` gets the whole assertion engine unchanged, whatever its transport.
+
+**Follow-up:** `starters/spring/stove-spring-kafka` has its own separate `MessageStore` (still polling, still global dumps); port it onto `MessageStore` + `KafkaRecorder` + `KafkaAssertions` so both modules share one assertion engine.
 
 ## Theme C — Diagnostics & observability ⏳ next
 

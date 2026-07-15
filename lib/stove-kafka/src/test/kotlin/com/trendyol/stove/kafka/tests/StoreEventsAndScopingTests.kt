@@ -12,8 +12,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import okio.ByteString.Companion.EMPTY
 import okio.ByteString.Companion.toByteString
-import org.apache.kafka.clients.admin.Admin
-import java.lang.reflect.Proxy
 import java.util.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -76,12 +74,13 @@ private fun acknowledged() = AcknowledgedMessage(
 
 private fun taggedWith(testId: String): Map<String, String> = mapOf(TraceContext.STOVE_TEST_ID_HEADER to testId)
 
-private fun noopAdmin(): Admin = Proxy.newProxyInstance(
-  Admin::class.java.classLoader,
-  arrayOf(Admin::class.java)
-) { _, method, _ -> error("Admin.${method.name} should not be called in this test") } as Admin
+private class Observer {
+  val store = MessageStore()
+  val recorder = KafkaRecorder(store, TopicSuffixes())
+  val assertions = KafkaAssertions(store, serde, TopicSuffixes())
+}
 
-private fun sink() = StoveMessageSink(noopAdmin(), serde, TopicSuffixes())
+private fun observer() = Observer()
 
 class StoreEventsAndScopingTests :
   FunSpec({
@@ -119,17 +118,17 @@ class StoreEventsAndScopingTests :
     }
 
     test("observer preserves the unary JVM and Go bridge contract") {
-      val messageSink = sink()
-      val server = StoveKafkaObserverGrpcServer(messageSink)
+      val observer = observer()
+      val server = StoveKafkaObserverGrpcServer(observer.recorder)
 
       server.onPublishedMessage(published()).status shouldBe 200
       server.onConsumedMessage(consumed()).status shouldBe 200
       server.onCommittedMessage(committed()).status shouldBe 200
       server.onAcknowledgedMessage(acknowledged()).status shouldBe 200
 
-      messageSink.store.publishedMessages().size shouldBe 1
-      messageSink.store.consumedMessages().size shouldBe 1
-      messageSink.store.committedMessages().size shouldBe 1
+      observer.store.publishedMessages().size shouldBe 1
+      observer.store.consumedMessages().size shouldBe 1
+      observer.store.committedMessages().size shouldBe 1
     }
 
     test("record flows replay records stored before subscription") {
@@ -183,38 +182,38 @@ class StoreEventsAndScopingTests :
     }
 
     test("waitUntilConsumed matches messages tagged with the current test id") {
-      val messageSink = sink()
+      val observer = observer()
       TraceContext.use("test-1") {
         val message = consumed(offset = 0, headers = taggedWith("test-1"), payload = ScopedEvent("mine"))
-        messageSink.onMessageConsumed(message)
-        messageSink.onMessageCommitted(committed(offset = 1))
+        observer.recorder.onMessageConsumed(message)
+        observer.recorder.onMessageCommitted(committed(offset = 1))
 
-        messageSink.waitUntilConsumed(1.seconds, ScopedEvent::class) { parsed ->
+        observer.assertions.waitUntilConsumed(1.seconds, ScopedEvent::class) { parsed ->
           parsed.message.isSome { it.name == "mine" }
         }
       }
     }
 
     test("waitUntilConsumed matches untagged messages for apps that do not propagate headers") {
-      val messageSink = sink()
+      val observer = observer()
       TraceContext.use("test-1") {
-        messageSink.onMessageConsumed(consumed(offset = 0, payload = ScopedEvent("untagged")))
-        messageSink.onMessageCommitted(committed(offset = 1))
+        observer.recorder.onMessageConsumed(consumed(offset = 0, payload = ScopedEvent("untagged")))
+        observer.recorder.onMessageCommitted(committed(offset = 1))
 
-        messageSink.waitUntilConsumed(1.seconds, ScopedEvent::class) { parsed ->
+        observer.assertions.waitUntilConsumed(1.seconds, ScopedEvent::class) { parsed ->
           parsed.message.isSome { it.name == "untagged" }
         }
       }
     }
 
     test("waitUntilConsumed ignores messages tagged with another test id") {
-      val messageSink = sink()
+      val observer = observer()
       TraceContext.use("test-1") {
-        messageSink.onMessageConsumed(consumed(offset = 0, headers = taggedWith("test-2"), payload = ScopedEvent("theirs")))
-        messageSink.onMessageCommitted(committed(offset = 1))
+        observer.recorder.onMessageConsumed(consumed(offset = 0, headers = taggedWith("test-2"), payload = ScopedEvent("theirs")))
+        observer.recorder.onMessageCommitted(committed(offset = 1))
 
         val failure = shouldThrow<AssertionError> {
-          messageSink.waitUntilConsumed(250.milliseconds, ScopedEvent::class) { parsed ->
+          observer.assertions.waitUntilConsumed(250.milliseconds, ScopedEvent::class) { parsed ->
             parsed.message.isSome { it.name == "theirs" }
           }
         }
@@ -223,33 +222,33 @@ class StoreEventsAndScopingTests :
     }
 
     test("another test's failed message does not fail the current test") {
-      val messageSink = sink()
+      val observer = observer()
       TraceContext.use("test-1") {
         // Same payload failed in another test; only this test's copy succeeded.
-        messageSink.onMessageConsumed(
+        observer.recorder.onMessageConsumed(
           consumed(topic = "topic.DLT", offset = 0, headers = taggedWith("test-2"), payload = ScopedEvent("shared"))
         )
-        messageSink.onMessageConsumed(consumed(offset = 0, headers = taggedWith("test-1"), payload = ScopedEvent("shared")))
-        messageSink.onMessageCommitted(committed(offset = 1))
+        observer.recorder.onMessageConsumed(consumed(offset = 0, headers = taggedWith("test-1"), payload = ScopedEvent("shared")))
+        observer.recorder.onMessageCommitted(committed(offset = 1))
 
-        messageSink.waitUntilConsumed(1.seconds, ScopedEvent::class) { parsed ->
+        observer.assertions.waitUntilConsumed(1.seconds, ScopedEvent::class) { parsed ->
           parsed.message.isSome { it.name == "shared" }
         }
       }
     }
 
     test("waitUntilPublished is scoped to the current test id") {
-      val messageSink = sink()
+      val observer = observer()
       TraceContext.use("test-1") {
-        messageSink.onMessagePublished(published(headers = taggedWith("test-2"), payload = ScopedEvent("theirs")))
-        messageSink.onMessagePublished(published(headers = taggedWith("test-1"), payload = ScopedEvent("mine")))
+        observer.recorder.onMessagePublished(published(headers = taggedWith("test-2"), payload = ScopedEvent("theirs")))
+        observer.recorder.onMessagePublished(published(headers = taggedWith("test-1"), payload = ScopedEvent("mine")))
 
-        messageSink.waitUntilPublished(1.seconds, ScopedEvent::class) { parsed ->
+        observer.assertions.waitUntilPublished(1.seconds, ScopedEvent::class) { parsed ->
           parsed.message.isSome { it.name == "mine" }
         }
 
         shouldThrow<AssertionError> {
-          messageSink.waitUntilPublished(250.milliseconds, ScopedEvent::class) { parsed ->
+          observer.assertions.waitUntilPublished(250.milliseconds, ScopedEvent::class) { parsed ->
             parsed.message.isSome { it.name == "theirs" }
           }
         }
@@ -307,10 +306,10 @@ class StoreEventsAndScopingTests :
     }
 
     test("recording a message without headers does not throw") {
-      val messageSink = sink()
-      messageSink.onMessageConsumed(consumed(headers = emptyMap()))
-      messageSink.onMessagePublished(published(headers = emptyMap()))
-      messageSink.store.consumedMessages().size shouldBe 1
-      messageSink.store.publishedMessages().size shouldBe 1
+      val observer = observer()
+      observer.recorder.onMessageConsumed(consumed(headers = emptyMap()))
+      observer.recorder.onMessagePublished(published(headers = emptyMap()))
+      observer.store.consumedMessages().size shouldBe 1
+      observer.store.publishedMessages().size shouldBe 1
     }
   })
