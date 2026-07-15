@@ -12,9 +12,11 @@ Make the mock systems the strongest external-dependency testing surface on the J
 
 ## Priority order
 
-**D1 (grpc-mock test scoping — live bug) ✅ → D2 (wiremock fail-open journal — decision violation) ✅ → D3 (shared journal foundation in core) → C1 (near-miss diagnostics) + C2 (exchange inspector) → A (grpc-mock verification + descriptor typing) → B (fidelity) → C3 (error-path coverage) → E (contracts, drift, live mode — later bets).**
+**D1 (grpc-mock test scoping — live bug) ✅ → D2 (wiremock fail-open journal — decision violation) ✅ → D3 (shared journal foundation in core) ✅ → C1 (near-miss diagnostics) ✅ → A (grpc-mock verification + descriptor typing) ✅ → B (fidelity, both modules) ✅ → C2 (exchange inspector) + C3 (error-path coverage) + cross-test match warnings → E (contracts, drift, live mode — later bets).**
 
-Verification status for D1/D2: wiremock suite 62 tests and grpc-mock suite 25 tests green (including new fail-open scoping specs at both journal and server level), core suite green, `apiCheck` and `spotlessCheck` pass after API regeneration. Release note needed: `ReceivedRequest` gained a `testId` field (data-class constructor/copy binary change), and stubs registered outside a test context no longer carry a `"default"` test-id tag.
+What remains is dashboard-side work (C2/C3, M6 warnings — reporter → sqlite → stove-cli panels + MCP queries over data the journals now already capture) and the Theme E later bets.
+
+Verification status for the library work: core suite 323 tests, wiremock 68, grpc-mock 35 — all green, including dedicated specs for fail-open scoping, stub precedence/type-conflict semantics, near-miss diagnostics, typed verification, and both modules' fidelity features. `apiCheck` and `spotlessCheck` pass after API regeneration. Release notes needed: `ReceivedRequest` gained a `testId` field and `StubDefinition` subclasses gained `delay`/`thenFailWith`/`trailers` fields (data-class constructor/copy binary changes); `delay: Duration?` parameters were appended to wiremock `mock*` signatures (binary change, source-compatible); stubs registered outside a test context no longer carry a `"default"` test-id tag; grpc-mock stub matching is now last-registered-wins and mixed method types per method fail fast.
 
 The mock-facing dashboard work rides the same reporter → sqlite → dashboard (stove-cli) → MCP pipeline as the Kafka diagnostics theme; panels and MCP queries ship together.
 
