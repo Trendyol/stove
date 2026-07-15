@@ -23,6 +23,26 @@ data class StubKey(
  * Matcher for incoming requests.
  */
 sealed class RequestMatcher {
+  companion object {
+    /**
+     * Typed request matcher: parses the request bytes as [T] and evaluates the predicate.
+     * Bytes that do not parse as [T] never match.
+     *
+     * ```kotlin
+     * mockUnary(
+     *   serviceName = "users.UserService",
+     *   methodName = "GetUser",
+     *   requestMatcher = RequestMatcher.message<GetUserRequest> { it.userId == "123" },
+     *   response = response
+     * )
+     * ```
+     */
+    inline fun <reified T : Message> message(crossinline predicate: (T) -> Boolean): Custom {
+      val parser = ProtoPayloads.parserFor(T::class.java)
+      return Custom { bytes -> parser(bytes)?.let(predicate) == true }
+    }
+  }
+
   /** Matches any request */
   data object Any : RequestMatcher()
 

@@ -362,6 +362,170 @@ class GrpcMockSystem internal constructor(
     metadata = mapOf("status" to status.name, "message" to message)
   )
 
+  // ==================== Descriptor-typed Registration ====================
+
+  /**
+   * Mocks a unary RPC identified by its generated [MethodDescriptor] — compile-time safe,
+   * no service/method name strings.
+   *
+   * ```kotlin
+   * grpcMock {
+   *   mockUnary(GreeterGrpc.getSayHelloMethod(), response = reply)
+   * }
+   * ```
+   */
+  suspend fun mockUnary(
+    method: MethodDescriptor<*, *>,
+    requestMatcher: RequestMatcher = RequestMatcher.Any,
+    metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
+    response: Message
+  ): GrpcMockSystem =
+    mockUnary(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, response)
+
+  /** Mocks a server-streaming RPC identified by its generated [MethodDescriptor]. */
+  suspend fun mockServerStream(
+    method: MethodDescriptor<*, *>,
+    requestMatcher: RequestMatcher = RequestMatcher.Any,
+    metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
+    responses: List<Message>
+  ): GrpcMockSystem =
+    mockServerStream(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, responses)
+
+  /** Mocks a client-streaming RPC identified by its generated [MethodDescriptor]. */
+  suspend fun mockClientStream(
+    method: MethodDescriptor<*, *>,
+    requestMatcher: RequestMatcher = RequestMatcher.Any,
+    metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
+    response: Message
+  ): GrpcMockSystem =
+    mockClientStream(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, response)
+
+  /** Mocks a bidi-streaming RPC identified by its generated [MethodDescriptor]. */
+  suspend fun mockBidiStream(
+    method: MethodDescriptor<*, *>,
+    metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
+    handler: suspend (Flow<ByteArray>) -> Flow<Message>
+  ): GrpcMockSystem =
+    mockBidiStream(method.requireServiceName(), method.requireBareMethodName(), RequestMatcher.Any, metadataMatcher, handler)
+
+  /** Mocks a gRPC error for the RPC identified by its generated [MethodDescriptor]. */
+  suspend fun mockError(
+    method: MethodDescriptor<*, *>,
+    requestMatcher: RequestMatcher = RequestMatcher.Any,
+    metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
+    status: Status.Code,
+    message: String = status.name
+  ): GrpcMockSystem =
+    mockError(method.requireServiceName(), method.requireBareMethodName(), requestMatcher, metadataMatcher, status, message)
+
+  private fun MethodDescriptor<*, *>.requireServiceName(): String =
+    requireNotNull(serviceName) { "MethodDescriptor has no service name: $fullMethodName" }
+
+  private fun MethodDescriptor<*, *>.requireBareMethodName(): String =
+    requireNotNull(bareMethodName) { "MethodDescriptor has no method name: $fullMethodName" }
+
+  // ==================== Typed Verification ====================
+
+  /**
+   * Verifies that the mock received exactly [times] requests of type [T] on the given method
+   * satisfying [condition], scoped to the current test. Point-in-time: by the moment mock
+   * assertions run, the call either happened or it didn't — there is nothing to wait for.
+   *
+   * Both matched and unmatched requests count: the assertion is about what the application
+   * sent, not about stub bookkeeping.
+   *
+   * ```kotlin
+   * grpcMock {
+   *   shouldHaveBeenCalled<GetUserRequest>("users.UserService", "GetUser") { it.userId == "123" }
+   * }
+   * ```
+   */
+  suspend inline fun <reified T : Message> shouldHaveBeenCalled(
+    serviceName: String,
+    methodName: String,
+    times: Int = 1,
+    noinline condition: (T) -> Boolean = { true }
+  ): GrpcMockSystem =
+    verifyCallCount(serviceName, methodName, times, ProtoPayloads.parserFor(T::class.java), condition)
+
+  /** Descriptor-typed variant of [shouldHaveBeenCalled]. */
+  suspend inline fun <reified T : Message> shouldHaveBeenCalled(
+    method: MethodDescriptor<*, *>,
+    times: Int = 1,
+    noinline condition: (T) -> Boolean = { true }
+  ): GrpcMockSystem =
+    verifyCallCount(
+      requireNotNull(method.serviceName),
+      requireNotNull(method.bareMethodName),
+      times,
+      ProtoPayloads.parserFor(T::class.java),
+      condition
+    )
+
+  /**
+   * Verifies that no request of type [T] satisfying [condition] reached the given method in
+   * this test. Sound for mocks: the mock server is the endpoint itself, so absence of evidence
+   * here is evidence of absence.
+   */
+  suspend inline fun <reified T : Message> shouldNotHaveBeenCalled(
+    serviceName: String,
+    methodName: String,
+    noinline condition: (T) -> Boolean = { true }
+  ): GrpcMockSystem =
+    verifyCallCount(serviceName, methodName, 0, ProtoPayloads.parserFor(T::class.java), condition)
+
+  /** Descriptor-typed variant of [shouldNotHaveBeenCalled]. */
+  suspend inline fun <reified T : Message> shouldNotHaveBeenCalled(
+    method: MethodDescriptor<*, *>,
+    noinline condition: (T) -> Boolean = { true }
+  ): GrpcMockSystem =
+    verifyCallCount(
+      requireNotNull(method.serviceName),
+      requireNotNull(method.bareMethodName),
+      0,
+      ProtoPayloads.parserFor(T::class.java),
+      condition
+    )
+
+  @PublishedApi
+  internal suspend fun <T : Message> verifyCallCount(
+    serviceName: String,
+    methodName: String,
+    times: Int,
+    parser: (ByteArray) -> T?,
+    condition: (T) -> Boolean
+  ): GrpcMockSystem {
+    val fullMethodName = "$serviceName/$methodName"
+    val received = callJournal
+      .entries(reporter.currentTestId())
+      .map { it.request }
+      .filter { it.stubKey.fullMethodName == fullMethodName }
+    val matching = received.filter { request -> parser(request.requestBytes)?.let(condition) == true }
+
+    report(
+      action = "Verify called exactly $times time(s): $fullMethodName",
+      expected = "$times matching request(s)".some(),
+      actual = "${matching.size} matching request(s)".some()
+    ) {
+      if (matching.size != times) {
+        throw AssertionError(
+          "Expected exactly $times request(s) matching the condition on $fullMethodName, " +
+            "but found ${matching.size} of ${received.size} request(s) this test sent to the method." +
+            received.render(parser)
+        )
+      }
+    }
+    return this
+  }
+
+  private fun <T : Message> List<ReceivedRequest>.render(parser: (ByteArray) -> T?): String {
+    if (isEmpty()) return ""
+    return "\nReceived on this method (this test):\n" + take(MAX_RENDERED_REQUESTS).joinToString("\n") { request ->
+      val payload = parser(request.requestBytes)?.let { with(ProtoPayloads) { it.singleLine() } }
+      "  - { ${payload ?: "unparseable as expected type"} }"
+    } + if (size > MAX_RENDERED_REQUESTS) "\n  … and ${size - MAX_RENDERED_REQUESTS} more" else ""
+  }
+
   // ==================== Validation & Reporting ====================
 
   override suspend fun validate() {
@@ -461,7 +625,12 @@ class GrpcMockSystem internal constructor(
       metadata = metadata
     ) {
       val registered = stubs.computeIfAbsent(key.fullMethodName) { CopyOnWriteArrayList() }
-      val conflicting = registered.firstOrNull { it.definition.methodType != stub.methodType }
+      // Error stubs adapt to any method type, so they never conflict.
+      val conflicting = registered.firstOrNull {
+        stub !is StubDefinition.Error &&
+          it.definition !is StubDefinition.Error &&
+          it.definition.methodType != stub.methodType
+      }
       require(conflicting == null) {
         "Cannot register a ${stub.methodType} stub for ${key.fullMethodName}: " +
           "a ${conflicting?.definition?.methodType} stub already exists for this method. " +
@@ -535,9 +704,13 @@ class GrpcMockSystem internal constructor(
   private inner class DynamicHandlerRegistry : HandlerRegistry() {
     override fun lookupMethod(methodName: String, authority: String?): ServerMethodDefinition<*, *>? {
       logger.debug("Looking up method: $methodName")
-      return stubs[methodName]?.firstOrNull()?.let { registered ->
-        createHandler(methodName, registered.definition.methodType)
-      } ?: run {
+      // Error stubs are type-agnostic; the method's real type comes from any other stub.
+      return stubs[methodName]
+        ?.let { registered ->
+          registered.firstOrNull { it.definition !is StubDefinition.Error } ?: registered.firstOrNull()
+        }?.let { registered ->
+          createHandler(methodName, registered.definition.methodType)
+        } ?: run {
         logger.warn("No stub registered for method: $methodName")
         null
       }
@@ -710,6 +883,8 @@ class GrpcMockSystem internal constructor(
   }
 
   companion object {
+    private const val MAX_RENDERED_REQUESTS = 5
+
     fun GrpcMockSystem.server(): Server = server
   }
 }
