@@ -75,9 +75,10 @@ private fun acknowledged() = AcknowledgedMessage(
 private fun taggedWith(testId: String): Map<String, String> = mapOf(TraceContext.STOVE_TEST_ID_HEADER to testId)
 
 private class Observer {
+  private val topicSuffixes = TopicSuffixes()
   val store = MessageStore()
-  val recorder = KafkaRecorder(store, TopicSuffixes())
-  val assertions = KafkaAssertions(store, serde, TopicSuffixes())
+  val recorder = KafkaRecorder(store, topicSuffixes)
+  val assertions = KafkaAssertions(store, serde, topicSuffixes)
 }
 
 private fun observer() = Observer()
@@ -235,6 +236,56 @@ class StoreEventsAndScopingTests :
           parsed.message.isSome { it.name == "shared" }
         }
       }
+    }
+
+    test("waitUntilConsumed reports a matching failed message without waiting for its timeout") {
+      val observer = observer()
+      observer.recorder.onMessageConsumed(consumed(topic = "topic.DLT", payload = ScopedEvent("failed")))
+
+      val failure = shouldThrow<AssertionError> {
+        withTimeout(500.milliseconds) {
+          observer.assertions.waitUntilConsumed(30.seconds, ScopedEvent::class) { parsed ->
+            parsed.message.isSome { it.name == "failed" }
+          }
+        }
+      }
+      failure.message shouldContain "but failed"
+    }
+
+    test("waitUntilConsumed reports a matching retried message without waiting for its timeout") {
+      val observer = observer()
+      observer.recorder.onMessageConsumed(consumed(topic = "topic.retry", payload = ScopedEvent("retried")))
+
+      val failure = shouldThrow<AssertionError> {
+        withTimeout(500.milliseconds) {
+          observer.assertions.waitUntilConsumed(30.seconds, ScopedEvent::class) { parsed ->
+            parsed.message.isSome { it.name == "retried" }
+          }
+        }
+      }
+      failure.message shouldContain "was retried"
+    }
+
+    test("waitUntilRetried requires a positive count") {
+      val observer = observer()
+
+      val failure = shouldThrow<IllegalArgumentException> {
+        observer.assertions.waitUntilRetried(1.seconds, times = 0, ScopedEvent::class) { true }
+      }
+      failure.message shouldBe "times must be greater than zero"
+    }
+
+    test("an immediately matching assertion evaluates its condition once") {
+      val observer = observer()
+      observer.recorder.onMessagePublished(published(payload = ScopedEvent("published")))
+      var evaluations = 0
+
+      observer.assertions.waitUntilPublished(1.seconds, ScopedEvent::class) {
+        evaluations += 1
+        true
+      }
+
+      evaluations shouldBe 1
     }
 
     test("waitUntilPublished is scoped to the current test id") {

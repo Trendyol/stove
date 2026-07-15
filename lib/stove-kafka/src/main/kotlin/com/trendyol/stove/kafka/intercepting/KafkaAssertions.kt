@@ -31,18 +31,40 @@ class KafkaAssertions(
     condition: (metadata: ParsedMessage<T>) -> Boolean
   ) {
     val testId = TraceContext.current()?.testId
-    awaitRecords(
+    val matching = awaitRecords(
       within = atLeastIn,
       subject = "While expecting consuming of ${clazz.java.simpleName}",
       testId = testId,
-      query = { store.consumedMessages().filter { it.headers.belongsToTest(testId) } }
-    ) {
-      matches(it.message.toByteArray(), it.metadata(), clazz, condition) &&
-        store.isCommitted(it.topic, it.offset, it.partition)
+      query = {
+        store
+          .consumedMessages()
+          .filter { it.headers.belongsToTest(testId) }
+          .map(ConsumptionOutcome::Consumed) +
+          store
+            .failedMessages()
+            .filter { it.headers.belongsToTest(testId) }
+            .map(ConsumptionOutcome::Failed) +
+          store
+            .retriedMessages()
+            .filter { it.headers.belongsToTest(testId) }
+            .map(ConsumptionOutcome::Retried)
+      }
+    ) { outcome ->
+      val record = outcome.record
+      matches(record.message.toByteArray(), record.metadata(), clazz, condition) &&
+        (outcome !is ConsumptionOutcome.Consumed || store.isCommitted(record.topic, record.offset, record.partition))
     }
 
-    throwIfFailed(clazz, testId, condition)
-    throwIfRetried(clazz, testId, condition)
+    matching.filterIsInstance<ConsumptionOutcome.Failed>().firstOrNull()?.let {
+      throw AssertionError(
+        "Message was expected to be consumed successfully, but failed: ${it.record} \n ${dumpMessages(testId)}"
+      )
+    }
+    matching.filterIsInstance<ConsumptionOutcome.Retried>().firstOrNull()?.let {
+      throw AssertionError(
+        "Message was expected to be consumed successfully, but was retried: ${it.record} \n ${dumpMessages(testId)}"
+      )
+    }
   }
 
   suspend fun <T : Any> waitUntilPublished(
@@ -88,6 +110,8 @@ class KafkaAssertions(
     clazz: KClass<T>,
     condition: (message: ParsedMessage<T>) -> Boolean
   ) {
+    require(times > 0) { "times must be greater than zero" }
+
     val testId = TraceContext.current()?.testId
     awaitRecords(
       within = atLeastIn,
@@ -115,14 +139,19 @@ class KafkaAssertions(
     query: () -> Collection<T>,
     predicate: (T) -> Boolean
   ): Collection<T> {
-    val matching = { query().filter(predicate) }
+    require(count > 0) { "count must be greater than zero" }
+
+    var matching = emptyList<T>()
     val matched = withTimeoutOrNull(within) {
-      store.version.first { matching().size >= count }
-      matching()
+      store.version.first {
+        matching = query().filter(predicate)
+        matching.size >= count
+      }
+      matching
     }
     return matched ?: throw AssertionError(
       "GOT A TIMEOUT: $subject. Expected at least $count matching message(s) within $within, " +
-        "but found ${matching().size}. ${dumpMessages(testId)}"
+        "but found ${matching.size}. ${dumpMessages(testId)}"
     )
   }
 
@@ -138,30 +167,6 @@ class KafkaAssertions(
     .map { condition(SuccessfulParsedMessage(it.some(), metadata)) }
     .getOrDefault(false)
 
-  private fun <T : Any> throwIfFailed(
-    clazz: KClass<T>,
-    testId: String?,
-    selector: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = store
-    .failedMessages()
-    .filter { it.headers.belongsToTest(testId) }
-    .filter { matches(it.message.toByteArray(), it.metadata(), clazz, selector) }
-    .forEach {
-      throw AssertionError("Message was expected to be consumed successfully, but failed: $it \n ${dumpMessages(testId)}")
-    }
-
-  private fun <T : Any> throwIfRetried(
-    clazz: KClass<T>,
-    testId: String?,
-    selector: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = store
-    .retriedMessages()
-    .filter { it.headers.belongsToTest(testId) }
-    .filter { matches(it.message.toByteArray(), it.metadata(), clazz, selector) }
-    .forEach {
-      throw AssertionError("Message was expected to be consumed successfully, but was retried: $it \n ${dumpMessages(testId)}")
-    }
-
   private fun <T : Any> deserializeCatching(
     value: ByteArray,
     clazz: KClass<T>
@@ -169,4 +174,14 @@ class KafkaAssertions(
     .onFailure { exception -> logger.debug("Failed to deserialize message: ${String(value)}", exception) }
 
   private fun dumpMessages(testId: String?): String = "Sink so far:\n${store.dump(testId)}"
+
+  private sealed interface ConsumptionOutcome {
+    val record: ConsumedMessage
+
+    data class Consumed(override val record: ConsumedMessage) : ConsumptionOutcome
+
+    data class Failed(override val record: ConsumedMessage) : ConsumptionOutcome
+
+    data class Retried(override val record: ConsumedMessage) : ConsumptionOutcome
+  }
 }

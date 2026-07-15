@@ -595,21 +595,21 @@ class KafkaSystem(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { assertions.waitUntilConsumed(atLeastIn, clazz, condition) }
+  ): Unit = assertions.waitUntilConsumed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { assertions.waitUntilFailed(atLeastIn, clazz, condition) }
+  ): Unit = assertions.waitUntilFailed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBePublishedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { assertions.waitUntilPublished(atLeastIn, clazz, condition) }
+  ): Unit = assertions.waitUntilPublished(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeRetriedInternal(
@@ -617,7 +617,7 @@ class KafkaSystem(
     atLeastIn: Duration,
     times: Int,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { assertions.waitUntilRetried(atLeastIn, times, clazz, condition) }
+  ): Unit = assertions.waitUntilRetried(atLeastIn, times, clazz, condition)
 
   private suspend fun obtainExposedConfiguration(): KafkaExposedConfiguration =
     when {
