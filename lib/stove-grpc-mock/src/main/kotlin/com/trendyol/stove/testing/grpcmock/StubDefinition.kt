@@ -139,7 +139,22 @@ sealed class StubDefinition {
 }
 
 /**
+ * A stub together with the test that registered it. Requests matched by this stub
+ * are attributed to that test; a null [testId] means the stub was registered outside
+ * any test context and matches every test's view.
+ */
+internal data class RegisteredStub(
+  val key: StubKey,
+  val definition: StubDefinition,
+  val testId: String?
+)
+
+/**
  * Record of a request that was received by the mock server.
+ *
+ * @property testId The test this request belongs to, when provable — from the matched
+ *   stub's registration or from `X-Stove-Test-Id`/baggage metadata. Null means untagged:
+ *   the request is visible to every test (fail-open scoping).
  */
 data class ReceivedRequest(
   val stubKey: StubKey,
@@ -147,7 +162,8 @@ data class ReceivedRequest(
   val metadata: Metadata = Metadata(),
   val timestamp: Long = System.currentTimeMillis(),
   val matched: Boolean,
-  val stubId: String? = null
+  val stubId: String? = null,
+  val testId: String? = null
 ) {
   /** Get authorization header value if present */
   val authorizationHeader: String?

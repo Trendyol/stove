@@ -593,6 +593,7 @@ public final class com/trendyol/stove/reporting/StoveReporter {
 	public final fun collectSnapshots ()Ljava/util/List;
 	public final fun currentTest ()Lcom/trendyol/stove/reporting/TestReport;
 	public final fun currentTestId ()Ljava/lang/String;
+	public final fun currentTestIdOrNull ()Ljava/lang/String;
 	public final fun currentTestOrNull ()Lcom/trendyol/stove/reporting/TestReport;
 	public final fun dump (Lcom/trendyol/stove/reporting/ReportRenderer;)Ljava/lang/String;
 	public final fun dumpIfFailed (Lcom/trendyol/stove/reporting/ReportRenderer;)Ljava/lang/String;

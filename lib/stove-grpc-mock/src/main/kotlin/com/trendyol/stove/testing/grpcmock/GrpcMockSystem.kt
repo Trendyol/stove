@@ -3,9 +3,9 @@
 package com.trendyol.stove.testing.grpcmock
 
 import arrow.core.*
-import com.github.benmanes.caffeine.cache.*
 import com.google.protobuf.Message
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.messaging.kafka.stoveTestId
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
@@ -18,8 +18,9 @@ import kotlinx.coroutines.flow.*
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.InputStream
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 /**
@@ -95,11 +96,19 @@ class GrpcMockSystem internal constructor(
   private val logger = LoggerFactory.getLogger(javaClass)
   override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
 
-  private val stubs = ConcurrentHashMap<String, MutableList<Pair<StubKey, StubDefinition>>>()
-  private val requestLog: Cache<String, ReceivedRequest> = Caffeine
-    .newBuilder()
-    .maximumSize(10_000)
-    .build()
+  private val stubs = ConcurrentHashMap<String, CopyOnWriteArrayList<RegisteredStub>>()
+  private val callJournal = GrpcCallJournal()
+  private val completedTestIds = ConcurrentLinkedQueue<String>()
+  private val reportListener = object : ReportEventListener {
+    override fun onTestStarted(ctx: StoveTestContext) {
+      clearCompletedTestJournals()
+    }
+
+    override fun onTestEnded(testId: String) {
+      completedTestIds.add(testId)
+    }
+  }
+  private var reportListenerRegistered = false
 
   private lateinit var server: Server
   private lateinit var exposedConfiguration: GrpcMockExposedConfiguration
@@ -109,6 +118,10 @@ class GrpcMockSystem internal constructor(
   // ==================== Lifecycle ====================
 
   override suspend fun run() {
+    if (!reportListenerRegistered) {
+      stove.addReportListener(reportListener)
+      reportListenerRegistered = true
+    }
     server = ctx
       .serverBuilder(ServerBuilder.forPort(ctx.port))
       .intercept(MetadataCapturingInterceptor)
@@ -131,7 +144,21 @@ class GrpcMockSystem internal constructor(
   }
 
   override fun close(): Unit = runBlocking {
-    Try { stop() }.recover { logger.warn("Error stopping gRPC mock: ${it.message}") }
+    Try {
+      if (reportListenerRegistered) {
+        stove.removeReportListener(reportListener)
+        reportListenerRegistered = false
+      }
+      stop()
+      callJournal.clearAll()
+    }.recover { logger.warn("Error stopping gRPC mock: ${it.message}") }
+  }
+
+  private fun clearCompletedTestJournals() {
+    while (true) {
+      val testId = completedTestIds.poll() ?: return
+      callJournal.clear(testId)
+    }
   }
 
   // ==================== Stub Registration ====================
@@ -343,7 +370,9 @@ class GrpcMockSystem internal constructor(
   // ==================== Validation & Reporting ====================
 
   override suspend fun validate() {
-    val unmatched = requestLog.asMap().values.filter { !it.matched }
+    val unmatched = callJournal
+      .requests(reporter.currentTestId())
+      .filter { !it.matched }
 
     if (unmatched.isNotEmpty()) {
       val error = AssertionError(
@@ -375,16 +404,24 @@ class GrpcMockSystem internal constructor(
   override fun then(): Stove = stove
 
   override fun snapshot(): SystemSnapshot {
-    val allStubs = stubs.values.flatten()
-    val allRequests = requestLog.asMap().values
+    val currentTestId = reporter.currentTestId()
+    val scopedStubs = stubs.values
+      .flatten()
+      .filter { it.testId == null || it.testId == currentTestId }
+    val scopedRequests = callJournal.requests(currentTestId)
 
     return SystemSnapshot(
       system = reportSystemName,
       state = mapOf(
-        "registeredStubs" to allStubs.map { (key, def) ->
-          mapOf("id" to key.id, "service" to key.serviceName, "method" to key.methodName, "type" to def::class.simpleName)
+        "registeredStubs" to scopedStubs.map { registered ->
+          mapOf(
+            "id" to registered.key.id,
+            "service" to registered.key.serviceName,
+            "method" to registered.key.methodName,
+            "type" to registered.definition::class.simpleName
+          )
         },
-        "receivedRequests" to allRequests.map { req ->
+        "receivedRequests" to scopedRequests.map { req ->
           mapOf(
             "method" to req.stubKey.fullMethodName,
             "matched" to req.matched,
@@ -394,11 +431,11 @@ class GrpcMockSystem internal constructor(
         }
       ),
       summary = """
-        |Registered stubs: ${allStubs.size}
-        |Received requests: ${allRequests.size}
-        |Matched requests: ${allRequests.count { it.matched }}
-        |Unmatched requests: ${allRequests.count { !it.matched }}
-        |Authenticated requests: ${allRequests.count { it.authorizationHeader != null }}
+        |Registered stubs: ${scopedStubs.size}
+        |Received requests: ${scopedRequests.size}
+        |Matched requests: ${scopedRequests.count { it.matched }}
+        |Unmatched requests: ${scopedRequests.count { !it.matched }}
+        |Authenticated requests: ${scopedRequests.count { it.authorizationHeader != null }}
       """.trimMargin()
     )
   }
@@ -425,7 +462,9 @@ class GrpcMockSystem internal constructor(
       output = outputProvider(),
       metadata = metadata
     ) {
-      stubs.computeIfAbsent(key.fullMethodName) { mutableListOf() }.add(key to stub)
+      stubs
+        .computeIfAbsent(key.fullMethodName) { CopyOnWriteArrayList() }
+        .add(RegisteredStub(key, stub, reporter.currentTestIdOrNull()))
       logger.debug("Registered stub for ${key.fullMethodName} (id: ${key.id})")
     }
     return this
@@ -437,32 +476,45 @@ class GrpcMockSystem internal constructor(
     fullMethodName: String,
     requestBytes: ByteArray,
     metadata: Metadata
-  ): Option<Pair<StubKey, StubDefinition>> {
+  ): Option<RegisteredStub> {
     val stubKey = fullMethodName.toStubKey()
     ctx.onRequestReceived(stubKey, requestBytes)
 
     return stubs[fullMethodName]
-      ?.find { (_, stub) ->
-        stub.requestMatcher.matches(requestBytes) && stub.metadataMatcher.matches(metadata)
-      }?.also { (key, stub) ->
-        logRequest(key, requestBytes, metadata, matched = true)
-        removeStubIfNeeded(key, fullMethodName)
-        ctx.afterStubMatched(key, stub)
+      ?.find { registered ->
+        registered.definition.requestMatcher.matches(requestBytes) &&
+          registered.definition.metadataMatcher.matches(metadata)
+      }?.also { registered ->
+        logRequest(registered.key, requestBytes, metadata, matched = true, stubTestId = registered.testId)
+        removeStubIfNeeded(registered.key, fullMethodName)
+        ctx.afterStubMatched(registered.key, registered.definition)
       }.toOption()
       .onNone { logRequest(stubKey, requestBytes, metadata, matched = false) }
   }
 
   private fun removeStubIfNeeded(key: StubKey, fullMethodName: String) {
     if (ctx.removeStubAfterRequestMatched) {
-      stubs[fullMethodName]?.removeIf { it.first.id == key.id }
+      stubs[fullMethodName]?.removeIf { it.key.id == key.id }
       logger.debug("Removed stub ${key.id} after match")
     }
   }
 
-  private fun logRequest(key: StubKey, requestBytes: ByteArray, metadata: Metadata, matched: Boolean) {
-    requestLog.put(
-      UUID.randomUUID().toString(),
-      ReceivedRequest(key, requestBytes, metadata, matched = matched, stubId = if (matched) key.id else null)
+  private fun logRequest(
+    key: StubKey,
+    requestBytes: ByteArray,
+    metadata: Metadata,
+    matched: Boolean,
+    stubTestId: String? = null
+  ) {
+    callJournal.record(
+      ReceivedRequest(
+        stubKey = key,
+        requestBytes = requestBytes,
+        metadata = metadata,
+        matched = matched,
+        stubId = if (matched) key.id else null,
+        testId = metadata.toHeaderMap().stoveTestId() ?: stubTestId
+      )
     )
   }
 
@@ -471,8 +523,8 @@ class GrpcMockSystem internal constructor(
   private inner class DynamicHandlerRegistry : HandlerRegistry() {
     override fun lookupMethod(methodName: String, authority: String?): ServerMethodDefinition<*, *>? {
       logger.debug("Looking up method: $methodName")
-      return stubs[methodName]?.firstOrNull()?.let { (_, stub) ->
-        createHandler(methodName, stub.methodType)
+      return stubs[methodName]?.firstOrNull()?.let { registered ->
+        createHandler(methodName, registered.definition.methodType)
       } ?: run {
         logger.warn("No stub registered for method: $methodName")
         null
@@ -510,7 +562,7 @@ class GrpcMockSystem internal constructor(
       val metadata = MetadataCapturingInterceptor.currentMetadata()
       findAndProcessStub(fullMethodName, request, metadata).fold(
         ifEmpty = { observer.sendUnimplemented(fullMethodName) },
-        ifSome = { (_, stub) -> stub.sendResponse(observer) }
+        ifSome = { registered -> registered.definition.sendResponse(observer) }
       )
     }
 
@@ -519,7 +571,7 @@ class GrpcMockSystem internal constructor(
       val metadata = MetadataCapturingInterceptor.currentMetadata()
       findAndProcessStub(fullMethodName, request, metadata).fold(
         ifEmpty = { observer.sendUnimplemented(fullMethodName) },
-        ifSome = { (_, stub) -> stub.sendResponse(observer) }
+        ifSome = { registered -> registered.definition.sendResponse(observer) }
       )
     }
 
@@ -531,7 +583,7 @@ class GrpcMockSystem internal constructor(
           val requestBytes = requests.firstOrNull() ?: ByteArray(0)
           findAndProcessStub(fullMethodName, requestBytes, metadata).fold(
             ifEmpty = { responseObserver.sendUnimplemented(fullMethodName) },
-            ifSome = { (_, stub) -> stub.sendResponse(responseObserver) }
+            ifSome = { registered -> registered.definition.sendResponse(responseObserver) }
           )
         },
         onStreamError = { responseObserver.onError(it) }
@@ -544,8 +596,8 @@ class GrpcMockSystem internal constructor(
       val requestChannel = Channel<ByteArray>(Channel.UNLIMITED)
 
       CoroutineScope(Dispatchers.IO).launch {
-        stubs[fullMethodName]?.find { (_, stub) -> stub.metadataMatcher.matches(metadata) }?.let { (_, stub) ->
-          when (stub) {
+        stubs[fullMethodName]?.find { it.definition.metadataMatcher.matches(metadata) }?.let { registered ->
+          when (val stub = registered.definition) {
             is StubDefinition.BidiStream -> runCatching {
               stub.handler(requestChannel.consumeAsFlow()).collect { response ->
                 responseObserver.onNext(response.toByteArray())

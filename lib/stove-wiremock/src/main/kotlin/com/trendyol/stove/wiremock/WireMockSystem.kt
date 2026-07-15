@@ -18,7 +18,6 @@ import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
-import com.trendyol.stove.tracing.TraceContext
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON_UTF8
 import com.trendyol.stove.wiremock.WireMockHeaders.CONTENT_TYPE
@@ -979,11 +978,12 @@ class WireMockSystem(
   override suspend fun validate() {
     val currentTestId = reporter.currentTestId()
 
-    // Filter unmatched requests to only include those from the current test
-    // by checking the X-Stove-Test-Id header
-    val unmatched = wireMock.findAllUnmatchedRequests().filter { req ->
-      req.getHeader(TraceContext.STOVE_TEST_ID_HEADER) == currentTestId
-    }
+    // Fail-open scoping: the journal excludes a request only when it is provably
+    // tagged with another test id; untagged unmatched requests fail every test.
+    val unmatched = callJournal
+      .serveEvents(currentTestId)
+      .filterNot { it.wasMatched }
+      .map { it.request }
     val passed = unmatched.isEmpty()
 
     if (!passed) {
@@ -1065,7 +1065,7 @@ class WireMockSystem(
   }
 
   private fun enrichMetadataWithTestId(metadata: Map<String, Any>): Map<String, Any> =
-    metadata + (STOVE_TEST_ID_KEY to reporter.currentTestId())
+    reporter.currentTestIdOrNull()?.let { metadata + (STOVE_TEST_ID_KEY to it) } ?: metadata
 
   private fun configureBodyAndMetadata(
     request: MappingBuilder,
