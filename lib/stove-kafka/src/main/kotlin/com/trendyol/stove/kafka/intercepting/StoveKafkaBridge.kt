@@ -9,7 +9,6 @@ import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.header.Headers
 import org.slf4j.Logger
-import java.nio.charset.Charset
 import java.util.*
 
 /**
@@ -129,7 +128,7 @@ class StoveKafkaBridge<K, V> :
   }
 
   private fun Headers.textHeaders(): Map<String, String> = associate { header ->
-    header.key() to (header.value()?.toString(Charset.defaultCharset()) ?: "")
+    header.key() to (header.value()?.toString(Charsets.UTF_8) ?: "")
   }
 
   private fun startGrpcClient(): StoveKafkaObserverClientHandle {

@@ -18,6 +18,8 @@ import org.testcontainers.kafka.ConfluentKafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.*
 
+private const val KAFKA_BOOTSTRAP_SERVERS = "kafka.bootstrapServers"
+
 // ============================================================================
 // Shared components
 // ============================================================================
@@ -33,7 +35,7 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
         val separator = entry.indexOf('=')
         if (separator <= 0) null else entry.take(separator) to entry.substring(separator + 1)
       }.toMap()
-    val bootstrapServers = configuration.entries.first { it.key.contains("kafka", true) }.value
+    val bootstrapServers = configuration.getValue(KAFKA_BOOTSTRAP_SERVERS)
     logger.info("Starting Kafka application with bootstrap servers: $bootstrapServers")
 
     client = mapOf<String, Any>(
@@ -162,7 +164,7 @@ class ContainerKafkaStrategy : KafkaTestStrategy {
       listenPublishedMessagesFromStove = true,
       containerOptions = KafkaContainerOptions(tag = "8.0.3"),
       configureExposedConfiguration = { cfg ->
-        listOf("kafka.servers=${cfg.bootstrapServers}")
+        listOf("$KAFKA_BOOTSTRAP_SERVERS=${cfg.bootstrapServers}")
       }
     ).migrations {
       register<CreateTestTopicsMigration>()
@@ -200,7 +202,7 @@ class EmbeddedKafkaStrategy : KafkaTestStrategy {
       useEmbeddedKafka = true,
       listenPublishedMessagesFromStove = true,
       configureExposedConfiguration = { cfg ->
-        listOf("kafka.servers=${cfg.bootstrapServers}")
+        listOf("$KAFKA_BOOTSTRAP_SERVERS=${cfg.bootstrapServers}")
       }
     ).migrations {
       register<CreateTestTopicsMigration>()
@@ -260,7 +262,7 @@ class ProvidedKafkaStrategy : KafkaTestStrategy {
           }
         },
         configureExposedConfiguration = { cfg ->
-          listOf("kafka.servers=${cfg.bootstrapServers}")
+          listOf("$KAFKA_BOOTSTRAP_SERVERS=${cfg.bootstrapServers}")
         }
       ).migrations {
         register<CreateTestTopicsMigration>()
