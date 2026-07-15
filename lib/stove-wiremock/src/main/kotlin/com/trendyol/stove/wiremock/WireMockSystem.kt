@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
+import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
@@ -29,6 +30,7 @@ import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.STATUS_CODE
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
+import kotlin.time.Duration
 
 /**
  * Callback invoked after a stub is removed (when `removeStubAfterRequestMatched` is enabled).
@@ -216,11 +218,13 @@ class WireMockSystem(
 
   private var wireMock: WireMockServer
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
+  private val dynamicResponses = WireMockDynamicResponses()
 
   init {
     val cfg = wireMockConfig()
       .port(ctx.port)
       .extensions(WireMockRequestListener(stubLog, ctx.afterRequest, callJournal::record))
+      .extensions(dynamicResponses)
     val stoveExtensions = mutableListOf<Extension>()
     if (ctx.removeStubAfterRequestMatched) {
       stoveExtensions.add(WireMockVacuumCleaner(stubLog, ctx.afterStubRemoved))
@@ -265,7 +269,8 @@ class WireMockSystem(
     statusCode: Int,
     responseBody: Option<Any> = None,
     metadata: Map<String, String> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.GET.value(),
@@ -275,7 +280,8 @@ class WireMockSystem(
       responseBody = responseBody,
       metadata = metadata,
       responseHeaders = responseHeaders,
-      reportMetadata = mapOf(STATUS_CODE to statusCode, RESPONSE_HEADERS to responseHeaders)
+      reportMetadata = mapOf(STATUS_CODE to statusCode, RESPONSE_HEADERS to responseHeaders),
+      delay = delay
     )
 
   /**
@@ -299,7 +305,8 @@ class WireMockSystem(
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.POST.value(),
@@ -309,7 +316,8 @@ class WireMockSystem(
       requestBody = requestBody,
       responseBody = responseBody,
       metadata = metadata,
-      responseHeaders = responseHeaders
+      responseHeaders = responseHeaders,
+      delay = delay
     )
 
   /**
@@ -333,7 +341,8 @@ class WireMockSystem(
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.PUT.value(),
@@ -343,7 +352,8 @@ class WireMockSystem(
       requestBody = requestBody,
       responseBody = responseBody,
       metadata = metadata,
-      responseHeaders = responseHeaders
+      responseHeaders = responseHeaders,
+      delay = delay
     )
 
   /**
@@ -367,7 +377,8 @@ class WireMockSystem(
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.PATCH.value(),
@@ -377,7 +388,8 @@ class WireMockSystem(
       requestBody = requestBody,
       responseBody = responseBody,
       metadata = metadata,
-      responseHeaders = responseHeaders
+      responseHeaders = responseHeaders,
+      delay = delay
     )
 
   /**
@@ -391,14 +403,16 @@ class WireMockSystem(
   suspend fun mockDelete(
     url: String,
     statusCode: Int,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.DELETE.value(),
       url = url,
       method = ::delete,
       statusCode = statusCode,
-      metadata = metadata
+      metadata = metadata,
+      delay = delay
     )
 
   /**
@@ -412,14 +426,16 @@ class WireMockSystem(
   suspend fun mockHead(
     url: String,
     statusCode: Int,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.HEAD.value(),
       url = url,
       method = ::head,
       statusCode = statusCode,
-      metadata = metadata
+      metadata = metadata,
+      delay = delay
     )
 
   /**
@@ -531,6 +547,78 @@ class WireMockSystem(
   ): WireMockSystem = mockRequestConfigure(RequestMethod.POST.value(), url, urlPatternFn, ::post, configure)
 
   /**
+   * Mocks a network-level fault: connection reset, empty response, malformed chunk, or
+   * random data. Makes "client timeout / retry / circuit breaker" tests one-liners.
+   *
+   * ```kotlin
+   * wiremock {
+   *     mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
+   * }
+   * ```
+   *
+   * @param method The HTTP method to match.
+   * @param url The URL to match.
+   * @param fault The WireMock [Fault] to inject.
+   * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
+   * @param metadata Optional metadata to attach to the stub.
+   * @return This [WireMockSystem] for chaining.
+   */
+  suspend fun mockFault(
+    method: RequestMethod,
+    url: String,
+    fault: Fault,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem =
+    registerStub(
+      action = WireMockReportActions.registerFaultStub(method.value(), url, fault.name),
+      metadata = mapOf("fault" to fault.name)
+    ) {
+      val stub = request(method.value(), urlPatternFn(url))
+      stub.withMetadata(enrichMetadataWithTestId(metadata))
+      stub.willReturn(aResponse().withFault(fault))
+    }
+
+  /**
+   * Mocks a request whose response is computed from the actual request at serve time.
+   *
+   * ```kotlin
+   * wiremock {
+   *     mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
+   *         val order = serde.deserialize(request.body, Map::class.java)
+   *         aResponse()
+   *             .withStatus(201)
+   *             .withBody("""{"orderId":"${order["id"]}"}""")
+   *     }
+   * }
+   * ```
+   *
+   * @param method The HTTP method to match.
+   * @param url The URL to match.
+   * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
+   * @param metadata Optional metadata to attach to the stub.
+   * @param respond Computes the response from the received request; the system's serde is provided.
+   * @return This [WireMockSystem] for chaining.
+   */
+  suspend fun mockDynamic(
+    method: RequestMethod,
+    url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    metadata: Map<String, Any> = mapOf(),
+    respond: (request: LoggedRequest, serde: StoveSerde<Any, ByteArray>) -> ResponseDefinitionBuilder
+  ): WireMockSystem {
+    val dynamicId = UUID.randomUUID().toString()
+    dynamicResponses.register(dynamicId) { request -> respond(request, serde) }
+    return registerStub(action = WireMockReportActions.registerDynamicStub(method.value(), url)) {
+      val stub = request(method.value(), urlPatternFn(url))
+      stub.withMetadata(
+        enrichMetadataWithTestId(metadata + (WireMockDynamicResponses.METADATA_KEY to dynamicId))
+      )
+      stub.willReturn(aResponse().withTransformers(WireMockDynamicResponses.NAME))
+    }
+  }
+
+  /**
    * Configures stateful stub behavior for scenario-based testing.
    *
    * Use this method when you need different responses for the same URL based on
@@ -637,7 +725,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf(),
-    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    delay: Duration? = null
   ): WireMockSystem = mockRequestContaining(
     url = url,
     method = ::post,
@@ -646,7 +735,8 @@ class WireMockSystem(
     responseBody = responseBody,
     metadata = metadata,
     responseHeaders = responseHeaders,
-    urlPatternFn = urlPatternFn
+    urlPatternFn = urlPatternFn,
+    delay = delay
   )
 
   /**
@@ -701,7 +791,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf(),
-    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    delay: Duration? = null
   ): WireMockSystem = mockRequestContaining(
     url = url,
     method = ::put,
@@ -710,7 +801,8 @@ class WireMockSystem(
     responseBody = responseBody,
     metadata = metadata,
     responseHeaders = responseHeaders,
-    urlPatternFn = urlPatternFn
+    urlPatternFn = urlPatternFn,
+    delay = delay
   )
 
   /**
@@ -765,7 +857,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf(),
-    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    delay: Duration? = null
   ): WireMockSystem = mockRequestContaining(
     url = url,
     method = ::patch,
@@ -774,7 +867,8 @@ class WireMockSystem(
     responseBody = responseBody,
     metadata = metadata,
     responseHeaders = responseHeaders,
-    urlPatternFn = urlPatternFn
+    urlPatternFn = urlPatternFn,
+    delay = delay
   )
 
   /**
@@ -883,7 +977,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap(),
     responseHeaders: Map<String, String> = emptyMap(),
-    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode)
+    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       action = WireMockReportActions.registerStub(methodName, url),
@@ -893,7 +988,8 @@ class WireMockSystem(
       responseBody = responseBody,
       metadata = metadata,
       responseHeaders = responseHeaders,
-      reportMetadata = reportMetadata
+      reportMetadata = reportMetadata,
+      delay = delay
     )
 
   private suspend fun mockRequest(
@@ -904,7 +1000,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap(),
     responseHeaders: Map<String, String> = emptyMap(),
-    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode)
+    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode),
+    delay: Duration? = null
   ): WireMockSystem =
     registerStub(
       action = action,
@@ -912,7 +1009,7 @@ class WireMockSystem(
       metadata = reportMetadata
     ) {
       configureBodyAndMetadata(request, metadata, requestBody)
-      request.willReturn(configureResponse(statusCode, responseBody, responseHeaders))
+      request.willReturn(configureResponse(statusCode, responseBody, responseHeaders, delay))
     }
 
   private suspend fun mockRequestConfigure(
@@ -936,7 +1033,8 @@ class WireMockSystem(
     responseBody: Option<Any>,
     metadata: Map<String, Any>,
     responseHeaders: Map<String, String>,
-    urlPatternFn: (url: String) -> UrlPattern
+    urlPatternFn: (url: String) -> UrlPattern,
+    delay: Duration? = null
   ): WireMockSystem {
     require(requestContaining.isNotEmpty()) { WireMockValidationMessages.REQUEST_CONTAINING_EMPTY }
 
@@ -949,7 +1047,7 @@ class WireMockSystem(
       mockRequest.withMetadata(enrichMetadataWithTestId(metadata))
       mockRequest.withHeader(CONTENT_TYPE, ContainsPattern(APPLICATION_JSON))
       mockRequest.configureBodyContaining(requestContaining, serde)
-      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders, delay)
       mockRequest.willReturn(mockResponse)
     }
   }
@@ -1072,7 +1170,8 @@ class WireMockSystem(
   private fun configureResponse(
     statusCode: Int,
     responseBody: Option<Any>,
-    responseHeaders: Map<String, String>
+    responseHeaders: Map<String, String>,
+    delay: Duration? = null
   ): ResponseDefinitionBuilder? {
     val mockResponse = aResponse()
       .withStatus(statusCode)
@@ -1081,6 +1180,7 @@ class WireMockSystem(
       mockResponse.withHeader(it.key, it.value)
     }
     responseBody.map { mockResponse.withBody(serde.serialize(it)) }
+    delay?.let { mockResponse.withFixedDelay(it.inWholeMilliseconds.toInt()) }
     return mockResponse
   }
 

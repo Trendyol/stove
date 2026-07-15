@@ -59,9 +59,9 @@ Concrete defects found by source review, driving Theme D:
 
 | Item | Status | Notes |
 |---|---|---|
-| First-class HTTP faults & latency | ⬜ | `mockFault(url, Fault.CONNECTION_RESET_BY_PEER)` plus `latency = 2.seconds` / log-normal delay parameters on every `mock*` — thin wrappers over WireMock's native fault support. Makes "client timeout + retry + circuit breaker" tests one-liners instead of `mockConfigure` archaeology. |
-| Retry-journey DSL | ⬜ | Extend `behaviourFor`: `failsTimes(2, withStatus = 503) thenSucceeds { response }` — the HTTP twin of Kafka's planned retry-flow DSL. Feeds the retry-journey dashboard view. |
-| Dynamic lambda responses | ⬜ | `mockPost(url) { request -> Response(id = request.body<Order>().id) }` — computed responses without Handlebars templating. |
+| First-class HTTP faults & latency | ✅ | `mockFault(method, url, Fault.CONNECTION_RESET_BY_PEER)` plus a `delay: Duration?` parameter on every `mock*`/`mock*Containing` — thin wrappers over WireMock's native fault/fixed-delay support. "Client timeout + retry + circuit breaker" tests are one-liners. |
+| Retry-journey DSL | ✅ | `behaviourFor(url, ::post) { failsTimes(2, withStatus = 503); thenSucceeds { response } }` — the HTTP twin of Kafka's planned retry-flow DSL. Feeds the retry-journey dashboard view later. |
+| Dynamic lambda responses | ✅ | `mockDynamic(method, url) { request, serde -> aResponse()... }` — responses computed from the received request at serve time via a Stove `ResponseDefinitionTransformerV2`, correlated to stubs through metadata so it survives WireMock's stub-id assignment. |
 | gRPC per-stub delay | ⬜ | Deadline-exceeded testing is impossible today. `mockUnary(…, delay = 2.seconds)` against a client deadline is the canonical resilience test. |
 | Stream-then-error | ⬜ | Server streams that emit N items then fail with a given status — the most common streaming resilience scenario. |
 | Error trailers & rich status | ⬜ | gRPC error metadata/trailers and `google.rpc.Status` error details; real APIs return structured errors and the mock currently can't. |

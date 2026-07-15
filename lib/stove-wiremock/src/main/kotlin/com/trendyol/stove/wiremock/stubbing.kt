@@ -58,6 +58,32 @@ class StubBehaviourBuilder(
     previousState = nextState
   }
 
+  /**
+   * Starts a retry journey: the first [times] requests fail with [withStatus], after which
+   * the behaviour continues with [thenSucceeds] (or any [then] step).
+   *
+   * ```kotlin
+   * behaviourFor("/payments", ::post) {
+   *   failsTimes(2, withStatus = 503)
+   *   thenSucceeds { aResponse().withStatus(200).withBody("recovered") }
+   * }
+   * ```
+   */
+  fun failsTimes(times: Int, withStatus: Int = SERVICE_UNAVAILABLE) {
+    check(initializedCounter == 0) { WireMockBehaviourMessages.FAILS_TIMES_FIRST }
+    require(times >= 1) { WireMockBehaviourMessages.FAILS_TIMES_POSITIVE }
+    repeat(times) {
+      stateCounter++
+      val nextState = WireMockBehaviourNames.state(stateCounter)
+      createStub(WireMock.aResponse().withStatus(withStatus), previousState, nextState)
+      previousState = nextState
+    }
+    initializedCounter++
+  }
+
+  /** The step after [failsTimes]: what the dependency returns once it has recovered. */
+  fun thenSucceeds(step: () -> ResponseDefinitionBuilder): Unit = then(step)
+
   private fun createStub(
     response: ResponseDefinitionBuilder,
     whenState: String,
@@ -72,5 +98,9 @@ class StubBehaviourBuilder(
         .withMetadata(metadata)
     )
     recordStub(stub)
+  }
+
+  companion object {
+    private const val SERVICE_UNAVAILABLE = 503
   }
 }

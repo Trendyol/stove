@@ -10,10 +10,17 @@ public final class com/trendyol/stove/wiremock/OptionsKt {
 }
 
 public final class com/trendyol/stove/wiremock/StubBehaviourBuilder {
+	public static final field Companion Lcom/trendyol/stove/wiremock/StubBehaviourBuilder$Companion;
 	public fun <init> (Lcom/github/tomakehurst/wiremock/WireMockServer;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Ljava/util/Map;)V
 	public synthetic fun <init> (Lcom/github/tomakehurst/wiremock/WireMockServer;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun failsTimes (II)V
+	public static synthetic fun failsTimes$default (Lcom/trendyol/stove/wiremock/StubBehaviourBuilder;IIILjava/lang/Object;)V
 	public final fun initially (Lkotlin/jvm/functions/Function0;)V
 	public final fun then (Lkotlin/jvm/functions/Function0;)V
+	public final fun thenSucceeds (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class com/trendyol/stove/wiremock/StubBehaviourBuilder$Companion {
 }
 
 public final class com/trendyol/stove/wiremock/WireMockContext {
@@ -76,36 +83,40 @@ public final class com/trendyol/stove/wiremock/WireMockSystem : com/trendyol/sto
 	public fun getReportSystemName ()Ljava/lang/String;
 	public fun getReporter ()Lcom/trendyol/stove/reporting/StoveReporter;
 	public fun getStove ()Lcom/trendyol/stove/system/Stove;
-	public final fun mockDelete (Ljava/lang/String;ILjava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockDelete$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILjava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockDelete-51bEbmg (Ljava/lang/String;ILjava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockDelete-51bEbmg$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILjava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockDeleteConfigure (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockDeleteConfigure$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockGet (Ljava/lang/String;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockGet$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockDynamic (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockDynamic$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockFault (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lcom/github/tomakehurst/wiremock/http/Fault;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockFault$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lcom/github/tomakehurst/wiremock/http/Fault;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockGet-7Yrd8eY (Ljava/lang/String;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockGet-7Yrd8eY$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockGetConfigure (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockGetConfigure$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockHead (Ljava/lang/String;ILjava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockHead$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILjava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockHead-51bEbmg (Ljava/lang/String;ILjava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockHead-51bEbmg$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILjava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockHeadConfigure (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockHeadConfigure$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockPatch (Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockPatch$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockPatch-rl3MWlM (Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockPatch-rl3MWlM$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockPatchConfigure (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockPatchConfigure$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockPatchContaining (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockPatchContaining$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockPost (Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockPost$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockPatchContaining-D5qb1SI (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockPatchContaining-D5qb1SI$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockPost-rl3MWlM (Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockPost-rl3MWlM$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockPostConfigure (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockPostConfigure$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockPostContaining (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockPostContaining$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockPut (Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockPut$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockPostContaining-D5qb1SI (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockPostContaining-D5qb1SI$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockPut-rl3MWlM (Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockPut-rl3MWlM$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;ILarrow/core/Option;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockPutConfigure (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockPutConfigure$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public final fun mockPutContaining (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun mockPutContaining$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun mockPutContaining-D5qb1SI (Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun mockPutContaining-D5qb1SI$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Ljava/lang/String;Ljava/util/Map;ILarrow/core/Option;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldHaveBeenCalled (Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
