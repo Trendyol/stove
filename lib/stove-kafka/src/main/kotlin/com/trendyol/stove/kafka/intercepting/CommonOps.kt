@@ -24,8 +24,8 @@ internal interface CommonOps {
    * [within] elapses first.
    *
    * Waiting is signal-driven: [MessageStore.version] is a StateFlow, so the condition is
-   * evaluated once immediately and then once per stored record. Exceptions thrown by
-   * [predicate] propagate as-is; only an elapsed timeout becomes an assertion failure.
+   * evaluated immediately and after observed store changes. Exceptions thrown by [predicate]
+   * propagate as-is; only an elapsed timeout becomes an assertion failure.
    */
   suspend fun <T> awaitRecords(
     within: Duration,

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
+import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
 import scala.collection.immutable.`Map$`
@@ -393,20 +394,20 @@ class KafkaSystem(
   ): KafkaSystem {
     var matchedMessage: T? = null
 
-    val result = runCatching {
+    val failure = try {
       coroutineScope {
         block { matchedMessage = it }
       }
+      null
+    } catch (e: CancellationException) {
+      // Cancellation belongs to the caller/parent scope and must retain its structured-concurrency semantics.
+      throw e
+    } catch (e: Throwable) {
+      // Assertion timeouts and user-condition failures are reported, then rethrown unchanged below.
+      e
     }
 
-    val failure = result.exceptionOrNull()?.let { e ->
-      e as? AssertionError ?: AssertionError(
-        "Expected $assertionName<$typeName> matching condition within $timeout, but none was found",
-        e
-      )
-    }
-
-    if (result.isSuccess) {
+    if (failure == null) {
       reporter.record(
         ReportEntry.success(
           system = reportSystemName,
@@ -422,7 +423,7 @@ class KafkaSystem(
           system = reportSystemName,
           testId = reporter.currentTestId(),
           action = "$assertionName<$typeName>",
-          error = failure?.message ?: "No matching message found",
+          error = failure.message ?: failure::class.simpleName ?: "Kafka assertion failed",
           expected = expected.some(),
           actual = (matchedMessage ?: "No matching message found").some()
         )
@@ -618,15 +619,22 @@ class KafkaSystem(
     onConsume: suspend (ConsumerRecord<K, V>) -> Unit
   ) = withContext(Dispatchers.IO) {
     val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId).apply(config)
-    // Every consumer call (poll, commit, close) stays on this coroutine:
-    // KafkaConsumer is not safe for multi-threaded access.
+    // KafkaConsumer calls are serialized in this coroutine; no poll/commit/close calls can overlap.
     KafkaConsumer(props, keyDeserializer, valueDeserializer).use { consumer ->
       consumer.subscribe(listOf(topic))
-      withTimeoutOrNull(keepConsumingAtLeastFor) {
-        while (isActive) {
-          consumer.poll(pollTimeout.toJavaDuration()).forEach { record ->
-            onConsume(record)
-            if (!readOnly) consumer.commitSync()
+      val startedAt = TimeSource.Monotonic.markNow()
+      while (currentCoroutineContext().isActive && startedAt.elapsedNow() < keepConsumingAtLeastFor) {
+        val records = consumer.poll(pollTimeout.toJavaDuration())
+        for (record in records) {
+          currentCoroutineContext().ensureActive()
+          if (startedAt.elapsedNow() >= keepConsumingAtLeastFor) break
+
+          // Once a callback starts, the duration deadline does not cancel it halfway through.
+          // External coroutine cancellation still propagates normally.
+          onConsume(record)
+          if (!readOnly) {
+            val offset = TopicPartition(record.topic(), record.partition()) to OffsetAndMetadata(record.offset() + 1)
+            consumer.commitSync(mapOf(offset))
           }
         }
       }

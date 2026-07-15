@@ -20,15 +20,15 @@ Agreed sequence: **D (foundation) → C (diagnostics) → B (publishing fidelity
 
 | Item | Status | Notes |
 |---|---|---|
-| Flow-based `MessageStore` | ✅ | `version: StateFlow<Long>` bumped on every record; public `events: SharedFlow<StoveMessageEvent>`; `awaitNewRecords(sinceVersion)` with capture-before-check so wake-ups cannot be missed. |
+| Flow-based `MessageStore` | ✅ | `version: StateFlow<Long>` bumped on every record; public `events: SharedFlow<StoveMessageEvent>`; store-backed replay-then-live flows avoid subscribe races without making the lossy event stream a source of truth. |
 | Signal-driven waits | ✅ | `waitUntilConditionMet` / `waitUntilCount` and the three `peek*` loops no longer poll with `delay(50/100)`; they suspend on the store's version signal. |
 | Test-scoped assertions | ✅ | `waitUntilConsumed/Published/Failed/Retried` and `throwIfFailed/throwIfRetried` filter by the current test id (from `TraceContext`), fail-open (see decisions). Fixed a latent bug: another test's failed message with matching content could fail the current test. |
 | Test-scoped failure dumps | ✅ | Timeout `AssertionError`s embed `MessageStore.dump(testId)` — only the current test's messages plus a `N message(s) from other tests hidden` count — instead of everything observed since the suite started. |
 | Bonus fixes | ✅ | `firstNotNullOf { it.key == "testCase" }` logging crash on header-less messages (source of silently swallowed gRPC UNKNOWN errors in the bridge); removed pointless `runBlocking` wrappers in record paths. |
 | Flow-idiom refactor | ✅ | Replay-then-live record flows on `MessageStore` (`consumedRecords()` etc.); all waits collapsed into one `awaitRecords` helper built on `version.first { }` — no `while(true)` loops, no manual version bookkeeping; `peek*` return the matched record; shared `matches()` helper removed the deserialize+condition boilerplate; `shouldBeRetried` now reports like the other assertions. |
-| Ad-hoc consumer thread-safety fix | ✅ | The old `consumer()` closed and committed the `KafkaConsumer` from different coroutines than the poll loop (KafkaConsumer is not thread-safe) and polled with a redundant `delay(100)`. Rewritten single-threaded on `Dispatchers.IO` with `use { }` + `withTimeoutOrNull`. |
+| Ad-hoc consumer thread-safety fix | ✅ | The old `consumer()` closed and committed the `KafkaConsumer` concurrently with the poll loop (KafkaConsumer is not thread-safe) and polled with a redundant `delay(100)`. Poll, callback, exact-offset commit, and close are now serialized in one coroutine on `Dispatchers.IO`; a monotonic deadline stops new callbacks without cancelling one halfway through. |
 
-Verified: 44/44 tests in all three runtime modes (container, embedded, provided), `apiCheck` and `detekt` clean. New coverage in `StoreEventsAndScopingTests`.
+Verified: 49/49 tests in all three runtime modes (container, embedded, provided), plus `apiCheck` and `spotlessCheck`. Detekt is disabled by the root build on JDK 25+ and was therefore not executed in this verification run. New coverage lives in `StoreEventsAndScopingTests` and `KafkaSystemTests`.
 
 **Follow-up:** `starters/spring/stove-spring-kafka` has its own separate `MessageStore` (still polling, still global dumps) and needs the same treatment.
 
@@ -76,7 +76,7 @@ Verified: 44/44 tests in all three runtime modes (container, embedded, provided)
 
 **Test scoping is fail-open.** Applications may publish with no propagation at all (no OTel agent, no manual header copying), so untagged messages always match every test — behavior identical to before scoping existed. A message is excluded only when *provably* tagged with a different test id. Tags are only ever written by Stove, via two transports: the `X-Stove-Test-Id` Kafka header (injected by Stove's `publish`, carried into the app's consumed records by Kafka itself, no OTel needed) and the W3C `baggage` header (`stove.test.id`, present on app-published messages only when the OTel agent propagates context). Extraction is liberal: case-insensitive header keys, percent-decoded baggage values, malformed baggage degrades to "untagged" rather than excluding.
 
-**StateFlow is the wait primitive.** `MessageStore.version` is a `StateFlow<Long>` bumped on every record, so `version.first { condition() }` evaluates the condition immediately and then once per stored record — signal-driven waiting with no missed wake-ups, no polling, and no manual version capture at call sites. Record streams (`consumedRecords()` etc.) are built the same way: collect `version`, re-query the store, dedup by id — replay-then-live with no subscribe race.
+**StateFlow is the wait primitive.** `MessageStore.version` is a `StateFlow<Long>` bumped on every record, so `version.first { condition() }` evaluates the condition immediately and again after observed version changes. Rapid changes may be conflated, but every evaluation re-queries the latest store state, so records cannot be missed when predicates are pure and the matching set is append-only. Record streams (`consumedRecords()` etc.) are built the same way: collect `version`, re-query the store, dedup by id — replay-then-live with no subscribe race.
 
 **Store stays the source of truth.** The `events` SharedFlow (bounded buffer, drop-oldest) is a live-tail surface; assertions and record flows always re-read the caches, so slow collectors can never cause missed assertions.
 
@@ -100,14 +100,14 @@ The naive event-driven replacement — "wait for the next store change, then re-
 store.version.first { matching().size >= count }
 ```
 
-evaluates the condition immediately at subscription (covering records that already arrived) and then exactly once per stored record. There is no gap in which a record can slip by, no version bookkeeping at the call site, and no loop — `first` *is* the loop.
+evaluates the condition immediately at subscription (covering records that already arrived) and then after observed version changes. There is no gap in which a record can slip by, no version bookkeeping at the call site, and no explicit loop — `first` performs the collection loop. `StateFlow` may conflate rapid changes, so several inserts can intentionally result in one re-check against the latest store contents.
 
 Two properties make this sound here:
 
-- **Conditions are monotone.** The store is append-only for the duration of a wait (caches are only cleaned at system close), so once a condition over store contents becomes true it stays true. `StateFlow` conflates rapid updates — under a burst, a collector may observe version 5 and then 9, skipping 6–8 — but conflation can only *batch* re-checks, never skip a satisfying state, because the condition re-queries the live store rather than inspecting the version number.
+- **Matching sets are monotone for pure predicates.** The store is append-only for the duration of a wait (caches are only cleaned at system close), so once a deterministic condition over store contents becomes true it stays true. User predicates are therefore expected to be side-effect-free. `StateFlow` conflates rapid updates — under a burst, a collector may observe version 5 and then 9, skipping 6–8 — but conflation can only *batch* re-checks, never skip a stable satisfying state, because the condition re-queries the live store rather than inspecting the version number.
 - **The store is the source of truth, not the signal.** The condition closure re-reads the caches on every evaluation. Even if every intermediate signal were dropped, one evaluation against the final state gives the right answer.
 
-`version` is a monotone counter rather than, say, a `StateFlow<List<Message>>` because state-carrying flows would need a copy of the collections per update (or expose mutable state to collectors), and `StateFlow` equality-conflates — two different stores states could compare equal with careless value semantics. A counter is allocation-free, never equal to its predecessor, and pushes the querying where it belongs: the caches.
+`version` is a monotone counter rather than, say, a `StateFlow<List<Message>>` because state-carrying flows would need a copy of the collections per update (or expose mutable state to collectors), and `StateFlow` equality-conflates — two different store states could compare equal with careless value semantics. A scalar counter keeps the signal small, never equals its predecessor, and pushes the querying where it belongs: the caches.
 
 ### `awaitRecords`: one helper instead of four wait shapes
 
@@ -121,7 +121,7 @@ Design choices inside it:
 
 - **`withTimeoutOrNull` instead of `runCatching` + `withTimeout`.** The old code caught *every* exception and reported it as `GOT A TIMEOUT`, so an NPE inside a user's condition lambda was indistinguishable from a slow consumer — a debugging trap. `withTimeoutOrNull` encodes "timeout" as `null` in the type; anything thrown by the predicate propagates unchanged. The error path is reached only by genuinely running out of time, and its message can therefore honestly report expected vs. found counts plus the test-scoped dump.
 - **`count` folded in.** The old `waitUntilRetried` nested one wait inside another (`waitUntilConditionMet` inside `waitUntilCount`), each with its own `atLeastIn` — worst-case 2× the caller's timeout, and two copies of timeout error handling. `first { matching().size >= count }` is the same statement with `count = 1` as a degenerate case.
-- **The predicate re-runs against the whole collection on each signal.** This is deliberate O(n·signals) simplicity: n is bounded by messages observed in a test run, conditions are cheap (deserialize + field checks, with deserialization failures cached as `false` by short-circuit), and the alternative — incremental evaluation over only-new records — needs the dedup machinery that record flows provide, without being on the assertion hot path.
+- **The predicate re-runs against the whole collection on each observed signal.** This is deliberate O(n·signals) simplicity: n is bounded by messages observed in a test run and conditions are normally cheap deserialize + field checks. Deserialization results are not cached, so an incremental or memoized path remains a future optimization if high-volume tests show this scan becoming material.
 
 The companion `matches(payload, metadata, clazz, condition)` helper exists because the block "deserialize; if it parsed, wrap in `SuccessfulParsedMessage` and ask the condition" appeared five times with small copy-paste drift (one copy skipped the `isSuccess` guard). It uses `Result.map` — **not** `mapCatching` — precisely so condition exceptions escape (see above), while deserialization failures return `false` (a message that isn't a `T` simply doesn't match a `T`-assertion).
 
@@ -156,9 +156,9 @@ Committed offsets are the one record type with no headers to tag, so scoped dump
 
 ### The ad-hoc `consumer()`: thread confinement as the design rule
 
-`KafkaConsumer` is single-threaded by contract — it throws `ConcurrentModificationException` on cross-thread access. The old implementation broke this twice: the poll loop ran in one coroutine while `whileSelect`'s `onTimeout` called `consumer.close()` from another, and `commitSync()` ran on the channel-receiving side while `poll()` ran on the producing side. It mostly worked because the races were narrow; it was still wrong.
+`KafkaConsumer` is not thread-safe — unsynchronized concurrent access can throw `ConcurrentModificationException`. The old implementation broke this twice: the poll loop ran in one coroutine while `whileSelect`'s `onTimeout` called `consumer.close()` from another, and `commitSync()` ran on the channel-receiving side while `poll()` ran on the producing side. It mostly worked because the races were narrow; it was still wrong.
 
-The rewrite makes the confinement structural: everything happens in one `withContext(Dispatchers.IO)` block — subscribe, poll, `onConsume`, commit, and (via `use { }`) close — so no cross-thread call *can* exist. `withTimeoutOrNull(keepConsumingAtLeastFor)` expresses that elapsing the duration is normal termination (null), not an error. Cancellation is observed between polls: a blocking `poll(pollTimeout)` isn't interrupted mid-call, so shutdown can overshoot by at most `pollTimeout` — the same bound the old code had, with its inter-poll `delay(100)` removed because `poll` already blocks up to the poll timeout; the delay only added dead time.
+The rewrite makes serialization structural: everything happens in one `withContext(Dispatchers.IO)` coroutine — subscribe, poll, `onConsume`, commit, and (via `use { }`) close — so consumer calls cannot overlap. `Dispatchers.IO` does not promise OS-thread affinity; serialized access is the relevant guarantee. A monotonic deadline is checked before polling and before starting each callback. Once a callback starts, the duration deadline lets it and its exact-offset commit finish; external coroutine cancellation still propagates normally. A blocking `poll(pollTimeout)` is not interrupted mid-call, so normal duration shutdown can overshoot by up to `pollTimeout`, plus any callback that started before the deadline. The old inter-poll `delay(100)` was removed because `poll` already blocks up to its timeout.
 
 ### Records path: why the gRPC handlers became plain calls
 
@@ -168,6 +168,6 @@ The logging bug fixed alongside: `record.headers.firstNotNullOf { it.key == "tes
 
 ### What deliberately did not change
 
-- **Public API shape**: all `shouldBe*`/`peek*` signatures are additive or return-type-improved (`Unit` → matched record; binary-visible but source-compatible for callers that ignore the result). `apiCheck` gates the rest.
+- **Public API shape**: all `shouldBe*`/`peek*` signatures are additive or return-type-improved (`Unit` → matched record; source-compatible for callers that ignore the result). `apiCheck` records the intended binary surface.
 - **The caches**: Caffeine maps remain the storage; flows and signals sit beside them, not instead of them. Replacing storage was not needed for any goal above and would have rippled into the spring starter.
 - **`stoveSerdeRef` global**: a known smell (mutable global connecting `KafkaSystem` to interceptor instances the Kafka client constructs reflectively), but it is the bridge's process-wide rendezvous point; redesigning it belongs with a dedicated bridge-configuration story, not this refactor.

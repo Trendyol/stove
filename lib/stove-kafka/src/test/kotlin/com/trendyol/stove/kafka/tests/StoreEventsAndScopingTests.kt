@@ -259,6 +259,16 @@ class StoreEventsAndScopingTests :
 
     test("malformed baggage leaves the message untagged instead of excluding it") {
       mapOf("baggage" to ",,=broken=,;;").belongsToTest("test-1") shouldBe true
+      mapOf("baggage" to "stove.test.id=%ZZ").stoveTestId() shouldBe null
+      mapOf("baggage" to "stove.test.id=%ZZ").belongsToTest("test-1") shouldBe true
+    }
+
+    test("blank explicit test id falls back to valid baggage") {
+      val headers = mapOf(
+        "X-Stove-Test-Id" to "",
+        "baggage" to "stove.test.id=test-1"
+      )
+      headers.stoveTestId() shouldBe "test-1"
     }
 
     test("explicit header wins over baggage") {

@@ -53,7 +53,9 @@ internal fun Map<String, String>.belongsToTest(testId: String?): Boolean {
 internal fun Map<String, String>.stoveTestId(): String? {
   entries
     .firstOrNull { it.key.equals(TraceContext.STOVE_TEST_ID_HEADER, ignoreCase = true) }
-    ?.let { return it.value }
+    ?.value
+    ?.takeIf { it.isNotBlank() }
+    ?.let { return it }
   val baggage = entries.firstOrNull { it.key.equals(BAGGAGE_HEADER, ignoreCase = true) }?.value ?: return null
   return parseBaggageEntry(baggage, TraceContext.BAGGAGE_TEST_ID_KEY)
 }
@@ -70,12 +72,13 @@ private fun parseBaggageEntry(baggage: String, key: String): String? = baggage
   }.firstOrNull { (entryKey, _) -> entryKey == key }
   ?.second
   ?.let(::percentDecode)
+  ?.takeIf { it.isNotBlank() }
 
-private fun percentDecode(value: String): String = runCatching {
+private fun percentDecode(value: String): String? = runCatching {
   // URLDecoder turns '+' into a space, which W3C baggage percent-encoding does not;
   // protect literal plus signs before decoding.
   java.net.URLDecoder.decode(value.replace("+", "%2B"), Charsets.UTF_8)
-}.getOrDefault(value)
+}.getOrNull()
 
 class MessageStore {
   private val consumed = Caching.of<String, ConsumedMessage>()
@@ -94,8 +97,8 @@ class MessageStore {
   /**
    * Monotonically increasing counter, bumped on every recorded message.
    * Because it is a [StateFlow], `version.first { storeCondition() }` evaluates the condition
-   * immediately and then once per stored record — signal-driven waiting with no missed wake-ups
-   * and no polling.
+   * immediately and again after observed version changes. Rapid updates may be conflated, but
+   * each evaluation reads the latest store state, so waiting is signal-driven without polling.
    */
   val version: StateFlow<Long> = mutableVersion.asStateFlow()
 
