@@ -101,6 +101,7 @@ class GrpcMockSystem internal constructor(
   private val callJournal = TestScopedJournal<ReceivedRequest>()
   private val reportListener = TestScopeCleanupListener(callJournal::clear)
   private var reportListenerRegistered = false
+  private val handlerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
   private lateinit var server: Server
   private lateinit var exposedConfiguration: GrpcMockExposedConfiguration
@@ -142,6 +143,7 @@ class GrpcMockSystem internal constructor(
         reportListenerRegistered = false
       }
       stop()
+      handlerScope.cancel()
       callJournal.clearAll()
     }.recover { logger.warn("Error stopping gRPC mock: ${it.message}") }
   }
@@ -276,7 +278,9 @@ class GrpcMockSystem internal constructor(
    *
    * @param serviceName The fully qualified gRPC service name (e.g., "chat.ChatService")
    * @param methodName The RPC method name (e.g., "Chat")
-   * @param requestMatcher Optional matcher. Currently not used for bidi streams as matching happens dynamically.
+   * @param requestMatcher Must be [RequestMatcher.Any]: bidi stubs are selected before any request
+   *   message arrives, so request-based matching is impossible. Passing any other matcher fails fast
+   *   instead of being silently ignored. Inspect requests inside the [handler].
    * @param metadataMatcher Optional matcher for filtering by gRPC metadata/headers. Defaults to [MetadataMatcher.Any].
    * @param handler A suspending function that transforms the incoming request flow into a response flow.
    *   The handler receives raw [ByteArray] request bytes which can be parsed using protobuf's `parseFrom`.
@@ -305,12 +309,18 @@ class GrpcMockSystem internal constructor(
     requestMatcher: RequestMatcher = RequestMatcher.Any,
     metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
     handler: suspend (Flow<ByteArray>) -> Flow<Message>
-  ): GrpcMockSystem = registerStub(
-    serviceName,
-    methodName,
-    StubDefinition.BidiStream(requestMatcher, metadataMatcher, handler),
-    "bidi stream"
-  )
+  ): GrpcMockSystem {
+    require(requestMatcher is RequestMatcher.Any) {
+      "requestMatcher is not supported for bidi streams: the stub is selected before any request " +
+        "message arrives. Use metadataMatcher, or inspect requests inside the handler."
+    }
+    return registerStub(
+      serviceName,
+      methodName,
+      StubDefinition.BidiStream(requestMatcher, metadataMatcher, handler),
+      "bidi stream"
+    )
+  }
 
   /**
    * Mocks a gRPC error response for any RPC type.
@@ -447,9 +457,14 @@ class GrpcMockSystem internal constructor(
       output = outputProvider(),
       metadata = metadata
     ) {
-      stubs
-        .computeIfAbsent(key.fullMethodName) { CopyOnWriteArrayList() }
-        .add(RegisteredStub(key, stub, reporter.currentTestIdOrNull()))
+      val registered = stubs.computeIfAbsent(key.fullMethodName) { CopyOnWriteArrayList() }
+      val conflicting = registered.firstOrNull { it.definition.methodType != stub.methodType }
+      require(conflicting == null) {
+        "Cannot register a ${stub.methodType} stub for ${key.fullMethodName}: " +
+          "a ${conflicting?.definition?.methodType} stub already exists for this method. " +
+          "A gRPC method has exactly one type; register stubs of one type per method."
+      }
+      registered.add(RegisteredStub(key, stub, reporter.currentTestIdOrNull()))
       logger.debug("Registered stub for ${key.fullMethodName} (id: ${key.id})")
     }
     return this
@@ -465,8 +480,9 @@ class GrpcMockSystem internal constructor(
     val stubKey = fullMethodName.toStubKey()
     ctx.onRequestReceived(stubKey, requestBytes)
 
+    // Last-registered wins: test-local stubs override earlier fixture defaults.
     return stubs[fullMethodName]
-      ?.find { registered ->
+      ?.findLast { registered ->
         registered.definition.requestMatcher.matches(requestBytes) &&
           registered.definition.metadataMatcher.matches(metadata)
       }?.also { registered ->
@@ -579,8 +595,8 @@ class GrpcMockSystem internal constructor(
       val metadata = MetadataCapturingInterceptor.currentMetadata()
       val requestChannel = Channel<ByteArray>(Channel.UNLIMITED)
 
-      CoroutineScope(Dispatchers.IO).launch {
-        stubs[fullMethodName]?.find { it.definition.metadataMatcher.matches(metadata) }?.let { registered ->
+      handlerScope.launch {
+        stubs[fullMethodName]?.findLast { it.definition.metadataMatcher.matches(metadata) }?.let { registered ->
           when (val stub = registered.definition) {
             is StubDefinition.BidiStream -> runCatching {
               stub.handler(requestChannel.consumeAsFlow()).collect { response ->
@@ -598,18 +614,10 @@ class GrpcMockSystem internal constructor(
         } ?: responseObserver.sendUnimplemented(fullMethodName)
       }
 
-      ChannelForwardingObserver(requestChannel, CoroutineScope(Dispatchers.IO))
+      ChannelForwardingObserver(requestChannel)
     }
 
   // ==================== Extension Functions ====================
-
-  private val StubDefinition.methodType: MethodDescriptor.MethodType
-    get() = when (this) {
-      is StubDefinition.Unary, is StubDefinition.Error -> MethodDescriptor.MethodType.UNARY
-      is StubDefinition.ServerStream -> MethodDescriptor.MethodType.SERVER_STREAMING
-      is StubDefinition.ClientStream -> MethodDescriptor.MethodType.CLIENT_STREAMING
-      is StubDefinition.BidiStream -> MethodDescriptor.MethodType.BIDI_STREAMING
-    }
 
   private fun RequestMatcher.matches(requestBytes: ByteArray): Boolean = when (this) {
     is RequestMatcher.Any -> true
@@ -708,16 +716,12 @@ class GrpcMockSystem internal constructor(
   }
 
   private class ChannelForwardingObserver(
-    private val channel: Channel<ByteArray>,
-    private val scope: CoroutineScope
+    private val channel: Channel<ByteArray>
   ) : StreamObserver<ByteArray> {
     override fun onNext(value: ByteArray) {
-      // Use trySend for non-blocking operation, falling back to coroutine launch
-      // if the channel buffer is full (which shouldn't happen with UNLIMITED capacity)
-      val result = channel.trySend(value)
-      if (result.isFailure && !result.isClosed) {
-        scope.launch { channel.send(value) }
-      }
+      // The channel is UNLIMITED, so trySend only fails when the channel is
+      // already closed — in which case the value has nowhere to go anyway.
+      channel.trySend(value)
     }
 
     override fun onError(t: Throwable) {

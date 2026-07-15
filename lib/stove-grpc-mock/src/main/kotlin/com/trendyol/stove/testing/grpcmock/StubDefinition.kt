@@ -2,6 +2,7 @@ package com.trendyol.stove.testing.grpcmock
 
 import com.google.protobuf.Message
 import io.grpc.Metadata
+import io.grpc.MethodDescriptor
 import io.grpc.Status
 import kotlinx.coroutines.flow.Flow
 
@@ -89,6 +90,14 @@ sealed class MetadataMatcher {
 sealed class StubDefinition {
   abstract val requestMatcher: RequestMatcher
   abstract val metadataMatcher: MetadataMatcher
+
+  internal val methodType: MethodDescriptor.MethodType
+    get() = when (this) {
+      is Unary, is Error -> MethodDescriptor.MethodType.UNARY
+      is ServerStream -> MethodDescriptor.MethodType.SERVER_STREAMING
+      is ClientStream -> MethodDescriptor.MethodType.CLIENT_STREAMING
+      is BidiStream -> MethodDescriptor.MethodType.BIDI_STREAMING
+    }
 
   /**
    * Unary RPC: single request -> single response
