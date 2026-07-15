@@ -703,6 +703,27 @@ public final class com/trendyol/stove/reporting/TraceProvider$DefaultImpls {
 	public static synthetic fun getTraceVisualizationForCurrentTest$default (Lcom/trendyol/stove/reporting/TraceProvider;JILjava/lang/Object;)Larrow/core/Option;
 }
 
+public final class com/trendyol/stove/scoping/TestScopeCleanupListener : com/trendyol/stove/reporting/ReportEventListener {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public fun onEntryRecorded (Lcom/trendyol/stove/reporting/ReportEntry;)V
+	public fun onTestEnded (Ljava/lang/String;)V
+	public fun onTestFailed (Ljava/lang/String;Ljava/lang/String;)V
+	public fun onTestStarted (Lcom/trendyol/stove/reporting/StoveTestContext;)V
+}
+
+public final class com/trendyol/stove/scoping/TestScopeKt {
+	public static final fun belongsToTest (Ljava/util/Map;Ljava/lang/String;)Z
+	public static final fun stoveTestId (Ljava/util/Map;)Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/scoping/TestScopedJournal {
+	public fun <init> ()V
+	public final fun clear (Ljava/lang/String;)V
+	public final fun clearAll ()V
+	public final fun entries (Ljava/lang/String;)Ljava/util/List;
+	public final fun record (Ljava/lang/String;Ljava/lang/Object;)V
+}
+
 public final class com/trendyol/stove/serialization/E2eObjectMapperConfig {
 	public static final field INSTANCE Lcom/trendyol/stove/serialization/E2eObjectMapperConfig;
 	public final fun createObjectMapperWithDefaults ()Lcom/fasterxml/jackson/databind/ObjectMapper;

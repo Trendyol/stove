@@ -1,7 +1,7 @@
 package com.trendyol.stove.testing.grpcmock
 
 import com.trendyol.stove.grpc.grpc
-import com.trendyol.stove.messaging.kafka.stoveTestId
+import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.system.stove
 import com.trendyol.stove.testing.grpcmock.test.*
 import io.grpc.Metadata
@@ -110,39 +110,7 @@ class GrpcMockScopingTest :
       }
     }
 
-    context("journal semantics") {
-      fun received(testId: String?, matched: Boolean = false) = ReceivedRequest(
-        stubKey = StubKey("test.TestService", "Unary"),
-        requestBytes = ByteArray(0),
-        matched = matched,
-        testId = testId
-      )
-
-      test("untagged requests are visible to every test") {
-        val journal = GrpcCallJournal()
-        journal.record(received(testId = null))
-
-        journal.requests("test-a") shouldHaveSize 1
-        journal.requests("test-b") shouldHaveSize 1
-      }
-
-      test("tagged requests are visible only to their test") {
-        val journal = GrpcCallJournal()
-        journal.record(received(testId = "test-a"))
-
-        journal.requests("test-a") shouldHaveSize 1
-        journal.requests("test-b") shouldHaveSize 0
-      }
-
-      test("clearing a test keeps untagged requests visible") {
-        val journal = GrpcCallJournal()
-        journal.record(received(testId = null))
-        journal.record(received(testId = "test-a"))
-        journal.clear("test-a")
-
-        journal.requests("test-a") shouldHaveSize 1
-      }
-
+    context("metadata attribution") {
       test("test id is extracted from metadata header or baggage") {
         val header = Metadata()
         header.put(Metadata.Key.of("x-stove-test-id", Metadata.ASCII_STRING_MARSHALLER), "test-1")

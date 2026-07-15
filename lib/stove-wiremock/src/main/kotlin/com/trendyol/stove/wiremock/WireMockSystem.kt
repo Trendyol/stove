@@ -15,6 +15,7 @@ import com.github.tomakehurst.wiremock.stubbing.*
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.*
+import com.trendyol.stove.scoping.TestScopeCleanupListener
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
@@ -28,7 +29,6 @@ import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.STATUS_CODE
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
-import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Callback invoked after a stub is removed (when `removeStubAfterRequestMatched` is enabled).
@@ -204,17 +204,7 @@ class WireMockSystem(
   private val callJournal = WireMockCallJournal()
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val verification = WireMockVerification(this, callJournal, serde)
-  private val completedTestIds = ConcurrentLinkedQueue<String>()
-  private val reportListener = object : ReportEventListener {
-    override fun onTestStarted(ctx: StoveTestContext) {
-      clearCompletedTestJournals()
-      callJournal.clear(ctx.testId)
-    }
-
-    override fun onTestEnded(testId: String) {
-      completedTestIds.add(testId)
-    }
-  }
+  private val reportListener = TestScopeCleanupListener(callJournal::clear)
   private var reportListenerRegistered = false
   private lateinit var exposedConfiguration: WireMockExposedConfiguration
 
@@ -1033,13 +1023,6 @@ class WireMockSystem(
       stop()
       callJournal.clearAll()
     }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
-  }
-
-  private fun clearCompletedTestJournals() {
-    while (true) {
-      val testId = completedTestIds.poll() ?: return
-      callJournal.clear(testId)
-    }
   }
 
   private suspend fun registerStub(

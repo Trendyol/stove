@@ -5,8 +5,10 @@ package com.trendyol.stove.testing.grpcmock
 import arrow.core.*
 import com.google.protobuf.Message
 import com.trendyol.stove.functional.*
-import com.trendyol.stove.messaging.kafka.stoveTestId
 import com.trendyol.stove.reporting.*
+import com.trendyol.stove.scoping.TestScopeCleanupListener
+import com.trendyol.stove.scoping.TestScopedJournal
+import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import io.grpc.*
@@ -19,7 +21,6 @@ import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
@@ -97,17 +98,8 @@ class GrpcMockSystem internal constructor(
   override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
 
   private val stubs = ConcurrentHashMap<String, CopyOnWriteArrayList<RegisteredStub>>()
-  private val callJournal = GrpcCallJournal()
-  private val completedTestIds = ConcurrentLinkedQueue<String>()
-  private val reportListener = object : ReportEventListener {
-    override fun onTestStarted(ctx: StoveTestContext) {
-      clearCompletedTestJournals()
-    }
-
-    override fun onTestEnded(testId: String) {
-      completedTestIds.add(testId)
-    }
-  }
+  private val callJournal = TestScopedJournal<ReceivedRequest>()
+  private val reportListener = TestScopeCleanupListener(callJournal::clear)
   private var reportListenerRegistered = false
 
   private lateinit var server: Server
@@ -152,13 +144,6 @@ class GrpcMockSystem internal constructor(
       stop()
       callJournal.clearAll()
     }.recover { logger.warn("Error stopping gRPC mock: ${it.message}") }
-  }
-
-  private fun clearCompletedTestJournals() {
-    while (true) {
-      val testId = completedTestIds.poll() ?: return
-      callJournal.clear(testId)
-    }
   }
 
   // ==================== Stub Registration ====================
@@ -371,7 +356,7 @@ class GrpcMockSystem internal constructor(
 
   override suspend fun validate() {
     val unmatched = callJournal
-      .requests(reporter.currentTestId())
+      .entries(reporter.currentTestId())
       .filter { !it.matched }
 
     if (unmatched.isNotEmpty()) {
@@ -408,7 +393,7 @@ class GrpcMockSystem internal constructor(
     val scopedStubs = stubs.values
       .flatten()
       .filter { it.testId == null || it.testId == currentTestId }
-    val scopedRequests = callJournal.requests(currentTestId)
+    val scopedRequests = callJournal.entries(currentTestId)
 
     return SystemSnapshot(
       system = reportSystemName,
@@ -506,16 +491,15 @@ class GrpcMockSystem internal constructor(
     matched: Boolean,
     stubTestId: String? = null
   ) {
-    callJournal.record(
-      ReceivedRequest(
-        stubKey = key,
-        requestBytes = requestBytes,
-        metadata = metadata,
-        matched = matched,
-        stubId = if (matched) key.id else null,
-        testId = metadata.toHeaderMap().stoveTestId() ?: stubTestId
-      )
+    val request = ReceivedRequest(
+      stubKey = key,
+      requestBytes = requestBytes,
+      metadata = metadata,
+      matched = matched,
+      stubId = if (matched) key.id else null,
+      testId = metadata.toHeaderMap().stoveTestId() ?: stubTestId
     )
+    callJournal.record(request.testId, request)
   }
 
   // ==================== Internal: Handler Registry ====================

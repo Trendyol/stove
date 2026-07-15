@@ -3,57 +3,42 @@ package com.trendyol.stove.wiremock
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
-import com.trendyol.stove.messaging.kafka.stoveTestId
-import java.util.concurrent.*
+import com.trendyol.stove.scoping.TestScopedJournal
+import com.trendyol.stove.scoping.stoveTestId
 
 /**
- * Test-scoped journal of stubs and serve events.
- *
- * Scoping is fail-open: an entry is excluded from a test's view only when it is
- * provably tagged with a different test id. Untagged entries — stubs registered
- * outside any test context, and requests carrying neither the `X-Stove-Test-Id`
- * header nor test-id baggage — are visible to every test, so applications without
- * test-id propagation behave as if scoping did not exist.
+ * Test-scoped journal of stubs and serve events, backed by the fail-open
+ * [TestScopedJournal]: entries provably tagged with another test are excluded,
+ * untagged entries are visible to every test. Requests are attributed by their
+ * `X-Stove-Test-Id` header or baggage first, then by the matched stub's tag.
  */
 internal class WireMockCallJournal {
-  private val stubsByTestId = ConcurrentHashMap<String, CopyOnWriteArrayList<StubMapping>>()
-  private val serveEventsByTestId = ConcurrentHashMap<String, CopyOnWriteArrayList<ServeEvent>>()
-  private val untaggedStubs = CopyOnWriteArrayList<StubMapping>()
-  private val untaggedServeEvents = CopyOnWriteArrayList<ServeEvent>()
+  private val stubs = TestScopedJournal<StubMapping>()
+  private val serveEvents = TestScopedJournal<ServeEvent>()
 
   fun recordStub(stubMapping: StubMapping) {
-    when (val testId = stubMapping.stoveTestId()) {
-      null -> untaggedStubs.add(stubMapping)
-      else -> stubsByTestId.computeIfAbsent(testId) { CopyOnWriteArrayList() }.add(stubMapping)
-    }
+    stubs.record(stubMapping.stoveTestId(), stubMapping)
   }
 
   fun record(serveEvent: ServeEvent) {
-    when (val testId = serveEvent.stoveTestId()) {
-      null -> untaggedServeEvents.add(serveEvent)
-      else -> serveEventsByTestId.computeIfAbsent(testId) { CopyOnWriteArrayList() }.add(serveEvent)
-    }
+    serveEvents.record(serveEvent.stoveTestId(), serveEvent)
   }
 
   fun requests(testId: String): List<LoggedRequest> =
     serveEvents(testId).map { it.request }
 
-  fun stubs(testId: String): List<StubMapping> =
-    untaggedStubs.toList() + (stubsByTestId[testId]?.toList() ?: emptyList())
+  fun stubs(testId: String): List<StubMapping> = stubs.entries(testId)
 
-  fun serveEvents(testId: String): List<ServeEvent> =
-    untaggedServeEvents.toList() + (serveEventsByTestId[testId]?.toList() ?: emptyList())
+  fun serveEvents(testId: String): List<ServeEvent> = serveEvents.entries(testId)
 
   fun clear(testId: String) {
-    stubsByTestId.remove(testId)
-    serveEventsByTestId.remove(testId)
+    stubs.clear(testId)
+    serveEvents.clear(testId)
   }
 
   fun clearAll() {
-    stubsByTestId.clear()
-    serveEventsByTestId.clear()
-    untaggedStubs.clear()
-    untaggedServeEvents.clear()
+    stubs.clearAll()
+    serveEvents.clearAll()
   }
 
   private fun ServeEvent.stoveTestId(): String? =
