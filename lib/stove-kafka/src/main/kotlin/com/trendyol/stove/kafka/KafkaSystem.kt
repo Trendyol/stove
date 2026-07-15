@@ -1,5 +1,3 @@
-@file:Suppress("TooGenericExceptionCaught")
-
 package com.trendyol.stove.kafka
 
 import arrow.core.*
@@ -625,7 +623,7 @@ class KafkaSystem(
     val config = EmbeddedKafkaConfig.apply(0, 0, `Map$`.`MODULE$`.empty(), `Map$`.`MODULE$`.empty(), `Map$`.`MODULE$`.empty())
     val server = EmbeddedKafka.start(config)
     while (!EmbeddedKafka.isRunning()) {
-      delay(100)
+      delay(100.milliseconds)
     }
     KafkaExposedConfiguration("0.0.0.0:${server.config().kafkaPort()}", StoveKafkaBridge::class.java.name)
   }
@@ -638,7 +636,7 @@ class KafkaSystem(
   private suspend fun stopEmbeddedKafka() {
     EmbeddedKafka.stop()
     while (EmbeddedKafka.isRunning()) {
-      delay(100)
+      delay(100.milliseconds)
     }
   }
 
@@ -755,7 +753,7 @@ class KafkaSystem(
             val response = handle.client.healthCheck().execute(HealthCheckRequest())
             healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
           }
-          delay(GRPC_SERVER_DELAY)
+          delay(GRPC_SERVER_DELAY.milliseconds)
         }
         logger.info("Stove Message Sink Grpc Server is healthy!")
       }

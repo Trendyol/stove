@@ -68,7 +68,7 @@ internal data class KafkaBridgeEndpoint(
 }
 
 internal class KafkaBridgeRuntime(
-  private val serde: StoveSerde<Any, ByteArray>,
+  serde: StoveSerde<Any, ByteArray>,
   keyName: String?
 ) : AutoCloseable {
   val id: String = UUID.randomUUID().toString()

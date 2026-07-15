@@ -43,43 +43,39 @@ class StoveKafkaBridge<K, V> :
     serde = bridgeId?.let(KafkaBridgeRuntimeRegistry::serde) ?: stoveSerdeRef
   }
 
-  override fun onSend(record: ProducerRecord<K, V>): ProducerRecord<K, V> = record.also {
-    runBlocking { send(it.toPublishedMessage()) }
-  }
+  override fun onSend(record: ProducerRecord<K, V>): ProducerRecord<K, V> =
+    record.also { send(it.toPublishedMessage()) }
 
-  override fun onConsume(records: ConsumerRecords<K, V>): ConsumerRecords<K, V> = records.also {
-    runBlocking { records.forEach { record -> send(record.toConsumedMessage()) } }
-  }
+  override fun onConsume(records: ConsumerRecords<K, V>): ConsumerRecords<K, V> =
+    records.also { records.forEach { record -> send(record.toConsumedMessage()) } }
 
-  override fun onCommit(offsets: MutableMap<TopicPartition, OffsetAndMetadata>) = runBlocking {
+  override fun onCommit(offsets: MutableMap<TopicPartition, OffsetAndMetadata>) {
     offsets.forEach { (topicPartition, offset) -> send(topicPartition.toCommittedMessage(offset)) }
   }
 
   override fun onAcknowledgement(
     metadata: RecordMetadata?,
     exception: Exception?
-  ) = runBlocking {
-    send(metadata.toAcknowledgedMessage(exception))
-  }
+  ) = send(metadata.toAcknowledgedMessage(exception))
 
   override fun close() {
     if (clientHandle.isInitialized()) clientHandle.value.close()
     scope.cancel()
   }
 
-  private suspend fun send(message: ConsumedMessage) {
+  private fun send(message: ConsumedMessage) = runBlocking {
     report("consumed", message) { client.onConsumedMessage().execute(message) }
   }
 
-  private suspend fun send(message: PublishedMessage) {
+  private fun send(message: PublishedMessage) = runBlocking {
     report("published", message) { client.onPublishedMessage().execute(message) }
   }
 
-  private suspend fun send(message: CommittedMessage) {
+  private fun send(message: CommittedMessage) = runBlocking {
     report("committed", message) { client.onCommittedMessage().execute(message) }
   }
 
-  private suspend fun send(message: AcknowledgedMessage) {
+  private fun send(message: AcknowledgedMessage) = runBlocking {
     report("acknowledged", message) { client.onAcknowledgedMessage().execute(message) }
   }
 
@@ -139,9 +135,7 @@ class StoveKafkaBridge<K, V> :
   private fun startGrpcClient(): StoveKafkaObserverClientHandle {
     logger.info("Connecting to Stove Kafka Bridge on port {}", bridgePort)
     return runCatching { GrpcUtils.createClientHandle(bridgePort, scope) }
-      .onSuccess {
-        logger.info("Stove Kafka Observer Client created on port {}", bridgePort)
-      }
+      .onSuccess { logger.info("Stove Kafka Observer Client created on port {}", bridgePort) }
       .getOrElse { cause -> throw IllegalStateException("Failed to connect Stove Kafka observer client", cause) }
   }
 }
