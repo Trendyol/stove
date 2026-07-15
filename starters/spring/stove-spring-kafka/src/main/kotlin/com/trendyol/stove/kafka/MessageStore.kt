@@ -1,39 +1,43 @@
 package com.trendyol.stove.kafka
 
+import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.messaging.Failure
-import io.exoquery.pprint
-import java.util.*
+import java.util.UUID
 
 internal class MessageStore {
-  private val consumed = Caching.of<UUID, StoveMessage.Consumed>()
-  private val produced = Caching.of<UUID, StoveMessage.Published>()
-  private val failures = Caching.of<UUID, Failure<StoveMessage.Failed>>()
+  internal val core = KafkaMessageStore<DefaultKafkaRecord>()
 
   fun record(record: StoveMessage.Consumed) {
-    consumed.put(UUID.randomUUID(), record)
+    core.recordConsumed(record.toRecord())
   }
 
   fun record(record: StoveMessage.Published) {
-    produced.put(UUID.randomUUID(), record)
+    core.recordPublished(record.toRecord())
   }
 
   fun record(failure: Failure<StoveMessage.Failed>) {
-    failures.put(UUID.randomUUID(), failure)
+    core.recordFailed(failure.message.actual.toRecord())
   }
 
-  fun consumedRecords(): List<StoveMessage.Consumed> = consumed.asMap().values.toList()
+  fun consumedRecords(): List<StoveMessage.Consumed> = core.consumedMessages().sources()
 
-  fun producedRecords(): List<StoveMessage.Published> = produced.asMap().values.toList()
+  fun producedRecords(): List<StoveMessage.Published> = core.publishedMessages().sources()
 
-  fun failedRecords(): List<StoveMessage.Failed> = failures
-    .asMap()
-    .values
-    .map { failure -> failure.message.actual }
-    .toList()
+  fun failedRecords(): List<StoveMessage.Failed> = core.failedMessages().sources()
 
-  override fun toString(): String = """
-    |Consumed: ${pprint(consumedRecords().map { it.copy(value = ByteArray(0)) })}
-    |Published: ${pprint(producedRecords().map { it.copy(value = ByteArray(0)) })}
-    |Failed: ${pprint(failedRecords().map { it.copy(value = ByteArray(0)) })}
-  """.trimIndent().trimMargin()
+  override fun toString(): String = core.toString()
+
+  private fun StoveMessage.toRecord() = DefaultKafkaRecord(
+    id = UUID.randomUUID().toString(),
+    value = value,
+    metadata = metadata,
+    partition = partition,
+    offset = (this as? StoveMessage.Consumed)?.offset,
+    timestamp = timestamp,
+    reason = (this as? StoveMessage.Failed)?.reason,
+    source = this
+  )
+
+  private inline fun <reified T : StoveMessage> Collection<DefaultKafkaRecord>.sources(): List<T> =
+    mapNotNull { it.source as? T }
 }

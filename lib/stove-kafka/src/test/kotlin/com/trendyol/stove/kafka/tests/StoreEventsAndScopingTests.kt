@@ -1,6 +1,7 @@
 package com.trendyol.stove.kafka.tests
 
 import com.trendyol.stove.kafka.*
+import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.kafka.intercepting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.tracing.TraceContext
@@ -78,7 +79,12 @@ private class Observer {
   private val topicSuffixes = TopicSuffixes()
   val store = MessageStore()
   val recorder = KafkaRecorder(store, topicSuffixes)
-  val assertions = KafkaAssertions(store, serde, topicSuffixes)
+  val assertions = KafkaAssertions(
+    store = store.core,
+    serde = serde,
+    isErrorTopic = topicSuffixes::isErrorTopic,
+    requireConsumedCommit = true
+  )
 }
 
 private fun observer() = Observer()

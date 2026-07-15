@@ -17,6 +17,7 @@ include(
   "lib:stove-grpc-mock",
   "lib:stove-http",
   "lib:stove-grpc",
+  "lib:stove-kafka-common",
   "lib:stove-kafka",
   "lib:stove-couchbase",
   "lib:stove-rdbms",

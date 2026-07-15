@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
   api(projects.lib.stove)
+  api(projects.lib.stoveKafkaCommon)
   api(libs.testcontainers.kafka)
   api(libs.kafka)
   api(libs.kafka.embedded)
@@ -19,8 +20,6 @@ dependencies {
   implementation(libs.io.grpc.kotlin)
   implementation(libs.io.grpc.netty)
   implementation(libs.google.protobuf.kotlin)
-  implementation(libs.caffeine)
-  implementation(libs.pprint)
 }
 
 dependencies {

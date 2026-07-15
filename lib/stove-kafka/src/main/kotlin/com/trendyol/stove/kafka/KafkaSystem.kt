@@ -2,6 +2,7 @@ package com.trendyol.stove.kafka
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.kafka.intercepting.*
 import com.trendyol.stove.messaging.*
 import com.trendyol.stove.reporting.*
@@ -238,7 +239,12 @@ class KafkaSystem(
   @PublishedApi
   internal val store: MessageStore = MessageStore()
   private val recorder = KafkaRecorder(store, context.options.topicSuffixes)
-  private val assertions = KafkaAssertions(store, context.options.serde, context.options.topicSuffixes)
+  private val assertions = KafkaAssertions(
+    store = store.core,
+    serde = context.options.serde,
+    isErrorTopic = context.options.topicSuffixes::isErrorTopic,
+    requireConsumedCommit = true
+  )
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<KafkaExposedConfiguration> =
     stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>(context.keyName)
@@ -427,45 +433,14 @@ class KafkaSystem(
     expected: String,
     crossinline block: suspend ((T) -> Unit) -> Unit
   ): KafkaSystem {
-    var matchedMessage: T? = null
-
-    val failure = try {
-      coroutineScope {
-        block { matchedMessage = it }
-      }
-      null
-    } catch (e: CancellationException) {
-      // Cancellation belongs to the caller/parent scope and must retain its structured-concurrency semantics.
-      throw e
-    } catch (e: Throwable) {
-      // Assertion timeouts and user-condition failures are reported, then rethrown unchanged below.
-      e
-    }
-
-    if (failure == null) {
-      reporter.record(
-        ReportEntry.success(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          output = matchedMessage.toOption(),
-          metadata = mapOf("timeout" to timeout.toString())
-        )
-      )
-    } else {
-      reporter.record(
-        ReportEntry.failure(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          error = failure.message ?: failure::class.simpleName ?: "Kafka assertion failed",
-          expected = expected.some(),
-          actual = (matchedMessage ?: "No matching message found").some()
-        )
-      )
-    }
-
-    failure?.let { throw it }
+    runKafkaAssertion<T>(
+      reporter = reporter,
+      systemName = reportSystemName,
+      assertionName = assertionName,
+      typeName = typeName,
+      timeout = timeout,
+      expected = expected
+    ) { onMatch -> block(onMatch) }
     return this
   }
 

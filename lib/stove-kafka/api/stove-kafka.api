@@ -21,11 +21,6 @@ public final class com/trendyol/stove/kafka/AcknowledgedMessage : com/squareup/w
 public final class com/trendyol/stove/kafka/AcknowledgedMessage$Companion {
 }
 
-public final class com/trendyol/stove/kafka/Caching {
-	public static final field INSTANCE Lcom/trendyol/stove/kafka/Caching;
-	public final fun of ()Lcom/github/benmanes/caffeine/cache/Cache;
-}
-
 public final class com/trendyol/stove/kafka/CommittedMessage : com/squareup/wire/Message {
 	public static final field ADAPTER Lcom/squareup/wire/ProtoAdapter;
 	public static final field Companion Lcom/trendyol/stove/kafka/CommittedMessage$Companion;
@@ -554,15 +549,6 @@ public final class com/trendyol/stove/kafka/TopicSuffixes {
 public final class com/trendyol/stove/kafka/intercepting/GrpcUtils {
 	public static final field INSTANCE Lcom/trendyol/stove/kafka/intercepting/GrpcUtils;
 	public final fun createClient (Ljava/lang/String;Lkotlinx/coroutines/CoroutineScope;)Lcom/trendyol/stove/kafka/StoveKafkaObserverServiceClient;
-}
-
-public final class com/trendyol/stove/kafka/intercepting/KafkaAssertions {
-	public fun <init> (Lcom/trendyol/stove/kafka/intercepting/MessageStore;Lcom/trendyol/stove/serialization/StoveSerde;Lcom/trendyol/stove/kafka/TopicSuffixes;)V
-	public final fun waitUntilConsumed-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun waitUntilFailed-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun waitUntilPublished-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun waitUntilRetried-gRj5Bb8 (JILkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun waitUntilRetried-gRj5Bb8$default (Lcom/trendyol/stove/kafka/intercepting/KafkaAssertions;JILkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/kafka/intercepting/KafkaRecorder {

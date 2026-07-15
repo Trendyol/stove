@@ -2,6 +2,7 @@ package com.trendyol.stove.kafka
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.messaging.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
@@ -40,14 +41,10 @@ class KafkaSystem(
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
     val store = getInterceptor().getStore()
-    val belongsToTest: (Map<String, Any>) -> Boolean = { headers ->
-      val testId = headers[TraceContext.STOVE_TEST_ID_HEADER].toOption()
-      testId.isNone() || testId.isSome { it.toString() == currentTestId }
-    }
 
-    val consumed = store.consumedRecords().filter { belongsToTest(it.metadata.headers) }
-    val produced = store.producedRecords().filter { belongsToTest(it.metadata.headers) }
-    val failed = store.failedRecords().filter { belongsToTest(it.metadata.headers) }
+    val consumed = store.consumedRecords().filter { it.metadata.headers.belongsToTest(currentTestId) }
+    val produced = store.producedRecords().filter { it.metadata.headers.belongsToTest(currentTestId) }
+    val failed = store.failedRecords().filter { it.metadata.headers.belongsToTest(currentTestId) }
 
     return SystemSnapshot(
       system = reportSystemName,
@@ -228,45 +225,14 @@ class KafkaSystem(
     expected: String,
     crossinline block: suspend ((T) -> Unit) -> Unit
   ): KafkaSystem {
-    var matchedMessage: T? = null
-
-    val result = runCatching {
-      coroutineScope {
-        block { matchedMessage = it }
-      }
-    }
-
-    val failure = result.exceptionOrNull()?.let { e ->
-      e as? AssertionError ?: AssertionError(
-        "Expected $assertionName<$typeName> matching condition within $timeout, but none was found",
-        e
-      )
-    }
-
-    if (result.isSuccess) {
-      reporter.record(
-        ReportEntry.success(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          output = matchedMessage.toOption(),
-          metadata = mapOf("timeout" to timeout.toString())
-        )
-      )
-    } else {
-      reporter.record(
-        ReportEntry.failure(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          error = failure?.message ?: "No matching message found",
-          expected = expected.some(),
-          actual = (matchedMessage ?: "No matching message found").some()
-        )
-      )
-    }
-
-    failure?.let { throw it }
+    runKafkaAssertion<T>(
+      reporter = reporter,
+      systemName = reportSystemName,
+      assertionName = assertionName,
+      typeName = typeName,
+      timeout = timeout,
+      expected = expected
+    ) { onMatch -> block(onMatch) }
     return this
   }
 
@@ -275,21 +241,21 @@ class KafkaSystem(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition) }
+  ): Unit = getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
+  ): Unit = getInterceptor().waitUntilFailed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBePublishedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { getInterceptor().waitUntilPublished(atLeastIn, clazz, condition) }
+  ): Unit = getInterceptor().waitUntilPublished(atLeastIn, clazz, condition)
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 

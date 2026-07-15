@@ -33,7 +33,7 @@ internal fun <K, V> ConsumerRecord<K, V>.toStoveMessage(
 
 internal fun <K, V> ConsumerRecord<K, V>.toFailedStoveMessage(
   serde: StoveSerde<Any, ByteArray>,
-  exception: Exception
+  exception: Throwable
 ): StoveMessage.Failed = StoveMessage.failed(
   this.topic(),
   serializeIfNotYet(this.value(), serde),
@@ -57,7 +57,7 @@ internal fun <K, V> ProducerRecord<K, V>.toStoveMessage(
 
 internal fun <K, V> ProducerRecord<K, V>.toFailedStoveMessage(
   serde: StoveSerde<Any, ByteArray>,
-  exception: Exception
+  exception: Throwable
 ): StoveMessage.Failed = StoveMessage.failed(
   this.topic(),
   serializeIfNotYet(this.value(), serde),
