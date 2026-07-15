@@ -10,7 +10,14 @@ data class KafkaContext(
   val runtime: SystemRuntime,
   val options: KafkaSystemOptions,
   val keyName: String? = null
-)
+) {
+  internal val bridgeServerPort: Int = when {
+    keyName != null && options.usesDefaultBridgeGrpcServerPort ->
+      PortFinder.findAvailablePortAsString().toInt()
+
+    else -> options.bridgeGrpcServerPort
+  }
+}
 
 internal fun Stove.kafka(): KafkaSystem = getOrNone<KafkaSystem>().getOrElse {
   throw SystemNotRegisteredException(KafkaSystem::class)

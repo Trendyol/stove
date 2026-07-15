@@ -91,6 +91,24 @@ class KafkaOptionsTests :
       }
     }
 
+    test("KafkaContext resolves bridge server ports from the system key and captured default intent") {
+      val originalDefault = stoveKafkaBridgePortDefault
+      try {
+        stoveKafkaBridgePortDefault = "1"
+        val defaultOptions = KafkaSystemOptions(configureExposedConfiguration = { emptyList() })
+        val explicitOptions = KafkaSystemOptions(
+          bridgeGrpcServerPort = 31005,
+          configureExposedConfiguration = { emptyList() }
+        )
+
+        KafkaContext(EmbeddedKafkaRuntime, defaultOptions).bridgeServerPort shouldBe 1
+        KafkaContext(EmbeddedKafkaRuntime, defaultOptions, keyName = "keyed").bridgeServerPort shouldNotBe 1
+        KafkaContext(EmbeddedKafkaRuntime, explicitOptions, keyName = "keyed").bridgeServerPort shouldBe 31005
+      } finally {
+        stoveKafkaBridgePortDefault = originalDefault
+      }
+    }
+
     test("non-keyed custom bridge ports are discoverable in-JVM and restored on close") {
       val previousPort = System.getProperty(STOVE_KAFKA_BRIDGE_PORT)
       System.setProperty(STOVE_KAFKA_BRIDGE_PORT, "previous-port")

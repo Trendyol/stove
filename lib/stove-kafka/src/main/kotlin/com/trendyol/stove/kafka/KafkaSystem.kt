@@ -236,12 +236,6 @@ class KafkaSystem(
   private lateinit var grpcServer: Server
   private var bridgePortDiscovery: AutoCloseable? = null
   private val bridgeRuntime = KafkaBridgeRuntime(context.options.serde, context.keyName)
-  private val bridgeServerPort: Int = when {
-    context.keyName != null && context.options.usesDefaultBridgeGrpcServerPort ->
-      PortFinder.findAvailablePortAsString().toInt()
-
-    else -> context.options.bridgeGrpcServerPort
-  }
 
   @PublishedApi
   internal val store: MessageStore = MessageStore()
@@ -726,7 +720,7 @@ class KafkaSystem(
 
   private suspend fun startGrpcServer(): Server = Try {
     NettyServerBuilder
-      .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), bridgeServerPort))
+      .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), context.bridgeServerPort))
       .executor(bridgeRuntime.scope.also { it.ensureActive() }.asExecutor)
       .addService(StoveKafkaObserverGrpcServer(recorder))
       .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
