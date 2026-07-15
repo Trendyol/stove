@@ -1,8 +1,13 @@
 package com.trendyol.stove.cassandra
 
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 class CassandraOptionsTests :
   FunSpec({
@@ -69,7 +74,30 @@ class CassandraOptionsTests :
 
       options.keyspace shouldBe "stove"
       options.datacenter shouldBe "datacenter1"
+      options.requestTimeout shouldBe 30.seconds
       options.container shouldNotBe null
+    }
+
+    test("CassandraSystemOptions should allow configuring the request timeout") {
+      val options = CassandraSystemOptions(
+        configureExposedConfiguration = { _ -> listOf() }
+      ).requestTimeout(45.seconds)
+
+      options.requestTimeout shouldBe 45.seconds
+      options.createDriverConfigLoader().use { loader ->
+        loader.initialConfig.defaultProfile.getDuration(DefaultDriverOption.REQUEST_TIMEOUT) shouldBe
+          45.seconds.toJavaDuration()
+      }
+    }
+
+    test("CassandraSystemOptions should reject invalid request timeouts") {
+      val options = CassandraSystemOptions(
+        configureExposedConfiguration = { _ -> listOf() }
+      )
+
+      shouldThrow<IllegalArgumentException> {
+        options.requestTimeout(Duration.ZERO)
+      }
     }
 
     test("CassandraSystemOptions.provided should default port to 9042") {

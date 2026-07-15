@@ -110,8 +110,10 @@ public class com/trendyol/stove/cassandra/CassandraSystemOptions : com/trendyol/
 	public fun getDatacenter ()Ljava/lang/String;
 	public fun getKeyspace ()Ljava/lang/String;
 	public fun getMigrationCollection ()Lcom/trendyol/stove/database/migrations/MigrationCollection;
+	public final fun getRequestTimeout-UwyO8pc ()J
 	public fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/cassandra/CassandraSystemOptions;
 	public synthetic fun migrations (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/database/migrations/SupportsMigrations;
+	public final fun requestTimeout-LRDsOJo (J)Lcom/trendyol/stove/cassandra/CassandraSystemOptions;
 }
 
 public final class com/trendyol/stove/cassandra/CassandraSystemOptions$Companion {
