@@ -1,7 +1,7 @@
 package com.trendyol.stove.kafka
 
-import com.trendyol.stove.kafka.common.KafkaAssertions
 import com.trendyol.stove.messaging.*
+import com.trendyol.stove.messaging.kafka.KafkaAssertions
 import com.trendyol.stove.serialization.StoveSerde
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*

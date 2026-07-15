@@ -314,6 +314,88 @@ public final class com/trendyol/stove/messaging/SuccessfulParsedMessage : com/tr
 	public fun getMetadata ()Lcom/trendyol/stove/messaging/MessageMetadata;
 }
 
+public final class com/trendyol/stove/messaging/kafka/DefaultKafkaRecord : com/trendyol/stove/messaging/kafka/KafkaRecord {
+	public fun <init> (Ljava/lang/String;[BLcom/trendyol/stove/messaging/MessageMetadata;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Throwable;Ljava/lang/Object;)V
+	public synthetic fun <init> (Ljava/lang/String;[BLcom/trendyol/stove/messaging/MessageMetadata;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Throwable;Ljava/lang/Object;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getHeaders ()Ljava/util/Map;
+	public fun getId ()Ljava/lang/String;
+	public fun getKey ()Ljava/lang/String;
+	public fun getMetadata ()Lcom/trendyol/stove/messaging/MessageMetadata;
+	public fun getOffset ()Ljava/lang/Long;
+	public fun getPartition ()Ljava/lang/Integer;
+	public fun getReason ()Ljava/lang/Throwable;
+	public final fun getSource ()Ljava/lang/Object;
+	public fun getTimestamp ()Ljava/lang/Long;
+	public fun getTopic ()Ljava/lang/String;
+	public fun getValue ()[B
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/messaging/kafka/KafkaAssertionReportingKt {
+	public static final fun runKafkaAssertion-Zb7fWow (Lcom/trendyol/stove/reporting/StoveReporter;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/messaging/kafka/KafkaAssertions {
+	public fun <init> (Lcom/trendyol/stove/messaging/kafka/KafkaMessageStore;Lcom/trendyol/stove/serialization/StoveSerde;Lkotlin/jvm/functions/Function1;ZZ)V
+	public synthetic fun <init> (Lcom/trendyol/stove/messaging/kafka/KafkaMessageStore;Lcom/trendyol/stove/serialization/StoveSerde;Lkotlin/jvm/functions/Function1;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun waitUntilConsumed-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitUntilFailed-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitUntilPublished-rnQQ1Ag (JLkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun waitUntilRetried-gRj5Bb8 (JILkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun waitUntilRetried-gRj5Bb8$default (Lcom/trendyol/stove/messaging/kafka/KafkaAssertions;JILkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/messaging/kafka/KafkaMessageStore {
+	public fun <init> ()V
+	public final fun acknowledgedMessages ()Ljava/util/Collection;
+	public final fun acknowledgedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun committedMessages ()Ljava/util/Collection;
+	public final fun committedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun consumedMessages ()Ljava/util/Collection;
+	public final fun consumedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun dump (Ljava/lang/String;)Ljava/lang/String;
+	public final fun failedMessages ()Ljava/util/Collection;
+	public final fun failedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun getVersion ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun isCommitted (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)Z
+	public final fun isCommitted (Ljava/lang/String;IJ)Z
+	public final fun publishedMessages ()Ljava/util/Collection;
+	public final fun publishedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public final fun recordAcknowledged (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)V
+	public final fun recordCommitted (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)V
+	public final fun recordConsumed (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)V
+	public final fun recordFailed (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)V
+	public final fun recordPublished (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)V
+	public final fun recordRetried (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)V
+	public final fun retriedMessages ()Ljava/util/Collection;
+	public final fun retriedRecords ()Lkotlinx/coroutines/flow/Flow;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/trendyol/stove/messaging/kafka/KafkaRecord {
+	public fun getHeaders ()Ljava/util/Map;
+	public abstract fun getId ()Ljava/lang/String;
+	public fun getKey ()Ljava/lang/String;
+	public abstract fun getMetadata ()Lcom/trendyol/stove/messaging/MessageMetadata;
+	public abstract fun getOffset ()Ljava/lang/Long;
+	public abstract fun getPartition ()Ljava/lang/Integer;
+	public abstract fun getReason ()Ljava/lang/Throwable;
+	public abstract fun getTimestamp ()Ljava/lang/Long;
+	public fun getTopic ()Ljava/lang/String;
+	public abstract fun getValue ()[B
+}
+
+public final class com/trendyol/stove/messaging/kafka/KafkaRecord$DefaultImpls {
+	public static fun getHeaders (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)Ljava/util/Map;
+	public static fun getKey (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)Ljava/lang/String;
+	public static fun getTopic (Lcom/trendyol/stove/messaging/kafka/KafkaRecord;)Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/messaging/kafka/KafkaTestScopeKt {
+	public static final fun belongsToTest (Ljava/util/Map;Ljava/lang/String;)Z
+	public static final fun stoveTestId (Ljava/util/Map;)Ljava/lang/String;
+}
+
 public final class com/trendyol/stove/reporting/AssertionResult : java/lang/Enum {
 	public static final field Companion Lcom/trendyol/stove/reporting/AssertionResult$Companion;
 	public static final field FAILED Lcom/trendyol/stove/reporting/AssertionResult;

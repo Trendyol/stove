@@ -1,4 +1,4 @@
-package com.trendyol.stove.kafka.common
+package com.trendyol.stove.messaging.kafka
 
 import com.trendyol.stove.tracing.TraceContext
 import java.net.URLDecoder
@@ -28,7 +28,7 @@ fun Map<String, *>.stoveTestId(): String? {
 
 private fun Any?.headerValue(): String? = when (this) {
   null -> null
-  is ByteArray -> String(this)
+  is ByteArray -> toString(Charsets.UTF_8)
   else -> toString()
 }
 

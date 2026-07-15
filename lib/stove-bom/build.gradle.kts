@@ -17,7 +17,6 @@ dependencies {
     api(projects.lib.stoveElasticsearch)
     api(projects.lib.stoveGrpc)
     api(projects.lib.stoveHttp)
-    api(projects.lib.stoveKafkaCommon)
     api(projects.lib.stoveKafka)
     api(projects.lib.stoveMongodb)
     api(projects.lib.stoveRdbms)

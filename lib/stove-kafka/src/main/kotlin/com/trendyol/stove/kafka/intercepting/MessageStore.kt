@@ -1,8 +1,8 @@
 package com.trendyol.stove.kafka.intercepting
 
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.messaging.MessageMetadata
+import com.trendyol.stove.messaging.kafka.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 

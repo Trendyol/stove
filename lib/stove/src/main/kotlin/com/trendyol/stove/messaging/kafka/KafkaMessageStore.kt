@@ -1,4 +1,4 @@
-package com.trendyol.stove.kafka.common
+package com.trendyol.stove.messaging.kafka
 
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.ConcurrentHashMap

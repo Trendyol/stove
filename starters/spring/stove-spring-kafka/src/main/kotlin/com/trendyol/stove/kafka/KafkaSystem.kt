@@ -2,8 +2,8 @@ package com.trendyol.stove.kafka
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
-import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.messaging.*
+import com.trendyol.stove.messaging.kafka.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*

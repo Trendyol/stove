@@ -1,4 +1,4 @@
-package com.trendyol.stove.kafka.common
+package com.trendyol.stove.messaging.kafka
 
 import com.trendyol.stove.messaging.*
 import com.trendyol.stove.reporting.StoveReporter
@@ -36,7 +36,7 @@ private fun record(
   reason = reason
 )
 
-class KafkaCommonTests :
+class KafkaMessagingTests :
   FunSpec({
     test("store signals changes and replay flows emit each record once") {
       val store = KafkaMessageStore<DefaultKafkaRecord>()
@@ -60,6 +60,7 @@ class KafkaCommonTests :
     test("test scoping supports explicit headers and percent-decoded baggage") {
       emptyMap<String, Any>().belongsToTest("test-1") shouldBe true
       mapOf("X-STOVE-TEST-ID" to "test-2").belongsToTest("test-1") shouldBe false
+      mapOf("X-Stove-Test-Id" to "tést".toByteArray(Charsets.UTF_8)).stoveTestId() shouldBe "tést"
       mapOf("baggage" to "region=eu,stove.test.id=my%20test;prop=1").stoveTestId() shouldBe "my test"
       mapOf("baggage" to "stove.test.id=a+b").stoveTestId() shouldBe "a+b"
       mapOf("baggage" to "stove.test.id=%ZZ").belongsToTest("test-1") shouldBe true

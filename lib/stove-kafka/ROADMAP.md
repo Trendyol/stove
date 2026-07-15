@@ -61,13 +61,13 @@ This became the reuse seam for the shared foundation below: integrations adapt t
 
 ### D4 — shared standalone/Spring Kafka foundation ✅
 
-`lib/stove-kafka-common` now owns the transport-neutral `KafkaRecord` contract, signal-driven `KafkaMessageStore`, test-id/baggage scoping, `KafkaAssertions`, and assertion reporting. Both integrations depend on it:
+Core messaging now owns the transport-neutral `KafkaRecord` contract, signal-driven `KafkaMessageStore`, test-id/baggage scoping, `KafkaAssertions`, and assertion reporting under `com.trendyol.stove.messaging.kafka`. Both integrations reuse it directly:
 
 - `lib/stove-kafka` adapts the existing Wire/gRPC records and enables commit-aware consumption plus retry/error-topic classification;
 - `starters/spring/stove-spring-kafka` adapts Spring producer/listener callbacks and enables Spring's success-versus-failure conflict check;
 - both retain their framework-native message facades and reporting snapshots, while waits, timeout dumps, replay flows, cancellation handling, and matching semantics execute through one implementation.
 
-The duplicate Caffeine stores, polling loop, deserialization helpers, assertion reporting blocks, and global Spring failure dumps were removed. The common module is a normal published dependency (and BOM entry) rather than making Spring Kafka depend on the standalone module's Wire, embedded-Kafka, and bridge stack.
+The duplicate Caffeine stores, polling loop, deserialization helpers, assertion reporting blocks, and global Spring failure dumps were removed. Keeping the shared foundation in core messaging lets Spring Kafka reuse it without depending on the standalone module's Wire, embedded-Kafka, and bridge stack or publishing a single-purpose intermediary artifact.
 
 ## Theme C — Diagnostics & observability ⏳ next
 

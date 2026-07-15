@@ -1,8 +1,8 @@
 package com.trendyol.stove.kafka.tests
 
 import com.trendyol.stove.kafka.*
-import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.kafka.intercepting.*
+import com.trendyol.stove.messaging.kafka.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.tracing.TraceContext
 import io.kotest.assertions.throwables.shouldThrow

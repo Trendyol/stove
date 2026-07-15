@@ -1,7 +1,7 @@
 package com.trendyol.stove.kafka
 
-import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.messaging.Failure
+import com.trendyol.stove.messaging.kafka.*
 import java.util.UUID
 
 internal class MessageStore {

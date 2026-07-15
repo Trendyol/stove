@@ -1,4 +1,4 @@
-package com.trendyol.stove.kafka.common
+package com.trendyol.stove.messaging.kafka
 
 import com.trendyol.stove.messaging.MessageMetadata
 
