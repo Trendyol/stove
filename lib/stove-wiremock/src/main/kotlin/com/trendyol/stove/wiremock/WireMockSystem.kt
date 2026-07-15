@@ -977,12 +977,13 @@ class WireMockSystem(
     val passed = unmatched.isEmpty()
 
     if (!passed) {
+      val scopedStubs = callJournal.stubs(currentTestId)
       val problems = unmatched.joinToString("\n") {
         WireMockValidationMessages.unmatchedRequestDetails(
           url = "${it.method.value()} ${it.url}",
           bodyAsString = it.bodyAsString,
           queryParams = serde.serialize(it.queryParams).decodeToString()
-        )
+        ) + "\nClosest stubs:\n" + WireMockNearMisses.closestStubsFor(it, scopedStubs)
       }
       val error = AssertionError(
         WireMockValidationMessages.unmatchedRequests(problems)

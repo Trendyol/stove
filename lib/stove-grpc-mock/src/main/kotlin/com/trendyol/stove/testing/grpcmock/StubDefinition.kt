@@ -200,6 +200,36 @@ data class ReceivedRequest(
   }
 }
 
+internal fun RequestMatcher.matches(requestBytes: ByteArray): Boolean = when (this) {
+  is RequestMatcher.Any -> true
+  is RequestMatcher.ExactBytes -> requestBytes.contentEquals(bytes)
+  is RequestMatcher.ExactMessage -> requestBytes.contentEquals(message.toByteArray())
+  is RequestMatcher.Custom -> matcher(requestBytes)
+}
+
+internal fun MetadataMatcher.matches(metadata: Metadata): Boolean = when (this) {
+  is MetadataMatcher.Any -> true
+
+  is MetadataMatcher.HasHeader -> {
+    val headerKey = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
+    metadata.get(headerKey) == value
+  }
+
+  is MetadataMatcher.BearerToken -> {
+    val auth = metadata.get(GrpcMetadataKeys.AUTHORIZATION)
+    auth == "Bearer $token"
+  }
+
+  is MetadataMatcher.RequiresAuth -> {
+    val auth = metadata.get(GrpcMetadataKeys.AUTHORIZATION)
+    !auth.isNullOrBlank()
+  }
+
+  is MetadataMatcher.Custom -> matcher(metadata)
+
+  is MetadataMatcher.All -> matchers.all { it.matches(metadata) }
+}
+
 /**
  * Common metadata keys for gRPC.
  */

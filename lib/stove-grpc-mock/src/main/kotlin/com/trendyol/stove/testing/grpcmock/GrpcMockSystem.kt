@@ -98,7 +98,7 @@ class GrpcMockSystem internal constructor(
   override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
 
   private val stubs = ConcurrentHashMap<String, CopyOnWriteArrayList<RegisteredStub>>()
-  private val callJournal = TestScopedJournal<ReceivedRequest>()
+  private val callJournal = TestScopedJournal<JournaledRequest>()
   private val reportListener = TestScopeCleanupListener(callJournal::clear)
   private var reportListenerRegistered = false
   private val handlerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -367,12 +367,15 @@ class GrpcMockSystem internal constructor(
   override suspend fun validate() {
     val unmatched = callJournal
       .entries(reporter.currentTestId())
-      .filter { !it.matched }
+      .filter { !it.request.matched }
 
     if (unmatched.isNotEmpty()) {
       val error = AssertionError(
         "There are ${unmatched.size} unmatched gRPC requests:\n" +
-          unmatched.joinToString("\n") { "  - ${it.stubKey.fullMethodName}" }
+          unmatched.joinToString("\n") { journaled ->
+            "  - ${journaled.request.stubKey.fullMethodName}" +
+              journaled.nearMisses.joinToString("") { "\n      $it" }
+          }
       )
       reporter.record(
         ReportEntry.failure(
@@ -403,7 +406,7 @@ class GrpcMockSystem internal constructor(
     val scopedStubs = stubs.values
       .flatten()
       .filter { it.testId == null || it.testId == currentTestId }
-    val scopedRequests = callJournal.entries(currentTestId)
+    val scopedRequests = callJournal.entries(currentTestId).map { it.request }
 
     return SystemSnapshot(
       system = reportSystemName,
@@ -490,7 +493,15 @@ class GrpcMockSystem internal constructor(
         removeStubIfNeeded(registered.key, fullMethodName)
         ctx.afterStubMatched(registered.key, registered.definition)
       }.toOption()
-      .onNone { logRequest(stubKey, requestBytes, metadata, matched = false) }
+      .onNone {
+        logRequest(
+          stubKey,
+          requestBytes,
+          metadata,
+          matched = false,
+          nearMisses = (stubs[fullMethodName] ?: emptyList()).diagnoseRejections(requestBytes, metadata)
+        )
+      }
   }
 
   private fun removeStubIfNeeded(key: StubKey, fullMethodName: String) {
@@ -505,7 +516,8 @@ class GrpcMockSystem internal constructor(
     requestBytes: ByteArray,
     metadata: Metadata,
     matched: Boolean,
-    stubTestId: String? = null
+    stubTestId: String? = null,
+    nearMisses: List<String> = emptyList()
   ) {
     val request = ReceivedRequest(
       stubKey = key,
@@ -515,7 +527,7 @@ class GrpcMockSystem internal constructor(
       stubId = if (matched) key.id else null,
       testId = metadata.toHeaderMap().stoveTestId() ?: stubTestId
     )
-    callJournal.record(request.testId, request)
+    callJournal.record(request.testId, JournaledRequest(request, nearMisses))
   }
 
   // ==================== Internal: Handler Registry ====================
@@ -618,42 +630,6 @@ class GrpcMockSystem internal constructor(
     }
 
   // ==================== Extension Functions ====================
-
-  private fun RequestMatcher.matches(requestBytes: ByteArray): Boolean = when (this) {
-    is RequestMatcher.Any -> true
-    is RequestMatcher.ExactBytes -> requestBytes.contentEquals(bytes)
-    is RequestMatcher.ExactMessage -> requestBytes.contentEquals(message.toByteArray())
-    is RequestMatcher.Custom -> matcher(requestBytes)
-  }
-
-  private fun MetadataMatcher.matches(metadata: Metadata): Boolean = when (this) {
-    is MetadataMatcher.Any -> {
-      true
-    }
-
-    is MetadataMatcher.HasHeader -> {
-      val headerKey = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
-      metadata.get(headerKey) == value
-    }
-
-    is MetadataMatcher.BearerToken -> {
-      val auth = metadata.get(GrpcMetadataKeys.AUTHORIZATION)
-      auth == "Bearer $token"
-    }
-
-    is MetadataMatcher.RequiresAuth -> {
-      val auth = metadata.get(GrpcMetadataKeys.AUTHORIZATION)
-      !auth.isNullOrBlank()
-    }
-
-    is MetadataMatcher.Custom -> {
-      matcher(metadata)
-    }
-
-    is MetadataMatcher.All -> {
-      matchers.all { it.matches(metadata) }
-    }
-  }
 
   private fun StubDefinition.sendResponse(observer: StreamObserver<ByteArray>) {
     when (this) {
