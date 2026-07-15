@@ -548,7 +548,6 @@ public final class com/trendyol/stove/kafka/TopicSuffixes {
 
 public final class com/trendyol/stove/kafka/intercepting/GrpcUtils {
 	public static final field INSTANCE Lcom/trendyol/stove/kafka/intercepting/GrpcUtils;
-	public final fun createClient (Ljava/lang/String;Lkotlinx/coroutines/CoroutineScope;)Lcom/trendyol/stove/kafka/StoveKafkaObserverServiceClient;
 }
 
 public final class com/trendyol/stove/kafka/intercepting/KafkaRecorder {

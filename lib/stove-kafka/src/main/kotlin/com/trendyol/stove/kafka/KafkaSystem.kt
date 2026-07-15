@@ -341,7 +341,7 @@ class KafkaSystem(
     }
     report(
       action = "Publish to '$topic'",
-      input = arrow.core.Some(message),
+      input = Some(message),
       metadata = buildMap {
         key.onSome { put("key", it) }
         put("headers", headers)
@@ -433,7 +433,7 @@ class KafkaSystem(
     expected: String,
     crossinline block: suspend ((T) -> Unit) -> Unit
   ): KafkaSystem {
-    runKafkaAssertion<T>(
+    runKafkaAssertion(
       reporter = reporter,
       systemName = reportSystemName,
       assertionName = assertionName,
@@ -670,7 +670,7 @@ class KafkaSystem(
   }
 
   private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> {
-    val properties = buildMap<String, Any> {
+    val properties = buildMap {
       putAll(context.options.properties)
       put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers)
       putIfAbsent(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-producer-${bridgeRuntime.systemId}")

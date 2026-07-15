@@ -100,7 +100,7 @@ class KafkaSystem(
    *   }
    * }
    * ```
-   * [BridgeSystem] should be enabled while configuring the [TestSystem].
+   * [BridgeSystem] should be enabled while configuring the [Stove].
    * @param topic The topic to publish the message to.
    * @param message The message to publish.
    * @param key The key of the message.
@@ -121,7 +121,7 @@ class KafkaSystem(
   ): KafkaSystem {
     report(
       action = "Publish to '$topic'",
-      input = arrow.core.Some(message),
+      input = Some(message),
       metadata = mapOf(
         "key" to (key.getOrNull() ?: ""),
         "headers" to headers,
@@ -225,7 +225,7 @@ class KafkaSystem(
     expected: String,
     crossinline block: suspend ((T) -> Unit) -> Unit
   ): KafkaSystem {
-    runKafkaAssertion<T>(
+    runKafkaAssertion(
       reporter = reporter,
       systemName = reportSystemName,
       assertionName = assertionName,

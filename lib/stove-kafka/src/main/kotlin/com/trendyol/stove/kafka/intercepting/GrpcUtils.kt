@@ -21,9 +21,6 @@ object GrpcUtils {
     .dispatcher(Dispatcher(scope.asExecutorService))
     .build()
 
-  fun createClient(onPort: String, scope: CoroutineScope): StoveKafkaObserverServiceClient =
-    createClientHandle(onPort, scope).client
-
   internal fun createClientHandle(onPort: String, scope: CoroutineScope): StoveKafkaObserverClientHandle {
     val httpClient = httpClient(scope)
     val client = GrpcClient
