@@ -42,6 +42,53 @@ class GrpcMockNearMissTest :
       }
     }
 
+    test("calls to methods with no stubs at all are journaled, not silently dropped") {
+      // Manually built descriptor: no generated stub exists for this method anywhere.
+      val unknownMethod = io.grpc.MethodDescriptor
+        .newBuilder<TestRequest, TestResponse>()
+        .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+        .setFullMethodName("test.TestService/DoesNotExist")
+        .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(TestRequest.getDefaultInstance()))
+        .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(TestResponse.getDefaultInstance()))
+        .build()
+
+      stove {
+        grpc {
+          rawChannel { ch ->
+            // Tag the call with this test's id so the journaled evidence stays scoped to it.
+            val testIdMetadata = io.grpc.Metadata().apply {
+              put(
+                io.grpc.Metadata.Key.of("x-stove-test-id", io.grpc.Metadata.ASCII_STRING_MARSHALLER),
+                com.trendyol.stove.system.Stove
+                  .reporter()
+                  .currentTestId()
+              )
+            }
+            val intercepted = io.grpc.ClientInterceptors.intercept(
+              ch,
+              io.grpc.stub.MetadataUtils
+                .newAttachHeadersInterceptor(testIdMetadata)
+            )
+            val exception = shouldThrow<io.grpc.StatusRuntimeException> {
+              io.grpc.stub.ClientCalls.blockingUnaryCall(
+                intercepted,
+                unknownMethod,
+                io.grpc.CallOptions.DEFAULT,
+                testRequest { message = "typo'd method" }
+              )
+            }
+            exception.status.code shouldBe Status.Code.UNIMPLEMENTED
+          }
+        }
+
+        grpcMock {
+          val error = shouldThrow<AssertionError> { validate() }
+          error.message shouldContain "test.TestService/DoesNotExist"
+          error.message shouldContain "no stubs registered for this method"
+        }
+      }
+    }
+
     test("exact-message rejection shows expected versus received payloads") {
       stove {
         grpcMock {

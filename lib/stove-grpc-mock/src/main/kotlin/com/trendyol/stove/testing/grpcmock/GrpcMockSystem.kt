@@ -745,11 +745,42 @@ class GrpcMockSystem internal constructor(
           registered.firstOrNull { it.definition !is StubDefinition.Error } ?: registered.firstOrNull()
         }?.let { registered ->
           createHandler(methodName, registered.definition.methodType)
-        } ?: run {
-        logger.warn("No stub registered for method: $methodName")
-        null
-      }
+        } ?: unknownMethodDefinition(methodName)
     }
+  }
+
+  /**
+   * Handler for methods with no stubs at all. Returning null here would let gRPC answer
+   * UNIMPLEMENTED before any Stove code runs, leaving the request invisible to the journal —
+   * a typo'd method name would never show up in validate(), snapshots, or diagnostics.
+   * The client still receives UNIMPLEMENTED immediately, exactly as before; request payloads
+   * are not consumed, so the journaled request carries method and metadata but no bytes.
+   */
+  private fun unknownMethodDefinition(fullMethodName: String): ServerMethodDefinition<ByteArray, ByteArray>? {
+    val stubKey = runCatching { fullMethodName.toStubKey() }.getOrNull() ?: return null
+    logger.warn("No stub registered for method: $fullMethodName")
+    // BIDI accepts any client message pattern, so this handler is safe for every real method type.
+    val method = MethodDescriptor
+      .newBuilder<ByteArray, ByteArray>()
+      .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
+      .setFullMethodName(fullMethodName)
+      .setRequestMarshaller(ByteArrayMarshaller)
+      .setResponseMarshaller(ByteArrayMarshaller)
+      .build()
+    val handler = ServerCalls.asyncBidiStreamingCall<ByteArray, ByteArray> { responseObserver ->
+      val metadata = MetadataCapturingInterceptor.currentMetadata()
+      ctx.onRequestReceived(stubKey, ByteArray(0))
+      logRequest(
+        stubKey,
+        ByteArray(0),
+        metadata,
+        matched = false,
+        nearMisses = emptyList<RegisteredStub>().diagnoseRejections(ByteArray(0), metadata)
+      )
+      responseObserver.sendUnimplemented(fullMethodName)
+      DiscardingStreamObserver
+    }
+    return ServerMethodDefinition.create(method, handler)
   }
 
   private fun createHandler(
@@ -916,6 +947,15 @@ class GrpcMockSystem internal constructor(
     override fun onCompleted() {
       onComplete(collected)
     }
+  }
+
+  /** Sink for messages arriving after the call has already been closed with an error. */
+  private object DiscardingStreamObserver : StreamObserver<ByteArray> {
+    override fun onNext(value: ByteArray) = Unit
+
+    override fun onError(t: Throwable) = Unit
+
+    override fun onCompleted() = Unit
   }
 
   private class ChannelForwardingObserver(
