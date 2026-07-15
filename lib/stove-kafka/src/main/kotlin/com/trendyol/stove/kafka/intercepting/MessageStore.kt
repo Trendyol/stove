@@ -1,51 +1,137 @@
 package com.trendyol.stove.kafka.intercepting
 
 import com.trendyol.stove.kafka.*
-import io.exoquery.pprint
+import com.trendyol.stove.kafka.common.*
+import com.trendyol.stove.messaging.MessageMetadata
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.*
 
+sealed interface StoveMessageEvent {
+  data class Consumed(val message: ConsumedMessage) : StoveMessageEvent
+
+  data class Published(val message: PublishedMessage) : StoveMessageEvent
+
+  data class Committed(val message: CommittedMessage) : StoveMessageEvent
+
+  data class Retried(val message: ConsumedMessage) : StoveMessageEvent
+
+  data class Failed(val message: ConsumedMessage) : StoveMessageEvent
+
+  data class Acknowledged(val message: AcknowledgedMessage) : StoveMessageEvent
+}
+
+/** Standalone Kafka facade over the transport-neutral message store. */
 class MessageStore {
-  private val consumed = Caching.of<String, ConsumedMessage>()
-  private val published = Caching.of<String, PublishedMessage>()
-  private val committed = Caching.of<String, CommittedMessage>()
-  private val retried = Caching.of<String, ConsumedMessage>()
-  private val failedMessages = Caching.of<String, ConsumedMessage>()
-  private val acknowledged = Caching.of<String, AcknowledgedMessage>()
+  internal val core = KafkaMessageStore<DefaultKafkaRecord>()
 
-  internal fun record(message: ConsumedMessage) = consumed.put(message.id, message)
+  private val mutableEvents = MutableSharedFlow<StoveMessageEvent>(
+    extraBufferCapacity = EVENT_BUFFER_CAPACITY,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST
+  )
 
-  internal fun record(message: PublishedMessage) = published.put(message.id, message)
+  val version: StateFlow<Long> = core.version
+  val events: SharedFlow<StoveMessageEvent> = mutableEvents.asSharedFlow()
 
-  internal fun record(message: CommittedMessage) = committed.put(message.id, message)
+  fun consumedRecords(): Flow<ConsumedMessage> = core.consumedRecords().mapNotNull { it.source as? ConsumedMessage }
 
-  internal fun record(message: AcknowledgedMessage) = acknowledged.put(message.id, message)
+  fun publishedRecords(): Flow<PublishedMessage> = core.publishedRecords().mapNotNull { it.source as? PublishedMessage }
 
-  internal fun recordRetry(message: ConsumedMessage) = retried.put(message.id, message)
+  fun committedRecords(): Flow<CommittedMessage> = core.committedRecords().mapNotNull { it.source as? CommittedMessage }
 
-  internal fun recordFailure(message: ConsumedMessage) = failedMessages.put(message.id, message)
+  fun retriedRecords(): Flow<ConsumedMessage> = core.retriedRecords().mapNotNull { it.source as? ConsumedMessage }
 
-  fun failedMessages(): Collection<ConsumedMessage> = failedMessages.asMap().values
+  fun failedRecords(): Flow<ConsumedMessage> = core.failedRecords().mapNotNull { it.source as? ConsumedMessage }
 
-  fun consumedMessages(): Collection<ConsumedMessage> = consumed.asMap().values
+  internal fun record(message: ConsumedMessage) {
+    core.recordConsumed(message.toRecord())
+    mutableEvents.tryEmit(StoveMessageEvent.Consumed(message))
+  }
 
-  fun publishedMessages(): Collection<PublishedMessage> = published.asMap().values
+  internal fun record(message: PublishedMessage) {
+    core.recordPublished(message.toRecord())
+    mutableEvents.tryEmit(StoveMessageEvent.Published(message))
+  }
 
-  fun committedMessages(): Collection<CommittedMessage> = committed.asMap().values
+  internal fun record(message: CommittedMessage) {
+    core.recordCommitted(message.toRecord())
+    mutableEvents.tryEmit(StoveMessageEvent.Committed(message))
+  }
 
-  fun retriedMessages(): Collection<ConsumedMessage> = retried.asMap().values
+  internal fun record(message: AcknowledgedMessage) {
+    core.recordAcknowledged(message.toRecord())
+    mutableEvents.tryEmit(StoveMessageEvent.Acknowledged(message))
+  }
+
+  internal fun recordRetry(message: ConsumedMessage) {
+    core.recordRetried(message.toRecord())
+    mutableEvents.tryEmit(StoveMessageEvent.Retried(message))
+  }
+
+  internal fun recordFailure(message: ConsumedMessage) {
+    core.recordFailed(message.toRecord())
+    mutableEvents.tryEmit(StoveMessageEvent.Failed(message))
+  }
+
+  fun failedMessages(): Collection<ConsumedMessage> = core.failedMessages().sources()
+
+  fun consumedMessages(): Collection<ConsumedMessage> = core.consumedMessages().sources()
+
+  fun publishedMessages(): Collection<PublishedMessage> = core.publishedMessages().sources()
+
+  fun committedMessages(): Collection<CommittedMessage> = core.committedMessages().sources()
+
+  fun retriedMessages(): Collection<ConsumedMessage> = core.retriedMessages().sources()
 
   internal fun isCommitted(
     topic: String,
     offset: Long,
     partition: Int
-  ): Boolean = committedMessages()
-    .filter { it.topic == topic && it.partition == partition }
-    .any { committed -> committed.offset >= offset + 1 }
+  ): Boolean = core.isCommitted(topic, partition, offset)
 
-  override fun toString(): String = """
-    |Consumed: ${pprint(consumedMessages())}
-    |Published: ${pprint(publishedMessages())}
-    |Committed: ${pprint(committedMessages())}
-    |Retried: ${pprint(retriedMessages())}
-    |Failed: ${pprint(failedMessages())}
-  """.trimIndent().trimMargin()
+  fun dump(testId: String?): String = core.dump(testId)
+
+  override fun toString(): String = core.toString()
+
+  private inline fun <reified T : Any> Collection<DefaultKafkaRecord>.sources(): List<T> =
+    mapNotNull { it.source as? T }
+
+  private fun ConsumedMessage.toRecord() = DefaultKafkaRecord(
+    id = id,
+    value = message.toByteArray(),
+    metadata = metadata(),
+    partition = partition,
+    offset = offset,
+    source = this
+  )
+
+  private fun PublishedMessage.toRecord() = DefaultKafkaRecord(
+    id = id,
+    value = message.toByteArray(),
+    metadata = metadata(),
+    source = this
+  )
+
+  private fun CommittedMessage.toRecord() = DefaultKafkaRecord(
+    id = id,
+    value = byteArrayOf(),
+    // The stable Wire contract has no headers; KafkaMessageStore scopes commits via consumed records.
+    metadata = MessageMetadata(topic, "", emptyMap()),
+    partition = partition,
+    offset = offset,
+    source = this
+  )
+
+  private fun AcknowledgedMessage.toRecord() = DefaultKafkaRecord(
+    id = id,
+    value = byteArrayOf(),
+    // The stable Wire contract has no headers; KafkaMessageStore scopes acks via published topics.
+    metadata = MessageMetadata(topic, "", emptyMap()),
+    partition = partition,
+    offset = offset,
+    source = this
+  )
+
+  companion object {
+    private const val EVENT_BUFFER_CAPACITY = 4096
+  }
 }

@@ -1,9 +1,8 @@
-@file:Suppress("TooGenericExceptionCaught")
-
 package com.trendyol.stove.kafka
 
 import arrow.core.*
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.kafka.common.*
 import com.trendyol.stove.kafka.intercepting.*
 import com.trendyol.stove.messaging.*
 import com.trendyol.stove.reporting.*
@@ -16,11 +15,11 @@ import io.github.embeddedkafka.*
 import io.grpc.Server
 import io.grpc.netty.NettyServerBuilder
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.selects.*
+import kotlinx.coroutines.flow.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
+import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.*
 import org.slf4j.*
 import scala.collection.immutable.`Map$`
@@ -35,12 +34,10 @@ var stoveSerdeRef: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArrayS
 
 /**
  * Default port for the Stove Kafka Bridge gRPC server.
- * This can be overridden by setting the [STOVE_KAFKA_BRIDGE_PORT] environment variable
- * or by using [PortFinder.findAvailablePortAsString] to get a dynamically available port.
+ * This can be overridden through [KafkaSystemOptions.bridgeGrpcServerPort].
  */
 var stoveKafkaBridgePortDefault: String = PortFinder.findAvailablePortAsString()
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
-internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
 /**
  * Kafka messaging system for testing message publishing and consumption.
@@ -181,16 +178,11 @@ class KafkaSystem(
   override val reportSystemName: String = "Kafka" + (context.keyName?.let { " [$it]" } ?: "")
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
-    val store = sink.store
-    val belongsToTest: (Map<String, String>) -> Boolean = { headers ->
-      val testId = headers[TraceContext.STOVE_TEST_ID_HEADER].toOption()
-      testId.isNone() || testId.isSome { it == currentTestId }
-    }
 
-    val consumed = store.consumedMessages().filter { belongsToTest(it.headers) }
-    val published = store.publishedMessages().filter { belongsToTest(it.headers) }
-    val failed = store.failedMessages().filter { belongsToTest(it.headers) }
-    val retried = store.retriedMessages().filter { belongsToTest(it.headers) }
+    val consumed = store.consumedMessages().filter { it.headers.belongsToTest(currentTestId) }
+    val published = store.publishedMessages().filter { it.headers.belongsToTest(currentTestId) }
+    val failed = store.failedMessages().filter { it.headers.belongsToTest(currentTestId) }
+    val retried = store.retriedMessages().filter { it.headers.belongsToTest(currentTestId) }
     val topicPartitions = consumed.map { it.topic to it.partition }.toSet()
     val committed = store.committedMessages().filter { (it.topic to it.partition) in topicPartitions }
 
@@ -241,23 +233,35 @@ class KafkaSystem(
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaProducer<String, Any>
   private lateinit var grpcServer: Server
+  private var bridgePortDiscovery: AutoCloseable? = null
+  private val bridgeRuntime = KafkaBridgeRuntime(context.options.serde, context.keyName)
 
   @PublishedApi
-  internal lateinit var sink: StoveMessageSink
+  internal val store: MessageStore = MessageStore()
+  private val recorder = KafkaRecorder(store, context.options.topicSuffixes)
+  private val assertions = KafkaAssertions(
+    store = store.core,
+    serde = context.options.serde,
+    isErrorTopic = context.options.topicSuffixes::isErrorTopic,
+    requireConsumedCommit = true
+  )
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<KafkaExposedConfiguration> =
     stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>(context.keyName)
 
   override suspend fun beforeRun() {
+    // Compatibility for no-arg serializers created outside KafkaSystemOptions. This system's own
+    // publisher uses the serializer already bound to its options and never reads this global.
     stoveSerdeRef = context.options.serde
   }
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
     adminClient = createAdminClient(exposedConfiguration)
-    kafkaPublisher = createPublisher(exposedConfiguration)
-    sink = StoveMessageSink(adminClient, context.options.serde, context.options.topicSuffixes)
     grpcServer = startGrpcServer()
+    bridgeRuntime.attach(grpcServer.port)
+    bridgePortDiscovery = exposeBridgePortForInJvmDiscovery(context.keyName, grpcServer.port)
+    kafkaPublisher = createPublisher(exposedConfiguration)
     runMigrationsIfNeeded()
   }
 
@@ -286,35 +290,67 @@ class KafkaSystem(
   }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      context.options.cleanup(adminClient)
-      grpcServer.shutdownNow()
-      StoveKafkaCoroutineScope.cancel()
-      kafkaPublisher.close()
-      executeWithReuseCheck { stop() }
-    }
-  }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
+    val failures = mutableListOf<Pair<String, Throwable>>()
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+    suspend fun closeStep(
+      name: String,
+      block: suspend () -> Unit
+    ) {
+      try {
+        block()
+      } catch (error: Throwable) {
+        failures += name to error
+      }
+    }
+
+    if (::adminClient.isInitialized) closeStep("cleanup") { context.options.cleanup(adminClient) }
+    // Producer close may execute acknowledgement callbacks, so the observer stays alive until after it finishes.
+    if (::kafkaPublisher.isInitialized) closeStep("producer") { kafkaPublisher.close() }
+    if (::adminClient.isInitialized) closeStep("admin") { adminClient.close() }
+    if (::grpcServer.isInitialized) {
+      closeStep("observer server") {
+        grpcServer.shutdownNow()
+        grpcServer.awaitTermination(CLOSE_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      }
+    }
+    bridgePortDiscovery?.let { discovery -> closeStep("bridge port discovery") { discovery.close() } }
+    closeStep("bridge runtime") { bridgeRuntime.close() }
+    closeStep("Kafka runtime") { executeWithReuseCheck { stop() } }
+
+    failures.forEach { (resource, error) -> logger.warn("Failed to close $resource: ${error.message}", error) }
+  }
+
+  override fun configuration(): List<String> {
+    val bridgeEntries = bridgeRuntime.endpoint.configurationEntries()
+    val bridgeKeys = bridgeRuntime.endpoint.clientProperties.keys
+    val applicationEntries = context.options
+      .configureExposedConfiguration(exposedConfiguration)
+      .filterNot { entry -> entry.substringBefore('=') in bridgeKeys }
+    return applicationEntries + bridgeEntries
+  }
 
   suspend fun publish(
     topic: String,
     message: Any,
     key: Option<String> = None,
     headers: Map<String, String> = mapOf(),
-    partition: Int = 0,
+    partition: Int = PARTITION_BY_KEY,
     testCase: Option<String> = None
   ): KafkaSystem {
+    require(partition == PARTITION_BY_KEY || partition >= 0) {
+      "partition must be non-negative or PARTITION_BY_KEY"
+    }
     report(
       action = "Publish to '$topic'",
-      input = arrow.core.Some(message),
+      input = Some(message),
       metadata = buildMap {
         key.onSome { put("key", it) }
         put("headers", headers)
-        put("partition", partition)
+        put("partition", partition.takeUnless { it == PARTITION_BY_KEY } ?: "partitioner")
       }
     ) {
-      val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
+      val selectedPartition = partition.takeUnless { it == PARTITION_BY_KEY }
+      val record = ProducerRecord<String, Any>(topic, selectedPartition, key.getOrNull(), message)
       headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
       testCase.map { record.headers().add("testCase", it.toByteArray()) }
       injectTraceHeaders(record)
@@ -325,6 +361,8 @@ class KafkaSystem(
 
   private fun injectTraceHeaders(record: ProducerRecord<String, Any>) {
     TraceContext.current()?.let { ctx ->
+      record.headers().remove(TraceContext.TRACEPARENT_HEADER)
+      record.headers().remove(TraceContext.STOVE_TEST_ID_HEADER)
       record.headers().add(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent().toByteArray())
       record.headers().add(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId.toByteArray())
     }
@@ -396,45 +434,14 @@ class KafkaSystem(
     expected: String,
     crossinline block: suspend ((T) -> Unit) -> Unit
   ): KafkaSystem {
-    var matchedMessage: T? = null
-
-    val result = runCatching {
-      coroutineScope {
-        block { matchedMessage = it }
-      }
-    }
-
-    val failure = result.exceptionOrNull()?.let { e ->
-      e as? AssertionError ?: AssertionError(
-        "Expected $assertionName<$typeName> matching condition within $timeout, but none was found",
-        e
-      )
-    }
-
-    if (result.isSuccess) {
-      reporter.record(
-        ReportEntry.success(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          output = matchedMessage.toOption(),
-          metadata = mapOf("timeout" to timeout.toString())
-        )
-      )
-    } else {
-      reporter.record(
-        ReportEntry.failure(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          error = failure?.message ?: "No matching message found",
-          expected = expected.some(),
-          actual = (matchedMessage ?: "No matching message found").some()
-        )
-      )
-    }
-
-    failure?.let { throw it }
+    runKafkaAssertion(
+      reporter = reporter,
+      systemName = reportSystemName,
+      assertionName = assertionName,
+      typeName = typeName,
+      timeout = timeout,
+      expected = expected
+    ) { onMatch -> block(onMatch) }
     return this
   }
 
@@ -442,76 +449,65 @@ class KafkaSystem(
     atLeastIn: Duration = 5.seconds,
     times: Int = 1,
     crossinline condition: ObservedMessage<T>.() -> Boolean
-  ): KafkaSystem = coroutineScope {
+  ): KafkaSystem = assertKafkaMessage(
+    assertionName = "shouldBeRetried",
+    typeName = T::class.simpleName ?: "Unknown",
+    timeout = atLeastIn,
+    expected = "Message retried $times time(s) matching condition within $atLeastIn"
+  ) { onMatch ->
     shouldBeRetriedInternal(T::class, atLeastIn, times) { parsed ->
-      parsed.message.isSome { o -> condition(ObservedMessage(o, parsed.metadata)) }
+      parsed.message.isSome { o ->
+        val result = condition(ObservedMessage(o, parsed.metadata))
+        if (result) onMatch(o)
+        result
+      }
     }
-  }.let { this }
+  }
 
   /**
-   * Waits until the consumed message is seen. This does not mean committed.
+   * Waits until a consumed message on [topic] matches [condition] and returns it.
+   * Seeing a consumed message does not mean it is committed.
    */
-  @Suppress("MagicNumber")
   suspend inline fun peekConsumedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
     crossinline condition: (ConsumedRecord) -> Boolean
-  ) = withTimeout(atLeastIn) {
-    var offset = -1L
-    var loop = true
-    while (loop) {
-      sink.store
-        .consumedMessages()
-        .filter { it.topic == topic && it.offset > offset }
-        .onEach { offset = it.offset }
-        .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
-        .forEach { loop = !condition(it) }
-      delay(100)
-    }
+  ): ConsumedRecord = withTimeout(atLeastIn) {
+    store
+      .consumedRecords()
+      .filter { it.topic == topic }
+      .map { ConsumedRecord(it.topic, it.key, it.message.toByteArray(), it.headers, it.offset, it.partition) }
+      .first { condition(it) }
   }
 
   /**
-   * Waits until the committed message is seen with the given condition.
+   * Waits until a committed message on [topic] matches [condition] and returns it.
    */
-  @Suppress("MagicNumber")
   suspend inline fun peekCommittedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
     crossinline condition: (CommittedRecord) -> Boolean
-  ) = withTimeout(atLeastIn) {
-    var offset = -1L
-    var loop = true
-    while (loop) {
-      sink.store
-        .committedMessages()
-        .filter { it.topic == topic && it.offset > offset }
-        .onEach { offset = it.offset }
-        .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
-        .forEach { loop = !condition(it) }
-      delay(100)
-    }
+  ): CommittedRecord = withTimeout(atLeastIn) {
+    store
+      .committedRecords()
+      .filter { it.topic == topic }
+      .map { CommittedRecord(it.topic, it.metadata, it.offset, it.partition) }
+      .first { condition(it) }
   }
 
   /**
-   * Waits until the published message is seen with the given condition.
+   * Waits until a published message on [topic] matches [condition] and returns it.
    */
-  @Suppress("MagicNumber")
   suspend inline fun peekPublishedMessages(
     atLeastIn: Duration = 5.seconds,
     topic: String,
     crossinline condition: (PublishedRecord) -> Boolean
-  ) = withTimeout(atLeastIn) {
-    val seenIds = mutableMapOf<String, PublishedMessage>()
-    var loop = true
-    while (loop) {
-      sink.store
-        .publishedMessages()
-        .filter { it.topic == topic && !seenIds.containsKey(it.id) }
-        .onEach { seenIds[it.id] = it }
-        .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
-        .forEach { loop = !condition(it) }
-      delay(100)
-    }
+  ): PublishedRecord = withTimeout(atLeastIn) {
+    store
+      .publishedRecords()
+      .filter { it.topic == topic }
+      .map { PublishedRecord(it.topic, it.key, it.message.toByteArray(), it.headers) }
+      .first { condition(it) }
   }
 
   /**
@@ -558,7 +554,7 @@ class KafkaSystem(
   /**
    * Provides access to the message store of the KafkaSystem.
    */
-  fun messageStore(): MessageStore = this.sink.store
+  fun messageStore(): MessageStore = this.store
 
   suspend fun adminOperations(block: suspend Admin.() -> Unit) = block(adminClient)
 
@@ -567,21 +563,21 @@ class KafkaSystem(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilConsumed(atLeastIn, clazz, condition) }
+  ): Unit = assertions.waitUntilConsumed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilFailed(atLeastIn, clazz, condition) }
+  ): Unit = assertions.waitUntilFailed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBePublishedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilPublished(atLeastIn, clazz, condition) }
+  ): Unit = assertions.waitUntilPublished(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeRetriedInternal(
@@ -589,7 +585,7 @@ class KafkaSystem(
     atLeastIn: Duration,
     times: Int,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { sink.waitUntilRetried(atLeastIn, times, clazz, condition) }
+  ): Unit = assertions.waitUntilRetried(atLeastIn, times, clazz, condition)
 
   private suspend fun obtainExposedConfiguration(): KafkaExposedConfiguration =
     when {
@@ -603,7 +599,7 @@ class KafkaSystem(
     val config = EmbeddedKafkaConfig.apply(0, 0, `Map$`.`MODULE$`.empty(), `Map$`.`MODULE$`.empty(), `Map$`.`MODULE$`.empty())
     val server = EmbeddedKafka.start(config)
     while (!EmbeddedKafka.isRunning()) {
-      delay(100)
+      delay(100.milliseconds)
     }
     KafkaExposedConfiguration("0.0.0.0:${server.config().kafkaPort()}", StoveKafkaBridge::class.java.name)
   }
@@ -616,12 +612,10 @@ class KafkaSystem(
   private suspend fun stopEmbeddedKafka() {
     EmbeddedKafka.stop()
     while (EmbeddedKafka.isRunning()) {
-      delay(100)
+      delay(100.milliseconds)
     }
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-  @Suppress("MagicNumber")
   private suspend fun <K : Any, V : Any> consume(
     autoOffsetReset: String,
     readOnly: Boolean,
@@ -634,27 +628,28 @@ class KafkaSystem(
     keepConsumingAtLeastFor: Duration,
     groupId: String,
     onConsume: suspend (ConsumerRecord<K, V>) -> Unit
-  ) = coroutineScope {
-    val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId).apply(config)
-    val c = KafkaConsumer(props, keyDeserializer, valueDeserializer)
-    c.subscribe(listOf(topic))
-    val channel = Channel<ConsumerRecord<K, V>>()
-    val job = launch {
-      while (isActive) {
-        c.poll(pollTimeout.toJavaDuration()).forEach { channel.send(it) }
-        delay(100)
-      }
-    }
-    whileSelect {
-      onTimeout(keepConsumingAtLeastFor) {
-        c.close()
-        job.cancelAndJoin()
-        false
-      }
-      channel.onReceive {
-        onConsume(it)
-        if (!readOnly) c.commitSync()
-        !channel.isClosedForReceive
+  ) = withContext(Dispatchers.IO) {
+    val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId)
+      .apply(config)
+      .apply { putAll(bridgeRuntime.clientProperties) }
+    // KafkaConsumer calls are serialized in this coroutine; no poll/commit/close calls can overlap.
+    KafkaConsumer(props, keyDeserializer, valueDeserializer).use { consumer ->
+      consumer.subscribe(listOf(topic))
+      val startedAt = TimeSource.Monotonic.markNow()
+      while (currentCoroutineContext().isActive && startedAt.elapsedNow() < keepConsumingAtLeastFor) {
+        val records = consumer.poll(pollTimeout.toJavaDuration())
+        for (record in records) {
+          currentCoroutineContext().ensureActive()
+          if (startedAt.elapsedNow() >= keepConsumingAtLeastFor) break
+
+          // Once a callback starts, the duration deadline does not cancel it halfway through.
+          // External coroutine cancellation still propagates normally.
+          onConsume(record)
+          if (!readOnly) {
+            val offset = TopicPartition(record.topic(), record.partition()) to OffsetAndMetadata(record.offset() + 1)
+            consumer.commitSync(mapOf(offset))
+          }
+        }
       }
     }
   }
@@ -671,21 +666,23 @@ class KafkaSystem(
     this[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
     this[ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG] = autoCreateTopics
     this[ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG] = exposedConfiguration.interceptorClass
+    putIfAbsent(ConsumerConfig.CLIENT_ID_CONFIG, "stove-kafka-consumer-$groupId")
+    putAll(bridgeRuntime.clientProperties)
   }
 
-  private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> = KafkaProducer(
-    buildMap {
+  private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> {
+    val properties = buildMap {
       putAll(context.options.properties)
       put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers)
-      put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
-      put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, context.options.valueSerializer::class.java.name)
-      put(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-producer")
-      put(ProducerConfig.ACKS_CONFIG, "1")
+      putIfAbsent(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-producer-${bridgeRuntime.systemId}")
+      putIfAbsent(ProducerConfig.ACKS_CONFIG, "1")
       if (context.options.listenPublishedMessagesFromStove) {
         put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, config.interceptorClass)
       }
+      putAll(bridgeRuntime.clientProperties)
     }
-  )
+    return KafkaProducer(properties, StringSerializer(), context.options.valueSerializer)
+  }
 
   private fun createAdminClient(config: KafkaExposedConfiguration): Admin = Admin.create(
     buildMap {
@@ -695,48 +692,49 @@ class KafkaSystem(
     }.toProperties()
   )
 
-  private suspend fun startGrpcServer(): Server {
-    System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
-    return Try {
-      NettyServerBuilder
-        .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), context.options.bridgeGrpcServerPort))
-        .executor(StoveKafkaCoroutineScope.also { it.ensureActive() }.asExecutor)
-        .addService(StoveKafkaObserverGrpcServer(sink))
-        .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .keepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .keepAliveTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxConnectionAge(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxConnectionAgeGrace(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxConnectionIdle(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxInboundMessageSize(MAX_MESSAGE_SIZE)
-        .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
-        .permitKeepAliveWithoutCalls(true)
-        .build()
-        .start()
-        .also { waitUntilHealthy(it, 30.seconds) }
-    }.recover {
-      logger.error("Failed to start Stove Message Sink Grpc Server", it)
-      throw it
-    }.map {
-      logger.info("Stove Sink Grpc Server started on port ${context.options.bridgeGrpcServerPort}")
-      it
-    }.get()
-  }
+  private suspend fun startGrpcServer(): Server = Try {
+    NettyServerBuilder
+      .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), context.bridgeServerPort))
+      .executor(bridgeRuntime.scope.also { it.ensureActive() }.asExecutor)
+      .addService(StoveKafkaObserverGrpcServer(recorder))
+      .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .keepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .keepAliveTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxConnectionAge(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxConnectionAgeGrace(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxConnectionIdle(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxInboundMessageSize(MAX_MESSAGE_SIZE)
+      .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
+      .permitKeepAliveWithoutCalls(true)
+      .build()
+      .start()
+      .also { waitUntilHealthy(it, 30.seconds) }
+  }.recover {
+    logger.error("Failed to start Stove Message Sink Grpc Server", it)
+    throw it
+  }.map {
+    logger.info("Stove Sink Grpc Server started on port ${it.port} for bridge ${bridgeRuntime.id}")
+    it
+  }.get()
 
   private suspend fun waitUntilHealthy(server: Server, duration: Duration) {
-    val client = GrpcUtils.createClient(server.port.toString(), StoveKafkaCoroutineScope)
-    var healthy = false
-    withTimeout(duration) {
-      while (!healthy) {
-        logger.info("Waiting for Stove Message Sink Grpc Server to be healthy")
-        Try {
-          val response = client.healthCheck().execute(HealthCheckRequest())
-          healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
+    val handle = GrpcUtils.createClientHandle(server.port.toString(), bridgeRuntime.scope)
+    try {
+      var healthy = false
+      withTimeout(duration) {
+        while (!healthy) {
+          logger.info("Waiting for Stove Message Sink Grpc Server to be healthy")
+          Try {
+            val response = handle.client.healthCheck().execute(HealthCheckRequest())
+            healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
+          }
+          delay(GRPC_SERVER_DELAY.milliseconds)
         }
-        delay(GRPC_SERVER_DELAY)
+        logger.info("Stove Message Sink Grpc Server is healthy!")
       }
-      logger.info("Stove Message Sink Grpc Server is healthy!")
+    } finally {
+      handle.close()
     }
   }
 
@@ -760,8 +758,12 @@ class KafkaSystem(
   }
 
   companion object {
+    /** Sentinel used by [publish] to let Kafka's configured partitioner choose the partition. */
+    const val PARTITION_BY_KEY: Int = -1
+
     private const val GRPC_SERVER_DELAY = 500L
     private const val GRPC_TIMEOUT_IN_SECONDS = 300L
+    private const val CLOSE_TIMEOUT_IN_SECONDS = 5L
     private const val MAX_MESSAGE_SIZE = 1024 * 1024 * 1024
   }
 }

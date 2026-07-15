@@ -79,9 +79,8 @@ class ReportingIntegrationTest :
 
       // Get the snapshot
       val snapshot = Stove.getSystem<KafkaSystem>(KafkaSystem::class).snapshot()
-      snapshot shouldNotBe null
       snapshot.system shouldBe "Kafka"
-      (snapshot.state["published"] as? List<*>)?.size?.shouldBeGreaterThan(0)
+      (snapshot.state["published"] as List<*>).size shouldBeGreaterThan 0
     }
 
     test("report should capture PostgreSQL operations") {
