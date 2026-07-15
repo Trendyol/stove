@@ -22,8 +22,9 @@ public final class com/trendyol/stove/testing/grpcmock/GrpcMockExposedConfigurat
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware, com/trendyol/stove/system/abstractions/ValidatedSystem {
+public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystem : com/trendyol/stove/interactions/MockInteractionPublisher, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware, com/trendyol/stove/system/abstractions/ValidatedSystem {
 	public static final field Companion Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem$Companion;
+	public fun addInteractionListener (Lcom/trendyol/stove/interactions/MockInteractionListener;)V
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -50,6 +51,7 @@ public final class com/trendyol/stove/testing/grpcmock/GrpcMockSystem : com/tren
 	public static synthetic fun mockUnary-7Yrd8eY$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun mockUnary-yV_PMig (Lio/grpc/MethodDescriptor;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun mockUnary-yV_PMig$default (Lcom/trendyol/stove/testing/grpcmock/GrpcMockSystem;Lio/grpc/MethodDescriptor;Lcom/trendyol/stove/testing/grpcmock/RequestMatcher;Lcom/trendyol/stove/testing/grpcmock/MetadataMatcher;Lcom/google/protobuf/Message;Lkotlin/time/Duration;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun removeInteractionListener (Lcom/trendyol/stove/interactions/MockInteractionListener;)V
 	public fun report (Ljava/lang/String;Larrow/core/Option;Larrow/core/Option;Ljava/util/Map;Larrow/core/Option;Larrow/core/Option;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun snapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;

@@ -16,6 +16,7 @@ message DashboardEvent {
     EntryRecordedEvent entry_recorded = 14;
     SpanRecordedEvent span_recorded = 15;
     SnapshotEvent snapshot = 16;
+    MockInteractionEvent mock_interaction = 17;
   }
 }
 
@@ -89,6 +90,39 @@ message SnapshotEvent {
   string system = 2;
   string state_json = 3;
   string summary = 4;
+}
+
+// One completed exchange observed by a mock system (WireMock / gRPC Mock) — the data
+// behind the network-tab/swimlane view. Emitted for every request that reaches a mock,
+// matched or not. Attribution is proven-only: an exchange is either provably owned by a
+// test or explicitly UNATTRIBUTED; consumers must never infer ownership.
+message MockInteractionEvent {
+  // Empty when attribution is UNATTRIBUTED; render in the run-level lane.
+  string test_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string system = 3;
+  string protocol = 4; // HTTP | GRPC
+  string method = 5;   // HTTP verb; empty for gRPC (target carries the method)
+  string target = 6;   // URL for HTTP; service/Method for gRPC
+  bool matched = 7;
+  string stub_id = 8;
+  MockInteractionAttribution attribution = 9;
+  string request_body = 10;
+  bool request_body_truncated = 11;
+  string response_body = 12;
+  bool response_body_truncated = 13;
+  string status = 14;      // HTTP status code, fault name, or gRPC status code name
+  int64 latency_ms = 15;   // -1 when the mock could not measure it
+  repeated string near_misses = 16; // populated for unmatched exchanges
+  string trace_id = 17;    // from traceparent, when the request carried one
+}
+
+enum MockInteractionAttribution {
+  MOCK_INTERACTION_ATTRIBUTION_UNSPECIFIED = 0;
+  PROVEN_HEADER = 1;
+  PROVEN_BAGGAGE = 2;
+  PROVEN_STUB = 3;
+  UNATTRIBUTED = 4;
 }
 
 message EventAck {

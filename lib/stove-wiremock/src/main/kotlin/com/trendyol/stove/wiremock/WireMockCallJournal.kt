@@ -43,12 +43,13 @@ internal class WireMockCallJournal {
 
   private fun ServeEvent.stoveTestId(): String? =
     request.headerMap().stoveTestId() ?: stubMapping?.stoveTestId()
-
-  private fun StubMapping.stoveTestId(): String? =
-    metadata
-      ?.takeIf { it.containsKey(WireMockSystem.STOVE_TEST_ID_KEY) }
-      ?.getString(WireMockSystem.STOVE_TEST_ID_KEY)
 }
+
+/** The test that registered this stub, when it was registered inside a test context. */
+internal fun StubMapping.stoveTestId(): String? =
+  metadata
+    ?.takeIf { it.containsKey(WireMockSystem.STOVE_TEST_ID_KEY) }
+    ?.getString(WireMockSystem.STOVE_TEST_ID_KEY)
 
 /** Request headers as a plain map for Stove's test-id extraction. */
 internal fun LoggedRequest.headerMap(): Map<String, String> =

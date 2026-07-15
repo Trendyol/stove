@@ -5,11 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.protobuf.Timestamp
 import com.trendyol.stove.dashboard.api.DashboardEvent
 import com.trendyol.stove.dashboard.api.EntryRecordedEvent
+import com.trendyol.stove.dashboard.api.MockInteractionAttribution
+import com.trendyol.stove.dashboard.api.MockInteractionEvent
 import com.trendyol.stove.dashboard.api.RunEndedEvent
 import com.trendyol.stove.dashboard.api.RunStartedEvent
 import com.trendyol.stove.dashboard.api.SpanRecordedEvent
 import com.trendyol.stove.dashboard.api.TestEndedEvent
 import com.trendyol.stove.dashboard.api.TestStartedEvent
+import com.trendyol.stove.interactions.InteractionAttribution
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.interactions.MockInteractionPublisher
 import com.trendyol.stove.reporting.ReportEntry
 import com.trendyol.stove.reporting.ReportEventListener
 import com.trendyol.stove.reporting.Reports
@@ -43,7 +49,8 @@ class DashboardSystem(
 ) : PluggedSystem,
   RunAware,
   ReportEventListener,
-  SpanEventListener {
+  SpanEventListener,
+  MockInteractionListener {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(DashboardSystem::class.java)
   private val jsonMapper = ObjectMapper()
@@ -61,6 +68,7 @@ class DashboardSystem(
     emitter = DashboardEmitter(options.cliHost, options.cliPort)
     stove.addReportListener(this)
     registerSpanListener()
+    stove.systemsOf<MockInteractionPublisher>().forEach { it.addInteractionListener(this) }
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {
@@ -132,6 +140,39 @@ class DashboardSystem(
     }
   }
 
+  override fun onInteraction(interaction: MockInteraction) {
+    emitter.tryEmit(
+      dashboardEvent {
+        mockInteraction = MockInteractionEvent.newBuilder()
+          .setTestId(interaction.testId ?: "")
+          .setTimestamp(interaction.timestamp.toTimestamp())
+          .setSystem(interaction.system)
+          .setProtocol(interaction.protocol.name)
+          .setMethod(interaction.method)
+          .setTarget(interaction.target)
+          .setMatched(interaction.matched)
+          .setStubId(interaction.stubId ?: "")
+          .setAttribution(interaction.attribution.toProto())
+          .setRequestBody(interaction.requestBody)
+          .setRequestBodyTruncated(interaction.requestBodyTruncated)
+          .setResponseBody(interaction.responseBody)
+          .setResponseBodyTruncated(interaction.responseBodyTruncated)
+          .setStatus(interaction.status)
+          .setLatencyMs(interaction.latencyMs ?: -1)
+          .addAllNearMisses(interaction.nearMisses)
+          .setTraceId(interaction.traceId ?: "")
+          .build()
+      }
+    )
+  }
+
+  private fun InteractionAttribution.toProto(): MockInteractionAttribution = when (this) {
+    InteractionAttribution.PROVEN_HEADER -> MockInteractionAttribution.PROVEN_HEADER
+    InteractionAttribution.PROVEN_BAGGAGE -> MockInteractionAttribution.PROVEN_BAGGAGE
+    InteractionAttribution.PROVEN_STUB -> MockInteractionAttribution.PROVEN_STUB
+    InteractionAttribution.UNATTRIBUTED -> MockInteractionAttribution.UNATTRIBUTED
+  }
+
   override fun onSpanRecorded(span: SpanInfo) {
     emitter.tryEmit(
       dashboardEvent {
@@ -175,6 +216,7 @@ class DashboardSystem(
             .build()
         }
       )
+      stove.systemsOf<MockInteractionPublisher>().forEach { it.removeInteractionListener(this) }
       stove.removeReportListener(this)
       emitter.close()
     }
@@ -252,11 +294,11 @@ class DashboardSystem(
       .apply(block)
       .build()
 
-  private fun now(): Timestamp {
-    val instant = Instant.now()
-    return Timestamp.newBuilder()
-      .setSeconds(instant.epochSecond)
-      .setNanos(instant.nano)
+  private fun now(): Timestamp = Instant.now().toTimestamp()
+
+  private fun Instant.toTimestamp(): Timestamp =
+    Timestamp.newBuilder()
+      .setSeconds(epochSecond)
+      .setNanos(nano)
       .build()
-  }
 }

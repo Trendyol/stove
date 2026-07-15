@@ -16,11 +16,16 @@ internal object WireMockNearMisses {
   /** Closest registered stubs for an unmatched request, ranked by match distance. */
   fun closestStubsFor(request: LoggedRequest, stubs: List<StubMapping>): String {
     if (stubs.isEmpty()) return "No stubs were registered for this test."
-    return stubs
+    return closestStubCandidates(request, stubs).joinToString("\n")
+  }
+
+  /** One rendered candidate per closest stub — the list form behind [closestStubsFor]. */
+  fun closestStubCandidates(request: LoggedRequest, stubs: List<StubMapping>): List<String> =
+    stubs
       .map { stub -> stub to stub.request.match(request).distance }
       .sortedBy { (_, distance) -> distance }
       .take(MAX_CANDIDATES)
-      .joinToString("\n") { (stub, distance) ->
+      .map { (stub, distance) ->
         if (distance == 0.0) {
           "Stub ${stub.displayName()} matches this request exactly but was not active when the " +
             "request arrived — it was already consumed (removeStubAfterRequestMatched) or registered later."
@@ -28,7 +33,6 @@ internal object WireMockNearMisses {
           Diff(stub.request, request).toString()
         }
       }
-  }
 
   /** Closest received requests for a verification pattern that matched nothing. */
   fun closestRequestsFor(pattern: RequestPattern, requests: List<LoggedRequest>): String {

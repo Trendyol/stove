@@ -5,6 +5,12 @@ package com.trendyol.stove.testing.grpcmock
 import arrow.core.*
 import com.google.protobuf.Message
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.interactions.MockInteractionListeners
+import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.resolveAttribution
+import com.trendyol.stove.interactions.traceparentTraceId
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.scoping.TestScopeCleanupListener
 import com.trendyol.stove.scoping.TestScopedJournal
@@ -96,9 +102,11 @@ class GrpcMockSystem internal constructor(
   ValidatedSystem,
   RunAware,
   ExposesConfiguration,
-  Reports {
+  Reports,
+  MockInteractionPublisher {
   private val logger = LoggerFactory.getLogger(javaClass)
   override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
+  private val interactionListeners = MockInteractionListeners()
 
   private val stubs = ConcurrentHashMap<String, CopyOnWriteArrayList<RegisteredStub>>()
   private val callJournal = TestScopedJournal<JournaledRequest>()
@@ -121,6 +129,7 @@ class GrpcMockSystem internal constructor(
     val builder = ctx
       .serverBuilder(ServerBuilder.forPort(ctx.port))
       .intercept(MetadataCapturingInterceptor)
+      .intercept(InteractionObservingInterceptor())
       .fallbackHandlerRegistry(DynamicHandlerRegistry())
     if (ctx.enableHealthService) builder.addService(HealthStatusManager().healthService)
     if (ctx.enableReflectionService) builder.addService(ProtoReflectionServiceV1.newInstance())
@@ -721,7 +730,8 @@ class GrpcMockSystem internal constructor(
     metadata: Metadata,
     matched: Boolean,
     stubTestId: String? = null,
-    nearMisses: List<String> = emptyList()
+    nearMisses: List<String> = emptyList(),
+    interactionRecord: InteractionRecord? = INTERACTION_RECORD.get()
   ) {
     val request = ReceivedRequest(
       stubKey = key,
@@ -732,6 +742,95 @@ class GrpcMockSystem internal constructor(
       testId = metadata.toHeaderMap().stoveTestId() ?: stubTestId
     )
     callJournal.record(request.testId, JournaledRequest(request, nearMisses))
+    interactionRecord?.let { record ->
+      record.matched = matched
+      record.stubId = if (matched) key.id else null
+      record.stubTestId = stubTestId
+      record.nearMisses = nearMisses
+    }
+  }
+
+  // ==================== Internal: Interaction Capture ====================
+
+  override fun addInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.add(listener)
+
+  override fun removeInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.remove(listener)
+
+  /**
+   * Observes every call end-to-end: creation time, payload sizes, and the final status —
+   * including CANCELLED/DEADLINE_EXCEEDED outcomes the handler never sees. Emits one
+   * interaction per call, on close or cancellation, whichever comes first.
+   */
+  private inner class InteractionObservingInterceptor : ServerInterceptor {
+    override fun <ReqT, RespT> interceptCall(
+      call: ServerCall<ReqT, RespT>,
+      headers: Metadata,
+      next: ServerCallHandler<ReqT, RespT>
+    ): ServerCall.Listener<ReqT> {
+      val fullMethodName = call.methodDescriptor.fullMethodName
+      // Built-in grpc.* services (health, reflection) are infrastructure, not mocked exchanges.
+      if (fullMethodName.startsWith("grpc.")) return next.startCall(call, headers)
+
+      val record = InteractionRecord(fullMethodName, headers.toHeaderMap(), System.nanoTime())
+      val observedCall = object : ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT>(call) {
+        override fun sendMessage(message: RespT) {
+          (message as? ByteArray)?.let { record.responseBytes += it.size }
+          record.responseMessages++
+          super.sendMessage(message)
+        }
+
+        override fun close(status: Status, trailers: Metadata) {
+          emitInteraction(record, status)
+          super.close(status, trailers)
+        }
+      }
+      val listener = Contexts.interceptCall(
+        Context.current().withValue(INTERACTION_RECORD, record),
+        observedCall,
+        headers,
+        next
+      )
+      return object : ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT>(listener) {
+        override fun onMessage(message: ReqT) {
+          (message as? ByteArray)?.let { record.requestBytes += it.size }
+          record.requestMessages++
+          super.onMessage(message)
+        }
+
+        override fun onCancel() {
+          emitInteraction(record, Status.CANCELLED)
+          super.onCancel()
+        }
+      }
+    }
+  }
+
+  private fun emitInteraction(record: InteractionRecord, status: Status) {
+    if (!record.emitted.compareAndSet(false, true)) return
+    runCatching {
+      val (testId, attribution) = resolveAttribution(record.headers, record.stubTestId)
+      interactionListeners.emit(
+        MockInteraction(
+          system = reportSystemName,
+          protocol = MockInteraction.Protocol.GRPC,
+          method = "",
+          target = record.fullMethodName,
+          matched = record.matched,
+          stubId = record.stubId,
+          testId = testId,
+          attribution = attribution,
+          requestBody = "${record.requestMessages} message(s), ${record.requestBytes} byte(s)",
+          requestBodyTruncated = false,
+          responseBody = "${record.responseMessages} message(s), ${record.responseBytes} byte(s)",
+          responseBodyTruncated = false,
+          status = status.code.name,
+          latencyMs = (System.nanoTime() - record.startNanos) / NANOS_PER_MILLI,
+          nearMisses = record.nearMisses,
+          traceId = record.headers.traceparentTraceId(),
+          timestamp = java.time.Instant.now()
+        )
+      )
+    }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
   }
 
   // ==================== Internal: Handler Registry ====================
@@ -844,25 +943,52 @@ class GrpcMockSystem internal constructor(
   private fun bidiStreamHandler(fullMethodName: String): ServerCallHandler<ByteArray, ByteArray> =
     ServerCalls.asyncBidiStreamingCall { responseObserver ->
       val metadata = MetadataCapturingInterceptor.currentMetadata()
+      // The handler coroutine runs outside the gRPC context; capture the record here.
+      val interactionRecord = INTERACTION_RECORD.get()
       val requestChannel = Channel<ByteArray>(Channel.UNLIMITED)
+      val stubKey = fullMethodName.toStubKey()
+      ctx.onRequestReceived(stubKey, ByteArray(0))
+
+      val registered = stubs[fullMethodName]?.findLast { it.definition.metadataMatcher.matches(metadata) }
+      if (registered == null) {
+        logRequest(
+          stubKey,
+          ByteArray(0),
+          metadata,
+          matched = false,
+          nearMisses = (stubs[fullMethodName] ?: emptyList()).diagnoseRejections(ByteArray(0), metadata),
+          interactionRecord = interactionRecord
+        )
+        responseObserver.sendUnimplemented(fullMethodName)
+        return@asyncBidiStreamingCall ChannelForwardingObserver(requestChannel)
+      }
+
+      logRequest(
+        registered.key,
+        ByteArray(0),
+        metadata,
+        matched = true,
+        stubTestId = registered.testId,
+        interactionRecord = interactionRecord
+      )
+      removeStubIfNeeded(registered.key, fullMethodName)
+      ctx.afterStubMatched(registered.key, registered.definition)
 
       handlerScope.launch {
-        stubs[fullMethodName]?.findLast { it.definition.metadataMatcher.matches(metadata) }?.let { registered ->
-          when (val stub = registered.definition) {
-            is StubDefinition.BidiStream -> runCatching {
-              stub.handler(requestChannel.consumeAsFlow()).collect { response ->
-                responseObserver.onNext(response.toByteArray())
-              }
-              responseObserver.onCompleted()
-            }.onFailure { e ->
-              responseObserver.onError(Status.INTERNAL.withCause(e).asException())
+        when (val stub = registered.definition) {
+          is StubDefinition.BidiStream -> runCatching {
+            stub.handler(requestChannel.consumeAsFlow()).collect { response ->
+              responseObserver.onNext(response.toByteArray())
             }
-
-            is StubDefinition.Error -> responseObserver.onError(stub.toStatusException())
-
-            else -> responseObserver.sendUnexpectedStubType("bidi stream")
+            responseObserver.onCompleted()
+          }.onFailure { e ->
+            responseObserver.onError(Status.INTERNAL.withCause(e).asException())
           }
-        } ?: responseObserver.sendUnimplemented(fullMethodName)
+
+          // Only Error can coexist with BidiStream on one method (type fail-fast);
+          // sendResponse gives it delay and trailer handling.
+          else -> stub.sendResponse(responseObserver)
+        }
       }
 
       ChannelForwardingObserver(requestChannel)
@@ -978,6 +1104,7 @@ class GrpcMockSystem internal constructor(
 
   companion object {
     private const val MAX_RENDERED_REQUESTS = 5
+    private const val NANOS_PER_MILLI = 1_000_000L
 
     fun GrpcMockSystem.server(): Server = server
   }

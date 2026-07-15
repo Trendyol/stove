@@ -15,6 +15,12 @@ import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.interactions.MockInteractionListeners
+import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.resolveAttribution
+import com.trendyol.stove.interactions.traceparentTraceId
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.scoping.TestScopeCleanupListener
 import com.trendyol.stove.serialization.StoveSerde
@@ -200,10 +206,12 @@ class WireMockSystem(
   ValidatedSystem,
   RunAware,
   ExposesConfiguration,
-  Reports {
+  Reports,
+  MockInteractionPublisher {
   override val reportSystemName: String = WireMockReportSystem.name(ctx.keyName)
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private val callJournal = WireMockCallJournal()
+  private val interactionListeners = MockInteractionListeners()
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val verification = WireMockVerification(this, callJournal, serde)
   private val reportListener = TestScopeCleanupListener(callJournal::clear)
@@ -223,7 +231,7 @@ class WireMockSystem(
   init {
     val cfg = wireMockConfig()
       .port(ctx.port)
-      .extensions(WireMockRequestListener(stubLog, ctx.afterRequest, callJournal::record))
+      .extensions(WireMockRequestListener(stubLog, ctx.afterRequest, callJournal::record, ::emitInteraction))
       .extensions(dynamicResponses)
     val stoveExtensions = mutableListOf<Extension>()
     if (ctx.removeStubAfterRequestMatched) {
@@ -1148,6 +1156,51 @@ class WireMockSystem(
 
   private fun enrichMetadataWithTestId(metadata: Map<String, Any>): Map<String, Any> =
     reporter.currentTestIdOrNull()?.let { metadata + (STOVE_TEST_ID_KEY to it) } ?: metadata
+
+  override fun addInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.add(listener)
+
+  override fun removeInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.remove(listener)
+
+  /**
+   * Emits one completed exchange per serve event — matched or not — after the response
+   * has been fully transmitted, so timing is final. Emission failures never affect the
+   * request being served.
+   */
+  private fun emitInteraction(serveEvent: ServeEvent) {
+    runCatching {
+      val request = serveEvent.request
+      val headers = request.headerMap()
+      val (testId, attribution) = resolveAttribution(headers, serveEvent.stubMapping?.stoveTestId())
+      val (requestBody, requestTruncated) = MockInteraction.truncated(request.bodyAsString.orEmpty())
+      val response = serveEvent.response
+      val (responseBody, responseTruncated) = MockInteraction.truncated(response?.bodyAsString.orEmpty())
+      interactionListeners.emit(
+        MockInteraction(
+          system = reportSystemName,
+          protocol = MockInteraction.Protocol.HTTP,
+          method = request.method.value(),
+          target = request.url,
+          matched = serveEvent.wasMatched,
+          stubId = serveEvent.stubMapping?.id?.toString(),
+          testId = testId,
+          attribution = attribution,
+          requestBody = requestBody,
+          requestBodyTruncated = requestTruncated,
+          responseBody = responseBody,
+          responseBodyTruncated = responseTruncated,
+          status = response?.fault?.name ?: response?.status?.toString().orEmpty(),
+          latencyMs = serveEvent.timing?.totalTime?.takeIf { it >= 0 }?.toLong(),
+          nearMisses = if (serveEvent.wasMatched) {
+            emptyList()
+          } else {
+            WireMockNearMisses.closestStubCandidates(request, callJournal.stubs(testId.orEmpty()))
+          },
+          traceId = headers.traceparentTraceId(),
+          timestamp = java.time.Instant.now()
+        )
+      )
+    }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
+  }
 
   private fun configureBodyAndMetadata(
     request: MappingBuilder,

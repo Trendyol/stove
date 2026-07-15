@@ -9,14 +9,20 @@ fun Map<String, *>.belongsToTest(testId: String?): Boolean {
   return stoveTestId()?.let { it == testId } ?: true
 }
 
+/** Which transport carried the test id. */
+enum class TestIdSource { HEADER, BAGGAGE }
+
 /** Extracts Stove's test id from its explicit header or W3C baggage. */
-fun Map<String, *>.stoveTestId(): String? {
+fun Map<String, *>.stoveTestId(): String? = stoveTestIdWithSource()?.first
+
+/** Extracts Stove's test id together with the transport that carried it. */
+fun Map<String, *>.stoveTestIdWithSource(): Pair<String, TestIdSource>? {
   entries
     .firstOrNull { it.key.equals(TraceContext.STOVE_TEST_ID_HEADER, ignoreCase = true) }
     ?.value
     ?.headerValue()
     ?.takeIf { it.isNotBlank() }
-    ?.let { return it }
+    ?.let { return it to TestIdSource.HEADER }
 
   val baggage = entries
     .firstOrNull { it.key.equals(BAGGAGE_HEADER, ignoreCase = true) }
@@ -24,6 +30,7 @@ fun Map<String, *>.stoveTestId(): String? {
     ?.headerValue()
     ?: return null
   return parseBaggageEntry(baggage, TraceContext.BAGGAGE_TEST_ID_KEY)
+    ?.let { it to TestIdSource.BAGGAGE }
 }
 
 private fun Any?.headerValue(): String? = when (this) {

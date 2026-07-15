@@ -247,6 +247,94 @@ public final class com/trendyol/stove/http/StoveHttpResponse$WithBody : com/tren
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/trendyol/stove/interactions/InteractionAttribution : java/lang/Enum {
+	public static final field PROVEN_BAGGAGE Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public static final field PROVEN_HEADER Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public static final field PROVEN_STUB Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public static final field UNATTRIBUTED Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public static fun values ()[Lcom/trendyol/stove/interactions/InteractionAttribution;
+}
+
+public final class com/trendyol/stove/interactions/MockInteraction {
+	public static final field Companion Lcom/trendyol/stove/interactions/MockInteraction$Companion;
+	public static final field MAX_BODY_CHARS I
+	public fun <init> (Ljava/lang/String;Lcom/trendyol/stove/interactions/MockInteraction$Protocol;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/interactions/InteractionAttribution;Ljava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/lang/String;Ljava/time/Instant;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Z
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Z
+	public final fun component13 ()Ljava/lang/String;
+	public final fun component14 ()Ljava/lang/Long;
+	public final fun component15 ()Ljava/util/List;
+	public final fun component16 ()Ljava/lang/String;
+	public final fun component17 ()Ljava/time/Instant;
+	public final fun component2 ()Lcom/trendyol/stove/interactions/MockInteraction$Protocol;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lcom/trendyol/stove/interactions/MockInteraction$Protocol;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/interactions/InteractionAttribution;Ljava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/lang/String;Ljava/time/Instant;)Lcom/trendyol/stove/interactions/MockInteraction;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/interactions/MockInteraction;Ljava/lang/String;Lcom/trendyol/stove/interactions/MockInteraction$Protocol;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/interactions/InteractionAttribution;Ljava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/lang/String;Ljava/time/Instant;ILjava/lang/Object;)Lcom/trendyol/stove/interactions/MockInteraction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttribution ()Lcom/trendyol/stove/interactions/InteractionAttribution;
+	public final fun getLatencyMs ()Ljava/lang/Long;
+	public final fun getMatched ()Z
+	public final fun getMethod ()Ljava/lang/String;
+	public final fun getNearMisses ()Ljava/util/List;
+	public final fun getProtocol ()Lcom/trendyol/stove/interactions/MockInteraction$Protocol;
+	public final fun getRequestBody ()Ljava/lang/String;
+	public final fun getRequestBodyTruncated ()Z
+	public final fun getResponseBody ()Ljava/lang/String;
+	public final fun getResponseBodyTruncated ()Z
+	public final fun getStatus ()Ljava/lang/String;
+	public final fun getStubId ()Ljava/lang/String;
+	public final fun getSystem ()Ljava/lang/String;
+	public final fun getTarget ()Ljava/lang/String;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public final fun getTraceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/interactions/MockInteraction$Companion {
+	public final fun truncated (Ljava/lang/String;)Lkotlin/Pair;
+}
+
+public final class com/trendyol/stove/interactions/MockInteraction$Protocol : java/lang/Enum {
+	public static final field GRPC Lcom/trendyol/stove/interactions/MockInteraction$Protocol;
+	public static final field HTTP Lcom/trendyol/stove/interactions/MockInteraction$Protocol;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/interactions/MockInteraction$Protocol;
+	public static fun values ()[Lcom/trendyol/stove/interactions/MockInteraction$Protocol;
+}
+
+public final class com/trendyol/stove/interactions/MockInteractionKt {
+	public static final fun resolveAttribution (Ljava/util/Map;Ljava/lang/String;)Lkotlin/Pair;
+	public static final fun traceparentTraceId (Ljava/util/Map;)Ljava/lang/String;
+}
+
+public abstract interface class com/trendyol/stove/interactions/MockInteractionListener {
+	public abstract fun onInteraction (Lcom/trendyol/stove/interactions/MockInteraction;)V
+}
+
+public final class com/trendyol/stove/interactions/MockInteractionListeners {
+	public fun <init> ()V
+	public final fun add (Lcom/trendyol/stove/interactions/MockInteractionListener;)V
+	public final fun emit (Lcom/trendyol/stove/interactions/MockInteraction;)V
+	public final fun remove (Lcom/trendyol/stove/interactions/MockInteractionListener;)V
+}
+
+public abstract interface class com/trendyol/stove/interactions/MockInteractionPublisher {
+	public abstract fun addInteractionListener (Lcom/trendyol/stove/interactions/MockInteractionListener;)V
+	public abstract fun removeInteractionListener (Lcom/trendyol/stove/interactions/MockInteractionListener;)V
+}
+
 public final class com/trendyol/stove/messaging/FailedObservedMessage : com/trendyol/stove/messaging/ObservedMessage {
 	public fun <init> (Ljava/lang/Object;Lcom/trendyol/stove/messaging/MessageMetadata;Ljava/lang/Throwable;)V
 	public final fun component1 ()Ljava/lang/Object;
@@ -703,6 +791,14 @@ public final class com/trendyol/stove/reporting/TraceProvider$DefaultImpls {
 	public static synthetic fun getTraceVisualizationForCurrentTest$default (Lcom/trendyol/stove/reporting/TraceProvider;JILjava/lang/Object;)Larrow/core/Option;
 }
 
+public final class com/trendyol/stove/scoping/TestIdSource : java/lang/Enum {
+	public static final field BAGGAGE Lcom/trendyol/stove/scoping/TestIdSource;
+	public static final field HEADER Lcom/trendyol/stove/scoping/TestIdSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/scoping/TestIdSource;
+	public static fun values ()[Lcom/trendyol/stove/scoping/TestIdSource;
+}
+
 public final class com/trendyol/stove/scoping/TestScopeCleanupListener : com/trendyol/stove/reporting/ReportEventListener {
 	public fun <init> (Lkotlin/jvm/functions/Function1;)V
 	public fun onEntryRecorded (Lcom/trendyol/stove/reporting/ReportEntry;)V
@@ -714,6 +810,7 @@ public final class com/trendyol/stove/scoping/TestScopeCleanupListener : com/tre
 public final class com/trendyol/stove/scoping/TestScopeKt {
 	public static final fun belongsToTest (Ljava/util/Map;Ljava/lang/String;)Z
 	public static final fun stoveTestId (Ljava/util/Map;)Ljava/lang/String;
+	public static final fun stoveTestIdWithSource (Ljava/util/Map;)Lkotlin/Pair;
 }
 
 public final class com/trendyol/stove/scoping/TestScopedJournal {
