@@ -35,12 +35,10 @@ var stoveSerdeRef: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArrayS
 
 /**
  * Default port for the Stove Kafka Bridge gRPC server.
- * This can be overridden by setting the [STOVE_KAFKA_BRIDGE_PORT] environment variable
- * or by using [PortFinder.findAvailablePortAsString] to get a dynamically available port.
+ * This can be overridden through [KafkaSystemOptions.bridgeGrpcServerPort].
  */
 var stoveKafkaBridgePortDefault: String = PortFinder.findAvailablePortAsString()
 const val STOVE_KAFKA_BRIDGE_PORT = "STOVE_KAFKA_BRIDGE_PORT"
-internal val StoveKafkaCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
 /**
  * Kafka messaging system for testing message publishing and consumption.
@@ -237,6 +235,14 @@ class KafkaSystem(
   private lateinit var adminClient: Admin
   private lateinit var kafkaPublisher: KafkaProducer<String, Any>
   private lateinit var grpcServer: Server
+  private var bridgePortDiscovery: AutoCloseable? = null
+  private val bridgeRuntime = KafkaBridgeRuntime(context.options.serde, context.keyName)
+  private val bridgeServerPort: Int = when {
+    context.keyName != null && context.options.usesDefaultBridgeGrpcServerPort ->
+      PortFinder.findAvailablePortAsString().toInt()
+
+    else -> context.options.bridgeGrpcServerPort
+  }
 
   @PublishedApi
   internal lateinit var sink: StoveMessageSink
@@ -245,15 +251,18 @@ class KafkaSystem(
     stove.createStateStorage<KafkaExposedConfiguration, KafkaSystem>(context.keyName)
 
   override suspend fun beforeRun() {
+    // Keep the public standalone Stove serializers aligned with this system's configured serde.
     stoveSerdeRef = context.options.serde
   }
 
   override suspend fun run() {
     exposedConfiguration = obtainExposedConfiguration()
     adminClient = createAdminClient(exposedConfiguration)
-    kafkaPublisher = createPublisher(exposedConfiguration)
     sink = StoveMessageSink(adminClient, context.options.serde, context.options.topicSuffixes)
     grpcServer = startGrpcServer()
+    bridgeRuntime.attach(grpcServer.port)
+    bridgePortDiscovery = exposeBridgePortForInJvmDiscovery(context.keyName, grpcServer.port)
+    kafkaPublisher = createPublisher(exposedConfiguration)
     runMigrationsIfNeeded()
   }
 
@@ -282,35 +291,67 @@ class KafkaSystem(
   }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      context.options.cleanup(adminClient)
-      grpcServer.shutdownNow()
-      StoveKafkaCoroutineScope.cancel()
-      kafkaPublisher.close()
-      executeWithReuseCheck { stop() }
-    }
-  }.recover { logger.warn("got an error while stopping: ${it.message}") }.let { }
+    val failures = mutableListOf<Pair<String, Throwable>>()
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+    suspend fun closeStep(
+      name: String,
+      block: suspend () -> Unit
+    ) {
+      try {
+        block()
+      } catch (error: Throwable) {
+        failures += name to error
+      }
+    }
+
+    if (::adminClient.isInitialized) closeStep("cleanup") { context.options.cleanup(adminClient) }
+    // Producer close may execute acknowledgement callbacks, so the observer stays alive until after it finishes.
+    if (::kafkaPublisher.isInitialized) closeStep("producer") { kafkaPublisher.close() }
+    if (::adminClient.isInitialized) closeStep("admin") { adminClient.close() }
+    if (::grpcServer.isInitialized) {
+      closeStep("observer server") {
+        grpcServer.shutdownNow()
+        grpcServer.awaitTermination(CLOSE_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      }
+    }
+    bridgePortDiscovery?.let { discovery -> closeStep("bridge port discovery") { discovery.close() } }
+    closeStep("bridge runtime") { bridgeRuntime.close() }
+    closeStep("Kafka runtime") { executeWithReuseCheck { stop() } }
+
+    failures.forEach { (resource, error) -> logger.warn("Failed to close $resource: ${error.message}", error) }
+  }
+
+  override fun configuration(): List<String> {
+    val bridgeEntries = bridgeRuntime.endpoint.configurationEntries()
+    val bridgeKeys = bridgeRuntime.endpoint.clientProperties.keys
+    val applicationEntries = context.options
+      .configureExposedConfiguration(exposedConfiguration)
+      .filterNot { entry -> entry.substringBefore('=') in bridgeKeys }
+    return applicationEntries + bridgeEntries
+  }
 
   suspend fun publish(
     topic: String,
     message: Any,
     key: Option<String> = None,
     headers: Map<String, String> = mapOf(),
-    partition: Int = 0,
+    partition: Int = PARTITION_BY_KEY,
     testCase: Option<String> = None
   ): KafkaSystem {
+    require(partition == PARTITION_BY_KEY || partition >= 0) {
+      "partition must be non-negative or PARTITION_BY_KEY"
+    }
     report(
       action = "Publish to '$topic'",
       input = arrow.core.Some(message),
       metadata = buildMap {
         key.onSome { put("key", it) }
         put("headers", headers)
-        put("partition", partition)
+        put("partition", partition.takeUnless { it == PARTITION_BY_KEY } ?: "partitioner")
       }
     ) {
-      val record = ProducerRecord<String, Any>(topic, partition, key.getOrNull(), message)
+      val selectedPartition = partition.takeUnless { it == PARTITION_BY_KEY }
+      val record = ProducerRecord<String, Any>(topic, selectedPartition, key.getOrNull(), message)
       headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
       testCase.map { record.headers().add("testCase", it.toByteArray()) }
       injectTraceHeaders(record)
@@ -321,6 +362,8 @@ class KafkaSystem(
 
   private fun injectTraceHeaders(record: ProducerRecord<String, Any>) {
     TraceContext.current()?.let { ctx ->
+      record.headers().remove(TraceContext.TRACEPARENT_HEADER)
+      record.headers().remove(TraceContext.STOVE_TEST_ID_HEADER)
       record.headers().add(TraceContext.TRACEPARENT_HEADER, ctx.toTraceparent().toByteArray())
       record.headers().add(TraceContext.STOVE_TEST_ID_HEADER, ctx.testId.toByteArray())
     }
@@ -618,7 +661,9 @@ class KafkaSystem(
     groupId: String,
     onConsume: suspend (ConsumerRecord<K, V>) -> Unit
   ) = withContext(Dispatchers.IO) {
-    val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId).apply(config)
+    val props = createConsumerProperties(autoOffsetReset, autoCreateTopics, groupId)
+      .apply(config)
+      .apply { putAll(bridgeRuntime.clientProperties) }
     // KafkaConsumer calls are serialized in this coroutine; no poll/commit/close calls can overlap.
     KafkaConsumer(props, keyDeserializer, valueDeserializer).use { consumer ->
       consumer.subscribe(listOf(topic))
@@ -653,21 +698,23 @@ class KafkaSystem(
     this[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
     this[ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG] = autoCreateTopics
     this[ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG] = exposedConfiguration.interceptorClass
+    putIfAbsent(ConsumerConfig.CLIENT_ID_CONFIG, "stove-kafka-consumer-$groupId")
+    putAll(bridgeRuntime.clientProperties)
   }
 
-  private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> = KafkaProducer(
-    buildMap {
+  private fun createPublisher(config: KafkaExposedConfiguration): KafkaProducer<String, Any> {
+    val properties = buildMap<String, Any> {
       putAll(context.options.properties)
       put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers)
-      put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
-      put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, context.options.valueSerializer::class.java.name)
-      put(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-producer")
-      put(ProducerConfig.ACKS_CONFIG, "1")
+      putIfAbsent(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-producer-${bridgeRuntime.systemId}")
+      putIfAbsent(ProducerConfig.ACKS_CONFIG, "1")
       if (context.options.listenPublishedMessagesFromStove) {
         put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, config.interceptorClass)
       }
+      putAll(bridgeRuntime.clientProperties)
     }
-  )
+    return KafkaProducer(properties, StringSerializer(), context.options.valueSerializer)
+  }
 
   private fun createAdminClient(config: KafkaExposedConfiguration): Admin = Admin.create(
     buildMap {
@@ -677,48 +724,49 @@ class KafkaSystem(
     }.toProperties()
   )
 
-  private suspend fun startGrpcServer(): Server {
-    System.setProperty(STOVE_KAFKA_BRIDGE_PORT, context.options.bridgeGrpcServerPort.toString())
-    return Try {
-      NettyServerBuilder
-        .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), context.options.bridgeGrpcServerPort))
-        .executor(StoveKafkaCoroutineScope.also { it.ensureActive() }.asExecutor)
-        .addService(StoveKafkaObserverGrpcServer(sink))
-        .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .keepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .keepAliveTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxConnectionAge(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxConnectionAgeGrace(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxConnectionIdle(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-        .maxInboundMessageSize(MAX_MESSAGE_SIZE)
-        .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
-        .permitKeepAliveWithoutCalls(true)
-        .build()
-        .start()
-        .also { waitUntilHealthy(it, 30.seconds) }
-    }.recover {
-      logger.error("Failed to start Stove Message Sink Grpc Server", it)
-      throw it
-    }.map {
-      logger.info("Stove Sink Grpc Server started on port ${context.options.bridgeGrpcServerPort}")
-      it
-    }.get()
-  }
+  private suspend fun startGrpcServer(): Server = Try {
+    NettyServerBuilder
+      .forAddress(InetSocketAddress(InetAddress.getLoopbackAddress(), bridgeServerPort))
+      .executor(bridgeRuntime.scope.also { it.ensureActive() }.asExecutor)
+      .addService(StoveKafkaObserverGrpcServer(sink))
+      .handshakeTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .permitKeepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .keepAliveTime(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .keepAliveTimeout(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxConnectionAge(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxConnectionAgeGrace(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxConnectionIdle(GRPC_TIMEOUT_IN_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+      .maxInboundMessageSize(MAX_MESSAGE_SIZE)
+      .maxInboundMetadataSize(MAX_MESSAGE_SIZE)
+      .permitKeepAliveWithoutCalls(true)
+      .build()
+      .start()
+      .also { waitUntilHealthy(it, 30.seconds) }
+  }.recover {
+    logger.error("Failed to start Stove Message Sink Grpc Server", it)
+    throw it
+  }.map {
+    logger.info("Stove Sink Grpc Server started on port ${it.port} for bridge ${bridgeRuntime.id}")
+    it
+  }.get()
 
   private suspend fun waitUntilHealthy(server: Server, duration: Duration) {
-    val client = GrpcUtils.createClient(server.port.toString(), StoveKafkaCoroutineScope)
-    var healthy = false
-    withTimeout(duration) {
-      while (!healthy) {
-        logger.info("Waiting for Stove Message Sink Grpc Server to be healthy")
-        Try {
-          val response = client.healthCheck().execute(HealthCheckRequest())
-          healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
+    val handle = GrpcUtils.createClientHandle(server.port.toString(), bridgeRuntime.scope)
+    try {
+      var healthy = false
+      withTimeout(duration) {
+        while (!healthy) {
+          logger.info("Waiting for Stove Message Sink Grpc Server to be healthy")
+          Try {
+            val response = handle.client.healthCheck().execute(HealthCheckRequest())
+            healthy = response.status == HealthCheckResponse.ServingStatus.SERVING
+          }
+          delay(GRPC_SERVER_DELAY)
         }
-        delay(GRPC_SERVER_DELAY)
+        logger.info("Stove Message Sink Grpc Server is healthy!")
       }
-      logger.info("Stove Message Sink Grpc Server is healthy!")
+    } finally {
+      handle.close()
     }
   }
 
@@ -742,8 +790,12 @@ class KafkaSystem(
   }
 
   companion object {
+    /** Sentinel used by [publish] to let Kafka's configured partitioner choose the partition. */
+    const val PARTITION_BY_KEY: Int = -1
+
     private const val GRPC_SERVER_DELAY = 500L
     private const val GRPC_TIMEOUT_IN_SECONDS = 300L
+    private const val CLOSE_TIMEOUT_IN_SECONDS = 5L
     private const val MAX_MESSAGE_SIZE = 1024 * 1024 * 1024
   }
 }

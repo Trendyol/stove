@@ -65,6 +65,15 @@ private fun committed(
   unknownFields = EMPTY
 )
 
+private fun acknowledged() = AcknowledgedMessage(
+  id = UUID.randomUUID().toString(),
+  topic = "topic",
+  partition = 0,
+  offset = 0,
+  exception = "",
+  unknownFields = EMPTY
+)
+
 private fun taggedWith(testId: String): Map<String, String> = mapOf(TraceContext.STOVE_TEST_ID_HEADER to testId)
 
 private fun noopAdmin(): Admin = Proxy.newProxyInstance(
@@ -107,6 +116,20 @@ class StoreEventsAndScopingTests :
 
       val record = withTimeout(2.seconds) { store.consumedRecords().first() }
       serde.deserialize(record.message.toByteArray(), ScopedEvent::class.java).name shouldBe "live"
+    }
+
+    test("observer preserves the unary JVM and Go bridge contract") {
+      val messageSink = sink()
+      val server = StoveKafkaObserverGrpcServer(messageSink)
+
+      server.onPublishedMessage(published()).status shouldBe 200
+      server.onConsumedMessage(consumed()).status shouldBe 200
+      server.onCommittedMessage(committed()).status shouldBe 200
+      server.onAcknowledgedMessage(acknowledged()).status shouldBe 200
+
+      messageSink.store.publishedMessages().size shouldBe 1
+      messageSink.store.consumedMessages().size shouldBe 1
+      messageSink.store.committedMessages().size shouldBe 1
     }
 
     test("record flows replay records stored before subscription") {

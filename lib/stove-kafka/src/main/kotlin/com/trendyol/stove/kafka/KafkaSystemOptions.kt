@@ -77,6 +77,10 @@ open class KafkaSystemOptions(
 ) : SystemOptions,
   ConfiguresExposedConfiguration<KafkaExposedConfiguration>,
   SupportsMigrations<KafkaMigrationContext, KafkaSystemOptions> {
+  /** Captured at construction so later reassignment of the compatibility default cannot change routing decisions. */
+  internal val usesDefaultBridgeGrpcServerPort: Boolean =
+    bridgeGrpcServerPort == stoveKafkaBridgePortDefault.toInt()
+
   override val migrationCollection: MigrationCollection<KafkaMigrationContext> = MigrationCollection()
 
   companion object {

@@ -12,11 +12,11 @@ Make stove-kafka the strongest Kafka e2e-testing surface on the JVM by improving
 
 ## Priority order
 
-Agreed sequence: **D (foundation) → C (diagnostics) → B (publishing fidelity) → A (assertions, deferred — discuss before starting)**. E-theme differentiators (chaos, schema registry, record & replay) are later bets, picked by audience.
+Current sequence: **D1 (event-driven foundation) ✅ → D2 (observer isolation and wire compatibility) ✅ + B0 (partition correctness) ✅ → C (diagnostics) → B1 (raw/tombstone publishing) → A (assertions, deferred — discuss before starting)**. Semantic observation envelopes and asynchronous batching were reviewed and deliberately not adopted; the existing JVM/Go unary protocol remains the single contract. E-theme differentiators (chaos, schema registry, record & replay) are later bets, picked by audience.
 
 ---
 
-## Theme D — Foundation ✅ done
+## Theme D — Foundation and observer correctness ✅
 
 | Item | Status | Notes |
 |---|---|---|
@@ -27,8 +27,26 @@ Agreed sequence: **D (foundation) → C (diagnostics) → B (publishing fidelity
 | Bonus fixes | ✅ | `firstNotNullOf { it.key == "testCase" }` logging crash on header-less messages (source of silently swallowed gRPC UNKNOWN errors in the bridge); removed pointless `runBlocking` wrappers in record paths. |
 | Flow-idiom refactor | ✅ | Replay-then-live record flows on `MessageStore` (`consumedRecords()` etc.); all waits collapsed into one `awaitRecords` helper built on `version.first { }` — no `while(true)` loops, no manual version bookkeeping; `peek*` return the matched record; shared `matches()` helper removed the deserialize+condition boilerplate; `shouldBeRetried` now reports like the other assertions. |
 | Ad-hoc consumer thread-safety fix | ✅ | The old `consumer()` closed and committed the `KafkaConsumer` concurrently with the poll loop (KafkaConsumer is not thread-safe) and polled with a redundant `delay(100)`. Poll, callback, exact-offset commit, and close are now serialized in one coroutine on `Dispatchers.IO`; a monotonic deadline stops new callbacks without cancelling one halfway through. |
+| Per-system bridge runtime | ✅ | Every Kafka system owns its observer scope, internal endpoint, serde registration, server, and authoritative client properties. Closing one keyed system no longer cancels the process-global scope used by every other system. Keyed systems using the default get independent observer ports, and that default intent is captured when options are constructed rather than re-inferred from a mutable global later. |
+| Single observer wire contract | ✅ | The original `StoveKafkaObserverService` remains the only service: health check plus `onConsumedMessage`, `onPublishedMessage`, `onCommittedMessage`, and `onAcknowledgedMessage`. JVM interceptors can use per-system client properties; existing single-system applications and the published Go bridge keep using `STOVE_KAFKA_BRIDGE_PORT`. No V1/V2 pair or legacy adapter exists because the existing contract was preserved rather than replaced. |
+| Semantic observation envelope | ↩ not adopted | The proposed envelope added richer stages and group identity, but replacing the wire messages broke the independently published Go client and every application using the documented interceptor/env setup. Richer evidence must be introduced only with an explicit cross-language migration plan and a demonstrated assertion need. |
+| Asynchronous batching/finalization | ↩ not adopted | Batching was unnecessary for the current testing workload, added a prompt-cancellation loss path, and made close completeness part of assertion correctness. Observer callbacks therefore forward the message conveyed by the Kafka bridge directly through the existing unary calls. |
+| Executor rejection semantics | ✅ | Coroutine-backed executors now reject work after shutdown/cancellation instead of accepting it and silently dropping the task. |
+| Lifecycle cleanup | ✅ | Producer, admin client, observer server, per-system bridge runtime, and Kafka runtime are closed independently; one cleanup failure no longer skips every remaining resource. The producer closes while the observer is still available for final acknowledgement callbacks. |
 
-Verified: 49/49 tests in all three runtime modes (container, embedded, provided), plus `apiCheck` and `spotlessCheck`. Detekt is disabled by the root build on JDK 25+ and was therefore not executed in this verification run. New coverage lives in `StoreEventsAndScopingTests` and `KafkaSystemTests`.
+Verification status for D1/D2/B0: all 168 Kafka tests pass across the provided, embedded, and container modes (56 in each mode); the Ktor example passes 5/5 using an explicit non-default observer port with interceptor-only application wiring; Go bridge unit suites pass for the shared bridge, Sarama, Franz, and Segmentio; and the Go showcase passes end-to-end against the locally published JVM artifact with all three Kafka clients. `apiCheck` and `spotlessCheck` pass after API regeneration. Detekt is disabled by the root build on JDK 25+.
+
+### D2 — protocol compatibility decision ✅
+
+The observer is internal to Stove's test architecture, but its wire contract crosses process and release boundaries. In particular, `go/stove-kafka` is independently published and the Go process/container recipes connect to the JVM observer through `STOVE_KAFKA_BRIDGE_PORT`. That makes an in-place protocol replacement a breaking change even when the Kotlin server and interceptor ship together.
+
+The adopted design is therefore intentionally small:
+
+1. keep the original message DTOs, RPC names, and environment variable unchanged;
+2. pass each Kafka callback's message directly through the matching unary RPC, without strict bridge-identity validation or mutation of application records;
+3. use per-system port/serde properties when Stove creates clients, while retaining the environment/system-property fallback for existing and non-JVM applications;
+4. keep observer state internal—no identity-keyed endpoint getter on `KafkaExposedConfiguration`;
+5. require an explicit cross-language compatibility plan before changing this wire format in the future.
 
 **Follow-up:** `starters/spring/stove-spring-kafka` has its own separate `MessageStore` (still polling, still global dumps) and needs the same treatment.
 
@@ -42,11 +60,11 @@ Verified: 49/49 tests in all three runtime modes (container, embedded, provided)
 | Consumer-group lag panel | ⬜ | Live `Admin`-fed panel: group state, per-partition lag, rebalance events on the timeline. Assertion API can follow once the data proves useful. |
 | Cross-run trend analytics | ⬜ | `~/.stove-dashboard.db` persists across sessions: track assertion latency vs. timeout per test per run; flag assertions trending toward their timeout (flakiness early warning). |
 
-## Theme B — Publishing fidelity ⬜
+## Theme B — Publishing fidelity 🚧
 
 | Item | Status | Notes |
 |---|---|---|
-| Fix `partition: Int = 0` default | ⬜ | Every `publish` currently lands on partition 0, silently bypassing key-based partitioning. Should be absent-by-default so the partitioner decides. Arguably a bug fix; prerequisite for honest per-key ordering tests. |
+| Fix `partition: Int = 0` default | ✅ | `publish` now uses the ABI-safe `PARTITION_BY_KEY = -1` sentinel and constructs a record with no explicit partition, allowing Kafka's configured partitioner to decide. Explicit non-negative partitions remain supported and invalid negative values fail early. |
 | `publishTombstone(topic, key)` | ⬜ | Null-value publishing for compacted-topic deletion logic — currently untestable. |
 | `publishRaw(topic, bytes)` | ⬜ | Poison-pill/malformed payloads to make "deserialization failure lands in DLT" a one-liner. |
 
@@ -63,6 +81,55 @@ Verified: 49/49 tests in all three runtime modes (container, embedded, provided)
 - **Schema Registry add-on**: registry container + Avro/Proto serdes + schema-compatibility assertions.
 - **Record & replay**: captured choreography as replayable fixtures (falls out of the choreography view data).
 - **Modern embedded runtime**: KRaft-native / `apache/kafka-native` instead of the Scala `EmbeddedKafka` path.
+
+---
+
+## Review findings — D2 compatibility review and resolution (2026-07-15)
+
+Process: two independent reviewers (one scoped to concurrency/lifecycle/transport, one to compatibility/API/semantics), findings reconciled and re-verified against source before documenting. The critical findings caused the semantic/batched protocol to be rolled back rather than patched forward. Severities: only timeouts/false evidence and user breakage rank critical/major; fail-safe imprecision ranks minor.
+
+### Critical
+
+**F1 — Resolved: unconfigured interceptors were rejected, so plain stove-kafka applications recorded nothing.**
+Strict bridge-identity validation was removed with the semantic envelope. The interceptor again accepts the existing setup—`interceptorClass` plus `STOVE_KAFKA_BRIDGE_PORT` for an out-of-process application—and simply forwards what the bridge observes. Per-system bridge properties remain an internal routing improvement for clients Stove creates. The previously failing Ktor example now passes 5/5 without custom bridge-id wiring.
+
+**F2 — Resolved: the published Go bridge spoke the protocol that had been removed.**
+The original unary service—not a separately named legacy service—has been restored exactly. `go/stove-kafka` continues calling `onConsumedMessage`, `onPublishedMessage`, `onCommittedMessage`, and `onAcknowledgedMessage`, and continues reading `STOVE_KAFKA_BRIDGE_PORT`; no Go regeneration or lockstep release is required. Go unit suites and the process showcase pass with Sarama, Franz, and Segmentio against the current local JVM artifact.
+
+### Major
+
+**F3 — Resolved by removal: prompt cancellation could lose an observation in the batching loop.**
+`KafkaObservationTransport`, its bounded channel, retry/finalization state, and batching configuration were removed. Kafka callbacks synchronously invoke the matching unary observer call as they did before, so there is no queue receive/timeout cancellation window and no close-time high-watermark whose correctness assertions depend on.
+
+**F4 — Bridge setup regression resolved; partition-default release note remains.**
+Existing documentation is valid again because interceptor-only and env-var wiring were preserved. No semantic/batching migration is required. The `publish` default-partition correction is behavior-visible and still needs a release-note callout before release.
+
+### Minor
+
+- **F5 — No longer applicable.** Source sequences and close finalization were removed with the semantic transport.
+- **F6 — `publish` default-partition change is behavior-visible.** Null-key publishes to multi-partition topics now spread via the sticky partitioner instead of pinning to partition 0; user tests asserting partition metadata or cross-message ordering can start flaking. Source/binary compatible; needs a release-note callout.
+- **F7 — Resolved.** The interceptor no longer adds `X-Stove-Observation-Id` or otherwise mutates application records.
+- **F8 — Existing semantics retained.** `shouldBePublished` continues to mean that the producer interceptor observed `onSend`; changing it to acknowledgement evidence is a separate assertion-contract decision, not smuggled into the wire refactor.
+- **F9 — Resolved.** Whether a bridge port used the compatibility default is captured when `KafkaSystemOptions` is created, so later mutation of `stoveKafkaBridgePortDefault` cannot make a keyed system reuse a stale default port.
+- **F10 — Resolved by API removal.** `KafkaExposedConfiguration.bridge` and the identity-keyed configuration registry were removed; routing endpoints remain internal.
+- **F11 — Resolved.** Coroutine-backed executors throw `RejectedExecutionException` after shutdown/cancellation instead of silently dropping work.
+- **F12 — Resolved.** Health-check and interceptor client handles now cancel outstanding calls and evict their OkHttp connection pools on close; the shared coroutine scope is cancelled separately by its owner.
+- **F13 — No longer applicable.** Batch replies and duplicate-count diagnostics were removed.
+
+### Verified sound (load-bearing checks that passed both reviews)
+
+`KafkaSystem.close()` ordering keeps the observer alive through producer close and isolates per-step failures; per-system scopes prevent one keyed system from cancelling another; `isCommitted` keeps the original next-offset comparison; test-id scoping works on the original unary DTOs; error/retry suffix classification is unchanged; `configuration()` strips user-supplied bridge keys before appending authoritative internal routing values; and the generated Go method names and JVM proto service now match exactly.
+
+### Re-review of the corrections (2026-07-15, second pass)
+
+Independently verified: the proto, `MessageSinkOps`, `KafkaExposedConfiguration`, and `build.gradle.kts` are byte-identical to the last commit (wire contract truly restored, not merely similar); the interceptor's port fallback chain is `stove.kafka.bridge.port` → `STOVE_KAFKA_BRIDGE_PORT` env → system property → shared default; no bridge-identity validation and no record mutation remain; the Go showcase's `env("STOVE_KAFKA_BRIDGE_PORT", …)` hand-off still lines up with the server's default port; tombstone-safe `serialize(null)` is a quiet improvement that pre-stages B1. Public `GrpcUtils` and `StoveKafkaObserverGrpcServer` visibility is preserved. Re-ran verification: full lib suite green in all three modes, `apiCheck` and `spotlessCheck` pass.
+
+New findings from the second pass, all resolved:
+
+- **F14 — Resolved.** A non-keyed system exposes its actual bound observer port through the established system-property fallback, including an explicit non-default `bridgeGrpcServerPort`. Close restores the previous value only if the application has not replaced it in the meantime. Keyed systems continue using per-system client properties because a process-global fallback is ambiguous. The Ktor example now exercises this exact custom-port/interceptor-only path.
+- **F15 — Resolved with F12.** Health-check and interceptor handles cancel outstanding calls and evict their connection pools before their owning scope is cancelled, so no straggling OkHttp task is submitted to a rejected executor during normal shutdown.
+- **F16 — Resolved.** `obtainExposedConfiguration` returns the provided configuration directly; the identity-registry-era `.copy()` is gone.
+- **Verification count corrected.** The suite now contains 56 tests per Kafka mode (168 total).
 
 ---
 
@@ -142,7 +209,7 @@ This replaced offset-based dedup (`it.offset > lastSeen`) for a correctness reas
 
 These flows intentionally **never complete** — the store can always grow — so every consumer bounds them (`first`, `take`, `withTimeout`). `peek*` keeps `withTimeout(atLeastIn) { ... .first { condition(it) } }`, which also preserves the old timeout behavior (a `TimeoutCancellationException`) while gaining a useful return value: the matched record, which the loop version discarded.
 
-The separate `events: SharedFlow<StoveMessageEvent>` (buffer 4096, `DROP_OLDEST`, `tryEmit`) survives as a *live-tail* surface for future diagnostics/DSL work. `tryEmit` + drop-oldest means recording never suspends and never blocks on a slow collector — the gRPC ingestion path (`onConsumedMessage` etc.) must stay non-blocking because the application's interceptor calls are on its consume/produce path. Nothing correctness-critical may subscribe to `events` precisely because it can drop; anything that must not miss data uses the store-backed flows.
+The separate `events: SharedFlow<StoveMessageEvent>` (buffer 4096, `DROP_OLDEST`, `tryEmit`) survives as a *live-tail* surface for future diagnostics/DSL work. `tryEmit` + drop-oldest means store recording never adds suspension or blocks on a slow collector; the application interceptor already waits for its unary observer call, so ingestion should do only the minimum synchronous work. Nothing correctness-critical may subscribe to `events` precisely because it can drop; anything that must not miss data uses the store-backed flows.
 
 ### Test scoping: where the test id is captured, and why only once
 
@@ -168,6 +235,7 @@ The logging bug fixed alongside: `record.headers.firstNotNullOf { it.key == "tes
 
 ### What deliberately did not change
 
-- **Public API shape**: all `shouldBe*`/`peek*` signatures are additive or return-type-improved (`Unit` → matched record; source-compatible for callers that ignore the result). `apiCheck` records the intended binary surface.
+- **User-facing assertion/configuration API**: existing `shouldBe*`/`peek*` APIs and configuration constructors remain available; the `publish` JVM signature is unchanged and only its default-partition behavior is corrected. The generated bridge wire API is preserved because it is also consumed by the independently published Go module.
 - **The caches**: Caffeine maps remain the storage; flows and signals sit beside them, not instead of them. Replacing storage was not needed for any goal above and would have rippled into the spring starter.
-- **`stoveSerdeRef` global**: a known smell (mutable global connecting `KafkaSystem` to interceptor instances the Kafka client constructs reflectively), but it is the bridge's process-wide rendezvous point; redesigning it belongs with a dedicated bridge-configuration story, not this refactor.
+- **No versioned observer compatibility layer**: there is one service and it is the established unary contract. No V1/V2 pair, capability negotiation, semantic adapter, or "legacy" label is needed because the existing JVM/Go wire format remains current.
+- **`stoveSerdeRef` default**: configured clients resolve serde by their per-system bridge id, so keyed systems no longer depend on one mutable serde. The global remains because it is also the public default used by `KafkaSystemOptions` and the standalone Stove Kafka serializers.

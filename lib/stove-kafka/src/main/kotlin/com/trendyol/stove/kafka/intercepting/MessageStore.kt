@@ -193,7 +193,7 @@ class MessageStore {
     partition: Int
   ): Boolean = committedMessages()
     .filter { it.topic == topic && it.partition == partition }
-    .any { committed -> committed.offset >= offset + 1 }
+    .any { committed -> committed.offset > offset }
 
   /**
    * Renders the store contents scoped to the given test id.
@@ -218,7 +218,6 @@ class MessageStore {
       (failedMessages().size - scopedFailed.size)
 
     val hiddenNote = if (hidden > 0) "\n|($hidden message(s) from other tests hidden)" else ""
-
     return """
       |Consumed: ${pprint(scopedConsumed)}
       |Published: ${pprint(scopedPublished)}

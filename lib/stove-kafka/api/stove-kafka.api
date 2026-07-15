@@ -257,6 +257,7 @@ public final class com/trendyol/stove/kafka/KafkaMigrationContext {
 
 public final class com/trendyol/stove/kafka/KafkaSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/AfterRunAware, com/trendyol/stove/system/abstractions/BeforeRunAware, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/kafka/KafkaSystem$Companion;
+	public static final field PARTITION_BY_KEY I
 	public field sink Lcom/trendyol/stove/kafka/intercepting/StoveMessageSink;
 	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/kafka/KafkaContext;)V
 	public final fun adminOperations (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

@@ -9,30 +9,30 @@ class StoveKafkaObserverGrpcServer(
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   override suspend fun healthCheck(request: HealthCheckRequest): HealthCheckResponse {
-    logger.info("Received health check request: $request")
+    logger.debug("Received Kafka observer health check: {}", request)
     return HealthCheckResponse(status = HealthCheckResponse.ServingStatus.SERVING)
   }
 
   override suspend fun onPublishedMessage(request: PublishedMessage): Reply {
-    logger.info("Received published message: $request")
+    logger.debug("Received published Kafka message: {}", request)
     sink.onMessagePublished(request)
     return Reply(status = 200)
   }
 
   override suspend fun onConsumedMessage(request: ConsumedMessage): Reply {
-    logger.info("Received consumed message: $request")
+    logger.debug("Received consumed Kafka message: {}", request)
     sink.onMessageConsumed(request)
     return Reply(status = 200)
   }
 
   override suspend fun onCommittedMessage(request: CommittedMessage): Reply {
-    logger.info("Received committed message: $request")
+    logger.debug("Received committed Kafka message: {}", request)
     sink.onMessageCommitted(request)
     return Reply(status = 200)
   }
 
   override suspend fun onAcknowledgedMessage(request: AcknowledgedMessage): Reply {
-    logger.info("Received acknowledged message: $request")
+    logger.debug("Received acknowledged Kafka message: {}", request)
     sink.onMessageAcknowledged(request)
     return Reply(status = 200)
   }

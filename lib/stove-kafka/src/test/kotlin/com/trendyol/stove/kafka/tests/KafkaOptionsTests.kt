@@ -2,11 +2,14 @@ package com.trendyol.stove.kafka.tests
 
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.kafka.intercepting.StoveKafkaBridge
+import com.trendyol.stove.serialization.StoveSerde
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import kotlinx.coroutines.isActive
 
 class KafkaOptionsTests :
   FunSpec({
@@ -74,5 +77,61 @@ class KafkaOptionsTests :
     test("stoveKafkaBridgePortDefault should return a valid port string") {
       stoveKafkaBridgePortDefault.shouldNotBeBlank()
       stoveKafkaBridgePortDefault.toInt() shouldNotBe 0
+    }
+
+    test("default bridge-port intent survives later compatibility-default changes") {
+      val originalDefault = stoveKafkaBridgePortDefault
+      try {
+        val options = KafkaSystemOptions(configureExposedConfiguration = { emptyList() })
+        stoveKafkaBridgePortDefault = "${originalDefault.toInt() + 1}"
+
+        options.usesDefaultBridgeGrpcServerPort.shouldBeTrue()
+      } finally {
+        stoveKafkaBridgePortDefault = originalDefault
+      }
+    }
+
+    test("non-keyed custom bridge ports are discoverable in-JVM and restored on close") {
+      val previousPort = System.getProperty(STOVE_KAFKA_BRIDGE_PORT)
+      System.setProperty(STOVE_KAFKA_BRIDGE_PORT, "previous-port")
+      try {
+        val discovery = exposeBridgePortForInJvmDiscovery(keyName = null, port = 31003)
+        System.getProperty(STOVE_KAFKA_BRIDGE_PORT) shouldBe "31003"
+
+        discovery.close()
+        System.getProperty(STOVE_KAFKA_BRIDGE_PORT) shouldBe "previous-port"
+
+        exposeBridgePortForInJvmDiscovery(keyName = "keyed", port = 31004).close()
+        System.getProperty(STOVE_KAFKA_BRIDGE_PORT) shouldBe "previous-port"
+      } finally {
+        if (previousPort == null) {
+          System.clearProperty(STOVE_KAFKA_BRIDGE_PORT)
+        } else {
+          System.setProperty(STOVE_KAFKA_BRIDGE_PORT, previousPort)
+        }
+      }
+    }
+
+    test("Kafka bridge runtimes have isolated endpoints and lifecycle") {
+      val serde = StoveSerde.jackson.anyByteArraySerde()
+      val first = KafkaBridgeRuntime(serde, "first")
+      val second = KafkaBridgeRuntime(serde, "second")
+
+      try {
+        first.attach(31001)
+        second.attach(31002)
+
+        first.endpoint.id shouldNotBe second.endpoint.id
+        first.clientProperties[KafkaBridgeConfig.BRIDGE_PORT_CONFIG] shouldBe "31001"
+        first.scope.isActive.shouldBeTrue()
+        second.scope.isActive.shouldBeTrue()
+
+        first.close()
+        first.scope.isActive.shouldBeFalse()
+        second.scope.isActive.shouldBeTrue()
+      } finally {
+        first.close()
+        second.close()
+      }
     }
   })

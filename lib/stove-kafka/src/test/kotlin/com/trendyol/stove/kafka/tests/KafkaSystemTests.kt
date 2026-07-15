@@ -13,6 +13,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.utils.Utils
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -60,6 +62,40 @@ class KafkaSystemTests :
           peekConsumedMessages(topic = "product") {
             it.key == key
           }
+        }
+      }
+    }
+
+    test("default publishing uses Kafka partitioning") {
+      stove {
+        kafka {
+          val topic = "partitioning-${randomString()}"
+          val group = "group-${randomString()}"
+          val key = generateSequence(0) { it + 1 }
+            .map { "partition-one-$it" }
+            .first { candidate ->
+              Utils.toPositive(Utils.murmur2(candidate.toByteArray())) % 2 == 1
+            }
+
+          adminOperations {
+            createTopic(NewTopic(topic, 2, 1))
+          }
+          publish(topic, message = ProductCreated(key), key = key.some())
+
+          var consumedPartition: Int? = null
+          consumer<String, ProductCreated>(
+            topic = topic,
+            readOnly = false,
+            keyDeserializer = StringDeserializer(),
+            // Leave enough time for the first group join in all three Kafka runtimes.
+            keepConsumingAtLeastFor = 6.seconds,
+            pollTimeout = 250.milliseconds,
+            groupId = group
+          ) { record ->
+            consumedPartition = record.partition()
+          }
+
+          consumedPartition shouldBe 1
         }
       }
     }
