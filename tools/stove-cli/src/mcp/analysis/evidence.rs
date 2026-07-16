@@ -7,6 +7,8 @@ use crate::mcp::contract::ArgName;
 use crate::mcp::contract::RawEvidenceKind;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
+use crate::storage::models::MockInteraction;
+use crate::storage::models::MockWarning;
 use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 
@@ -94,6 +96,77 @@ pub(super) fn snapshot_detail(
       (ArgName::Id, json!(snapshot.id)),
       (ArgName::RunId, json!(&snapshot.run_id)),
       (ArgName::TestId, json!(&snapshot.test_id)),
+    ])),
+  })
+}
+
+pub(super) fn interaction_preview(interaction: &MockInteraction, max_chars: usize) -> Value {
+  let mut preview = json!({
+    "id": interaction.id,
+    "timestamp": interaction.timestamp,
+    "system": interaction.system,
+    "protocol": interaction.protocol,
+    "method": interaction.method,
+    "target": interaction.target,
+    "matched": interaction.matched,
+    "status": interaction.status,
+    "latency_ms": interaction.latency_ms,
+    "test_id": interaction.test_id,
+    // Proven-only: PROVEN_HEADER | PROVEN_BAGGAGE | PROVEN_STUB | UNATTRIBUTED.
+    // UNATTRIBUTED means no provable link to any test — never inferred.
+    "attribution": interaction.attribution,
+    "stub_id": interaction.stub_id,
+    "request_body": preview_field(interaction.request_body.as_deref(), max_chars),
+    "request_body_truncated": interaction.request_body_truncated,
+    "response_body": preview_field(interaction.response_body.as_deref(), max_chars),
+    "response_body_truncated": interaction.response_body_truncated,
+    "near_misses": interaction
+      .near_misses
+      .iter()
+      .map(|near_miss| clip_string(near_miss, max_chars))
+      .collect::<Vec<_>>(),
+    "trace_id": interaction.trace_id,
+    "raw_tool_call": tool_call(ToolName::RawEvidence, tool_args([
+      (ArgName::Kind, json!(RawEvidenceKind::Interaction.as_str())),
+      (ArgName::Id, json!(interaction.id)),
+      (ArgName::RunId, json!(&interaction.run_id)),
+    ])),
+  });
+
+  // Fidelity context is attached only when present, to keep the compact view compact.
+  if interaction.scenario_name.is_some() {
+    preview["scenario"] = json!({
+      "name": interaction.scenario_name,
+      "state": interaction.scenario_state,
+      "next_state": interaction.next_scenario_state,
+    });
+  }
+  if let Some(delay) = interaction.configured_delay_ms {
+    preview["configured_delay_ms"] = json!(delay);
+  }
+  if let Some(fault) = &interaction.fault {
+    preview["fault"] = json!(fault);
+  }
+  if let Some(deadline) = interaction.client_deadline_ms {
+    preview["client_deadline_ms"] = json!(deadline);
+  }
+  preview
+}
+
+pub(super) fn warning_preview(warning: &MockWarning, max_chars: usize) -> Value {
+  json!({
+    "id": warning.id,
+    "timestamp": warning.timestamp,
+    "system": warning.system,
+    "kind": warning.kind,
+    "message": clip_string(&warning.message, max_chars),
+    "test_id": warning.test_id,
+    "stub_id": warning.stub_id,
+    "target": warning.target,
+    "raw_tool_call": tool_call(ToolName::RawEvidence, tool_args([
+      (ArgName::Kind, json!(RawEvidenceKind::Warning.as_str())),
+      (ArgName::Id, json!(warning.id)),
+      (ArgName::RunId, json!(&warning.run_id)),
     ])),
   })
 }

@@ -21,7 +21,9 @@ use super::common::timeline_summary;
 use super::common::trace_summary;
 use super::evidence::clip_opt;
 use super::evidence::entry_preview;
+use super::evidence::interaction_preview;
 use super::evidence::snapshot_summary;
+use super::evidence::warning_preview;
 use crate::mcp::args::Budget;
 use crate::mcp::args::ExactTestArgs;
 use crate::mcp::args::FailuresArgs;
@@ -106,6 +108,14 @@ impl Analyzer {
       .repository
       .get_spans_for_test(&args.run_id, &args.test_id)
       .map_err(display_error)?;
+    let interactions = self
+      .repository
+      .get_mock_interactions_for_test(&args.run_id, &args.test_id)
+      .map_err(display_error)?;
+    let warnings = self
+      .repository
+      .get_mock_warnings_for_test(&args.run_id, &args.test_id)
+      .map_err(display_error)?;
 
     let failed_entries: Vec<&Entry> = entries
       .iter()
@@ -129,6 +139,23 @@ impl Analyzer {
       .take(budget.snapshots)
       .map(|snapshot| snapshot_summary(snapshot, budget.string_chars))
       .collect();
+    // Unmatched mock exchanges carry the near-miss diagnoses — for "why did nothing
+    // match" failures this IS the answer, so it belongs in the compact packet.
+    let unmatched_interactions: Vec<Value> = interactions
+      .iter()
+      .filter(|interaction| !interaction.matched)
+      .take(budget.interactions)
+      .map(|interaction| interaction_preview(interaction, budget.string_chars))
+      .collect();
+    let unmatched_total = interactions
+      .iter()
+      .filter(|interaction| !interaction.matched)
+      .count();
+    let mock_warnings: Vec<Value> = warnings
+      .iter()
+      .take(budget.interactions)
+      .map(|warning| warning_preview(warning, budget.string_chars))
+      .collect();
 
     let structured = json!({
       "app_name": run.app_name,
@@ -147,13 +174,19 @@ impl Analyzer {
         "failed_entries": failed_entries.len().saturating_sub(budget.failed_entries),
         "spans": spans.len().saturating_sub(budget.trace_spans),
         "snapshots": snapshots.len().saturating_sub(snapshot_summaries.len()),
+        "unmatched_interactions": unmatched_total.saturating_sub(unmatched_interactions.len()),
+        "mock_warnings": warnings.len().saturating_sub(mock_warnings.len()),
       },
       "timeline_summary": timeline_summary,
       "trace_summary": trace_summary,
       "snapshot_summaries": snapshot_summaries,
+      "unmatched_interactions": unmatched_interactions,
+      "mock_warnings": mock_warnings,
+      "total_interactions": interactions.len(),
       "timeline_tool_call": exact_test_tool_call(ToolName::Timeline, &args.run_id, &args.test_id),
       "trace_tool_call": exact_test_tool_call(ToolName::Trace, &args.run_id, &args.test_id),
       "snapshot_tool_call": exact_test_tool_call(ToolName::Snapshot, &args.run_id, &args.test_id),
+      "interactions_tool_call": exact_test_tool_call(ToolName::Interactions, &args.run_id, &args.test_id),
       "fallback": fallback_message(),
     });
     Ok(output(structured, "Stove failure detail"))

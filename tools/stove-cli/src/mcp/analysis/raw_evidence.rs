@@ -10,8 +10,10 @@ use super::common::display_error;
 use super::common::fallback_message;
 use super::common::output;
 use super::evidence::entry_preview;
+use super::evidence::interaction_preview;
 use super::evidence::snapshot_detail;
 use super::evidence::span_preview;
+use super::evidence::warning_preview;
 use crate::mcp::args::Budget;
 use crate::mcp::args::RawEvidenceArgs;
 use crate::mcp::args::parse;
@@ -91,12 +93,20 @@ impl Analyzer {
           })?;
         json!({ "kind": RawEvidenceKind::Snapshot.as_str(), "evidence": snapshot_detail(&snapshot, None, budget.raw_string_chars) })
       }
+      Some(RawEvidenceKind::Interaction) => {
+        self.raw_interaction(args.run_id.as_deref(), args.id, budget.raw_string_chars)?
+      }
+      Some(RawEvidenceKind::Warning) => {
+        self.raw_warning(args.run_id.as_deref(), args.id, budget.raw_string_chars)?
+      }
       None => {
         return Err(format!(
-          "kind must be one of: {}, {}, {}",
-          RawEvidenceKind::Entry.as_str(),
-          RawEvidenceKind::Span.as_str(),
-          RawEvidenceKind::Snapshot.as_str()
+          "kind must be one of: {}",
+          RawEvidenceKind::ALL
+            .into_iter()
+            .map(RawEvidenceKind::as_str)
+            .collect::<Vec<_>>()
+            .join(", ")
         ));
       }
     };
@@ -105,5 +115,40 @@ impl Analyzer {
       json!({ "raw_evidence": evidence, "fallback": fallback_message() }),
       "Raw Stove evidence",
     ))
+  }
+
+  fn raw_interaction(
+    &self,
+    run_id: Option<&str>,
+    id: i64,
+    max_chars: usize,
+  ) -> Result<Value, String> {
+    let run_id = run_id.ok_or_else(|| "raw interaction lookup requires run_id".to_string())?;
+    let interaction = self
+      .repository
+      .get_mock_interactions_for_run(run_id)
+      .map_err(display_error)?
+      .into_iter()
+      .find(|interaction| interaction.id == id)
+      .ok_or_else(|| format!("interaction {id} was not found in run {run_id}"))?;
+    Ok(json!({
+      "kind": RawEvidenceKind::Interaction.as_str(),
+      "evidence": interaction_preview(&interaction, max_chars),
+    }))
+  }
+
+  fn raw_warning(&self, run_id: Option<&str>, id: i64, max_chars: usize) -> Result<Value, String> {
+    let run_id = run_id.ok_or_else(|| "raw warning lookup requires run_id".to_string())?;
+    let warning = self
+      .repository
+      .get_mock_warnings_for_run(run_id)
+      .map_err(display_error)?
+      .into_iter()
+      .find(|warning| warning.id == id)
+      .ok_or_else(|| format!("warning {id} was not found in run {run_id}"))?;
+    Ok(json!({
+      "kind": RawEvidenceKind::Warning.as_str(),
+      "evidence": warning_preview(&warning, max_chars),
+    }))
   }
 }

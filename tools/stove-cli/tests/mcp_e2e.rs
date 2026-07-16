@@ -177,6 +177,118 @@ async fn failure_detail_includes_timeline_trace_and_snapshot_summaries() {
 }
 
 #[tokio::test]
+async fn mock_interactions_and_warnings_reach_agents() {
+  let server = TestServer::start().await;
+  server.seed_run("run-1", "checkout-api");
+  server.seed_test("run-1", "test-1", "charges the card", "CheckoutSpec");
+  server.seed_entry("run-1", "test-1", "Kafka", "waitUntilConsumed", "FAILED");
+  // The test's own unmatched exchange, carrying the near-miss diagnosis.
+  server.seed_mock_interaction(
+    "run-1",
+    Some("test-1"),
+    "/payments/charge",
+    false,
+    "404",
+    "PROVEN_HEADER",
+    &["closest stub differed in request body $.amount (expected 100, got 99)"],
+  );
+  // Unattributed evidence: run-level lane, never guessed into a test.
+  server.seed_mock_interaction(
+    "run-1",
+    None,
+    "/ambient/probe",
+    false,
+    "404",
+    "UNATTRIBUTED",
+    &[],
+  );
+  server.seed_mock_warning(
+    "run-1",
+    Some("test-1"),
+    "UNUSED_STUB",
+    "Stub GET /never was registered by this test but never matched.",
+  );
+  server.end_test_failed("run-1", "test-1", 800, "timeout");
+  server.end_run("run-1", 0, 1, 900);
+
+  // failure_detail carries the near-miss diagnosis in the compact packet.
+  let detail = mcp_tool(
+    &server,
+    "stove_failure_detail",
+    json!({ "run_id": "run-1", "test_id": "test-1" }),
+  )
+  .await;
+  let detail_content = &detail["result"]["structuredContent"];
+  assert_eq!(
+    detail_content["unmatched_interactions"][0]["target"],
+    "/payments/charge"
+  );
+  assert!(
+    detail_content["unmatched_interactions"][0]["near_misses"][0]
+      .as_str()
+      .unwrap()
+      .contains("$.amount")
+  );
+  assert_eq!(detail_content["mock_warnings"][0]["kind"], "UNUSED_STUB");
+  assert_eq!(
+    detail_content["interactions_tool_call"]["tool"],
+    "stove_interactions"
+  );
+  // Bodies go through the same redaction as every other evidence surface.
+  assert_eq!(
+    detail_content["unmatched_interactions"][0]["request_body"]["authorization"],
+    "[REDACTED]"
+  );
+
+  // Test scope sees only the test's own exchange; run scope adds the ambient lane.
+  let test_scope = mcp_tool(
+    &server,
+    "stove_interactions",
+    json!({ "run_id": "run-1", "test_id": "test-1" }),
+  )
+  .await;
+  let test_content = &test_scope["result"]["structuredContent"];
+  assert_eq!(test_content["scope"], "test");
+  assert_eq!(test_content["total_interactions"], 1);
+  assert_eq!(test_content["warnings"][0]["kind"], "UNUSED_STUB");
+
+  let run_scope = mcp_tool(&server, "stove_interactions", json!({ "run_id": "run-1" })).await;
+  let run_content = &run_scope["result"]["structuredContent"];
+  assert_eq!(run_content["scope"], "run");
+  assert_eq!(run_content["total_interactions"], 2);
+  assert_eq!(run_content["unattributed_interactions"], 1);
+
+  // The timeline interleaves the exchange with report entries, tagged by type.
+  let timeline = mcp_tool(
+    &server,
+    "stove_timeline",
+    json!({ "run_id": "run-1", "test_id": "test-1", "focus": "all" }),
+  )
+  .await;
+  let events = timeline["result"]["structuredContent"]["events"]
+    .as_array()
+    .unwrap();
+  assert!(
+    events
+      .iter()
+      .any(|event| event["type"] == "mock_interaction" && event["target"] == "/payments/charge")
+  );
+
+  // Raw drill-down by id works through the interaction's own raw_tool_call.
+  let interaction_id = test_content["interactions"][0]["id"].clone();
+  let raw = mcp_tool(
+    &server,
+    "stove_raw_evidence",
+    json!({ "kind": "interaction", "id": interaction_id, "run_id": "run-1" }),
+  )
+  .await;
+  assert_eq!(
+    raw["result"]["structuredContent"]["raw_evidence"]["evidence"]["target"],
+    "/payments/charge"
+  );
+}
+
+#[tokio::test]
 async fn mcp_handles_no_failures_and_caps_oversized_detail() {
   let server = TestServer::start().await;
 

@@ -13,7 +13,7 @@ use stove::http::server::create_router_with_ingestor;
 use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
 use stove::storage::database::Database;
-use stove::storage::models::{NewEntry, NewSpan};
+use stove::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use stove::storage::repository::Repository;
 
 /// A running test server with its base URL and repository handle.
@@ -361,6 +361,55 @@ impl TestServer {
     self
       .repo
       .save_snapshot(run_id, test_id, system, state_json, summary)
+      .unwrap();
+  }
+
+  /// Seed a mock interaction; `test_id = None` lands in the unattributed lane.
+  #[allow(clippy::too_many_arguments)]
+  pub fn seed_mock_interaction(
+    &self,
+    run_id: &str,
+    test_id: Option<&str>,
+    target: &str,
+    matched: bool,
+    status: &str,
+    attribution: &str,
+    near_misses: &[&str],
+  ) {
+    self
+      .repo
+      .save_mock_interaction(&NewMockInteraction {
+        run_id: run_id.into(),
+        test_id: test_id.map(Into::into),
+        timestamp: "2024-06-01T10:00:01Z".into(),
+        system: "WireMock".into(),
+        protocol: "HTTP".into(),
+        method: "POST".into(),
+        target: target.into(),
+        matched,
+        attribution: attribution.into(),
+        request_body: r#"{"amount":99,"authorization":"secret"}"#.into(),
+        status: status.into(),
+        latency_ms: Some(12),
+        near_misses: serde_json::to_string(near_misses).unwrap(),
+        ..Default::default()
+      })
+      .unwrap();
+  }
+
+  pub fn seed_mock_warning(&self, run_id: &str, test_id: Option<&str>, kind: &str, message: &str) {
+    self
+      .repo
+      .save_mock_warning(&NewMockWarning {
+        run_id: run_id.into(),
+        test_id: test_id.map(Into::into),
+        timestamp: "2024-06-01T10:00:02Z".into(),
+        system: "WireMock".into(),
+        kind: kind.into(),
+        message: message.into(),
+        stub_id: None,
+        target: Some("/payments/charge".into()),
+      })
       .unwrap();
   }
 

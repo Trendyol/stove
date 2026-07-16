@@ -81,6 +81,14 @@ pub(crate) struct SnapshotArgs {
 }
 
 #[derive(Debug, Deserialize)]
+pub(crate) struct InteractionsArgs {
+  #[serde(flatten)]
+  pub(crate) common: CommonArgs,
+  pub(crate) run_id: String,
+  pub(crate) test_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub(crate) struct RawEvidenceArgs {
   #[serde(flatten)]
   pub(crate) common: CommonArgs,
@@ -99,6 +107,7 @@ pub(crate) struct Budget {
   pub(crate) trace_spans: usize,
   pub(crate) failed_entries: usize,
   pub(crate) snapshots: usize,
+  pub(crate) interactions: usize,
 }
 
 impl Budget {
@@ -114,6 +123,7 @@ impl Budget {
         trace_spans: 8,
         failed_entries: 3,
         snapshots: 3,
+        interactions: 3,
       },
       BudgetValue::Full => Self {
         string_chars: 2_000,
@@ -122,6 +132,7 @@ impl Budget {
         trace_spans: 200,
         failed_entries: 50,
         snapshots: 50,
+        interactions: 100,
       },
       BudgetValue::Compact => Self {
         string_chars: 600,
@@ -130,6 +141,7 @@ impl Budget {
         trace_spans: 40,
         failed_entries: 10,
         snapshots: 10,
+        interactions: 15,
       },
     };
 
