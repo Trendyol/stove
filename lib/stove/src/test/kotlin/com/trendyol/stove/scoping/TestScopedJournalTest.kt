@@ -15,6 +15,50 @@ class TestScopedJournalTest :
       journal.entries("test-b") shouldContainExactly listOf("untagged")
     }
 
+    test("untagged request evidence is visible only inside a test lifecycle window") {
+      val journal = TestScopedJournal<String>()
+      journal.startTest("test-a")
+      journal.record(null, "during-a")
+      journal.endTest("test-a")
+      journal.startTest("test-b")
+      journal.record(null, "during-b")
+
+      journal.entriesWithinTest("test-a") shouldContainExactly listOf("during-a")
+      journal.entriesWithinTest("test-b") shouldContainExactly listOf("during-b")
+    }
+
+    test("concurrent tests share ambiguous untagged request evidence") {
+      val journal = TestScopedJournal<String>()
+      journal.startTest("test-a")
+      journal.startTest("test-b")
+      journal.record(null, "overlap")
+      journal.endTest("test-a")
+      journal.endTest("test-b")
+
+      journal.entriesWithinTest("test-a") shouldContainExactly listOf("overlap")
+      journal.entriesWithinTest("test-b") shouldContainExactly listOf("overlap")
+    }
+
+    test("completed request windows can be pruned without removing overlapping evidence") {
+      val journal = TestScopedJournal<String>()
+      journal.startTest("test-a")
+      journal.record(null, "a-only")
+      journal.startTest("test-b")
+      journal.record(null, "overlap")
+      journal.endTest("test-a")
+      journal.clear("test-a")
+      journal.pruneUntaggedOutsideWindows()
+
+      journal.entriesWithinTest("test-b") shouldContainExactly listOf("overlap")
+    }
+
+    test("request evidence without lifecycle callbacks remains fail-open") {
+      val journal = TestScopedJournal<String>()
+      journal.record(null, "unscoped")
+
+      journal.entriesWithinTest("manual-test") shouldContainExactly listOf("unscoped")
+    }
+
     test("tagged entries are visible only to their test") {
       val journal = TestScopedJournal<String>()
       journal.record("test-a", "mine")

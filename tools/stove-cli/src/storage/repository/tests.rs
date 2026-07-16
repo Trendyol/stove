@@ -223,6 +223,12 @@ fn mock_interactions_and_warnings_roundtrip() {
       status: "200".into(),
       latency_ms: Some(12),
       near_misses: "[]".into(),
+      scenario_name: Some("payment retry".into()),
+      scenario_state: Some("attempt-2".into()),
+      next_scenario_state: Some("recovered".into()),
+      configured_delay_ms: Some(250),
+      fault: Some("CONNECTION_RESET_BY_PEER".into()),
+      client_deadline_ms: Some(500),
       ..Default::default()
     })
     .unwrap();
@@ -265,6 +271,16 @@ fn mock_interactions_and_warnings_roundtrip() {
   assert!(test_interactions[0].matched);
   assert_eq!(test_interactions[0].attribution, "PROVEN_STUB");
   assert_eq!(test_interactions[0].latency_ms, Some(12));
+  assert!(test_interactions[0].near_misses.is_empty());
+  assert_eq!(
+    test_interactions[0].scenario_name.as_deref(),
+    Some("payment retry")
+  );
+  assert_eq!(test_interactions[0].configured_delay_ms, Some(250));
+  assert_eq!(
+    test_interactions[0].fault.as_deref(),
+    Some("CONNECTION_RESET_BY_PEER")
+  );
 
   let run_interactions = repo.get_mock_interactions_for_run("run-1").unwrap();
   assert_eq!(run_interactions.len(), 2);
@@ -274,6 +290,10 @@ fn mock_interactions_and_warnings_roundtrip() {
     .unwrap();
   assert_eq!(unattributed.attribution, "UNATTRIBUTED");
   assert_eq!(unattributed.status, "UNIMPLEMENTED");
+  assert_eq!(
+    unattributed.near_misses,
+    vec!["no stubs registered for this method"]
+  );
 
   let warnings = repo.get_mock_warnings_for_test("run-1", "test-1").unwrap();
   assert_eq!(warnings.len(), 1);

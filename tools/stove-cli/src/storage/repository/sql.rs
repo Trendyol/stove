@@ -16,7 +16,7 @@ pub(super) const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status
 pub(super) const SPAN_COLUMNS: &str = "id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace";
 pub(super) const SNAPSHOT_COLUMNS: &str =
   "id, run_id, test_id, system, state_json, summary, captured_at, trigger_kind";
-pub(super) const MOCK_INTERACTION_COLUMNS: &str = "id, run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id";
+pub(super) const MOCK_INTERACTION_COLUMNS: &str = "id, run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name, scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms";
 pub(super) const MOCK_WARNING_COLUMNS: &str =
   "id, run_id, test_id, timestamp, system, kind, message, stub_id, target";
 
@@ -105,6 +105,15 @@ pub(super) fn snapshot_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Sna
 pub(super) fn mock_interaction_from_row(
   row: &rusqlite::Row<'_>,
 ) -> rusqlite::Result<MockInteraction> {
+  let near_misses_json: Option<String> = row.get(17)?;
+  let near_misses = near_misses_json
+    .map(|json| {
+      serde_json::from_str(&json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(17, rusqlite::types::Type::Text, Box::new(error))
+      })
+    })
+    .transpose()?
+    .unwrap_or_default();
   Ok(MockInteraction {
     id: row.get(0)?,
     run_id: row.get(1)?,
@@ -123,8 +132,14 @@ pub(super) fn mock_interaction_from_row(
     response_body_truncated: row.get(14)?,
     status: row.get(15)?,
     latency_ms: row.get(16)?,
-    near_misses: row.get(17)?,
+    near_misses,
     trace_id: row.get(18)?,
+    scenario_name: row.get(19)?,
+    scenario_state: row.get(20)?,
+    next_scenario_state: row.get(21)?,
+    configured_delay_ms: row.get(22)?,
+    fault: row.get(23)?,
+    client_deadline_ms: row.get(24)?,
   })
 }
 

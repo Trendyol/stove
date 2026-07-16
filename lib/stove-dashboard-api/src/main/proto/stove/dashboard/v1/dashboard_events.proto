@@ -132,6 +132,12 @@ message MockInteractionEvent {
   int64 latency_ms = 15;   // -1 when the mock could not measure it
   repeated string near_misses = 16; // populated for unmatched exchanges
   string trace_id = 17;    // from traceparent, when the request carried one
+  string scenario_name = 18;       // WireMock scenario, when scenario behaviour served the request
+  string scenario_state = 19;      // state required by the matched scenario stub
+  string next_scenario_state = 20; // state entered after the request; empty for stable terminal states
+  int64 configured_delay_ms = 21;  // -1 when no artificial delay was configured
+  string fault = 22;               // injected WireMock fault or gRPC error status
+  int64 client_deadline_ms = 23;   // gRPC deadline remaining at server arrival; -1 when absent
 }
 
 enum MockInteractionAttribution {

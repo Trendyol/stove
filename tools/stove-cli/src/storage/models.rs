@@ -191,9 +191,15 @@ pub struct MockInteraction {
   pub response_body_truncated: bool,
   pub status: String,
   pub latency_ms: Option<i64>,
-  /// JSON array of rendered near-miss candidates; present for unmatched exchanges.
-  pub near_misses: Option<String>,
+  /// Rendered near-miss candidates; populated for unmatched exchanges.
+  pub near_misses: Vec<String>,
   pub trace_id: Option<String>,
+  pub scenario_name: Option<String>,
+  pub scenario_state: Option<String>,
+  pub next_scenario_state: Option<String>,
+  pub configured_delay_ms: Option<i64>,
+  pub fault: Option<String>,
+  pub client_deadline_ms: Option<i64>,
 }
 
 /// A diagnostic a mock system observed — never a test failure.
@@ -252,6 +258,12 @@ pub struct NewMockInteraction {
   /// JSON array of rendered near-miss candidates.
   pub near_misses: String,
   pub trace_id: Option<String>,
+  pub scenario_name: Option<String>,
+  pub scenario_state: Option<String>,
+  pub next_scenario_state: Option<String>,
+  pub configured_delay_ms: Option<i64>,
+  pub fault: Option<String>,
+  pub client_deadline_ms: Option<i64>,
 }
 
 /// Data required to save a new mock warning.

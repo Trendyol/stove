@@ -178,6 +178,39 @@ fn span_recorded_event(
   }
 }
 
+fn mock_interaction_event(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::dashboard_event::Event::MockInteraction(
+      proto::MockInteractionEvent {
+        test_id: test_id.to_string(),
+        timestamp: Some(ts(seconds, 0)),
+        system: "WireMock".to_string(),
+        protocol: "HTTP".to_string(),
+        method: "POST".to_string(),
+        target: "/payments".to_string(),
+        matched: false,
+        stub_id: "stub-1".to_string(),
+        attribution: proto::MockInteractionAttribution::ProvenStub as i32,
+        request_body: r#"{"amount":100}"#.to_string(),
+        request_body_truncated: false,
+        response_body: String::new(),
+        response_body_truncated: false,
+        status: "404".to_string(),
+        latency_ms: 42,
+        near_misses: vec!["body matcher rejected".to_string()],
+        trace_id: "0123456789abcdef0123456789abcdef".to_string(),
+        scenario_name: "payment retry".to_string(),
+        scenario_state: "attempt-2".to_string(),
+        next_scenario_state: "recovered".to_string(),
+        configured_delay_ms: 250,
+        fault: "CONNECTION_RESET_BY_PEER".to_string(),
+        client_deadline_ms: 500,
+      },
+    )),
+  }
+}
+
 fn snapshot_event(
   run_id: &str,
   test_id: &str,
@@ -1321,6 +1354,59 @@ async fn snapshot_state_json_preserves_complex_json() {
 // ---------------------------------------------------------------------------
 // GET /api/v1/traces/:trace_id
 // ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new_with_ingest_config(
+    server.repo.clone(),
+    server.sse.clone(),
+    50,
+    Duration::from_secs(60),
+  );
+  let mut live = server.sse.subscribe();
+
+  service
+    .send_event(Request::new(run_started_event(
+      "run-mocks",
+      "product-api",
+      1_704_067_200,
+      0,
+    )))
+    .await
+    .unwrap();
+  let _ = live.recv().await.unwrap();
+  service
+    .send_event(Request::new(mock_interaction_event(
+      "run-mocks",
+      "test-1",
+      1_704_067_201,
+    )))
+    .await
+    .unwrap();
+
+  let live_json: Value = serde_json::from_str(&live.recv().await.unwrap()).unwrap();
+  assert_eq!(
+    live_json["payload"]["near_misses"],
+    serde_json::json!(["body matcher rejected"])
+  );
+  assert_eq!(live_json["payload"]["configured_delay_ms"], 250);
+
+  service.flush_pending().await.unwrap();
+  let rest = server
+    .get_json("/runs/run-mocks/tests/test-1/interactions")
+    .await;
+  assert_eq!(
+    rest[0]["near_misses"],
+    serde_json::json!(["body matcher rejected"])
+  );
+  assert_eq!(rest[0]["scenario_name"], "payment retry");
+  assert_eq!(rest[0]["scenario_state"], "attempt-2");
+  assert_eq!(rest[0]["next_scenario_state"], "recovered");
+  assert_eq!(rest[0]["configured_delay_ms"], 250);
+  assert_eq!(rest[0]["fault"], "CONNECTION_RESET_BY_PEER");
+  assert_eq!(rest[0]["client_deadline_ms"], 500);
+}
 
 #[tokio::test]
 async fn get_trace_returns_all_spans_for_trace() {

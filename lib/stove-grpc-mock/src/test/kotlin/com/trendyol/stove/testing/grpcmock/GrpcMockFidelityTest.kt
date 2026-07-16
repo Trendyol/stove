@@ -1,6 +1,8 @@
 package com.trendyol.stove.testing.grpcmock
 
 import com.trendyol.stove.grpc.grpc
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
 import com.trendyol.stove.system.stove
 import com.trendyol.stove.testing.grpcmock.test.*
 import io.grpc.Metadata
@@ -14,6 +16,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.delay
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -24,8 +28,11 @@ import kotlin.time.Duration.Companion.milliseconds
 class GrpcMockFidelityTest :
   FunSpec({
     test("per-stub delay makes client deadlines expire") {
+      val interactions = CopyOnWriteArrayList<MockInteraction>()
+      val listener = MockInteractionListener { interactions.add(it) }
       stove {
         grpcMock {
+          addInteractionListener(listener)
           // Matcher pinned to this test's payload: a client deadline can cancel the call
           // before the server consumes the stub, and an Any matcher would then leak into
           // other tests' calls on the same method.
@@ -34,20 +41,39 @@ class GrpcMockFidelityTest :
             methodName = "Unary",
             requestMatcher = RequestMatcher.message<TestRequest> { it.message == "deadline-probe" },
             response = TestResponse.newBuilder().setMessage("late").build(),
-            delay = 500.milliseconds
+            delay = 1_000.milliseconds
           )
         }
 
         grpc {
           rawChannel { ch ->
+            // Establish the HTTP/2 connection before starting the deadline budget; under a
+            // loaded parallel test run, cold channel setup can otherwise consume it locally
+            // and no request reaches the mock to be observed.
+            HealthGrpc
+              .newBlockingStub(ch)
+              .check(HealthCheckRequest.getDefaultInstance())
+              .status shouldBe HealthCheckResponse.ServingStatus.SERVING
             val stub = TestServiceGrpc
               .newBlockingStub(ch)
-              .withDeadlineAfter(100, TimeUnit.MILLISECONDS)
+              .withDeadlineAfter(500, TimeUnit.MILLISECONDS)
             val exception = shouldThrow<io.grpc.StatusRuntimeException> {
               stub.unary(testRequest { message = "deadline-probe" })
             }
             exception.status.code shouldBe Status.Code.DEADLINE_EXCEEDED
           }
+        }
+        try {
+          val deadline = System.currentTimeMillis() + 5_000
+          while (interactions.none { it.target == "test.TestService/Unary" } && System.currentTimeMillis() < deadline) {
+            delay(25)
+          }
+          val interaction = interactions.single { it.target == "test.TestService/Unary" }
+          interaction.status shouldBe Status.Code.DEADLINE_EXCEEDED.name
+          interaction.configuredDelayMs shouldBe 1_000
+          (interaction.clientDeadlineMs != null) shouldBe true
+        } finally {
+          grpcMock { removeInteractionListener(listener) }
         }
       }
     }

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { Test } from "../api/types";
 import { EntryRow } from "../components/EntryRow";
 import { ErrorDialog } from "../components/ErrorDialog";
-import { FlowTab } from "../components/FlowTab";
+import { MockJournal } from "../components/MockJournal";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
 import { partitionSnapshotsByDetail } from "../utils/snapshot-state";
@@ -12,6 +12,10 @@ import { isRunning } from "../utils/status";
 import type { Tab } from "./detail/TabBar";
 import { TabBar } from "./detail/TabBar";
 import { TestHeader } from "./detail/TestHeader";
+
+const FlowTab = lazy(() =>
+  import("../components/FlowTab").then((module) => ({ default: module.FlowTab })),
+);
 
 interface TestDetailProps {
   runId: string;
@@ -53,33 +57,98 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
+  const {
+    data: interactions = [],
+    isLoading: interactionsLoading,
+    error: interactionsError,
+  } = useQuery({
+    queryKey: ["interactions", runId, test.id],
+    queryFn: () => api.getTestInteractions(runId, test.id),
+    refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
+  });
+
+  const {
+    data: warnings = [],
+    isLoading: warningsLoading,
+    error: warningsError,
+  } = useQuery({
+    queryKey: ["warnings", runId, test.id],
+    queryFn: () => api.getTestWarnings(runId, test.id),
+    refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
+  });
+
+  const { data: runInteractions = [], error: runInteractionsError } = useQuery({
+    queryKey: ["interactions", runId],
+    queryFn: () => api.getRunInteractions(runId),
+    refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
+  });
+
+  const { data: runWarnings = [], error: runWarningsError } = useQuery({
+    queryKey: ["warnings", runId],
+    queryFn: () => api.getRunWarnings(runId),
+    refetchInterval: liveRefetchInterval,
+    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
+  });
+
   const { detailedSnapshots, hiddenCount: hiddenSnapshotCount } = useMemo(
     () => partitionSnapshotsByDetail(snapshots),
     [snapshots],
   );
+  const ambientInteractions = useMemo(
+    () => runInteractions.filter((interaction) => interaction.test_id == null),
+    [runInteractions],
+  );
+  const ambientWarnings = useMemo(
+    () => runWarnings.filter((warning) => warning.test_id == null),
+    [runWarnings],
+  );
+  const mockError =
+    interactionsError ?? warningsError ?? runInteractionsError ?? runWarningsError ?? null;
 
   const tabs = [
-    { id: "timeline" as Tab, label: `Timeline (${entries.length})`, icon: "\u{1f4cb}" },
-    { id: "trace" as Tab, label: `Trace (${spans.length})`, icon: "\u{1f50d}" },
+    { id: "timeline" as Tab, label: "Evidence", count: entries.length, icon: "activity" as const },
+    {
+      id: "mocks" as Tab,
+      label: "Mock journal",
+      count: interactions.length + ambientInteractions.length,
+      attention: warnings.length + ambientWarnings.length > 0,
+      icon: "mock" as const,
+    },
+    { id: "trace" as Tab, label: "Trace", count: spans.length, icon: "trace" as const },
     {
       id: "snapshots" as Tab,
-      label: `Snapshots (${detailedSnapshots.length})`,
-      icon: "\u{1f4f8}",
+      label: "State",
+      count: detailedSnapshots.length,
+      icon: "snapshot" as const,
     },
-    { id: "flow" as Tab, label: "Flow", icon: "\u{1f310}" },
+    { id: "flow" as Tab, label: "Flow", icon: "flow" as const },
   ];
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="sticky top-0 z-10 border-b border-stove-border bg-[var(--stove-panel-strong)] px-4 py-3 shadow-sm">
-        <TestHeader test={test} />
+    <main className="test-detail">
+      <div className="test-detail-header">
+        <TestHeader
+          test={test}
+          liveConnected={liveConnected}
+          metrics={{
+            entries: entries.length,
+            interactions: interactions.length + ambientInteractions.length,
+            warnings: warnings.length + ambientWarnings.length,
+            snapshots: detailedSnapshots.length,
+          }}
+          onSelectTab={setTab}
+        />
         {test.error && (
           <button
             type="button"
             onClick={() => setErrorOpen(true)}
-            className="mt-3 block w-full cursor-pointer truncate rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-left font-mono text-xs text-[var(--stove-red)] hover:bg-red-500/20"
+            className="test-error-strip"
             title="Click to view full error"
           >
+            <span>Failure</span>
             {test.error}
           </button>
         )}
@@ -89,27 +158,43 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
         <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       </div>
 
-      <div className={`min-h-0 flex-1 ${tab === "flow" ? "overflow-hidden" : "overflow-y-auto"}`}>
+      <div className={`test-detail-body ${tab === "flow" ? "is-flow" : ""}`}>
         {tab === "timeline" && (
-          <div className="p-4 space-y-2">
+          <div className="evidence-page">
+            <div className="section-heading">
+              <div>
+                <div className="stove-kicker">Chronological evidence</div>
+                <h2>What the test did</h2>
+              </div>
+              <span>{entries.length} recorded actions</span>
+            </div>
             {entriesError && (
               <QueryErrorMessage error={entriesError} fallback="Failed to load entries" />
             )}
-            {entries.map((entry) => (
-              <EntryRow key={entry.id} entry={entry} />
-            ))}
-            {entries.length === 0 && (
-              <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
-                No entries recorded
-              </div>
-            )}
+            <div className="space-y-2">
+              {entries.map((entry) => (
+                <EntryRow key={entry.id} entry={entry} />
+              ))}
+            </div>
+            {entries.length === 0 && <div className="stove-empty-state">No entries recorded</div>}
           </div>
         )}
+        {tab === "mocks" &&
+          (interactionsLoading || warningsLoading ? (
+            <div className="stove-empty-state m-4">Loading mock journal…</div>
+          ) : mockError ? (
+            <QueryErrorMessage error={mockError} fallback="Failed to load mock journal" />
+          ) : (
+            <MockJournal
+              interactions={interactions}
+              warnings={warnings}
+              ambientInteractions={ambientInteractions}
+              ambientWarnings={ambientWarnings}
+            />
+          ))}
         {tab === "trace" &&
           (spansLoading ? (
-            <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
-              Loading traces...
-            </div>
+            <div className="stove-empty-state m-4">Loading traces…</div>
           ) : spansError ? (
             <QueryErrorMessage error={spansError} fallback="Failed to load traces" />
           ) : (
@@ -117,24 +202,24 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
           ))}
         {tab === "snapshots" &&
           (snapshotsLoading ? (
-            <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
-              Loading snapshots...
-            </div>
+            <div className="stove-empty-state m-4">Loading snapshots…</div>
           ) : snapshotsError ? (
             <QueryErrorMessage error={snapshotsError} fallback="Failed to load snapshots" />
           ) : (
             <SnapshotCards snapshots={detailedSnapshots} hiddenCount={hiddenSnapshotCount} />
           ))}
         {tab === "flow" && (
-          <FlowTab
-            entries={entries}
-            spans={spans}
-            snapshots={detailedSnapshots}
-            onOpenTraceTab={() => setTab("trace")}
-          />
+          <Suspense fallback={<div className="stove-empty-state m-4">Assembling flow…</div>}>
+            <FlowTab
+              entries={entries}
+              spans={spans}
+              snapshots={detailedSnapshots}
+              onOpenTraceTab={() => setTab("trace")}
+            />
+          </Suspense>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 

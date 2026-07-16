@@ -173,6 +173,12 @@ class DashboardSystem(
           .setLatencyMs(interaction.latencyMs ?: -1)
           .addAllNearMisses(interaction.nearMisses)
           .setTraceId(interaction.traceId ?: "")
+          .setScenarioName(interaction.scenarioName ?: "")
+          .setScenarioState(interaction.scenarioState ?: "")
+          .setNextScenarioState(interaction.nextScenarioState ?: "")
+          .setConfiguredDelayMs(interaction.configuredDelayMs ?: -1)
+          .setFault(interaction.fault ?: "")
+          .setClientDeadlineMs(interaction.clientDeadlineMs ?: -1)
           .build()
       }
     )

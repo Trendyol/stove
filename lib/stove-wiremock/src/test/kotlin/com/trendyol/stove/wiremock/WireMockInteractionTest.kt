@@ -18,6 +18,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Every exchange that reaches the mock is emitted as an interaction — matched or not —
@@ -45,7 +46,8 @@ class WireMockInteractionTest :
             mockGet(
               url = "/interactions/orders",
               statusCode = 200,
-              responseBody = mapOf("ok" to true).some()
+              responseBody = mapOf("ok" to true).some(),
+              delay = 25.milliseconds
             )
 
             // Matched call with no headers at all: attribution comes from the stub.
@@ -78,6 +80,7 @@ class WireMockInteractionTest :
             matched.status shouldBe "200"
             matched.stubId.shouldNotBeNull()
             matched.latencyMs.shouldNotBeNull()
+            matched.configuredDelayMs shouldBe 25
 
             val unmatched = interactions.single { it.target == "/interactions/nowhere" }
             unmatched.matched shouldBe false

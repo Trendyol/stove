@@ -22,6 +22,7 @@ import io.kotest.matchers.string.shouldContain
  */
 class GrpcMockScopingTest :
   FunSpec({
+    val stalePayload = "stale-test-owned-stub"
     suspend fun registerBearerOnlyStub() {
       stove {
         grpcMock {
@@ -106,6 +107,38 @@ class GrpcMockScopingTest :
         grpcMock {
           val error = shouldThrow<AssertionError> { validate() }
           error.message shouldContain "test.TestService/Unary"
+        }
+      }
+    }
+
+    test("untagged request evidence from a completed test does not leak forward") {
+      stove {
+        grpcMock { validate() }
+      }
+    }
+
+    test("test-owned gRPC stub is registered for cleanup") {
+      stove {
+        grpcMock {
+          mockUnary(
+            serviceName = "test.TestService",
+            methodName = "Unary",
+            requestMatcher = RequestMatcher.message<TestRequest> { it.message == stalePayload },
+            response = testResponse { message = "must not leak" }
+          )
+        }
+      }
+    }
+
+    test("completed test's gRPC stub cannot serve later untagged traffic") {
+      stove {
+        grpc {
+          rawChannel { ch ->
+            val exception = shouldThrow<StatusRuntimeException> {
+              TestServiceGrpc.newBlockingStub(ch).unary(testRequest { message = stalePayload })
+            }
+            exception.status.code shouldBe Status.Code.UNIMPLEMENTED
+          }
         }
       }
     }

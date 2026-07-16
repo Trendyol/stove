@@ -23,6 +23,10 @@ const MIGRATIONS: &[(&str, &str)] = &[
     "V4__mock_interactions",
     include_str!("migrations/V4__mock_interactions.sql"),
   ),
+  (
+    "V5__mock_interaction_metadata",
+    include_str!("migrations/V5__mock_interaction_metadata.sql"),
+  ),
 ];
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.

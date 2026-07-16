@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import type { AppSummary, Run, Test } from "../api/types";
 import { filterTests } from "../utils/filters";
@@ -11,7 +11,7 @@ import { TestTree } from "./sidebar/TestTree";
 
 const SIDEBAR_MIN_WIDTH = 240;
 const SIDEBAR_MAX_WIDTH = 600;
-const SIDEBAR_DEFAULT_WIDTH = 320;
+const SIDEBAR_DEFAULT_WIDTH = 344;
 const SIDEBAR_STORAGE_KEY = "stove-sidebar-width";
 
 function loadSidebarWidth(): number {
@@ -99,8 +99,8 @@ export function Sidebar({
 
   return (
     <aside
-      className="stove-glass-panel relative flex shrink-0 flex-col overflow-hidden border-r border-stove-border"
-      style={{ width }}
+      className="stove-sidebar stove-glass-panel"
+      style={{ "--sidebar-width": `${width}px` } as CSSProperties}
     >
       <AppPicker
         apps={apps}
@@ -115,19 +115,23 @@ export function Sidebar({
         search={search}
         onSearchChange={setSearch}
       />
-      <div className="flex-1 overflow-y-auto">
+      <div className="stove-test-tree-scroll">
+        <div className="stove-sidebar-section-label">
+          <span>Run navigator</span>
+          <span>{filteredTests.length}</span>
+        </div>
         <TestTree
           tests={filteredTests}
           selectedTestId={selectedTestId}
           onSelectTest={onSelectTest}
         />
       </div>
-      <div className="border-t border-stove-border bg-[var(--stove-panel-strong)] px-3 py-2">
+      <div className="stove-sidebar-footer">
         <button
           type="button"
           onClick={handleClear}
           disabled={clearing}
-          className="stove-focus-ring flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-stove-border bg-stove-base px-2 py-1.5 text-xs text-[var(--stove-text-secondary)] transition-colors hover:bg-red-400/10 hover:text-red-400 disabled:opacity-50"
+          className="stove-clear-button stove-focus-ring"
         >
           <svg aria-hidden="true" className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
             <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z" />
@@ -140,10 +144,7 @@ export function Sidebar({
         </button>
       </div>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: resize drag handle */}
-      <div
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500/40 transition-colors"
-        onMouseDown={handleMouseDown}
-      />
+      <div className="stove-sidebar-resizer" onMouseDown={handleMouseDown} />
     </aside>
   );
 }

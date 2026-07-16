@@ -5,6 +5,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.http.RequestMethod
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
 import com.trendyol.stove.tracing.TraceContext
@@ -20,6 +22,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -74,8 +77,11 @@ class WireMockFidelityTest :
     }
 
     test("failsTimes then thenSucceeds models a retry journey") {
+      val interactions = CopyOnWriteArrayList<MockInteraction>()
+      val listener = MockInteractionListener { interactions.add(it) }
       stove {
         wiremock {
+          addInteractionListener(listener)
           behaviourFor("/fidelity/retry", ::post) { _ ->
             failsTimes(2, withStatus = 503)
             thenSucceeds {
@@ -85,11 +91,23 @@ class WireMockFidelityTest :
         }
       }
 
-      send(request("/fidelity/retry")).statusCode() shouldBe 503
-      send(request("/fidelity/retry")).statusCode() shouldBe 503
-      val recovered = send(request("/fidelity/retry"))
-      recovered.statusCode() shouldBe 200
-      recovered.body() shouldContain "recovered"
+      try {
+        send(request("/fidelity/retry")).statusCode() shouldBe 503
+        send(request("/fidelity/retry")).statusCode() shouldBe 503
+        val recovered = send(request("/fidelity/retry"))
+        recovered.statusCode() shouldBe 200
+        recovered.body() shouldContain "recovered"
+        send(request("/fidelity/retry")).statusCode() shouldBe 200
+
+        val retryInteractions = interactions.filter { it.target == "/fidelity/retry" }
+        retryInteractions.size shouldBe 4
+        retryInteractions.map { it.scenarioName }.distinct().size shouldBe 1
+        retryInteractions.all { it.scenarioName != null } shouldBe true
+        retryInteractions.take(2).all { it.nextScenarioState != null } shouldBe true
+        retryInteractions.takeLast(2).all { it.nextScenarioState == null } shouldBe true
+      } finally {
+        stove { wiremock { removeInteractionListener(listener) } }
+      }
     }
 
     test("mockDynamic computes the response from the received request") {

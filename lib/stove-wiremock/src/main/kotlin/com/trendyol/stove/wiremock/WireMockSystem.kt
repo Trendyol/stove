@@ -42,6 +42,7 @@ import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.STATUS_CODE
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 
 /**
@@ -220,14 +221,30 @@ class WireMockSystem(
   private val callJournal = WireMockCallJournal()
   private val interactionListeners = MockInteractionListeners()
   private val warningListeners = MockWarningListeners()
+  private val validatedTests = ConcurrentHashMap.newKeySet<String>()
   private val warningReportListener = object : ReportEventListener {
     override fun onTestEnded(testId: String) {
-      emitTestEndWarnings(testId)
+      try {
+        emitTestEndWarnings(testId)
+      } finally {
+        removeTestStubs(testId)
+      }
     }
   }
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val verification = WireMockVerification(this, callJournal, serde)
-  private val reportListener = TestScopeCleanupListener(callJournal::clear)
+  private val cleanupListener = TestScopeCleanupListener(::clearTestScope)
+  private val reportListener = object : ReportEventListener {
+    override fun onTestStarted(ctx: StoveTestContext) {
+      cleanupListener.onTestStarted(ctx)
+      callJournal.startTest(ctx.testId)
+    }
+
+    override fun onTestEnded(testId: String) {
+      callJournal.endTest(testId)
+      cleanupListener.onTestEnded(testId)
+    }
+  }
   private var reportListenerRegistered = false
   private lateinit var exposedConfiguration: WireMockExposedConfiguration
 
@@ -1087,9 +1104,10 @@ class WireMockSystem(
    */
   override suspend fun validate() {
     val currentTestId = reporter.currentTestId()
+    validatedTests.add(currentTestId)
 
     // Fail-open scoping: the journal excludes a request only when it is provably
-    // tagged with another test id; untagged unmatched requests fail every test.
+    // tagged with another test id; untagged requests fail every test active when observed.
     val unmatched = callJournal
       .serveEvents(currentTestId)
       .filterNot { it.wasMatched }
@@ -1144,6 +1162,8 @@ class WireMockSystem(
       }
       stop()
       callJournal.clearAll()
+      validatedTests.clear()
+      dynamicResponses.clear()
     }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
   }
 
@@ -1169,6 +1189,28 @@ class WireMockSystem(
     callJournal.recordStub(stub)
   }
 
+  private fun clearTestScope(testId: String) {
+    removeTestStubs(testId)
+    callJournal.clear(testId)
+    validatedTests.remove(testId)
+  }
+
+  private fun removeTestStubs(testId: String) {
+    if (!wireMock.isRunning) return
+    val activeIds = wireMock.stubMappings.map(StubMapping::getId).toSet()
+    callJournal.taggedStubs(testId)
+      .forEach { stub ->
+        stubLog.invalidate(stub.id)
+        dynamicResponses.unregister(stub)
+        if (stub.id !in activeIds) return@forEach
+        runCatching {
+          synchronized(wireMock) {
+            wireMock.removeStub(stub)
+          }
+        }.onFailure { e -> logger.warn("Failed to remove test-scoped stub ${stub.id}: ${e.message}") }
+      }
+  }
+
   private fun enrichMetadataWithTestId(metadata: Map<String, Any>): Map<String, Any> =
     reporter.currentTestIdOrNull()?.let { metadata + (STOVE_TEST_ID_KEY to it) } ?: metadata
 
@@ -1188,11 +1230,9 @@ class WireMockSystem(
   private fun emitTestEndWarnings(testId: String) {
     runCatching {
       val ownServeEvents = callJournal.taggedServeEvents(testId)
-      val matchedStubIds = ownServeEvents.filter { it.wasMatched }.mapNotNull { it.stubMapping?.id }.toSet()
-
       callJournal
         .taggedStubs(testId)
-        .filterNot { it.id in matchedStubIds }
+        .filterNot { callJournal.wasStubMatched(it.id) }
         .forEach { stub ->
           val target = "${stub.request.method?.value() ?: "?"} ${stub.request.url ?: stub.request.urlPath ?: ""}".trim()
           warningListeners.emit(
@@ -1209,7 +1249,7 @@ class WireMockSystem(
         }
 
       val ownUnmatched = ownServeEvents.filterNot { it.wasMatched }
-      if (ownUnmatched.isNotEmpty()) {
+      if (ownUnmatched.isNotEmpty() && testId !in validatedTests) {
         warningListeners.emit(
           MockWarning(
             system = reportSystemName,
@@ -1238,6 +1278,7 @@ class WireMockSystem(
       emitCrossTestMatchWarning(serveEvent, headers.stoveTestId(), stubTestId)
       val (requestBody, requestTruncated) = MockInteraction.truncated(request.bodyAsString.orEmpty())
       val response = serveEvent.response
+      val matchedStub = serveEvent.stubMapping
       val (responseBody, responseTruncated) = MockInteraction.truncated(response?.bodyAsString.orEmpty())
       interactionListeners.emit(
         MockInteraction(
@@ -1261,7 +1302,12 @@ class WireMockSystem(
             WireMockNearMisses.closestStubCandidates(request, callJournal.stubs(testId.orEmpty()))
           },
           traceId = headers.traceparentTraceId(),
-          timestamp = java.time.Instant.now()
+          timestamp = java.time.Instant.now(),
+          scenarioName = matchedStub?.scenarioName,
+          scenarioState = matchedStub?.requiredScenarioState,
+          nextScenarioState = matchedStub?.newScenarioState,
+          configuredDelayMs = matchedStub?.response?.fixedDelayMilliseconds?.toLong(),
+          fault = matchedStub?.response?.fault?.name ?: response?.fault?.name
         )
       )
     }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
@@ -1323,6 +1369,7 @@ class WireMockSystem(
      * Metadata key used to associate stubs with test IDs for filtering in snapshots.
      */
     const val STOVE_TEST_ID_KEY = "stoveTestId"
+    internal const val STOVE_PERSISTENT_STUB_KEY = "stovePersistentStub"
     private const val LOCALHOST = "localhost"
 
     /**

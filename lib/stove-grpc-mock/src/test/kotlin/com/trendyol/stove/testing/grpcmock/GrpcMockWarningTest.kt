@@ -9,7 +9,10 @@ import com.trendyol.stove.system.stove
 import com.trendyol.stove.testing.grpcmock.test.*
 import io.grpc.ClientInterceptors
 import io.grpc.Metadata
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.stub.MetadataUtils
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
@@ -26,6 +29,7 @@ class GrpcMockWarningTest :
     val warnings = CopyOnWriteArrayList<MockWarning>()
     val listener = MockWarningListener { warnings.add(it) }
     lateinit var producingTestId: String
+    lateinit var validatedTestId: String
 
     suspend fun awaitUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
       val deadline = System.currentTimeMillis() + timeoutMs
@@ -74,9 +78,39 @@ class GrpcMockWarningTest :
     }
 
     test("test-end warnings were raised for the previous test") {
+      val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
+      unused.any { it.target == "test.TestService/WarningsNeverCalled" }.shouldBeTrue()
+      unused.none { it.target == "test.TestService/Unary" }.shouldBeTrue()
+    }
+
+    test("calling validate suppresses the gRPC unvalidated unmatched warning") {
+      validatedTestId = Stove.reporter().currentTestId()
+      stove {
+        grpcMock {
+          mockUnary(
+            serviceName = "test.TestService",
+            methodName = "Unary",
+            requestMatcher = RequestMatcher.message<TestRequest> { it.message == "expected" },
+            response = testResponse { message = "ok" }
+          )
+        }
+        grpc {
+          channel<TestServiceGrpcKt.TestServiceCoroutineStub> {
+            val exception = shouldThrow<StatusException> { unary(testRequest { message = "unexpected" }) }
+            exception.status.code shouldBe Status.Code.UNIMPLEMENTED
+          }
+        }
+        grpcMock {
+          shouldThrow<AssertionError> { validate() }
+        }
+      }
+    }
+
+    test("validated gRPC evidence did not produce a misleading warning") {
       try {
-        val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
-        unused.any { it.target == "test.TestService/WarningsNeverCalled" }.shouldBeTrue()
+        warnings.none {
+          it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == validatedTestId
+        }.shouldBeTrue()
       } finally {
         stove { grpcMock { removeWarningListener(listener) } }
       }

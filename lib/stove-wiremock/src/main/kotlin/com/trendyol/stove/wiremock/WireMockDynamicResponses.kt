@@ -19,6 +19,17 @@ internal class WireMockDynamicResponses : ResponseDefinitionTransformerV2 {
     responders[id] = respond
   }
 
+  fun unregister(stub: com.github.tomakehurst.wiremock.stubbing.StubMapping) {
+    stub.metadata
+      ?.takeIf { it.containsKey(METADATA_KEY) }
+      ?.getString(METADATA_KEY)
+      ?.let(responders::remove)
+  }
+
+  fun clear() {
+    responders.clear()
+  }
+
   override fun getName(): String = NAME
 
   override fun applyGlobally(): Boolean = false

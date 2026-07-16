@@ -203,7 +203,7 @@ internal data class RegisteredStub(
  *
  * @property testId The test this request belongs to, when provable — from the matched
  *   stub's registration or from `X-Stove-Test-Id`/baggage metadata. Null means untagged:
- *   the request is visible to every test (fail-open scoping).
+ *   the request is visible to every test whose lifecycle overlaps it (fail-open scoping).
  */
 data class ReceivedRequest(
   val stubKey: StubKey,

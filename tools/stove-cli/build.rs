@@ -3,6 +3,12 @@ use std::process::Command;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   // ── Proto codegen ──────────────────────────────────────────────
+  println!(
+    "cargo:rerun-if-changed=../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_events.proto"
+  );
+  println!(
+    "cargo:rerun-if-changed=../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_service.proto"
+  );
   tonic_prost_build::configure()
     .build_server(true)
     .build_client(false)

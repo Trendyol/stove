@@ -28,6 +28,7 @@ import java.net.http.HttpResponse.BodyHandlers
 class WireMockFailOpenScopingTest :
   FunSpec({
     val client = HttpClient.newBuilder().build()
+    val staleStubPath = "/scoping/stale-test-owned-stub"
 
     fun postTo(baseUrl: String, url: String, headers: Map<String, String> = emptyMap()): Int {
       val builder = HttpRequest
@@ -108,6 +109,34 @@ class WireMockFailOpenScopingTest :
       } finally {
         isolated.close()
       }
+    }
+
+    test("untagged request evidence is visible during the active test") {
+      stove {
+        wiremock {
+          postTo(WIREMOCK_BASE_URL, "/scoping/windowed-untagged") shouldBe 404
+          val error = shouldThrow<AssertionError> { validate() }
+          error.message shouldContain "/scoping/windowed-untagged"
+        }
+      }
+    }
+
+    test("untagged request evidence from a completed test does not leak forward") {
+      stove {
+        wiremock { validate() }
+      }
+    }
+
+    test("test-owned stub is registered for cleanup") {
+      stove {
+        wiremock {
+          mockPost(url = staleStubPath, statusCode = 200)
+        }
+      }
+    }
+
+    test("completed test's stub cannot serve later untagged traffic") {
+      postTo(WIREMOCK_BASE_URL, staleStubPath) shouldBe 404
     }
 
     context("journal-level stub scoping") {

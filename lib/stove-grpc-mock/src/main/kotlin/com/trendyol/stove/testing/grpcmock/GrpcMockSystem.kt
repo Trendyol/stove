@@ -114,15 +114,32 @@ class GrpcMockSystem internal constructor(
   override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
   private val interactionListeners = MockInteractionListeners()
   private val warningListeners = MockWarningListeners()
+  private val validatedTests = ConcurrentHashMap.newKeySet<String>()
+  private val matchedStubIds = ConcurrentHashMap.newKeySet<String>()
   private val warningReportListener = object : ReportEventListener {
     override fun onTestEnded(testId: String) {
-      emitTestEndWarnings(testId)
+      try {
+        emitTestEndWarnings(testId)
+      } finally {
+        removeTestStubs(testId)
+      }
     }
   }
 
   private val stubs = ConcurrentHashMap<String, CopyOnWriteArrayList<RegisteredStub>>()
   private val callJournal = TestScopedJournal<JournaledRequest>()
-  private val reportListener = TestScopeCleanupListener(callJournal::clear)
+  private val cleanupListener = TestScopeCleanupListener(::clearTestScope)
+  private val reportListener = object : ReportEventListener {
+    override fun onTestStarted(ctx: StoveTestContext) {
+      cleanupListener.onTestStarted(ctx)
+      callJournal.startTest(ctx.testId)
+    }
+
+    override fun onTestEnded(testId: String) {
+      callJournal.endTest(testId)
+      cleanupListener.onTestEnded(testId)
+    }
+  }
   private var reportListenerRegistered = false
   private val handlerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -174,6 +191,9 @@ class GrpcMockSystem internal constructor(
       stop()
       handlerScope.cancel()
       callJournal.clearAll()
+      stubs.clear()
+      matchedStubIds.clear()
+      validatedTests.clear()
     }.recover { logger.warn("Error stopping gRPC mock: ${it.message}") }
   }
 
@@ -555,7 +575,7 @@ class GrpcMockSystem internal constructor(
   ): GrpcMockSystem {
     val fullMethodName = "$serviceName/$methodName"
     val received = callJournal
-      .entries(reporter.currentTestId())
+      .entriesWithinTest(reporter.currentTestId())
       .map { it.request }
       .filter { it.stubKey.fullMethodName == fullMethodName }
     val matching = received.filter { request -> parser(request.requestBytes)?.let(condition) == true }
@@ -587,8 +607,9 @@ class GrpcMockSystem internal constructor(
   // ==================== Validation & Reporting ====================
 
   override suspend fun validate() {
+    validatedTests.add(reporter.currentTestId())
     val unmatched = callJournal
-      .entries(reporter.currentTestId())
+      .entriesWithinTest(reporter.currentTestId())
       .filter { !it.request.matched }
 
     if (unmatched.isNotEmpty()) {
@@ -628,7 +649,7 @@ class GrpcMockSystem internal constructor(
     val scopedStubs = stubs.values
       .flatten()
       .filter { it.testId == null || it.testId == currentTestId }
-    val scopedJournaled = callJournal.entries(currentTestId)
+    val scopedJournaled = callJournal.entriesWithinTest(currentTestId)
     val scopedRequests = scopedJournaled.map { it.request }
 
     return SystemSnapshot(
@@ -718,7 +739,14 @@ class GrpcMockSystem internal constructor(
         registered.definition.requestMatcher.matches(requestBytes) &&
           registered.definition.metadataMatcher.matches(metadata)
       }?.also { registered ->
-        logRequest(registered.key, requestBytes, metadata, matched = true, stubTestId = registered.testId)
+        logRequest(
+          registered.key,
+          requestBytes,
+          metadata,
+          matched = true,
+          stubTestId = registered.testId,
+          stubDefinition = registered.definition
+        )
         removeStubIfNeeded(registered.key, fullMethodName)
         ctx.afterStubMatched(registered.key, registered.definition)
       }.toOption()
@@ -746,6 +774,7 @@ class GrpcMockSystem internal constructor(
     metadata: Metadata,
     matched: Boolean,
     stubTestId: String? = null,
+    stubDefinition: StubDefinition? = null,
     nearMisses: List<String> = emptyList(),
     interactionRecord: InteractionRecord? = INTERACTION_RECORD.get()
   ) {
@@ -757,12 +786,15 @@ class GrpcMockSystem internal constructor(
       stubId = if (matched) key.id else null,
       testId = metadata.toHeaderMap().stoveTestId() ?: stubTestId
     )
+    if (matched) matchedStubIds.add(key.id)
     callJournal.record(request.testId, JournaledRequest(request, nearMisses))
     interactionRecord?.let { record ->
       record.matched = matched
       record.stubId = if (matched) key.id else null
       record.stubTestId = stubTestId
       record.nearMisses = nearMisses
+      record.configuredDelayMs = stubDefinition?.configuredDelayMs()
+      record.fault = stubDefinition?.injectedFault()
     }
   }
 
@@ -783,8 +815,6 @@ class GrpcMockSystem internal constructor(
   private fun emitTestEndWarnings(testId: String) {
     runCatching {
       val ownRequests = callJournal.taggedEntries(testId).map { it.request }
-      val matchedStubIds = ownRequests.filter { it.matched }.mapNotNull { it.stubId }.toSet()
-
       stubs.values
         .flatten()
         .filter { it.testId == testId && it.key.id !in matchedStubIds }
@@ -804,7 +834,7 @@ class GrpcMockSystem internal constructor(
         }
 
       val ownUnmatched = ownRequests.filterNot { it.matched }
-      if (ownUnmatched.isNotEmpty()) {
+      if (ownUnmatched.isNotEmpty() && testId !in validatedTests) {
         warningListeners.emit(
           MockWarning(
             system = reportSystemName,
@@ -834,7 +864,14 @@ class GrpcMockSystem internal constructor(
       // Built-in grpc.* services (health, reflection) are infrastructure, not mocked exchanges.
       if (fullMethodName.startsWith("grpc.")) return next.startCall(call, headers)
 
-      val record = InteractionRecord(fullMethodName, headers.toHeaderMap(), System.nanoTime())
+      val context = Context.current()
+      val deadline = context.deadline
+      val record = InteractionRecord(
+        fullMethodName,
+        headers.toHeaderMap(),
+        System.nanoTime(),
+        deadline?.timeRemaining(TimeUnit.MILLISECONDS)?.coerceAtLeast(0)
+      )
       val observedCall = object : ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT>(call) {
         override fun sendMessage(message: RespT) {
           (message as? ByteArray)?.let { record.responseBytes += it.size }
@@ -848,7 +885,7 @@ class GrpcMockSystem internal constructor(
         }
       }
       val listener = Contexts.interceptCall(
-        Context.current().withValue(INTERACTION_RECORD, record),
+        context.withValue(INTERACTION_RECORD, record),
         observedCall,
         headers,
         next
@@ -861,7 +898,14 @@ class GrpcMockSystem internal constructor(
         }
 
         override fun onCancel() {
-          emitInteraction(record, Status.CANCELLED)
+          record.cancelPendingResponse()
+          // A client-side deadline arrives at the server as a cancelled stream. The server
+          // context's timer can still have a few milliseconds left because connection setup
+          // consumed part of the client's budget before grpc-timeout reached us.
+          emitInteraction(
+            record,
+            if (deadline != null) Status.DEADLINE_EXCEEDED else Contexts.statusFromCancelled(context) ?: Status.CANCELLED
+          )
           super.onCancel()
         }
       }
@@ -891,7 +935,10 @@ class GrpcMockSystem internal constructor(
           latencyMs = (System.nanoTime() - record.startNanos) / NANOS_PER_MILLI,
           nearMisses = record.nearMisses,
           traceId = record.headers.traceparentTraceId(),
-          timestamp = java.time.Instant.now()
+          timestamp = java.time.Instant.now(),
+          configuredDelayMs = record.configuredDelayMs,
+          fault = record.fault,
+          clientDeadlineMs = record.clientDeadlineMs
         )
       )
     }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
@@ -1051,12 +1098,13 @@ class GrpcMockSystem internal constructor(
         metadata,
         matched = true,
         stubTestId = registered.testId,
+        stubDefinition = registered.definition,
         interactionRecord = interactionRecord
       )
       removeStubIfNeeded(registered.key, fullMethodName)
       ctx.afterStubMatched(registered.key, registered.definition)
 
-      handlerScope.launch {
+      val responseJob = handlerScope.launch(start = CoroutineStart.LAZY) {
         when (val stub = registered.definition) {
           is StubDefinition.BidiStream -> runCatching {
             stub.handler(requestChannel.consumeAsFlow()).collect { response ->
@@ -1072,6 +1120,8 @@ class GrpcMockSystem internal constructor(
           else -> stub.sendResponse(responseObserver)
         }
       }
+      interactionRecord?.attachResponseJob(responseJob)
+      responseJob.start()
 
       ChannelForwardingObserver(requestChannel)
     }
@@ -1089,11 +1139,46 @@ class GrpcMockSystem internal constructor(
     if (delay == null) {
       dispatchResponse(observer)
     } else {
-      handlerScope.launch {
+      val record = INTERACTION_RECORD.get()
+      val responseJob = handlerScope.launch(start = CoroutineStart.LAZY) {
         delay(delay)
         dispatchResponse(observer)
       }
+      record?.attachResponseJob(responseJob)
+      responseJob.start()
     }
+  }
+
+  private fun clearTestScope(testId: String) {
+    removeTestStubs(testId)
+    callJournal.clear(testId)
+    callJournal.pruneUntaggedOutsideWindows()
+    validatedTests.remove(testId)
+  }
+
+  private fun removeTestStubs(testId: String) {
+    stubs.entries.removeIf { (_, registered) ->
+      registered.removeIf { stub ->
+        (stub.testId == testId).also { remove ->
+          if (remove) matchedStubIds.remove(stub.key.id)
+        }
+      }
+      registered.isEmpty()
+    }
+  }
+
+  private fun StubDefinition.configuredDelayMs(): Long? = when (this) {
+    is StubDefinition.Unary -> delay
+    is StubDefinition.ServerStream -> delay
+    is StubDefinition.ClientStream -> delay
+    is StubDefinition.Error -> delay
+    is StubDefinition.BidiStream -> null
+  }?.inWholeMilliseconds
+
+  private fun StubDefinition.injectedFault(): String? = when (this) {
+    is StubDefinition.Error -> status.code.name
+    is StubDefinition.ServerStream -> thenFailWith?.code?.name
+    else -> null
   }
 
   private fun StubDefinition.dispatchResponse(observer: StreamObserver<ByteArray>) {

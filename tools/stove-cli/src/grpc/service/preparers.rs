@@ -357,6 +357,12 @@ pub(super) fn prepare_mock_interaction(
     latency_ms: (event.latency_ms >= 0).then_some(event.latency_ms),
     near_misses: near_misses_json,
     trace_id: non_empty(&event.trace_id),
+    scenario_name: non_empty(&event.scenario_name),
+    scenario_state: non_empty(&event.scenario_state),
+    next_scenario_state: non_empty(&event.next_scenario_state),
+    configured_delay_ms: (event.configured_delay_ms >= 0).then_some(event.configured_delay_ms),
+    fault: non_empty(&event.fault),
+    client_deadline_ms: (event.client_deadline_ms >= 0).then_some(event.client_deadline_ms),
   };
 
   Ok(PreparedDashboardEvent {
@@ -382,6 +388,12 @@ pub(super) fn prepare_mock_interaction(
         latency_ms: interaction.latency_ms,
         near_misses: event.near_misses.clone(),
         trace_id: interaction.trace_id.clone(),
+        scenario_name: interaction.scenario_name.clone(),
+        scenario_state: interaction.scenario_state.clone(),
+        next_scenario_state: interaction.next_scenario_state.clone(),
+        configured_delay_ms: interaction.configured_delay_ms,
+        fault: interaction.fault.clone(),
+        client_deadline_ms: interaction.client_deadline_ms,
       }),
     ),
     persisted: PersistedDashboardEvent::MockInteraction(interaction),

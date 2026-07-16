@@ -49,7 +49,7 @@ export function useAppData() {
     queryKey: ["runs", activeApp],
     queryFn: () => api.getRuns(activeApp!),
     enabled: !!activeApp,
-    refetchInterval: !!activeApp && !liveConnected ? 5000 : false,
+    refetchInterval: activeApp && !liveConnected ? 5000 : false,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 

@@ -1,4 +1,14 @@
-import type { AppSummary, Entry, MetaResponse, Run, Snapshot, Span, Test } from "./types";
+import type {
+  AppSummary,
+  Entry,
+  MetaResponse,
+  MockInteraction,
+  MockWarning,
+  Run,
+  Snapshot,
+  Span,
+  Test,
+} from "./types";
 
 const BASE = "/api/v1";
 const encodePath = (value: string) => encodeURIComponent(value);
@@ -26,6 +36,13 @@ export const api = {
     get<Span[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/spans`),
   getSnapshots: (runId: string, testId: string) =>
     get<Snapshot[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/snapshots`),
+  getTestInteractions: (runId: string, testId: string) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/interactions`),
+  getRunInteractions: (runId: string) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions`),
+  getTestWarnings: (runId: string, testId: string) =>
+    get<MockWarning[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/warnings`),
+  getRunWarnings: (runId: string) => get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings`),
   getTrace: (traceId: string) => get<Span[]>(`/traces/${encodePath(traceId)}`),
   clearAll: () => del("/data"),
 };

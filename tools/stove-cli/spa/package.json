@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "test": "node --test test/*.test.mjs",
     "check": "biome check src",
     "format": "biome check --write src"
   },

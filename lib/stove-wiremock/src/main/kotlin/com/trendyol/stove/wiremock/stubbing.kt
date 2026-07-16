@@ -82,21 +82,29 @@ class StubBehaviourBuilder(
   }
 
   /** The step after [failsTimes]: what the dependency returns once it has recovered. */
-  fun thenSucceeds(step: () -> ResponseDefinitionBuilder): Unit = then(step)
+  fun thenSucceeds(step: () -> ResponseDefinitionBuilder) {
+    check(previousState != STARTED) { WireMockBehaviourMessages.INITIALLY_BEFORE_THEN }
+    createStub(
+      step(),
+      previousState,
+      setState = null,
+      extraMetadata = mapOf(WireMockSystem.STOVE_PERSISTENT_STUB_KEY to true)
+    )
+  }
 
   private fun createStub(
     response: ResponseDefinitionBuilder,
     whenState: String,
-    setState: String
+    setState: String?,
+    extraMetadata: Map<String, Any> = emptyMap()
   ) {
-    val stub = wireMockServer.stubFor(
-      method(url)
-        .inScenario(scenarioName)
-        .whenScenarioStateIs(whenState)
-        .willReturn(response)
-        .willSetStateTo(setState)
-        .withMetadata(metadata)
-    )
+    val mapping = method(url)
+      .inScenario(scenarioName)
+      .whenScenarioStateIs(whenState)
+      .willReturn(response)
+      .withMetadata(metadata + extraMetadata)
+    setState?.let(mapping::willSetStateTo)
+    val stub = wireMockServer.stubFor(mapping)
     recordStub(stub)
   }
 

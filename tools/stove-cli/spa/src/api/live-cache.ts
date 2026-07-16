@@ -1,6 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Status } from "../utils/status";
-import type { AppSummary, Entry, LiveDashboardEvent, Run, Snapshot, Span, Test } from "./types";
+import type {
+  AppSummary,
+  Entry,
+  LiveDashboardEvent,
+  MockInteraction,
+  MockWarning,
+  Run,
+  Snapshot,
+  Span,
+  Test,
+} from "./types";
 import { EVENT_TYPE } from "./types";
 
 const RUNNING: Status = "RUNNING";
@@ -35,6 +45,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         upsertRun(runs, run),
       );
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
+      queryClient.setQueryData<MockInteraction[]>(
+        ["interactions", event.run_id],
+        (interactions) => interactions ?? [],
+      );
+      queryClient.setQueryData<MockWarning[]>(
+        ["warnings", event.run_id],
+        (warnings) => warnings ?? [],
+      );
       break;
     }
     case EVENT_TYPE.RUN_ENDED: {
@@ -84,6 +102,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       queryClient.setQueryData<Snapshot[]>(
         ["snapshots", event.run_id, event.payload.test_id],
         (snapshots) => snapshots ?? [],
+      );
+      queryClient.setQueryData<MockInteraction[]>(
+        ["interactions", event.run_id, event.payload.test_id],
+        (interactions) => interactions ?? [],
+      );
+      queryClient.setQueryData<MockWarning[]>(
+        ["warnings", event.run_id, event.payload.test_id],
+        (warnings) => warnings ?? [],
       );
       break;
     }
@@ -171,12 +197,78 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         system: event.payload.system,
         state_json: event.payload.state_json,
         summary: event.payload.summary,
+        captured_at: event.payload.captured_at,
+        trigger: event.payload.trigger,
       };
 
       queryClient.setQueryData<Snapshot[]>(
         ["snapshots", event.run_id, event.payload.test_id],
         (snapshots) => appendSnapshots(snapshots, snapshot),
       );
+      break;
+    }
+    case EVENT_TYPE.MOCK_INTERACTION: {
+      const interaction: MockInteraction = {
+        id: event.payload.id,
+        run_id: event.run_id,
+        test_id: event.payload.test_id,
+        timestamp: event.payload.timestamp,
+        system: event.payload.system,
+        protocol: event.payload.protocol,
+        method: event.payload.method,
+        target: event.payload.target,
+        matched: event.payload.matched,
+        stub_id: event.payload.stub_id,
+        attribution: event.payload.attribution,
+        request_body: event.payload.request_body,
+        request_body_truncated: event.payload.request_body_truncated,
+        response_body: event.payload.response_body,
+        response_body_truncated: event.payload.response_body_truncated,
+        status: event.payload.status,
+        latency_ms: event.payload.latency_ms,
+        near_misses: event.payload.near_misses,
+        trace_id: event.payload.trace_id,
+        scenario_name: event.payload.scenario_name,
+        scenario_state: event.payload.scenario_state,
+        next_scenario_state: event.payload.next_scenario_state,
+        configured_delay_ms: event.payload.configured_delay_ms,
+        fault: event.payload.fault,
+        client_deadline_ms: event.payload.client_deadline_ms,
+      };
+
+      queryClient.setQueryData<MockInteraction[]>(["interactions", event.run_id], (interactions) =>
+        appendInteractions(interactions, interaction),
+      );
+      if (event.payload.test_id) {
+        queryClient.setQueryData<MockInteraction[]>(
+          ["interactions", event.run_id, event.payload.test_id],
+          (interactions) => appendInteractions(interactions, interaction),
+        );
+      }
+      break;
+    }
+    case EVENT_TYPE.MOCK_WARNING: {
+      const warning: MockWarning = {
+        id: event.payload.id,
+        run_id: event.run_id,
+        test_id: event.payload.test_id,
+        timestamp: event.payload.timestamp,
+        system: event.payload.system,
+        kind: event.payload.kind,
+        message: event.payload.message,
+        stub_id: event.payload.stub_id,
+        target: event.payload.target,
+      };
+
+      queryClient.setQueryData<MockWarning[]>(["warnings", event.run_id], (warnings) =>
+        appendWarnings(warnings, warning),
+      );
+      if (event.payload.test_id) {
+        queryClient.setQueryData<MockWarning[]>(
+          ["warnings", event.run_id, event.payload.test_id],
+          (warnings) => appendWarnings(warnings, warning),
+        );
+      }
       break;
     }
   }
@@ -190,6 +282,8 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
     queryClient.invalidateQueries({ queryKey: ["snapshots", runId] });
+    queryClient.invalidateQueries({ queryKey: ["interactions", runId] });
+    queryClient.invalidateQueries({ queryKey: ["warnings", runId] });
   } else {
     queryClient.invalidateQueries();
   }
@@ -276,6 +370,27 @@ function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot):
     return snapshots;
   }
   return [...(snapshots ?? []), incoming];
+}
+
+function appendInteractions(
+  interactions: MockInteraction[] | undefined,
+  incoming: MockInteraction,
+): MockInteraction[] {
+  if (interactions?.some((interaction) => interaction.id === incoming.id)) {
+    return interactions;
+  }
+  return [...(interactions ?? []), incoming].sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
+  );
+}
+
+function appendWarnings(warnings: MockWarning[] | undefined, incoming: MockWarning): MockWarning[] {
+  if (warnings?.some((warning) => warning.id === incoming.id)) {
+    return warnings;
+  }
+  return [...(warnings ?? []), incoming].sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
+  );
 }
 
 function compareRuns(left: Run, right: Run): number {

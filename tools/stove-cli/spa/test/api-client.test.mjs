@@ -5,7 +5,7 @@ import createJiti from "jiti";
 const jiti = createJiti(import.meta.url);
 const { api } = await jiti.import("../src/api/client.ts");
 
-test("getSnapshots URL-encodes run and test ids before requesting snapshot data", async () => {
+test("test evidence endpoints URL-encode run and test ids", async () => {
   const originalFetch = globalThis.fetch;
   const seen = [];
 
@@ -18,10 +18,12 @@ test("getSnapshots URL-encodes run and test ids before requesting snapshot data"
   };
 
   try {
-    await api.getSnapshots(
-      "run:1",
-      "AuditHeadersValidationTests::should not require audit headers for get endpoint",
-    );
+    const runId = "run:1";
+    const testId =
+      "AuditHeadersValidationTests::should not require audit headers for get endpoint";
+    await api.getSnapshots(runId, testId);
+    await api.getTestInteractions(runId, testId);
+    await api.getTestWarnings(runId, testId);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -29,5 +31,13 @@ test("getSnapshots URL-encodes run and test ids before requesting snapshot data"
   assert.equal(
     seen[0],
     "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/snapshots",
+  );
+  assert.equal(
+    seen[1],
+    "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/interactions",
+  );
+  assert.equal(
+    seen[2],
+    "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/warnings",
   );
 });

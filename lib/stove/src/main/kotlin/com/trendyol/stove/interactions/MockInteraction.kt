@@ -57,7 +57,19 @@ data class MockInteraction(
   val nearMisses: List<String>,
   /** W3C trace id when the request carried `traceparent`; links the exchange to spans. */
   val traceId: String?,
-  val timestamp: Instant
+  val timestamp: Instant,
+  /** WireMock scenario owning the matched stub, when scenario behaviour was used. */
+  val scenarioName: String? = null,
+  /** Scenario state required by the stub that served this exchange. */
+  val scenarioState: String? = null,
+  /** Scenario state entered after this exchange; null for stable terminal states. */
+  val nextScenarioState: String? = null,
+  /** Artificial response delay configured on the matched stub. */
+  val configuredDelayMs: Long? = null,
+  /** Injected WireMock fault or gRPC error status, distinct from an organic response failure. */
+  val fault: String? = null,
+  /** Client deadline remaining when the gRPC call reached the mock server. */
+  val clientDeadlineMs: Long? = null
 ) {
   enum class Protocol { HTTP, GRPC }
 

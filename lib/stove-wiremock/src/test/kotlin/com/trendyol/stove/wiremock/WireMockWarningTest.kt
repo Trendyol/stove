@@ -29,6 +29,7 @@ class WireMockWarningTest :
     val warnings = CopyOnWriteArrayList<MockWarning>()
     val listener = MockWarningListener { warnings.add(it) }
     lateinit var producingTestId: String
+    lateinit var validatedTestId: String
 
     suspend fun awaitUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
       val deadline = System.currentTimeMillis() + timeoutMs
@@ -80,15 +81,40 @@ class WireMockWarningTest :
     }
 
     test("test-end warnings were raised for the previous test") {
-      try {
-        val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
-        unused.any { it.target == "GET /warnings/never-called" }.shouldBeTrue()
+      val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
+      unused.any { it.target == "GET /warnings/never-called" }.shouldBeTrue()
+      unused.none { it.target == "GET /warnings/crossed" }.shouldBeTrue()
 
-        val unvalidated = warnings.single {
-          it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == producingTestId
+      val unvalidated = warnings.single {
+        it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == producingTestId
+      }
+      unvalidated.message shouldContain "validate() would have failed"
+      unvalidated.target shouldBe "/warnings/unmatched"
+    }
+
+    test("calling validate suppresses the unvalidated unmatched warning") {
+      validatedTestId = Stove.reporter().currentTestId()
+      stove {
+        wiremock {
+          client
+            .send(
+              HttpRequest
+                .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/explicitly-validated"))
+                .header(TraceContext.STOVE_TEST_ID_HEADER, validatedTestId)
+                .GET()
+                .build(),
+              BodyHandlers.ofString()
+            ).statusCode() shouldBe 404
+          io.kotest.assertions.throwables.shouldThrow<AssertionError> { validate() }
         }
-        unvalidated.message shouldContain "validate() would have failed"
-        unvalidated.target shouldBe "/warnings/unmatched"
+      }
+    }
+
+    test("validated unmatched evidence did not produce a misleading warning") {
+      try {
+        warnings.none {
+          it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == validatedTestId
+        }.shouldBeTrue()
       } finally {
         stove { wiremock { removeWarningListener(listener) } }
       }

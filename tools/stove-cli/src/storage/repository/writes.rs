@@ -404,7 +404,7 @@ fn save_mock_interaction_on(
   interaction: &NewMockInteraction,
 ) -> Result<()> {
   conn.execute(
-    "INSERT INTO mock_interactions (run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+    "INSERT INTO mock_interactions (run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name, scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
     rusqlite::params![
       interaction.run_id,
       interaction.test_id,
@@ -423,7 +423,13 @@ fn save_mock_interaction_on(
       interaction.status,
       interaction.latency_ms,
       non_empty(&interaction.near_misses),
-      interaction.trace_id
+      interaction.trace_id,
+      interaction.scenario_name,
+      interaction.scenario_state,
+      interaction.next_scenario_state,
+      interaction.configured_delay_ms,
+      interaction.fault,
+      interaction.client_deadline_ms
     ],
   )?;
   Ok(())

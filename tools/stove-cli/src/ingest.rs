@@ -205,6 +205,12 @@ pub struct LiveMockInteractionPayload {
   pub latency_ms: Option<i64>,
   pub near_misses: Vec<String>,
   pub trace_id: Option<String>,
+  pub scenario_name: Option<String>,
+  pub scenario_state: Option<String>,
+  pub next_scenario_state: Option<String>,
+  pub configured_delay_ms: Option<i64>,
+  pub fault: Option<String>,
+  pub client_deadline_ms: Option<i64>,
 }
 
 #[derive(Clone, Debug, Serialize)]
