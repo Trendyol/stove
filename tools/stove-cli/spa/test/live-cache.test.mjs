@@ -4,7 +4,9 @@ import createJiti from "jiti";
 import { QueryClient } from "@tanstack/react-query";
 
 const jiti = createJiti(import.meta.url);
-const { applyLiveDashboardEvent } = await jiti.import("../src/api/live-cache.ts");
+const { applyLiveDashboardEvent, reconcileDashboardData } = await jiti.import(
+  "../src/api/live-cache.ts",
+);
 
 test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE payloads", () => {
   const queryClient = new QueryClient();
@@ -203,4 +205,114 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   assert.equal(runInteractions.filter((interaction) => interaction.test_id === null).length, 1);
   assert.equal(testWarnings.length, 1);
   assert.equal(testWarnings[0].kind, "UNUSED_STUB");
+});
+
+test("live test data survives a stale persisted response", () => {
+  const queryClient = new QueryClient();
+  const queryKey = ["tests", "run-race"];
+
+  queryClient.setQueryData(queryKey, [
+    {
+      id: "test-live",
+      run_id: "run-race",
+      test_name: "arrives over SSE",
+      spec_name: "RealtimeSpec",
+      test_path: ["RealtimeSpec", "arrives over SSE"],
+      started_at: "2024-06-01T10:00:01Z",
+      ended_at: null,
+      status: "RUNNING",
+      duration_ms: null,
+      error: null,
+    },
+  ]);
+
+  const reconciled = reconcileDashboardData(queryClient, queryKey, []);
+
+  assert.equal(reconciled.length, 1);
+  assert.equal(reconciled[0].id, "test-live");
+  assert.equal(reconciled[0].status, "RUNNING");
+});
+
+test("a live event cancels the conflicting REST request before updating its cache", async () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  let requestWasAborted = false;
+
+  const staleRequest = queryClient
+    .fetchQuery({
+      queryKey: ["tests", "run-race"],
+      queryFn: ({ signal }) =>
+        new Promise((resolve, reject) => {
+          signal.addEventListener(
+            "abort",
+            () => {
+              requestWasAborted = true;
+              reject(new DOMException("The operation was aborted", "AbortError"));
+            },
+            { once: true },
+          );
+          setTimeout(() => resolve([]), 100);
+        }),
+    })
+    .catch((error) => error);
+
+  applyLiveDashboardEvent(queryClient, {
+    seq: 1,
+    run_id: "run-race",
+    event_type: "test_started",
+    payload: {
+      test_id: "test-live",
+      test_name: "cannot be erased",
+      spec_name: "RealtimeSpec",
+      test_path: ["RealtimeSpec", "cannot be erased"],
+      started_at: "2024-06-01T10:00:01Z",
+      status: "RUNNING",
+    },
+  });
+
+  await staleRequest;
+  const tests = queryClient.getQueryData(["tests", "run-race"]);
+
+  assert.equal(requestWasAborted, true);
+  assert.equal(tests.length, 1);
+  assert.equal(tests[0].id, "test-live");
+});
+
+test("persisted evidence replaces its temporary live duplicate during reconciliation", () => {
+  const queryClient = new QueryClient();
+  const queryKey = ["interactions", "run-race", "test-live"];
+  const live = {
+    id: -7,
+    run_id: "run-race",
+    test_id: "test-live",
+    timestamp: "2024-06-01T10:00:02Z",
+    system: "WireMock",
+    protocol: "HTTP",
+    method: "GET",
+    target: "/health",
+    matched: true,
+    stub_id: "stub-1",
+    attribution: "PROVEN_STUB",
+    request_body: null,
+    request_body_truncated: false,
+    response_body: null,
+    response_body_truncated: false,
+    status: "200",
+    latency_ms: 3,
+    near_misses: [],
+    trace_id: null,
+    scenario_name: null,
+    scenario_state: null,
+    next_scenario_state: null,
+    configured_delay_ms: null,
+    fault: null,
+    client_deadline_ms: null,
+  };
+  queryClient.setQueryData(queryKey, [live]);
+
+  const reconciled = reconcileDashboardData(queryClient, queryKey, [{ ...live, id: 42 }]);
+
+  assert.equal(reconciled.length, 1);
+  assert.equal(reconciled[0].id, 42);
 });

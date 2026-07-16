@@ -56,7 +56,7 @@ export function Sidebar({
     setClearing(true);
     try {
       await api.clearAll();
-      queryClient.invalidateQueries();
+      await queryClient.resetQueries();
     } finally {
       setClearing(false);
     }

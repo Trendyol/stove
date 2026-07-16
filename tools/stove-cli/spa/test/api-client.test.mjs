@@ -8,9 +8,10 @@ const { api } = await jiti.import("../src/api/client.ts");
 test("test evidence endpoints URL-encode run and test ids", async () => {
   const originalFetch = globalThis.fetch;
   const seen = [];
+  const controller = new AbortController();
 
-  globalThis.fetch = async (input) => {
-    seen.push(String(input));
+  globalThis.fetch = async (input, init) => {
+    seen.push({ input: String(input), signal: init?.signal });
     return new Response("[]", {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -21,7 +22,7 @@ test("test evidence endpoints URL-encode run and test ids", async () => {
     const runId = "run:1";
     const testId =
       "AuditHeadersValidationTests::should not require audit headers for get endpoint";
-    await api.getSnapshots(runId, testId);
+    await api.getSnapshots(runId, testId, controller.signal);
     await api.getTestInteractions(runId, testId);
     await api.getTestWarnings(runId, testId);
   } finally {
@@ -29,15 +30,16 @@ test("test evidence endpoints URL-encode run and test ids", async () => {
   }
 
   assert.equal(
-    seen[0],
+    seen[0].input,
     "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/snapshots",
   );
+  assert.equal(seen[0].signal, controller.signal);
   assert.equal(
-    seen[1],
+    seen[1].input,
     "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/interactions",
   );
   assert.equal(
-    seen[2],
+    seen[2].input,
     "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/warnings",
   );
 });

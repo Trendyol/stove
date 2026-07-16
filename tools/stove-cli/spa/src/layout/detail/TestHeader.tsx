@@ -1,22 +1,13 @@
 import type { Test } from "../../api/types";
 import { Badge } from "../../components/Badge";
-import { Icon } from "../../components/Icon";
 import { formatDuration } from "../../utils/format";
-import type { Tab } from "./TabBar";
 
 interface TestHeaderProps {
   test: Test;
   liveConnected: boolean;
-  metrics: {
-    entries: number;
-    interactions: number;
-    warnings: number;
-    snapshots: number;
-  };
-  onSelectTab: (tab: Tab) => void;
 }
 
-export function TestHeader({ test, liveConnected, metrics, onSelectTab }: TestHeaderProps) {
+export function TestHeader({ test, liveConnected }: TestHeaderProps) {
   const path = test.test_path.filter((segment) => segment !== test.test_name);
 
   return (
@@ -44,59 +35,6 @@ export function TestHeader({ test, liveConnected, metrics, onSelectTab }: TestHe
           <code title={test.id}>{test.id}</code>
         </div>
       </div>
-      <div className="test-signal-grid">
-        <SignalButton
-          icon="activity"
-          label="Evidence"
-          value={metrics.entries}
-          onClick={() => onSelectTab("timeline")}
-        />
-        <SignalButton
-          icon="mock"
-          label="Mocks"
-          value={metrics.interactions}
-          onClick={() => onSelectTab("mocks")}
-        />
-        <SignalButton
-          icon="warning"
-          label="Warnings"
-          value={metrics.warnings}
-          attention={metrics.warnings > 0}
-          onClick={() => onSelectTab("mocks")}
-        />
-        <SignalButton
-          icon="snapshot"
-          label="State"
-          value={metrics.snapshots}
-          onClick={() => onSelectTab("snapshots")}
-        />
-      </div>
     </div>
-  );
-}
-
-function SignalButton({
-  icon,
-  label,
-  value,
-  attention = false,
-  onClick,
-}: {
-  icon: "activity" | "mock" | "warning" | "snapshot";
-  label: string;
-  value: number;
-  attention?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className={`test-signal ${attention ? "is-attention" : ""}`}
-      onClick={onClick}
-    >
-      <Icon name={icon} className="h-3.5 w-3.5" />
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </button>
   );
 }

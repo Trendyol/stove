@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { api } from "../api/client";
-import type { Test } from "../api/types";
-import { EntryRow } from "../components/EntryRow";
+import { reconcileDashboardData } from "../api/live-cache";
+import type { Entry, MockInteraction, MockWarning, Snapshot, Span, Test } from "../api/types";
 import { ErrorDialog } from "../components/ErrorDialog";
+import { EvidenceWorkbench } from "../components/EvidenceWorkbench";
 import { MockJournal } from "../components/MockJournal";
 import { SnapshotCards } from "../components/SnapshotCards";
 import { SpanTree } from "../components/SpanTree";
@@ -24,13 +25,19 @@ interface TestDetailProps {
 }
 
 export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("timeline");
   const [errorOpen, setErrorOpen] = useState(false);
-  const liveRefetchInterval = isRunning(test.status) && !liveConnected ? 5000 : false;
+  const liveRefetchInterval = isRunning(test.status) ? 5000 : false;
 
   const { data: entries = [], error: entriesError } = useQuery({
     queryKey: ["entries", runId, test.id],
-    queryFn: () => api.getEntries(runId, test.id),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<Entry[]>(
+        queryClient,
+        ["entries", runId, test.id],
+        await api.getEntries(runId, test.id, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
@@ -41,7 +48,12 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     error: spansError,
   } = useQuery({
     queryKey: ["spans", runId, test.id],
-    queryFn: () => api.getSpans(runId, test.id),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<Span[]>(
+        queryClient,
+        ["spans", runId, test.id],
+        await api.getSpans(runId, test.id, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
@@ -52,7 +64,12 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     error: snapshotsError,
   } = useQuery({
     queryKey: ["snapshots", runId, test.id],
-    queryFn: () => api.getSnapshots(runId, test.id),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<Snapshot[]>(
+        queryClient,
+        ["snapshots", runId, test.id],
+        await api.getSnapshots(runId, test.id, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
@@ -63,7 +80,12 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     error: interactionsError,
   } = useQuery({
     queryKey: ["interactions", runId, test.id],
-    queryFn: () => api.getTestInteractions(runId, test.id),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<MockInteraction[]>(
+        queryClient,
+        ["interactions", runId, test.id],
+        await api.getTestInteractions(runId, test.id, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
@@ -74,21 +96,36 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     error: warningsError,
   } = useQuery({
     queryKey: ["warnings", runId, test.id],
-    queryFn: () => api.getTestWarnings(runId, test.id),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<MockWarning[]>(
+        queryClient,
+        ["warnings", runId, test.id],
+        await api.getTestWarnings(runId, test.id, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const { data: runInteractions = [], error: runInteractionsError } = useQuery({
     queryKey: ["interactions", runId],
-    queryFn: () => api.getRunInteractions(runId),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<MockInteraction[]>(
+        queryClient,
+        ["interactions", runId],
+        await api.getRunInteractions(runId, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const { data: runWarnings = [], error: runWarningsError } = useQuery({
     queryKey: ["warnings", runId],
-    queryFn: () => api.getRunWarnings(runId),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData<MockWarning[]>(
+        queryClient,
+        ["warnings", runId],
+        await api.getRunWarnings(runId, signal),
+      ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
@@ -130,17 +167,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
   return (
     <main className="test-detail">
       <div className="test-detail-header">
-        <TestHeader
-          test={test}
-          liveConnected={liveConnected}
-          metrics={{
-            entries: entries.length,
-            interactions: interactions.length + ambientInteractions.length,
-            warnings: warnings.length + ambientWarnings.length,
-            snapshots: detailedSnapshots.length,
-          }}
-          onSelectTab={setTab}
-        />
+        <TestHeader test={test} liveConnected={liveConnected} />
         {test.error && (
           <button
             type="button"
@@ -160,24 +187,18 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
 
       <div className={`test-detail-body ${tab === "flow" ? "is-flow" : ""}`}>
         {tab === "timeline" && (
-          <div className="evidence-page">
-            <div className="section-heading">
-              <div>
-                <div className="stove-kicker">Chronological evidence</div>
-                <h2>What the test did</h2>
-              </div>
-              <span>{entries.length} recorded actions</span>
-            </div>
+          <>
             {entriesError && (
               <QueryErrorMessage error={entriesError} fallback="Failed to load entries" />
             )}
-            <div className="space-y-2">
-              {entries.map((entry) => (
-                <EntryRow key={entry.id} entry={entry} />
-              ))}
-            </div>
-            {entries.length === 0 && <div className="stove-empty-state">No entries recorded</div>}
-          </div>
+            {!entriesError && (
+              <EvidenceWorkbench
+                key={test.id}
+                entries={entries}
+                onOpenTrace={() => setTab("trace")}
+              />
+            )}
+          </>
         )}
         {tab === "mocks" &&
           (interactionsLoading || warningsLoading ? (
@@ -186,10 +207,12 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
             <QueryErrorMessage error={mockError} fallback="Failed to load mock journal" />
           ) : (
             <MockJournal
+              key={test.id}
               interactions={interactions}
               warnings={warnings}
               ambientInteractions={ambientInteractions}
               ambientWarnings={ambientWarnings}
+              onOpenTrace={() => setTab("trace")}
             />
           ))}
         {tab === "trace" &&
