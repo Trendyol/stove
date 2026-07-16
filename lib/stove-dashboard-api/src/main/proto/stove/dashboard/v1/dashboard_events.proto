@@ -17,6 +17,7 @@ message DashboardEvent {
     SpanRecordedEvent span_recorded = 15;
     SnapshotEvent snapshot = 16;
     MockInteractionEvent mock_interaction = 17;
+    MockWarningEvent mock_warning = 18;
   }
 }
 
@@ -90,6 +91,22 @@ message SnapshotEvent {
   string system = 2;
   string state_json = 3;
   string summary = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  // TEST_END for the regular end-of-test snapshot; FAILURE for the state captured at the
+  // moment the first failing entry was recorded — the two can genuinely differ.
+  string trigger = 6;
+}
+
+// A diagnostic the mocks observed — never a test failure. Raised only from provable
+// evidence (tagged stubs/requests), consistent with proven-only attribution.
+message MockWarningEvent {
+  string test_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string system = 3;
+  string kind = 4;   // UNUSED_STUB | CROSS_TEST_MATCH | UNVALIDATED_UNMATCHED
+  string message = 5;
+  string stub_id = 6;
+  string target = 7; // URL for HTTP, service/Method for gRPC
 }
 
 // One completed exchange observed by a mock system (WireMock / gRPC Mock) — the data

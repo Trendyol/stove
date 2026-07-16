@@ -31,6 +31,13 @@ class TestScopedJournal<T> {
   fun entries(testId: String): List<T> =
     untagged.toList() + (tagged[testId]?.toList() ?: emptyList())
 
+  /**
+   * Only entries provably owned by the given test — no untagged evidence. This is the
+   * certainty-preserving view warnings are computed from, so shared fixtures and
+   * non-propagating traffic can never raise a warning against an unrelated test.
+   */
+  fun taggedEntries(testId: String): List<T> = tagged[testId]?.toList() ?: emptyList()
+
   fun clear(testId: String) {
     tagged.remove(testId)
   }

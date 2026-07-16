@@ -19,10 +19,16 @@ import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.interactions.MockInteractionListener
 import com.trendyol.stove.interactions.MockInteractionListeners
 import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.MockWarning
+import com.trendyol.stove.interactions.MockWarningKind
+import com.trendyol.stove.interactions.MockWarningListener
+import com.trendyol.stove.interactions.MockWarningListeners
+import com.trendyol.stove.interactions.MockWarningPublisher
 import com.trendyol.stove.interactions.resolveAttribution
 import com.trendyol.stove.interactions.traceparentTraceId
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.scoping.TestScopeCleanupListener
+import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
@@ -207,11 +213,18 @@ class WireMockSystem(
   RunAware,
   ExposesConfiguration,
   Reports,
-  MockInteractionPublisher {
+  MockInteractionPublisher,
+  MockWarningPublisher {
   override val reportSystemName: String = WireMockReportSystem.name(ctx.keyName)
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private val callJournal = WireMockCallJournal()
   private val interactionListeners = MockInteractionListeners()
+  private val warningListeners = MockWarningListeners()
+  private val warningReportListener = object : ReportEventListener {
+    override fun onTestEnded(testId: String) {
+      emitTestEndWarnings(testId)
+    }
+  }
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val verification = WireMockVerification(this, callJournal, serde)
   private val reportListener = TestScopeCleanupListener(callJournal::clear)
@@ -248,6 +261,7 @@ class WireMockSystem(
   override suspend fun run() {
     if (!reportListenerRegistered) {
       stove.addReportListener(reportListener)
+      stove.addReportListener(warningReportListener)
       reportListenerRegistered = true
     }
     wireMock.start()
@@ -1125,6 +1139,7 @@ class WireMockSystem(
     Try {
       if (reportListenerRegistered) {
         stove.removeReportListener(reportListener)
+        stove.removeReportListener(warningReportListener)
         reportListenerRegistered = false
       }
       stop()
@@ -1161,6 +1176,54 @@ class WireMockSystem(
 
   override fun removeInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.remove(listener)
 
+  override fun addWarningListener(listener: MockWarningListener): Unit = warningListeners.add(listener)
+
+  override fun removeWarningListener(listener: MockWarningListener): Unit = warningListeners.remove(listener)
+
+  /**
+   * Warnings computed when a test ends, strictly from evidence provably owned by that test:
+   * stubs it registered that nothing matched, and unmatched requests it provably sent while
+   * never calling validate(). Diagnostics only — never failures.
+   */
+  private fun emitTestEndWarnings(testId: String) {
+    runCatching {
+      val ownServeEvents = callJournal.taggedServeEvents(testId)
+      val matchedStubIds = ownServeEvents.filter { it.wasMatched }.mapNotNull { it.stubMapping?.id }.toSet()
+
+      callJournal
+        .taggedStubs(testId)
+        .filterNot { it.id in matchedStubIds }
+        .forEach { stub ->
+          val target = "${stub.request.method?.value() ?: "?"} ${stub.request.url ?: stub.request.urlPath ?: ""}".trim()
+          warningListeners.emit(
+            MockWarning(
+              system = reportSystemName,
+              kind = MockWarningKind.UNUSED_STUB,
+              testId = testId,
+              message = "Stub $target was registered by this test but never matched — dead fixture, " +
+                "or the interaction this test thinks it proves never happened.",
+              stubId = stub.id.toString(),
+              target = target
+            )
+          )
+        }
+
+      val ownUnmatched = ownServeEvents.filterNot { it.wasMatched }
+      if (ownUnmatched.isNotEmpty()) {
+        warningListeners.emit(
+          MockWarning(
+            system = reportSystemName,
+            kind = MockWarningKind.UNVALIDATED_UNMATCHED,
+            testId = testId,
+            message = "${ownUnmatched.size} unmatched request(s) provably belong to this test; " +
+              "validate() would have failed had the test called it.",
+            target = ownUnmatched.first().request.url
+          )
+        )
+      }
+    }.onFailure { e -> logger.warn("Failed to emit test-end warnings: ${e.message}") }
+  }
+
   /**
    * Emits one completed exchange per serve event — matched or not — after the response
    * has been fully transmitted, so timing is final. Emission failures never affect the
@@ -1170,7 +1233,9 @@ class WireMockSystem(
     runCatching {
       val request = serveEvent.request
       val headers = request.headerMap()
-      val (testId, attribution) = resolveAttribution(headers, serveEvent.stubMapping?.stoveTestId())
+      val stubTestId = serveEvent.stubMapping?.stoveTestId()
+      val (testId, attribution) = resolveAttribution(headers, stubTestId)
+      emitCrossTestMatchWarning(serveEvent, headers.stoveTestId(), stubTestId)
       val (requestBody, requestTruncated) = MockInteraction.truncated(request.bodyAsString.orEmpty())
       val response = serveEvent.response
       val (responseBody, responseTruncated) = MockInteraction.truncated(response?.bodyAsString.orEmpty())
@@ -1200,6 +1265,22 @@ class WireMockSystem(
         )
       )
     }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
+  }
+
+  /** Both sides provably tagged and different: cross-test bleed the user should see. */
+  private fun emitCrossTestMatchWarning(serveEvent: ServeEvent, requestTestId: String?, stubTestId: String?) {
+    if (!serveEvent.wasMatched || requestTestId == null || stubTestId == null || requestTestId == stubTestId) return
+    warningListeners.emit(
+      MockWarning(
+        system = reportSystemName,
+        kind = MockWarningKind.CROSS_TEST_MATCH,
+        testId = requestTestId,
+        message = "Request ${serveEvent.request.method.value()} ${serveEvent.request.url} sent by this test " +
+          "was served by a stub registered in test '$stubTestId'.",
+        stubId = serveEvent.stubMapping?.id?.toString(),
+        target = serveEvent.request.url
+      )
+    )
   }
 
   private fun configureBodyAndMetadata(

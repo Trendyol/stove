@@ -31,6 +31,12 @@ internal class WireMockCallJournal {
 
   fun serveEvents(testId: String): List<ServeEvent> = serveEvents.entries(testId)
 
+  /** Only stubs provably registered by the given test — the certainty view for warnings. */
+  fun taggedStubs(testId: String): List<StubMapping> = stubs.taggedEntries(testId)
+
+  /** Only serve events provably owned by the given test — the certainty view for warnings. */
+  fun taggedServeEvents(testId: String): List<ServeEvent> = serveEvents.taggedEntries(testId)
+
   fun clear(testId: String) {
     stubs.clear(testId)
     serveEvents.clear(testId)

@@ -7,6 +7,7 @@ import com.trendyol.stove.dashboard.api.DashboardEvent
 import com.trendyol.stove.dashboard.api.EntryRecordedEvent
 import com.trendyol.stove.dashboard.api.MockInteractionAttribution
 import com.trendyol.stove.dashboard.api.MockInteractionEvent
+import com.trendyol.stove.dashboard.api.MockWarningEvent
 import com.trendyol.stove.dashboard.api.RunEndedEvent
 import com.trendyol.stove.dashboard.api.RunStartedEvent
 import com.trendyol.stove.dashboard.api.SpanRecordedEvent
@@ -16,6 +17,9 @@ import com.trendyol.stove.interactions.InteractionAttribution
 import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.interactions.MockInteractionListener
 import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.MockWarning
+import com.trendyol.stove.interactions.MockWarningListener
+import com.trendyol.stove.interactions.MockWarningPublisher
 import com.trendyol.stove.reporting.ReportEntry
 import com.trendyol.stove.reporting.ReportEventListener
 import com.trendyol.stove.reporting.Reports
@@ -50,7 +54,8 @@ class DashboardSystem(
   RunAware,
   ReportEventListener,
   SpanEventListener,
-  MockInteractionListener {
+  MockInteractionListener,
+  MockWarningListener {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(DashboardSystem::class.java)
   private val jsonMapper = ObjectMapper()
@@ -63,12 +68,14 @@ class DashboardSystem(
   private val lifecycleLock = ReentrantLock()
   private val testStartTimes = ConcurrentHashMap<String, Instant>()
   private val testFailures = ConcurrentHashMap<String, String>()
+  private val failureSnapshotTaken = ConcurrentHashMap.newKeySet<String>()
 
   override suspend fun run() {
     emitter = DashboardEmitter(options.cliHost, options.cliPort)
     stove.addReportListener(this)
     registerSpanListener()
     stove.systemsOf<MockInteractionPublisher>().forEach { it.addInteractionListener(this) }
+    stove.systemsOf<MockWarningPublisher>().forEach { it.addWarningListener(this) }
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {
@@ -137,6 +144,11 @@ class DashboardSystem(
     )
     if (entry.isFailed) {
       testFailures.putIfAbsent(entry.testId, entry.error.getOrElse { "Assertion failed" })
+      // State at the moment of failure genuinely differs from state at test end
+      // (stubs get consumed, cleanup runs); capture the failing system once per test.
+      if (failureSnapshotTaken.add(entry.testId)) {
+        emitSnapshots(entry.testId, trigger = TRIGGER_FAILURE) { it.reportSystemName == entry.system }
+      }
     }
   }
 
@@ -161,6 +173,22 @@ class DashboardSystem(
           .setLatencyMs(interaction.latencyMs ?: -1)
           .addAllNearMisses(interaction.nearMisses)
           .setTraceId(interaction.traceId ?: "")
+          .build()
+      }
+    )
+  }
+
+  override fun onWarning(warning: MockWarning) {
+    emitter.tryEmit(
+      dashboardEvent {
+        mockWarning = MockWarningEvent.newBuilder()
+          .setTestId(warning.testId ?: "")
+          .setTimestamp(warning.timestamp.toTimestamp())
+          .setSystem(warning.system)
+          .setKind(warning.kind.name)
+          .setMessage(warning.message)
+          .setStubId(warning.stubId ?: "")
+          .setTarget(warning.target ?: "")
           .build()
       }
     )
@@ -217,6 +245,7 @@ class DashboardSystem(
         }
       )
       stove.systemsOf<MockInteractionPublisher>().forEach { it.removeInteractionListener(this) }
+      stove.systemsOf<MockWarningPublisher>().forEach { it.removeWarningListener(this) }
       stove.removeReportListener(this)
       emitter.close()
     }
@@ -236,7 +265,8 @@ class DashboardSystem(
       return
     }
 
-    emitSnapshots(testId)
+    emitSnapshots(testId, trigger = TRIGGER_TEST_END)
+    failureSnapshotTaken.remove(testId)
     val durationMs = Duration.between(startedAt, Instant.now()).toMillis()
     val failure = testFailures.remove(testId)
     val status = if (failure != null) "FAILED" else "PASSED"
@@ -258,8 +288,9 @@ class DashboardSystem(
     }
   }
 
-  private fun emitSnapshots(testId: String) {
+  private fun emitSnapshots(testId: String, trigger: String, filter: (Reports) -> Boolean = { true }) {
     stove.systemsOf<Reports>()
+      .filter(filter)
       .forEach { system ->
         runCatching { system.snapshot() }
           .onFailure { e ->
@@ -275,6 +306,8 @@ class DashboardSystem(
                   .setSystem(snap.system)
                   .setStateJson(stateJson)
                   .setSummary(snap.summary)
+                  .setTimestamp(now())
+                  .setTrigger(trigger)
                   .build()
               }
             )
@@ -295,6 +328,11 @@ class DashboardSystem(
       .build()
 
   private fun now(): Timestamp = Instant.now().toTimestamp()
+
+  private companion object {
+    const val TRIGGER_TEST_END = "TEST_END"
+    const val TRIGGER_FAILURE = "FAILURE"
+  }
 
   private fun Instant.toTimestamp(): Timestamp =
     Timestamp.newBuilder()

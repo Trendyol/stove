@@ -9,6 +9,11 @@ import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.interactions.MockInteractionListener
 import com.trendyol.stove.interactions.MockInteractionListeners
 import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.MockWarning
+import com.trendyol.stove.interactions.MockWarningKind
+import com.trendyol.stove.interactions.MockWarningListener
+import com.trendyol.stove.interactions.MockWarningListeners
+import com.trendyol.stove.interactions.MockWarningPublisher
 import com.trendyol.stove.interactions.resolveAttribution
 import com.trendyol.stove.interactions.traceparentTraceId
 import com.trendyol.stove.reporting.*
@@ -103,10 +108,17 @@ class GrpcMockSystem internal constructor(
   RunAware,
   ExposesConfiguration,
   Reports,
-  MockInteractionPublisher {
+  MockInteractionPublisher,
+  MockWarningPublisher {
   private val logger = LoggerFactory.getLogger(javaClass)
   override val reportSystemName: String = "gRPC Mock" + (ctx.keyName?.let { " [$it]" } ?: "")
   private val interactionListeners = MockInteractionListeners()
+  private val warningListeners = MockWarningListeners()
+  private val warningReportListener = object : ReportEventListener {
+    override fun onTestEnded(testId: String) {
+      emitTestEndWarnings(testId)
+    }
+  }
 
   private val stubs = ConcurrentHashMap<String, CopyOnWriteArrayList<RegisteredStub>>()
   private val callJournal = TestScopedJournal<JournaledRequest>()
@@ -124,6 +136,7 @@ class GrpcMockSystem internal constructor(
   override suspend fun run() {
     if (!reportListenerRegistered) {
       stove.addReportListener(reportListener)
+      stove.addReportListener(warningReportListener)
       reportListenerRegistered = true
     }
     val builder = ctx
@@ -155,6 +168,7 @@ class GrpcMockSystem internal constructor(
     Try {
       if (reportListenerRegistered) {
         stove.removeReportListener(reportListener)
+        stove.removeReportListener(warningReportListener)
         reportListenerRegistered = false
       }
       stop()
@@ -614,7 +628,8 @@ class GrpcMockSystem internal constructor(
     val scopedStubs = stubs.values
       .flatten()
       .filter { it.testId == null || it.testId == currentTestId }
-    val scopedRequests = callJournal.entries(currentTestId).map { it.request }
+    val scopedJournaled = callJournal.entries(currentTestId)
+    val scopedRequests = scopedJournaled.map { it.request }
 
     return SystemSnapshot(
       system = reportSystemName,
@@ -627,13 +642,14 @@ class GrpcMockSystem internal constructor(
             "type" to registered.definition::class.simpleName
           )
         },
-        "receivedRequests" to scopedRequests.map { req ->
-          mapOf(
-            "method" to req.stubKey.fullMethodName,
-            "matched" to req.matched,
-            "timestamp" to req.timestamp,
-            "hasAuth" to (req.authorizationHeader != null)
-          )
+        "receivedRequests" to scopedJournaled.map { journaled ->
+          buildMap<String, Any> {
+            put("method", journaled.request.stubKey.fullMethodName)
+            put("matched", journaled.request.matched)
+            put("timestamp", journaled.request.timestamp)
+            put("hasAuth", journaled.request.authorizationHeader != null)
+            if (journaled.nearMisses.isNotEmpty()) put("nearMisses", journaled.nearMisses)
+          }
         }
       ),
       summary = """
@@ -756,6 +772,53 @@ class GrpcMockSystem internal constructor(
 
   override fun removeInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.remove(listener)
 
+  override fun addWarningListener(listener: MockWarningListener): Unit = warningListeners.add(listener)
+
+  override fun removeWarningListener(listener: MockWarningListener): Unit = warningListeners.remove(listener)
+
+  /**
+   * Warnings computed when a test ends, strictly from evidence provably owned by that test.
+   * Diagnostics only — never failures.
+   */
+  private fun emitTestEndWarnings(testId: String) {
+    runCatching {
+      val ownRequests = callJournal.taggedEntries(testId).map { it.request }
+      val matchedStubIds = ownRequests.filter { it.matched }.mapNotNull { it.stubId }.toSet()
+
+      stubs.values
+        .flatten()
+        .filter { it.testId == testId && it.key.id !in matchedStubIds }
+        .forEach { registered ->
+          warningListeners.emit(
+            MockWarning(
+              system = reportSystemName,
+              kind = MockWarningKind.UNUSED_STUB,
+              testId = testId,
+              message = "${registered.definition::class.simpleName} stub for ${registered.key.fullMethodName} " +
+                "was registered by this test but never matched — dead fixture, or the interaction this " +
+                "test thinks it proves never happened.",
+              stubId = registered.key.id,
+              target = registered.key.fullMethodName
+            )
+          )
+        }
+
+      val ownUnmatched = ownRequests.filterNot { it.matched }
+      if (ownUnmatched.isNotEmpty()) {
+        warningListeners.emit(
+          MockWarning(
+            system = reportSystemName,
+            kind = MockWarningKind.UNVALIDATED_UNMATCHED,
+            testId = testId,
+            message = "${ownUnmatched.size} unmatched request(s) provably belong to this test; " +
+              "validate() would have failed had the test called it.",
+            target = ownUnmatched.first().stubKey.fullMethodName
+          )
+        )
+      }
+    }.onFailure { e -> logger.warn("Failed to emit test-end warnings: ${e.message}") }
+  }
+
   /**
    * Observes every call end-to-end: creation time, payload sizes, and the final status —
    * including CANCELLED/DEADLINE_EXCEEDED outcomes the handler never sees. Emits one
@@ -809,6 +872,7 @@ class GrpcMockSystem internal constructor(
     if (!record.emitted.compareAndSet(false, true)) return
     runCatching {
       val (testId, attribution) = resolveAttribution(record.headers, record.stubTestId)
+      emitCrossTestMatchWarning(record)
       interactionListeners.emit(
         MockInteraction(
           system = reportSystemName,
@@ -831,6 +895,24 @@ class GrpcMockSystem internal constructor(
         )
       )
     }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
+  }
+
+  /** Both sides provably tagged and different: cross-test bleed the user should see. */
+  private fun emitCrossTestMatchWarning(record: InteractionRecord) {
+    val requestTestId = record.headers.stoveTestId()
+    val stubTestId = record.stubTestId
+    if (!record.matched || requestTestId == null || stubTestId == null || requestTestId == stubTestId) return
+    warningListeners.emit(
+      MockWarning(
+        system = reportSystemName,
+        kind = MockWarningKind.CROSS_TEST_MATCH,
+        testId = requestTestId,
+        message = "Call to ${record.fullMethodName} sent by this test was served by a stub " +
+          "registered in test '$stubTestId'.",
+        stubId = record.stubId,
+        target = record.fullMethodName
+      )
+    )
   }
 
   // ==================== Internal: Handler Registry ====================
