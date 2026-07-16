@@ -811,6 +811,8 @@ Other options: `removeStubAfterRequestMatched` (auto-remove stubs after match), 
 grpcMock {
     GrpcMockSystemOptions(
         port = 0, // Dynamic port
+        enableHealthService = true,     // serves grpc.health.v1.Health — for apps that gate startup on a healthy channel
+        enableReflectionService = true, // grpcurl works against the mock
         configureExposedConfiguration = { cfg ->
             listOf(
                 "grpcService.host=${cfg.host}",
@@ -820,6 +822,8 @@ grpcMock {
     )
 }
 ```
+
+Both service flags default to `false`. Other options: `removeStubAfterRequestMatched`, `afterStubMatched` / `onRequestReceived` callbacks, `serverBuilder` for raw `ServerBuilder` access. Stubbing and typed verification (`shouldHaveBeenCalled<T>`) are in [writing-tests.md](writing-tests.md#grpc-mock).
 
 ## gRPC Client
 

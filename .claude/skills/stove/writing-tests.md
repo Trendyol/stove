@@ -546,6 +546,26 @@ wiremock {
     }
 }
 
+// Resilience testing (0.26+): faults, latency, retry journeys, dynamic responses
+wiremock {
+    // Network-level fault — client timeout / circuit-breaker tests
+    mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
+
+    // Fixed latency on any mock* / mock*Containing via trailing `delay` param
+    mockGet(url = "/slow", statusCode = 200, responseBody = body.some(), delay = 2.seconds)
+
+    // Retry journey shorthand inside behaviourFor
+    behaviourFor("/payments", ::post) {
+        failsTimes(2, withStatus = 503)
+        thenSucceeds { aResponse().withStatus(200).withBody("""{"recovered":true}""") }
+    }
+
+    // Response computed from the received request at serve time
+    mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
+        aResponse().withStatus(201).withBody("""{"echo":${request.bodyAsString}}""")
+    }
+}
+
 // Verify requests reached the mock (call journal is scoped to the current test)
 wiremock {
     // Called exactly once (default)
@@ -575,6 +595,8 @@ wiremock {
     calls.size shouldBe 2
 }
 ```
+
+Mock verification is point-in-time by design — there is no `within`/timeout parameter. Run it after the anchor assertion (Kafka `atLeastIn`, awaited HTTP call) has absorbed any async wait. `validate()` fails on unmatched requests scoped fail-open to the current test (untagged traffic counts for every test), and failures include near-miss diffs against the closest stubs.
 
 ## gRPC Mock
 
@@ -633,6 +655,38 @@ grpcMock {
     )
 }
 ```
+
+0.26+ additions — typed matching, descriptor stubbing, verification, resilience:
+
+```kotlin
+grpcMock {
+    // Descriptor-typed stubbing: no service/method name strings, no typo'd UNIMPLEMENTED
+    mockUnary(GreeterGrpc.getSayHelloMethod(), response = reply)
+
+    // Typed request matcher (parses bytes as the proto type; unparseable never matches)
+    mockUnary(
+        serviceName = "users.UserService",
+        methodName = "GetUser",
+        requestMatcher = RequestMatcher.message<GetUserRequest> { it.userId == "123" },
+        response = response
+    )
+
+    // Deadline testing: delay on any stub; client deadline yields DEADLINE_EXCEEDED
+    mockUnary(service, method, response = reply, delay = 2.seconds)
+
+    // Stream N items then fail mid-flight
+    mockServerStream(service, method, responses = items, thenFailWith = Status.UNAVAILABLE)
+
+    // Structured errors with trailers
+    mockError(service, method, status = Status.Code.FAILED_PRECONDITION, trailers = metadata)
+
+    // Typed, point-in-time, test-scoped verification (exact count; no timeout param)
+    shouldHaveBeenCalled<GetUserRequest>("users.UserService", "GetUser") { it.userId == "123" }
+    shouldNotHaveBeenCalled<GetUserRequest>(GreeterGrpc.getSayHelloMethod())
+}
+```
+
+Semantics to know (0.26+): among matching stubs the **last registered wins**; registering stubs of different RPC types for one method **fails fast** (`Error` stubs are type-agnostic and never conflict); bidi stubs **reject** `requestMatcher` (use `metadataMatcher` or inspect inside the handler); `validate()` is test-scoped fail-open and its failures name which matcher rejected each candidate stub.
 
 ## gRPC Client
 
