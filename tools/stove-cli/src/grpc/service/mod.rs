@@ -145,6 +145,12 @@ impl DashboardEventServiceImpl {
       proto::dashboard_event::Event::Snapshot(inner) => {
         preparers::prepare_snapshot(&mut state, &event.run_id, inner)
       }
+      proto::dashboard_event::Event::MockInteraction(inner) => {
+        preparers::prepare_mock_interaction(&mut state, &event.run_id, inner)
+      }
+      proto::dashboard_event::Event::MockWarning(inner) => {
+        preparers::prepare_mock_warning(&mut state, &event.run_id, inner)
+      }
     }?;
 
     Ok(Some(prepared))

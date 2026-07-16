@@ -17,9 +17,14 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
+use self::sql::MOCK_INTERACTION_COLUMNS;
+use self::sql::MOCK_WARNING_COLUMNS;
 use self::sql::RUN_COLUMNS;
+use self::sql::SNAPSHOT_COLUMNS;
 use self::sql::SPAN_COLUMNS;
 use self::sql::entry_from_row;
+use self::sql::mock_interaction_from_row;
+use self::sql::mock_warning_from_row;
 use self::sql::parse_run_status;
 use self::sql::run_from_row;
 use self::sql::snapshot_from_row;
@@ -29,6 +34,8 @@ use crate::error::Result;
 use crate::storage::database::Database;
 use crate::storage::models::AppSummary;
 use crate::storage::models::Entry;
+use crate::storage::models::MockInteraction;
+use crate::storage::models::MockWarning;
 use crate::storage::models::Run;
 use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
@@ -173,11 +180,72 @@ impl Repository {
 
   pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
     let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(
-            "SELECT id, run_id, test_id, system, state_json, summary FROM snapshots WHERE run_id = ?1 AND test_id = ?2",
-        )?;
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {SNAPSHOT_COLUMNS} FROM snapshots WHERE run_id = ?1 AND test_id = ?2"
+    ))?;
     let rows = stmt
       .query_map(rusqlite::params![run_id, test_id], snapshot_from_row)?
+      .filter_map(|r| r.ok())
+      .collect();
+    Ok(rows)
+  }
+
+  pub fn get_mock_interactions_for_test(
+    &self,
+    run_id: &str,
+    test_id: &str,
+  ) -> Result<Vec<MockInteraction>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
+    ))?;
+    let rows = stmt
+      .query_map(
+        rusqlite::params![run_id, test_id],
+        mock_interaction_from_row,
+      )?
+      .filter_map(|r| r.ok())
+      .collect();
+    Ok(rows)
+  }
+
+  /// All interactions of a run, including unattributed ones (`test_id IS NULL`) —
+  /// the run-level lane the UI renders instead of guessing ownership.
+  pub fn get_mock_interactions_for_run(&self, run_id: &str) -> Result<Vec<MockInteraction>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 ORDER BY id"
+    ))?;
+    let rows = stmt
+      .query_map(rusqlite::params![run_id], mock_interaction_from_row)?
+      .filter_map(|r| r.ok())
+      .collect();
+    Ok(rows)
+  }
+
+  pub fn get_mock_warnings_for_test(
+    &self,
+    run_id: &str,
+    test_id: &str,
+  ) -> Result<Vec<MockWarning>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
+    ))?;
+    let rows = stmt
+      .query_map(rusqlite::params![run_id, test_id], mock_warning_from_row)?
+      .filter_map(|r| r.ok())
+      .collect();
+    Ok(rows)
+  }
+
+  pub fn get_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 ORDER BY id"
+    ))?;
+    let rows = stmt
+      .query_map(rusqlite::params![run_id], mock_warning_from_row)?
       .filter_map(|r| r.ok())
       .collect();
     Ok(rows)

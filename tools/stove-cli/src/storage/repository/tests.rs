@@ -3,6 +3,8 @@ use crate::storage::database::Database;
 use crate::storage::models::AppSummary;
 use crate::storage::models::Entry;
 use crate::storage::models::NewEntry;
+use crate::storage::models::NewMockInteraction;
+use crate::storage::models::NewMockWarning;
 use crate::storage::models::NewSpan;
 use crate::storage::models::Run;
 use crate::storage::models::RunStatus;
@@ -16,6 +18,7 @@ fn test_repo() -> Repository {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn full_event_lifecycle() {
   let repo = test_repo();
 
@@ -182,6 +185,8 @@ fn full_event_lifecycle() {
       system: "Kafka".into(),
       state_json: r#"{"consumed":5}"#.into(),
       summary: "5 messages consumed".into(),
+      captured_at: None,
+      trigger: "TEST_END".into(),
     }]
   );
 
@@ -195,6 +200,94 @@ fn full_event_lifecycle() {
       total_runs: 1,
     }]
   );
+}
+
+#[test]
+fn mock_interactions_and_warnings_roundtrip() {
+  let repo = test_repo();
+
+  repo
+    .save_mock_interaction(&NewMockInteraction {
+      run_id: "run-1".into(),
+      test_id: Some("test-1".into()),
+      timestamp: "2024-01-01T00:00:02Z".into(),
+      system: "WireMock".into(),
+      protocol: "HTTP".into(),
+      method: "POST".into(),
+      target: "/payments".into(),
+      matched: true,
+      stub_id: Some("stub-1".into()),
+      attribution: "PROVEN_STUB".into(),
+      request_body: r#"{"amount":100}"#.into(),
+      response_body: r#"{"ok":true}"#.into(),
+      status: "200".into(),
+      latency_ms: Some(12),
+      near_misses: "[]".into(),
+      ..Default::default()
+    })
+    .unwrap();
+
+  // Unattributed evidence keeps test_id NULL — the run-level lane.
+  repo
+    .save_mock_interaction(&NewMockInteraction {
+      run_id: "run-1".into(),
+      test_id: None,
+      timestamp: "2024-01-01T00:00:03Z".into(),
+      system: "gRPC Mock".into(),
+      protocol: "GRPC".into(),
+      target: "users.UserService/GetUser".into(),
+      matched: false,
+      attribution: "UNATTRIBUTED".into(),
+      status: "UNIMPLEMENTED".into(),
+      near_misses: r#"["no stubs registered for this method"]"#.into(),
+      ..Default::default()
+    })
+    .unwrap();
+
+  repo
+    .save_mock_warning(&NewMockWarning {
+      run_id: "run-1".into(),
+      test_id: Some("test-1".into()),
+      timestamp: "2024-01-01T00:00:04Z".into(),
+      system: "WireMock".into(),
+      kind: "UNUSED_STUB".into(),
+      message: "Stub GET /never was registered by this test but never matched.".into(),
+      stub_id: Some("stub-2".into()),
+      target: Some("GET /never".into()),
+    })
+    .unwrap();
+
+  let test_interactions = repo
+    .get_mock_interactions_for_test("run-1", "test-1")
+    .unwrap();
+  assert_eq!(test_interactions.len(), 1);
+  assert_eq!(test_interactions[0].target, "/payments");
+  assert!(test_interactions[0].matched);
+  assert_eq!(test_interactions[0].attribution, "PROVEN_STUB");
+  assert_eq!(test_interactions[0].latency_ms, Some(12));
+
+  let run_interactions = repo.get_mock_interactions_for_run("run-1").unwrap();
+  assert_eq!(run_interactions.len(), 2);
+  let unattributed = run_interactions
+    .iter()
+    .find(|interaction| interaction.test_id.is_none())
+    .unwrap();
+  assert_eq!(unattributed.attribution, "UNATTRIBUTED");
+  assert_eq!(unattributed.status, "UNIMPLEMENTED");
+
+  let warnings = repo.get_mock_warnings_for_test("run-1", "test-1").unwrap();
+  assert_eq!(warnings.len(), 1);
+  assert_eq!(warnings[0].kind, "UNUSED_STUB");
+  assert_eq!(repo.get_mock_warnings_for_run("run-1").unwrap().len(), 1);
+
+  repo.clear_all().unwrap();
+  assert!(
+    repo
+      .get_mock_interactions_for_run("run-1")
+      .unwrap()
+      .is_empty()
+  );
+  assert!(repo.get_mock_warnings_for_run("run-1").unwrap().is_empty());
 }
 
 #[test]

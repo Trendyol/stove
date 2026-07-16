@@ -18,8 +18,8 @@ use stove::proto;
 use stove::proto::dashboard_event_service_server::DashboardEventService;
 use tonic::Request;
 
-fn ts(seconds: i64, nanos: i32) -> Option<prost_types::Timestamp> {
-  Some(prost_types::Timestamp { seconds, nanos })
+fn ts(seconds: i64, nanos: i32) -> prost_types::Timestamp {
+  prost_types::Timestamp { seconds, nanos }
 }
 
 fn run_started_event(
@@ -42,7 +42,7 @@ fn run_started_event_with_version(
     run_id: run_id.to_string(),
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         app_name: app_name.to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
         stove_version: stove_version.to_string(),
@@ -64,7 +64,7 @@ fn run_ended_event(
     run_id: run_id.to_string(),
     event: Some(proto::dashboard_event::Event::RunEnded(
       proto::RunEndedEvent {
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         total_tests,
         passed,
         failed,
@@ -89,7 +89,7 @@ fn test_started_event(
         test_id: test_id.to_string(),
         test_name: test_name.to_string(),
         spec_name: spec_name.to_string(),
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         test_path: vec![],
       },
     )),
@@ -113,7 +113,7 @@ fn test_ended_event(
         status: status.to_string(),
         duration_ms,
         error: error.to_string(),
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
       },
     )),
   }
@@ -133,7 +133,7 @@ fn entry_recorded_event(
     event: Some(proto::dashboard_event::Event::EntryRecorded(
       proto::EntryRecordedEvent {
         test_id: test_id.to_string(),
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         system: "HTTP".to_string(),
         action: action.to_string(),
         result: result.to_string(),
@@ -184,6 +184,8 @@ fn snapshot_event(
   system: &str,
   state_json: &str,
   summary: &str,
+  seconds: i64,
+  nanos: i32,
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
@@ -193,6 +195,8 @@ fn snapshot_event(
         system: system.to_string(),
         state_json: state_json.to_string(),
         summary: summary.to_string(),
+        timestamp: Some(ts(seconds, nanos)),
+        trigger: "TEST_END".to_string(),
       },
     )),
   }
@@ -699,6 +703,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
           "Kafka",
           r#"{"published":1}"#,
           "1 published",
+          1_704_067_302,
+          0,
         ),
       )
       .await
@@ -712,6 +718,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
           "Redis",
           r#"{"keys":2}"#,
           "2 keys",
+          1_704_067_302,
+          0,
         ),
       )
       .await
@@ -802,6 +810,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   let snapshots_a = snapshots_a.as_array().unwrap();
   assert_eq!(snapshots_a.len(), 1);
   assert_eq!(snapshots_a[0]["system"], "Kafka");
+  assert!(!snapshots_a[0]["captured_at"].is_null());
+  assert_eq!(snapshots_a[0]["trigger"], "TEST_END");
 
   let snapshots_b = server
     .get_json("/runs/run-interleaved/tests/test-b/snapshots")
@@ -809,6 +819,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   let snapshots_b = snapshots_b.as_array().unwrap();
   assert_eq!(snapshots_b.len(), 1);
   assert_eq!(snapshots_b[0]["system"], "Redis");
+  assert!(!snapshots_b[0]["captured_at"].is_null());
+  assert_eq!(snapshots_b[0]["trigger"], "TEST_END");
 }
 
 // ---------------------------------------------------------------------------

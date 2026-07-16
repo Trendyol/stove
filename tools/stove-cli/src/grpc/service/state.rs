@@ -18,6 +18,8 @@ pub(super) mod event_type {
   pub const ENTRY_RECORDED: &str = "entry_recorded";
   pub const SPAN_RECORDED: &str = "span_recorded";
   pub const SNAPSHOT: &str = "snapshot";
+  pub const MOCK_INTERACTION: &str = "mock_interaction";
+  pub const MOCK_WARNING: &str = "mock_warning";
 }
 
 #[derive(Default)]

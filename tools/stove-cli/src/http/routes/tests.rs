@@ -2,7 +2,7 @@ use axum::Json;
 use axum::extract::{Path, State};
 
 use crate::http::server::AppState;
-use crate::storage::models::{Entry, Snapshot, Test};
+use crate::storage::models::{Entry, MockInteraction, MockWarning, Snapshot, Test};
 
 pub async fn get_tests(
   State(state): State<AppState>,
@@ -34,4 +34,40 @@ pub async fn get_test_spans(
 ) -> Result<Json<Vec<crate::storage::models::Span>>, crate::error::AppError> {
   let spans = state.repository.get_spans_for_test(&run_id, &test_id)?;
   Ok(Json(spans))
+}
+
+pub async fn get_test_interactions(
+  State(state): State<AppState>,
+  Path((run_id, test_id)): Path<(String, String)>,
+) -> Result<Json<Vec<MockInteraction>>, crate::error::AppError> {
+  let interactions = state
+    .repository
+    .get_mock_interactions_for_test(&run_id, &test_id)?;
+  Ok(Json(interactions))
+}
+
+pub async fn get_run_interactions(
+  State(state): State<AppState>,
+  Path(run_id): Path<String>,
+) -> Result<Json<Vec<MockInteraction>>, crate::error::AppError> {
+  let interactions = state.repository.get_mock_interactions_for_run(&run_id)?;
+  Ok(Json(interactions))
+}
+
+pub async fn get_test_warnings(
+  State(state): State<AppState>,
+  Path((run_id, test_id)): Path<(String, String)>,
+) -> Result<Json<Vec<MockWarning>>, crate::error::AppError> {
+  let warnings = state
+    .repository
+    .get_mock_warnings_for_test(&run_id, &test_id)?;
+  Ok(Json(warnings))
+}
+
+pub async fn get_run_warnings(
+  State(state): State<AppState>,
+  Path(run_id): Path<String>,
+) -> Result<Json<Vec<MockWarning>>, crate::error::AppError> {
+  let warnings = state.repository.get_mock_warnings_for_run(&run_id)?;
+  Ok(Json(warnings))
 }
