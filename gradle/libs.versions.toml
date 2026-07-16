@@ -57,7 +57,7 @@ bytebuddy = "1.18.11"
 mordant = "3.0.2"
 
 # Recipes
-stove = "1.0.0.540-SNAPSHOT"
+stove = "1.0.0.541-SNAPSHOT"
 scala2x = "2.13.18"
 kotlinLogging = "8.0.4"
 kediatr = "4.4.0"
