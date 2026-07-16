@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { reconcileDashboardData } from "../api/live-cache";
 import type { Entry, MockInteraction, MockWarning, Snapshot, Span, Test } from "../api/types";
@@ -144,16 +144,33 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
   );
   const mockError =
     interactionsError ?? warningsError ?? runInteractionsError ?? runWarningsError ?? null;
+  const mockEvidenceCount =
+    interactions.length + ambientInteractions.length + warnings.length + ambientWarnings.length;
+  const hasMockEvidence = mockEvidenceCount > 0;
+
+  useEffect(() => {
+    setTab("timeline");
+  }, [runId, test.id]);
+
+  useEffect(() => {
+    if (tab === "mocks" && !hasMockEvidence && !interactionsLoading && !warningsLoading) {
+      setTab("timeline");
+    }
+  }, [hasMockEvidence, interactionsLoading, tab, warningsLoading]);
 
   const tabs = [
     { id: "timeline" as Tab, label: "Evidence", count: entries.length, icon: "activity" as const },
-    {
-      id: "mocks" as Tab,
-      label: "Mock journal",
-      count: interactions.length + ambientInteractions.length,
-      attention: warnings.length + ambientWarnings.length > 0,
-      icon: "mock" as const,
-    },
+    ...(hasMockEvidence
+      ? [
+          {
+            id: "mocks" as Tab,
+            label: "Mock journal",
+            count: mockEvidenceCount,
+            attention: warnings.length + ambientWarnings.length > 0,
+            icon: "mock" as const,
+          },
+        ]
+      : []),
     { id: "trace" as Tab, label: "Trace", count: spans.length, icon: "trace" as const },
     {
       id: "snapshots" as Tab,

@@ -1227,6 +1227,50 @@ button {
   white-space: nowrap;
 }
 
+.ledger-command-summary {
+  display: flex;
+  min-width: 190px;
+  align-items: center;
+  gap: 7px;
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.ledger-command-summary > strong {
+  color: var(--stove-text-heading);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ledger-command-summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ledger-command-summary > span.is-issue {
+  color: var(--stove-red);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.ledger-command-summary > span.is-issue i {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--stove-red);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .ledger-command-actions {
   display: flex;
   min-width: 0;
@@ -1379,7 +1423,6 @@ button {
   position: absolute;
   top: 20px;
   bottom: 20px;
-  left: 20px;
   width: 2px;
   border-radius: 999px;
   background: linear-gradient(
@@ -1389,6 +1432,18 @@ button {
     transparent
   );
   content: "";
+}
+
+.evidence-ledger::before {
+  left: 23px;
+}
+
+.mock-ledger::before {
+  left: 20px;
+}
+
+.evidence-ledger {
+  margin-top: 12px;
 }
 
 .evidence-ledger-row,
@@ -1439,23 +1494,59 @@ button {
   box-shadow: 0 0 0 1px var(--stove-border-strong);
 }
 
-.is-issue > .ledger-rail-point,
-.is-unmatched > .ledger-rail-point {
+.mock-ledger-row.is-issue > .ledger-rail-point,
+.mock-ledger-row.is-unmatched > .ledger-rail-point {
   background: var(--stove-red);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--stove-red) 40%, var(--stove-border)),
     0 0 9px color-mix(in srgb, var(--stove-red) 35%, transparent);
 }
 
-.is-success > .ledger-rail-point,
-.is-matched > .ledger-rail-point {
+.evidence-ledger-row.is-success > .ledger-rail-point,
+.mock-ledger-row.is-matched > .ledger-rail-point {
   background: var(--stove-green);
 }
 
+.evidence-ledger-row.is-issue {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--stove-red) 8%, transparent),
+    transparent 58%
+  );
+}
+
+.evidence-ledger-row.is-issue:hover {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--stove-red) 13%, transparent),
+    var(--stove-hover) 62%
+  );
+}
+
+.evidence-ledger-row.is-issue.is-selected {
+  box-shadow: inset 3px 0 0 var(--stove-red);
+}
+
+.evidence-ledger-row.is-issue > .ledger-rail-point {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-color: color-mix(in srgb, var(--stove-red) 22%, var(--stove-surface));
+  background: var(--stove-red);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--stove-red) 18%, transparent),
+    0 0 13px color-mix(in srgb, var(--stove-red) 36%, transparent);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 850;
+}
+
 .evidence-ledger-row {
-  grid-template-columns: 16px 90px 30px minmax(180px, 1fr) auto 90px 16px;
+  grid-template-columns: 20px 90px 30px minmax(180px, 1fr) auto 90px 16px;
   gap: 9px;
-  padding: 11px 12px 11px 17px;
+  padding: 11px 12px 11px 13px;
 }
 
 .evidence-ledger-row time,
@@ -1549,6 +1640,35 @@ button {
   border-radius: 12px;
   background: var(--stove-surface);
   box-shadow: var(--stove-shadow-soft);
+}
+
+.evidence-dialog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: fade-in 120ms ease-out;
+}
+
+.evidence-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+  border: 0;
+  background: rgba(7, 9, 14, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.ledger-inspector.evidence-dialog {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  width: min(760px, 100%);
+  max-height: min(82vh, 800px);
+  border-color: var(--stove-border-strong);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
 }
 
 .ledger-inspector.is-empty {
@@ -1690,6 +1810,23 @@ button {
 
 .ledger-inspector-body pre {
   user-select: text;
+}
+
+.evidence-dialog .ledger-inspector-header {
+  padding: 15px 16px 13px;
+}
+
+.evidence-dialog .ledger-inspector-header strong,
+.mock-inspector .ledger-inspector-header strong {
+  margin-top: 0;
+}
+
+.evidence-dialog .ledger-inspector-header strong {
+  font-size: 15px;
+}
+
+.evidence-dialog .ledger-inspector-body {
+  padding: 13px 16px 18px;
 }
 
 .inspector-no-detail {
@@ -2416,6 +2553,13 @@ button {
     display: none;
   }
 
+  .ledger-inspector.evidence-dialog {
+    position: relative;
+    inset: auto;
+    width: min(760px, 100%);
+    max-height: min(84vh, 760px);
+  }
+
   .warning-ribbon {
     grid-template-columns: 1fr;
   }
@@ -2443,6 +2587,11 @@ button {
     margin: 3px 0 0;
   }
 
+  .ledger-command-summary {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
   .ledger-command-actions {
     flex-wrap: wrap;
   }
@@ -2463,9 +2612,9 @@ button {
   }
 
   .evidence-ledger-row {
-    grid-template-columns: 14px 26px minmax(150px, 1fr) auto 14px;
+    grid-template-columns: 20px 26px minmax(150px, 1fr) auto 14px;
     gap: 7px;
-    padding: 10px 9px 10px 14px;
+    padding: 10px 9px 10px 13px;
   }
 
   .evidence-ledger-row > time {
@@ -2516,6 +2665,18 @@ button {
     left: 6px;
     max-height: 84vh;
     border-radius: 14px 14px 10px 10px;
+  }
+
+  .evidence-dialog-layer {
+    align-items: end;
+    padding: 6px;
+  }
+
+  .ledger-inspector.evidence-dialog {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-height: 88vh;
   }
 
   .ledger-inspector::before {

@@ -123,14 +123,16 @@ export function MockJournal({
   return (
     <div className="mock-workbench">
       <header className="ledger-command-bar mock-command-bar">
-        <div className="ledger-command-title">
-          <div className="stove-kicker">Dependency evidence</div>
-          <h2>Mock ledger</h2>
-          <span>
-            {allInteractions.length} exchanges · {counts.issues} need attention ·{" "}
-            {matchedRate == null ? "—" : `${matchedRate}%`} matched
-            {slowest == null ? "" : ` · ${formatDuration(slowest)} slowest`}
-          </span>
+        <div className="ledger-command-summary">
+          <strong>{allInteractions.length}</strong> exchanges
+          {counts.issues > 0 && (
+            <span className="is-issue">
+              <i>!</i>
+              {counts.issues} need attention
+            </span>
+          )}
+          <span>{matchedRate == null ? "—" : `${matchedRate}%`} matched</span>
+          {slowest != null && <span>{formatDuration(slowest)} slowest</span>}
         </div>
         <div className="ledger-command-actions">
           {counts.issues > 0 && (
@@ -166,10 +168,10 @@ export function MockJournal({
       </header>
 
       {allWarnings.length > 0 && (
-        <section className="warning-ribbon" aria-label="Mock diagnostic signals">
+        <section className="warning-ribbon" aria-label="Mock warnings">
           <div className="warning-ribbon-label">
             <Icon name="warning" className="h-4 w-4" />
-            <span>Diagnostic signals</span>
+            <span>Warnings</span>
             <strong>{allWarnings.length}</strong>
           </div>
           <div className="warning-ribbon-list">
@@ -382,7 +384,6 @@ function InteractionInspector({
     >
       <header className="ledger-inspector-header">
         <div>
-          <span className="stove-kicker">Exchange inspector</span>
           <strong>{interaction?.target ?? warning?.target ?? humanize(warning?.kind ?? "")}</strong>
           <p>
             {interaction && system ? (

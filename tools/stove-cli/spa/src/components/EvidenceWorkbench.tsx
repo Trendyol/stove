@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Entry } from "../api/types";
 import { formatTimestamp } from "../utils/format";
 import { getSystemInfo } from "../utils/systems";
@@ -17,10 +17,12 @@ export function EvidenceWorkbench({ entries, onOpenTrace }: EvidenceWorkbenchPro
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<Entry["id"] | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const closeInspector = useCallback(() => setSelectedId(null), []);
 
   useEffect(() => {
-    if (selectedId != null && entries.some((entry) => entry.id === selectedId)) return;
-    setSelectedId(entries.find(isEntryIssue)?.id ?? entries[0]?.id ?? null);
+    if (selectedId != null && !entries.some((entry) => entry.id === selectedId)) {
+      setSelectedId(null);
+    }
   }, [entries, selectedId]);
 
   useEffect(() => {
@@ -66,12 +68,14 @@ export function EvidenceWorkbench({ entries, onOpenTrace }: EvidenceWorkbenchPro
   return (
     <div className="evidence-workbench">
       <header className="ledger-command-bar">
-        <div className="ledger-command-title">
-          <div className="stove-kicker">Chronological evidence</div>
-          <h2>Test ledger</h2>
-          <span>
-            {entries.length} events · {issueCount} need attention
-          </span>
+        <div className="ledger-command-summary">
+          <strong>{entries.length}</strong> events
+          {issueCount > 0 && (
+            <span className="is-issue">
+              <i>!</i>
+              {issueCount} need attention
+            </span>
+          )}
         </div>
         <div className="ledger-command-actions">
           {issueCount > 0 && (
@@ -109,37 +113,35 @@ export function EvidenceWorkbench({ entries, onOpenTrace }: EvidenceWorkbenchPro
         </div>
       </header>
 
-      <div className="evidence-ledger-layout">
-        <section className="evidence-ledger" aria-label="Recorded test evidence">
-          {visibleEntries.length > 0 ? (
-            visibleEntries.map((entry) => (
-              <EvidenceRow
-                key={entry.id}
-                entry={entry}
-                selected={entry.id === selectedId}
-                onSelect={() => setSelectedId(entry.id)}
-              />
-            ))
-          ) : (
-            <LedgerEmpty
-              title={entries.length > 0 ? "No evidence matches this lens" : "No evidence recorded"}
-              detail={
-                entries.length > 0
-                  ? "Broaden the filter or clear the search."
-                  : "The test completed without report entries."
-              }
+      <section className="evidence-ledger" aria-label="Recorded test evidence">
+        {visibleEntries.length > 0 ? (
+          visibleEntries.map((entry) => (
+            <EvidenceRow
+              key={entry.id}
+              entry={entry}
+              selected={entry.id === selectedId}
+              onSelect={() => setSelectedId(entry.id)}
             />
-          )}
-        </section>
+          ))
+        ) : (
+          <LedgerEmpty
+            title={entries.length > 0 ? "No matching evidence" : "No evidence recorded"}
+            detail={
+              entries.length > 0
+                ? "Broaden the filter or clear the search."
+                : "This test did not report any events."
+            }
+          />
+        )}
+      </section>
 
-        <EvidenceInspector
-          entry={selectedEntry}
-          entries={entries}
-          onSelect={setSelectedId}
-          onClose={() => setSelectedId(null)}
-          onOpenTrace={onOpenTrace}
-        />
-      </div>
+      <EvidenceInspector
+        entry={selectedEntry}
+        entries={entries}
+        onSelect={setSelectedId}
+        onClose={closeInspector}
+        onOpenTrace={onOpenTrace}
+      />
     </div>
   );
 }
@@ -162,10 +164,12 @@ function EvidenceRow({
       className={`evidence-ledger-row ${selected ? "is-selected" : ""} ${
         issue ? "is-issue" : "is-success"
       }`}
-      aria-pressed={selected}
+      aria-haspopup="dialog"
       onClick={onSelect}
     >
-      <span className="ledger-rail-point" />
+      <span className="ledger-rail-point" aria-hidden="true">
+        {issue ? "!" : ""}
+      </span>
       <time>{formatTimestamp(entry.timestamp)}</time>
       <span
         className="ledger-system-glyph"
@@ -197,15 +201,27 @@ function EvidenceInspector({
   onClose: () => void;
   onOpenTrace: () => void;
 }) {
-  if (!entry) {
-    return (
-      <aside className="ledger-inspector is-empty">
-        <Icon name="activity" className="h-5 w-5" />
-        <strong>Select an event</strong>
-        <p>Details stay pinned here while you compare the surrounding chronology.</p>
-      </aside>
-    );
-  }
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const isOpen = entry != null;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
+  }, [isOpen, onClose]);
+
+  if (!entry) return null;
 
   const position = entries.findIndex((candidate) => candidate.id === entry.id);
   const previous = position > 0 ? entries[position - 1] : null;
@@ -213,61 +229,72 @@ function EvidenceInspector({
   const system = getSystemInfo(entry.system);
 
   return (
-    <aside className="ledger-inspector" aria-label={`Evidence details for ${entry.action}`}>
-      <header className="ledger-inspector-header">
-        <div>
-          <span className="stove-kicker">Evidence inspector</span>
-          <strong>{entry.action}</strong>
-          <p>
-            <span style={{ color: system.color }}>{system.icon}</span> {entry.system} ·{" "}
-            {formatTimestamp(entry.timestamp)}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="inspector-close"
-          onClick={onClose}
-          aria-label="Close inspector"
-        >
-          ×
-        </button>
-      </header>
-
-      <div className="inspector-status-line">
-        <span className={isEntryIssue(entry) ? "is-issue" : "is-success"}>{entry.result}</span>
-        {entry.trace_id && (
-          <button type="button" onClick={onOpenTrace}>
-            Open trace
-            <Icon name="chevron" className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-
-      <div className="ledger-inspector-body">
-        <EntryDetails entry={entry} />
-        {!hasEntryDetail(entry) && (
-          <div className="inspector-no-detail">
-            No structured payload was captured for this event.
+    <div className="evidence-dialog-layer">
+      <button
+        type="button"
+        className="evidence-dialog-backdrop"
+        aria-label="Close evidence details"
+        onClick={onClose}
+      />
+      <section
+        className="ledger-inspector evidence-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Evidence details for ${entry.action}`}
+      >
+        <header className="ledger-inspector-header">
+          <div>
+            <strong>{entry.action}</strong>
+            <p>
+              <span style={{ color: system.color }}>{system.icon}</span> {entry.system} ·{" "}
+              {formatTimestamp(entry.timestamp)}
+            </p>
           </div>
-        )}
-      </div>
+          <button
+            type="button"
+            className="inspector-close"
+            ref={closeButtonRef}
+            onClick={onClose}
+            aria-label="Close inspector"
+          >
+            ×
+          </button>
+        </header>
 
-      <footer className="ledger-inspector-nav">
-        <button
-          type="button"
-          disabled={!previous}
-          onClick={() => previous && onSelect(previous.id)}
-        >
-          ← Previous
-        </button>
-        <span>
-          {position + 1} / {entries.length}
-        </span>
-        <button type="button" disabled={!next} onClick={() => next && onSelect(next.id)}>
-          Next →
-        </button>
-      </footer>
-    </aside>
+        <div className="inspector-status-line">
+          <span className={isEntryIssue(entry) ? "is-issue" : "is-success"}>{entry.result}</span>
+          {entry.trace_id && (
+            <button type="button" onClick={onOpenTrace}>
+              Open trace
+              <Icon name="chevron" className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="ledger-inspector-body">
+          <EntryDetails entry={entry} />
+          {!hasEntryDetail(entry) && (
+            <div className="inspector-no-detail">No payload was captured for this event.</div>
+          )}
+        </div>
+
+        <footer className="ledger-inspector-nav">
+          <button
+            type="button"
+            disabled={!previous}
+            onClick={() => previous && onSelect(previous.id)}
+          >
+            ← Previous
+          </button>
+          <span>
+            {position + 1} / {entries.length}
+          </span>
+          <button type="button" disabled={!next} onClick={() => next && onSelect(next.id)}>
+            Next →
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }
 
