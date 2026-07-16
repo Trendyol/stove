@@ -38,9 +38,5 @@ internal fun Message.singleLine(): String = toString().replace(Regex("\\s+"), " 
 
 internal fun Throwable.conciseDecodeError(): String {
   val root = generateSequence(this) { it.cause }.last()
-  val type = root::class.simpleName ?: "Decode error"
-  return root.message
-    ?.takeIf { it.isNotBlank() }
-    ?.let { "$type: $it" }
-    ?: type
+  return root::class.simpleName ?: "Decode error"
 }

@@ -139,4 +139,22 @@ class GrpcMockNearMissTest :
       evaluation.rejection shouldContain "could not decode request with the supplied protobuf parser"
       evaluation.rejection shouldContain "InvalidProtocolBufferException"
     }
+
+    test("decode diagnostics omit root exception messages") {
+      val evaluation = RequestMatcher
+        .ParsedMessage(
+          decoder = PayloadDecoder<TestRequest>("a test decoder") {
+            throw IllegalStateException(
+              "wrapper detail",
+              IllegalArgumentException("sensitive payload detail")
+            )
+          },
+          predicate = { true }
+        ).evaluate(byteArrayOf())
+
+      evaluation.matched shouldBe false
+      evaluation.rejection shouldContain "IllegalArgumentException"
+      evaluation.rejection shouldNotContain "wrapper detail"
+      evaluation.rejection shouldNotContain "sensitive payload detail"
+    }
   })
