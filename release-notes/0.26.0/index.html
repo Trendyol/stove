@@ -3382,7 +3382,7 @@
 
 
 <h1 id="0260">0.26.0<a class="headerlink" href="#0260" title="Permanent link">&para;</a></h1>
-<p><strong>Released:</strong> July 2026</p>
+<p><strong>Status:</strong> Upcoming — not released yet</p>
 <p>This release is a ground-up rework of Stove's two mocking systems — <strong>stove-wiremock</strong> and <strong>stove-grpc-mock</strong> — plus a new evidence pipeline that turns the dashboard into a network tab for your application's egress. It also ships the stove-kafka internals rework: event-driven waits instead of polling, and test-scoped assertions that make parallel suites safe.</p>
 <p>The guiding principle throughout: <strong>evidence is either proven or explicitly unattributed — never inferred.</strong> A mock exchange is linked to a test only through provable signals (the <code>X-Stove-Test-Id</code> header, W3C baggage, or the matched stub's registration tag); everything else is shown as unattributed rather than guessed. In tests we want certainty, not blur.</p>
 <hr />
