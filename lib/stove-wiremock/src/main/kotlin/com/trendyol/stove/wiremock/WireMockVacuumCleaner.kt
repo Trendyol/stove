@@ -32,6 +32,9 @@ class WireMockVacuumCleaner(
     if (!stubLog.containsKey(serveEvent.stubMapping.id)) {
       return
     }
+    if (serveEvent.stubMapping.metadata?.containsKey(WireMockSystem.STOVE_PERSISTENT_STUB_KEY) == true) {
+      return
+    }
 
     Try {
       synchronized(wireMock) {

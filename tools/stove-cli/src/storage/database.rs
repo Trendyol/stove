@@ -19,6 +19,14 @@ const MIGRATIONS: &[(&str, &str)] = &[
     "V3__test_path",
     include_str!("migrations/V3__test_path.sql"),
   ),
+  (
+    "V4__mock_interactions",
+    include_str!("migrations/V4__mock_interactions.sql"),
+  ),
+  (
+    "V5__mock_interaction_metadata",
+    include_str!("migrations/V5__mock_interaction_metadata.sql"),
+  ),
 ];
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.
@@ -186,7 +194,7 @@ mod tests {
         row.get(0)
       })
       .unwrap();
-    assert_eq!(version, MIGRATIONS.len() as i64);
+    assert_eq!(version, i64::try_from(MIGRATIONS.len()).unwrap());
   }
 
   #[test]
@@ -230,6 +238,6 @@ mod tests {
       .unwrap();
 
     assert_eq!(stove_version_columns, 1);
-    assert_eq!(schema_version, MIGRATIONS.len() as i64);
+    assert_eq!(schema_version, i64::try_from(MIGRATIONS.len()).unwrap());
   }
 }

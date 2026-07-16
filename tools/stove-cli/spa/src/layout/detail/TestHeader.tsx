@@ -4,24 +4,36 @@ import { formatDuration } from "../../utils/format";
 
 interface TestHeaderProps {
   test: Test;
+  liveConnected: boolean;
 }
 
-export function TestHeader({ test }: TestHeaderProps) {
+export function TestHeader({ test, liveConnected }: TestHeaderProps) {
+  const path = test.test_path.filter((segment) => segment !== test.test_name);
+
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--stove-text-muted)]">
-          {test.spec_name}
+    <div className="test-dossier">
+      <div className={`test-dossier-beam is-${test.status.toLowerCase()}`} />
+      <div className="test-dossier-main">
+        <div className="test-breadcrumbs">
+          <span>{test.spec_name}</span>
+          {path.map((segment) => (
+            <span key={segment}>{segment}</span>
+          ))}
         </div>
-        <div className="mt-1 truncate text-base font-semibold text-[var(--stove-text-heading)]">
-          {test.test_name}
+        <div className="test-title-row">
+          <h1>{test.test_name}</h1>
+          <Badge status={test.status} />
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Badge status={test.status} />
-        <span className="rounded-full border border-stove-border bg-stove-base px-2.5 py-1 font-mono text-xs text-[var(--stove-text-secondary)]">
-          {formatDuration(test.duration_ms)}
-        </span>
+        <div className="test-dossier-meta">
+          <span>
+            <strong>{formatDuration(test.duration_ms)}</strong> elapsed
+          </span>
+          <span className={liveConnected ? "is-live" : ""}>
+            <i />
+            {liveConnected ? "live evidence" : "polling evidence"}
+          </span>
+          <code title={test.id}>{test.id}</code>
+        </div>
       </div>
     </div>
   );

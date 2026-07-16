@@ -18,8 +18,8 @@ use stove::proto;
 use stove::proto::dashboard_event_service_server::DashboardEventService;
 use tonic::Request;
 
-fn ts(seconds: i64, nanos: i32) -> Option<prost_types::Timestamp> {
-  Some(prost_types::Timestamp { seconds, nanos })
+fn ts(seconds: i64, nanos: i32) -> prost_types::Timestamp {
+  prost_types::Timestamp { seconds, nanos }
 }
 
 fn run_started_event(
@@ -42,7 +42,7 @@ fn run_started_event_with_version(
     run_id: run_id.to_string(),
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         app_name: app_name.to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
         stove_version: stove_version.to_string(),
@@ -64,7 +64,7 @@ fn run_ended_event(
     run_id: run_id.to_string(),
     event: Some(proto::dashboard_event::Event::RunEnded(
       proto::RunEndedEvent {
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         total_tests,
         passed,
         failed,
@@ -89,7 +89,7 @@ fn test_started_event(
         test_id: test_id.to_string(),
         test_name: test_name.to_string(),
         spec_name: spec_name.to_string(),
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         test_path: vec![],
       },
     )),
@@ -113,7 +113,7 @@ fn test_ended_event(
         status: status.to_string(),
         duration_ms,
         error: error.to_string(),
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
       },
     )),
   }
@@ -133,7 +133,7 @@ fn entry_recorded_event(
     event: Some(proto::dashboard_event::Event::EntryRecorded(
       proto::EntryRecordedEvent {
         test_id: test_id.to_string(),
-        timestamp: ts(seconds, nanos),
+        timestamp: Some(ts(seconds, nanos)),
         system: "HTTP".to_string(),
         action: action.to_string(),
         result: result.to_string(),
@@ -178,12 +178,64 @@ fn span_recorded_event(
   }
 }
 
+fn mock_interaction_event(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::dashboard_event::Event::MockInteraction(
+      proto::MockInteractionEvent {
+        test_id: test_id.to_string(),
+        timestamp: Some(ts(seconds, 0)),
+        system: "WireMock".to_string(),
+        protocol: "HTTP".to_string(),
+        method: "POST".to_string(),
+        target: "/payments".to_string(),
+        matched: false,
+        stub_id: "stub-1".to_string(),
+        attribution: proto::MockInteractionAttribution::ProvenStub as i32,
+        request_body: r#"{"amount":100}"#.to_string(),
+        request_body_truncated: false,
+        response_body: String::new(),
+        response_body_truncated: false,
+        status: "404".to_string(),
+        latency_ms: 42,
+        near_misses: vec!["body matcher rejected".to_string()],
+        trace_id: "0123456789abcdef0123456789abcdef".to_string(),
+        scenario_name: "payment retry".to_string(),
+        scenario_state: "attempt-2".to_string(),
+        next_scenario_state: "recovered".to_string(),
+        configured_delay_ms: 250,
+        fault: "CONNECTION_RESET_BY_PEER".to_string(),
+        client_deadline_ms: 500,
+      },
+    )),
+  }
+}
+
+fn mock_warning_event(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::dashboard_event::Event::MockWarning(
+      proto::MockWarningEvent {
+        test_id: test_id.to_string(),
+        timestamp: Some(ts(seconds, 0)),
+        system: "WireMock".to_string(),
+        kind: "UNUSED_STUB".to_string(),
+        message: "Stub was never matched".to_string(),
+        stub_id: "stub-1".to_string(),
+        target: "/payments".to_string(),
+      },
+    )),
+  }
+}
+
 fn snapshot_event(
   run_id: &str,
   test_id: &str,
   system: &str,
   state_json: &str,
   summary: &str,
+  seconds: i64,
+  nanos: i32,
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
@@ -193,6 +245,8 @@ fn snapshot_event(
         system: system.to_string(),
         state_json: state_json.to_string(),
         summary: summary.to_string(),
+        timestamp: Some(ts(seconds, nanos)),
+        trigger: "TEST_END".to_string(),
       },
     )),
   }
@@ -699,6 +753,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
           "Kafka",
           r#"{"published":1}"#,
           "1 published",
+          1_704_067_302,
+          0,
         ),
       )
       .await
@@ -712,6 +768,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
           "Redis",
           r#"{"keys":2}"#,
           "2 keys",
+          1_704_067_302,
+          0,
         ),
       )
       .await
@@ -802,6 +860,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   let snapshots_a = snapshots_a.as_array().unwrap();
   assert_eq!(snapshots_a.len(), 1);
   assert_eq!(snapshots_a[0]["system"], "Kafka");
+  assert!(!snapshots_a[0]["captured_at"].is_null());
+  assert_eq!(snapshots_a[0]["trigger"], "TEST_END");
 
   let snapshots_b = server
     .get_json("/runs/run-interleaved/tests/test-b/snapshots")
@@ -809,6 +869,8 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   let snapshots_b = snapshots_b.as_array().unwrap();
   assert_eq!(snapshots_b.len(), 1);
   assert_eq!(snapshots_b[0]["system"], "Redis");
+  assert!(!snapshots_b[0]["captured_at"].is_null());
+  assert_eq!(snapshots_b[0]["trigger"], "TEST_END");
 }
 
 // ---------------------------------------------------------------------------
@@ -1309,6 +1371,103 @@ async fn snapshot_state_json_preserves_complex_json() {
 // ---------------------------------------------------------------------------
 // GET /api/v1/traces/:trace_id
 // ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new_with_ingest_config(
+    server.repo.clone(),
+    server.sse.clone(),
+    50,
+    Duration::from_secs(60),
+  );
+  let mut live = server.sse.subscribe();
+
+  service
+    .send_event(Request::new(run_started_event(
+      "run-mocks",
+      "product-api",
+      1_704_067_200,
+      0,
+    )))
+    .await
+    .unwrap();
+  let _ = live.recv().await.unwrap();
+  service
+    .send_event(Request::new(mock_interaction_event(
+      "run-mocks",
+      "test-1",
+      1_704_067_201,
+    )))
+    .await
+    .unwrap();
+
+  let live_json: Value = serde_json::from_str(&live.recv().await.unwrap()).unwrap();
+  assert_eq!(
+    live_json["payload"]["near_misses"],
+    serde_json::json!(["body matcher rejected"])
+  );
+  assert_eq!(live_json["payload"]["configured_delay_ms"], 250);
+
+  service.flush_pending().await.unwrap();
+  let rest = server
+    .get_json("/runs/run-mocks/tests/test-1/interactions")
+    .await;
+  assert_eq!(
+    rest[0]["near_misses"],
+    serde_json::json!(["body matcher rejected"])
+  );
+  assert_eq!(rest[0]["scenario_name"], "payment retry");
+  assert_eq!(rest[0]["scenario_state"], "attempt-2");
+  assert_eq!(rest[0]["next_scenario_state"], "recovered");
+  assert_eq!(rest[0]["configured_delay_ms"], 250);
+  assert_eq!(rest[0]["fault"], "CONNECTION_RESET_BY_PEER");
+  assert_eq!(rest[0]["client_deadline_ms"], 500);
+}
+
+#[tokio::test]
+async fn ambient_mock_endpoints_return_only_unattributed_records() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new_with_ingest_config(
+    server.repo.clone(),
+    server.sse.clone(),
+    50,
+    Duration::from_secs(60),
+  );
+
+  for event in [
+    run_started_event("run-ambient", "product-api", 1_704_067_200, 0),
+    mock_interaction_event("run-ambient", "test-1", 1_704_067_201),
+    mock_interaction_event("run-ambient", "", 1_704_067_202),
+    mock_warning_event("run-ambient", "test-1", 1_704_067_203),
+    mock_warning_event("run-ambient", "", 1_704_067_204),
+  ] {
+    service.send_event(Request::new(event)).await.unwrap();
+  }
+  service.flush_pending().await.unwrap();
+
+  let ambient_interactions = server
+    .get_json("/runs/run-ambient/interactions/ambient")
+    .await;
+  assert_eq!(ambient_interactions.as_array().unwrap().len(), 1);
+  assert!(ambient_interactions[0]["test_id"].is_null());
+
+  let ambient_warnings = server.get_json("/runs/run-ambient/warnings/ambient").await;
+  assert_eq!(ambient_warnings.as_array().unwrap().len(), 1);
+  assert!(ambient_warnings[0]["test_id"].is_null());
+
+  let test_interactions = server
+    .get_json("/runs/run-ambient/tests/test-1/interactions")
+    .await;
+  assert_eq!(test_interactions.as_array().unwrap().len(), 1);
+  assert_eq!(test_interactions[0]["test_id"], "test-1");
+
+  let test_warnings = server
+    .get_json("/runs/run-ambient/tests/test-1/warnings")
+    .await;
+  assert_eq!(test_warnings.as_array().unwrap().len(), 1);
+  assert_eq!(test_warnings[0]["test_id"], "test-1");
+}
 
 #[tokio::test]
 async fn get_trace_returns_all_spans_for_trace() {

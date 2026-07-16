@@ -10,6 +10,8 @@ use super::sql::non_empty;
 use crate::error::Result;
 use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::NewEntry;
+use crate::storage::models::NewMockInteraction;
+use crate::storage::models::NewMockWarning;
 use crate::storage::models::NewSpan;
 use crate::storage::models::RunStatus;
 
@@ -133,14 +135,35 @@ impl Repository {
     summary: &str,
   ) -> Result<()> {
     let db = self.lock_write_db();
-    save_snapshot_on(db.conn(), run_id, test_id, system, state_json, summary)?;
+    save_snapshot_on(
+      db.conn(),
+      run_id,
+      test_id,
+      system,
+      state_json,
+      summary,
+      "",
+      "TEST_END",
+    )?;
+    Ok(())
+  }
+
+  pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
+    let db = self.lock_write_db();
+    save_mock_interaction_on(db.conn(), interaction)?;
+    Ok(())
+  }
+
+  pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
+    let db = self.lock_write_db();
+    save_mock_warning_on(db.conn(), warning)?;
     Ok(())
   }
 
   pub fn clear_all(&self) -> Result<()> {
     let db = self.lock_write_db();
     db.conn().execute_batch(
-      "DELETE FROM snapshots; DELETE FROM spans; DELETE FROM entries; DELETE FROM tests; DELETE FROM runs;",
+      "DELETE FROM mock_warnings; DELETE FROM mock_interactions; DELETE FROM snapshots; DELETE FROM spans; DELETE FROM entries; DELETE FROM tests; DELETE FROM runs;",
     )?;
     Ok(())
   }
@@ -225,7 +248,22 @@ fn apply_persisted_event(
       system,
       state_json,
       summary,
-    } => save_snapshot_on(conn, run_id, test_id, system, state_json, summary),
+      captured_at,
+      trigger,
+    } => save_snapshot_on(
+      conn,
+      run_id,
+      test_id,
+      system,
+      state_json,
+      summary,
+      captured_at,
+      trigger,
+    ),
+    PersistedDashboardEvent::MockInteraction(interaction) => {
+      save_mock_interaction_on(conn, interaction)
+    }
+    PersistedDashboardEvent::MockWarning(warning) => save_mock_warning_on(conn, warning),
   }
 }
 
@@ -343,6 +381,7 @@ fn save_span_on(conn: &rusqlite::Connection, span: &NewSpan) -> Result<()> {
   Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn save_snapshot_on(
   conn: &rusqlite::Connection,
   run_id: &str,
@@ -350,10 +389,65 @@ fn save_snapshot_on(
   system: &str,
   state_json: &str,
   summary: &str,
+  captured_at: &str,
+  trigger: &str,
 ) -> Result<()> {
   conn.execute(
-    "INSERT INTO snapshots (run_id, test_id, system, state_json, summary) VALUES (?1, ?2, ?3, ?4, ?5)",
-    rusqlite::params![run_id, test_id, system, state_json, summary],
+    "INSERT INTO snapshots (run_id, test_id, system, state_json, summary, captured_at, trigger_kind) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+    rusqlite::params![run_id, test_id, system, state_json, summary, non_empty(captured_at), trigger],
+  )?;
+  Ok(())
+}
+
+fn save_mock_interaction_on(
+  conn: &rusqlite::Connection,
+  interaction: &NewMockInteraction,
+) -> Result<()> {
+  conn.execute(
+    "INSERT INTO mock_interactions (run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name, scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
+    rusqlite::params![
+      interaction.run_id,
+      interaction.test_id,
+      interaction.timestamp,
+      interaction.system,
+      interaction.protocol,
+      interaction.method,
+      interaction.target,
+      interaction.matched,
+      interaction.stub_id,
+      interaction.attribution,
+      non_empty(&interaction.request_body),
+      interaction.request_body_truncated,
+      non_empty(&interaction.response_body),
+      interaction.response_body_truncated,
+      interaction.status,
+      interaction.latency_ms,
+      non_empty(&interaction.near_misses),
+      interaction.trace_id,
+      interaction.scenario_name,
+      interaction.scenario_state,
+      interaction.next_scenario_state,
+      interaction.configured_delay_ms,
+      interaction.fault,
+      interaction.client_deadline_ms
+    ],
+  )?;
+  Ok(())
+}
+
+fn save_mock_warning_on(conn: &rusqlite::Connection, warning: &NewMockWarning) -> Result<()> {
+  conn.execute(
+    "INSERT INTO mock_warnings (run_id, test_id, timestamp, system, kind, message, stub_id, target) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+    rusqlite::params![
+      warning.run_id,
+      warning.test_id,
+      warning.timestamp,
+      warning.system,
+      warning.kind,
+      warning.message,
+      warning.stub_id,
+      warning.target
+    ],
   )?;
   Ok(())
 }

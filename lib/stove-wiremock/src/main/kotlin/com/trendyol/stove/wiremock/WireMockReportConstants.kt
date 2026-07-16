@@ -34,6 +34,10 @@ internal object WireMockReportActions {
 
   fun registerBehaviourStub(url: String): String = "Register behaviour stub: $url"
 
+  fun registerFaultStub(method: String, url: String, fault: String): String = "Register fault stub: $method $url ($fault)"
+
+  fun registerDynamicStub(method: String, url: String): String = "Register stub: $method $url (dynamic response)"
+
   const val VALIDATE_ALL_REQUESTS_SHOULD_MATCH = "Validate: All requests should match registered stubs"
   const val VALIDATE_ALL_REQUESTS_MATCHED = "Validate: All requests matched registered stubs"
   const val VERIFY_REQUEST_WAS_CALLED = "Verify request was called"
@@ -132,6 +136,9 @@ internal object WireMockSnapshotDisplayValues {
 internal object WireMockBehaviourMessages {
   const val INITIALLY_ONCE = "You should call initially only once"
   const val INITIALLY_BEFORE_THEN = "You should call initially before calling then"
+  const val FAILS_TIMES_FIRST = "failsTimes starts a behaviour; call it before initially/then"
+  const val FAILS_TIMES_POSITIVE = "failsTimes requires times >= 1"
+  const val BEHAVIOUR_COMPLETED = "The behaviour is already completed"
 }
 
 internal object WireMockBehaviourNames {

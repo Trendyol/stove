@@ -29,6 +29,7 @@ class StubBehaviourBuilder(
   private var previousState: String = STARTED
   private var stateCounter = 0
   private var initializedCounter = 0
+  private var completed = false
   private var recordStub: (StubMapping) -> Unit = {}
 
   internal constructor(
@@ -42,6 +43,7 @@ class StubBehaviourBuilder(
   }
 
   fun initially(step: () -> ResponseDefinitionBuilder) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
     check(initializedCounter == 0) { WireMockBehaviourMessages.INITIALLY_ONCE }
     stateCounter++
     val nextState = WireMockBehaviourNames.state(stateCounter)
@@ -51,6 +53,7 @@ class StubBehaviourBuilder(
   }
 
   fun then(step: () -> ResponseDefinitionBuilder) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
     check(previousState != STARTED) { WireMockBehaviourMessages.INITIALLY_BEFORE_THEN }
     stateCounter++
     val nextState = WireMockBehaviourNames.state(stateCounter)
@@ -58,19 +61,60 @@ class StubBehaviourBuilder(
     previousState = nextState
   }
 
+  /**
+   * Starts a retry journey: the first [times] requests fail with [withStatus], after which
+   * the behaviour continues with [thenSucceeds] (or any [then] step).
+   *
+   * ```kotlin
+   * behaviourFor("/payments", ::post) {
+   *   failsTimes(2, withStatus = 503)
+   *   thenSucceeds { aResponse().withStatus(200).withBody("recovered") }
+   * }
+   * ```
+   */
+  fun failsTimes(times: Int, withStatus: Int = SERVICE_UNAVAILABLE) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
+    check(initializedCounter == 0) { WireMockBehaviourMessages.FAILS_TIMES_FIRST }
+    require(times >= 1) { WireMockBehaviourMessages.FAILS_TIMES_POSITIVE }
+    repeat(times) {
+      stateCounter++
+      val nextState = WireMockBehaviourNames.state(stateCounter)
+      createStub(WireMock.aResponse().withStatus(withStatus), previousState, nextState)
+      previousState = nextState
+    }
+    initializedCounter++
+  }
+
+  /** The step after [failsTimes]: what the dependency returns once it has recovered. */
+  fun thenSucceeds(step: () -> ResponseDefinitionBuilder) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
+    check(previousState != STARTED) { WireMockBehaviourMessages.INITIALLY_BEFORE_THEN }
+    createStub(
+      step(),
+      previousState,
+      setState = null,
+      extraMetadata = mapOf(WireMockSystem.STOVE_PERSISTENT_STUB_KEY to true)
+    )
+    completed = true
+  }
+
   private fun createStub(
     response: ResponseDefinitionBuilder,
     whenState: String,
-    setState: String
+    setState: String?,
+    extraMetadata: Map<String, Any> = emptyMap()
   ) {
-    val stub = wireMockServer.stubFor(
-      method(url)
-        .inScenario(scenarioName)
-        .whenScenarioStateIs(whenState)
-        .willReturn(response)
-        .willSetStateTo(setState)
-        .withMetadata(metadata)
-    )
+    val mapping = method(url)
+      .inScenario(scenarioName)
+      .whenScenarioStateIs(whenState)
+      .willReturn(response)
+      .withMetadata(metadata + extraMetadata)
+    setState?.let(mapping::willSetStateTo)
+    val stub = wireMockServer.stubFor(mapping)
     recordStub(stub)
+  }
+
+  companion object {
+    private const val SERVICE_UNAVAILABLE = 503
   }
 }

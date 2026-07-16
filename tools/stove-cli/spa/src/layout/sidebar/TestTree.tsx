@@ -81,23 +81,21 @@ function renderNodes(
       <button
         type="button"
         key={`group-${nodeKey}`}
-        className="flex w-full cursor-pointer items-center gap-1 rounded-md text-left transition-colors hover:bg-[var(--stove-hover)]"
+        className="stove-tree-group"
         style={{ paddingLeft: `${depth * 12 + 8}px`, paddingTop: "4px", paddingBottom: "4px" }}
         onClick={() => toggle(nodeKey)}
       >
         {hasChildren && (
           <svg
             aria-hidden="true"
-            className={`w-3 h-3 shrink-0 text-[var(--stove-text-muted)] transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+            className={`stove-tree-chevron ${isCollapsed ? "" : "is-open"}`}
             viewBox="0 0 16 16"
             fill="currentColor"
           >
             <path d="M6 4l4 4-4 4z" />
           </svg>
         )}
-        <span className="text-xs font-medium text-[var(--stove-text-secondary)] truncate flex-1">
-          {node.label}
-        </span>
+        <span className="stove-tree-label">{node.label}</span>
         <StatusDot status={status} />
       </button>,
     );
@@ -150,12 +148,12 @@ function collectNodeStatuses(node: TreeNode, out: Status[]): void {
 }
 
 function StatusDot({ status }: { status: Status }) {
-  const color =
+  const tone =
     status === "FAILED" || status === "ERROR"
-      ? "bg-red-400"
+      ? "failed"
       : status === "PASSED"
-        ? "bg-emerald-400"
-        : "bg-blue-400 animate-pulse-dot";
+        ? "passed"
+        : "running";
 
-  return <span className={`mr-2 h-1.5 w-1.5 shrink-0 rounded-full ${color}`} />;
+  return <span className={`stove-tree-dot is-${tone}`} />;
 }

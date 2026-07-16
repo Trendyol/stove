@@ -9,16 +9,29 @@ import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
+import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.interactions.MockInteractionListeners
+import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.MockWarning
+import com.trendyol.stove.interactions.MockWarningKind
+import com.trendyol.stove.interactions.MockWarningListener
+import com.trendyol.stove.interactions.MockWarningListeners
+import com.trendyol.stove.interactions.MockWarningPublisher
+import com.trendyol.stove.interactions.resolveAttribution
+import com.trendyol.stove.interactions.traceparentTraceId
 import com.trendyol.stove.reporting.*
+import com.trendyol.stove.scoping.TestScopeCleanupListener
+import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
-import com.trendyol.stove.tracing.TraceContext
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON_UTF8
 import com.trendyol.stove.wiremock.WireMockHeaders.CONTENT_TYPE
@@ -29,7 +42,8 @@ import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.STATUS_CODE
 import kotlinx.coroutines.runBlocking
 import wiremock.org.slf4j.*
 import java.util.*
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
 
 /**
  * Callback invoked after a stub is removed (when `removeStubAfterRequestMatched` is enabled).
@@ -199,21 +213,32 @@ class WireMockSystem(
   ValidatedSystem,
   RunAware,
   ExposesConfiguration,
-  Reports {
+  Reports,
+  MockInteractionPublisher,
+  MockWarningPublisher {
   override val reportSystemName: String = WireMockReportSystem.name(ctx.keyName)
   private val stubLog: Cache<UUID, StubMapping> = Caffeine.newBuilder().build()
   private val callJournal = WireMockCallJournal()
+  private val interactionListeners = MockInteractionListeners()
+  private val warningListeners = MockWarningListeners()
+  private val validatedTests = ConcurrentHashMap.newKeySet<String>()
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val verification = WireMockVerification(this, callJournal, serde)
-  private val completedTestIds = ConcurrentLinkedQueue<String>()
+  private val cleanupListener = TestScopeCleanupListener(::clearTestScope)
   private val reportListener = object : ReportEventListener {
     override fun onTestStarted(ctx: StoveTestContext) {
-      clearCompletedTestJournals()
-      callJournal.clear(ctx.testId)
+      cleanupListener.onTestStarted(ctx)
+      callJournal.startTest(ctx.testId)
     }
 
     override fun onTestEnded(testId: String) {
-      completedTestIds.add(testId)
+      try {
+        emitTestEndWarnings(testId)
+      } finally {
+        callJournal.endTest(testId)
+        cleanupListener.onTestEnded(testId)
+        removeTestStubs(testId)
+      }
     }
   }
   private var reportListenerRegistered = false
@@ -227,11 +252,13 @@ class WireMockSystem(
 
   private var wireMock: WireMockServer
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
+  private val dynamicResponses = WireMockDynamicResponses()
 
   init {
     val cfg = wireMockConfig()
       .port(ctx.port)
-      .extensions(WireMockRequestListener(stubLog, ctx.afterRequest, callJournal::record))
+      .extensions(WireMockRequestListener(stubLog, ctx.afterRequest, callJournal::record, ::emitInteraction))
+      .extensions(dynamicResponses)
     val stoveExtensions = mutableListOf<Extension>()
     if (ctx.removeStubAfterRequestMatched) {
       stoveExtensions.add(WireMockVacuumCleaner(stubLog, ctx.afterStubRemoved))
@@ -276,7 +303,8 @@ class WireMockSystem(
     statusCode: Int,
     responseBody: Option<Any> = None,
     metadata: Map<String, String> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.GET.value(),
@@ -286,7 +314,8 @@ class WireMockSystem(
       responseBody = responseBody,
       metadata = metadata,
       responseHeaders = responseHeaders,
-      reportMetadata = mapOf(STATUS_CODE to statusCode, RESPONSE_HEADERS to responseHeaders)
+      reportMetadata = mapOf(STATUS_CODE to statusCode, RESPONSE_HEADERS to responseHeaders),
+      delay = delay
     )
 
   /**
@@ -310,7 +339,8 @@ class WireMockSystem(
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.POST.value(),
@@ -320,7 +350,8 @@ class WireMockSystem(
       requestBody = requestBody,
       responseBody = responseBody,
       metadata = metadata,
-      responseHeaders = responseHeaders
+      responseHeaders = responseHeaders,
+      delay = delay
     )
 
   /**
@@ -344,7 +375,8 @@ class WireMockSystem(
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.PUT.value(),
@@ -354,7 +386,8 @@ class WireMockSystem(
       requestBody = requestBody,
       responseBody = responseBody,
       metadata = metadata,
-      responseHeaders = responseHeaders
+      responseHeaders = responseHeaders,
+      delay = delay
     )
 
   /**
@@ -378,7 +411,8 @@ class WireMockSystem(
     requestBody: Option<Any> = None,
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
-    responseHeaders: Map<String, String> = mapOf()
+    responseHeaders: Map<String, String> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.PATCH.value(),
@@ -388,7 +422,8 @@ class WireMockSystem(
       requestBody = requestBody,
       responseBody = responseBody,
       metadata = metadata,
-      responseHeaders = responseHeaders
+      responseHeaders = responseHeaders,
+      delay = delay
     )
 
   /**
@@ -402,14 +437,16 @@ class WireMockSystem(
   suspend fun mockDelete(
     url: String,
     statusCode: Int,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.DELETE.value(),
       url = url,
       method = ::delete,
       statusCode = statusCode,
-      metadata = metadata
+      metadata = metadata,
+      delay = delay
     )
 
   /**
@@ -423,14 +460,16 @@ class WireMockSystem(
   suspend fun mockHead(
     url: String,
     statusCode: Int,
-    metadata: Map<String, Any> = mapOf()
+    metadata: Map<String, Any> = mapOf(),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       methodName = RequestMethod.HEAD.value(),
       url = url,
       method = ::head,
       statusCode = statusCode,
-      metadata = metadata
+      metadata = metadata,
+      delay = delay
     )
 
   /**
@@ -542,6 +581,78 @@ class WireMockSystem(
   ): WireMockSystem = mockRequestConfigure(RequestMethod.POST.value(), url, urlPatternFn, ::post, configure)
 
   /**
+   * Mocks a network-level fault: connection reset, empty response, malformed chunk, or
+   * random data. Makes "client timeout / retry / circuit breaker" tests one-liners.
+   *
+   * ```kotlin
+   * wiremock {
+   *     mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
+   * }
+   * ```
+   *
+   * @param method The HTTP method to match.
+   * @param url The URL to match.
+   * @param fault The WireMock [Fault] to inject.
+   * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
+   * @param metadata Optional metadata to attach to the stub.
+   * @return This [WireMockSystem] for chaining.
+   */
+  suspend fun mockFault(
+    method: RequestMethod,
+    url: String,
+    fault: Fault,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    metadata: Map<String, Any> = mapOf()
+  ): WireMockSystem =
+    registerStub(
+      action = WireMockReportActions.registerFaultStub(method.value(), url, fault.name),
+      metadata = mapOf("fault" to fault.name)
+    ) {
+      val stub = request(method.value(), urlPatternFn(url))
+      stub.withMetadata(enrichMetadataWithTestId(metadata))
+      stub.willReturn(aResponse().withFault(fault))
+    }
+
+  /**
+   * Mocks a request whose response is computed from the actual request at serve time.
+   *
+   * ```kotlin
+   * wiremock {
+   *     mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
+   *         val order = serde.deserialize(request.body, Map::class.java)
+   *         aResponse()
+   *             .withStatus(201)
+   *             .withBody("""{"orderId":"${order["id"]}"}""")
+   *     }
+   * }
+   * ```
+   *
+   * @param method The HTTP method to match.
+   * @param url The URL to match.
+   * @param urlPatternFn Function to create URL pattern. Defaults to exact URL matching.
+   * @param metadata Optional metadata to attach to the stub.
+   * @param respond Computes the response from the received request; the system's serde is provided.
+   * @return This [WireMockSystem] for chaining.
+   */
+  suspend fun mockDynamic(
+    method: RequestMethod,
+    url: String,
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    metadata: Map<String, Any> = mapOf(),
+    respond: (request: LoggedRequest, serde: StoveSerde<Any, ByteArray>) -> ResponseDefinitionBuilder
+  ): WireMockSystem {
+    val dynamicId = UUID.randomUUID().toString()
+    dynamicResponses.register(dynamicId) { request -> respond(request, serde) }
+    return registerStub(action = WireMockReportActions.registerDynamicStub(method.value(), url)) {
+      val stub = request(method.value(), urlPatternFn(url))
+      stub.withMetadata(
+        enrichMetadataWithTestId(metadata + (WireMockDynamicResponses.METADATA_KEY to dynamicId))
+      )
+      stub.willReturn(aResponse().withTransformers(WireMockDynamicResponses.NAME))
+    }
+  }
+
+  /**
    * Configures stateful stub behavior for scenario-based testing.
    *
    * Use this method when you need different responses for the same URL based on
@@ -648,7 +759,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf(),
-    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    delay: Duration? = null
   ): WireMockSystem = mockRequestContaining(
     url = url,
     method = ::post,
@@ -657,7 +769,8 @@ class WireMockSystem(
     responseBody = responseBody,
     metadata = metadata,
     responseHeaders = responseHeaders,
-    urlPatternFn = urlPatternFn
+    urlPatternFn = urlPatternFn,
+    delay = delay
   )
 
   /**
@@ -712,7 +825,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf(),
-    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    delay: Duration? = null
   ): WireMockSystem = mockRequestContaining(
     url = url,
     method = ::put,
@@ -721,7 +835,8 @@ class WireMockSystem(
     responseBody = responseBody,
     metadata = metadata,
     responseHeaders = responseHeaders,
-    urlPatternFn = urlPatternFn
+    urlPatternFn = urlPatternFn,
+    delay = delay
   )
 
   /**
@@ -776,7 +891,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = mapOf(),
     responseHeaders: Map<String, String> = mapOf(),
-    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) }
+    urlPatternFn: (url: String) -> UrlPattern = { urlEqualTo(it) },
+    delay: Duration? = null
   ): WireMockSystem = mockRequestContaining(
     url = url,
     method = ::patch,
@@ -785,7 +901,8 @@ class WireMockSystem(
     responseBody = responseBody,
     metadata = metadata,
     responseHeaders = responseHeaders,
-    urlPatternFn = urlPatternFn
+    urlPatternFn = urlPatternFn,
+    delay = delay
   )
 
   /**
@@ -894,7 +1011,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap(),
     responseHeaders: Map<String, String> = emptyMap(),
-    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode)
+    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode),
+    delay: Duration? = null
   ): WireMockSystem =
     mockRequest(
       action = WireMockReportActions.registerStub(methodName, url),
@@ -904,7 +1022,8 @@ class WireMockSystem(
       responseBody = responseBody,
       metadata = metadata,
       responseHeaders = responseHeaders,
-      reportMetadata = reportMetadata
+      reportMetadata = reportMetadata,
+      delay = delay
     )
 
   private suspend fun mockRequest(
@@ -915,7 +1034,8 @@ class WireMockSystem(
     responseBody: Option<Any> = None,
     metadata: Map<String, Any> = emptyMap(),
     responseHeaders: Map<String, String> = emptyMap(),
-    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode)
+    reportMetadata: Map<String, Any> = mapOf(STATUS_CODE to statusCode),
+    delay: Duration? = null
   ): WireMockSystem =
     registerStub(
       action = action,
@@ -923,7 +1043,7 @@ class WireMockSystem(
       metadata = reportMetadata
     ) {
       configureBodyAndMetadata(request, metadata, requestBody)
-      request.willReturn(configureResponse(statusCode, responseBody, responseHeaders))
+      request.willReturn(configureResponse(statusCode, responseBody, responseHeaders, delay))
     }
 
   private suspend fun mockRequestConfigure(
@@ -947,7 +1067,8 @@ class WireMockSystem(
     responseBody: Option<Any>,
     metadata: Map<String, Any>,
     responseHeaders: Map<String, String>,
-    urlPatternFn: (url: String) -> UrlPattern
+    urlPatternFn: (url: String) -> UrlPattern,
+    delay: Duration? = null
   ): WireMockSystem {
     require(requestContaining.isNotEmpty()) { WireMockValidationMessages.REQUEST_CONTAINING_EMPTY }
 
@@ -960,7 +1081,7 @@ class WireMockSystem(
       mockRequest.withMetadata(enrichMetadataWithTestId(metadata))
       mockRequest.withHeader(CONTENT_TYPE, ContainsPattern(APPLICATION_JSON))
       mockRequest.configureBodyContaining(requestContaining, serde)
-      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders)
+      val mockResponse = configureResponse(statusCode, responseBody, responseHeaders, delay)
       mockRequest.willReturn(mockResponse)
     }
   }
@@ -978,21 +1099,24 @@ class WireMockSystem(
    */
   override suspend fun validate() {
     val currentTestId = reporter.currentTestId()
+    validatedTests.add(currentTestId)
 
-    // Filter unmatched requests to only include those from the current test
-    // by checking the X-Stove-Test-Id header
-    val unmatched = wireMock.findAllUnmatchedRequests().filter { req ->
-      req.getHeader(TraceContext.STOVE_TEST_ID_HEADER) == currentTestId
-    }
+    // Fail-open scoping: the journal excludes a request only when it is provably
+    // tagged with another test id; untagged requests fail every test active when observed.
+    val unmatched = callJournal
+      .serveEvents(currentTestId)
+      .filterNot { it.wasMatched }
+      .map { it.request }
     val passed = unmatched.isEmpty()
 
     if (!passed) {
+      val scopedStubs = callJournal.stubs(currentTestId)
       val problems = unmatched.joinToString("\n") {
         WireMockValidationMessages.unmatchedRequestDetails(
           url = "${it.method.value()} ${it.url}",
           bodyAsString = it.bodyAsString,
           queryParams = serde.serialize(it.queryParams).decodeToString()
-        )
+        ) + "\nClosest stubs:\n" + WireMockNearMisses.closestStubsFor(it, scopedStubs)
       }
       val error = AssertionError(
         WireMockValidationMessages.unmatchedRequests(problems)
@@ -1032,14 +1156,9 @@ class WireMockSystem(
       }
       stop()
       callJournal.clearAll()
+      validatedTests.clear()
+      dynamicResponses.clear()
     }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
-  }
-
-  private fun clearCompletedTestJournals() {
-    while (true) {
-      val testId = completedTestIds.poll() ?: return
-      callJournal.clear(testId)
-    }
   }
 
   private suspend fun registerStub(
@@ -1064,8 +1183,153 @@ class WireMockSystem(
     callJournal.recordStub(stub)
   }
 
+  private fun clearTestScope(testId: String) {
+    removeTestStubs(testId)
+    callJournal.clear(testId)
+    validatedTests.remove(testId)
+  }
+
+  private fun removeTestStubs(testId: String) {
+    if (!wireMock.isRunning) return
+    val activeIds = wireMock.stubMappings.map(StubMapping::getId).toSet()
+    callJournal.taggedStubs(testId)
+      .forEach { stub ->
+        stubLog.invalidate(stub.id)
+        dynamicResponses.unregister(stub)
+        if (stub.id !in activeIds) return@forEach
+        runCatching {
+          synchronized(wireMock) {
+            wireMock.removeStub(stub)
+          }
+        }.onFailure { e -> logger.warn("Failed to remove test-scoped stub ${stub.id}: ${e.message}") }
+      }
+  }
+
   private fun enrichMetadataWithTestId(metadata: Map<String, Any>): Map<String, Any> =
-    metadata + (STOVE_TEST_ID_KEY to reporter.currentTestId())
+    reporter.currentTestIdOrNull()?.let { metadata + (STOVE_TEST_ID_KEY to it) } ?: metadata
+
+  override fun addInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.add(listener)
+
+  override fun removeInteractionListener(listener: MockInteractionListener): Unit = interactionListeners.remove(listener)
+
+  override fun addWarningListener(listener: MockWarningListener): Unit = warningListeners.add(listener)
+
+  override fun removeWarningListener(listener: MockWarningListener): Unit = warningListeners.remove(listener)
+
+  /**
+   * Warnings computed when a test ends, strictly from evidence provably owned by that test:
+   * stubs it registered that nothing matched, and unmatched requests it provably sent while
+   * never calling validate(). Diagnostics only — never failures.
+   */
+  internal fun emitTestEndWarnings(testId: String) {
+    runCatching {
+      val ownServeEvents = callJournal.taggedServeEvents(testId)
+      callJournal
+        .taggedStubs(testId)
+        .filterNot { callJournal.wasStubMatched(it.id) }
+        .forEach { stub ->
+          val target = "${stub.request.method?.value() ?: "?"} ${stub.request.url ?: stub.request.urlPath ?: ""}".trim()
+          warningListeners.emit(
+            MockWarning(
+              system = reportSystemName,
+              kind = MockWarningKind.UNUSED_STUB,
+              testId = testId,
+              message = "Stub $target was registered by this test but never matched — dead fixture, " +
+                "or the interaction this test thinks it proves never happened.",
+              stubId = stub.id.toString(),
+              target = target
+            )
+          )
+        }
+
+      val ownUnmatched = ownServeEvents.filterNot { it.wasMatched }
+      if (ownUnmatched.isNotEmpty() && testId !in validatedTests) {
+        warningListeners.emit(
+          MockWarning(
+            system = reportSystemName,
+            kind = MockWarningKind.UNVALIDATED_UNMATCHED,
+            testId = testId,
+            message = "${ownUnmatched.size} unmatched request(s) provably belong to this test; " +
+              "validate() would have failed had the test called it.",
+            target = ownUnmatched.first().request.url
+          )
+        )
+      }
+    }.onFailure { e -> logger.warn("Failed to emit test-end warnings: ${e.message}") }
+  }
+
+  /**
+   * Emits one completed exchange per serve event — matched or not — after the response
+   * has been fully transmitted, so timing is final. Emission failures never affect the
+   * request being served.
+   */
+  private fun emitInteraction(serveEvent: ServeEvent) {
+    runCatching {
+      val request = serveEvent.request
+      val headers = request.headerMap()
+      val stubTestId = serveEvent.stubMapping?.stoveTestId()
+      val (testId, attribution) = resolveAttribution(headers, stubTestId)
+      emitCrossTestMatchWarning(serveEvent, headers.stoveTestId(), stubTestId)
+      val (requestBody, requestTruncated) = MockInteraction.capturedBody(
+        body = request.bodyAsString.orEmpty(),
+        retainRawBody = ctx.retainRawInteractionBodies,
+        redactor = ctx.interactionBodyRedactor
+      )
+      val response = serveEvent.response
+      val matchedStub = serveEvent.stubMapping
+      val (responseBody, responseTruncated) = MockInteraction.capturedBody(
+        body = response?.bodyAsString.orEmpty(),
+        retainRawBody = ctx.retainRawInteractionBodies,
+        redactor = ctx.interactionBodyRedactor
+      )
+      interactionListeners.emit(
+        MockInteraction(
+          system = reportSystemName,
+          protocol = MockInteraction.Protocol.HTTP,
+          method = request.method.value(),
+          target = request.url,
+          matched = serveEvent.wasMatched,
+          stubId = serveEvent.stubMapping?.id?.toString(),
+          testId = testId,
+          attribution = attribution,
+          requestBody = requestBody,
+          requestBodyTruncated = requestTruncated,
+          responseBody = responseBody,
+          responseBodyTruncated = responseTruncated,
+          status = response?.fault?.name ?: response?.status?.toString().orEmpty(),
+          latencyMs = serveEvent.timing?.totalTime?.takeIf { it >= 0 }?.toLong(),
+          nearMisses = if (serveEvent.wasMatched) {
+            emptyList()
+          } else {
+            WireMockNearMisses.closestStubCandidates(request, callJournal.stubs(testId.orEmpty()))
+          },
+          traceId = headers.traceparentTraceId(),
+          timestamp = java.time.Instant.now(),
+          scenarioName = matchedStub?.scenarioName,
+          scenarioState = matchedStub?.requiredScenarioState,
+          nextScenarioState = matchedStub?.newScenarioState,
+          configuredDelayMs = matchedStub?.response?.fixedDelayMilliseconds?.toLong(),
+          fault = matchedStub?.response?.fault?.name ?: response?.fault?.name
+        )
+      )
+    }.onFailure { e -> logger.warn("Failed to emit mock interaction: ${e.message}") }
+  }
+
+  /** Both sides provably tagged and different: cross-test bleed the user should see. */
+  private fun emitCrossTestMatchWarning(serveEvent: ServeEvent, requestTestId: String?, stubTestId: String?) {
+    if (!serveEvent.wasMatched || requestTestId == null || stubTestId == null || requestTestId == stubTestId) return
+    warningListeners.emit(
+      MockWarning(
+        system = reportSystemName,
+        kind = MockWarningKind.CROSS_TEST_MATCH,
+        testId = requestTestId,
+        message = "Request ${serveEvent.request.method.value()} ${serveEvent.request.url} sent by this test " +
+          "was served by a stub registered in test '$stubTestId'.",
+        stubId = serveEvent.stubMapping?.id?.toString(),
+        target = serveEvent.request.url
+      )
+    )
+  }
 
   private fun configureBodyAndMetadata(
     request: MappingBuilder,
@@ -1088,7 +1352,8 @@ class WireMockSystem(
   private fun configureResponse(
     statusCode: Int,
     responseBody: Option<Any>,
-    responseHeaders: Map<String, String>
+    responseHeaders: Map<String, String>,
+    delay: Duration? = null
   ): ResponseDefinitionBuilder? {
     val mockResponse = aResponse()
       .withStatus(statusCode)
@@ -1097,6 +1362,13 @@ class WireMockSystem(
       mockResponse.withHeader(it.key, it.value)
     }
     responseBody.map { mockResponse.withBody(serde.serialize(it)) }
+    delay?.let {
+      require(!it.isNegative()) { "WireMock response delay cannot be negative" }
+      require(!it.isInfinite()) { "WireMock response delay must be finite" }
+      val delayMs = it.inWholeMilliseconds
+      require(delayMs <= Int.MAX_VALUE) { "WireMock response delay must fit in Int milliseconds" }
+      mockResponse.withFixedDelay(delayMs.toInt())
+    }
     return mockResponse
   }
 
@@ -1105,6 +1377,7 @@ class WireMockSystem(
      * Metadata key used to associate stubs with test IDs for filtering in snapshots.
      */
     const val STOVE_TEST_ID_KEY = "stoveTestId"
+    internal const val STOVE_PERSISTENT_STUB_KEY = "stovePersistentStub"
     private const val LOCALHOST = "localhost"
 
     /**

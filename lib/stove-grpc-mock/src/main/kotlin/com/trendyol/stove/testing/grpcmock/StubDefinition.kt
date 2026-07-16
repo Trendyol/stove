@@ -1,9 +1,12 @@
 package com.trendyol.stove.testing.grpcmock
 
 import com.google.protobuf.Message
+import com.google.protobuf.Parser
 import io.grpc.Metadata
+import io.grpc.MethodDescriptor
 import io.grpc.Status
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Duration
 
 /**
  * Key for identifying a stub in the registry.
@@ -22,12 +25,48 @@ data class StubKey(
  * Matcher for incoming requests.
  */
 sealed class RequestMatcher {
+  companion object {
+    /**
+     * Typed request matcher backed by an explicit protobuf [parser]. Decode failures do not
+     * match and are preserved in near-miss diagnostics.
+     *
+     * ```kotlin
+     * mockUnary(
+     *   serviceName = "users.UserService",
+     *   methodName = "GetUser",
+     *   requestMatcher = RequestMatcher.message(GetUserRequest.parser()) { it.userId == "123" },
+     *   response = response
+     * )
+     * ```
+     */
+    fun <T : Message> message(
+      parser: Parser<T>,
+      predicate: (T) -> Boolean
+    ): RequestMatcher = ParsedMessage(parser.payloadDecoder(), predicate)
+
+    /**
+     * Typed request matcher backed by the generated gRPC [method]'s request marshaller.
+     * The predicate type is inferred from the descriptor, so it cannot drift from the RPC.
+     */
+    fun <RequestT : Message, ResponseT> message(
+      method: MethodDescriptor<RequestT, ResponseT>,
+      predicate: (RequestT) -> Boolean
+    ): RequestMatcher = ParsedMessage(method.requestPayloadDecoder(), predicate)
+  }
+
   /** Matches any request */
   data object Any : RequestMatcher()
 
-  /** Matches requests with exact message content */
+  /**
+   * Matches requests with exact message content.
+   *
+   * Payloads are redacted from rejection diagnostics by default. Callers may provide a
+   * diagnostic-only redactor that returns a safe representation when field-level context
+   * is required.
+   */
   data class ExactMessage(
-    val message: Message
+    val message: Message,
+    val diagnosticPayloadRedactor: ((Message) -> String)? = null
   ) : RequestMatcher()
 
   /** Matches requests with exact byte content */
@@ -47,6 +86,30 @@ sealed class RequestMatcher {
   data class Custom(
     val matcher: (ByteArray) -> Boolean
   ) : RequestMatcher()
+
+  internal class ParsedMessage<T : Message>(
+    private val decoder: PayloadDecoder<T>,
+    private val predicate: (T) -> Boolean
+  ) : RequestMatcher() {
+    fun evaluate(bytes: ByteArray): RequestMatchEvaluation = when (val result = decoder.decode(bytes)) {
+      is PayloadDecodeResult.Decoded -> {
+        val matched = predicate(result.value)
+        RequestMatchEvaluation(
+          matched = matched,
+          rejection = if (matched) {
+            null
+          } else {
+            "decoded message { ${result.value.singleLine()} } did not satisfy the predicate"
+          }
+        )
+      }
+
+      is PayloadDecodeResult.Failed -> RequestMatchEvaluation(
+        matched = false,
+        rejection = "could not decode request with ${decoder.description}: ${result.error.conciseDecodeError()}"
+      )
+    }
+  }
 }
 
 /**
@@ -90,31 +153,52 @@ sealed class StubDefinition {
   abstract val requestMatcher: RequestMatcher
   abstract val metadataMatcher: MetadataMatcher
 
+  internal val methodType: MethodDescriptor.MethodType
+    get() = when (this) {
+      is Unary, is Error -> MethodDescriptor.MethodType.UNARY
+      is ServerStream -> MethodDescriptor.MethodType.SERVER_STREAMING
+      is ClientStream -> MethodDescriptor.MethodType.CLIENT_STREAMING
+      is BidiStream -> MethodDescriptor.MethodType.BIDI_STREAMING
+    }
+
   /**
    * Unary RPC: single request -> single response
+   *
+   * @property delay Optional artificial latency before the response is sent — makes
+   *   client deadline (`DEADLINE_EXCEEDED`) testing possible.
    */
   data class Unary(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    val response: Message
+    val response: Message,
+    val delay: Duration? = null
   ) : StubDefinition()
 
   /**
    * Server streaming RPC: single request -> stream of responses
+   *
+   * @property delay Optional artificial latency before the stream starts.
+   * @property thenFailWith When set, the stream emits all [responses] and then fails
+   *   with this status instead of completing — the classic mid-stream failure scenario.
    */
   data class ServerStream(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    val responses: List<Message>
+    val responses: List<Message>,
+    val delay: Duration? = null,
+    val thenFailWith: Status? = null
   ) : StubDefinition()
 
   /**
    * Client streaming RPC: stream of requests -> single response
+   *
+   * @property delay Optional artificial latency before the response is sent.
    */
   data class ClientStream(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
-    val response: Message
+    val response: Message,
+    val delay: Duration? = null
   ) : StubDefinition()
 
   /**
@@ -129,17 +213,38 @@ sealed class StubDefinition {
 
   /**
    * Error response for any RPC type
+   *
+   * @property trailers Optional error trailers, e.g. carrying `google.rpc.Status` details
+   *   the way real gRPC APIs return structured errors.
+   * @property delay Optional artificial latency before the error is sent.
    */
   data class Error(
     override val requestMatcher: RequestMatcher = RequestMatcher.Any,
     override val metadataMatcher: MetadataMatcher = MetadataMatcher.Any,
     val status: Status,
-    val message: String? = null
+    val message: String? = null,
+    val trailers: Metadata? = null,
+    val delay: Duration? = null
   ) : StubDefinition()
 }
 
 /**
+ * A stub together with the test that registered it. Requests matched by this stub
+ * are attributed to that test; a null [testId] means the stub was registered outside
+ * any test context and matches every test's view.
+ */
+internal data class RegisteredStub(
+  val key: StubKey,
+  val definition: StubDefinition,
+  val testId: String?
+)
+
+/**
  * Record of a request that was received by the mock server.
+ *
+ * @property testId The test this request belongs to, when provable — from the matched
+ *   stub's registration or from `X-Stove-Test-Id`/baggage metadata. Null means untagged:
+ *   the request is visible to every test whose lifecycle overlaps it (fail-open scoping).
  */
 data class ReceivedRequest(
   val stubKey: StubKey,
@@ -147,7 +252,8 @@ data class ReceivedRequest(
   val metadata: Metadata = Metadata(),
   val timestamp: Long = System.currentTimeMillis(),
   val matched: Boolean,
-  val stubId: String? = null
+  val stubId: String? = null,
+  val testId: String? = null
 ) {
   /** Get authorization header value if present */
   val authorizationHeader: String?
@@ -173,6 +279,86 @@ data class ReceivedRequest(
     result = 31 * result + matched.hashCode()
     return result
   }
+}
+
+internal data class RequestMatchEvaluation(
+  val matched: Boolean,
+  val rejection: String?
+)
+
+internal fun RequestMatcher.evaluate(requestBytes: ByteArray): RequestMatchEvaluation = when (this) {
+  is RequestMatcher.Any -> RequestMatchEvaluation(matched = true, rejection = null)
+
+  is RequestMatcher.ExactBytes -> {
+    val matched = requestBytes.contentEquals(bytes)
+    RequestMatchEvaluation(
+      matched = matched,
+      rejection = if (matched) null else "expected ${bytes.size} exact bytes, received ${requestBytes.size}"
+    )
+  }
+
+  is RequestMatcher.ExactMessage -> {
+    val matched = requestBytes.contentEquals(message.toByteArray())
+    val received = if (matched) {
+      null
+    } else {
+      runCatching { message.parserForType.parseFrom(requestBytes) }.getOrNull()
+    }
+    RequestMatchEvaluation(
+      matched = matched,
+      rejection = if (matched) {
+        null
+      } else {
+        "expected ${message.diagnosticSummary(diagnosticPayloadRedactor)} but received " +
+          (received?.diagnosticSummary(diagnosticPayloadRedactor) ?: "unparseable bytes")
+      }
+    )
+  }
+
+  is RequestMatcher.Custom -> {
+    val matched = matcher(requestBytes)
+    RequestMatchEvaluation(
+      matched = matched,
+      rejection = if (matched) null else "custom request matcher returned false"
+    )
+  }
+
+  is RequestMatcher.ParsedMessage<*> -> evaluate(requestBytes)
+}
+
+internal fun RequestMatcher.matches(requestBytes: ByteArray): Boolean = evaluate(requestBytes).matched
+
+private fun Message.diagnosticSummary(redactor: ((Message) -> String)?): String =
+  if (redactor == null) {
+    "${descriptorForType.fullName} message (${serializedSize} bytes; payload redacted)"
+  } else {
+    runCatching { redactor(this).take(MAX_DIAGNOSTIC_PAYLOAD_CHARS) }
+      .getOrElse { "<diagnostic redactor failed>" }
+  }
+
+private const val MAX_DIAGNOSTIC_PAYLOAD_CHARS = 512
+
+internal fun MetadataMatcher.matches(metadata: Metadata): Boolean = when (this) {
+  is MetadataMatcher.Any -> true
+
+  is MetadataMatcher.HasHeader -> {
+    val headerKey = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
+    metadata.get(headerKey) == value
+  }
+
+  is MetadataMatcher.BearerToken -> {
+    val auth = metadata.get(GrpcMetadataKeys.AUTHORIZATION)
+    auth == "Bearer $token"
+  }
+
+  is MetadataMatcher.RequiresAuth -> {
+    val auth = metadata.get(GrpcMetadataKeys.AUTHORIZATION)
+    !auth.isNullOrBlank()
+  }
+
+  is MetadataMatcher.Custom -> matcher(metadata)
+
+  is MetadataMatcher.All -> matchers.all { it.matches(metadata) }
 }
 
 /**

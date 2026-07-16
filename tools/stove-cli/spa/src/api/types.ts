@@ -10,6 +10,8 @@ export const EVENT_TYPE = {
   ENTRY_RECORDED: "entry_recorded",
   SPAN_RECORDED: "span_recorded",
   SNAPSHOT: "snapshot",
+  MOCK_INTERACTION: "mock_interaction",
+  MOCK_WARNING: "mock_warning",
 } as const;
 
 export type EventType = (typeof EVENT_TYPE)[keyof typeof EVENT_TYPE];
@@ -96,6 +98,48 @@ export interface Snapshot {
   system: string;
   state_json: string;
   summary: string;
+  captured_at: string | null;
+  trigger: string;
+}
+
+export interface MockInteraction {
+  id: LiveRecordId;
+  run_id: string;
+  test_id: string | null;
+  timestamp: string;
+  system: string;
+  protocol: string;
+  method: string;
+  target: string;
+  matched: boolean;
+  stub_id: string | null;
+  attribution: string;
+  request_body: string | null;
+  request_body_truncated: boolean;
+  response_body: string | null;
+  response_body_truncated: boolean;
+  status: string;
+  latency_ms: number | null;
+  near_misses: string[];
+  trace_id: string | null;
+  scenario_name: string | null;
+  scenario_state: string | null;
+  next_scenario_state: string | null;
+  configured_delay_ms: number | null;
+  fault: string | null;
+  client_deadline_ms: number | null;
+}
+
+export interface MockWarning {
+  id: LiveRecordId;
+  run_id: string;
+  test_id: string | null;
+  timestamp: string;
+  system: string;
+  kind: string;
+  message: string;
+  stub_id: string | null;
+  target: string | null;
 }
 
 export interface LiveRunStartedPayload {
@@ -170,6 +214,46 @@ export interface LiveSnapshotPayload {
   system: string;
   state_json: string;
   summary: string;
+  captured_at: string | null;
+  trigger: string;
+}
+
+export interface LiveMockInteractionPayload {
+  id: LiveRecordId;
+  test_id: string | null;
+  timestamp: string;
+  system: string;
+  protocol: string;
+  method: string;
+  target: string;
+  matched: boolean;
+  stub_id: string | null;
+  attribution: string;
+  request_body: string | null;
+  request_body_truncated: boolean;
+  response_body: string | null;
+  response_body_truncated: boolean;
+  status: string;
+  latency_ms: number | null;
+  near_misses: string[];
+  trace_id: string | null;
+  scenario_name: string | null;
+  scenario_state: string | null;
+  next_scenario_state: string | null;
+  configured_delay_ms: number | null;
+  fault: string | null;
+  client_deadline_ms: number | null;
+}
+
+export interface LiveMockWarningPayload {
+  id: LiveRecordId;
+  test_id: string | null;
+  timestamp: string;
+  system: string;
+  kind: string;
+  message: string;
+  stub_id: string | null;
+  target: string | null;
 }
 
 interface LiveEventBase {
@@ -193,4 +277,12 @@ export type LiveDashboardEvent =
       event_type: typeof EVENT_TYPE.SPAN_RECORDED;
       payload: LiveSpanRecordedPayload;
     })
-  | (LiveEventBase & { event_type: typeof EVENT_TYPE.SNAPSHOT; payload: LiveSnapshotPayload });
+  | (LiveEventBase & { event_type: typeof EVENT_TYPE.SNAPSHOT; payload: LiveSnapshotPayload })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.MOCK_INTERACTION;
+      payload: LiveMockInteractionPayload;
+    })
+  | (LiveEventBase & {
+      event_type: typeof EVENT_TYPE.MOCK_WARNING;
+      payload: LiveMockWarningPayload;
+    });

@@ -3,6 +3,8 @@
 //! nor the write impl has to depend on the other's internals.
 
 use crate::storage::models::Entry;
+use crate::storage::models::MockInteraction;
+use crate::storage::models::MockWarning;
 use crate::storage::models::Run;
 use crate::storage::models::RunStatus;
 use crate::storage::models::Snapshot;
@@ -12,6 +14,11 @@ use crate::storage::models::TestStatus;
 
 pub(super) const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, stove_version, systems";
 pub(super) const SPAN_COLUMNS: &str = "id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace";
+pub(super) const SNAPSHOT_COLUMNS: &str =
+  "id, run_id, test_id, system, state_json, summary, captured_at, trigger_kind";
+pub(super) const MOCK_INTERACTION_COLUMNS: &str = "id, run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name, scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms";
+pub(super) const MOCK_WARNING_COLUMNS: &str =
+  "id, run_id, test_id, timestamp, system, kind, message, stub_id, target";
 
 /// Convert empty strings to `None` for optional database fields.
 pub(super) fn non_empty(s: &str) -> Option<&str> {
@@ -90,6 +97,63 @@ pub(super) fn snapshot_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Sna
     system: row.get(3)?,
     state_json: row.get(4)?,
     summary: row.get(5)?,
+    captured_at: row.get(6)?,
+    trigger: row.get(7)?,
+  })
+}
+
+pub(super) fn mock_interaction_from_row(
+  row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<MockInteraction> {
+  let near_misses_json: Option<String> = row.get(17)?;
+  let near_misses = near_misses_json
+    .map(|json| {
+      serde_json::from_str(&json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(17, rusqlite::types::Type::Text, Box::new(error))
+      })
+    })
+    .transpose()?
+    .unwrap_or_default();
+  Ok(MockInteraction {
+    id: row.get(0)?,
+    run_id: row.get(1)?,
+    test_id: row.get(2)?,
+    timestamp: row.get(3)?,
+    system: row.get(4)?,
+    protocol: row.get(5)?,
+    method: row.get(6)?,
+    target: row.get(7)?,
+    matched: row.get(8)?,
+    stub_id: row.get(9)?,
+    attribution: row.get(10)?,
+    request_body: row.get(11)?,
+    request_body_truncated: row.get(12)?,
+    response_body: row.get(13)?,
+    response_body_truncated: row.get(14)?,
+    status: row.get(15)?,
+    latency_ms: row.get(16)?,
+    near_misses,
+    trace_id: row.get(18)?,
+    scenario_name: row.get(19)?,
+    scenario_state: row.get(20)?,
+    next_scenario_state: row.get(21)?,
+    configured_delay_ms: row.get(22)?,
+    fault: row.get(23)?,
+    client_deadline_ms: row.get(24)?,
+  })
+}
+
+pub(super) fn mock_warning_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MockWarning> {
+  Ok(MockWarning {
+    id: row.get(0)?,
+    run_id: row.get(1)?,
+    test_id: row.get(2)?,
+    timestamp: row.get(3)?,
+    system: row.get(4)?,
+    kind: row.get(5)?,
+    message: row.get(6)?,
+    stub_id: row.get(7)?,
+    target: row.get(8)?,
   })
 }
 

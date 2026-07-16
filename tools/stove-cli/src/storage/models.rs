@@ -163,6 +163,57 @@ pub struct Snapshot {
   pub system: String,
   pub state_json: String,
   pub summary: String,
+  pub captured_at: Option<String>,
+  /// `TEST_END` for the regular end-of-test snapshot, `FAILURE` for the state
+  /// captured at the moment the first failing entry was recorded.
+  pub trigger: String,
+}
+
+/// One completed exchange observed by a mock system (`WireMock` / gRPC Mock).
+/// `test_id` is `None` for unattributed evidence — attribution is proven-only,
+/// so those render in a run-level lane instead of being guessed into a test.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct MockInteraction {
+  pub id: i64,
+  pub run_id: String,
+  pub test_id: Option<String>,
+  pub timestamp: String,
+  pub system: String,
+  pub protocol: String,
+  pub method: String,
+  pub target: String,
+  pub matched: bool,
+  pub stub_id: Option<String>,
+  pub attribution: String,
+  pub request_body: Option<String>,
+  pub request_body_truncated: bool,
+  pub response_body: Option<String>,
+  pub response_body_truncated: bool,
+  pub status: String,
+  pub latency_ms: Option<i64>,
+  /// Rendered near-miss candidates; populated for unmatched exchanges.
+  pub near_misses: Vec<String>,
+  pub trace_id: Option<String>,
+  pub scenario_name: Option<String>,
+  pub scenario_state: Option<String>,
+  pub next_scenario_state: Option<String>,
+  pub configured_delay_ms: Option<i64>,
+  pub fault: Option<String>,
+  pub client_deadline_ms: Option<i64>,
+}
+
+/// A diagnostic a mock system observed — never a test failure.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct MockWarning {
+  pub id: i64,
+  pub run_id: String,
+  pub test_id: Option<String>,
+  pub timestamp: String,
+  pub system: String,
+  pub kind: String,
+  pub message: String,
+  pub stub_id: Option<String>,
+  pub target: Option<String>,
 }
 
 // --- Input structs for write operations ---
@@ -183,6 +234,49 @@ pub struct NewEntry {
   pub actual: String,
   pub error: String,
   pub trace_id: String,
+}
+
+/// Data required to save a new mock interaction.
+#[derive(Clone, Debug, Default)]
+pub struct NewMockInteraction {
+  pub run_id: String,
+  pub test_id: Option<String>,
+  pub timestamp: String,
+  pub system: String,
+  pub protocol: String,
+  pub method: String,
+  pub target: String,
+  pub matched: bool,
+  pub stub_id: Option<String>,
+  pub attribution: String,
+  pub request_body: String,
+  pub request_body_truncated: bool,
+  pub response_body: String,
+  pub response_body_truncated: bool,
+  pub status: String,
+  pub latency_ms: Option<i64>,
+  /// JSON array of rendered near-miss candidates.
+  pub near_misses: String,
+  pub trace_id: Option<String>,
+  pub scenario_name: Option<String>,
+  pub scenario_state: Option<String>,
+  pub next_scenario_state: Option<String>,
+  pub configured_delay_ms: Option<i64>,
+  pub fault: Option<String>,
+  pub client_deadline_ms: Option<i64>,
+}
+
+/// Data required to save a new mock warning.
+#[derive(Clone, Debug, Default)]
+pub struct NewMockWarning {
+  pub run_id: String,
+  pub test_id: Option<String>,
+  pub timestamp: String,
+  pub system: String,
+  pub kind: String,
+  pub message: String,
+  pub stub_id: Option<String>,
+  pub target: Option<String>,
 }
 
 /// Data required to save a new span.

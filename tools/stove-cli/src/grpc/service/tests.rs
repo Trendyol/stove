@@ -15,12 +15,12 @@ fn test_service() -> DashboardEventServiceImpl {
     repo,
     sse,
     /*max_batch_size*/ 50,
-    Duration::from_secs(60),
+    Duration::from_mins(1),
   )
 }
 
-fn ts(seconds: i64) -> Option<prost_types::Timestamp> {
-  Some(prost_types::Timestamp { seconds, nanos: 0 })
+fn ts(seconds: i64) -> prost_types::Timestamp {
+  prost_types::Timestamp { seconds, nanos: 0 }
 }
 
 #[tokio::test]
@@ -35,7 +35,7 @@ async fn no_broadcast_on_invalid_event_order() {
         test_id: "t-1".to_string(),
         test_name: "orphan test".to_string(),
         spec_name: "Spec".to_string(),
-        timestamp: ts(1_704_067_200),
+        timestamp: Some(ts(1_704_067_200)),
         test_path: vec![],
       },
     )),
@@ -61,7 +61,7 @@ async fn broadcast_fires_before_batch_flush() {
       run_id: "run-1".to_string(),
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
-          timestamp: ts(1_704_067_200),
+          timestamp: Some(ts(1_704_067_200)),
           app_name: "my-api".to_string(),
           systems: vec!["HTTP".to_string()],
           stove_version: "0.23.1".to_string(),
@@ -90,10 +90,7 @@ async fn process_run_started_event() {
     run_id: "run-1".to_string(),
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
-        timestamp: Some(prost_types::Timestamp {
-          seconds: 1_704_067_200,
-          nanos: 0,
-        }),
+        timestamp: Some(ts(1_704_067_200)),
         app_name: "product-api".to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
         stove_version: "0.23.2".to_string(),
@@ -119,10 +116,7 @@ async fn process_full_lifecycle() {
       run_id: "run-1".to_string(),
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_200,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_200)),
           app_name: "test-app".to_string(),
           stove_version: String::new(),
           systems: vec![],
@@ -139,10 +133,7 @@ async fn process_full_lifecycle() {
           test_id: "test-1".to_string(),
           test_name: "my test".to_string(),
           spec_name: "MySpec".to_string(),
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_201,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_201)),
           test_path: vec![],
         },
       )),
@@ -155,10 +146,7 @@ async fn process_full_lifecycle() {
       event: Some(proto::dashboard_event::Event::EntryRecorded(
         proto::EntryRecordedEvent {
           test_id: "test-1".to_string(),
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_202,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_202)),
           system: "HTTP".to_string(),
           action: "GET /api".to_string(),
           result: "PASSED".to_string(),
@@ -183,10 +171,7 @@ async fn process_full_lifecycle() {
           status: "PASSED".to_string(),
           duration_ms: 500,
           error: String::new(),
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_203,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_203)),
         },
       )),
     })
@@ -197,10 +182,7 @@ async fn process_full_lifecycle() {
       run_id: "run-1".to_string(),
       event: Some(proto::dashboard_event::Event::RunEnded(
         proto::RunEndedEvent {
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_210,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_210)),
           total_tests: 1,
           passed: 1,
           failed: 0,

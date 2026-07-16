@@ -6,7 +6,7 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::warn;
 
 use crate::error::{AppError, Result};
-use crate::storage::models::{NewEntry, NewSpan};
+use crate::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use crate::storage::repository::Repository;
 
 pub const DEFAULT_MAX_BATCH_SIZE: usize = 20;
@@ -53,7 +53,11 @@ pub enum PersistedDashboardEvent {
     system: String,
     state_json: String,
     summary: String,
+    captured_at: String,
+    trigger: String,
   },
+  MockInteraction(NewMockInteraction),
+  MockWarning(NewMockWarning),
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -73,6 +77,8 @@ impl LiveDashboardEvent {
       LiveDashboardPayload::EntryRecorded(payload) => payload.id = temp_id,
       LiveDashboardPayload::SpanRecorded(payload) => payload.id = temp_id,
       LiveDashboardPayload::Snapshot(payload) => payload.id = temp_id,
+      LiveDashboardPayload::MockInteraction(payload) => payload.id = temp_id,
+      LiveDashboardPayload::MockWarning(payload) => payload.id = temp_id,
       LiveDashboardPayload::RunStarted(_)
       | LiveDashboardPayload::RunEnded(_)
       | LiveDashboardPayload::TestStarted(_)
@@ -92,6 +98,8 @@ pub enum LiveDashboardPayload {
   EntryRecorded(LiveEntryRecordedPayload),
   SpanRecorded(LiveSpanRecordedPayload),
   Snapshot(LiveSnapshotPayload),
+  MockInteraction(LiveMockInteractionPayload),
+  MockWarning(LiveMockWarningPayload),
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -173,6 +181,48 @@ pub struct LiveSnapshotPayload {
   pub system: String,
   pub state_json: String,
   pub summary: String,
+  pub captured_at: Option<String>,
+  pub trigger: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LiveMockInteractionPayload {
+  pub id: i64,
+  pub test_id: Option<String>,
+  pub timestamp: String,
+  pub system: String,
+  pub protocol: String,
+  pub method: String,
+  pub target: String,
+  pub matched: bool,
+  pub stub_id: Option<String>,
+  pub attribution: String,
+  pub request_body: Option<String>,
+  pub request_body_truncated: bool,
+  pub response_body: Option<String>,
+  pub response_body_truncated: bool,
+  pub status: String,
+  pub latency_ms: Option<i64>,
+  pub near_misses: Vec<String>,
+  pub trace_id: Option<String>,
+  pub scenario_name: Option<String>,
+  pub scenario_state: Option<String>,
+  pub next_scenario_state: Option<String>,
+  pub configured_delay_ms: Option<i64>,
+  pub fault: Option<String>,
+  pub client_deadline_ms: Option<i64>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LiveMockWarningPayload {
+  pub id: i64,
+  pub test_id: Option<String>,
+  pub timestamp: String,
+  pub system: String,
+  pub kind: String,
+  pub message: String,
+  pub stub_id: Option<String>,
+  pub target: Option<String>,
 }
 
 #[derive(Clone)]

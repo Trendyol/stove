@@ -20,7 +20,8 @@ class StoveConfig : AbstractProjectConfig() {
         grpcMock {
           GrpcMockSystemOptions(
             port = GRPC_PORT,
-            removeStubAfterRequestMatched = true
+            removeStubAfterRequestMatched = true,
+            enableHealthService = true
           )
         }
         grpc {

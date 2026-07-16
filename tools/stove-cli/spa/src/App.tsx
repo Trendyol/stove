@@ -19,10 +19,10 @@ export default function App() {
   } = useAppData();
 
   return (
-    <div className="stove-app-shell flex flex-col h-screen text-[var(--stove-text)] font-sans">
+    <div className="stove-app-shell flex h-screen flex-col font-sans text-[var(--stove-text)]">
       <Header liveConnected={liveConnected} />
       {versionMismatchSummary ? <VersionMismatchBanner summary={versionMismatchSummary} /> : null}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="stove-workspace">
         <Sidebar
           apps={apps}
           mismatchedApps={mismatchedApps}
@@ -36,8 +36,23 @@ export default function App() {
         {latestRun && selectedTest ? (
           <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
         ) : (
-          <div className="flex-1 flex items-center justify-center text-[var(--stove-text-muted)] text-sm">
-            {apps.length === 0 ? "Waiting for test events..." : "Select a test to view details"}
+          <div className="workspace-empty">
+            <div className="workspace-empty-mark">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="stove-kicker">
+              {apps.length === 0 ? "Listening for a run" : "Evidence workspace"}
+            </div>
+            <h1>
+              {apps.length === 0 ? "Waiting for the first signal" : "Choose a test to inspect"}
+            </h1>
+            <p>
+              {apps.length === 0
+                ? "The dashboard will assemble the run as test, trace, state and mock events arrive."
+                : "Select a test from the run navigator to open its evidence dossier."}
+            </p>
           </div>
         )}
       </div>

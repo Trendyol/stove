@@ -2,6 +2,14 @@ package com.trendyol.stove.dashboard
 
 import com.trendyol.stove.dashboard.api.*
 import com.trendyol.stove.dashboard.api.DashboardEventServiceGrpcKt.DashboardEventServiceCoroutineImplBase
+import com.trendyol.stove.interactions.InteractionAttribution
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.MockWarning
+import com.trendyol.stove.interactions.MockWarningKind
+import com.trendyol.stove.interactions.MockWarningListener
+import com.trendyol.stove.interactions.MockWarningPublisher
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.PluggedSystem
@@ -12,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -142,6 +151,89 @@ class DashboardSystemTest : FunSpec({
       server.shutdownNow()
     }
   }
+
+  test("mock interaction forwarding preserves diagnostic metadata") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+      system.run()
+      system.onInteraction(
+        MockInteraction(
+          system = "WireMock",
+          protocol = MockInteraction.Protocol.HTTP,
+          method = "POST",
+          target = "/payments",
+          matched = true,
+          stubId = "stub-1",
+          testId = "test-1",
+          attribution = InteractionAttribution.PROVEN_STUB,
+          requestBody = """{"amount":100}""",
+          requestBodyTruncated = false,
+          responseBody = """{"ok":true}""",
+          responseBodyTruncated = false,
+          status = "200",
+          latencyMs = 42,
+          nearMisses = emptyList(),
+          traceId = "0123456789abcdef0123456789abcdef",
+          timestamp = Instant.parse("2026-01-01T00:00:00Z"),
+          scenarioName = "payment retry",
+          scenarioState = "attempt-2",
+          nextScenarioState = "recovered",
+          configuredDelayMs = 250,
+          fault = "CONNECTION_RESET_BY_PEER",
+          clientDeadlineMs = 500
+        )
+      )
+      delay(300.milliseconds)
+      system.stop()
+
+      val event = received.first { it.hasMockInteraction() }.mockInteraction
+      event.scenarioName shouldBe "payment retry"
+      event.scenarioState shouldBe "attempt-2"
+      event.nextScenarioState shouldBe "recovered"
+      event.configuredDelayMs shouldBe 250
+      event.fault shouldBe "CONNECTION_RESET_BY_PEER"
+      event.clientDeadlineMs shouldBe 500
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("mock diagnostics stay inside the dashboard run lifecycle") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      stove.getOrRegister(LifecycleDiagnosticSystem(stove))
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+
+      system.run()
+      stove.startTest(StoveTestContext("test-open", "open test", "LifecycleSpec"))
+      system.stop()
+      delay(500.milliseconds)
+
+      received.first().hasRunStarted() shouldBe true
+      received.any { it.hasMockInteraction() && it.mockInteraction.target == "/on-register" } shouldBe true
+      received.any { it.hasMockWarning() && it.mockWarning.target == "/on-register" } shouldBe true
+      received.none {
+        it.hasMockInteraction() && it.mockInteraction.target == "/during-finalization"
+      } shouldBe true
+      received.none { it.hasMockWarning() && it.mockWarning.target == "/during-finalization" } shouldBe true
+      received.last().hasRunEnded() shouldBe true
+    } finally {
+      server.shutdownNow()
+    }
+  }
 })
 
 private fun startMockServer(received: MutableList<DashboardEvent>, port: Int): Server {
@@ -198,4 +290,74 @@ private class BlockingSnapshotSystem(
   }
 
   override fun close() = Unit
+}
+
+private class LifecycleDiagnosticSystem(
+  override val stove: Stove
+) : PluggedSystem,
+  Reports,
+  MockInteractionPublisher,
+  MockWarningPublisher {
+  private val interactionListeners = CopyOnWriteArrayList<MockInteractionListener>()
+  private val warningListeners = CopyOnWriteArrayList<MockWarningListener>()
+
+  override val reportSystemName: String = "Lifecycle diagnostics"
+
+  override fun addInteractionListener(listener: MockInteractionListener) {
+    interactionListeners.add(listener)
+    listener.onInteraction(interaction("/on-register"))
+  }
+
+  override fun removeInteractionListener(listener: MockInteractionListener) {
+    interactionListeners.remove(listener)
+  }
+
+  override fun addWarningListener(listener: MockWarningListener) {
+    warningListeners.add(listener)
+    listener.onWarning(warning("/on-register"))
+  }
+
+  override fun removeWarningListener(listener: MockWarningListener) {
+    warningListeners.remove(listener)
+  }
+
+  override fun snapshot(): SystemSnapshot {
+    interactionListeners.forEach { it.onInteraction(interaction("/during-finalization")) }
+    warningListeners.forEach { it.onWarning(warning("/during-finalization")) }
+    return SystemSnapshot(
+      system = reportSystemName,
+      state = emptyMap<String, Any>(),
+      summary = "lifecycle snapshot"
+    )
+  }
+
+  override fun close() = Unit
+
+  private fun interaction(target: String) = MockInteraction(
+    system = reportSystemName,
+    protocol = MockInteraction.Protocol.HTTP,
+    method = "GET",
+    target = target,
+    matched = true,
+    stubId = null,
+    testId = null,
+    attribution = InteractionAttribution.UNATTRIBUTED,
+    requestBody = "",
+    requestBodyTruncated = false,
+    responseBody = "",
+    responseBodyTruncated = false,
+    status = "200",
+    latencyMs = null,
+    nearMisses = emptyList(),
+    traceId = null,
+    timestamp = Instant.now()
+  )
+
+  private fun warning(target: String) = MockWarning(
+    system = reportSystemName,
+    kind = MockWarningKind.UNUSED_STUB,
+    testId = null,
+    message = "lifecycle warning",
+    target = target
+  )
 }

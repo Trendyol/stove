@@ -10,6 +10,8 @@ use crate::ingest::FlushBehavior;
 use crate::ingest::LiveDashboardEvent;
 use crate::ingest::LiveDashboardPayload;
 use crate::ingest::LiveEntryRecordedPayload;
+use crate::ingest::LiveMockInteractionPayload;
+use crate::ingest::LiveMockWarningPayload;
 use crate::ingest::LiveRunEndedPayload;
 use crate::ingest::LiveRunStartedPayload;
 use crate::ingest::LiveSnapshotPayload;
@@ -19,6 +21,8 @@ use crate::ingest::LiveTestStartedPayload;
 use crate::ingest::PersistedDashboardEvent;
 use crate::proto;
 use crate::storage::models::NewEntry;
+use crate::storage::models::NewMockInteraction;
+use crate::storage::models::NewMockWarning;
 use crate::storage::models::NewSpan;
 
 use super::convert::PreparedDashboardEvent;
@@ -290,6 +294,12 @@ pub(super) fn prepare_snapshot(
   event: &proto::SnapshotEvent,
 ) -> AppResult<PreparedDashboardEvent> {
   ensure_test_known(state, run_id, &event.test_id)?;
+  let captured_at = format_timestamp(event.timestamp.as_ref());
+  let trigger = if event.trigger.is_empty() {
+    "TEST_END".to_string()
+  } else {
+    event.trigger.clone()
+  };
   Ok(PreparedDashboardEvent {
     live: live_event(
       run_id,
@@ -300,6 +310,8 @@ pub(super) fn prepare_snapshot(
         system: event.system.clone(),
         state_json: event.state_json.clone(),
         summary: event.summary.clone(),
+        captured_at: non_empty(&captured_at),
+        trigger: trigger.clone(),
       }),
     ),
     persisted: PersistedDashboardEvent::Snapshot {
@@ -308,7 +320,121 @@ pub(super) fn prepare_snapshot(
       system: event.system.clone(),
       state_json: event.state_json.clone(),
       summary: event.summary.clone(),
+      captured_at,
+      trigger,
     },
+    flush: FlushBehavior::Deferred,
+  })
+}
+
+/// Interactions and warnings are diagnostics: unlike entries, they may reference tests the
+/// CLI has never seen (fail-open evidence, cross-test warnings naming another test id), so
+/// only the run is validated and the test id is carried through as-is.
+pub(super) fn prepare_mock_interaction(
+  state: &mut LiveState,
+  run_id: &str,
+  event: &proto::MockInteractionEvent,
+) -> AppResult<PreparedDashboardEvent> {
+  ensure_run_known(state, run_id)?;
+  let timestamp = format_timestamp(event.timestamp.as_ref());
+  let near_misses_json = serde_json::to_string(&event.near_misses)?;
+  let interaction = NewMockInteraction {
+    run_id: run_id.to_string(),
+    test_id: non_empty(&event.test_id),
+    timestamp: timestamp.clone(),
+    system: event.system.clone(),
+    protocol: event.protocol.clone(),
+    method: event.method.clone(),
+    target: event.target.clone(),
+    matched: event.matched,
+    stub_id: non_empty(&event.stub_id),
+    attribution: event.attribution().as_str_name().to_string(),
+    request_body: event.request_body.clone(),
+    request_body_truncated: event.request_body_truncated,
+    response_body: event.response_body.clone(),
+    response_body_truncated: event.response_body_truncated,
+    status: event.status.clone(),
+    latency_ms: (event.latency_ms >= 0).then_some(event.latency_ms),
+    near_misses: near_misses_json,
+    trace_id: non_empty(&event.trace_id),
+    scenario_name: non_empty(&event.scenario_name),
+    scenario_state: non_empty(&event.scenario_state),
+    next_scenario_state: non_empty(&event.next_scenario_state),
+    configured_delay_ms: (event.configured_delay_ms >= 0).then_some(event.configured_delay_ms),
+    fault: non_empty(&event.fault),
+    client_deadline_ms: (event.client_deadline_ms >= 0).then_some(event.client_deadline_ms),
+  };
+
+  Ok(PreparedDashboardEvent {
+    live: live_event(
+      run_id,
+      event_type::MOCK_INTERACTION,
+      LiveDashboardPayload::MockInteraction(LiveMockInteractionPayload {
+        id: 0,
+        test_id: interaction.test_id.clone(),
+        timestamp,
+        system: interaction.system.clone(),
+        protocol: interaction.protocol.clone(),
+        method: interaction.method.clone(),
+        target: interaction.target.clone(),
+        matched: interaction.matched,
+        stub_id: interaction.stub_id.clone(),
+        attribution: interaction.attribution.clone(),
+        request_body: non_empty(&interaction.request_body),
+        request_body_truncated: interaction.request_body_truncated,
+        response_body: non_empty(&interaction.response_body),
+        response_body_truncated: interaction.response_body_truncated,
+        status: interaction.status.clone(),
+        latency_ms: interaction.latency_ms,
+        near_misses: event.near_misses.clone(),
+        trace_id: interaction.trace_id.clone(),
+        scenario_name: interaction.scenario_name.clone(),
+        scenario_state: interaction.scenario_state.clone(),
+        next_scenario_state: interaction.next_scenario_state.clone(),
+        configured_delay_ms: interaction.configured_delay_ms,
+        fault: interaction.fault.clone(),
+        client_deadline_ms: interaction.client_deadline_ms,
+      }),
+    ),
+    persisted: PersistedDashboardEvent::MockInteraction(interaction),
+    flush: FlushBehavior::Deferred,
+  })
+}
+
+pub(super) fn prepare_mock_warning(
+  state: &mut LiveState,
+  run_id: &str,
+  event: &proto::MockWarningEvent,
+) -> AppResult<PreparedDashboardEvent> {
+  ensure_run_known(state, run_id)?;
+  let timestamp = format_timestamp(event.timestamp.as_ref());
+  let warning = NewMockWarning {
+    run_id: run_id.to_string(),
+    test_id: non_empty(&event.test_id),
+    timestamp: timestamp.clone(),
+    system: event.system.clone(),
+    kind: event.kind.clone(),
+    message: event.message.clone(),
+    stub_id: non_empty(&event.stub_id),
+    target: non_empty(&event.target),
+  };
+
+  Ok(PreparedDashboardEvent {
+    live: live_event(
+      run_id,
+      event_type::MOCK_WARNING,
+      LiveDashboardPayload::MockWarning(LiveMockWarningPayload {
+        id: 0,
+        test_id: warning.test_id.clone(),
+        timestamp,
+        system: warning.system.clone(),
+        kind: warning.kind.clone(),
+        message: warning.message.clone(),
+        stub_id: warning.stub_id.clone(),
+        target: warning.target.clone(),
+      }),
+    ),
+    persisted: PersistedDashboardEvent::MockWarning(warning),
     flush: FlushBehavior::Deferred,
   })
 }

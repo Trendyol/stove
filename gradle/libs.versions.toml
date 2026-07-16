@@ -230,6 +230,7 @@ io-grpc = { module = "io.grpc:grpc-core", version.ref = "io-grpc" }
 io-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "io-grpc" }
 io-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "io-grpc" }
 io-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "io-grpc" }
+io-grpc-services = { module = "io.grpc:grpc-services", version.ref = "io-grpc" }
 io-grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "io-grpc-kotlin" }
 grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "io-grpc" }
 grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "io-grpc-kotlin" }
