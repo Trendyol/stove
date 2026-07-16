@@ -180,6 +180,7 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   const testInteractions = queryClient.getQueryData(["interactions", "run-live", "test-1"]);
   const runInteractions = queryClient.getQueryData(["interactions", "run-live"]);
   const testWarnings = queryClient.getQueryData(["warnings", "run-live", "test-1"]);
+  const runWarnings = queryClient.getQueryData(["warnings", "run-live"]);
 
   assert.equal(apps.length, 1);
   assert.equal(apps[0].latest_run_id, "run-live");
@@ -201,10 +202,11 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
 
   assert.equal(testInteractions.length, 1);
   assert.equal(testInteractions[0].scenario_name, "Payment retry");
-  assert.equal(runInteractions.length, 2);
-  assert.equal(runInteractions.filter((interaction) => interaction.test_id === null).length, 1);
+  assert.equal(runInteractions.length, 1);
+  assert.equal(runInteractions[0].test_id, null);
   assert.equal(testWarnings.length, 1);
   assert.equal(testWarnings[0].kind, "UNUSED_STUB");
+  assert.equal(runWarnings.length, 0);
 });
 
 test("live test data survives a stale persisted response", () => {
@@ -315,4 +317,47 @@ test("persisted evidence replaces its temporary live duplicate during reconcilia
 
   assert.equal(reconciled.length, 1);
   assert.equal(reconciled[0].id, 42);
+});
+
+test("evidence reconciliation preserves persisted and cached multiplicity", () => {
+  const queryClient = new QueryClient();
+  const queryKey = ["interactions", "run-race", "test-live"];
+  const interaction = {
+    id: -7,
+    run_id: "run-race",
+    test_id: "test-live",
+    timestamp: "2024-06-01T10:00:02Z",
+    system: "WireMock",
+    protocol: "HTTP",
+    method: "GET",
+    target: "/health",
+    matched: true,
+    stub_id: "stub-1",
+    attribution: "PROVEN_STUB",
+    request_body: null,
+    request_body_truncated: false,
+    response_body: null,
+    response_body_truncated: false,
+    status: "200",
+    latency_ms: 3,
+    near_misses: [],
+    trace_id: null,
+    scenario_name: null,
+    scenario_state: null,
+    next_scenario_state: null,
+    configured_delay_ms: null,
+    fault: null,
+    client_deadline_ms: null,
+  };
+  queryClient.setQueryData(queryKey, [interaction, { ...interaction, id: -8 }]);
+
+  const reconciled = reconcileDashboardData(queryClient, queryKey, [
+    { ...interaction, id: 42 },
+  ]);
+
+  assert.equal(reconciled.length, 2);
+  assert.deepEqual(
+    reconciled.map((record) => record.id).sort((left, right) => left - right),
+    [-8, 42],
+  );
 });

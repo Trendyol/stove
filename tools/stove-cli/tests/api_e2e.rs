@@ -211,6 +211,23 @@ fn mock_interaction_event(run_id: &str, test_id: &str, seconds: i64) -> proto::D
   }
 }
 
+fn mock_warning_event(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: run_id.to_string(),
+    event: Some(proto::dashboard_event::Event::MockWarning(
+      proto::MockWarningEvent {
+        test_id: test_id.to_string(),
+        timestamp: Some(ts(seconds, 0)),
+        system: "WireMock".to_string(),
+        kind: "UNUSED_STUB".to_string(),
+        message: "Stub was never matched".to_string(),
+        stub_id: "stub-1".to_string(),
+        target: "/payments".to_string(),
+      },
+    )),
+  }
+}
+
 fn snapshot_event(
   run_id: &str,
   test_id: &str,
@@ -1406,6 +1423,50 @@ async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
   assert_eq!(rest[0]["configured_delay_ms"], 250);
   assert_eq!(rest[0]["fault"], "CONNECTION_RESET_BY_PEER");
   assert_eq!(rest[0]["client_deadline_ms"], 500);
+}
+
+#[tokio::test]
+async fn ambient_mock_endpoints_return_only_unattributed_records() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new_with_ingest_config(
+    server.repo.clone(),
+    server.sse.clone(),
+    50,
+    Duration::from_secs(60),
+  );
+
+  for event in [
+    run_started_event("run-ambient", "product-api", 1_704_067_200, 0),
+    mock_interaction_event("run-ambient", "test-1", 1_704_067_201),
+    mock_interaction_event("run-ambient", "", 1_704_067_202),
+    mock_warning_event("run-ambient", "test-1", 1_704_067_203),
+    mock_warning_event("run-ambient", "", 1_704_067_204),
+  ] {
+    service.send_event(Request::new(event)).await.unwrap();
+  }
+  service.flush_pending().await.unwrap();
+
+  let ambient_interactions = server
+    .get_json("/runs/run-ambient/interactions/ambient")
+    .await;
+  assert_eq!(ambient_interactions.as_array().unwrap().len(), 1);
+  assert!(ambient_interactions[0]["test_id"].is_null());
+
+  let ambient_warnings = server.get_json("/runs/run-ambient/warnings/ambient").await;
+  assert_eq!(ambient_warnings.as_array().unwrap().len(), 1);
+  assert!(ambient_warnings[0]["test_id"].is_null());
+
+  let test_interactions = server
+    .get_json("/runs/run-ambient/tests/test-1/interactions")
+    .await;
+  assert_eq!(test_interactions.as_array().unwrap().len(), 1);
+  assert_eq!(test_interactions[0]["test_id"], "test-1");
+
+  let test_warnings = server
+    .get_json("/runs/run-ambient/tests/test-1/warnings")
+    .await;
+  assert_eq!(test_warnings.as_array().unwrap().len(), 1);
+  assert_eq!(test_warnings[0]["test_id"], "test-1");
 }
 
 #[tokio::test]

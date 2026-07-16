@@ -53,9 +53,9 @@ Concrete defects found by source review, driving Theme D:
 
 | Item | Status | Notes |
 |---|---|---|
-| Typed gRPC verification | ✅ | `shouldHaveBeenCalled<T>(service, method, times) { condition }` / `shouldNotHaveBeenCalled<T>` — point-in-time, exact-count, test-scoped, counting what the application sent (matched or not). Failures report matching-vs-received counts plus parsed payloads. Descriptor overloads included. |
+| Typed gRPC verification | ✅ | String overloads take an explicit generated `Parser<T>`; descriptor overloads infer the request type and decode with the method's configured marshaller. Both are point-in-time, exact-count, test-scoped, and count what the application sent (matched or not). Decode failures fail closed with payload diagnostics. |
 | Descriptor-typed stubbing | ✅ | All `mock*` and both typed verifications accept generated `MethodDescriptor`s; string overloads remain. |
-| Reified request matchers | ✅ (bidi typed handler deferred) | `RequestMatcher.message<T> { predicate }` parses request bytes via the generated parser; unparseable bytes never match. The typed bidi handler remains raw `ByteArray` for now — revisit with descriptor-based marshalling. |
+| Typed request matchers | ✅ (bidi typed handler deferred) | `RequestMatcher.message(Request.parser()) { predicate }` uses an explicit parser; `RequestMatcher.message(methodDescriptor) { predicate }` uses the descriptor marshaller and cannot drift from the RPC request type. Unparseable bytes never match and produce a specific near-miss. The typed bidi handler remains raw `ByteArray` for now. |
 | `shouldNotHaveBeenCalled` kept as-is | ✅ decision | Sound for mocks, unlike Kafka negative assertions — see decisions log. |
 
 ## Theme B — Fidelity: simulating how real dependencies fail

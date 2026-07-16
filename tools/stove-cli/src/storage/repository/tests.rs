@@ -203,6 +203,7 @@ fn full_event_lifecycle() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn mock_interactions_and_warnings_roundtrip() {
   let repo = test_repo();
 
@@ -263,6 +264,19 @@ fn mock_interactions_and_warnings_roundtrip() {
     })
     .unwrap();
 
+  repo
+    .save_mock_warning(&NewMockWarning {
+      run_id: "run-1".into(),
+      test_id: None,
+      timestamp: "2024-01-01T00:00:05Z".into(),
+      system: "gRPC Mock".into(),
+      kind: "UNVALIDATED_UNMATCHED".into(),
+      message: "Unattributed warning.".into(),
+      stub_id: None,
+      target: Some("users.UserService/GetUser".into()),
+    })
+    .unwrap();
+
   let test_interactions = repo
     .get_mock_interactions_for_test("run-1", "test-1")
     .unwrap();
@@ -294,11 +308,21 @@ fn mock_interactions_and_warnings_roundtrip() {
     unattributed.near_misses,
     vec!["no stubs registered for this method"]
   );
+  let ambient_interactions = repo
+    .get_unattributed_mock_interactions_for_run("run-1")
+    .unwrap();
+  assert_eq!(ambient_interactions.len(), 1);
+  assert!(ambient_interactions[0].test_id.is_none());
 
   let warnings = repo.get_mock_warnings_for_test("run-1", "test-1").unwrap();
   assert_eq!(warnings.len(), 1);
   assert_eq!(warnings[0].kind, "UNUSED_STUB");
-  assert_eq!(repo.get_mock_warnings_for_run("run-1").unwrap().len(), 1);
+  assert_eq!(repo.get_mock_warnings_for_run("run-1").unwrap().len(), 2);
+  let ambient_warnings = repo
+    .get_unattributed_mock_warnings_for_run("run-1")
+    .unwrap();
+  assert_eq!(ambient_warnings.len(), 1);
+  assert!(ambient_warnings[0].test_id.is_none());
 
   repo.clear_all().unwrap();
   assert!(
@@ -308,6 +332,41 @@ fn mock_interactions_and_warnings_roundtrip() {
       .is_empty()
   );
   assert!(repo.get_mock_warnings_for_run("run-1").unwrap().is_empty());
+}
+
+#[test]
+fn malformed_rows_are_reported_instead_of_dropped() {
+  let repo = test_repo();
+  repo
+    .save_mock_interaction(&NewMockInteraction {
+      run_id: "run-1".into(),
+      test_id: Some("test-1".into()),
+      timestamp: "2024-01-01T00:00:02Z".into(),
+      system: "WireMock".into(),
+      protocol: "HTTP".into(),
+      method: "GET".into(),
+      target: "/broken".into(),
+      matched: false,
+      attribution: "PROVEN_HEADER".into(),
+      status: "404".into(),
+      near_misses: "[]".into(),
+      ..Default::default()
+    })
+    .unwrap();
+  repo
+    .lock_write_db()
+    .conn()
+    .execute(
+      "UPDATE mock_interactions SET near_misses = 'not-json' WHERE run_id = 'run-1'",
+      [],
+    )
+    .unwrap();
+
+  assert!(
+    repo
+      .get_mock_interactions_for_test("run-1", "test-1")
+      .is_err()
+  );
 }
 
 #[test]

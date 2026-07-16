@@ -3,10 +3,16 @@ package com.trendyol.stove.testing.grpcmock
 import com.trendyol.stove.grpc.grpc
 import com.trendyol.stove.system.stove
 import com.trendyol.stove.testing.grpcmock.test.*
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 
 /**
@@ -58,6 +64,38 @@ class GrpcMockStubSemanticsTest :
             )
           }
           error.message shouldContain "exactly one type"
+        }
+      }
+    }
+
+    test("a one-shot stub is consumed by only one concurrent request") {
+      stove {
+        grpcMock {
+          mockUnary(
+            serviceName = "test.TestService",
+            methodName = "Unary",
+            requestMatcher = RequestMatcher.message(TestRequest.parser()) {
+              it.message == "concurrent-one-shot"
+            },
+            response = TestResponse.newBuilder().setMessage("served-once").build()
+          )
+        }
+
+        grpc {
+          rawChannel { channel ->
+            val stub = TestServiceGrpc.newBlockingStub(channel)
+            val outcomes = coroutineScope {
+              List(2) {
+                async(Dispatchers.IO) {
+                  runCatching { stub.unary(testRequest { message = "concurrent-one-shot" }) }
+                }
+              }.awaitAll()
+            }
+
+            outcomes.count { it.getOrNull()?.message == "served-once" } shouldBe 1
+            val failure = outcomes.single { it.isFailure }.exceptionOrNull()
+            (failure as StatusRuntimeException).status.code shouldBe Status.Code.UNIMPLEMENTED
+          }
         }
       }
     }

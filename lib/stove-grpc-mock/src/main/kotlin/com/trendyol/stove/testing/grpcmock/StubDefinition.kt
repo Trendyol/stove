@@ -1,6 +1,7 @@
 package com.trendyol.stove.testing.grpcmock
 
 import com.google.protobuf.Message
+import com.google.protobuf.Parser
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.Status
@@ -26,30 +27,46 @@ data class StubKey(
 sealed class RequestMatcher {
   companion object {
     /**
-     * Typed request matcher: parses the request bytes as [T] and evaluates the predicate.
-     * Bytes that do not parse as [T] never match.
+     * Typed request matcher backed by an explicit protobuf [parser]. Decode failures do not
+     * match and are preserved in near-miss diagnostics.
      *
      * ```kotlin
      * mockUnary(
      *   serviceName = "users.UserService",
      *   methodName = "GetUser",
-     *   requestMatcher = RequestMatcher.message<GetUserRequest> { it.userId == "123" },
+     *   requestMatcher = RequestMatcher.message(GetUserRequest.parser()) { it.userId == "123" },
      *   response = response
      * )
      * ```
      */
-    inline fun <reified T : Message> message(crossinline predicate: (T) -> Boolean): Custom {
-      val parser = ProtoPayloads.parserFor(T::class.java)
-      return Custom { bytes -> parser(bytes)?.let(predicate) == true }
-    }
+    fun <T : Message> message(
+      parser: Parser<T>,
+      predicate: (T) -> Boolean
+    ): RequestMatcher = ParsedMessage(parser.payloadDecoder(), predicate)
+
+    /**
+     * Typed request matcher backed by the generated gRPC [method]'s request marshaller.
+     * The predicate type is inferred from the descriptor, so it cannot drift from the RPC.
+     */
+    fun <RequestT : Message, ResponseT> message(
+      method: MethodDescriptor<RequestT, ResponseT>,
+      predicate: (RequestT) -> Boolean
+    ): RequestMatcher = ParsedMessage(method.requestPayloadDecoder(), predicate)
   }
 
   /** Matches any request */
   data object Any : RequestMatcher()
 
-  /** Matches requests with exact message content */
+  /**
+   * Matches requests with exact message content.
+   *
+   * Payloads are redacted from rejection diagnostics by default. Callers may provide a
+   * diagnostic-only redactor that returns a safe representation when field-level context
+   * is required.
+   */
   data class ExactMessage(
-    val message: Message
+    val message: Message,
+    val diagnosticPayloadRedactor: ((Message) -> String)? = null
   ) : RequestMatcher()
 
   /** Matches requests with exact byte content */
@@ -69,6 +86,30 @@ sealed class RequestMatcher {
   data class Custom(
     val matcher: (ByteArray) -> Boolean
   ) : RequestMatcher()
+
+  internal class ParsedMessage<T : Message>(
+    private val decoder: PayloadDecoder<T>,
+    private val predicate: (T) -> Boolean
+  ) : RequestMatcher() {
+    fun evaluate(bytes: ByteArray): RequestMatchEvaluation = when (val result = decoder.decode(bytes)) {
+      is PayloadDecodeResult.Decoded -> {
+        val matched = predicate(result.value)
+        RequestMatchEvaluation(
+          matched = matched,
+          rejection = if (matched) {
+            null
+          } else {
+            "decoded message { ${result.value.singleLine()} } did not satisfy the predicate"
+          }
+        )
+      }
+
+      is PayloadDecodeResult.Failed -> RequestMatchEvaluation(
+        matched = false,
+        rejection = "could not decode request with ${decoder.description}: ${result.error.conciseDecodeError()}"
+      )
+    }
+  }
 }
 
 /**
@@ -240,12 +281,62 @@ data class ReceivedRequest(
   }
 }
 
-internal fun RequestMatcher.matches(requestBytes: ByteArray): Boolean = when (this) {
-  is RequestMatcher.Any -> true
-  is RequestMatcher.ExactBytes -> requestBytes.contentEquals(bytes)
-  is RequestMatcher.ExactMessage -> requestBytes.contentEquals(message.toByteArray())
-  is RequestMatcher.Custom -> matcher(requestBytes)
+internal data class RequestMatchEvaluation(
+  val matched: Boolean,
+  val rejection: String?
+)
+
+internal fun RequestMatcher.evaluate(requestBytes: ByteArray): RequestMatchEvaluation = when (this) {
+  is RequestMatcher.Any -> RequestMatchEvaluation(matched = true, rejection = null)
+
+  is RequestMatcher.ExactBytes -> {
+    val matched = requestBytes.contentEquals(bytes)
+    RequestMatchEvaluation(
+      matched = matched,
+      rejection = if (matched) null else "expected ${bytes.size} exact bytes, received ${requestBytes.size}"
+    )
+  }
+
+  is RequestMatcher.ExactMessage -> {
+    val matched = requestBytes.contentEquals(message.toByteArray())
+    val received = if (matched) {
+      null
+    } else {
+      runCatching { message.parserForType.parseFrom(requestBytes) }.getOrNull()
+    }
+    RequestMatchEvaluation(
+      matched = matched,
+      rejection = if (matched) {
+        null
+      } else {
+        "expected ${message.diagnosticSummary(diagnosticPayloadRedactor)} but received " +
+          (received?.diagnosticSummary(diagnosticPayloadRedactor) ?: "unparseable bytes")
+      }
+    )
+  }
+
+  is RequestMatcher.Custom -> {
+    val matched = matcher(requestBytes)
+    RequestMatchEvaluation(
+      matched = matched,
+      rejection = if (matched) null else "custom request matcher returned false"
+    )
+  }
+
+  is RequestMatcher.ParsedMessage<*> -> evaluate(requestBytes)
 }
+
+internal fun RequestMatcher.matches(requestBytes: ByteArray): Boolean = evaluate(requestBytes).matched
+
+private fun Message.diagnosticSummary(redactor: ((Message) -> String)?): String =
+  if (redactor == null) {
+    "${descriptorForType.fullName} message (${serializedSize} bytes; payload redacted)"
+  } else {
+    runCatching { redactor(this).take(MAX_DIAGNOSTIC_PAYLOAD_CHARS) }
+      .getOrElse { "<diagnostic redactor failed>" }
+  }
+
+private const val MAX_DIAGNOSTIC_PAYLOAD_CHARS = 512
 
 internal fun MetadataMatcher.matches(metadata: Metadata): Boolean = when (this) {
   is MetadataMatcher.Any -> true

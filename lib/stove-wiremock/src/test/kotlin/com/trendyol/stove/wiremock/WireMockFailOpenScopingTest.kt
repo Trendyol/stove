@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
@@ -96,6 +97,8 @@ class WireMockFailOpenScopingTest :
           afterStubRemoved = { _, _ -> },
           afterRequest = { _, _ -> },
           serde = StoveSerde.jackson.anyByteArraySerde(),
+          retainRawInteractionBodies = false,
+          interactionBodyRedactor = { MockInteraction.redactSensitiveBody(it) },
           configure = { this },
           configureExposedConfiguration = { listOf() }
         )

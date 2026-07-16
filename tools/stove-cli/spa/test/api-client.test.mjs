@@ -25,6 +25,8 @@ test("test evidence endpoints URL-encode run and test ids", async () => {
     await api.getSnapshots(runId, testId, controller.signal);
     await api.getTestInteractions(runId, testId);
     await api.getTestWarnings(runId, testId);
+    await api.getAmbientInteractions(runId);
+    await api.getAmbientWarnings(runId);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -42,4 +44,6 @@ test("test evidence endpoints URL-encode run and test ids", async () => {
     seen[2].input,
     "/api/v1/runs/run%3A1/tests/AuditHeadersValidationTests%3A%3Ashould%20not%20require%20audit%20headers%20for%20get%20endpoint/warnings",
   );
+  assert.equal(seen[3].input, "/api/v1/runs/run%3A1/interactions/ambient");
+  assert.equal(seen[4].input, "/api/v1/runs/run%3A1/warnings/ambient");
 });

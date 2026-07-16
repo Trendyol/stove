@@ -26,93 +26,99 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 class GrpcMockWarningTest :
   FunSpec({
-    val warnings = CopyOnWriteArrayList<MockWarning>()
-    val listener = MockWarningListener { warnings.add(it) }
-    lateinit var producingTestId: String
-    lateinit var validatedTestId: String
-
     suspend fun awaitUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
       val deadline = System.currentTimeMillis() + timeoutMs
       while (!condition() && System.currentTimeMillis() < deadline) delay(50)
       condition().shouldBeTrue()
     }
 
-    test("a test producing warning-worthy evidence") {
-      producingTestId = Stove.reporter().currentTestId()
+    test("warning-worthy evidence emits self-contained diagnostics") {
+      val warnings = CopyOnWriteArrayList<MockWarning>()
+      val listener = MockWarningListener { warnings.add(it) }
+      val producingTestId = Stove.reporter().currentTestId()
 
       stove {
         grpcMock {
           addWarningListener(listener)
-          // Never called: unused-stub warning at test end.
-          mockUnary(
-            serviceName = "test.TestService",
-            methodName = "WarningsNeverCalled",
-            response = TestResponse.newBuilder().setMessage("lonely").build()
-          )
-          // Will be called with a foreign test id: cross-test match at serve time.
-          mockUnary(
-            serviceName = "test.TestService",
-            methodName = "Unary",
-            requestMatcher = RequestMatcher.message<TestRequest> { it.message == "crossed" },
-            response = TestResponse.newBuilder().setMessage("served").build()
-          )
         }
-
-        grpc {
-          rawChannel { ch ->
-            val foreign = Metadata().apply {
-              put(Metadata.Key.of("x-stove-test-id", Metadata.ASCII_STRING_MARSHALLER), "an-entirely-different-test")
-            }
-            val stub = TestServiceGrpc
-              .newBlockingStub(ClientInterceptors.intercept(ch, MetadataUtils.newAttachHeadersInterceptor(foreign)))
-            stub.unary(testRequest { message = "crossed" }).message shouldBe "served"
+        try {
+          grpcMock {
+            // Never called: unused-stub warning at test end.
+            mockUnary(
+              serviceName = "test.TestService",
+              methodName = "WarningsNeverCalled",
+              response = TestResponse.newBuilder().setMessage("lonely").build()
+            )
+            // Will be called with a foreign test id: cross-test match at serve time.
+            mockUnary(
+              serviceName = "test.TestService",
+              methodName = "Unary",
+              requestMatcher = RequestMatcher.message(TestRequest.parser()) { it.message == "crossed" },
+              response = TestResponse.newBuilder().setMessage("served").build()
+            )
           }
+
+          grpc {
+            rawChannel { ch ->
+              val foreign = Metadata().apply {
+                put(Metadata.Key.of("x-stove-test-id", Metadata.ASCII_STRING_MARSHALLER), "an-entirely-different-test")
+              }
+              val stub = TestServiceGrpc
+                .newBlockingStub(ClientInterceptors.intercept(ch, MetadataUtils.newAttachHeadersInterceptor(foreign)))
+              stub.unary(testRequest { message = "crossed" }).message shouldBe "served"
+            }
+          }
+
+          awaitUntil { warnings.any { it.kind == MockWarningKind.CROSS_TEST_MATCH } }
+          val crossed = warnings.single { it.kind == MockWarningKind.CROSS_TEST_MATCH }
+          crossed.testId shouldBe "an-entirely-different-test"
+          crossed.message shouldContain producingTestId
+          crossed.target shouldBe "test.TestService/Unary"
+
+          grpcMock { emitTestEndWarnings(producingTestId) }
+          val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
+          unused.any { it.target == "test.TestService/WarningsNeverCalled" }.shouldBeTrue()
+          unused.none { it.target == "test.TestService/Unary" }.shouldBeTrue()
+        } finally {
+          grpcMock { removeWarningListener(listener) }
         }
-
-        awaitUntil { warnings.any { it.kind == MockWarningKind.CROSS_TEST_MATCH } }
-        val crossed = warnings.single { it.kind == MockWarningKind.CROSS_TEST_MATCH }
-        crossed.testId shouldBe "an-entirely-different-test"
-        crossed.message shouldContain producingTestId
-        crossed.target shouldBe "test.TestService/Unary"
       }
-    }
-
-    test("test-end warnings were raised for the previous test") {
-      val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
-      unused.any { it.target == "test.TestService/WarningsNeverCalled" }.shouldBeTrue()
-      unused.none { it.target == "test.TestService/Unary" }.shouldBeTrue()
     }
 
     test("calling validate suppresses the gRPC unvalidated unmatched warning") {
-      validatedTestId = Stove.reporter().currentTestId()
+      val warnings = CopyOnWriteArrayList<MockWarning>()
+      val listener = MockWarningListener { warnings.add(it) }
+      val validatedTestId = Stove.reporter().currentTestId()
       stove {
         grpcMock {
-          mockUnary(
-            serviceName = "test.TestService",
-            methodName = "Unary",
-            requestMatcher = RequestMatcher.message<TestRequest> { it.message == "expected" },
-            response = testResponse { message = "ok" }
-          )
+          addWarningListener(listener)
         }
-        grpc {
-          channel<TestServiceGrpcKt.TestServiceCoroutineStub> {
-            val exception = shouldThrow<StatusException> { unary(testRequest { message = "unexpected" }) }
-            exception.status.code shouldBe Status.Code.UNIMPLEMENTED
+        try {
+          grpcMock {
+            mockUnary(
+              serviceName = "test.TestService",
+              methodName = "Unary",
+              requestMatcher = RequestMatcher.message(TestRequest.parser()) { it.message == "expected" },
+              response = testResponse { message = "ok" }
+            )
           }
-        }
-        grpcMock {
-          shouldThrow<AssertionError> { validate() }
-        }
-      }
-    }
+          grpc {
+            channel<TestServiceGrpcKt.TestServiceCoroutineStub> {
+              val exception = shouldThrow<StatusException> { unary(testRequest { message = "unexpected" }) }
+              exception.status.code shouldBe Status.Code.UNIMPLEMENTED
+            }
+          }
+          grpcMock {
+            shouldThrow<AssertionError> { validate() }
+            emitTestEndWarnings(validatedTestId)
+          }
 
-    test("validated gRPC evidence did not produce a misleading warning") {
-      try {
-        warnings.none {
-          it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == validatedTestId
-        }.shouldBeTrue()
-      } finally {
-        stove { grpcMock { removeWarningListener(listener) } }
+          warnings.none {
+            it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == validatedTestId
+          }.shouldBeTrue()
+        } finally {
+          grpcMock { removeWarningListener(listener) }
+        }
       }
     }
   })

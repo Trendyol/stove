@@ -69,13 +69,12 @@ class DashboardSystem(
   private val testStartTimes = ConcurrentHashMap<String, Instant>()
   private val testFailures = ConcurrentHashMap<String, String>()
   private val failureSnapshotTaken = ConcurrentHashMap.newKeySet<String>()
+  private var mockDiagnosticListenersRegistered = false
 
   override suspend fun run() {
     emitter = DashboardEmitter(options.cliHost, options.cliPort)
     stove.addReportListener(this)
     registerSpanListener()
-    stove.systemsOf<MockInteractionPublisher>().forEach { it.addInteractionListener(this) }
-    stove.systemsOf<MockWarningPublisher>().forEach { it.addWarningListener(this) }
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {
@@ -91,6 +90,7 @@ class DashboardSystem(
           .build()
       }
     )
+    registerMockDiagnosticListeners()
   }
 
   override suspend fun stop() {
@@ -237,6 +237,7 @@ class DashboardSystem(
   override fun close() {
     lifecycleLock.withLock {
       if (!::emitter.isInitialized) return
+      removeMockDiagnosticListeners()
       finalizeOpenTests()
       val duration = Duration.between(startTime, Instant.now()).toMillis()
       emitter.tryEmit(
@@ -250,8 +251,6 @@ class DashboardSystem(
             .build()
         }
       )
-      stove.systemsOf<MockInteractionPublisher>().forEach { it.removeInteractionListener(this) }
-      stove.systemsOf<MockWarningPublisher>().forEach { it.removeWarningListener(this) }
       stove.removeReportListener(this)
       emitter.close()
     }
@@ -325,6 +324,19 @@ class DashboardSystem(
     stove.systemsOf<SpanListenerRegistry>()
       .firstOrNull()
       ?.addSpanListener(this)
+  }
+
+  private fun registerMockDiagnosticListeners() {
+    stove.systemsOf<MockInteractionPublisher>().forEach { it.addInteractionListener(this) }
+    stove.systemsOf<MockWarningPublisher>().forEach { it.addWarningListener(this) }
+    mockDiagnosticListenersRegistered = true
+  }
+
+  private fun removeMockDiagnosticListeners() {
+    if (!mockDiagnosticListenersRegistered) return
+    stove.systemsOf<MockInteractionPublisher>().forEach { it.removeInteractionListener(this) }
+    stove.systemsOf<MockWarningPublisher>().forEach { it.removeWarningListener(this) }
+    mockDiagnosticListenersRegistered = false
   }
 
   private fun dashboardEvent(block: DashboardEvent.Builder.() -> Unit): DashboardEvent =

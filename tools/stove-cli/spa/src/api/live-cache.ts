@@ -238,12 +238,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         client_deadline_ms: event.payload.client_deadline_ms,
       };
 
-      queryClient.setQueryData<MockInteraction[]>(["interactions", event.run_id], (interactions) =>
-        appendInteractions(interactions, interaction),
-      );
       if (event.payload.test_id) {
         queryClient.setQueryData<MockInteraction[]>(
           ["interactions", event.run_id, event.payload.test_id],
+          (interactions) => appendInteractions(interactions, interaction),
+        );
+      } else {
+        queryClient.setQueryData<MockInteraction[]>(
+          ["interactions", event.run_id],
           (interactions) => appendInteractions(interactions, interaction),
         );
       }
@@ -262,13 +264,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         target: event.payload.target,
       };
 
-      queryClient.setQueryData<MockWarning[]>(["warnings", event.run_id], (warnings) =>
-        appendWarnings(warnings, warning),
-      );
       if (event.payload.test_id) {
         queryClient.setQueryData<MockWarning[]>(
           ["warnings", event.run_id, event.payload.test_id],
           (warnings) => appendWarnings(warnings, warning),
+        );
+      } else {
+        queryClient.setQueryData<MockWarning[]>(["warnings", event.run_id], (warnings) =>
+          appendWarnings(warnings, warning),
         );
       }
       break;
@@ -379,15 +382,17 @@ function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboard
       cancel(["snapshots", event.run_id, event.payload.test_id]);
       break;
     case EVENT_TYPE.MOCK_INTERACTION:
-      cancel(["interactions", event.run_id]);
       if (event.payload.test_id) {
         cancel(["interactions", event.run_id, event.payload.test_id]);
+      } else {
+        cancel(["interactions", event.run_id]);
       }
       break;
     case EVENT_TYPE.MOCK_WARNING:
-      cancel(["warnings", event.run_id]);
       if (event.payload.test_id) {
         cancel(["warnings", event.run_id, event.payload.test_id]);
+      } else {
+        cancel(["warnings", event.run_id]);
       }
       break;
   }
@@ -632,14 +637,23 @@ function mergeEvidenceRecords<T>(
   identity: (record: T) => string,
   compare: (left: T, right: T) => number,
 ): T[] {
-  const byIdentity = new Map(persisted.map((record) => [identity(record), record]));
+  const unmatchedPersisted = new Map<string, number>();
+  for (const record of persisted) {
+    const key = identity(record);
+    unmatchedPersisted.set(key, (unmatchedPersisted.get(key) ?? 0) + 1);
+  }
+
+  const merged = [...persisted];
   for (const record of cached) {
     const key = identity(record);
-    if (!byIdentity.has(key)) {
-      byIdentity.set(key, record);
+    const remaining = unmatchedPersisted.get(key) ?? 0;
+    if (remaining > 0) {
+      unmatchedPersisted.set(key, remaining - 1);
+    } else {
+      merged.push(record);
     }
   }
-  return [...byIdentity.values()].sort(compare);
+  return merged.sort(compare);
 }
 
 function statusProgress(status: Status): number {

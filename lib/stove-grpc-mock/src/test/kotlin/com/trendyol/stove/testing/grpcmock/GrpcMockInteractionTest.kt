@@ -40,7 +40,7 @@ class GrpcMockInteractionTest :
           mockUnary(
             serviceName = "test.TestService",
             methodName = "Unary",
-            requestMatcher = RequestMatcher.message<TestRequest> { it.message == "observe-me" },
+            requestMatcher = RequestMatcher.message(TestRequest.parser()) { it.message == "observe-me" },
             response = TestResponse.newBuilder().setMessage("observed").build()
           )
         }

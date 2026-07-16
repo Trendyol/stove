@@ -29,17 +29,18 @@ export function MockJournal({
   const [selectedId, setSelectedId] = useState<MockInteraction["id"] | null>(null);
   const [selectedWarningId, setSelectedWarningId] = useState<MockWarning["id"] | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const initialSelectionMade = useRef(false);
 
   const allInteractions = useMemo(
     () =>
-      (includeAmbient ? [...interactions, ...ambientInteractions] : interactions).sort(
-        (left, right) => left.timestamp.localeCompare(right.timestamp),
+      [...interactions, ...(includeAmbient ? ambientInteractions : [])].sort((left, right) =>
+        left.timestamp.localeCompare(right.timestamp),
       ),
     [ambientInteractions, includeAmbient, interactions],
   );
   const allWarnings = useMemo(
     () =>
-      (includeAmbient ? [...warnings, ...ambientWarnings] : warnings).sort((left, right) =>
+      [...warnings, ...(includeAmbient ? ambientWarnings : [])].sort((left, right) =>
         left.timestamp.localeCompare(right.timestamp),
       ),
     [ambientWarnings, includeAmbient, warnings],
@@ -50,9 +51,20 @@ export function MockJournal({
       selectedId != null &&
       allInteractions.some((interaction) => interaction.id === selectedId)
     ) {
+      initialSelectionMade.current = true;
       return;
     }
-    setSelectedId(allInteractions.find(hasIssue)?.id ?? allInteractions[0]?.id ?? null);
+    if (selectedId != null) {
+      initialSelectionMade.current = true;
+      setSelectedId(null);
+      return;
+    }
+    if (initialSelectionMade.current) return;
+    const initialId = allInteractions.find(hasIssue)?.id ?? allInteractions[0]?.id;
+    if (initialId != null) {
+      initialSelectionMade.current = true;
+      setSelectedId(initialId);
+    }
   }, [allInteractions, selectedId]);
 
   useEffect(() => {
@@ -248,7 +260,7 @@ export function MockJournal({
         <InteractionInspector
           interaction={selectedInteraction}
           warning={selectedWarning}
-          interactions={allInteractions}
+          interactions={visibleInteractions}
           onSelect={(id) => {
             setSelectedWarningId(null);
             setSelectedId(id);

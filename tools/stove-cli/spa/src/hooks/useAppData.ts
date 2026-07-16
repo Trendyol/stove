@@ -37,7 +37,7 @@ export function useAppData() {
     queryKey: ["apps"],
     queryFn: async ({ signal }) =>
       reconcileDashboardData(queryClient, ["apps"], await api.getApps(signal)),
-    refetchInterval: 5000,
+    refetchInterval: liveConnected ? false : 5000,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
@@ -59,7 +59,7 @@ export function useAppData() {
         await api.getRuns(activeApp!, signal),
       ),
     enabled: !!activeApp,
-    refetchInterval: activeApp ? 5000 : false,
+    refetchInterval: activeApp && !liveConnected ? 5000 : false,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
@@ -75,7 +75,7 @@ export function useAppData() {
       ),
     enabled: !!latestRun,
     refetchInterval: (query) => {
-      if (!latestRun) return false;
+      if (!latestRun || liveConnected) return false;
       const cachedTests = query.state.data as Test[] | undefined;
       return isRunning(latestRun.status) || cachedTests?.length !== latestRun.total_tests
         ? 5000

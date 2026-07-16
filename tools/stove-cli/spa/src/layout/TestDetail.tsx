@@ -112,7 +112,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
       reconcileDashboardData<MockInteraction[]>(
         queryClient,
         ["interactions", runId],
-        await api.getRunInteractions(runId, signal),
+        await api.getAmbientInteractions(runId, signal),
       ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
@@ -124,7 +124,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
       reconcileDashboardData<MockWarning[]>(
         queryClient,
         ["warnings", runId],
-        await api.getRunWarnings(runId, signal),
+        await api.getAmbientWarnings(runId, signal),
       ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
@@ -134,14 +134,8 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     () => partitionSnapshotsByDetail(snapshots),
     [snapshots],
   );
-  const ambientInteractions = useMemo(
-    () => runInteractions.filter((interaction) => interaction.test_id == null),
-    [runInteractions],
-  );
-  const ambientWarnings = useMemo(
-    () => runWarnings.filter((warning) => warning.test_id == null),
-    [runWarnings],
-  );
+  const ambientInteractions = runInteractions;
+  const ambientWarnings = runWarnings;
   const mockError =
     interactionsError ?? warningsError ?? runInteractionsError ?? runWarningsError ?? null;
   const mockEvidenceCount =

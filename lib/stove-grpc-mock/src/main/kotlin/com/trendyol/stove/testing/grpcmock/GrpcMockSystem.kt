@@ -4,6 +4,7 @@ package com.trendyol.stove.testing.grpcmock
 
 import arrow.core.*
 import com.google.protobuf.Message
+import com.google.protobuf.Parser
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.interactions.MockInteractionListener
@@ -505,38 +506,47 @@ class GrpcMockSystem internal constructor(
   // ==================== Typed Verification ====================
 
   /**
-   * Verifies that the mock received exactly [times] requests of type [T] on the given method
-   * satisfying [condition], scoped to the current test. Point-in-time: by the moment mock
-   * assertions run, the call either happened or it didn't — there is nothing to wait for.
+   * Verifies that the mock received exactly [times] requests decoded by the explicit protobuf
+   * [parser] and satisfying [condition], scoped to the current test. Point-in-time: by the
+   * moment mock assertions run, the call either happened or it didn't.
    *
    * Both matched and unmatched requests count: the assertion is about what the application
-   * sent, not about stub bookkeeping.
+   * sent, not about stub bookkeeping. Any request that the parser cannot decode makes the
+   * verification fail instead of being silently treated as a predicate miss.
    *
    * ```kotlin
    * grpcMock {
-   *   shouldHaveBeenCalled<GetUserRequest>("users.UserService", "GetUser") { it.userId == "123" }
+   *   shouldHaveBeenCalled(
+   *     serviceName = "users.UserService",
+   *     methodName = "GetUser",
+   *     parser = GetUserRequest.parser()
+   *   ) { it.userId == "123" }
    * }
    * ```
    */
-  suspend inline fun <reified T : Message> shouldHaveBeenCalled(
+  suspend fun <T : Message> shouldHaveBeenCalled(
     serviceName: String,
     methodName: String,
+    parser: Parser<T>,
     times: Int = 1,
-    noinline condition: (T) -> Boolean = { true }
+    condition: (T) -> Boolean = { true }
   ): GrpcMockSystem =
-    verifyCallCount(serviceName, methodName, times, ProtoPayloads.parserFor(T::class.java), condition)
+    verifyCallCount(serviceName, methodName, times, parser.payloadDecoder(), condition)
 
-  /** Descriptor-typed variant of [shouldHaveBeenCalled]. */
-  suspend inline fun <reified T : Message> shouldHaveBeenCalled(
-    method: MethodDescriptor<*, *>,
+  /**
+   * Descriptor-typed variant of [shouldHaveBeenCalled]. The request type is inferred from
+   * [method] and decoded by its configured request marshaller.
+   */
+  suspend fun <RequestT : Message, ResponseT> shouldHaveBeenCalled(
+    method: MethodDescriptor<RequestT, ResponseT>,
     times: Int = 1,
-    noinline condition: (T) -> Boolean = { true }
+    condition: (RequestT) -> Boolean = { true }
   ): GrpcMockSystem =
     verifyCallCount(
-      requireNotNull(method.serviceName),
-      requireNotNull(method.bareMethodName),
+      method.requireServiceName(),
+      method.requireBareMethodName(),
       times,
-      ProtoPayloads.parserFor(T::class.java),
+      method.requestPayloadDecoder(),
       condition
     )
 
@@ -545,32 +555,35 @@ class GrpcMockSystem internal constructor(
    * this test. Sound for mocks: the mock server is the endpoint itself, so absence of evidence
    * here is evidence of absence.
    */
-  suspend inline fun <reified T : Message> shouldNotHaveBeenCalled(
+  suspend fun <T : Message> shouldNotHaveBeenCalled(
     serviceName: String,
     methodName: String,
-    noinline condition: (T) -> Boolean = { true }
+    parser: Parser<T>,
+    condition: (T) -> Boolean = { true }
   ): GrpcMockSystem =
-    verifyCallCount(serviceName, methodName, 0, ProtoPayloads.parserFor(T::class.java), condition)
+    verifyCallCount(serviceName, methodName, 0, parser.payloadDecoder(), condition)
 
-  /** Descriptor-typed variant of [shouldNotHaveBeenCalled]. */
-  suspend inline fun <reified T : Message> shouldNotHaveBeenCalled(
-    method: MethodDescriptor<*, *>,
-    noinline condition: (T) -> Boolean = { true }
+  /**
+   * Descriptor-typed variant of [shouldNotHaveBeenCalled]. The request type is inferred from
+   * [method] and decoded by its configured request marshaller.
+   */
+  suspend fun <RequestT : Message, ResponseT> shouldNotHaveBeenCalled(
+    method: MethodDescriptor<RequestT, ResponseT>,
+    condition: (RequestT) -> Boolean = { true }
   ): GrpcMockSystem =
     verifyCallCount(
-      requireNotNull(method.serviceName),
-      requireNotNull(method.bareMethodName),
+      method.requireServiceName(),
+      method.requireBareMethodName(),
       0,
-      ProtoPayloads.parserFor(T::class.java),
+      method.requestPayloadDecoder(),
       condition
     )
 
-  @PublishedApi
   internal suspend fun <T : Message> verifyCallCount(
     serviceName: String,
     methodName: String,
     times: Int,
-    parser: (ByteArray) -> T?,
+    decoder: PayloadDecoder<T>,
     condition: (T) -> Boolean
   ): GrpcMockSystem {
     val fullMethodName = "$serviceName/$methodName"
@@ -578,31 +591,61 @@ class GrpcMockSystem internal constructor(
       .entriesWithinTest(reporter.currentTestId())
       .map { it.request }
       .filter { it.stubKey.fullMethodName == fullMethodName }
-    val matching = received.filter { request -> parser(request.requestBytes)?.let(condition) == true }
+    val evaluated = received.map { request ->
+      when (val decoded = decoder.decode(request.requestBytes)) {
+        is PayloadDecodeResult.Decoded ->
+          EvaluatedRequest(decoded, condition(decoded.value))
+
+        is PayloadDecodeResult.Failed ->
+          EvaluatedRequest<T>(decoded, null)
+      }
+    }
+    val matchingCount = evaluated.count { it.predicateMatched == true }
+    val decodeFailureCount = evaluated.count { it.decoded is PayloadDecodeResult.Failed }
 
     report(
       action = "Verify called exactly $times time(s): $fullMethodName",
       expected = "$times matching request(s)".some(),
-      actual = "${matching.size} matching request(s)".some()
+      actual = buildString {
+        append("$matchingCount matching request(s)")
+        if (decodeFailureCount > 0) append(", $decodeFailureCount decode failure(s)")
+      }.some()
     ) {
-      if (matching.size != times) {
+      if (matchingCount != times || decodeFailureCount > 0) {
         throw AssertionError(
           "Expected exactly $times request(s) matching the condition on $fullMethodName, " +
-            "but found ${matching.size} of ${received.size} request(s) this test sent to the method." +
-            received.render(parser)
+            "but found $matchingCount of ${received.size} request(s) this test sent to the method." +
+            if (decodeFailureCount > 0) {
+              " $decodeFailureCount request(s) could not be decoded with ${decoder.description}; " +
+                "the predicate was not evaluated for them."
+            } else {
+              ""
+            } +
+            evaluated.render(decoder)
         )
       }
     }
     return this
   }
 
-  private fun <T : Message> List<ReceivedRequest>.render(parser: (ByteArray) -> T?): String {
+  private fun <T : Message> List<EvaluatedRequest<T>>.render(decoder: PayloadDecoder<T>): String {
     if (isEmpty()) return ""
-    return "\nReceived on this method (this test):\n" + take(MAX_RENDERED_REQUESTS).joinToString("\n") { request ->
-      val payload = parser(request.requestBytes)?.let { with(ProtoPayloads) { it.singleLine() } }
-      "  - { ${payload ?: "unparseable as expected type"} }"
+    return "\nReceived on this method (this test):\n" + take(MAX_RENDERED_REQUESTS).joinToString("\n") { evaluated ->
+      when (val decoded = evaluated.decoded) {
+        is PayloadDecodeResult.Decoded ->
+          "  - { ${decoded.value.singleLine()} } — predicate " +
+            if (evaluated.predicateMatched == true) "matched" else "rejected"
+
+        is PayloadDecodeResult.Failed ->
+          "  - decode failed with ${decoder.description}: ${decoded.error.conciseDecodeError()}"
+      }
     } + if (size > MAX_RENDERED_REQUESTS) "\n  … and ${size - MAX_RENDERED_REQUESTS} more" else ""
   }
+
+  private data class EvaluatedRequest<T : Message>(
+    val decoded: PayloadDecodeResult<T>,
+    val predicateMatched: Boolean?
+  )
 
   // ==================== Validation & Reporting ====================
 
@@ -647,7 +690,7 @@ class GrpcMockSystem internal constructor(
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
     val scopedStubs = stubs.values
-      .flatten()
+      .flatMap { registered -> synchronized(registered) { registered.toList() } }
       .filter { it.testId == null || it.testId == currentTestId }
     val scopedJournaled = callJournal.entriesWithinTest(currentTestId)
     val scopedRequests = scopedJournaled.map { it.request }
@@ -706,18 +749,20 @@ class GrpcMockSystem internal constructor(
       metadata = metadata
     ) {
       val registered = stubs.computeIfAbsent(key.fullMethodName) { CopyOnWriteArrayList() }
-      // Error stubs adapt to any method type, so they never conflict.
-      val conflicting = registered.firstOrNull {
-        stub !is StubDefinition.Error &&
-          it.definition !is StubDefinition.Error &&
-          it.definition.methodType != stub.methodType
+      synchronized(registered) {
+        // Error stubs adapt to any method type, so they never conflict.
+        val conflicting = registered.firstOrNull {
+          stub !is StubDefinition.Error &&
+            it.definition !is StubDefinition.Error &&
+            it.definition.methodType != stub.methodType
+        }
+        require(conflicting == null) {
+          "Cannot register a ${stub.methodType} stub for ${key.fullMethodName}: " +
+            "a ${conflicting?.definition?.methodType} stub already exists for this method. " +
+            "A gRPC method has exactly one type; register stubs of one type per method."
+        }
+        registered.add(RegisteredStub(key, stub, reporter.currentTestIdOrNull()))
       }
-      require(conflicting == null) {
-        "Cannot register a ${stub.methodType} stub for ${key.fullMethodName}: " +
-          "a ${conflicting?.definition?.methodType} stub already exists for this method. " +
-          "A gRPC method has exactly one type; register stubs of one type per method."
-      }
-      registered.add(RegisteredStub(key, stub, reporter.currentTestIdOrNull()))
       logger.debug("Registered stub for ${key.fullMethodName} (id: ${key.id})")
     }
     return this
@@ -734,11 +779,12 @@ class GrpcMockSystem internal constructor(
     ctx.onRequestReceived(stubKey, requestBytes)
 
     // Last-registered wins: test-local stubs override earlier fixture defaults.
-    return stubs[fullMethodName]
-      ?.findLast { registered ->
+    val selection = selectStub(fullMethodName) { registered ->
         registered.definition.requestMatcher.matches(requestBytes) &&
           registered.definition.metadataMatcher.matches(metadata)
-      }?.also { registered ->
+      }
+    return selection.selected
+      ?.also { registered ->
         logRequest(
           registered.key,
           requestBytes,
@@ -747,7 +793,7 @@ class GrpcMockSystem internal constructor(
           stubTestId = registered.testId,
           stubDefinition = registered.definition
         )
-        removeStubIfNeeded(registered.key, fullMethodName)
+        if (selection.removed) logger.debug("Removed stub ${registered.key.id} after match")
         ctx.afterStubMatched(registered.key, registered.definition)
       }.toOption()
       .onNone {
@@ -756,15 +802,24 @@ class GrpcMockSystem internal constructor(
           requestBytes,
           metadata,
           matched = false,
-          nearMisses = (stubs[fullMethodName] ?: emptyList()).diagnoseRejections(requestBytes, metadata)
+          nearMisses = selection.candidates.diagnoseRejections(requestBytes, metadata)
         )
       }
   }
 
-  private fun removeStubIfNeeded(key: StubKey, fullMethodName: String) {
-    if (ctx.removeStubAfterRequestMatched) {
-      stubs[fullMethodName]?.removeIf { it.key.id == key.id }
-      logger.debug("Removed stub ${key.id} after match")
+  private fun selectStub(
+    fullMethodName: String,
+    predicate: (RegisteredStub) -> Boolean
+  ): StubSelection {
+    val registered = stubs[fullMethodName] ?: return StubSelection()
+    return synchronized(registered) {
+      val selected = registered.findLast(predicate)
+      val removed = selected != null && ctx.removeStubAfterRequestMatched && registered.remove(selected)
+      StubSelection(
+        selected = selected,
+        candidates = if (selected == null) registered.toList() else emptyList(),
+        removed = removed
+      )
     }
   }
 
@@ -812,11 +867,11 @@ class GrpcMockSystem internal constructor(
    * Warnings computed when a test ends, strictly from evidence provably owned by that test.
    * Diagnostics only — never failures.
    */
-  private fun emitTestEndWarnings(testId: String) {
+  internal fun emitTestEndWarnings(testId: String) {
     runCatching {
       val ownRequests = callJournal.taggedEntries(testId).map { it.request }
       stubs.values
-        .flatten()
+        .flatMap { registered -> synchronized(registered) { registered.toList() } }
         .filter { it.testId == testId && it.key.id !in matchedStubIds }
         .forEach { registered ->
           warningListeners.emit(
@@ -1074,24 +1129,25 @@ class GrpcMockSystem internal constructor(
       val metadata = MetadataCapturingInterceptor.currentMetadata()
       // The handler coroutine runs outside the gRPC context; capture the record here.
       val interactionRecord = INTERACTION_RECORD.get()
-      val requestChannel = Channel<ByteArray>(Channel.UNLIMITED)
       val stubKey = fullMethodName.toStubKey()
       ctx.onRequestReceived(stubKey, ByteArray(0))
 
-      val registered = stubs[fullMethodName]?.findLast { it.definition.metadataMatcher.matches(metadata) }
+      val selection = selectStub(fullMethodName) { it.definition.metadataMatcher.matches(metadata) }
+      val registered = selection.selected
       if (registered == null) {
         logRequest(
           stubKey,
           ByteArray(0),
           metadata,
           matched = false,
-          nearMisses = (stubs[fullMethodName] ?: emptyList()).diagnoseRejections(ByteArray(0), metadata),
+          nearMisses = selection.candidates.diagnoseRejections(ByteArray(0), metadata),
           interactionRecord = interactionRecord
         )
         responseObserver.sendUnimplemented(fullMethodName)
-        return@asyncBidiStreamingCall ChannelForwardingObserver(requestChannel)
+        return@asyncBidiStreamingCall DiscardingStreamObserver
       }
 
+      val requestChannel = Channel<ByteArray>(Channel.UNLIMITED)
       logRequest(
         registered.key,
         ByteArray(0),
@@ -1101,7 +1157,7 @@ class GrpcMockSystem internal constructor(
         stubDefinition = registered.definition,
         interactionRecord = interactionRecord
       )
-      removeStubIfNeeded(registered.key, fullMethodName)
+      if (selection.removed) logger.debug("Removed stub ${registered.key.id} after match")
       ctx.afterStubMatched(registered.key, registered.definition)
 
       val responseJob = handlerScope.launch(start = CoroutineStart.LAZY) {
@@ -1157,13 +1213,14 @@ class GrpcMockSystem internal constructor(
   }
 
   private fun removeTestStubs(testId: String) {
-    stubs.entries.removeIf { (_, registered) ->
-      registered.removeIf { stub ->
-        (stub.testId == testId).also { remove ->
-          if (remove) matchedStubIds.remove(stub.key.id)
+    stubs.values.forEach { registered ->
+      synchronized(registered) {
+        registered.removeIf { stub ->
+          (stub.testId == testId).also { remove ->
+            if (remove) matchedStubIds.remove(stub.key.id)
+          }
         }
       }
-      registered.isEmpty()
     }
   }
 
@@ -1275,6 +1332,12 @@ class GrpcMockSystem internal constructor(
 
     fun GrpcMockSystem.server(): Server = server
   }
+
+  private data class StubSelection(
+    val selected: RegisteredStub? = null,
+    val candidates: List<RegisteredStub> = emptyList(),
+    val removed: Boolean = false
+  )
 }
 
 /**

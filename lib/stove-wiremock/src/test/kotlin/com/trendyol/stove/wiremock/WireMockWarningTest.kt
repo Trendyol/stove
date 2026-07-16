@@ -26,10 +26,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 class WireMockWarningTest :
   FunSpec({
     val client = HttpClient.newBuilder().build()
-    val warnings = CopyOnWriteArrayList<MockWarning>()
-    val listener = MockWarningListener { warnings.add(it) }
-    lateinit var producingTestId: String
-    lateinit var validatedTestId: String
 
     suspend fun awaitUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
       val deadline = System.currentTimeMillis() + timeoutMs
@@ -37,86 +33,96 @@ class WireMockWarningTest :
       condition().shouldBeTrue()
     }
 
-    test("a test producing warning-worthy evidence") {
-      producingTestId = Stove.reporter().currentTestId()
+    test("warning-worthy evidence emits self-contained diagnostics") {
+      val warnings = CopyOnWriteArrayList<MockWarning>()
+      val listener = MockWarningListener { warnings.add(it) }
+      val producingTestId = Stove.reporter().currentTestId()
 
       stove {
         wiremock {
           addWarningListener(listener)
+        }
+        try {
+          wiremock {
+            // Never called: unused-stub warning at test end.
+            mockGet(url = "/warnings/never-called", statusCode = 200, responseBody = mapOf("ok" to true).some())
 
-          // Never called: unused-stub warning at test end.
-          mockGet(url = "/warnings/never-called", statusCode = 200, responseBody = mapOf("ok" to true).some())
+            // Called with a foreign test id against this test's stub: cross-test match at serve time.
+            mockGet(url = "/warnings/crossed", statusCode = 200, responseBody = mapOf("ok" to true).some())
+            client
+              .send(
+                HttpRequest
+                  .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/crossed"))
+                  .header(TraceContext.STOVE_TEST_ID_HEADER, "an-entirely-different-test")
+                  .GET()
+                  .build(),
+                BodyHandlers.ofString()
+              ).statusCode() shouldBe 200
 
-          // Called with a foreign test id against this test's stub: cross-test match at serve time.
-          mockGet(url = "/warnings/crossed", statusCode = 200, responseBody = mapOf("ok" to true).some())
-          client
-            .send(
-              HttpRequest
-                .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/crossed"))
-                .header(TraceContext.STOVE_TEST_ID_HEADER, "an-entirely-different-test")
-                .GET()
-                .build(),
-              BodyHandlers.ofString()
-            ).statusCode() shouldBe 200
+            // Provably this test's unmatched request, and validate() is never called.
+            client
+              .send(
+                HttpRequest
+                  .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/unmatched"))
+                  .header("Content-Type", "application/json")
+                  .header(TraceContext.STOVE_TEST_ID_HEADER, producingTestId)
+                  .POST(BodyPublishers.ofString("{}"))
+                  .build(),
+                BodyHandlers.ofString()
+              ).statusCode() shouldBe 404
 
-          // Provably this test's unmatched request, and validate() is never called.
-          client
-            .send(
-              HttpRequest
-                .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/unmatched"))
-                .header("Content-Type", "application/json")
-                .header(TraceContext.STOVE_TEST_ID_HEADER, producingTestId)
-                .POST(BodyPublishers.ofString("{}"))
-                .build(),
-              BodyHandlers.ofString()
-            ).statusCode() shouldBe 404
+            awaitUntil { warnings.any { it.kind == MockWarningKind.CROSS_TEST_MATCH } }
+            val crossed = warnings.single { it.kind == MockWarningKind.CROSS_TEST_MATCH }
+            crossed.testId shouldBe "an-entirely-different-test"
+            crossed.message shouldContain producingTestId
+            crossed.target shouldBe "/warnings/crossed"
 
-          awaitUntil { warnings.any { it.kind == MockWarningKind.CROSS_TEST_MATCH } }
-          val crossed = warnings.single { it.kind == MockWarningKind.CROSS_TEST_MATCH }
-          crossed.testId shouldBe "an-entirely-different-test"
-          crossed.message shouldContain producingTestId
-          crossed.target shouldBe "/warnings/crossed"
+            emitTestEndWarnings(producingTestId)
+            val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
+            unused.any { it.target == "GET /warnings/never-called" }.shouldBeTrue()
+            unused.none { it.target == "GET /warnings/crossed" }.shouldBeTrue()
+
+            val unvalidated = warnings.single {
+              it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == producingTestId
+            }
+            unvalidated.message shouldContain "validate() would have failed"
+            unvalidated.target shouldBe "/warnings/unmatched"
+          }
+        } finally {
+          wiremock { removeWarningListener(listener) }
         }
       }
-    }
-
-    test("test-end warnings were raised for the previous test") {
-      val unused = warnings.filter { it.kind == MockWarningKind.UNUSED_STUB && it.testId == producingTestId }
-      unused.any { it.target == "GET /warnings/never-called" }.shouldBeTrue()
-      unused.none { it.target == "GET /warnings/crossed" }.shouldBeTrue()
-
-      val unvalidated = warnings.single {
-        it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == producingTestId
-      }
-      unvalidated.message shouldContain "validate() would have failed"
-      unvalidated.target shouldBe "/warnings/unmatched"
     }
 
     test("calling validate suppresses the unvalidated unmatched warning") {
-      validatedTestId = Stove.reporter().currentTestId()
+      val warnings = CopyOnWriteArrayList<MockWarning>()
+      val listener = MockWarningListener { warnings.add(it) }
+      val validatedTestId = Stove.reporter().currentTestId()
       stove {
         wiremock {
-          client
-            .send(
-              HttpRequest
-                .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/explicitly-validated"))
-                .header(TraceContext.STOVE_TEST_ID_HEADER, validatedTestId)
-                .GET()
-                .build(),
-              BodyHandlers.ofString()
-            ).statusCode() shouldBe 404
-          io.kotest.assertions.throwables.shouldThrow<AssertionError> { validate() }
+          addWarningListener(listener)
         }
-      }
-    }
+        try {
+          wiremock {
+            client
+              .send(
+                HttpRequest
+                  .newBuilder(URI("$WIREMOCK_BASE_URL/warnings/explicitly-validated"))
+                  .header(TraceContext.STOVE_TEST_ID_HEADER, validatedTestId)
+                  .GET()
+                  .build(),
+                BodyHandlers.ofString()
+              ).statusCode() shouldBe 404
+            io.kotest.assertions.throwables.shouldThrow<AssertionError> { validate() }
+            emitTestEndWarnings(validatedTestId)
+          }
 
-    test("validated unmatched evidence did not produce a misleading warning") {
-      try {
-        warnings.none {
-          it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == validatedTestId
-        }.shouldBeTrue()
-      } finally {
-        stove { wiremock { removeWarningListener(listener) } }
+          warnings.none {
+            it.kind == MockWarningKind.UNVALIDATED_UNMATCHED && it.testId == validatedTestId
+          }.shouldBeTrue()
+        } finally {
+          wiremock { removeWarningListener(listener) }
+        }
       }
     }
   })

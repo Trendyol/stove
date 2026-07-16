@@ -260,6 +260,7 @@ public final class com/trendyol/stove/interactions/InteractionAttribution : java
 public final class com/trendyol/stove/interactions/MockInteraction {
 	public static final field Companion Lcom/trendyol/stove/interactions/MockInteraction$Companion;
 	public static final field MAX_BODY_CHARS I
+	public static final field REDACTED_BODY Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;Lcom/trendyol/stove/interactions/MockInteraction$Protocol;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/interactions/InteractionAttribution;Ljava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/lang/String;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/Long;)V
 	public synthetic fun <init> (Ljava/lang/String;Lcom/trendyol/stove/interactions/MockInteraction$Protocol;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/interactions/InteractionAttribution;Ljava/lang/String;ZLjava/lang/String;ZLjava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/lang/String;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -316,6 +317,8 @@ public final class com/trendyol/stove/interactions/MockInteraction {
 }
 
 public final class com/trendyol/stove/interactions/MockInteraction$Companion {
+	public final fun capturedBody (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)Lkotlin/Pair;
+	public final fun redactSensitiveBody (Ljava/lang/String;)Ljava/lang/String;
 	public final fun truncated (Ljava/lang/String;)Lkotlin/Pair;
 }
 

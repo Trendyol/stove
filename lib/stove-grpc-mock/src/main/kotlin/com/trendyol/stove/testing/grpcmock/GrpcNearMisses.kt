@@ -20,33 +20,21 @@ internal fun List<RegisteredStub>.diagnoseRejections(
   if (isEmpty()) return listOf("no stubs registered for this method")
   return map { registered ->
     val definition = registered.definition
-    val requestOk = definition.requestMatcher.matches(requestBytes)
+    val requestEvaluation = definition.requestMatcher.evaluate(requestBytes)
+    val requestOk = requestEvaluation.matched
     val metadataOk = definition.metadataMatcher.matches(metadata)
     val reason = when {
       !requestOk && !metadataOk ->
-        "request matcher rejected (${definition.requestMatcher.describeRejection(requestBytes)}) " +
+        "request matcher rejected (${requestEvaluation.rejection}) " +
           "and metadata matcher rejected (${definition.metadataMatcher.describe()})"
 
-      !requestOk -> "request matcher rejected: ${definition.requestMatcher.describeRejection(requestBytes)}"
+      !requestOk -> "request matcher rejected: ${requestEvaluation.rejection}"
 
       !metadataOk -> "metadata matcher rejected: ${definition.metadataMatcher.describe()}"
 
       else -> "matches now, but was consumed or overridden when the request arrived"
     }
     "${definition::class.simpleName} stub: $reason"
-  }
-}
-
-private fun RequestMatcher.describeRejection(requestBytes: ByteArray): String = when (this) {
-  is RequestMatcher.Any -> "matches any request"
-
-  is RequestMatcher.ExactBytes -> "expected ${bytes.size} exact bytes, received ${requestBytes.size}"
-
-  is RequestMatcher.Custom -> "custom request matcher returned false"
-
-  is RequestMatcher.ExactMessage -> {
-    val received = runCatching { message.parserForType.parseFrom(requestBytes) }.getOrNull()
-    "expected message { ${message.singleLine()} } but received { ${received?.singleLine() ?: "unparseable bytes"} }"
   }
 }
 
@@ -58,5 +46,3 @@ private fun MetadataMatcher.describe(): String = when (this) {
   is MetadataMatcher.Custom -> "custom metadata matcher returned false"
   is MetadataMatcher.All -> matchers.joinToString(" and ") { it.describe() }
 }
-
-private fun Message.singleLine(): String = toString().replace(Regex("\\s+"), " ").trim()

@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.delay
 import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
@@ -23,6 +24,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -32,6 +34,18 @@ import kotlin.time.Duration.Companion.milliseconds
 class WireMockFidelityTest :
   FunSpec({
     val client = HttpClient.newBuilder().build()
+
+    suspend fun awaitInteractionCount(
+      interactions: List<MockInteraction>,
+      target: String,
+      expected: Int
+    ) {
+      val deadline = System.currentTimeMillis() + 5_000
+      while (interactions.count { it.target == target } < expected && System.currentTimeMillis() < deadline) {
+        delay(25)
+      }
+      interactions.count { it.target == target } shouldBe expected
+    }
 
     fun request(url: String, body: String = "{}"): HttpRequest = HttpRequest
       .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
@@ -76,6 +90,26 @@ class WireMockFidelityTest :
       elapsedMs shouldBeGreaterThanOrEqual 300
     }
 
+    test("invalid response delays are rejected before WireMock conversion") {
+      stove {
+        wiremock {
+          shouldThrow<IllegalArgumentException> {
+            mockGet("/fidelity/negative-delay", 200, delay = (-1).milliseconds)
+          }
+          shouldThrow<IllegalArgumentException> {
+            mockGet("/fidelity/infinite-delay", 200, delay = Duration.INFINITE)
+          }
+          shouldThrow<IllegalArgumentException> {
+            mockGet(
+              "/fidelity/overflow-delay",
+              200,
+              delay = (Int.MAX_VALUE.toLong() + 1).milliseconds
+            )
+          }
+        }
+      }
+    }
+
     test("failsTimes then thenSucceeds models a retry journey") {
       val interactions = CopyOnWriteArrayList<MockInteraction>()
       val listener = MockInteractionListener { interactions.add(it) }
@@ -99,14 +133,31 @@ class WireMockFidelityTest :
         recovered.body() shouldContain "recovered"
         send(request("/fidelity/retry")).statusCode() shouldBe 200
 
+        // Interactions are emitted from WireMock's afterComplete hook so timing is final;
+        // that callback can finish just after the client receives the response body.
+        awaitInteractionCount(interactions, "/fidelity/retry", expected = 4)
         val retryInteractions = interactions.filter { it.target == "/fidelity/retry" }
-        retryInteractions.size shouldBe 4
         retryInteractions.map { it.scenarioName }.distinct().size shouldBe 1
         retryInteractions.all { it.scenarioName != null } shouldBe true
         retryInteractions.take(2).all { it.nextScenarioState != null } shouldBe true
         retryInteractions.takeLast(2).all { it.nextScenarioState == null } shouldBe true
       } finally {
         stove { wiremock { removeInteractionListener(listener) } }
+      }
+    }
+
+    test("thenSucceeds completes the behaviour builder") {
+      stove {
+        wiremock {
+          val error = shouldThrow<IllegalStateException> {
+            behaviourFor("/fidelity/completed-retry", ::post) { _ ->
+              failsTimes(1)
+              thenSucceeds { aResponse().withStatus(200) }
+              then { aResponse().withStatus(201) }
+            }
+          }
+          error.message shouldBe WireMockBehaviourMessages.BEHAVIOUR_COMPLETED
+        }
       }
     }
 

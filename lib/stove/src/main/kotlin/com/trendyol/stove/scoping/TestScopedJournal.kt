@@ -4,7 +4,6 @@ import com.trendyol.stove.reporting.ReportEventListener
 import com.trendyol.stove.reporting.StoveTestContext
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -18,15 +17,15 @@ import java.util.concurrent.atomic.AtomicLong
  * back a per-test view for validation, verification, and snapshots.
  */
 class TestScopedJournal<T> {
-  private val tagged = ConcurrentHashMap<String, CopyOnWriteArrayList<T>>()
-  private val untagged = CopyOnWriteArrayList<SequencedEntry<T>>()
+  private val tagged = ConcurrentHashMap<String, ConcurrentLinkedQueue<T>>()
+  private val untagged = ConcurrentLinkedQueue<SequencedEntry<T>>()
   private val nextSequence = AtomicLong()
   private val testWindows = ConcurrentHashMap<String, TestWindow>()
 
   fun record(testId: String?, entry: T) {
     when (testId) {
       null -> untagged.add(SequencedEntry(nextSequence.getAndIncrement(), entry))
-      else -> tagged.computeIfAbsent(testId) { CopyOnWriteArrayList() }.add(entry)
+      else -> tagged.computeIfAbsent(testId) { ConcurrentLinkedQueue() }.add(entry)
     }
   }
 
@@ -38,7 +37,8 @@ class TestScopedJournal<T> {
    * into every later test.
    */
   fun entries(testId: String): List<T> =
-    untagged.map(SequencedEntry<T>::value) + (tagged[testId]?.toList() ?: emptyList())
+    untagged.toList().sortedBy(SequencedEntry<T>::sequence).map(SequencedEntry<T>::value) +
+      (tagged[testId]?.toList() ?: emptyList())
 
   /**
    * Request evidence visible to a test: its own tagged entries plus untagged entries observed
@@ -50,10 +50,11 @@ class TestScopedJournal<T> {
    */
   fun entriesWithinTest(testId: String): List<T> {
     val window = testWindows[testId]
+    val untaggedSnapshot = untagged.toList().sortedBy(SequencedEntry<T>::sequence)
     val visibleUntagged = if (window == null) {
-      untagged
+      untaggedSnapshot
     } else {
-      untagged.filter { entry ->
+      untaggedSnapshot.filter { entry ->
         entry.sequence >= window.startInclusive &&
           (window.endExclusive == null || entry.sequence < window.endExclusive)
       }

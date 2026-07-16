@@ -70,7 +70,7 @@ class MockWarningListeners {
   fun emit(warning: MockWarning) {
     listeners.forEach { listener ->
       runCatching { listener.onWarning(warning) }
-        .onFailure { e -> logger.warn("Mock warning listener failed: ${e.message}") }
+        .onFailure { e -> logger.warn("Mock warning listener failed", e) }
     }
   }
 }

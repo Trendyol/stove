@@ -222,15 +222,6 @@ class WireMockSystem(
   private val interactionListeners = MockInteractionListeners()
   private val warningListeners = MockWarningListeners()
   private val validatedTests = ConcurrentHashMap.newKeySet<String>()
-  private val warningReportListener = object : ReportEventListener {
-    override fun onTestEnded(testId: String) {
-      try {
-        emitTestEndWarnings(testId)
-      } finally {
-        removeTestStubs(testId)
-      }
-    }
-  }
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
   private val verification = WireMockVerification(this, callJournal, serde)
   private val cleanupListener = TestScopeCleanupListener(::clearTestScope)
@@ -241,8 +232,13 @@ class WireMockSystem(
     }
 
     override fun onTestEnded(testId: String) {
-      callJournal.endTest(testId)
-      cleanupListener.onTestEnded(testId)
+      try {
+        emitTestEndWarnings(testId)
+      } finally {
+        callJournal.endTest(testId)
+        cleanupListener.onTestEnded(testId)
+        removeTestStubs(testId)
+      }
     }
   }
   private var reportListenerRegistered = false
@@ -278,7 +274,6 @@ class WireMockSystem(
   override suspend fun run() {
     if (!reportListenerRegistered) {
       stove.addReportListener(reportListener)
-      stove.addReportListener(warningReportListener)
       reportListenerRegistered = true
     }
     wireMock.start()
@@ -1157,7 +1152,6 @@ class WireMockSystem(
     Try {
       if (reportListenerRegistered) {
         stove.removeReportListener(reportListener)
-        stove.removeReportListener(warningReportListener)
         reportListenerRegistered = false
       }
       stop()
@@ -1227,7 +1221,7 @@ class WireMockSystem(
    * stubs it registered that nothing matched, and unmatched requests it provably sent while
    * never calling validate(). Diagnostics only — never failures.
    */
-  private fun emitTestEndWarnings(testId: String) {
+  internal fun emitTestEndWarnings(testId: String) {
     runCatching {
       val ownServeEvents = callJournal.taggedServeEvents(testId)
       callJournal
@@ -1276,10 +1270,18 @@ class WireMockSystem(
       val stubTestId = serveEvent.stubMapping?.stoveTestId()
       val (testId, attribution) = resolveAttribution(headers, stubTestId)
       emitCrossTestMatchWarning(serveEvent, headers.stoveTestId(), stubTestId)
-      val (requestBody, requestTruncated) = MockInteraction.truncated(request.bodyAsString.orEmpty())
+      val (requestBody, requestTruncated) = MockInteraction.capturedBody(
+        body = request.bodyAsString.orEmpty(),
+        retainRawBody = ctx.retainRawInteractionBodies,
+        redactor = ctx.interactionBodyRedactor
+      )
       val response = serveEvent.response
       val matchedStub = serveEvent.stubMapping
-      val (responseBody, responseTruncated) = MockInteraction.truncated(response?.bodyAsString.orEmpty())
+      val (responseBody, responseTruncated) = MockInteraction.capturedBody(
+        body = response?.bodyAsString.orEmpty(),
+        retainRawBody = ctx.retainRawInteractionBodies,
+        redactor = ctx.interactionBodyRedactor
+      )
       interactionListeners.emit(
         MockInteraction(
           system = reportSystemName,
@@ -1360,7 +1362,13 @@ class WireMockSystem(
       mockResponse.withHeader(it.key, it.value)
     }
     responseBody.map { mockResponse.withBody(serde.serialize(it)) }
-    delay?.let { mockResponse.withFixedDelay(it.inWholeMilliseconds.toInt()) }
+    delay?.let {
+      require(!it.isNegative()) { "WireMock response delay cannot be negative" }
+      require(!it.isInfinite()) { "WireMock response delay must be finite" }
+      val delayMs = it.inWholeMilliseconds
+      require(delayMs <= Int.MAX_VALUE) { "WireMock response delay must fit in Int milliseconds" }
+      mockResponse.withFixedDelay(delayMs.toInt())
+    }
     return mockResponse
   }
 

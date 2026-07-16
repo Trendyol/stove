@@ -46,10 +46,14 @@ export const api = {
     ),
   getRunInteractions: (runId: string, signal?: AbortSignal) =>
     get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions`, signal),
+  getAmbientInteractions: (runId: string, signal?: AbortSignal) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions/ambient`, signal),
   getTestWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
     get<MockWarning[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/warnings`, signal),
   getRunWarnings: (runId: string, signal?: AbortSignal) =>
     get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings`, signal),
+  getAmbientWarnings: (runId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings/ambient`, signal),
   getTrace: (traceId: string, signal?: AbortSignal) =>
     get<Span[]>(`/traces/${encodePath(traceId)}`, signal),
   clearAll: () => del("/data"),

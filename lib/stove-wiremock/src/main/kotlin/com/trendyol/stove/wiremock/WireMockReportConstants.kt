@@ -138,6 +138,7 @@ internal object WireMockBehaviourMessages {
   const val INITIALLY_BEFORE_THEN = "You should call initially before calling then"
   const val FAILS_TIMES_FIRST = "failsTimes starts a behaviour; call it before initially/then"
   const val FAILS_TIMES_POSITIVE = "failsTimes requires times >= 1"
+  const val BEHAVIOUR_COMPLETED = "The behaviour is already completed"
 }
 
 internal object WireMockBehaviourNames {

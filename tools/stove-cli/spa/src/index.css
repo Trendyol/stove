@@ -256,8 +256,8 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 13%, transparent);
+  background: currentcolor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentcolor 13%, transparent);
 }
 
 .stove-stream-status.is-live {
@@ -1298,8 +1298,8 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
+  background: currentcolor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentcolor 12%, transparent);
 }
 
 .ledger-jump-button:focus-visible,
@@ -3025,8 +3025,11 @@ button {
   *::before,
   *::after {
     scroll-behavior: auto;
-    animation-duration: 0.01ms;
-    animation-iteration-count: 1;
-    transition-duration: 0.01ms;
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override must win over component rules */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override must win over component rules */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override must win over component rules */
+    transition-duration: 0.01ms !important;
   }
 }

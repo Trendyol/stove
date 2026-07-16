@@ -64,7 +64,7 @@ class WireMockInteractionTest :
                   .newBuilder(URI("$WIREMOCK_BASE_URL/interactions/nowhere"))
                   .header("Content-Type", "application/json")
                   .header(TraceContext.STOVE_TEST_ID_HEADER, Stove.reporter().currentTestId())
-                  .POST(BodyPublishers.ofString("""{"probe":true}"""))
+                  .POST(BodyPublishers.ofString("""{"probe":true,"password":"secret"}"""))
                   .build(),
                 BodyHandlers.ofString()
               ).statusCode() shouldBe 404
@@ -88,7 +88,7 @@ class WireMockInteractionTest :
             unmatched.testId shouldBe Stove.reporter().currentTestId()
             unmatched.status shouldBe "404"
             unmatched.nearMisses.shouldNotBeEmpty()
-            unmatched.requestBody shouldBe """{"probe":true}"""
+            unmatched.requestBody shouldBe """{"probe":true,"password":"<redacted>"}"""
           } finally {
             removeInteractionListener(listener)
           }

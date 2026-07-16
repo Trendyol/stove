@@ -54,6 +54,16 @@ pub async fn get_run_interactions(
   Ok(Json(interactions))
 }
 
+pub async fn get_unattributed_run_interactions(
+  State(state): State<AppState>,
+  Path(run_id): Path<String>,
+) -> Result<Json<Vec<MockInteraction>>, crate::error::AppError> {
+  let interactions = state
+    .repository
+    .get_unattributed_mock_interactions_for_run(&run_id)?;
+  Ok(Json(interactions))
+}
+
 pub async fn get_test_warnings(
   State(state): State<AppState>,
   Path((run_id, test_id)): Path<(String, String)>,
@@ -69,5 +79,15 @@ pub async fn get_run_warnings(
   Path(run_id): Path<String>,
 ) -> Result<Json<Vec<MockWarning>>, crate::error::AppError> {
   let warnings = state.repository.get_mock_warnings_for_run(&run_id)?;
+  Ok(Json(warnings))
+}
+
+pub async fn get_unattributed_run_warnings(
+  State(state): State<AppState>,
+  Path(run_id): Path<String>,
+) -> Result<Json<Vec<MockWarning>>, crate::error::AppError> {
+  let warnings = state
+    .repository
+    .get_unattributed_mock_warnings_for_run(&run_id)?;
   Ok(Json(warnings))
 }

@@ -123,7 +123,7 @@ class GrpcMockScopingTest :
           mockUnary(
             serviceName = "test.TestService",
             methodName = "Unary",
-            requestMatcher = RequestMatcher.message<TestRequest> { it.message == stalePayload },
+            requestMatcher = RequestMatcher.message(TestRequest.parser()) { it.message == stalePayload },
             response = testResponse { message = "must not leak" }
           )
         }
@@ -152,6 +152,12 @@ class GrpcMockScopingTest :
         val baggage = Metadata()
         baggage.put(Metadata.Key.of("baggage", Metadata.ASCII_STRING_MARSHALLER), "stove.test.id=my%20test")
         baggage.toHeaderMap().stoveTestId() shouldBe "my test"
+
+        val repeatedBaggage = Metadata()
+        val baggageKey = Metadata.Key.of("baggage", Metadata.ASCII_STRING_MARSHALLER)
+        repeatedBaggage.put(baggageKey, "vendor.trace=abc")
+        repeatedBaggage.put(baggageKey, "stove.test.id=split%20baggage")
+        repeatedBaggage.toHeaderMap().stoveTestId() shouldBe "split baggage"
 
         Metadata().toHeaderMap().stoveTestId().shouldBeNull()
       }

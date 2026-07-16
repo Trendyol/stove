@@ -33,37 +33,40 @@ class GrpcMockFidelityTest :
       stove {
         grpcMock {
           addInteractionListener(listener)
-          // Matcher pinned to this test's payload: a client deadline can cancel the call
-          // before the server consumes the stub, and an Any matcher would then leak into
-          // other tests' calls on the same method.
-          mockUnary(
-            serviceName = "test.TestService",
-            methodName = "Unary",
-            requestMatcher = RequestMatcher.message<TestRequest> { it.message == "deadline-probe" },
-            response = TestResponse.newBuilder().setMessage("late").build(),
-            delay = 1_000.milliseconds
-          )
-        }
-
-        grpc {
-          rawChannel { ch ->
-            // Establish the HTTP/2 connection before starting the deadline budget; under a
-            // loaded parallel test run, cold channel setup can otherwise consume it locally
-            // and no request reaches the mock to be observed.
-            HealthGrpc
-              .newBlockingStub(ch)
-              .check(HealthCheckRequest.getDefaultInstance())
-              .status shouldBe HealthCheckResponse.ServingStatus.SERVING
-            val stub = TestServiceGrpc
-              .newBlockingStub(ch)
-              .withDeadlineAfter(500, TimeUnit.MILLISECONDS)
-            val exception = shouldThrow<io.grpc.StatusRuntimeException> {
-              stub.unary(testRequest { message = "deadline-probe" })
-            }
-            exception.status.code shouldBe Status.Code.DEADLINE_EXCEEDED
-          }
         }
         try {
+          grpcMock {
+            // Matcher pinned to this test's payload: a client deadline can cancel the call
+            // before the server consumes the stub, and an Any matcher would then leak into
+            // other tests' calls on the same method.
+            mockUnary(
+              serviceName = "test.TestService",
+              methodName = "Unary",
+              requestMatcher = RequestMatcher.message(TestRequest.parser()) { it.message == "deadline-probe" },
+              response = TestResponse.newBuilder().setMessage("late").build(),
+              delay = 1_000.milliseconds
+            )
+          }
+
+          grpc {
+            rawChannel { ch ->
+              // Establish the HTTP/2 connection before starting the deadline budget; under a
+              // loaded parallel test run, cold channel setup can otherwise consume it locally
+              // and no request reaches the mock to be observed.
+              HealthGrpc
+                .newBlockingStub(ch)
+                .check(HealthCheckRequest.getDefaultInstance())
+                .status shouldBe HealthCheckResponse.ServingStatus.SERVING
+              val stub = TestServiceGrpc
+                .newBlockingStub(ch)
+                .withDeadlineAfter(500, TimeUnit.MILLISECONDS)
+              val exception = shouldThrow<io.grpc.StatusRuntimeException> {
+                stub.unary(testRequest { message = "deadline-probe" })
+              }
+              exception.status.code shouldBe Status.Code.DEADLINE_EXCEEDED
+            }
+          }
+
           val deadline = System.currentTimeMillis() + 5_000
           while (interactions.none { it.target == "test.TestService/Unary" } && System.currentTimeMillis() < deadline) {
             delay(25)

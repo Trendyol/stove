@@ -1,5 +1,9 @@
 package com.trendyol.stove.interactions
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.trendyol.stove.scoping.TestIdSource
 import com.trendyol.stove.scoping.stoveTestIdWithSource
 import com.trendyol.stove.tracing.TraceContext
@@ -76,9 +80,62 @@ data class MockInteraction(
   companion object {
     /** Bodies larger than this are truncated before emission; the flag records that it happened. */
     const val MAX_BODY_CHARS: Int = 8_192
+    const val REDACTED_BODY: String = "<redacted>"
+    private val bodyMapper = ObjectMapper()
+    private val sensitiveFieldMarkers = setOf(
+      "apikey",
+      "api_key",
+      "authorization",
+      "cookie",
+      "credential",
+      "password",
+      "secret",
+      "token"
+    )
 
     fun truncated(body: String): Pair<String, Boolean> =
       if (body.length <= MAX_BODY_CHARS) body to false else body.take(MAX_BODY_CHARS) to true
+
+    /**
+     * Applies the configured redactor before truncation. Raw bodies are retained only when
+     * the caller explicitly opts in.
+     */
+    fun capturedBody(
+      body: String,
+      retainRawBody: Boolean,
+      redactor: (String) -> String
+    ): Pair<String, Boolean> =
+      truncated(if (retainRawBody) body else redactor(body))
+
+    /**
+     * Redacts common credential fields in JSON bodies. Non-JSON bodies are fully redacted
+     * because their structure cannot be inspected safely.
+     */
+    fun redactSensitiveBody(body: String): String {
+      if (body.isBlank()) return body
+      val root = runCatching { bodyMapper.readTree(body) }.getOrNull() ?: return REDACTED_BODY
+      root.redactSensitiveFields()
+      return bodyMapper.writeValueAsString(root)
+    }
+
+    private fun JsonNode.redactSensitiveFields() {
+      when (this) {
+        is ObjectNode -> {
+          properties().forEach { (name, value) ->
+            if (name.isSensitiveFieldName()) {
+              put(name, REDACTED_BODY)
+            } else {
+              value.redactSensitiveFields()
+            }
+          }
+        }
+
+        is ArrayNode -> forEach { it.redactSensitiveFields() }
+      }
+    }
+
+    private fun String.isSensitiveFieldName(): Boolean =
+      lowercase().let { fieldName -> sensitiveFieldMarkers.any(fieldName::contains) }
   }
 }
 
@@ -107,11 +164,16 @@ fun Map<String, *>.traceparentTraceId(): String? =
     .firstOrNull { it.key.equals(TraceContext.TRACEPARENT_HEADER, ignoreCase = true) }
     ?.value
     ?.toString()
-    ?.split('-')
-    ?.getOrNull(1)
-    ?.takeIf { it.length == TRACE_ID_LENGTH && it.any { char -> char != '0' } }
+    ?.let { traceparent ->
+      TRACEPARENT_PATTERN.matchEntire(traceparent)?.destructured?.let { (traceId, spanId) ->
+        traceId.takeIf {
+          it.any { char -> char != '0' } &&
+            spanId.any { char -> char != '0' }
+        }
+      }
+    }
 
-private const val TRACE_ID_LENGTH = 32
+private val TRACEPARENT_PATTERN = Regex("^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$")
 
 /** Receives every completed mock exchange; implemented by diagnostics consumers (dashboard). */
 fun interface MockInteractionListener {

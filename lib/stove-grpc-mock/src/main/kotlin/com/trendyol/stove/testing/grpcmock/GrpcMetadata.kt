@@ -7,5 +7,11 @@ internal fun Metadata.toHeaderMap(): Map<String, String> =
   keys()
     .filterNot { it.endsWith(Metadata.BINARY_HEADER_SUFFIX) }
     .mapNotNull { name ->
-      get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER))?.let { name to it }
+      val key = Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER)
+      val value = if (name.equals("baggage", ignoreCase = true)) {
+        getAll(key)?.joinToString(",")
+      } else {
+        get(key)
+      }
+      value?.let { name to it }
     }.toMap()

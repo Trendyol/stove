@@ -137,7 +137,7 @@ export function EvidenceWorkbench({ entries, onOpenTrace }: EvidenceWorkbenchPro
 
       <EvidenceInspector
         entry={selectedEntry}
-        entries={entries}
+        entries={visibleEntries}
         onSelect={setSelectedId}
         onClose={closeInspector}
         onOpenTrace={onOpenTrace}

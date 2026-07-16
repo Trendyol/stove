@@ -3,6 +3,7 @@ package com.trendyol.stove.wiremock
 import arrow.core.getOrElse
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
@@ -54,6 +55,15 @@ data class WireMockSystemOptions(
    */
   val serde: StoveSerde<Any, ByteArray> = StoveSerde.jackson.anyByteArraySerde(),
   /**
+   * Retains unredacted HTTP request and response bodies in diagnostic interactions.
+   * Disabled by default because diagnostics may be persisted or streamed to a dashboard.
+   */
+  val retainRawInteractionBodies: Boolean = false,
+  /**
+   * Redacts diagnostic interaction bodies before truncation when raw retention is disabled.
+   */
+  val interactionBodyRedactor: (String) -> String = { MockInteraction.redactSensitiveBody(it) },
+  /**
    * Configures the exposed configuration for the application under test.
    * Use this to inject WireMock's URL into your application's configuration.
    *
@@ -80,6 +90,8 @@ data class WireMockContext(
   val afterStubRemoved: AfterStubRemoved,
   val afterRequest: AfterRequestHandler,
   val serde: StoveSerde<Any, ByteArray>,
+  val retainRawInteractionBodies: Boolean,
+  val interactionBodyRedactor: (String) -> String,
   val configure: WireMockConfiguration.() -> WireMockConfiguration,
   val configureExposedConfiguration: (WireMockExposedConfiguration) -> List<String>,
   val keyName: String? = null
@@ -94,6 +106,8 @@ internal fun Stove.withWireMock(options: WireMockSystemOptions = WireMockSystemO
       options.afterStubRemoved,
       options.afterRequest,
       options.serde,
+      options.retainRawInteractionBodies,
+      options.interactionBodyRedactor,
       options.configure,
       options.configureExposedConfiguration
     )
@@ -109,6 +123,8 @@ internal fun Stove.withWireMock(key: SystemKey, options: WireMockSystemOptions =
       options.afterStubRemoved,
       options.afterRequest,
       options.serde,
+      options.retainRawInteractionBodies,
+      options.interactionBodyRedactor,
       options.configure,
       options.configureExposedConfiguration,
       keyName = keyDisplayName(key)

@@ -29,6 +29,7 @@ class StubBehaviourBuilder(
   private var previousState: String = STARTED
   private var stateCounter = 0
   private var initializedCounter = 0
+  private var completed = false
   private var recordStub: (StubMapping) -> Unit = {}
 
   internal constructor(
@@ -42,6 +43,7 @@ class StubBehaviourBuilder(
   }
 
   fun initially(step: () -> ResponseDefinitionBuilder) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
     check(initializedCounter == 0) { WireMockBehaviourMessages.INITIALLY_ONCE }
     stateCounter++
     val nextState = WireMockBehaviourNames.state(stateCounter)
@@ -51,6 +53,7 @@ class StubBehaviourBuilder(
   }
 
   fun then(step: () -> ResponseDefinitionBuilder) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
     check(previousState != STARTED) { WireMockBehaviourMessages.INITIALLY_BEFORE_THEN }
     stateCounter++
     val nextState = WireMockBehaviourNames.state(stateCounter)
@@ -70,6 +73,7 @@ class StubBehaviourBuilder(
    * ```
    */
   fun failsTimes(times: Int, withStatus: Int = SERVICE_UNAVAILABLE) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
     check(initializedCounter == 0) { WireMockBehaviourMessages.FAILS_TIMES_FIRST }
     require(times >= 1) { WireMockBehaviourMessages.FAILS_TIMES_POSITIVE }
     repeat(times) {
@@ -83,6 +87,7 @@ class StubBehaviourBuilder(
 
   /** The step after [failsTimes]: what the dependency returns once it has recovered. */
   fun thenSucceeds(step: () -> ResponseDefinitionBuilder) {
+    check(!completed) { WireMockBehaviourMessages.BEHAVIOUR_COMPLETED }
     check(previousState != STARTED) { WireMockBehaviourMessages.INITIALLY_BEFORE_THEN }
     createStub(
       step(),
@@ -90,6 +95,7 @@ class StubBehaviourBuilder(
       setState = null,
       extraMetadata = mapOf(WireMockSystem.STOVE_PERSISTENT_STUB_KEY to true)
     )
+    completed = true
   }
 
   private fun createStub(

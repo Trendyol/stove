@@ -9,6 +9,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 
 /**
  * validate() failures explain which matcher rejected each candidate stub,
@@ -89,7 +90,7 @@ class GrpcMockNearMissTest :
       }
     }
 
-    test("exact-message rejection shows expected versus received payloads") {
+    test("exact-message rejection redacts parsed payloads by default") {
       stove {
         grpcMock {
           mockUnary(
@@ -110,9 +111,32 @@ class GrpcMockNearMissTest :
         grpcMock {
           val error = shouldThrow<AssertionError> { validate() }
           error.message shouldContain "request matcher rejected"
-          error.message shouldContain "expected-payload"
-          error.message shouldContain "actual-payload"
+          error.message shouldContain "payload redacted"
+          error.message shouldNotContain "expected-payload"
+          error.message shouldNotContain "actual-payload"
         }
       }
+    }
+
+    test("exact-message diagnostics accept an explicit bounded redactor") {
+      val evaluation = RequestMatcher
+        .ExactMessage(
+          message = testRequest { message = "expected-payload" },
+          diagnosticPayloadRedactor = { message -> (message as TestRequest).message }
+        ).evaluate(testRequest { message = "actual-payload" }.toByteArray())
+
+      evaluation.matched shouldBe false
+      evaluation.rejection shouldContain "expected-payload"
+      evaluation.rejection shouldContain "actual-payload"
+    }
+
+    test("typed-message rejection distinguishes malformed protobuf bytes") {
+      val evaluation = RequestMatcher
+        .message(TestRequest.parser()) { true }
+        .evaluate(byteArrayOf(0))
+
+      evaluation.matched shouldBe false
+      evaluation.rejection shouldContain "could not decode request with the supplied protobuf parser"
+      evaluation.rejection shouldContain "InvalidProtocolBufferException"
     }
   })
