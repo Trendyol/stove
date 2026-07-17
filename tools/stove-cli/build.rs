@@ -20,13 +20,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       &["../../lib/stove-dashboard-api/src/main/proto/"],
     )?;
 
-  // ── Version from gradle.properties ─────────────────────────────
-  let gradle_props = std::fs::read_to_string("../../gradle.properties")
-    .expect("Failed to read gradle.properties — is this running from tools/stove-cli?");
-  let version = gradle_props
-    .lines()
-    .find_map(|line| line.strip_prefix("version="))
-    .expect("No 'version=' line found in gradle.properties");
+  // ── Version: env override (CI snapshot/next builds) or gradle.properties ──
+  println!("cargo:rerun-if-env-changed=STOVE_VERSION");
+  let version = std::env::var("STOVE_VERSION").unwrap_or_else(|_| {
+    let gradle_props = std::fs::read_to_string("../../gradle.properties")
+      .expect("Failed to read gradle.properties — is this running from tools/stove-cli?");
+    gradle_props
+      .lines()
+      .find_map(|line| line.strip_prefix("version="))
+      .expect("No 'version=' line found in gradle.properties")
+      .to_string()
+  });
   println!("cargo:rustc-env=STOVE_VERSION={version}");
   println!("cargo:rerun-if-changed=../../gradle.properties");
 

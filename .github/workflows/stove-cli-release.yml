@@ -24,10 +24,17 @@ jobs:
 
       - name: Resolve version
         id: resolve
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            INPUT_VERSION="${{ github.event.inputs.version }}"
             if [ -n "$INPUT_VERSION" ]; then
+              case "$INPUT_VERSION" in
+                *[!A-Za-z0-9._-]*)
+                  echo "Invalid version '${INPUT_VERSION}': only [A-Za-z0-9._-] allowed" >&2
+                  exit 1
+                  ;;
+              esac
               VERSION="$INPUT_VERSION"
             else
               VERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
@@ -99,8 +106,9 @@ jobs:
           SKIP_SPA_BUILD: "1"
 
       - name: Package tarball
+        env:
+          VERSION: ${{ needs.resolve-version.outputs.version }}
         run: |
-          VERSION="${{ needs.resolve-version.outputs.version }}"
           ARCHIVE="stove-${VERSION}-${{ matrix.label }}.tar.gz"
           mkdir -p staging
           cp "target/${{ matrix.target }}/release/stove" staging/
@@ -183,12 +191,32 @@ jobs:
           sed -i "s/__SHA256_DARWIN_AMD64__/${SHA_DARWIN_AMD64}/" stove.rb
           sed -i "s/__SHA256_LINUX_AMD64__/${SHA_LINUX_AMD64}/" stove.rb
 
-          WORKDIR="$(mktemp -d)"
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/Trendyol/homebrew-trendyol-tap.git" "${WORKDIR}"
-          cp stove.rb "${WORKDIR}/stove.rb"
-          cd "${WORKDIR}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add stove.rb
-          git commit -m "stove ${VERSION}"
-          git push
+          # Retried with a fresh clone: the stove-cli-next workflow pushes to
+          # the same tap, and a concurrent push would reject this one as
+          # non-fast-forward. An empty staged diff means the formula is
+          # already current (idempotent rerun, or a push that landed despite
+          # a reported network error) — success, not failure.
+          attempt_push() {
+            WORKDIR="$(mktemp -d)" &&
+              git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/Trendyol/homebrew-trendyol-tap.git" "${WORKDIR}" &&
+              cp stove.rb "${WORKDIR}/stove.rb" &&
+              git -C "${WORKDIR}" add stove.rb &&
+              if git -C "${WORKDIR}" diff --cached --quiet; then
+                echo "Formula already up to date in tap — nothing to push"
+              else
+                git -C "${WORKDIR}" config user.name "github-actions[bot]" &&
+                  git -C "${WORKDIR}" config user.email "github-actions[bot]@users.noreply.github.com" &&
+                  git -C "${WORKDIR}" commit -m "stove ${VERSION}" &&
+                  git -C "${WORKDIR}" push
+              fi
+          }
+
+          for attempt in 1 2 3; do
+            if attempt_push; then
+              exit 0
+            fi
+            echo "Tap push failed (attempt ${attempt}/3) — retrying with a fresh clone"
+            sleep 5
+          done
+          echo "Failed to push stove formula after 3 attempts" >&2
+          exit 1

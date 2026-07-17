@@ -34,3 +34,13 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.ossrh_username }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ossrh_pass }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Publish the CLI dev channel (rolling `next` prerelease + `stove-next`
+  # Homebrew formula) versioned to match the Maven snapshot above —
+  # github.run_number inside the called workflow is this run's number.
+  publish-cli-next:
+    needs: publish
+    permissions:
+      contents: write
+    uses: ./.github/workflows/stove-cli-next.yml
+    secrets: inherit

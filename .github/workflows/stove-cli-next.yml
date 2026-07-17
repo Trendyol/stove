@@ -1,0 +1,335 @@
+name: Stove CLI Next
+
+# Publishes the CLI dev channel: builds binaries versioned like the Maven
+# snapshot, updates the rolling `next` prerelease in place with them, and
+# updates the `stove-next` formula in the Homebrew tap.
+#
+# Called from gradle-publish-snapshot.yml after every Maven snapshot publish
+# (github.run_number inside a reusable workflow is the caller's run number,
+# so the version matches Maven's BUILD_NUMBER-based snapshot version).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for <snapshot>.<run_number>-SNAPSHOT)'
+        required: false
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for <snapshot>.<run_number>-SNAPSHOT)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    if: github.repository == 'Trendyol/stove'
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve version
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            case "$INPUT_VERSION" in
+              *[!A-Za-z0-9._-]*)
+                echo "Invalid version '${INPUT_VERSION}': only [A-Za-z0-9._-] allowed" >&2
+                exit 1
+                ;;
+            esac
+            VERSION="$INPUT_VERSION"
+          else
+            SNAPSHOT_BASE=$(grep '^snapshot=' gradle.properties | cut -d'=' -f2)
+            VERSION="${SNAPSHOT_BASE}.${{ github.run_number }}-SNAPSHOT"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Resolved next version: ${VERSION}"
+
+  build:
+    needs: resolve-version
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-14
+            label: darwin-arm64
+          - target: x86_64-apple-darwin
+            runner: macos-14
+            label: darwin-amd64
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            label: linux-amd64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: tools/stove-cli
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: tools/stove-cli/spa/package-lock.json
+
+      - name: Build SPA
+        run: cd spa && npm ci && npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install protoc (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - name: Install protoc (macOS)
+        if: runner.os == 'macOS'
+        run: brew install protobuf
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/stove-cli/target
+          key: cargo-release-${{ matrix.target }}-${{ hashFiles('tools/stove-cli/Cargo.lock') }}
+          restore-keys: cargo-release-${{ matrix.target }}-
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          SKIP_SPA_BUILD: "1"
+          STOVE_VERSION: ${{ needs.resolve-version.outputs.version }}
+
+      - name: Package tarball
+        env:
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: |
+          ARCHIVE="stove-${VERSION}-${{ matrix.label }}.tar.gz"
+          mkdir -p staging
+          cp "target/${{ matrix.target }}/release/stove" staging/
+          cp "${GITHUB_WORKSPACE}/LICENSE" staging/
+          tar czf "${ARCHIVE}" -C staging .
+          shasum -a 256 "${ARCHIVE}" > "${ARCHIVE}.sha256"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: binaries-${{ matrix.label }}
+          path: |
+            tools/stove-cli/stove-*.tar.gz
+            tools/stove-cli/stove-*.sha256
+
+  # Publishing the `next` prerelease and pushing the matching formula is one
+  # serialized transaction (all invocations, reusable and dispatch, share the
+  # job-level group; queue: max keeps every snapshot instead of replacing
+  # pending runs). Order matters for crash safety: upload version-unique
+  # assets while keeping the old ones, push the formula, only then delete
+  # stale assets — a failure at any point leaves a working channel.
+  publish-next:
+    needs: [resolve-version, build]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: stove-cli-next-publish
+      queue: max
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+
+      # queue: max orders runs by when they reach this job, not by version —
+      # a slower older snapshot could otherwise roll the channel backward.
+      # Compare against the published version (from the release title this
+      # workflow writes) while holding the lock. Equal versions reuse the
+      # already-published assets and retry only the formula/tag updates, so a
+      # rerun never clobbers files referenced by the live formula. To force a
+      # downgrade, delete the `next` release first.
+      - name: Guard against stale publication
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: |
+          CURRENT=$(gh release view next --repo "$GITHUB_REPOSITORY" --json name -q .name 2>/dev/null | sed -n 's/.*(\(.*\)).*/\1/p') || CURRENT=""
+          if [ "$CURRENT" = "$VERSION" ]; then
+            echo "Release assets for ${VERSION} already exist — reusing them"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "same=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "$CURRENT" ]; then
+            NEWEST=$(printf '%s\n%s\n' "$CURRENT" "$VERSION" | sort -V | tail -1)
+            if [ "$NEWEST" = "$CURRENT" ]; then
+              echo "Published next channel is ${CURRENT}, newer than candidate ${VERSION} — skipping stale publish"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "same=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "Publishing ${VERSION} (channel currently: ${CURRENT:-none})"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "same=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish assets to rolling `next` prerelease
+        if: steps.guard.outputs.skip != 'true' && steps.guard.outputs.same != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: |
+          cat > notes.md <<EOF
+          Rolling dev-channel build of the Stove CLI, published alongside the \`${VERSION}\` Maven snapshot.
+
+          **Homebrew (macOS & Linux):**
+          \`\`\`
+          brew install Trendyol/trendyol-tap/stove-next
+          \`\`\`
+          Already installed? Refresh the tap, then upgrade:
+          \`\`\`
+          brew update && brew upgrade stove-next
+          \`\`\`
+
+          Assets from older snapshot runs are replaced on every publish — pin a \`v*\` release if you need stability.
+
+          <!-- source-commit: ${GITHUB_SHA} -->
+          EOF
+
+          # Old assets are kept until the formula points at the new ones;
+          # the cleanup step removes them afterwards. The release body records
+          # the source SHA so the rolling tag can be moved after the tap update.
+          if gh release view next --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload next stove-*.tar.gz stove-*.sha256 \
+              --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit next \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --title "Stove CLI next (${VERSION})" \
+              --notes-file notes.md
+          else
+            gh release create next \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --title "Stove CLI next (${VERSION})" \
+              --notes-file notes.md \
+              stove-*.tar.gz stove-*.sha256
+          fi
+
+      - name: Generate and push Homebrew formula
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+          TAP_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+          SAME_VERSION: ${{ steps.guard.outputs.same }}
+        run: |
+          CHECKSUM_DIR="."
+          if [ "$SAME_VERSION" = "true" ]; then
+            # Equal-version runs are recovery/idempotent reruns. Reuse the
+            # checksums belonging to the existing release assets rather than
+            # replacing files that the current formula may already consume.
+            # If the release has this version's title but incomplete assets
+            # (a first publish that died mid-`gh release create`), the awk
+            # below fails on the missing .sha256 — delete the `next` release
+            # and rerun to recover.
+            CHECKSUM_DIR="$(mktemp -d)"
+            gh release download next \
+              --repo "$GITHUB_REPOSITORY" \
+              --dir "$CHECKSUM_DIR" \
+              --pattern "stove-${VERSION}-*.sha256"
+          fi
+
+          SHA_DARWIN_ARM64=$(awk '{print $1}' "${CHECKSUM_DIR}/stove-${VERSION}-darwin-arm64.tar.gz.sha256")
+          SHA_DARWIN_AMD64=$(awk '{print $1}' "${CHECKSUM_DIR}/stove-${VERSION}-darwin-amd64.tar.gz.sha256")
+          SHA_LINUX_AMD64=$(awk '{print $1}' "${CHECKSUM_DIR}/stove-${VERSION}-linux-amd64.tar.gz.sha256")
+
+          cp tools/stove-cli/Formula/stove-next.rb stove-next.rb
+          sed -i "s/__VERSION__/${VERSION}/" stove-next.rb
+          sed -i "s/__SHA256_DARWIN_ARM64__/${SHA_DARWIN_ARM64}/" stove-next.rb
+          sed -i "s/__SHA256_DARWIN_AMD64__/${SHA_DARWIN_AMD64}/" stove-next.rb
+          sed -i "s/__SHA256_LINUX_AMD64__/${SHA_LINUX_AMD64}/" stove-next.rb
+
+          # Retried with a fresh clone: the stable release workflow pushes to
+          # the same tap, and a concurrent push would reject this one as
+          # non-fast-forward. An empty staged diff means the formula is
+          # already current (idempotent rerun, or a push that landed despite
+          # a reported network error) — success, not failure.
+          attempt_push() {
+            WORKDIR="$(mktemp -d)" &&
+              git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/Trendyol/homebrew-trendyol-tap.git" "${WORKDIR}" &&
+              cp stove-next.rb "${WORKDIR}/stove-next.rb" &&
+              git -C "${WORKDIR}" add stove-next.rb &&
+              if git -C "${WORKDIR}" diff --cached --quiet; then
+                echo "Formula already up to date in tap — nothing to push"
+              else
+                git -C "${WORKDIR}" config user.name "github-actions[bot]" &&
+                  git -C "${WORKDIR}" config user.email "github-actions[bot]@users.noreply.github.com" &&
+                  git -C "${WORKDIR}" commit -m "stove-next ${VERSION}" &&
+                  git -C "${WORKDIR}" push
+              fi
+          }
+
+          for attempt in 1 2 3; do
+            if attempt_push; then
+              exit 0
+            fi
+            echo "Tap push failed (attempt ${attempt}/3) — retrying with a fresh clone"
+            sleep 5
+          done
+          echo "Failed to push stove-next formula after 3 attempts" >&2
+          exit 1
+
+      # Release edits can change targetCommitish metadata but do not move an
+      # existing Git ref. Move the rolling tag only after the formula points
+      # at this release's assets. The source SHA is stored in the release body
+      # so an equal-version recovery run moves the tag to the original build,
+      # not necessarily the recovery run's checkout.
+      #
+      # Best-effort: the tag is provenance metadata the formula never
+      # consumes, and a hard failure here would be unrecoverable by rerun —
+      # the equal-version path skips the asset step, the only writer of the
+      # body marker this step depends on.
+      - name: Move rolling `next` tag to published commit
+        if: steps.guard.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET_SHA=$(gh release view next --repo "$GITHUB_REPOSITORY" --json body -q .body |
+            sed -n 's/.*<!-- source-commit: \([0-9a-fA-F]\{40\}\) -->.*/\1/p')
+          if [ -z "$TARGET_SHA" ]; then
+            echo "Release notes do not contain a source commit — leaving the tag where it is" >&2
+            exit 1
+          fi
+          gh api --method PATCH \
+            "repos/${GITHUB_REPOSITORY}/git/refs/tags/next" \
+            -f sha="$TARGET_SHA" \
+            -F force=true
+
+      # Best-effort: a failure here leaves extra assets behind, never a
+      # broken channel.
+      - name: Clean up stale release assets
+        if: steps.guard.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: |
+          gh release view next --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
+            { grep -v -F "stove-${VERSION}-" || true; } |
+            while read -r ASSET; do
+              echo "Deleting stale asset ${ASSET}"
+              gh release delete-asset next "$ASSET" --repo "$GITHUB_REPOSITORY" --yes
+            done

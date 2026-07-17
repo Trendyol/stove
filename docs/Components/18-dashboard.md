@@ -20,8 +20,7 @@ The dashboard is useful because the test timeline, trace tree, and system eviden
 === "Homebrew"
 
     ```bash
-    brew tap trendyol/tap
-    brew install stove
+    brew install trendyol/trendyol-tap/stove
     ```
 
 === "curl"
@@ -42,6 +41,23 @@ Upgrade an existing install (Homebrew caches the tap, so refresh it first):
 brew update           # refresh the tap manifests so new versions are visible
 brew upgrade stove
 ```
+
+### Dev channel (`stove-next`)
+
+Want the latest changes before a release? Every Maven snapshot publish also ships the CLI as a rolling dev channel, versioned to match the snapshot (e.g. `1.0.0.57-SNAPSHOT`):
+
+```bash
+brew install trendyol/trendyol-tap/stove-next
+```
+
+Both formulae install the same `stove` binary, so they conflict — switch channels by uninstalling one first:
+
+```bash
+brew uninstall stove && brew install trendyol/trendyol-tap/stove-next   # stable → next
+brew uninstall stove-next && brew install trendyol/trendyol-tap/stove   # next → stable
+```
+
+New snapshots replace the channel in place; `brew update && brew upgrade stove-next` moves you to the latest. Older snapshot binaries are not kept — if you need a version that stays put, use the stable `stove` formula.
 
 ## Start the dashboard
 
