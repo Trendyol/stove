@@ -41,6 +41,6 @@ jobs:
   publish-cli-next:
     needs: publish
     permissions:
-      contents: write
+      contents: read
     uses: ./.github/workflows/stove-cli-next.yml
     secrets: inherit

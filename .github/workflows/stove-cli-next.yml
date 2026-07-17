@@ -4,6 +4,10 @@ name: Stove CLI Next
 # snapshot, updates the rolling `next` prerelease in place with them, and
 # updates the `stove-next` formula in the Homebrew tap.
 #
+# The `next` prerelease lives on the tap repo (homebrew-trendyol-tap), not
+# here — Stove's release list stays purely `v*` releases. Everything that
+# touches it authenticates with BOT_REPO_TOKEN.
+#
 # Called from gradle-publish-snapshot.yml after every Maven snapshot publish
 # (github.run_number inside a reusable workflow is the caller's run number,
 # so the version matches Maven's BUILD_NUMBER-based snapshot version).
@@ -21,7 +25,7 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   resolve-version:
@@ -153,16 +157,17 @@ jobs:
       # a slower older snapshot could otherwise roll the channel backward.
       # Compare against the published version (from the release title this
       # workflow writes) while holding the lock. Equal versions reuse the
-      # already-published assets and retry only the formula/tag updates, so a
+      # already-published assets and retry only the formula update, so a
       # rerun never clobbers files referenced by the live formula. To force a
-      # downgrade, delete the `next` release first.
+      # downgrade, delete the `next` release in the tap repo first.
       - name: Guard against stale publication
         id: guard
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+          TAP_REPO: Trendyol/homebrew-trendyol-tap
           VERSION: ${{ needs.resolve-version.outputs.version }}
         run: |
-          CURRENT=$(gh release view next --repo "$GITHUB_REPOSITORY" --json name -q .name 2>/dev/null | sed -n 's/.*(\(.*\)).*/\1/p') || CURRENT=""
+          CURRENT=$(gh release view next --repo "$TAP_REPO" --json name -q .name 2>/dev/null | sed -n 's/.*(\(.*\)).*/\1/p') || CURRENT=""
           if [ "$CURRENT" = "$VERSION" ]; then
             echo "Release assets for ${VERSION} already exist — reusing them"
             echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -185,7 +190,8 @@ jobs:
       - name: Publish assets to rolling `next` prerelease
         if: steps.guard.outputs.skip != 'true' && steps.guard.outputs.same != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+          TAP_REPO: Trendyol/homebrew-trendyol-tap
           VERSION: ${{ needs.resolve-version.outputs.version }}
         run: |
           cat > notes.md <<EOF
@@ -206,21 +212,20 @@ jobs:
           EOF
 
           # Old assets are kept until the formula points at the new ones;
-          # the cleanup step removes them afterwards. The release body records
-          # the source SHA so the rolling tag can be moved after the tap update.
-          if gh release view next --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+          # the cleanup step removes them afterwards. The `next` tag lives in
+          # the tap repo, so it can't point at Stove commits — the release
+          # body records the source SHA as the provenance link instead.
+          if gh release view next --repo "$TAP_REPO" > /dev/null 2>&1; then
             gh release upload next stove-*.tar.gz stove-*.sha256 \
-              --repo "$GITHUB_REPOSITORY" --clobber
+              --repo "$TAP_REPO" --clobber
             gh release edit next \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
+              --repo "$TAP_REPO" \
               --prerelease \
               --title "Stove CLI next (${VERSION})" \
               --notes-file notes.md
           else
             gh release create next \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
+              --repo "$TAP_REPO" \
               --prerelease \
               --title "Stove CLI next (${VERSION})" \
               --notes-file notes.md \
@@ -230,7 +235,8 @@ jobs:
       - name: Generate and push Homebrew formula
         if: steps.guard.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+          TAP_REPO: Trendyol/homebrew-trendyol-tap
           VERSION: ${{ needs.resolve-version.outputs.version }}
           TAP_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
           SAME_VERSION: ${{ steps.guard.outputs.same }}
@@ -246,7 +252,7 @@ jobs:
             # and rerun to recover.
             CHECKSUM_DIR="$(mktemp -d)"
             gh release download next \
-              --repo "$GITHUB_REPOSITORY" \
+              --repo "$TAP_REPO" \
               --dir "$CHECKSUM_DIR" \
               --pattern "stove-${VERSION}-*.sha256"
           fi
@@ -291,45 +297,19 @@ jobs:
           echo "Failed to push stove-next formula after 3 attempts" >&2
           exit 1
 
-      # Release edits can change targetCommitish metadata but do not move an
-      # existing Git ref. Move the rolling tag only after the formula points
-      # at this release's assets. The source SHA is stored in the release body
-      # so an equal-version recovery run moves the tag to the original build,
-      # not necessarily the recovery run's checkout.
-      #
-      # Best-effort: the tag is provenance metadata the formula never
-      # consumes, and a hard failure here would be unrecoverable by rerun —
-      # the equal-version path skips the asset step, the only writer of the
-      # body marker this step depends on.
-      - name: Move rolling `next` tag to published commit
-        if: steps.guard.outputs.skip != 'true'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TARGET_SHA=$(gh release view next --repo "$GITHUB_REPOSITORY" --json body -q .body |
-            sed -n 's/.*<!-- source-commit: \([0-9a-fA-F]\{40\}\) -->.*/\1/p')
-          if [ -z "$TARGET_SHA" ]; then
-            echo "Release notes do not contain a source commit — leaving the tag where it is" >&2
-            exit 1
-          fi
-          gh api --method PATCH \
-            "repos/${GITHUB_REPOSITORY}/git/refs/tags/next" \
-            -f sha="$TARGET_SHA" \
-            -F force=true
-
       # Best-effort: a failure here leaves extra assets behind, never a
       # broken channel.
       - name: Clean up stale release assets
         if: steps.guard.outputs.skip != 'true'
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
+          TAP_REPO: Trendyol/homebrew-trendyol-tap
           VERSION: ${{ needs.resolve-version.outputs.version }}
         run: |
-          gh release view next --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
+          gh release view next --repo "$TAP_REPO" --json assets -q '.assets[].name' |
             { grep -v -F "stove-${VERSION}-" || true; } |
             while read -r ASSET; do
               echo "Deleting stale asset ${ASSET}"
-              gh release delete-asset next "$ASSET" --repo "$GITHUB_REPOSITORY" --yes
+              gh release delete-asset next "$ASSET" --repo "$TAP_REPO" --yes
             done
