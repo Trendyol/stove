@@ -12,7 +12,7 @@ Make stove-kafka the strongest Kafka e2e-testing surface on the JVM by improving
 
 ## Priority order
 
-Current sequence: **D1 (event-driven foundation) ✅ → D2 (observer isolation and wire compatibility) ✅ + B0 (partition correctness) ✅ → C (diagnostics) → B1 (raw/tombstone publishing) → A (assertions, deferred — discuss before starting)**. Semantic observation envelopes and asynchronous batching were reviewed and deliberately not adopted; the existing JVM/Go unary protocol remains the single contract. E-theme differentiators (chaos, schema registry, record & replay) are later bets, picked by audience.
+Current sequence: **D1 (event-driven foundation) ✅ → D2 (observer isolation and wire compatibility) ✅ + B0 (partition correctness) ✅ → B1 (raw/tombstone publishing) ✅ → C (diagnostics) → A (assertions, deferred — discuss before starting)**. Semantic observation envelopes and asynchronous batching were reviewed and deliberately not adopted; the existing JVM/Go unary protocol remains the single contract. E-theme differentiators (chaos, schema registry, record & replay) are later bets, picked by audience.
 
 ---
 
@@ -79,13 +79,17 @@ The duplicate Caffeine stores, polling loop, deserialization helpers, assertion 
 | Consumer-group lag panel | ⬜ | Live `Admin`-fed panel: group state, per-partition lag, rebalance events on the timeline. Assertion API can follow once the data proves useful. |
 | Cross-run trend analytics | ⬜ | `~/.stove-dashboard.db` persists across sessions: track assertion latency vs. timeout per test per run; flag assertions trending toward their timeout (flakiness early warning). |
 
-## Theme B — Publishing fidelity 🚧
+## Theme B — Publishing fidelity ✅
 
 | Item | Status | Notes |
 |---|---|---|
 | Fix `partition: Int = 0` default | ✅ | `publish` now uses the ABI-safe `PARTITION_BY_KEY = -1` sentinel and constructs a record with no explicit partition, allowing Kafka's configured partitioner to decide. Explicit non-negative partitions remain supported and invalid negative values fail early. |
-| `publishTombstone(topic, key)` | ⬜ | Null-value publishing for compacted-topic deletion logic — currently untestable. |
-| `publishRaw(topic, bytes)` | ⬜ | Poison-pill/malformed payloads to make "deserialization failure lands in DLT" a one-liner. |
+| `publishTombstone(topic, key)` | ✅ | Publishes a null-value record for the (mandatory) key. `StoveKafkaValueSerializer` maps null → null so Kafka stores a genuine tombstone, not empty bytes; the bridge observes it as an empty payload, so `peekPublishedMessages` can assert on it. `StoveKafkaValueDeserializer` is now null-safe for consuming tombstones. |
+| `publishRaw(topic, bytes)` | ✅ | Sends bytes to the wire unchanged: `StoveKafkaValueSerializer` passes `ByteArray` through, mirroring the bridge's observation-side passthrough, so observed evidence equals wire bytes. Poison-pill/DLT scenarios are a one-liner. Both new methods share `publish`'s record construction (headers, trace injection, partition sentinel, reporting). Custom value serializers must handle null/`ByteArray` to use these. |
+
+B1 verification: 64 Kafka tests pass in all three modes (container, embedded, provided), including tombstone and raw-bytes round-trips through publish-observation (`peekPublishedMessages`) and an ad-hoc consumer; `apiCheck` passes with additive-only API changes (the serializer/deserializer nullability changes don't alter JVM descriptors) and `spotlessCheck` passes.
+
+B1 parity in `starters/spring/stove-spring-kafka`: same `publishTombstone`/`publishRaw` surface. Tombstones go through the application's own `KafkaTemplate` (so key bytes match regular `publish`; standard serializers map null → null), while raw bytes use a dedicated Stove-owned producer (String keys, `ByteArraySerializer` values) because the application's value serializer would re-encode them. The observation path (`serializeIfNotYet`, `toMetadata`) is now null-safe, recording tombstones as empty payloads like the standalone bridge. Because the typed `shouldBe*` assertions require deserialization, the starter also gained `peekPublished/Consumed/FailedMessages` over the raw observed `MessageProperties` — the assertion surface for tombstone/poison-pill evidence. Verified with starter unit tests plus a spring-example e2e round-trip; both starter API dumps changed additively only.
 
 ## Theme A — Assertion power ⏸ deferred (discuss before starting)
 

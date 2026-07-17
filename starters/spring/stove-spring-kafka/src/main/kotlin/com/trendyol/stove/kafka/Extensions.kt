@@ -9,13 +9,13 @@ import org.apache.kafka.clients.producer.ProducerRecord
 
 internal fun <K, V> ProducerRecord<K, V>.toMetadata(): MessageMetadata = MessageMetadata(
   this.topic(),
-  this.key().toString(),
+  this.key()?.toString() ?: "",
   this.headers().associate { h -> Pair(h.key(), String(h.value())) }
 )
 
 internal fun <K, V> ConsumerRecord<K, V>.toMetadata(): MessageMetadata = MessageMetadata(
   this.topic(),
-  this.key().toString(),
+  this.key()?.toString() ?: "",
   this.headers().associate { h -> Pair(h.key(), String(h.value())) }
 )
 
@@ -72,7 +72,11 @@ private fun <V> serializeIfNotYet(
   value: V,
   serde: StoveSerde<Any, ByteArray>
 ): ByteArray = when (value) {
+  // Tombstones are observed as empty payloads, matching the standalone bridge's behavior.
+  null -> byteArrayOf()
+
   is ByteArray -> value
+
   else -> serde.serialize(value as Any)
 }
 

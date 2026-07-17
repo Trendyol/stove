@@ -336,21 +336,97 @@ class KafkaSystem(
     headers: Map<String, String> = mapOf(),
     partition: Int = PARTITION_BY_KEY,
     testCase: Option<String> = None
+  ): KafkaSystem = publishRecord(
+    action = "Publish to '$topic'",
+    input = Some(message),
+    topic = topic,
+    value = message,
+    key = key.getOrNull(),
+    headers = headers,
+    partition = partition,
+    testCase = testCase
+  )
+
+  /**
+   * Publishes a tombstone — a record with a null value — for [key] to [topic].
+   *
+   * Compacted topics treat a null value as a deletion marker for the key, so this is the way to
+   * exercise an application's compaction/deletion handling. The key is mandatory because a
+   * tombstone without a key deletes nothing.
+   *
+   * Requires a value serializer that maps null to null; the default [StoveKafkaValueSerializer] does.
+   */
+  suspend fun publishTombstone(
+    topic: String,
+    key: String,
+    headers: Map<String, String> = mapOf(),
+    partition: Int = PARTITION_BY_KEY,
+    testCase: Option<String> = None
+  ): KafkaSystem = publishRecord(
+    action = "Publish tombstone to '$topic'",
+    input = None,
+    topic = topic,
+    value = null,
+    key = key,
+    headers = headers,
+    partition = partition,
+    testCase = testCase
+  )
+
+  /**
+   * Publishes [message] to [topic] byte-for-byte, bypassing serialization.
+   *
+   * Intended for malformed/poison-pill payloads — e.g. asserting that a message the application
+   * cannot deserialize lands in the dead-letter topic.
+   *
+   * Requires a value serializer that passes [ByteArray] through unchanged; the default
+   * [StoveKafkaValueSerializer] does.
+   */
+  suspend fun publishRaw(
+    topic: String,
+    message: ByteArray,
+    key: Option<String> = None,
+    headers: Map<String, String> = mapOf(),
+    partition: Int = PARTITION_BY_KEY,
+    testCase: Option<String> = None
+  ): KafkaSystem = publishRecord(
+    action = "Publish raw bytes to '$topic'",
+    input = Some(String(message, Charsets.UTF_8)),
+    topic = topic,
+    value = message,
+    key = key.getOrNull(),
+    headers = headers,
+    partition = partition,
+    testCase = testCase,
+    extraMetadata = mapOf("sizeBytes" to message.size)
+  )
+
+  private suspend fun publishRecord(
+    action: String,
+    input: Option<Any>,
+    topic: String,
+    value: Any?,
+    key: String?,
+    headers: Map<String, String>,
+    partition: Int,
+    testCase: Option<String>,
+    extraMetadata: Map<String, Any> = emptyMap()
   ): KafkaSystem {
     require(partition == PARTITION_BY_KEY || partition >= 0) {
       "partition must be non-negative or PARTITION_BY_KEY"
     }
     report(
-      action = "Publish to '$topic'",
-      input = Some(message),
+      action = action,
+      input = input,
       metadata = buildMap {
-        key.onSome { put("key", it) }
+        key?.let { put("key", it) }
         put("headers", headers)
         put("partition", partition.takeUnless { it == PARTITION_BY_KEY } ?: "partitioner")
+        putAll(extraMetadata)
       }
     ) {
       val selectedPartition = partition.takeUnless { it == PARTITION_BY_KEY }
-      val record = ProducerRecord<String, Any>(topic, selectedPartition, key.getOrNull(), message)
+      val record = ProducerRecord<String, Any>(topic, selectedPartition, key, value)
       headers.forEach { (k, v) -> record.headers().add(k, v.toByteArray()) }
       testCase.map { record.headers().add("testCase", it.toByteArray()) }
       injectTraceHeaders(record)
