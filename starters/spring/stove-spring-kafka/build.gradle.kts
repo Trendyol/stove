@@ -7,4 +7,5 @@ dependencies {
 
 dependencies {
   testImplementation(libs.kotest.runner.junit6)
+  testImplementation(libs.kafka)
 }

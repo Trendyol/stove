@@ -9,11 +9,12 @@ import io.github.nomisRev.kafka.createTopic
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldNotContainAll
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.*
 import org.apache.kafka.common.utils.Utils
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
@@ -96,6 +97,75 @@ class KafkaSystemTests :
           }
 
           consumedPartition shouldBe 1
+        }
+      }
+    }
+
+    test("publishTombstone publishes a null value under the given key") {
+      stove {
+        kafka {
+          val key = randomString()
+          val topic = randomString()
+
+          adminOperations {
+            createTopic(NewTopic(topic, 1, 1))
+          }
+
+          publishTombstone(topic, key = key)
+
+          peekPublishedMessages(topic = topic) {
+            it.key == key && it.value.isEmpty()
+          }
+
+          var consumedKey: String? = null
+          var consumedValue: Any? = "sentinel"
+          consumer<String, Any>(
+            topic = topic,
+            readOnly = false,
+            keyDeserializer = StringDeserializer(),
+            keepConsumingAtLeastFor = 6.seconds,
+            pollTimeout = 250.milliseconds
+          ) { record ->
+            consumedKey = record.key()
+            consumedValue = record.value()
+          }
+
+          consumedKey shouldBe key
+          consumedValue shouldBe null
+        }
+      }
+    }
+
+    test("publishRaw publishes the given bytes unchanged") {
+      stove {
+        kafka {
+          val key = randomString()
+          val topic = randomString()
+          val poisonPill = "{not-valid-json!!".toByteArray()
+
+          adminOperations {
+            createTopic(NewTopic(topic, 1, 1))
+          }
+
+          publishRaw(topic, poisonPill, key = key.some())
+
+          peekPublishedMessages(topic = topic) {
+            it.key == key && it.value.contentEquals(poisonPill)
+          }
+
+          var consumed: ByteArray? = null
+          consumer<String, ByteArray>(
+            topic = topic,
+            readOnly = false,
+            keyDeserializer = StringDeserializer(),
+            valueDeserializer = ByteArrayDeserializer(),
+            keepConsumingAtLeastFor = 6.seconds,
+            pollTimeout = 250.milliseconds
+          ) { record ->
+            consumed = record.value()
+          }
+
+          consumed.shouldNotBeNull().contentEquals(poisonPill) shouldBe true
         }
       }
     }
