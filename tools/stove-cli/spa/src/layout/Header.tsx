@@ -1,11 +1,14 @@
 import stoveMarkUrl from "../assets/stove-mark.svg";
+import { VersionMismatchWarning } from "../components/VersionMismatchWarning";
 import { useTheme } from "../hooks/useTheme";
+import type { VersionMismatchSummary } from "../utils/version-mismatch";
 
 interface HeaderProps {
   liveConnected: boolean;
+  versionMismatchSummary: VersionMismatchSummary | null;
 }
 
-export function Header({ liveConnected }: HeaderProps) {
+export function Header({ liveConnected, versionMismatchSummary }: HeaderProps) {
   const { theme, toggle } = useTheme();
 
   return (
@@ -25,6 +28,9 @@ export function Header({ liveConnected }: HeaderProps) {
       </div>
 
       <div className="stove-topbar-actions">
+        {versionMismatchSummary ? (
+          <VersionMismatchWarning summary={versionMismatchSummary} />
+        ) : null}
         <span
           className={`stove-stream-status ${liveConnected ? "is-live" : "is-polling"}`}
           title={liveConnected ? "Live SSE stream connected" : "SSE disconnected; polling APIs"}

@@ -1,4 +1,3 @@
-import { VersionMismatchBanner } from "./components/VersionMismatchBanner";
 import { useAppData } from "./hooks/useAppData";
 import { Header } from "./layout/Header";
 import { Sidebar } from "./layout/Sidebar";
@@ -20,8 +19,7 @@ export default function App() {
 
   return (
     <div className="stove-app-shell flex h-screen flex-col font-sans text-[var(--stove-text)]">
-      <Header liveConnected={liveConnected} />
-      {versionMismatchSummary ? <VersionMismatchBanner summary={versionMismatchSummary} /> : null}
+      <Header liveConnected={liveConnected} versionMismatchSummary={versionMismatchSummary} />
       <div className="stove-workspace">
         <Sidebar
           apps={apps}
