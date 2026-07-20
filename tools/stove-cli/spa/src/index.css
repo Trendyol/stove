@@ -240,6 +240,269 @@ button {
   font-size: 11px;
 }
 
+.stove-version-warning {
+  position: relative;
+}
+
+.stove-version-warning::after {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 12px;
+  content: "";
+  pointer-events: none;
+}
+
+.stove-version-warning:hover::after,
+.stove-version-warning:focus-within::after {
+  pointer-events: auto;
+}
+
+.stove-version-warning-trigger {
+  display: inline-flex;
+  min-height: 30px;
+  cursor: default;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--stove-amber) 42%, var(--stove-border));
+  border-radius: 999px;
+  background: var(--stove-amber-bg);
+  padding: 5px 8px;
+  color: var(--stove-amber);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.stove-version-warning-trigger:hover,
+.stove-version-warning-trigger:focus-visible {
+  border-color: color-mix(in srgb, var(--stove-amber) 70%, var(--stove-border));
+  background: color-mix(in srgb, var(--stove-amber-bg) 72%, var(--stove-surface));
+  color: color-mix(in srgb, var(--stove-amber) 86%, var(--stove-text-heading));
+}
+
+.stove-version-warning-trigger > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.stove-version-warning-count {
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--stove-amber);
+  padding: 0 5px;
+  color: var(--stove-surface);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.stove-version-warning-popover {
+  position: absolute;
+  top: calc(100% + 11px);
+  right: 0;
+  z-index: 80;
+  width: min(430px, calc(100vw - 24px));
+  max-height: min(560px, calc(100vh - 86px));
+  visibility: hidden;
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--stove-amber) 38%, var(--stove-border));
+  border-radius: 14px;
+  background: var(--stove-panel-strong);
+  box-shadow: var(--stove-shadow);
+  color: var(--stove-text);
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translateY(-4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
+  backdrop-filter: blur(18px);
+}
+
+.stove-version-warning:hover .stove-version-warning-popover,
+.stove-version-warning:focus-within .stove-version-warning-popover {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.stove-version-warning-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-bottom: 1px solid var(--stove-border);
+  padding: 14px;
+}
+
+.stove-version-warning-heading-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--stove-amber-bg);
+  color: var(--stove-amber);
+}
+
+.stove-version-warning-heading-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.stove-version-warning-heading strong {
+  color: var(--stove-text-heading);
+  font-size: 13px;
+}
+
+.stove-version-warning-heading p {
+  margin: 3px 0 0;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.stove-version-warning-heading code {
+  color: var(--stove-amber);
+  font-family: var(--font-mono);
+}
+
+.stove-version-warning-list {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.stove-version-warning-detail {
+  border: 1px solid var(--stove-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--stove-card) 42%, transparent);
+  padding: 11px;
+}
+
+.stove-version-warning-detail.is-selected {
+  border-color: color-mix(in srgb, var(--stove-amber) 42%, var(--stove-border));
+  background: color-mix(in srgb, var(--stove-amber-bg) 46%, transparent);
+}
+
+.stove-version-warning-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stove-version-warning-detail-heading strong {
+  overflow: hidden;
+  color: var(--stove-text-heading);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-version-warning-detail-heading span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--stove-amber-bg);
+  padding: 3px 6px;
+  color: var(--stove-amber);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stove-version-warning-problem {
+  margin: 6px 0 0;
+  color: var(--stove-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.stove-version-warning-versions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 9px 0 0;
+}
+
+.stove-version-warning-versions > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--stove-surface) 70%, transparent);
+  padding: 6px 8px;
+}
+
+.stove-version-warning-versions dt {
+  color: var(--stove-text-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.stove-version-warning-versions dd {
+  overflow: hidden;
+  margin: 0;
+  color: var(--stove-text-heading);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-version-warning-fix {
+  margin-top: 9px;
+  border-top: 1px solid var(--stove-border);
+  padding-top: 8px;
+}
+
+.stove-version-warning-fix > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.stove-version-warning-fix p {
+  margin: 0;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.stove-version-warning-fix code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+  border-radius: 6px;
+  background: var(--stove-base);
+  padding: 6px 7px;
+  color: var(--stove-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.45;
+  user-select: text;
+}
+
 .stove-stream-status,
 .stove-endpoint {
   display: inline-flex;
@@ -2737,6 +3000,18 @@ button {
 }
 
 @media (max-width: 900px) {
+  .stove-version-warning-label {
+    display: none;
+  }
+
+  .stove-version-warning-popover {
+    position: fixed;
+    top: 63px;
+    right: 8px;
+    width: min(430px, calc(100vw - 16px));
+    max-height: calc(100vh - 71px);
+  }
+
   .stove-sidebar {
     width: 282px;
   }
@@ -2804,6 +3079,13 @@ button {
 
   .stove-topbar-actions {
     gap: 2px;
+  }
+
+  .stove-version-warning-popover {
+    top: 59px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100vh - 67px);
   }
 
   .stove-stream-status {

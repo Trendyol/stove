@@ -1,7 +1,6 @@
 import type { AppSummary } from "../api/types";
 
 const RELEASE_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/;
-const SWITCH_HINT = "Switch to a mismatched app to see exact remediation.";
 const CLI_UPGRADE_COMMAND = "brew upgrade Trendyol/trendyol-tap/stove";
 
 export type VersionMismatchKind = "runtime_older" | "cli_older" | "unknown";
@@ -25,14 +24,17 @@ export interface VersionMismatchRemediationStep {
   value: string;
 }
 
-export interface VersionMismatchBannerModel {
-  title: string;
-  affectedApps: string[];
-  switchHint: string | null;
-  selectedAppName: string | null;
-  runtimeVersion: string | null;
-  cliVersion: string;
+export interface VersionMismatchDetailModel extends VersionMismatch {
+  selected: boolean;
+  problem: string;
   remediationSteps: VersionMismatchRemediationStep[];
+}
+
+export interface VersionMismatchWarningModel {
+  title: string;
+  mismatchCount: number;
+  cliVersion: string;
+  details: VersionMismatchDetailModel[];
 }
 
 export function compareVersions(
@@ -93,20 +95,25 @@ export function summarizeVersionMismatches(
   };
 }
 
-export function buildVersionMismatchBannerModel(
+export function buildVersionMismatchWarningModel(
   summary: VersionMismatchSummary,
-): VersionMismatchBannerModel {
+): VersionMismatchWarningModel {
   const mismatchCount = summary.mismatches.length;
   const selectedAppMismatch = summary.selectedAppMismatch;
+  const details = summary.mismatches
+    .map((mismatch) => ({
+      ...mismatch,
+      selected: mismatch.appName === selectedAppMismatch?.appName,
+      problem: mismatchProblem(mismatch),
+      remediationSteps: remediationStepsForMismatch(mismatch),
+    }))
+    .sort((left, right) => Number(right.selected) - Number(left.selected));
 
   return {
-    title: bannerTitle(mismatchCount),
-    affectedApps: summary.affectedAppNames,
-    switchHint: selectedAppMismatch ? null : SWITCH_HINT,
-    selectedAppName: selectedAppMismatch?.appName ?? null,
-    runtimeVersion: selectedAppMismatch?.runtimeVersion ?? null,
+    title: warningTitle(mismatchCount),
+    mismatchCount,
     cliVersion: summary.cliVersion,
-    remediationSteps: selectedAppMismatch ? remediationStepsForMismatch(selectedAppMismatch) : [],
+    details,
   };
 }
 
@@ -124,10 +131,10 @@ function createVersionMismatch(app: AppSummary, cliVersion: string): VersionMism
   };
 }
 
-function bannerTitle(mismatchCount: number): string {
+function warningTitle(mismatchCount: number): string {
   return mismatchCount === 1
-    ? "A version mismatch was detected in the latest Stove dashboard run."
-    : `${mismatchCount} apps have a version mismatch in their latest Stove dashboard runs.`;
+    ? "Version mismatch detected"
+    : `${mismatchCount} version mismatches detected`;
 }
 
 function normalizeVersion(version: string | null | undefined): string | null {
@@ -162,6 +169,18 @@ function remediationStepsForMismatch(mismatch: VersionMismatch): VersionMismatch
       `This run comes from an older or non-standard Stove runtime. ${dependencyAlignmentMessage(mismatch.cliVersion)}`,
     ),
   ];
+}
+
+function mismatchProblem(mismatch: VersionMismatch): string {
+  if (mismatch.kind === "runtime_older") {
+    return "The app runtime is older than the dashboard CLI.";
+  }
+
+  if (mismatch.kind === "cli_older") {
+    return "The dashboard CLI is older than the app runtime.";
+  }
+
+  return "The app did not report a standard Stove release version.";
 }
 
 function dependencyAlignmentMessage(cliVersion: string): string {
