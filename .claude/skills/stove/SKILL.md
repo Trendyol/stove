@@ -118,6 +118,7 @@ In test code, `DashboardSystemOptions.cliHost` defaults to `localhost`; `cliPort
 - Keep examples minimal and app-specific. Add only the systems the user actually needs.
 - Ktor runners must not block: the app's `run` must start the engine with `wait = false` (a blocking main hangs the suite).
 - Mock verifications (`wiremock`/`grpcMock` `shouldHaveBeenCalled`) are point-in-time — do not invent a `within`/timeout parameter. Await async flows with the Kafka `atLeastIn` or HTTP assertion first, then verify the mock.
+- WireMock (0.26+): prefer the structured `request` / `respond` / `behaviour` DSL for new examples. String verb functions match URL paths; use reusable `RequestSpec`s across stubbing, verification, and `callsFor`, and use `rawStub` before unmanaged `server()` access. No compiler opt-in is required; Stove APIs may evolve in minor releases and release notes provide migration guidance.
 - gRPC Mock (0.26+): among matching stubs the last registered wins; mixing RPC types for one method fails fast; bidi stubs reject `requestMatcher`. Prefer `MethodDescriptor` overloads and `RequestMatcher.message<T> { ... }` over name strings and byte matchers.
 
 ## Known runtime pitfalls (0.25.x)

@@ -1,6 +1,3 @@
-public abstract interface annotation class com/trendyol/stove/ExperimentalStoveApi : java/lang/annotation/Annotation {
-}
-
 public abstract interface class com/trendyol/stove/containers/ContainerOptions {
 	public abstract fun getCompatibleSubstitute ()Ljava/lang/String;
 	public abstract fun getContainerFn ()Lkotlin/jvm/functions/Function1;

@@ -15,7 +15,6 @@ import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
-import com.trendyol.stove.ExperimentalStoveApi
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.interactions.MockInteractionListener
@@ -294,51 +293,45 @@ class WireMockSystem(
   override suspend fun stop(): Unit = wireMock.shutdownServer()
 
   /**
-   * Registers a GET stub with the structured experimental DSL.
+   * Registers a GET stub with the structured DSL.
    *
    * The URL is matched as a path so query parameters can be declared independently.
    */
-  @ExperimentalStoveApi
   suspend fun mockGet(
     url: String,
     name: String? = null,
     configure: StubDsl.() -> Unit
   ): WireMockSystem = stub(RequestMethod.GET, path(url), name, configure)
 
-  /** Registers a POST stub with the structured experimental DSL. */
-  @ExperimentalStoveApi
+  /** Registers a POST stub with the structured DSL. */
   suspend fun mockPost(
     url: String,
     name: String? = null,
     configure: StubDsl.() -> Unit
   ): WireMockSystem = stub(RequestMethod.POST, path(url), name, configure)
 
-  /** Registers a PUT stub with the structured experimental DSL. */
-  @ExperimentalStoveApi
+  /** Registers a PUT stub with the structured DSL. */
   suspend fun mockPut(
     url: String,
     name: String? = null,
     configure: StubDsl.() -> Unit
   ): WireMockSystem = stub(RequestMethod.PUT, path(url), name, configure)
 
-  /** Registers a PATCH stub with the structured experimental DSL. */
-  @ExperimentalStoveApi
+  /** Registers a PATCH stub with the structured DSL. */
   suspend fun mockPatch(
     url: String,
     name: String? = null,
     configure: StubDsl.() -> Unit
   ): WireMockSystem = stub(RequestMethod.PATCH, path(url), name, configure)
 
-  /** Registers a DELETE stub with the structured experimental DSL. */
-  @ExperimentalStoveApi
+  /** Registers a DELETE stub with the structured DSL. */
   suspend fun mockDelete(
     url: String,
     name: String? = null,
     configure: StubDsl.() -> Unit
   ): WireMockSystem = stub(RequestMethod.DELETE, path(url), name, configure)
 
-  /** Registers a HEAD stub with the structured experimental DSL. */
-  @ExperimentalStoveApi
+  /** Registers a HEAD stub with the structured DSL. */
   suspend fun mockHead(
     url: String,
     name: String? = null,
@@ -346,7 +339,6 @@ class WireMockSystem(
   ): WireMockSystem = stub(RequestMethod.HEAD, path(url), name, configure)
 
   /** Builds a reusable request specification. */
-  @ExperimentalStoveApi
   fun request(
     method: RequestMethod,
     target: RequestTarget,
@@ -359,7 +351,6 @@ class WireMockSystem(
     )
 
   /** Registers a structured stub from an HTTP method and target. */
-  @ExperimentalStoveApi
   suspend fun stub(
     method: RequestMethod,
     target: RequestTarget,
@@ -374,7 +365,6 @@ class WireMockSystem(
     )
 
   /** Registers a structured stub from a reusable request specification. */
-  @ExperimentalStoveApi
   suspend fun stub(
     request: RequestSpec,
     name: String? = null,
@@ -388,7 +378,6 @@ class WireMockSystem(
     )
 
   /** Verifies calls using the same reusable request specification used for stubbing. */
-  @ExperimentalStoveApi
   suspend fun shouldHaveBeenCalled(
     request: RequestSpec,
     count: CountMatchingStrategy = exactly(1)
@@ -398,7 +387,6 @@ class WireMockSystem(
     }
 
   /** Verifies calls with an inline structured request description. */
-  @ExperimentalStoveApi
   suspend fun shouldHaveBeenCalled(
     method: RequestMethod,
     target: RequestTarget,
@@ -411,14 +399,12 @@ class WireMockSystem(
     )
 
   /** Verifies that no call matched the reusable request specification. */
-  @ExperimentalStoveApi
   suspend fun shouldNotHaveBeenCalled(request: RequestSpec): WireMockSystem =
     verification.shouldNotHaveBeenCalled {
       dslCompiler.pattern(request.model)
     }
 
   /** Verifies that no call matched an inline structured request description. */
-  @ExperimentalStoveApi
   suspend fun shouldNotHaveBeenCalled(
     method: RequestMethod,
     target: RequestTarget,
@@ -427,14 +413,12 @@ class WireMockSystem(
     shouldNotHaveBeenCalled(request(method, target, configure))
 
   /** Returns current-test calls matching the reusable request specification. */
-  @ExperimentalStoveApi
   fun callsFor(request: RequestSpec): List<LoggedRequest> =
     verification.callsFor {
       dslCompiler.pattern(request.model)
     }
 
   /** Returns current-test calls matching an inline structured request description. */
-  @ExperimentalStoveApi
   fun callsFor(
     method: RequestMethod,
     target: RequestTarget,
@@ -446,7 +430,6 @@ class WireMockSystem(
    * Registers a native WireMock mapping while retaining Stove naming, scoping,
    * reporting, journaling, and cleanup.
    */
-  @ExperimentalStoveApi
   suspend fun rawStub(
     name: String? = null,
     configure: RawStubDsl.() -> MappingBuilder
@@ -1329,7 +1312,6 @@ class WireMockSystem(
     }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
   }
 
-  @OptIn(ExperimentalStoveApi::class)
   private suspend fun registerDslStub(
     name: String?,
     definition: DslStubDefinition

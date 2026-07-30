@@ -90,14 +90,14 @@ stove {
 }
 ```
 
-## Structured DSL (experimental)
+## Structured DSL (0.26+)
 
 The structured DSL keeps request matching and response construction separate. String-based verb functions match the URL path, so query parameters can be declared independently. Stub names are inferred from the method and target unless you provide one.
 
-Opt in at the test or class level:
+!!! note "API evolution"
+    Stove APIs are still evolving and may change in minor releases. When an API changes, the release notes will include a migration guide.
 
 ```kotlin
-@OptIn(ExperimentalStoveApi::class)
 test("creates a payment") {
   stove {
     wiremock {
@@ -130,7 +130,6 @@ Request blocks support `header`, `query`, `contentTypeJson`, `jsonEqualTo`, `jso
 ### Reuse a request for stubbing and verification
 
 ```kotlin
-@OptIn(ExperimentalStoveApi::class)
 test("calls the payment service") {
   stove {
     wiremock {
@@ -162,7 +161,6 @@ The same request specification also works with `shouldNotHaveBeenCalled`.
 Use `rawStub` when WireMock exposes a feature that the structured DSL does not:
 
 ```kotlin
-@OptIn(ExperimentalStoveApi::class)
 test("uses a native transformer") {
   stove {
     wiremock {
@@ -292,7 +290,6 @@ Supports primitives, nested maps, arrays, dot paths, and `urlPatternFn` for rege
 The structured DSL describes only observable behaviour; WireMock scenario and state names remain internal. Add transient responses, then finish with the response that stays active:
 
 ```kotlin
-@OptIn(ExperimentalStoveApi::class)
 test("service recovers after two timeouts") {
   stove {
     wiremock {
@@ -317,7 +314,6 @@ test("service recovers after two timeouts") {
 Transient HTTP responses use the same response DSL:
 
 ```kotlin
-@OptIn(ExperimentalStoveApi::class)
 test("service succeeds after two unavailable responses") {
   stove {
     wiremock {

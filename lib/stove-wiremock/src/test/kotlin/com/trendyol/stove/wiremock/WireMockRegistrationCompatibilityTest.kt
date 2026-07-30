@@ -1,5 +1,3 @@
-@file:OptIn(com.trendyol.stove.ExperimentalStoveApi::class)
-
 package com.trendyol.stove.wiremock
 
 import com.trendyol.stove.system.Stove
