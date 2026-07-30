@@ -2876,6 +2876,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#structured-wiremock-dsl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured WireMock DSL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dashboard-a-network-tab-for-your-applications-egress" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3264,6 +3275,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#structured-wiremock-dsl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured WireMock DSL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dashboard-a-network-tab-for-your-applications-egress" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3454,6 +3476,53 @@
 </span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">}</span>
 </span></code></pre></div>
 <p><code>GrpcMockSystemOptions</code> gains opt-in <code>enableHealthService</code> (the standard <code>grpc.health.v1.Health</code>, for apps that gate startup on a healthy channel) and <code>enableReflectionService</code> (so <code>grpcurl</code> works against the mock).</p>
+<h2 id="structured-wiremock-dsl">Structured WireMock DSL<a class="headerlink" href="#structured-wiremock-dsl" title="Permanent link">&para;</a></h2>
+<p>WireMock gains a structured DSL that keeps request matching, response construction, and retry behaviour readable without exposing WireMock scenario state:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;payment service recovers&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">        </span><span class="n">wiremock</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">            </span><span class="n">mockPost</span><span class="p">(</span><span class="s">&quot;/payments&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;create payment&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">                </span><span class="n">request</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">                    </span><span class="n">header</span><span class="p">(</span><span class="s">&quot;X-Tenant&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;nl&quot;</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">                    </span><span class="n">contentTypeJson</span><span class="p">()</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">                    </span><span class="n">jsonField</span><span class="p">(</span><span class="s">&quot;customer.id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;customer-1&quot;</span><span class="p">)</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">                </span><span class="p">}</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">                </span><span class="n">behaviour</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">                    </span><span class="n">repeat</span><span class="p">(</span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">                        </span><span class="n">respond</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">                            </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">503</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">                            </span><span class="n">json</span><span class="p">(</span><span class="n">mapOf</span><span class="p">(</span><span class="s">&quot;error&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;temporarily unavailable&quot;</span><span class="p">))</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">                        </span><span class="p">}</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">                    </span><span class="p">}</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">                    </span><span class="n">thenAlways</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">                        </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">201</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">                        </span><span class="n">json</span><span class="p">(</span><span class="n">mapOf</span><span class="p">(</span><span class="s">&quot;paymentId&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;payment-1&quot;</span><span class="p">))</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">                    </span><span class="p">}</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">                </span><span class="p">}</span>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>String-based verb functions use path matching by default. <code>path</code>, <code>exactUrl</code>, and <code>pathRegex</code> make the matching strategy explicit for reusable request specifications:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">paymentRequest</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">request</span><span class="p">(</span><span class="n">RequestMethod</span><span class="p">.</span><span class="na">POST</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">(</span><span class="s">&quot;/payments&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="n">header</span><span class="p">(</span><span class="s">&quot;X-Tenant&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;nl&quot;</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">jsonField</span><span class="p">(</span><span class="s">&quot;customer.id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;customer-1&quot;</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">stub</span><span class="p">(</span><span class="n">paymentRequest</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="n">respond</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">201</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="n">json</span><span class="p">(</span><span class="n">mapOf</span><span class="p">(</span><span class="s">&quot;paymentId&quot;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&quot;payment-1&quot;</span><span class="p">))</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="p">}</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="n">shouldHaveBeenCalled</span><span class="p">(</span><span class="n">paymentRequest</span><span class="p">)</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="n">callsFor</span><span class="p">(</span><span class="n">paymentRequest</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Response bodies are explicit through <code>json</code>, <code>jsonNull</code>, <code>rawJson</code>, <code>text</code>, <code>bytes</code>, and <code>empty</code>; their content types follow the selected body format. Stub names are inferred from the HTTP method and target, with an optional name for domain context.</p>
+<p><code>rawStub(name?)</code> is the managed escape hatch for native WireMock mappings. It keeps Stove's test metadata, reporting, call journal, and cleanup, while direct <code>server()</code> access remains available for deliberately unmanaged operations. Stove replaces any caller-supplied mapping ID with its managed ID during installation.</p>
+<p>As noted in the README, Stove APIs are still evolving and may change in minor releases. Any such changes will include migration guidance in the release notes; no compiler opt-in is required.</p>
 <h2 id="dashboard-a-network-tab-for-your-applications-egress">Dashboard: a network tab for your application's egress<a class="headerlink" href="#dashboard-a-network-tab-for-your-applications-egress" title="Permanent link">&para;</a></h2>
 <p>Every request that reaches either mock — matched or not — is emitted as a <strong>mock interaction event</strong> and streamed to the stove CLI: method/URL or gRPC method, final status (including <code>CANCELLED</code>/<code>DEADLINE_EXCEEDED</code> outcomes the handler never sees), latency, truncated request/response bodies with <strong>sensitive-field redaction</strong> (authorization, tokens, passwords, cookies), near-miss diagnoses for unmatched exchanges, scenario state transitions, injected faults and configured delays, and the trace id when the request carried <code>traceparent</code>.</p>
 <p>Each interaction carries its <strong>attribution</strong>: <code>PROVEN_HEADER</code>, <code>PROVEN_BAGGAGE</code>, <code>PROVEN_STUB</code>, or <code>UNATTRIBUTED</code>. Unattributed exchanges land in a run-level lane — never guessed into a test — and each one is actionable: fix the stub matcher, or enable <code>stove-tracing</code> for propagation.</p>
