@@ -7,6 +7,7 @@ import com.github.benmanes.caffeine.cache.*
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.common.Metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.Extension
 import com.github.tomakehurst.wiremock.http.Fault
@@ -14,6 +15,7 @@ import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.*
 import com.github.tomakehurst.wiremock.stubbing.*
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
+import com.trendyol.stove.ExperimentalStoveApi
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.interactions.MockInteraction
 import com.trendyol.stove.interactions.MockInteractionListener
@@ -223,6 +225,7 @@ class WireMockSystem(
   private val warningListeners = MockWarningListeners()
   private val validatedTests = ConcurrentHashMap.newKeySet<String>()
   private val serde: StoveSerde<Any, ByteArray> = ctx.serde
+  private val dslCompiler = WireMockDslCompiler(serde)
   private val verification = WireMockVerification(this, callJournal, serde)
   private val cleanupListener = TestScopeCleanupListener(::clearTestScope)
   private val reportListener = object : ReportEventListener {
@@ -251,6 +254,7 @@ class WireMockSystem(
       .build(reporter.currentTestId())
 
   private var wireMock: WireMockServer
+  private val stubInstaller: WireMockStubInstaller
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val dynamicResponses = WireMockDynamicResponses()
 
@@ -265,6 +269,7 @@ class WireMockSystem(
     }
     stoveExtensions.map { cfg.extensions(it) }
     wireMock = WireMockServer(cfg.let(ctx.configure))
+    stubInstaller = WireMockStubInstaller(wireMock, ::recordStub)
     stoveExtensions.filterIsInstance<WireMockVacuumCleaner>().forEach { it.wireMock(wireMock) }
   }
 
@@ -287,6 +292,169 @@ class WireMockSystem(
    * Stops the WireMock server.
    */
   override suspend fun stop(): Unit = wireMock.shutdownServer()
+
+  /**
+   * Registers a GET stub with the structured experimental DSL.
+   *
+   * The URL is matched as a path so query parameters can be declared independently.
+   */
+  @ExperimentalStoveApi
+  suspend fun mockGet(
+    url: String,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem = stub(RequestMethod.GET, path(url), name, configure)
+
+  /** Registers a POST stub with the structured experimental DSL. */
+  @ExperimentalStoveApi
+  suspend fun mockPost(
+    url: String,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem = stub(RequestMethod.POST, path(url), name, configure)
+
+  /** Registers a PUT stub with the structured experimental DSL. */
+  @ExperimentalStoveApi
+  suspend fun mockPut(
+    url: String,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem = stub(RequestMethod.PUT, path(url), name, configure)
+
+  /** Registers a PATCH stub with the structured experimental DSL. */
+  @ExperimentalStoveApi
+  suspend fun mockPatch(
+    url: String,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem = stub(RequestMethod.PATCH, path(url), name, configure)
+
+  /** Registers a DELETE stub with the structured experimental DSL. */
+  @ExperimentalStoveApi
+  suspend fun mockDelete(
+    url: String,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem = stub(RequestMethod.DELETE, path(url), name, configure)
+
+  /** Registers a HEAD stub with the structured experimental DSL. */
+  @ExperimentalStoveApi
+  suspend fun mockHead(
+    url: String,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem = stub(RequestMethod.HEAD, path(url), name, configure)
+
+  /** Builds a reusable request specification. */
+  @ExperimentalStoveApi
+  fun request(
+    method: RequestMethod,
+    target: RequestTarget,
+    configure: RequestDsl.() -> Unit = {}
+  ): RequestSpec =
+    RequestSpec(
+      RequestDsl(RequestModel(method, target))
+        .apply(configure)
+        .build()
+    )
+
+  /** Registers a structured stub from an HTTP method and target. */
+  @ExperimentalStoveApi
+  suspend fun stub(
+    method: RequestMethod,
+    target: RequestTarget,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem =
+    registerDslStub(
+      name = name,
+      definition = StubDsl(RequestModel(method, target))
+        .apply(configure)
+        .build()
+    )
+
+  /** Registers a structured stub from a reusable request specification. */
+  @ExperimentalStoveApi
+  suspend fun stub(
+    request: RequestSpec,
+    name: String? = null,
+    configure: StubDsl.() -> Unit
+  ): WireMockSystem =
+    registerDslStub(
+      name = name,
+      definition = StubDsl(request.model)
+        .apply(configure)
+        .build()
+    )
+
+  /** Verifies calls using the same reusable request specification used for stubbing. */
+  @ExperimentalStoveApi
+  suspend fun shouldHaveBeenCalled(
+    request: RequestSpec,
+    count: CountMatchingStrategy = exactly(1)
+  ): WireMockSystem =
+    verification.shouldHaveBeenCalled(count) {
+      dslCompiler.pattern(request.model)
+    }
+
+  /** Verifies calls with an inline structured request description. */
+  @ExperimentalStoveApi
+  suspend fun shouldHaveBeenCalled(
+    method: RequestMethod,
+    target: RequestTarget,
+    count: CountMatchingStrategy = exactly(1),
+    configure: RequestDsl.() -> Unit = {}
+  ): WireMockSystem =
+    shouldHaveBeenCalled(
+      request = request(method, target, configure),
+      count = count
+    )
+
+  /** Verifies that no call matched the reusable request specification. */
+  @ExperimentalStoveApi
+  suspend fun shouldNotHaveBeenCalled(request: RequestSpec): WireMockSystem =
+    verification.shouldNotHaveBeenCalled {
+      dslCompiler.pattern(request.model)
+    }
+
+  /** Verifies that no call matched an inline structured request description. */
+  @ExperimentalStoveApi
+  suspend fun shouldNotHaveBeenCalled(
+    method: RequestMethod,
+    target: RequestTarget,
+    configure: RequestDsl.() -> Unit = {}
+  ): WireMockSystem =
+    shouldNotHaveBeenCalled(request(method, target, configure))
+
+  /** Returns current-test calls matching the reusable request specification. */
+  @ExperimentalStoveApi
+  fun callsFor(request: RequestSpec): List<LoggedRequest> =
+    verification.callsFor {
+      dslCompiler.pattern(request.model)
+    }
+
+  /** Returns current-test calls matching an inline structured request description. */
+  @ExperimentalStoveApi
+  fun callsFor(
+    method: RequestMethod,
+    target: RequestTarget,
+    configure: RequestDsl.() -> Unit = {}
+  ): List<LoggedRequest> =
+    callsFor(request(method, target, configure))
+
+  /**
+   * Registers a native WireMock mapping while retaining Stove naming, scoping,
+   * reporting, journaling, and cleanup.
+   */
+  @ExperimentalStoveApi
+  suspend fun rawStub(
+    name: String? = null,
+    configure: RawStubDsl.() -> MappingBuilder
+  ): WireMockSystem {
+    require(name == null || name.isNotBlank()) { "Raw stub name must not be blank" }
+    val mapping = RawStubDsl(serde).configure().build()
+    return registerManagedMapping(name, mapping)
+  }
 
   /**
    * Mocks a GET request with exact URL matching.
@@ -689,7 +857,7 @@ class WireMockSystem(
         url = url,
         method = method,
         metadata = enrichMetadataWithTestId(emptyMap()),
-        recordStub = ::recordStub,
+        installStub = stubInstaller::install,
         block = block
       )
     }
@@ -1161,6 +1329,89 @@ class WireMockSystem(
     }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
   }
 
+  @OptIn(ExperimentalStoveApi::class)
+  private suspend fun registerDslStub(
+    name: String?,
+    definition: DslStubDefinition
+  ): WireMockSystem {
+    require(name == null || name.isNotBlank()) { "Stub name must not be blank" }
+    return registerManagedMappings(name, dslCompiler.mappings(definition))
+  }
+
+  private suspend fun registerManagedMapping(
+    explicitName: String?,
+    mapping: StubMapping
+  ): WireMockSystem =
+    registerManagedMappings(explicitName, listOf(mapping))
+
+  private suspend fun registerManagedMappings(
+    explicitName: String?,
+    mappings: List<StubMapping>
+  ): WireMockSystem {
+    require(mappings.isNotEmpty()) { "At least one stub mapping is required" }
+    val preparedMappings = mappings.map { mapping ->
+      val resolvedName = resolveStubName(explicitName, mapping)
+      mapping.name = resolvedName.name
+      mapping.metadata = Metadata(
+        enrichMetadataWithTestId(mapping.metadata?.toMap().orEmpty())
+      )
+      mapping to resolvedName
+    }
+    val responseMetadata = preparedMappings.map { (mapping) ->
+      mapping.response.status to mapping.response.headers?.all()
+        ?.associate { it.key() to it.values() }
+        .orEmpty()
+    }
+    val isBehaviour = preparedMappings.size > 1
+    val displayName = preparedMappings.first().second.displayName
+    val statuses = responseMetadata.map { it.first }
+    val responseHeaders = responseMetadata.map { it.second }
+
+    report(
+      action = if (isBehaviour) {
+        "Register behaviour stub: $displayName"
+      } else {
+        "Register stub: $displayName"
+      },
+      metadata = mapOf(
+        STATUS_CODE to if (isBehaviour) statuses else statuses.single(),
+        RESPONSE_HEADERS to if (isBehaviour) responseHeaders else responseHeaders.single()
+      )
+    ) {
+      stubInstaller.installAll(preparedMappings.map { it.first })
+    }
+    return this
+  }
+
+  private fun resolveStubName(
+    explicitName: String?,
+    mapping: StubMapping
+  ): ResolvedStubName {
+    val method = mapping.request.method?.value() ?: "ANY"
+    val target = mapping.request.url
+      ?: mapping.request.urlPath
+      ?: mapping.request.urlPattern
+      ?: mapping.request.urlPathPattern
+      ?: mapping.request.urlPathTemplate
+      ?: mapping.request.urlMatcher?.toString()
+      ?: "<any URL>"
+    val inferredName = "$method $target"
+    val description = explicitName
+      ?.trim()
+      ?.takeIf { it.isNotEmpty() }
+      ?: mapping.name
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+
+    return ResolvedStubName(
+      name = description ?: inferredName,
+      displayName = description
+        ?.takeUnless { it == inferredName }
+        ?.let { "$it [$inferredName]" }
+        ?: inferredName
+    )
+  }
+
   private suspend fun registerStub(
     action: String,
     input: Option<Any> = None,
@@ -1174,8 +1425,7 @@ class WireMockSystem(
   }
 
   private fun registerStub(request: MappingBuilder) {
-    val stub = wireMock.stubFor(request.withId(UUID.randomUUID()))
-    recordStub(stub)
+    stubInstaller.install(request)
   }
 
   private fun recordStub(stub: StubMapping) {
@@ -1340,11 +1590,7 @@ class WireMockSystem(
     body.map {
       request
         .withRequestBody(
-          equalToJson(
-            serde.serialize(it).decodeToString(),
-            true,
-            false
-          )
+          createWireMockJsonEqualityMatcher(it, serde, true, false)
         ).withHeader(CONTENT_TYPE, ContainsPattern(APPLICATION_JSON))
     }
   }
@@ -1363,11 +1609,7 @@ class WireMockSystem(
     }
     responseBody.map { mockResponse.withBody(serde.serialize(it)) }
     delay?.let {
-      require(!it.isNegative()) { "WireMock response delay cannot be negative" }
-      require(!it.isInfinite()) { "WireMock response delay must be finite" }
-      val delayMs = it.inWholeMilliseconds
-      require(delayMs <= Int.MAX_VALUE) { "WireMock response delay must fit in Int milliseconds" }
-      mockResponse.withFixedDelay(delayMs.toInt())
+      mockResponse.withFixedDelay(it.toWireMockDelayMilliseconds())
     }
     return mockResponse
   }
@@ -1387,4 +1629,9 @@ class WireMockSystem(
     @Suppress("unused")
     fun WireMockSystem.server(): WireMockServer = wireMock
   }
+
+  private data class ResolvedStubName(
+    val name: String,
+    val displayName: String
+  )
 }

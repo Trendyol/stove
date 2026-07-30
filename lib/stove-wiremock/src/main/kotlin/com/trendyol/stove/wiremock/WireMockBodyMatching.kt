@@ -10,7 +10,7 @@ internal fun MappingBuilder.configureBodyContaining(
   serde: StoveSerde<Any, ByteArray>
 ) {
   requestContaining.forEach { (key, value) ->
-    val matcher = createValueMatcher(value, serde)
+    val matcher = createWireMockValueMatcher(value, serde)
     val jsonPath = WireMockJsonPath.field(key)
     withRequestBody(matchingJsonPath(jsonPath, matcher))
   }
@@ -21,13 +21,13 @@ internal fun RequestPatternBuilder.configureBodyContaining(
   serde: StoveSerde<Any, ByteArray>
 ) {
   requestContaining.forEach { (key, value) ->
-    val matcher = createValueMatcher(value, serde)
+    val matcher = createWireMockValueMatcher(value, serde)
     val jsonPath = WireMockJsonPath.field(key)
     withRequestBody(matchingJsonPath(jsonPath, matcher))
   }
 }
 
-private fun createValueMatcher(
+internal fun createWireMockValueMatcher(
   value: Any,
   serde: StoveSerde<Any, ByteArray>
 ): StringValuePattern = when (value) {
@@ -38,3 +38,15 @@ private fun createValueMatcher(
   is Collection<*> -> equalToJson(serde.serialize(value).decodeToString(), true, true)
   else -> equalToJson(serde.serialize(value).decodeToString(), true, true)
 }
+
+internal fun createWireMockJsonEqualityMatcher(
+  value: Any,
+  serde: StoveSerde<Any, ByteArray>,
+  ignoreArrayOrder: Boolean,
+  ignoreExtraElements: Boolean
+): StringValuePattern =
+  equalToJson(
+    serde.serialize(value).decodeToString(),
+    ignoreArrayOrder,
+    ignoreExtraElements
+  )
