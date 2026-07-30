@@ -141,6 +141,9 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         actual: event.payload.actual,
         error: event.payload.error,
         trace_id: event.payload.trace_id,
+        assertion_id: event.payload.assertion_id,
+        attempt_count: event.payload.attempt_count,
+        failure_count: event.payload.failure_count,
       };
 
       queryClient.setQueryData<Entry[]>(
@@ -446,12 +449,35 @@ function updateCachedTests(
 }
 
 function appendEntries(entries: Entry[] | undefined, incoming: Entry): Entry[] {
-  if (entries?.some((entry) => entry.id === incoming.id)) {
+  if (incoming.id !== 0 && entries?.some((entry) => entry.id === incoming.id)) {
     return entries;
   }
-  return [...(entries ?? []), incoming].sort((left, right) =>
-    left.timestamp.localeCompare(right.timestamp),
+
+  const existing = entries ?? [];
+  const assertionIndex = existing.findIndex(
+    (entry) => entry.assertion_id === incoming.assertion_id,
   );
+  if (assertionIndex < 0) {
+    return [...existing, incoming].sort((left, right) =>
+      left.timestamp.localeCompare(right.timestamp),
+    );
+  }
+
+  const previous = existing[assertionIndex];
+  const latest =
+    incoming.attempt_count > previous.attempt_count ||
+    (incoming.attempt_count === previous.attempt_count && incoming.timestamp > previous.timestamp)
+      ? incoming
+      : previous;
+  const correlated = {
+    ...latest,
+    id: previous.id,
+    attempt_count: Math.max(previous.attempt_count, incoming.attempt_count),
+    failure_count: Math.max(previous.failure_count, incoming.failure_count),
+  };
+  return existing
+    .map((entry, index) => (index === assertionIndex ? correlated : entry))
+    .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
 }
 
 function appendSpan(spans: Span[] | undefined, incoming: Span): Span[] {
@@ -545,20 +571,28 @@ function mergeTests(persisted: Test[], cached: Test[]): Test[] {
 }
 
 function mergeEntries(persisted: Entry[], cached: Entry[]): Entry[] {
-  return mergeEvidenceRecords(
-    persisted,
-    cached,
-    (entry) =>
-      [
-        entry.run_id,
-        entry.test_id,
-        entry.timestamp,
-        entry.system,
-        entry.action,
-        entry.result,
-        entry.trace_id,
-      ].join("\u0000"),
-    (left, right) => left.timestamp.localeCompare(right.timestamp),
+  const byAssertion = new Map(persisted.map((entry) => [entry.assertion_id, entry]));
+  for (const live of cached) {
+    const stored = byAssertion.get(live.assertion_id);
+    if (!stored) {
+      byAssertion.set(live.assertion_id, live);
+      continue;
+    }
+
+    const latest =
+      live.attempt_count > stored.attempt_count ||
+      (live.attempt_count === stored.attempt_count && live.timestamp > stored.timestamp)
+        ? live
+        : stored;
+    byAssertion.set(live.assertion_id, {
+      ...latest,
+      id: stored.id,
+      attempt_count: Math.max(stored.attempt_count, live.attempt_count),
+      failure_count: Math.max(stored.failure_count, live.failure_count),
+    });
+  }
+  return [...byAssertion.values()].sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
   );
 }
 

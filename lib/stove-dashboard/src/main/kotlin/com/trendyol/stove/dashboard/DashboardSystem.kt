@@ -34,6 +34,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -70,11 +71,10 @@ class DashboardSystem(
   private val testFailures = ConcurrentHashMap<String, String>()
   private val failureSnapshotTaken = ConcurrentHashMap.newKeySet<String>()
   private var mockDiagnosticListenersRegistered = false
+  private val acceptingEvents = AtomicBoolean(false)
 
   override suspend fun run() {
     emitter = DashboardEmitter(options.cliHost, options.cliPort)
-    stove.addReportListener(this)
-    registerSpanListener()
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {
@@ -90,6 +90,9 @@ class DashboardSystem(
           .build()
       }
     )
+    acceptingEvents.set(true)
+    stove.addReportListener(this)
+    registerSpanListener()
     registerMockDiagnosticListeners()
   }
 
@@ -98,61 +101,75 @@ class DashboardSystem(
   }
 
   override fun onTestStarted(ctx: StoveTestContext) {
-    totalTests++
-    testStartTimes[ctx.testId] = Instant.now()
-    emitter.tryEmit(
-      dashboardEvent {
-        testStarted = TestStartedEvent.newBuilder()
-          .setTestId(ctx.testId)
-          .setTestName(ctx.testName)
-          .setSpecName(ctx.specName ?: "")
-          .setTimestamp(now())
-          .addAllTestPath(ctx.testPath)
-          .build()
-      }
-    )
+    lifecycleLock.withLock {
+      if (!acceptingEvents.get()) return
+      totalTests++
+      testStartTimes[ctx.testId] = Instant.now()
+      emitter.tryEmit(
+        dashboardEvent {
+          testStarted = TestStartedEvent.newBuilder()
+            .setTestId(ctx.testId)
+            .setTestName(ctx.testName)
+            .setSpecName(ctx.specName ?: "")
+            .setTimestamp(now())
+            .addAllTestPath(ctx.testPath)
+            .build()
+        }
+      )
+    }
   }
 
   override fun onTestFailed(testId: String, error: String) {
-    testFailures[testId] = error
+    lifecycleLock.withLock {
+      if (!acceptingEvents.get() || !testStartTimes.containsKey(testId)) return
+      testFailures[testId] = error
+    }
   }
 
   override fun onTestEnded(testId: String) {
     lifecycleLock.withLock {
+      if (!acceptingEvents.get()) return
       finishTestIfOpen(testId)
     }
   }
 
   override fun onEntryRecorded(entry: ReportEntry) {
-    emitter.tryEmit(
-      dashboardEvent {
-        entryRecorded = EntryRecordedEvent.newBuilder()
-          .setTestId(entry.testId)
-          .setTimestamp(now())
-          .setSystem(entry.system)
-          .setAction(entry.action)
-          .setResult(entry.result.name)
-          .setInput(entry.input.getOrElse { "" }.toString())
-          .setOutput(entry.output.getOrElse { "" }.toString())
-          .putAllMetadata(entry.metadata.mapValues { it.value.toString() })
-          .setExpected(entry.expected.getOrElse { "" }.toString())
-          .setActual(entry.actual.getOrElse { "" }.toString())
-          .setError(entry.error.getOrElse { "" })
-          .setTraceId(entry.traceId.getOrElse { "" })
-          .build()
+    val shouldCaptureFailureSnapshot = lifecycleLock.withLock {
+      if (!acceptingEvents.get() || !testStartTimes.containsKey(entry.testId)) {
+        return@withLock false
       }
-    )
-    if (entry.isFailed) {
-      testFailures.putIfAbsent(entry.testId, entry.error.getOrElse { "Assertion failed" })
-      // State at the moment of failure genuinely differs from state at test end
-      // (stubs get consumed, cleanup runs); capture the failing system once per test.
-      if (failureSnapshotTaken.add(entry.testId)) {
-        emitSnapshots(entry.testId, trigger = TRIGGER_FAILURE) { it.reportSystemName == entry.system }
+      emitter.tryEmit(
+        dashboardEvent {
+          entryRecorded = EntryRecordedEvent.newBuilder()
+            .setTestId(entry.testId)
+            .setTimestamp(entry.timestamp.toTimestamp())
+            .setSystem(entry.system)
+            .setAction(entry.action)
+            .setResult(entry.result.name)
+            .setInput(entry.input.getOrElse { "" }.toString())
+            .setOutput(entry.output.getOrElse { "" }.toString())
+            .putAllMetadata(entry.metadata.mapValues { it.value.toString() })
+            .setExpected(entry.expected.getOrElse { "" }.toString())
+            .setActual(entry.actual.getOrElse { "" }.toString())
+            .setError(entry.error.getOrElse { "" })
+            .setTraceId(entry.traceId.getOrElse { "" })
+            .build()
+        }
+      )
+      entry.isFailed && failureSnapshotTaken.add(entry.testId)
+    }
+    if (shouldCaptureFailureSnapshot) {
+      // Entry failures are attempt-level diagnostics. The test framework's terminal
+      // callback is the only authority for the test status, so an `eventually` retry
+      // can fail here and still finish as a passed test.
+      emitSnapshots(entry.testId, trigger = TRIGGER_FAILURE) {
+        it.reportSystemName == entry.system
       }
     }
   }
 
   override fun onInteraction(interaction: MockInteraction) {
+    if (!acceptingEvents.get()) return
     emitter.tryEmit(
       dashboardEvent {
         mockInteraction = MockInteractionEvent.newBuilder()
@@ -185,6 +202,7 @@ class DashboardSystem(
   }
 
   override fun onWarning(warning: MockWarning) {
+    if (!acceptingEvents.get()) return
     emitter.tryEmit(
       dashboardEvent {
         mockWarning = MockWarningEvent.newBuilder()
@@ -208,6 +226,7 @@ class DashboardSystem(
   }
 
   override fun onSpanRecorded(span: SpanInfo) {
+    if (!acceptingEvents.get()) return
     emitter.tryEmit(
       dashboardEvent {
         spanRecorded = SpanRecordedEvent.newBuilder()
@@ -236,7 +255,8 @@ class DashboardSystem(
 
   override fun close() {
     lifecycleLock.withLock {
-      if (!::emitter.isInitialized) return
+      if (!::emitter.isInitialized || !acceptingEvents.compareAndSet(true, false)) return
+      stove.removeReportListener(this)
       removeMockDiagnosticListeners()
       finalizeOpenTests()
       val duration = Duration.between(startTime, Instant.now()).toMillis()
@@ -251,7 +271,6 @@ class DashboardSystem(
             .build()
         }
       )
-      stove.removeReportListener(this)
       emitter.close()
     }
   }
@@ -260,36 +279,41 @@ class DashboardSystem(
     val stillRunning = testStartTimes.keys.toList()
     stillRunning.forEach { testId ->
       logger.debug("Finalizing still-running test {} during dashboard shutdown", testId)
-      finishTestIfOpen(testId)
+      finishTestIfOpen(testId, interrupted = true)
     }
   }
 
-  private fun finishTestIfOpen(testId: String) {
+  private fun finishTestIfOpen(testId: String, interrupted: Boolean = false) {
     val startedAt = testStartTimes.remove(testId) ?: run {
       logger.debug("Ignoring duplicate or late test end for {}", testId)
       return
     }
 
+    val failure = testFailures.remove(testId)
     emitSnapshots(testId, trigger = TRIGGER_TEST_END)
     failureSnapshotTaken.remove(testId)
     val durationMs = Duration.between(startedAt, Instant.now()).toMillis()
-    val failure = testFailures.remove(testId)
-    val status = if (failure != null) "FAILED" else "PASSED"
+    val status = when {
+      failure != null -> "FAILED"
+      interrupted -> "ERROR"
+      else -> "PASSED"
+    }
+    val error = failure ?: if (interrupted) "Test ended before the framework reported an outcome" else ""
     emitter.tryEmit(
       dashboardEvent {
         testEnded = TestEndedEvent.newBuilder()
           .setTestId(testId)
           .setStatus(status)
           .setDurationMs(durationMs)
-          .setError(failure ?: "")
+          .setError(error)
           .setTimestamp(now())
           .build()
       }
     )
-    if (failure != null) {
-      failedTests++
-    } else {
+    if (status == "PASSED") {
       passedTests++
+    } else {
+      failedTests++
     }
   }
 

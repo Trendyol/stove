@@ -133,6 +133,10 @@ pub struct Entry {
   pub actual: Option<String>,
   pub error: Option<String>,
   pub trace_id: Option<String>,
+  /// Best-effort identity shared by repeated invocations of the same assertion.
+  pub assertion_id: String,
+  pub attempt_count: i64,
+  pub failure_count: i64,
 }
 
 /// A span in a distributed trace.
@@ -234,6 +238,7 @@ pub struct NewEntry {
   pub actual: String,
   pub error: String,
   pub trace_id: String,
+  pub assertion_id: String,
 }
 
 /// Data required to save a new mock interaction.

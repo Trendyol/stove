@@ -44,6 +44,10 @@ pub fn create_router_with_ingestor(
       get(super::routes::get_entries),
     )
     .route(
+      "/runs/{run_id}/tests/{test_id}/entries/raw",
+      get(super::routes::get_raw_entries),
+    )
+    .route(
       "/runs/{run_id}/tests/{test_id}/spans",
       get(super::routes::get_test_spans),
     )

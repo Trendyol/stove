@@ -20,6 +20,14 @@ pub async fn get_entries(
   Ok(Json(entries))
 }
 
+pub async fn get_raw_entries(
+  State(state): State<AppState>,
+  Path((run_id, test_id)): Path<(String, String)>,
+) -> Result<Json<Vec<Entry>>, crate::error::AppError> {
+  let entries = state.repository.get_raw_entries(&run_id, &test_id)?;
+  Ok(Json(entries))
+}
+
 pub async fn get_snapshots(
   State(state): State<AppState>,
   Path((run_id, test_id)): Path<(String, String)>,

@@ -72,6 +72,9 @@ export interface Entry {
   actual: string | null;
   error: string | null;
   trace_id: string | null;
+  assertion_id: string;
+  attempt_count: number;
+  failure_count: number;
 }
 
 export interface Span {
@@ -189,6 +192,9 @@ export interface LiveEntryRecordedPayload {
   actual: string | null;
   error: string | null;
   trace_id: string | null;
+  assertion_id: string;
+  attempt_count: number;
+  failure_count: number;
 }
 
 export interface LiveSpanRecordedPayload {

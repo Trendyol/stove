@@ -86,6 +86,9 @@ pub(super) fn entry_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Entry>
     actual: row.get(11)?,
     error: row.get(12)?,
     trace_id: row.get(13)?,
+    assertion_id: row.get(14)?,
+    attempt_count: row.get(15)?,
+    failure_count: row.get(16)?,
   })
 }
 

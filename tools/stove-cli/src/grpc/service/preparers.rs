@@ -24,12 +24,14 @@ use crate::storage::models::NewEntry;
 use crate::storage::models::NewMockInteraction;
 use crate::storage::models::NewMockWarning;
 use crate::storage::models::NewSpan;
+use uuid::Uuid;
 
 use super::convert::PreparedDashboardEvent;
 use super::convert::extract_test_id;
 use super::convert::format_timestamp;
 use super::convert::non_empty;
 use super::convert::run_status;
+use super::state::AssertionAttempts;
 use super::state::LiveState;
 use super::state::ensure_run_known;
 use super::state::ensure_test_known;
@@ -140,6 +142,7 @@ pub(super) fn prepare_test_ended(
 ) -> AppResult<PreparedDashboardEvent> {
   ensure_test_known(state, run_id, &event.test_id)?;
   let ended_at = format_timestamp(event.timestamp.as_ref());
+  state.end_test(run_id, &event.test_id);
   Ok(PreparedDashboardEvent {
     live: live_event(
       run_id,
@@ -179,6 +182,27 @@ pub(super) fn prepare_entry_recorded(
 
   let metadata = serde_json::to_string(&event.metadata)?;
   let timestamp = format_timestamp(event.timestamp.as_ref());
+  let correlation_id = assertion_correlation_key(event)?;
+  let occurrence_id = Uuid::new_v4().to_string();
+  let correlated_attempts = state.record_assertion_attempt(
+    run_id,
+    &event.test_id,
+    &correlation_id,
+    &occurrence_id,
+    matches!(event.result.as_str(), "FAILED" | "ERROR"),
+  );
+  // A passing entry with no preceding failed attempt is a standalone operation,
+  // not a retry. Give it a unique ID so repeated successful calls stay visible.
+  let (assertion_id, attempts) = match correlated_attempts {
+    Some(correlated) => correlated,
+    None => (
+      occurrence_id,
+      AssertionAttempts {
+        attempt_count: 1,
+        failure_count: 0,
+      },
+    ),
+  };
   let entry = NewEntry {
     run_id: run_id.to_string(),
     test_id: event.test_id.clone(),
@@ -193,6 +217,7 @@ pub(super) fn prepare_entry_recorded(
     actual: event.actual.clone(),
     error: event.error.clone(),
     trace_id: event.trace_id.clone(),
+    assertion_id: assertion_id.clone(),
   };
 
   Ok(PreparedDashboardEvent {
@@ -213,11 +238,27 @@ pub(super) fn prepare_entry_recorded(
         actual: non_empty(&event.actual),
         error: non_empty(&event.error),
         trace_id: non_empty(&event.trace_id),
+        assertion_id,
+        attempt_count: attempts.attempt_count,
+        failure_count: attempts.failure_count,
       }),
     ),
     persisted: PersistedDashboardEvent::EntryRecorded(entry),
     flush: FlushBehavior::Deferred,
   })
+}
+
+/// The current reporting protocol does not carry a call-site identity, so the CLI
+/// derives a best-effort correlation signature from the assertion's semantic
+/// action, input, and expectation. Result-specific fields are deliberately excluded.
+fn assertion_correlation_key(event: &proto::EntryRecordedEvent) -> AppResult<String> {
+  Ok(serde_json::to_string(&[
+    &event.test_id,
+    &event.system,
+    &event.action,
+    &event.input,
+    &event.expected,
+  ])?)
 }
 
 pub(super) fn prepare_span_recorded(

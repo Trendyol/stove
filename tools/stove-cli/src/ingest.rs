@@ -154,6 +154,9 @@ pub struct LiveEntryRecordedPayload {
   pub actual: Option<String>,
   pub error: Option<String>,
   pub trace_id: Option<String>,
+  pub assertion_id: String,
+  pub attempt_count: i64,
+  pub failure_count: i64,
 }
 
 #[derive(Clone, Debug, Serialize)]

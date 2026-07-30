@@ -41,6 +41,9 @@ use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 use crate::storage::models::Test;
 
+const NORMALIZED_ASSERTION_ID_SQL: &str =
+  "CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END";
+
 pub struct Repository {
   write_db: Arc<Mutex<Database>>,
   read_db: Arc<Mutex<Database>>,
@@ -126,9 +129,51 @@ impl Repository {
 
   pub fn get_entries(&self, run_id: &str, test_id: &str) -> Result<Vec<Entry>> {
     let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(
-            "SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata, expected, actual, error, trace_id FROM entries WHERE run_id = ?1 AND test_id = ?2 ORDER BY timestamp",
-        )?;
+    let sql = format!(
+      "WITH correlated AS (
+         SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
+                metadata, expected, actual, error, trace_id,
+                {NORMALIZED_ASSERTION_ID_SQL} AS assertion_id
+           FROM entries
+          WHERE run_id = ?1 AND test_id = ?2
+       ),
+       ranked AS (
+         SELECT *,
+                COUNT(*) OVER (PARTITION BY assertion_id) AS attempt_count,
+                SUM(CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END)
+                  OVER (PARTITION BY assertion_id) AS failure_count,
+                ROW_NUMBER() OVER (
+                  PARTITION BY assertion_id
+                  ORDER BY id DESC
+                ) AS attempt_rank
+           FROM correlated
+       )
+       SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
+              metadata, expected, actual, error, trace_id, assertion_id,
+              attempt_count, failure_count
+         FROM ranked
+        WHERE attempt_rank = 1
+        ORDER BY timestamp, id"
+    );
+    let mut stmt = db.conn().prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![run_id, test_id], entry_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  /// Return the append-only entry history without assertion correlation.
+  pub fn get_raw_entries(&self, run_id: &str, test_id: &str) -> Result<Vec<Entry>> {
+    let db = self.lock_read_db();
+    let sql = format!(
+      "SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
+              metadata, expected, actual, error, trace_id,
+              {NORMALIZED_ASSERTION_ID_SQL} AS assertion_id,
+              1 AS attempt_count,
+              CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END AS failure_count
+         FROM entries
+        WHERE run_id = ?1 AND test_id = ?2
+        ORDER BY timestamp, id"
+    );
+    let mut stmt = db.conn().prepare(&sql)?;
     let rows = stmt.query_map(rusqlite::params![run_id, test_id], entry_from_row)?;
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
