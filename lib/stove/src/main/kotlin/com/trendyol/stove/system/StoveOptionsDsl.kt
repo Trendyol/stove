@@ -1,6 +1,7 @@
 package com.trendyol.stove.system
 
 import com.trendyol.stove.reporting.ReportRenderer
+import com.trendyol.stove.reporting.isRunningOnCI
 import com.trendyol.stove.system.abstractions.StateStorageFactory
 import com.trendyol.stove.system.annotations.StoveDsl
 import org.slf4j.LoggerFactory
@@ -108,11 +109,7 @@ class StoveOptionsDsl {
     options = options.copy(failureRenderer = renderer)
   }
 
-  private fun isRunningOnCI(): Boolean = CI_ENV_VARS.any { System.getenv(it) == "true" }
-
-  companion object {
-    private val CI_ENV_VARS = listOf("CI", "GITLAB_CI", "GITHUB_ACTIONS")
-  }
+  companion object
 }
 
 /**

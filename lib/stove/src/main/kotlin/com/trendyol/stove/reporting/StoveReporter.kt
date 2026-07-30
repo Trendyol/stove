@@ -100,14 +100,14 @@ class StoveReporter(
     currentTestOrNull()?.let { renderer.render(it, collectSnapshots()) } ?: ""
 
   /** Render report only if there are failures */
-  fun dumpIfFailed(renderer: ReportRenderer = PrettyConsoleRenderer): String =
+  fun dumpIfFailed(renderer: ReportRenderer = PrettyConsoleRenderer.ciAware()): String =
     currentTestOrNull()
       ?.takeIf { it.hasFailures() }
       ?.let { renderer.render(it, collectSnapshots()) }
       ?: ""
 
   /** Print report to console only if there are failures */
-  fun printIfFailed(renderer: ReportRenderer = PrettyConsoleRenderer): Unit =
+  fun printIfFailed(renderer: ReportRenderer = PrettyConsoleRenderer.ciAware()): Unit =
     dumpIfFailed(renderer).takeIf { it.isNotEmpty() }?.let(::println) ?: Unit
 
   /** Collect snapshots from all reporting systems */

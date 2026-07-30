@@ -186,7 +186,7 @@ class PrettyConsoleRendererTest :
       rendered shouldContain "Input: CreateProductRequest("
       rendered shouldContain "Output: {\"productId\":3"
       (rendered.lines().maxOf { it.length } <= 160) shouldBe true
-      rendered shouldContain "\n│             ST_03eacf0a-6c1d-4f34-a, requestedBarcode=BARCODE_12345678901234567890, supplierId=99)"
+      rendered shouldContain "\n│             code=TEST_03eacf0a-6c1d-4f34-a, requestedBarcode=BARCODE_12345678901234567890, supplierId=99)"
       rendered shouldContain "\n│              \"BARCODE_12345678901234567890\"}]}]}"
     }
 
@@ -221,6 +221,230 @@ class PrettyConsoleRendererTest :
       val width = rendered.lines().first { it.isNotBlank() }.length
 
       (width <= 160) shouldBe true
+    }
+
+    test("compact output keeps failed and recent timeline entries with complete counts") {
+      val report = TestReport("test-compact-timeline", "compact timeline")
+      report.record(
+        ReportEntry.failure(
+          system = "Kafka",
+          testId = report.testId,
+          action = "failed-message-0",
+          error = "expected message was not published"
+        )
+      )
+      (1..4).forEach { index ->
+        report.record(
+          ReportEntry.success(
+            system = "Kafka",
+            testId = report.testId,
+            action = "publish-message-$index"
+          )
+        )
+      }
+
+      val renderer = PrettyConsoleRenderer.compact(
+        ConsoleReportLimits(
+          maxTimelineEntries = 2,
+          maxCollectionItems = 2,
+          maxValueCharacters = 100
+        )
+      )
+      val rendered = renderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "4 passed"
+      rendered shouldContain "1 failed"
+      rendered shouldContain "5 total"
+      rendered shouldContain "3 step(s) omitted from compact output"
+      rendered shouldContain "#1 ✗ FAILED failed-message-0"
+      rendered shouldContain "#5 ✓ PASSED publish-message-4"
+      rendered shouldNotContain "Action: publish-message-1"
+    }
+
+    test("compact output keeps recent snapshot items and shortens large values") {
+      val report = TestReport("test-compact-snapshot", "compact snapshot")
+      val longPayload = "BEGIN-" + "x".repeat(80) + "-END"
+      val snapshot = SystemSnapshot(
+        system = "Kafka",
+        summary = "Consumed (this test): 5",
+        state = mapOf(
+          "consumed" to List(5) { index ->
+            mapOf(
+              "topic" to "orders",
+              "message" to if (index == 4) longPayload else "payload-$index"
+            )
+          }
+        )
+      )
+      val renderer = PrettyConsoleRenderer.compact(
+        ConsoleReportLimits(
+          maxTimelineEntries = 2,
+          maxCollectionItems = 2,
+          maxValueCharacters = 20
+        )
+      )
+
+      val rendered = renderer.render(report, listOf(snapshot)).stripAnsi()
+
+      rendered shouldContain "consumed: 5 item(s)"
+      rendered shouldContain "3 earlier item(s) omitted in compact output"
+      rendered shouldContain "[3]"
+      rendered shouldContain "[4]"
+      rendered shouldNotContain "payload-0"
+      rendered shouldContain "BEGIN-"
+      rendered shouldContain "character(s) omitted in compact output"
+      rendered shouldContain "-END"
+    }
+
+    test("compact collection limits also apply to timeline diagnostic values") {
+      val report = TestReport("test-compact-details", "compact details")
+      report.record(
+        ReportEntry.failure(
+          system = "HTTP",
+          testId = report.testId,
+          action = "collection failure",
+          error = "boom",
+          input = Some(listOf("old-value", "recent-value-1", "recent-value-2"))
+        )
+      )
+      val renderer = PrettyConsoleRenderer.compact(
+        ConsoleReportLimits(maxCollectionItems = 2)
+      )
+
+      val rendered = renderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "1 earlier item(s) omitted in compact output"
+      rendered shouldContain "[1] recent-value-1"
+      rendered shouldContain "[2] recent-value-2"
+      rendered shouldNotContain "old-value"
+    }
+
+    test("compact timeline retains the most recent failures when failures exceed the limit") {
+      val report = TestReport("test-many-failures", "many failures")
+      repeat(3) { index ->
+        report.record(
+          ReportEntry.failure(
+            system = "HTTP",
+            testId = report.testId,
+            action = "failure-$index",
+            error = "boom-$index"
+          )
+        )
+      }
+      val renderer = PrettyConsoleRenderer.compact(
+        ConsoleReportLimits(maxTimelineEntries = 2)
+      )
+
+      val rendered = renderer.render(report, emptyList()).stripAnsi()
+
+      rendered shouldContain "1 step(s) omitted from compact output"
+      rendered shouldNotContain "Action: failure-0"
+      rendered shouldContain "#2 ✗ FAILED failure-1"
+      rendered shouldContain "#3 ✗ FAILED failure-2"
+    }
+
+    test("CI-aware renderer only compacts when CI is detected") {
+      val report = TestReport("test-ci-aware", "CI-aware output")
+      repeat(3) { index ->
+        report.record(ReportEntry.success("Kafka", report.testId, "message-$index"))
+      }
+      val limits = ConsoleReportLimits(
+        maxTimelineEntries = 1,
+        maxCollectionItems = 1,
+        maxValueCharacters = 100
+      )
+
+      val localOutput = PrettyConsoleRenderer
+        .ciAware(limits) { false }
+        .render(report, emptyList())
+        .stripAnsi()
+      val ciOutput = PrettyConsoleRenderer
+        .ciAware(limits) { true }
+        .render(report, emptyList())
+        .stripAnsi()
+
+      localOutput shouldContain "#1 ✓ PASSED message-0"
+      localOutput shouldNotContain "step(s) omitted from compact output"
+      ciOutput shouldContain "2 step(s) omitted from compact output"
+      ciOutput shouldNotContain "Action: message-0"
+      ciOutput shouldContain "#3 ✓ PASSED message-2"
+    }
+
+    test("compact output limits maps snapshots and nesting depth") {
+      val report = TestReport("test-container-limits", "bounded containers")
+      val nestedState = linkedMapOf<String, Any>(
+        "largeMap" to linkedMapOf(
+          "first" to 1,
+          "second" to 2,
+          "third" to 3,
+          "fourth" to 4
+        ),
+        "deepMap" to mapOf(
+          "level1" to mapOf(
+            "level2" to mapOf("value" to "too deep")
+          )
+        )
+      )
+      val snapshots = listOf(
+        SystemSnapshot("Kafka", nestedState, "First snapshot"),
+        SystemSnapshot("WireMock", emptyMap(), "Second snapshot")
+      )
+      val renderer = PrettyConsoleRenderer.compact(
+        ConsoleReportLimits(
+          maxMapEntries = 2,
+          maxSnapshots = 1,
+          maxNestingDepth = 2
+        )
+      )
+
+      val rendered = renderer.render(report, snapshots).stripAnsi()
+
+      rendered shouldContain "2 map entry(s) omitted from compact output"
+      rendered shouldContain "1 snapshot(s) omitted from compact output"
+      rendered shouldContain "<MAX DEPTH REACHED>"
+      rendered shouldNotContain "Second snapshot"
+    }
+
+    test("compact output applies a hard limit to the complete rendered report") {
+      val report = TestReport("test-output-limit", "bounded output")
+      report.record(
+        ReportEntry.failure(
+          system = "HTTP",
+          testId = report.testId,
+          action = "large failure",
+          error = "BEGIN-" + "x".repeat(8_000) + "-END"
+        )
+      )
+      val maxOutputCharacters = 800
+      val renderer = PrettyConsoleRenderer.compact(
+        ConsoleReportLimits(
+          maxValueCharacters = 10_000,
+          maxOutputCharacters = maxOutputCharacters
+        )
+      )
+
+      val rendered = renderer.render(report, emptyList())
+      val plainRendered = rendered.stripAnsi()
+
+      (rendered.length <= maxOutputCharacters) shouldBe true
+      plainRendered shouldContain "character(s) omitted from compact report"
+      plainRendered shouldContain "STOVE TEST EXECUTION REPORT"
+      plainRendered shouldNotContain "\u001B"
+    }
+
+    test("snapshot rendering detects cyclic diagnostic data") {
+      val report = TestReport("test-cycle", "cyclic snapshot")
+      val cyclic = linkedMapOf<String, Any>()
+      cyclic["self"] = cyclic
+      val snapshot = SystemSnapshot(
+        system = "Custom",
+        state = mapOf("cyclic" to cyclic),
+        summary = "Cycle fixture"
+      )
+
+      val rendered = PrettyConsoleRenderer.render(report, listOf(snapshot)).stripAnsi()
+
+      rendered shouldContain "<CYCLE>"
     }
 
     test("renders real-world like report fixture for visual iteration") {

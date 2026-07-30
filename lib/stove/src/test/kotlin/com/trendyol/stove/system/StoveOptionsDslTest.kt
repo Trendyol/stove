@@ -1,5 +1,6 @@
 package com.trendyol.stove.system
 
+import com.trendyol.stove.reporting.isRunningOnCI
 import com.trendyol.stove.system.abstractions.*
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -16,11 +17,7 @@ class StoveOptionsDslTest :
 
     test("should check if running locally") {
       val stoveOptionsDsl = StoveOptionsDsl()
-      stoveOptionsDsl.isRunningLocally() shouldBe (
-        System.getenv("CI") != "true" &&
-          System.getenv("GITLAB_CI") != "true" &&
-          System.getenv("GITHUB_ACTIONS") != "true"
-        )
+      stoveOptionsDsl.isRunningLocally() shouldBe !isRunningOnCI()
     }
 
     test("should enable reuse for test containers") {
