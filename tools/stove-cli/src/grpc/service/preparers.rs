@@ -250,13 +250,14 @@ pub(super) fn prepare_entry_recorded(
 
 /// The current reporting protocol does not carry a call-site identity, so the CLI
 /// derives a best-effort correlation signature from the assertion's semantic
-/// action and input. Outcome fields are deliberately excluded.
+/// action, input, and expectation. Result-specific fields are deliberately excluded.
 fn assertion_correlation_key(event: &proto::EntryRecordedEvent) -> AppResult<String> {
   Ok(serde_json::to_string(&[
     &event.test_id,
     &event.system,
     &event.action,
     &event.input,
+    &event.expected,
   ])?)
 }
 

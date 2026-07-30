@@ -27,12 +27,14 @@ suspend fun <T : Any> runKafkaAssertion(
 
   if (failure == null) {
     reporter.record(
-      ReportEntry.success(
+      ReportEntry.action(
         system = systemName,
         testId = reporter.currentTestId(),
         action = "$assertionName<$typeName>",
+        passed = true,
         output = matchedMessage.toOption(),
-        metadata = mapOf("timeout" to timeout.toString())
+        metadata = mapOf("timeout" to timeout.toString()),
+        expected = expected.some()
       )
     )
   } else {

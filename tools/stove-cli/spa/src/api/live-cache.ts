@@ -449,7 +449,7 @@ function updateCachedTests(
 }
 
 function appendEntries(entries: Entry[] | undefined, incoming: Entry): Entry[] {
-  if (entries?.some((entry) => entry.id === incoming.id)) {
+  if (incoming.id !== 0 && entries?.some((entry) => entry.id === incoming.id)) {
     return entries;
   }
 

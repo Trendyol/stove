@@ -1289,10 +1289,12 @@ class WireMockSystem(
       throw error
     } else {
       reporter.record(
-        ReportEntry.success(
+        ReportEntry.action(
           system = reportSystemName,
           testId = reporter.currentTestId(),
-          action = VALIDATE_ALL_REQUESTS_SHOULD_MATCH
+          action = VALIDATE_ALL_REQUESTS_SHOULD_MATCH,
+          passed = true,
+          expected = WireMockValidationMessages.EXPECTED_NO_UNMATCHED_REQUESTS.some()
         )
       )
     }
