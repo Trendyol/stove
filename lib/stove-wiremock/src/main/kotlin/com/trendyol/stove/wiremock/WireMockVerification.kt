@@ -143,11 +143,7 @@ internal class WireMockVerification(
     val request = RequestPatternBuilder.newRequestPattern(method, urlPatternFn(url))
     requestBody.map {
       request.withRequestBody(
-        equalToJson(
-          serde.serialize(it).decodeToString(),
-          true,
-          false
-        )
+        createWireMockJsonEqualityMatcher(it, serde, true, false)
       )
     }
     request.configureBodyContaining(requestContaining, serde)

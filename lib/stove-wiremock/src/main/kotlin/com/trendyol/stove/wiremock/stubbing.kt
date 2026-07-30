@@ -12,10 +12,10 @@ internal fun stubBehaviour(
   url: String,
   method: (String) -> MappingBuilder,
   metadata: Map<String, Any> = emptyMap(),
-  recordStub: (StubMapping) -> Unit = {},
+  installStub: (MappingBuilder) -> StubMapping = wireMockServer::stubFor,
   block: StubBehaviourBuilder.(StoveSerde<Any, ByteArray>) -> Unit
 ) {
-  val builder = StubBehaviourBuilder(wireMockServer, url, method, metadata, recordStub)
+  val builder = StubBehaviourBuilder(wireMockServer, url, method, metadata, installStub)
   builder.block(serde)
 }
 
@@ -30,16 +30,16 @@ class StubBehaviourBuilder(
   private var stateCounter = 0
   private var initializedCounter = 0
   private var completed = false
-  private var recordStub: (StubMapping) -> Unit = {}
+  private var installStub: (MappingBuilder) -> StubMapping = wireMockServer::stubFor
 
   internal constructor(
     wireMockServer: WireMockServer,
     url: String,
     method: (String) -> MappingBuilder,
     metadata: Map<String, Any> = emptyMap(),
-    recordStub: (StubMapping) -> Unit
+    installStub: (MappingBuilder) -> StubMapping
   ) : this(wireMockServer, url, method, metadata) {
-    this.recordStub = recordStub
+    this.installStub = installStub
   }
 
   fun initially(step: () -> ResponseDefinitionBuilder) {
@@ -110,8 +110,7 @@ class StubBehaviourBuilder(
       .willReturn(response)
       .withMetadata(metadata + extraMetadata)
     setState?.let(mapping::willSetStateTo)
-    val stub = wireMockServer.stubFor(mapping)
-    recordStub(stub)
+    installStub(mapping)
   }
 
   companion object {

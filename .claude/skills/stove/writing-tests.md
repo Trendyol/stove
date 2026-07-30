@@ -492,6 +492,105 @@ kafka {
 
 ## WireMock mocking
 
+Prefer the structured DSL for new tests in 0.26+. It requires no opt-in annotation. Stove APIs may evolve in minor releases; release notes provide migration guidance when they do.
+
+```kotlin
+wiremock {
+    mockGet("/inventory/$productId") {
+        respond {
+            status = 200
+            json(InventoryResponse(available = true))
+        }
+    }
+
+    mockPost("/payments/charge", name = "charge payment") {
+        request {
+            header("X-Tenant", "nl")
+            contentTypeJson()
+            jsonField("order.id", orderId)
+        }
+        respond {
+            status = 200
+            json(PaymentResult(success = true))
+        }
+    }
+}
+```
+
+String verb functions match the URL path. Use `path`, `exactUrl`, or `pathRegex` when building a reusable request:
+
+```kotlin
+wiremock {
+    val chargePayment = request(RequestMethod.POST, path("/payments/charge")) {
+        header("X-Tenant", "nl")
+        jsonField("order.id", orderId)
+    }
+
+    stub(chargePayment) {
+        respond {
+            status = 202
+            text("accepted")
+        }
+    }
+
+    // Exercise the AUT before point-in-time verification.
+
+    shouldHaveBeenCalled(chargePayment, exactly(1))
+    callsFor(chargePayment)
+}
+```
+
+Request blocks support `header`, `query`, `contentTypeJson`, `jsonEqualTo`, `jsonField`, and `jsonPath`. Response blocks support `json`, `jsonNull`, `rawJson`, `text`, `bytes`, `empty`, status, headers, and delay.
+
+Use `behaviour` for retry and recovery journeys. Transient responses are ordered; `thenAlways` is required and remains active:
+
+```kotlin
+wiremock {
+    mockPost("/payments") {
+        behaviour {
+            repeat(2) {
+                respond {
+                    status = 503
+                    json(mapOf("error" to "temporarily unavailable"))
+                }
+            }
+            thenAlways {
+                status = 200
+                json(mapOf("recovered" to true))
+            }
+        }
+    }
+
+    mockGet("/slow") {
+        behaviour {
+            repeat(2) { timeout(2.seconds) }
+            thenAlways { json(mapOf("recovered" to true)) }
+        }
+    }
+}
+```
+
+Use `rawStub(name?)` for native WireMock features while retaining Stove naming, test scoping, reporting, journaling, and cleanup:
+
+```kotlin
+wiremock {
+    rawStub("dynamic order response") {
+        post(urlPathEqualTo("/orders"))
+            .willReturn(aResponse().withTransformers("response-template"))
+    }
+
+    // Existing specialized APIs remain available.
+    mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
+    mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
+        aResponse().withStatus(201).withBody("""{"echo":${request.bodyAsString}}""")
+    }
+}
+```
+
+`rawStub` assigns a managed mapping ID and replaces any `.withId(...)` value from the native builder.
+
+The stable `mock*(statusCode = ...)`, `mock*Containing`, `behaviourFor`, and verification overloads remain available for existing tests:
+
 ```kotlin
 wiremock {
     mockGet(
@@ -500,78 +599,8 @@ wiremock {
         responseBody = InventoryResponse(available = true).some()
     )
 
-    mockPost(
-        url = "/payments/charge",
-        statusCode = 200,
-        responseBody = PaymentResult(success = true).some()
-    )
-}
-
-// PUT, PATCH, DELETE mocks
-wiremock {
-    mockPut(url = "/products/123", statusCode = 200,
-        responseBody = Product("123", "Updated", 899.99).some())
-    mockPatch(url = "/users/123", statusCode = 200,
-        requestBody = mapOf("email" to "new@example.com").some())
-    mockDelete(url = "/products/123", statusCode = 204)
-    mockHead(url = "/products/exists/123", statusCode = 200)
-}
-
-// Partial body matching — match specific fields, ignore the rest
-wiremock {
-    mockPostContaining(
-        url = "/api/orders",
-        requestContaining = mapOf("productId" to 123),
-        statusCode = 201,
-        responseBody = OrderResponse(orderId = "order-123").some()
-    )
-
-    // Deep nested matching with dot notation
-    mockPostContaining(
-        url = "/api/checkout",
-        requestContaining = mapOf(
-            "order.customer.id" to "cust-123",
-            "order.payment.method" to "credit_card"
-        ),
-        statusCode = 200
-    )
-}
-
-// Sequential responses (behavioral mocking)
-wiremock {
-    behaviourFor("/api/service", WireMock::get) {
-        initially { aResponse().withStatus(503) }
-        then { aResponse().withStatus(503) }
-        then { aResponse().withStatus(200).withBody(it.serialize(result)) }
-    }
-}
-
-// Resilience testing (0.26+): faults, latency, retry journeys, dynamic responses
-wiremock {
-    // Network-level fault — client timeout / circuit-breaker tests
-    mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
-
-    // Fixed latency on any mock* / mock*Containing via trailing `delay` param
-    mockGet(url = "/slow", statusCode = 200, responseBody = body.some(), delay = 2.seconds)
-
-    // Retry journey shorthand inside behaviourFor
-    behaviourFor("/payments", ::post) {
-        failsTimes(2, withStatus = 503)
-        thenSucceeds { aResponse().withStatus(200).withBody("""{"recovered":true}""") }
-    }
-
-    // Response computed from the received request at serve time
-    mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
-        aResponse().withStatus(201).withBody("""{"echo":${request.bodyAsString}}""")
-    }
-}
-
-// Verify requests reached the mock (call journal is scoped to the current test)
-wiremock {
-    // Called exactly once (default)
     shouldHaveBeenCalled(RequestMethod.POST, "/payments/charge")
 
-    // With count, headers, query params, partial body matching
     shouldHaveBeenCalled(
         method = RequestMethod.POST,
         url = "/payments/charge",
@@ -581,18 +610,12 @@ wiremock {
         queryParams = mapOf("retry" to "true")
     )
 
-    // Raw WireMock RequestPatternBuilder for anything else
     shouldHaveBeenCalled(exactly(1)) {
         postRequestedFor(urlEqualTo("/payments/charge"))
             .withRequestBody(matchingJsonPath("$.amount"))
     }
 
-    // Negative
     shouldNotHaveBeenCalled(RequestMethod.DELETE, "/payments/charge")
-
-    // Inspect matching LoggedRequests directly
-    val calls = callsFor(RequestMethod.POST, "/payments/charge")
-    calls.size shouldBe 2
 }
 ```
 
