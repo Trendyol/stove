@@ -27,6 +27,10 @@ const MIGRATIONS: &[(&str, &str)] = &[
     "V5__mock_interaction_metadata",
     include_str!("migrations/V5__mock_interaction_metadata.sql"),
   ),
+  (
+    "V6__entry_assertion_correlation",
+    include_str!("migrations/V6__entry_assertion_correlation.sql"),
+  ),
 ];
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.
@@ -230,6 +234,14 @@ mod tests {
         |row| row.get(0),
       )
       .unwrap();
+    let assertion_id_columns: i64 = db
+      .conn()
+      .query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('entries') WHERE name = 'assertion_id'",
+        [],
+        |row| row.get(0),
+      )
+      .unwrap();
     let schema_version: i64 = db
       .conn()
       .query_row("SELECT MAX(version) FROM schema_migrations", [], |row| {
@@ -238,6 +250,7 @@ mod tests {
       .unwrap();
 
     assert_eq!(stove_version_columns, 1);
+    assert_eq!(assertion_id_columns, 1);
     assert_eq!(schema_version, i64::try_from(MIGRATIONS.len()).unwrap());
   }
 }

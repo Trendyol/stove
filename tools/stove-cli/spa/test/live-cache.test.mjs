@@ -54,6 +54,9 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
       actual: null,
       error: null,
       trace_id: "trace-1",
+      assertion_id: "assertion-health",
+      attempt_count: 1,
+      failure_count: 0,
     },
   });
 
@@ -207,6 +210,62 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   assert.equal(testWarnings.length, 1);
   assert.equal(testWarnings[0].kind, "UNUSED_STUB");
   assert.equal(runWarnings.length, 0);
+});
+
+test("live assertion retries collapse to the latest attempt and retain failure history", () => {
+  const queryClient = new QueryClient();
+  const queryKey = ["entries", "run-retry", "test-retry"];
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    const failed = attempt < 5;
+    applyLiveDashboardEvent(queryClient, {
+      seq: attempt,
+      run_id: "run-retry",
+      event_type: "entry_recorded",
+      payload: {
+        id: -attempt,
+        test_id: "test-retry",
+        timestamp: `2024-06-01T10:00:0${attempt}Z`,
+        system: "PostgreSQL",
+        action: "Query",
+        result: failed ? "FAILED" : "PASSED",
+        input: "select * from products",
+        output: null,
+        metadata: "{}",
+        expected: "one row",
+        actual: failed ? "no rows" : "one row",
+        error: failed ? `not ready on attempt ${attempt}` : null,
+        trace_id: null,
+        assertion_id: "assertion-products",
+        attempt_count: attempt,
+        failure_count: failed ? attempt : attempt - 1,
+      },
+    });
+  }
+
+  const liveEntries = queryClient.getQueryData(queryKey);
+  assert.equal(liveEntries.length, 1);
+  assert.equal(liveEntries[0].result, "PASSED");
+  assert.equal(liveEntries[0].attempt_count, 5);
+  assert.equal(liveEntries[0].failure_count, 4);
+  assert.equal(liveEntries[0].actual, "one row");
+
+  const reconciled = reconcileDashboardData(queryClient, queryKey, [
+    {
+      ...liveEntries[0],
+      id: 42,
+      timestamp: "2024-06-01T10:00:04Z",
+      result: "FAILED",
+      actual: "no rows",
+      error: "not ready on attempt 4",
+      attempt_count: 4,
+      failure_count: 4,
+    },
+  ]);
+  assert.equal(reconciled.length, 1);
+  assert.equal(reconciled[0].result, "PASSED");
+  assert.equal(reconciled[0].attempt_count, 5);
+  assert.equal(reconciled[0].failure_count, 4);
 });
 
 test("live test data survives a stale persisted response", () => {

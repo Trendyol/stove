@@ -917,6 +917,37 @@ async fn get_entries_returns_empty_for_unknown_test() {
   assert_eq!(body, Value::Array(vec![]));
 }
 
+#[tokio::test]
+async fn raw_entries_preserve_attempts_hidden_by_the_correlated_view() {
+  let server = TestServer::start().await;
+  server.seed_run("run-retry", "product-api");
+  server.seed_test(
+    "run-retry",
+    "test-retry",
+    "eventually creates a product",
+    "ProductSpec",
+  );
+  server.seed_entry("run-retry", "test-retry", "PostgreSQL", "Query", "FAILED");
+  server.seed_entry("run-retry", "test-retry", "PostgreSQL", "Query", "PASSED");
+
+  let correlated = server
+    .get_json("/runs/run-retry/tests/test-retry/entries")
+    .await;
+  let correlated = correlated.as_array().unwrap();
+  assert_eq!(correlated.len(), 1);
+  assert_eq!(correlated[0]["result"], "PASSED");
+  assert_eq!(correlated[0]["attempt_count"], 2);
+  assert_eq!(correlated[0]["failure_count"], 1);
+
+  let raw = server
+    .get_json("/runs/run-retry/tests/test-retry/entries/raw")
+    .await;
+  let raw = raw.as_array().unwrap();
+  assert_eq!(raw.len(), 2);
+  assert_eq!(raw[0]["result"], "FAILED");
+  assert_eq!(raw[1]["result"], "PASSED");
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/v1/runs/:run_id/tests/:test_id/spans
 // ---------------------------------------------------------------------------

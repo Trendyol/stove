@@ -36,7 +36,6 @@ import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON_UTF8
 import com.trendyol.stove.wiremock.WireMockHeaders.CONTENT_TYPE
-import com.trendyol.stove.wiremock.WireMockReportActions.VALIDATE_ALL_REQUESTS_MATCHED
 import com.trendyol.stove.wiremock.WireMockReportActions.VALIDATE_ALL_REQUESTS_SHOULD_MATCH
 import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.RESPONSE_HEADERS
 import com.trendyol.stove.wiremock.WireMockReportMetadataKeys.STATUS_CODE
@@ -1293,7 +1292,7 @@ class WireMockSystem(
         ReportEntry.success(
           system = reportSystemName,
           testId = reporter.currentTestId(),
-          action = VALIDATE_ALL_REQUESTS_MATCHED
+          action = VALIDATE_ALL_REQUESTS_SHOULD_MATCH
         )
       )
     }

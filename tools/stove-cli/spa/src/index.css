@@ -1867,6 +1867,17 @@ button {
   text-transform: uppercase;
 }
 
+.ledger-attempt-stamp {
+  border: 1px solid color-mix(in srgb, var(--stove-amber) 30%, var(--stove-border));
+  border-radius: 999px;
+  background: var(--stove-amber-bg);
+  padding: 3px 6px;
+  color: var(--stove-amber);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
 .ledger-result {
   justify-self: end;
   border-radius: 999px;

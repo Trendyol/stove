@@ -26,6 +26,9 @@ pub(super) fn entry_preview(entry: &Entry, max_chars: usize) -> Value {
     "actual": preview_field(entry.actual.as_deref(), max_chars),
     "error": clip_opt(entry.error.as_deref(), max_chars),
     "trace_id": entry.trace_id,
+    "assertion_id": entry.assertion_id,
+    "attempt_count": entry.attempt_count,
+    "failure_count": entry.failure_count,
     "raw_tool_call": tool_call(ToolName::RawEvidence, tool_args([
       (ArgName::Kind, json!(RawEvidenceKind::Entry.as_str())),
       (ArgName::Id, json!(entry.id)),

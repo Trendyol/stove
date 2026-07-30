@@ -680,7 +680,7 @@ class GrpcMockSystem internal constructor(
       ReportEntry.success(
         system = reportSystemName,
         testId = reporter.currentTestId(),
-        action = "Validate: All gRPC requests matched registered stubs"
+        action = "Validate: All gRPC requests should match registered stubs"
       )
     )
   }

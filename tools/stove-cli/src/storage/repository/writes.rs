@@ -339,7 +339,7 @@ fn save_test_end_on(
 
 fn save_entry_on(conn: &rusqlite::Connection, entry: &NewEntry) -> Result<()> {
   conn.execute(
-    "INSERT INTO entries (run_id, test_id, timestamp, system, action, result, input, output, metadata, expected, actual, error, trace_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+    "INSERT INTO entries (run_id, test_id, timestamp, system, action, result, input, output, metadata, expected, actual, error, trace_id, assertion_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
     rusqlite::params![
       entry.run_id,
       entry.test_id,
@@ -353,7 +353,8 @@ fn save_entry_on(conn: &rusqlite::Connection, entry: &NewEntry) -> Result<()> {
       non_empty(&entry.expected),
       non_empty(&entry.actual),
       non_empty(&entry.error),
-      non_empty(&entry.trace_id)
+      non_empty(&entry.trace_id),
+      entry.assertion_id
     ],
   )?;
   Ok(())

@@ -39,7 +39,6 @@ internal object WireMockReportActions {
   fun registerDynamicStub(method: String, url: String): String = "Register stub: $method $url (dynamic response)"
 
   const val VALIDATE_ALL_REQUESTS_SHOULD_MATCH = "Validate: All requests should match registered stubs"
-  const val VALIDATE_ALL_REQUESTS_MATCHED = "Validate: All requests matched registered stubs"
   const val VERIFY_REQUEST_WAS_CALLED = "Verify request was called"
   const val VERIFY_REQUEST_WAS_NOT_CALLED = "Verify request was not called"
 }

@@ -36,7 +36,7 @@ impl Analyzer {
           .ok_or_else(|| "raw entry lookup requires run_id and test_id".to_string())?;
         let entry = self
           .repository
-          .get_entries(run_id, test_id)
+          .get_raw_entries(run_id, test_id)
           .map_err(display_error)?
           .into_iter()
           .find(|entry| entry.id == args.id)

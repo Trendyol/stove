@@ -140,27 +140,34 @@ async fn process_full_lifecycle() {
     })
     .unwrap();
 
-  svc
-    .process_event(&proto::DashboardEvent {
-      run_id: "run-1".to_string(),
-      event: Some(proto::dashboard_event::Event::EntryRecorded(
-        proto::EntryRecordedEvent {
-          test_id: "test-1".to_string(),
-          timestamp: Some(ts(1_704_067_202)),
-          system: "HTTP".to_string(),
-          action: "GET /api".to_string(),
-          result: "PASSED".to_string(),
-          input: String::new(),
-          output: String::new(),
-          metadata: std::collections::HashMap::default(),
-          expected: String::new(),
-          actual: String::new(),
-          error: String::new(),
-          trace_id: String::new(),
-        },
-      )),
-    })
-    .unwrap();
+  for attempt in 1_i64..=5 {
+    let failed = attempt < 5;
+    svc
+      .process_event(&proto::DashboardEvent {
+        run_id: "run-1".to_string(),
+        event: Some(proto::dashboard_event::Event::EntryRecorded(
+          proto::EntryRecordedEvent {
+            test_id: "test-1".to_string(),
+            timestamp: Some(ts(1_704_067_201 + attempt)),
+            system: "HTTP".to_string(),
+            action: "GET /api".to_string(),
+            result: if failed { "FAILED" } else { "PASSED" }.to_string(),
+            input: String::new(),
+            output: String::new(),
+            metadata: std::collections::HashMap::default(),
+            expected: "200".to_string(),
+            actual: if failed { "503" } else { "200" }.to_string(),
+            error: if failed {
+              format!("not ready on attempt {attempt}")
+            } else {
+              String::new()
+            },
+            trace_id: String::new(),
+          },
+        )),
+      })
+      .unwrap();
+  }
 
   svc
     .process_event(&proto::DashboardEvent {
@@ -171,7 +178,7 @@ async fn process_full_lifecycle() {
           status: "PASSED".to_string(),
           duration_ms: 500,
           error: String::new(),
-          timestamp: Some(ts(1_704_067_203)),
+          timestamp: Some(ts(1_704_067_207)),
         },
       )),
     })
@@ -204,4 +211,11 @@ async fn process_full_lifecycle() {
 
   let entries = svc.repository.get_entries("run-1", "test-1").unwrap();
   assert_eq!(entries.len(), 1);
+  assert_eq!(
+    entries[0].result,
+    crate::storage::models::TestStatus::Passed
+  );
+  assert_eq!(entries[0].attempt_count, 5);
+  assert_eq!(entries[0].failure_count, 4);
+  assert_eq!(entries[0].actual.as_deref(), Some("200"));
 }

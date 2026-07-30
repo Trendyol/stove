@@ -58,6 +58,7 @@ fn full_event_lifecycle() {
       actual: String::new(),
       error: String::new(),
       trace_id: String::new(),
+      assertion_id: "assertion-post-products".into(),
     })
     .unwrap();
 
@@ -151,6 +152,9 @@ fn full_event_lifecycle() {
       actual: None,
       error: None,
       trace_id: None,
+      assertion_id: "assertion-post-products".into(),
+      attempt_count: 1,
+      failure_count: 0,
     }]
   );
 
@@ -200,6 +204,67 @@ fn full_event_lifecycle() {
       total_runs: 1,
     }]
   );
+}
+
+#[test]
+fn entries_return_latest_assertion_attempt_with_retry_counts() {
+  let repo = test_repo();
+  repo
+    .save_run_start("run-1", "product-api", "2024-01-01T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_test_start(
+      "run-1",
+      "test-1",
+      "eventually creates product",
+      "ProductSpec",
+      &[],
+      "2024-01-01T00:00:01Z",
+    )
+    .unwrap();
+
+  for attempt in 1..=5 {
+    let failed = attempt < 5;
+    repo
+      .save_entry(&NewEntry {
+        run_id: "run-1".into(),
+        test_id: "test-1".into(),
+        timestamp: format!("2024-01-01T00:00:0{}Z", attempt + 1),
+        system: "PostgreSQL".into(),
+        action: "Query".into(),
+        result: if failed { "FAILED" } else { "PASSED" }.into(),
+        input: "select * from products".into(),
+        output: String::new(),
+        metadata: "{}".into(),
+        expected: "one row".into(),
+        actual: if failed { "no rows" } else { "one row" }.into(),
+        error: if failed {
+          format!("not ready on attempt {attempt}")
+        } else {
+          String::new()
+        },
+        trace_id: String::new(),
+        assertion_id: "assertion-query-products".into(),
+      })
+      .unwrap();
+  }
+
+  let raw_entries = repo.get_raw_entries("run-1", "test-1").unwrap();
+  assert_eq!(
+    raw_entries.len(),
+    5,
+    "every attempt must remain available in the audit log"
+  );
+  assert_eq!(raw_entries[0].failure_count, 1);
+  assert_eq!(raw_entries[4].failure_count, 0);
+
+  let entries = repo.get_entries("run-1", "test-1").unwrap();
+  assert_eq!(entries.len(), 1);
+  assert_eq!(entries[0].result, TestStatus::Passed);
+  assert_eq!(entries[0].attempt_count, 5);
+  assert_eq!(entries[0].failure_count, 4);
+  assert_eq!(entries[0].actual.as_deref(), Some("one row"));
+  assert_eq!(entries[0].error, None);
 }
 
 #[test]

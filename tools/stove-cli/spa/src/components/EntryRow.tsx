@@ -32,6 +32,11 @@ export function EntryRow({ entry }: EntryRowProps) {
         <ResultIcon result={entry.result} />
         <SysBadge system={entry.system} />
         <span className="truncate font-medium text-[var(--stove-text)]">{entry.action}</span>
+        {entry.attempt_count > 1 && (
+          <span className="text-xs text-[var(--stove-amber)]">
+            {entry.attempt_count} attempts · {entry.failure_count} failed
+          </span>
+        )}
         <span className="ml-auto text-[var(--stove-text-muted)]">
           {expanded ? "Hide" : "Details"}
         </span>

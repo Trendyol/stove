@@ -250,6 +250,7 @@ impl TestServer {
         actual: actual.into(),
         error: error.into(),
         trace_id: trace_id.into(),
+        assertion_id: format!("{test_id}\u{0}{system}\u{0}{action}\u{0}{input}\u{0}{expected}"),
       })
       .unwrap();
   }

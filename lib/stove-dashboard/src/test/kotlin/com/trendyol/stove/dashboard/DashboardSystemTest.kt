@@ -98,8 +98,110 @@ class DashboardSystemTest : FunSpec({
       system.stop()
       delay(1000.milliseconds)
 
-      received.any { it.hasTestEnded() && it.testEnded.testId == "test-still-running" } shouldBe true
-      received.first { it.hasRunEnded() }.runEnded.totalTests shouldBe 1
+      received.single {
+        it.hasTestEnded() && it.testEnded.testId == "test-still-running"
+      }.testEnded.status shouldBe "ERROR"
+      received.first { it.hasRunEnded() }.runEnded.let {
+        it.totalTests shouldBe 1
+        it.passed shouldBe 0
+        it.failed shouldBe 1
+      }
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("eventually-style attempts all reach the CLI while final test status stays passed") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      stove.getOrRegister(PostgreSqlSnapshotSystem(stove))
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+
+      system.run()
+      delay(200.milliseconds)
+
+      stove.startTest(StoveTestContext("test-eventually", "eventually passes", "MySpec"))
+      repeat(4) { attempt ->
+        stove.recordReport(
+          ReportEntry.failure("PostgreSQL", "test-eventually", "Query", "not ready: $attempt")
+        )
+      }
+      stove.recordReport(ReportEntry.success("PostgreSQL", "test-eventually", "Query"))
+      stove.endTest()
+      stove.recordReport(
+        ReportEntry.failure("PostgreSQL", "test-eventually", "Query", "late callback")
+      )
+
+      delay(300.milliseconds)
+      system.stop()
+
+      val entries = received.filter {
+        it.hasEntryRecorded() && it.entryRecorded.testId == "test-eventually"
+      }
+      entries.size shouldBe 5
+      entries.take(4).all { it.entryRecorded.result == "FAILED" } shouldBe true
+      entries.last().entryRecorded.result shouldBe "PASSED"
+      received.single {
+        it.hasTestEnded() && it.testEnded.testId == "test-eventually"
+      }.testEnded.status shouldBe "PASSED"
+      received.count {
+        it.hasSnapshot() &&
+          it.snapshot.testId == "test-eventually" &&
+          it.snapshot.trigger == "FAILURE"
+      } shouldBe 1
+      received.single { it.hasRunEnded() }.runEnded.failed shouldBe 0
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("exhausted attempts all reach the CLI and final test failure remains authoritative") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      stove.getOrRegister(PostgreSqlSnapshotSystem(stove))
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+
+      system.run()
+      delay(200.milliseconds)
+
+      stove.startTest(StoveTestContext("test-exhausted", "eventually fails", "MySpec"))
+      repeat(5) { attempt ->
+        stove.recordReport(
+          ReportEntry.failure("PostgreSQL", "test-exhausted", "Query", "not ready: $attempt")
+        )
+      }
+      system.onTestFailed("test-exhausted", "eventually timed out")
+      stove.endTest()
+
+      delay(300.milliseconds)
+      system.stop()
+
+      val entries = received.filter {
+        it.hasEntryRecorded() && it.entryRecorded.testId == "test-exhausted"
+      }
+      entries.size shouldBe 5
+      entries.all { it.entryRecorded.result == "FAILED" } shouldBe true
+      received.single {
+        it.hasTestEnded() && it.testEnded.testId == "test-exhausted"
+      }.testEnded.status shouldBe "FAILED"
+      received.count {
+        it.hasSnapshot() &&
+          it.snapshot.testId == "test-exhausted" &&
+          it.snapshot.trigger == "FAILURE"
+      } shouldBe 1
+      received.single { it.hasRunEnded() }.runEnded.failed shouldBe 1
     } finally {
       server.shutdownNow()
     }
@@ -288,6 +390,21 @@ private class BlockingSnapshotSystem(
   fun releaseSnapshots() {
     releaseSnapshots.countDown()
   }
+
+  override fun close() = Unit
+}
+
+private class PostgreSqlSnapshotSystem(
+  override val stove: Stove
+) : PluggedSystem,
+  Reports {
+  override val reportSystemName: String = "PostgreSQL"
+
+  override fun snapshot(): SystemSnapshot = SystemSnapshot(
+    system = reportSystemName,
+    state = mapOf("ready" to true),
+    summary = "PostgreSQL state"
+  )
 
   override fun close() = Unit
 }
