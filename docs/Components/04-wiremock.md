@@ -177,7 +177,7 @@ test("uses a native transformer") {
 }
 ```
 
-The name is optional and otherwise inferred from the mapping. Unlike direct `server()` access, `rawStub` retains Stove reporting, test scoping, verification, and cleanup.
+The name is optional and otherwise inferred from the mapping. Unlike direct `server()` access, `rawStub` retains Stove reporting, test scoping, verification, and cleanup. Stove assigns a managed mapping ID, replacing any `.withId(...)` value from the native builder.
 
 ## Advanced matching
 

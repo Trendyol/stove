@@ -36,12 +36,18 @@ class RequestTarget internal constructor(
   internal val value: String
 )
 
+/** Matches the complete request URL, including its query string. */
 fun exactUrl(value: String): RequestTarget = RequestTarget(RequestTargetKind.EXACT_URL, value)
 
+/** Matches only the request path, leaving query matching to [RequestDsl.query]. */
 fun path(value: String): RequestTarget = RequestTarget(RequestTargetKind.PATH, value)
 
+/** Matches the request path against a WireMock regular expression. */
 fun pathRegex(value: String): RequestTarget = RequestTarget(RequestTargetKind.PATH_REGEX, value)
 
+/**
+ * Describes one structured stub with an optional request and one response plan.
+ */
 @WiremockDsl
 class StubDsl internal constructor(
   private var requestModel: RequestModel
@@ -51,12 +57,14 @@ class StubDsl internal constructor(
   private var responseModel = ResponseModel()
   private var behaviourModel: BehaviourModel? = null
 
+  /** Adds request constraints to the method and target declared by the enclosing stub. */
   fun request(configure: RequestDsl.() -> Unit) {
     check(!requestConfigured) { "A request block has already been configured" }
     requestModel = RequestDsl(requestModel).apply(configure).build()
     requestConfigured = true
   }
 
+  /** Defines the response returned for every matching request. */
   fun respond(configure: ResponseDsl.() -> Unit) {
     check(!responseConfigured) { "A response block has already been configured" }
     check(behaviourModel == null) { "A behaviour block has already been configured" }
@@ -64,6 +72,7 @@ class StubDsl internal constructor(
     responseConfigured = true
   }
 
+  /** Defines ordered transient responses followed by one persistent response. */
   fun behaviour(configure: BehaviourDsl.() -> Unit) {
     check(!responseConfigured) { "A response block has already been configured" }
     check(behaviourModel == null) { "A behaviour block has already been configured" }
@@ -79,6 +88,11 @@ class StubDsl internal constructor(
     )
 }
 
+/**
+ * Adds header, query, and body constraints to a structured request.
+ *
+ * Header and query names can each be configured once per request.
+ */
 @WiremockDsl
 class RequestDsl internal constructor(
   initial: RequestModel
@@ -89,24 +103,31 @@ class RequestDsl internal constructor(
   private val queries = initial.queries.toMutableList()
   private val bodies = initial.bodies.toMutableList()
 
+  /** Requires header [name] to equal [value]. Header names are case-insensitive. */
   fun header(name: String, value: String) {
     header(name, equalTo(value))
   }
 
+  /** Requires header [name] to match a native WireMock [pattern]. */
   fun header(name: String, pattern: StringValuePattern) {
     requireName("Header", name)
+    requireUniqueName("Header", name, headers, ignoreCase = true)
     headers += NamedPattern(name, pattern)
   }
 
+  /** Requires query parameter [name] to equal [value]. */
   fun query(name: String, value: String) {
     query(name, equalTo(value))
   }
 
+  /** Requires query parameter [name] to match a native WireMock [pattern]. */
   fun query(name: String, pattern: StringValuePattern) {
     requireName("Query parameter", name)
+    requireUniqueName("Query parameter", name, queries, ignoreCase = false)
     queries += NamedPattern(name, pattern)
   }
 
+  /** Requires a JSON-compatible `Content-Type` request header. */
   fun contentTypeJson() {
     header(
       WireMockHeaders.CONTENT_TYPE,
@@ -114,6 +135,9 @@ class RequestDsl internal constructor(
     )
   }
 
+  /**
+   * Requires the request body to equal the serialized [value] as JSON.
+   */
   fun jsonEqualTo(
     value: Any,
     ignoreArrayOrder: Boolean = true,
@@ -122,15 +146,18 @@ class RequestDsl internal constructor(
     bodies += RequestBodyConstraint.JsonEquality(value, ignoreArrayOrder, ignoreExtraElements)
   }
 
+  /** Requires the JSON field at dot-separated [path] to equal [value]. */
   fun jsonField(path: String, value: Any) {
     require(path.isNotBlank()) { "JSON field path must not be blank" }
     bodies += RequestBodyConstraint.JsonField(path, value)
   }
 
+  /** Requires the JSONPath [expression] to select [value]. */
   fun jsonPath(expression: String, value: String) {
     jsonPath(expression, equalTo(value))
   }
 
+  /** Requires the JSONPath [expression] result to match a native WireMock [pattern]. */
   fun jsonPath(expression: String, pattern: StringValuePattern) {
     require(expression.isNotBlank()) { "JSONPath expression must not be blank" }
     bodies += RequestBodyConstraint.JsonPath(expression, pattern)
@@ -148,43 +175,67 @@ class RequestDsl internal constructor(
   private fun requireName(kind: String, name: String) {
     require(name.isNotBlank()) { "$kind name must not be blank" }
   }
+
+  private fun requireUniqueName(
+    kind: String,
+    name: String,
+    patterns: List<NamedPattern>,
+    ignoreCase: Boolean
+  ) {
+    require(patterns.none { it.name.equals(name, ignoreCase) }) {
+      "$kind '$name' has already been configured"
+    }
+  }
 }
 
+/**
+ * Builds an HTTP response with explicit status, headers, body format, and delay.
+ */
 @WiremockDsl
 class ResponseDsl internal constructor(
   initial: ResponseModel
 ) {
+  /** HTTP response status. Valid values are 100 through 599. */
   var status: Int = initial.status
+
+  /** Optional fixed delay applied before WireMock sends the response. */
   var delay: Duration? = initial.delay
   private val headers = initial.headers.toMutableList()
   private var body = initial.body
 
+  /** Adds a response header without restricting native WireMock header semantics. */
   fun header(name: String, value: String) {
     require(name.isNotBlank()) { "Response header name must not be blank" }
     headers += ResponseHeader(name, value)
   }
 
+  /** Serializes [value] as JSON and defaults `Content-Type` to `application/json`. */
   fun json(value: Any) {
     setBody(ResponseBody.Json(value))
   }
 
+  /** Returns the JSON literal `null` with an `application/json` content type. */
   fun jsonNull() {
     setBody(ResponseBody.JsonNull)
   }
 
+  /** Returns already serialized JSON with an `application/json` content type. */
   fun rawJson(value: String) {
     setBody(ResponseBody.RawJson(value))
   }
 
+  /** Returns plain text with a `text/plain` content type. */
   fun text(value: String) {
     setBody(ResponseBody.Text(value))
   }
 
+  /** Returns a defensive copy of [value] with the supplied [contentType]. */
   fun bytes(value: ByteArray, contentType: String) {
     require(contentType.isNotBlank()) { "Binary response content type must not be blank" }
     setBody(ResponseBody.Bytes(value.copyOf(), contentType))
   }
 
+  /** Returns no body and does not infer a content type. */
   fun empty() {
     setBody(ResponseBody.Empty)
   }
@@ -267,8 +318,12 @@ class BehaviourDsl internal constructor() {
   }
 }
 
+/**
+ * Native WireMock escape-hatch context used by [WireMockSystem.rawStub].
+ */
 @WiremockDsl
 class RawStubDsl internal constructor(
+  /** Stove's configured serializer for native request or response construction. */
   val serde: StoveSerde<Any, ByteArray>
 )
 

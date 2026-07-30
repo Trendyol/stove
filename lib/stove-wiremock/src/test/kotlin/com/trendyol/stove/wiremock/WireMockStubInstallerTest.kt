@@ -17,23 +17,25 @@ class WireMockStubInstallerTest :
       val server = WireMockServer(0)
       val recorded = mutableListOf<StubMapping>()
       val installer = WireMockStubInstaller(server) { recorded.add(it) }
-      val callerId = UUID.randomUUID()
+      val builderCallerId = UUID.randomUUID()
+      val mappingCallerId = UUID.randomUUID()
 
       server.start()
       try {
         val installedBuilder = installer.install(
           get("/installer/builder")
-            .withId(callerId)
+            .withId(builderCallerId)
             .willReturn(aResponse().withStatus(200))
         )
         val installedMapping = installer.install(
           post("/installer/mapping")
+            .withId(mappingCallerId)
             .willReturn(aResponse().withStatus(201))
             .build()
         )
 
-        installedBuilder.id shouldNotBe callerId
-        installedMapping.id shouldNotBe null
+        installedBuilder.id shouldNotBe builderCallerId
+        installedMapping.id shouldNotBe mappingCallerId
         installedBuilder.id shouldNotBe installedMapping.id
         server.stubMappings.map { it.id }.toSet() shouldBe setOf(
           installedBuilder.id,

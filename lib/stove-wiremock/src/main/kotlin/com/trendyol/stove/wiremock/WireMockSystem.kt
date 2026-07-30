@@ -429,12 +429,15 @@ class WireMockSystem(
   /**
    * Registers a native WireMock mapping while retaining Stove naming, scoping,
    * reporting, journaling, and cleanup.
+   *
+   * Stove assigns the installed mapping a managed ID, replacing any ID configured
+   * on the returned builder.
    */
   suspend fun rawStub(
     name: String? = null,
     configure: RawStubDsl.() -> MappingBuilder
   ): WireMockSystem {
-    require(name == null || name.isNotBlank()) { "Raw stub name must not be blank" }
+    requireValidStubName(name, "Raw stub")
     val mapping = RawStubDsl(serde).configure().build()
     return registerManagedMapping(name, mapping)
   }
@@ -1316,8 +1319,12 @@ class WireMockSystem(
     name: String?,
     definition: DslStubDefinition
   ): WireMockSystem {
-    require(name == null || name.isNotBlank()) { "Stub name must not be blank" }
+    requireValidStubName(name, "Stub")
     return registerManagedMappings(name, dslCompiler.mappings(definition))
+  }
+
+  private fun requireValidStubName(name: String?, subject: String) {
+    require(name == null || name.isNotBlank()) { "$subject name must not be blank" }
   }
 
   private suspend fun registerManagedMapping(

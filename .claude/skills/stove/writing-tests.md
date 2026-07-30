@@ -587,6 +587,8 @@ wiremock {
 }
 ```
 
+`rawStub` assigns a managed mapping ID and replaces any `.withId(...)` value from the native builder.
+
 The stable `mock*(statusCode = ...)`, `mock*Containing`, `behaviourFor`, and verification overloads remain available for existing tests:
 
 ```kotlin
