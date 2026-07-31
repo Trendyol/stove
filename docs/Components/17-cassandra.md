@@ -103,6 +103,16 @@ cassandra {
 }
 ```
 
+### Request timeout
+
+Stove gives Cassandra requests 30 seconds by default so DDL can complete on a newly started node. Increase it for slower clusters:
+
+```kotlin
+cassandra {
+  CassandraSystemOptions(/* ... */).requestTimeout(60.seconds)
+}
+```
+
 ### Pause / unpause (container mode)
 
 ```kotlin
@@ -114,6 +124,7 @@ cassandra { pause(); unpause() }
 | Symptom | Fix |
 |---|---|
 | `Cannot achieve consistency level` | Replication factor 1 in dev; raise only when you're testing multi-DC |
+| `Query timed out` | Increase the driver's 30-second default with `.requestTimeout(60.seconds)` |
 | Query needs `ALLOW FILTERING` | Add a secondary index or use the partition key; not for production but fine in tests |
 | `KeyspaceNotFound` | Create in a migration before tests run |
 

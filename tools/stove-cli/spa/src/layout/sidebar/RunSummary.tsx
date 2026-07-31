@@ -14,20 +14,32 @@ export function RunSummary({ run, tests }: RunSummaryProps) {
   const passed = hasLiveTests ? tests.filter((t) => isPassed(t.status)).length : run.passed;
   const failed = hasLiveTests ? tests.filter((t) => isFailed(t.status)).length : run.failed;
   const running = hasLiveTests ? tests.filter((t) => isRunning(t.status)).length : 0;
+  const completed = passed + failed;
+  const passPercent = total === 0 ? 0 : Math.round((passed / total) * 100);
 
   return (
-    <div className="border-b border-stove-border p-3">
-      <div className="flex items-center justify-between mb-2">
+    <div className="stove-run-summary">
+      <div className="stove-run-heading">
+        <div>
+          <span>Latest run</span>
+          <code title={run.id}>{run.id.slice(0, 12)}</code>
+        </div>
         <Badge status={run.status} />
-        <span className="text-xs text-[var(--stove-text-secondary)] font-mono">
-          {formatDuration(run.duration_ms)}
-        </span>
       </div>
-      <div className="grid grid-cols-4 gap-1.5 text-center">
-        <Stat label="Total" value={total} />
-        <Stat label="Running" value={running} color="var(--stove-blue)" />
-        <Stat label="Pass" value={passed} color="var(--stove-green)" />
-        <Stat label="Fail" value={failed} color="var(--stove-red)" />
+      <div className="stove-run-progress">
+        <div>
+          <span style={{ width: `${total === 0 ? 0 : (completed / total) * 100}%` }} />
+        </div>
+        <p>
+          <strong>{passPercent}%</strong> pass rate
+          <span>{formatDuration(run.duration_ms)}</span>
+        </p>
+      </div>
+      <div className="stove-run-stats">
+        <Stat label="Tests" value={total} />
+        <Stat label="Live" value={running} color="var(--stove-blue)" />
+        <Stat label="Passed" value={passed} color="var(--stove-green)" />
+        <Stat label="Failed" value={failed} color="var(--stove-red)" />
       </div>
     </div>
   );
@@ -35,11 +47,9 @@ export function RunSummary({ run, tests }: RunSummaryProps) {
 
 function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <div className="rounded-lg border border-stove-border bg-stove-base px-1.5 py-1.5">
-      <div className="font-mono text-base font-semibold leading-none" style={{ color }}>
-        {value}
-      </div>
-      <div className="mt-1 text-[10px] text-[var(--stove-text-secondary)]">{label}</div>
+    <div>
+      <div style={{ color }}>{value}</div>
+      <span>{label}</span>
     </div>
   );
 }

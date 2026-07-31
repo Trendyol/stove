@@ -9,6 +9,8 @@ class Stove < Formula
   version "__VERSION__"
   license "Apache-2.0"
 
+  conflicts_with "stove-next", because: "both install a `stove` binary"
+
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-darwin-arm64.tar.gz"

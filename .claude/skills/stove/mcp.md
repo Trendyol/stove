@@ -62,8 +62,8 @@ Some clients call the same field `transport` and may accept `streamable-http`. T
 1. Call `stove_failures` first.
 2. Pick a specific `run_id` and `test_id` from the result. **Never infer a test selector from names alone** — multiple apps and runs can contain duplicate test names.
 3. Call `stove_failure_detail` with that exact `run_id + test_id` for the compact failure packet.
-4. Drill into `stove_timeline`, `stove_trace`, or `stove_snapshot` only when needed.
-5. Use `stove_raw_evidence` for one specific entry / span / snapshot when the compact view isn't enough.
+4. Drill into `stove_timeline`, `stove_trace`, `stove_snapshot`, or `stove_interactions` only when needed. For "why did the mock not match" questions, the near-miss diagnoses are already in `stove_failure_detail`'s `unmatched_interactions`.
+5. Use `stove_raw_evidence` for one specific entry / span / snapshot / interaction / warning when the compact view isn't enough.
 6. If MCP is missing data, fall back to normal test output and logs.
 
 Every failure result includes ready-to-use next tool calls — use them, don't guess.
@@ -75,10 +75,22 @@ database
   -> apps by app_name
     -> runs by run_id
       -> tests by test_id
-        -> entries, spans, snapshots
+        -> entries, spans, snapshots, mock interactions, mock warnings
+      -> unattributed mock interactions / warnings (run-level "ambient" lane)
 ```
 
 `app_name` is the label set in `DashboardSystemOptions(appName = "...")` on the test side. `run_id + test_id` is the only authoritative selector.
+
+Since 0.26, every request that reaches a WireMock or gRPC Mock is recorded as a **mock interaction** (matched or not, with status, latency, near-miss diagnoses, and proven-only attribution), and the mocks raise **warnings** (`UNUSED_STUB`, `CROSS_TEST_MATCH`, `UNVALIDATED_UNMATCHED`). Agents get them through MCP:
+
+- `stove_failure_detail` includes the failed test's `unmatched_interactions` (each carrying its near-miss diagnoses — usually *the* answer to "why did nothing match") and `mock_warnings`.
+- `stove_timeline` interleaves mock exchanges with report entries chronologically; events are tagged `"type": "entry" | "mock_interaction"`.
+- `stove_interactions` lists exchanges and warnings for one test (`run_id + test_id`) or a whole run (omit `test_id`), the run scope including the unattributed lane.
+- `stove_raw_evidence` accepts `kind: "interaction"` and `kind: "warning"` with `run_id + id`.
+
+The same data is on REST for the UI: `/api/v1/runs/{run_id}/interactions` (+ `/ambient`, per-test, and `warnings` variants).
+
+Interactions with no `test_id` are unattributed by design (attribution is proven-only — header, baggage, or matched-stub tag; never inferred). Do not guess an owner for them from timing or names. Snapshots carry a `trigger` (`TEST_END` or `FAILURE`); the `FAILURE` one is the state at the moment the first failing entry was recorded.
 
 ## Tools
 
@@ -91,7 +103,8 @@ database
 | `stove_timeline` | Ordered test actions, failure-focused by default |
 | `stove_trace` | Critical path and exception evidence from correlated spans |
 | `stove_snapshot` | System snapshot summaries with targeted JSON drill-down |
-| `stove_raw_evidence` | Capped raw lookup for one entry, span, or snapshot |
+| `stove_interactions` | Mock exchanges + warnings for a test or whole run, incl. the unattributed lane |
+| `stove_raw_evidence` | Capped raw lookup for one entry, span, snapshot, interaction, or warning |
 
 ## Token Budgeting
 

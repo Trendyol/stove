@@ -1,9 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
-import { applyLiveDashboardEvent, invalidateDashboardQueries } from "../api/live-cache";
+import {
+  applyLiveDashboardEvent,
+  invalidateDashboardQueries,
+  reconcileDashboardData,
+} from "../api/live-cache";
 import { useSSE } from "../api/sse";
-import { EVENT_TYPE, type LiveDashboardEvent } from "../api/types";
+import { EVENT_TYPE, type LiveDashboardEvent, type Test } from "../api/types";
 import { isRunning } from "../utils/status";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 
@@ -26,19 +30,20 @@ export function useAppData() {
   const { connected: liveConnected } = useSSE({
     onEvent: handleLiveEvent,
     onGap: (event) => invalidateDashboardQueries(queryClient, event.run_id),
-    onReconnect: () => invalidateDashboardQueries(queryClient),
+    onConnect: () => invalidateDashboardQueries(queryClient),
   });
 
   const { data: apps = [] } = useQuery({
     queryKey: ["apps"],
-    queryFn: api.getApps,
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData(queryClient, ["apps"], await api.getApps(signal)),
     refetchInterval: liveConnected ? false : 5000,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const { data: meta } = useQuery({
     queryKey: ["meta"],
-    queryFn: api.getMeta,
+    queryFn: ({ signal }) => api.getMeta(signal),
     staleTime: Number.POSITIVE_INFINITY,
   });
 
@@ -47,9 +52,14 @@ export function useAppData() {
 
   const { data: runs = [] } = useQuery({
     queryKey: ["runs", activeApp],
-    queryFn: () => api.getRuns(activeApp!),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData(
+        queryClient,
+        ["runs", activeApp],
+        await api.getRuns(activeApp!, signal),
+      ),
     enabled: !!activeApp,
-    refetchInterval: !!activeApp && !liveConnected ? 5000 : false,
+    refetchInterval: activeApp && !liveConnected ? 5000 : false,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
@@ -57,9 +67,20 @@ export function useAppData() {
 
   const { data: tests = [] } = useQuery({
     queryKey: ["tests", latestRun?.id],
-    queryFn: () => api.getTests(latestRun!.id),
+    queryFn: async ({ signal }) =>
+      reconcileDashboardData(
+        queryClient,
+        ["tests", latestRun?.id],
+        await api.getTests(latestRun!.id, signal),
+      ),
     enabled: !!latestRun,
-    refetchInterval: latestRun && isRunning(latestRun.status) && !liveConnected ? 5000 : false,
+    refetchInterval: (query) => {
+      if (!latestRun || liveConnected) return false;
+      const cachedTests = query.state.data as Test[] | undefined;
+      return isRunning(latestRun.status) || cachedTests?.length !== latestRun.total_tests
+        ? 5000
+        : false;
+    },
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 

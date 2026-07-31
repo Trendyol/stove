@@ -5,6 +5,7 @@ dependencies {
   api(libs.io.grpc.protobuf)
   api(libs.google.protobuf.util)
   api(libs.caffeine)
+  implementation(libs.io.grpc.services)
   implementation(libs.kotlinx.core)
 }
 

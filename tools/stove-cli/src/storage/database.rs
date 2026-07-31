@@ -19,6 +19,18 @@ const MIGRATIONS: &[(&str, &str)] = &[
     "V3__test_path",
     include_str!("migrations/V3__test_path.sql"),
   ),
+  (
+    "V4__mock_interactions",
+    include_str!("migrations/V4__mock_interactions.sql"),
+  ),
+  (
+    "V5__mock_interaction_metadata",
+    include_str!("migrations/V5__mock_interaction_metadata.sql"),
+  ),
+  (
+    "V6__entry_assertion_correlation",
+    include_str!("migrations/V6__entry_assertion_correlation.sql"),
+  ),
 ];
 
 /// `SQLite` database wrapper with WAL mode and versioned schema migrations.
@@ -151,6 +163,7 @@ static IN_MEMORY_DB_COUNTER: AtomicUsize = AtomicUsize::new(0);
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::storage::repository::Repository;
   use tempfile::TempDir;
 
   #[test]
@@ -186,11 +199,11 @@ mod tests {
         row.get(0)
       })
       .unwrap();
-    assert_eq!(version, MIGRATIONS.len() as i64);
+    assert_eq!(version, i64::try_from(MIGRATIONS.len()).unwrap());
   }
 
   #[test]
-  fn open_upgrades_v1_database_with_run_stove_version_column() {
+  fn open_upgrades_v1_database_and_preserves_legacy_entries() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("stove-v1.db");
     let conn = Connection::open(&path).unwrap();
@@ -211,6 +224,21 @@ mod tests {
         rusqlite::params![1_i64, "V1__initial_schema"],
       )
       .unwrap();
+    conn
+      .execute_batch(
+        "INSERT INTO runs (id, app_name, started_at)
+           VALUES ('legacy-run', 'legacy-app', '2024-01-01T00:00:00Z');
+         INSERT INTO tests (id, run_id, test_name, spec_name, started_at)
+           VALUES ('legacy-test', 'legacy-run', 'legacy test', 'LegacySpec',
+                   '2024-01-01T00:00:01Z');
+         INSERT INTO entries (
+           run_id, test_id, timestamp, system, action, result, input
+         ) VALUES (
+           'legacy-run', 'legacy-test', '2024-01-01T00:00:02Z',
+           'HTTP', 'GET /legacy', 'PASSED', '/legacy'
+         );",
+      )
+      .unwrap();
     drop(conn);
 
     let db = Database::open(path.to_str().unwrap()).unwrap();
@@ -222,14 +250,42 @@ mod tests {
         |row| row.get(0),
       )
       .unwrap();
+    let assertion_id_columns: i64 = db
+      .conn()
+      .query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('entries') WHERE name = 'assertion_id'",
+        [],
+        |row| row.get(0),
+      )
+      .unwrap();
     let schema_version: i64 = db
       .conn()
       .query_row("SELECT MAX(version) FROM schema_migrations", [], |row| {
         row.get(0)
       })
       .unwrap();
+    let stored_assertion_id: String = db
+      .conn()
+      .query_row(
+        "SELECT assertion_id FROM entries WHERE run_id = 'legacy-run'",
+        [],
+        |row| row.get(0),
+      )
+      .unwrap();
 
     assert_eq!(stove_version_columns, 1);
-    assert_eq!(schema_version, MIGRATIONS.len() as i64);
+    assert_eq!(assertion_id_columns, 1);
+    assert_eq!(schema_version, i64::try_from(MIGRATIONS.len()).unwrap());
+    assert_eq!(stored_assertion_id, "");
+
+    let repository = Repository::new(db);
+    let entries = repository.get_entries("legacy-run", "legacy-test").unwrap();
+    let raw_entries = repository
+      .get_raw_entries("legacy-run", "legacy-test")
+      .unwrap();
+    assert_eq!(entries.len(), 1);
+    assert_eq!(raw_entries.len(), 1);
+    assert_eq!(entries[0].assertion_id, format!("legacy:{}", entries[0].id));
+    assert_eq!(raw_entries[0].assertion_id, entries[0].assertion_id);
   }
 }

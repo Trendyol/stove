@@ -41,6 +41,26 @@ class ExampleTest :
       }
     }
 
+    test("tombstone and raw bytes should be published as-is") {
+      stove {
+        kafka {
+          val key = "tombstone-key-${System.currentTimeMillis()}"
+          val topic = "tombstone.and.raw"
+
+          publishTombstone(topic, key = key)
+          peekPublishedMessages(atLeastIn = 10.seconds, topic = topic) {
+            it.key == key && it.value.isEmpty()
+          }
+
+          val poisonPill = "{not-valid-json!!".toByteArray()
+          publishRaw(topic, poisonPill, key = key.some())
+          peekPublishedMessages(atLeastIn = 10.seconds, topic = topic) {
+            it.key == key && it.value.contentEquals(poisonPill)
+          }
+        }
+      }
+    }
+
     test("should create new product when send product create request from api for the allowed supplier") {
       stove {
         val productCreateRequest = ProductCreateRequest(1L, name = "product name", 99L)

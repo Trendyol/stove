@@ -2,7 +2,9 @@ package com.trendyol.stove.wiremock
 
 import arrow.core.some
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
+import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
+import com.trendyol.stove.tracing.TraceContext
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import org.intellij.lang.annotations.Language
@@ -97,6 +99,7 @@ class WireMockPartialMockingTest :
       val request = HttpRequest
         .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
+        .header(TraceContext.STOVE_TEST_ID_HEADER, Stove.reporter().currentTestId())
         .POST(BodyPublishers.ofString(requestBody))
         .build()
 
@@ -126,6 +129,7 @@ class WireMockPartialMockingTest :
       val request = HttpRequest
         .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
         .header("Content-Type", "application/json")
+        .header(TraceContext.STOVE_TEST_ID_HEADER, Stove.reporter().currentTestId())
         .POST(BodyPublishers.ofString(requestBody))
         .build()
 

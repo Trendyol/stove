@@ -1,11 +1,23 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Status } from "../utils/status";
-import type { AppSummary, Entry, LiveDashboardEvent, Run, Snapshot, Span, Test } from "./types";
+import type {
+  AppSummary,
+  Entry,
+  LiveDashboardEvent,
+  MockInteraction,
+  MockWarning,
+  Run,
+  Snapshot,
+  Span,
+  Test,
+} from "./types";
 import { EVENT_TYPE } from "./types";
 
 const RUNNING: Status = "RUNNING";
 
 export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDashboardEvent) {
+  cancelConflictingQueries(queryClient, event);
+
   switch (event.event_type) {
     case EVENT_TYPE.RUN_STARTED: {
       const run: Run = {
@@ -35,6 +47,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         upsertRun(runs, run),
       );
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
+      queryClient.setQueryData<MockInteraction[]>(
+        ["interactions", event.run_id],
+        (interactions) => interactions ?? [],
+      );
+      queryClient.setQueryData<MockWarning[]>(
+        ["warnings", event.run_id],
+        (warnings) => warnings ?? [],
+      );
       break;
     }
     case EVENT_TYPE.RUN_ENDED: {
@@ -85,6 +105,14 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         ["snapshots", event.run_id, event.payload.test_id],
         (snapshots) => snapshots ?? [],
       );
+      queryClient.setQueryData<MockInteraction[]>(
+        ["interactions", event.run_id, event.payload.test_id],
+        (interactions) => interactions ?? [],
+      );
+      queryClient.setQueryData<MockWarning[]>(
+        ["warnings", event.run_id, event.payload.test_id],
+        (warnings) => warnings ?? [],
+      );
       break;
     }
     case EVENT_TYPE.TEST_ENDED: {
@@ -113,6 +141,9 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         actual: event.payload.actual,
         error: event.payload.error,
         trace_id: event.payload.trace_id,
+        assertion_id: event.payload.assertion_id,
+        attempt_count: event.payload.attempt_count,
+        failure_count: event.payload.failure_count,
       };
 
       queryClient.setQueryData<Entry[]>(
@@ -171,6 +202,8 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         system: event.payload.system,
         state_json: event.payload.state_json,
         summary: event.payload.summary,
+        captured_at: event.payload.captured_at,
+        trigger: event.payload.trigger,
       };
 
       queryClient.setQueryData<Snapshot[]>(
@@ -179,6 +212,111 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       );
       break;
     }
+    case EVENT_TYPE.MOCK_INTERACTION: {
+      const interaction: MockInteraction = {
+        id: event.payload.id,
+        run_id: event.run_id,
+        test_id: event.payload.test_id,
+        timestamp: event.payload.timestamp,
+        system: event.payload.system,
+        protocol: event.payload.protocol,
+        method: event.payload.method,
+        target: event.payload.target,
+        matched: event.payload.matched,
+        stub_id: event.payload.stub_id,
+        attribution: event.payload.attribution,
+        request_body: event.payload.request_body,
+        request_body_truncated: event.payload.request_body_truncated,
+        response_body: event.payload.response_body,
+        response_body_truncated: event.payload.response_body_truncated,
+        status: event.payload.status,
+        latency_ms: event.payload.latency_ms,
+        near_misses: event.payload.near_misses,
+        trace_id: event.payload.trace_id,
+        scenario_name: event.payload.scenario_name,
+        scenario_state: event.payload.scenario_state,
+        next_scenario_state: event.payload.next_scenario_state,
+        configured_delay_ms: event.payload.configured_delay_ms,
+        fault: event.payload.fault,
+        client_deadline_ms: event.payload.client_deadline_ms,
+      };
+
+      if (event.payload.test_id) {
+        queryClient.setQueryData<MockInteraction[]>(
+          ["interactions", event.run_id, event.payload.test_id],
+          (interactions) => appendInteractions(interactions, interaction),
+        );
+      } else {
+        queryClient.setQueryData<MockInteraction[]>(
+          ["interactions", event.run_id],
+          (interactions) => appendInteractions(interactions, interaction),
+        );
+      }
+      break;
+    }
+    case EVENT_TYPE.MOCK_WARNING: {
+      const warning: MockWarning = {
+        id: event.payload.id,
+        run_id: event.run_id,
+        test_id: event.payload.test_id,
+        timestamp: event.payload.timestamp,
+        system: event.payload.system,
+        kind: event.payload.kind,
+        message: event.payload.message,
+        stub_id: event.payload.stub_id,
+        target: event.payload.target,
+      };
+
+      if (event.payload.test_id) {
+        queryClient.setQueryData<MockWarning[]>(
+          ["warnings", event.run_id, event.payload.test_id],
+          (warnings) => appendWarnings(warnings, warning),
+        );
+      } else {
+        queryClient.setQueryData<MockWarning[]>(["warnings", event.run_id], (warnings) =>
+          appendWarnings(warnings, warning),
+        );
+      }
+      break;
+    }
+  }
+}
+
+/**
+ * Combines a persisted API response with records that arrived over SSE while
+ * the request was in flight. Persistence is intentionally batched, so a valid
+ * REST response can briefly be older than the live dashboard.
+ */
+export function reconcileDashboardData<T>(
+  queryClient: QueryClient,
+  queryKey: readonly unknown[],
+  persisted: T,
+): T {
+  const cached = queryClient.getQueryData<T>(queryKey);
+  if (!Array.isArray(persisted) || !Array.isArray(cached) || cached.length === 0) {
+    return persisted;
+  }
+
+  switch (queryKey[0]) {
+    case "apps":
+      return mergeApps(persisted as AppSummary[], cached as AppSummary[]) as T;
+    case "runs":
+      return mergeRuns(persisted as Run[], cached as Run[]) as T;
+    case "tests":
+      return mergeTests(persisted as Test[], cached as Test[]) as T;
+    case "entries":
+      return mergeEntries(persisted as Entry[], cached as Entry[]) as T;
+    case "spans":
+    case "trace":
+      return mergeSpanLists(persisted as Span[], cached as Span[]) as T;
+    case "snapshots":
+      return mergeSnapshotLists(persisted as Snapshot[], cached as Snapshot[]) as T;
+    case "interactions":
+      return mergeInteractions(persisted as MockInteraction[], cached as MockInteraction[]) as T;
+    case "warnings":
+      return mergeWarnings(persisted as MockWarning[], cached as MockWarning[]) as T;
+    default:
+      return persisted;
   }
 }
 
@@ -190,8 +328,76 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
     queryClient.invalidateQueries({ queryKey: ["snapshots", runId] });
+    queryClient.invalidateQueries({ queryKey: ["interactions", runId] });
+    queryClient.invalidateQueries({ queryKey: ["warnings", runId] });
   } else {
     queryClient.invalidateQueries();
+  }
+}
+
+function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboardEvent) {
+  const cancel = (queryKey: readonly unknown[], exact = true) => {
+    void queryClient.cancelQueries({ queryKey, exact }, { revert: false });
+  };
+  const cancelRunDetails = (runId: string) => {
+    cancel(["tests", runId]);
+    cancel(["entries", runId], false);
+    cancel(["spans", runId], false);
+    cancel(["snapshots", runId], false);
+    cancel(["interactions", runId], false);
+    cancel(["warnings", runId], false);
+  };
+
+  switch (event.event_type) {
+    case EVENT_TYPE.RUN_STARTED:
+      cancel(["apps"]);
+      cancel(["runs", event.payload.app_name]);
+      cancelRunDetails(event.run_id);
+      break;
+    case EVENT_TYPE.RUN_ENDED:
+      cancel(["apps"]);
+      cancel(["runs"], false);
+      cancelRunDetails(event.run_id);
+      break;
+    case EVENT_TYPE.TEST_STARTED:
+      cancel(["tests", event.run_id]);
+      cancel(["entries", event.run_id, event.payload.test_id]);
+      cancel(["spans", event.run_id, event.payload.test_id]);
+      cancel(["snapshots", event.run_id, event.payload.test_id]);
+      cancel(["interactions", event.run_id, event.payload.test_id]);
+      cancel(["warnings", event.run_id, event.payload.test_id]);
+      break;
+    case EVENT_TYPE.TEST_ENDED:
+      cancel(["tests", event.run_id]);
+      break;
+    case EVENT_TYPE.ENTRY_RECORDED:
+      cancel(["entries", event.run_id, event.payload.test_id]);
+      break;
+    case EVENT_TYPE.SPAN_RECORDED:
+      cancel(["trace", event.payload.trace_id]);
+      if (event.payload.test_id) {
+        cancel(["spans", event.run_id, event.payload.test_id]);
+      } else {
+        cancel(["spans", event.run_id], false);
+      }
+      break;
+    case EVENT_TYPE.SNAPSHOT:
+      cancel(["snapshots", event.run_id, event.payload.test_id]);
+      break;
+    case EVENT_TYPE.MOCK_INTERACTION:
+      if (event.payload.test_id) {
+        cancel(["interactions", event.run_id, event.payload.test_id]);
+      } else {
+        cancel(["interactions", event.run_id]);
+      }
+      break;
+    case EVENT_TYPE.MOCK_WARNING:
+      if (event.payload.test_id) {
+        cancel(["warnings", event.run_id, event.payload.test_id]);
+      } else {
+        cancel(["warnings", event.run_id]);
+      }
+      break;
   }
 }
 
@@ -243,12 +449,35 @@ function updateCachedTests(
 }
 
 function appendEntries(entries: Entry[] | undefined, incoming: Entry): Entry[] {
-  if (entries?.some((entry) => entry.id === incoming.id)) {
+  if (incoming.id !== 0 && entries?.some((entry) => entry.id === incoming.id)) {
     return entries;
   }
-  return [...(entries ?? []), incoming].sort((left, right) =>
-    left.timestamp.localeCompare(right.timestamp),
+
+  const existing = entries ?? [];
+  const assertionIndex = existing.findIndex(
+    (entry) => entry.assertion_id === incoming.assertion_id,
   );
+  if (assertionIndex < 0) {
+    return [...existing, incoming].sort((left, right) =>
+      left.timestamp.localeCompare(right.timestamp),
+    );
+  }
+
+  const previous = existing[assertionIndex];
+  const latest =
+    incoming.attempt_count > previous.attempt_count ||
+    (incoming.attempt_count === previous.attempt_count && incoming.timestamp > previous.timestamp)
+      ? incoming
+      : previous;
+  const correlated = {
+    ...latest,
+    id: previous.id,
+    attempt_count: Math.max(previous.attempt_count, incoming.attempt_count),
+    failure_count: Math.max(previous.failure_count, incoming.failure_count),
+  };
+  return existing
+    .map((entry, index) => (index === assertionIndex ? correlated : entry))
+    .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
 }
 
 function appendSpan(spans: Span[] | undefined, incoming: Span): Span[] {
@@ -276,6 +505,197 @@ function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot):
     return snapshots;
   }
   return [...(snapshots ?? []), incoming];
+}
+
+function appendInteractions(
+  interactions: MockInteraction[] | undefined,
+  incoming: MockInteraction,
+): MockInteraction[] {
+  if (interactions?.some((interaction) => interaction.id === incoming.id)) {
+    return interactions;
+  }
+  return [...(interactions ?? []), incoming].sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
+  );
+}
+
+function appendWarnings(warnings: MockWarning[] | undefined, incoming: MockWarning): MockWarning[] {
+  if (warnings?.some((warning) => warning.id === incoming.id)) {
+    return warnings;
+  }
+  return [...(warnings ?? []), incoming].sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
+  );
+}
+
+function mergeApps(persisted: AppSummary[], cached: AppSummary[]): AppSummary[] {
+  const byName = new Map(persisted.map((app) => [app.app_name, app]));
+  for (const live of cached) {
+    const stored = byName.get(live.app_name);
+    if (
+      !stored ||
+      live.total_runs > stored.total_runs ||
+      (live.total_runs === stored.total_runs &&
+        live.latest_run_id === stored.latest_run_id &&
+        statusProgress(live.latest_status) > statusProgress(stored.latest_status)) ||
+      (live.total_runs === stored.total_runs &&
+        live.latest_run_id !== stored.latest_run_id &&
+        isRunningStatus(live.latest_status))
+    ) {
+      byName.set(live.app_name, live);
+    }
+  }
+  return [...byName.values()].sort((left, right) => left.app_name.localeCompare(right.app_name));
+}
+
+function mergeRuns(persisted: Run[], cached: Run[]): Run[] {
+  const byId = new Map(persisted.map((run) => [run.id, run]));
+  for (const live of cached) {
+    const stored = byId.get(live.id);
+    if (!stored || statusProgress(live.status) > statusProgress(stored.status)) {
+      byId.set(live.id, live);
+    }
+  }
+  return [...byId.values()].sort(compareRuns);
+}
+
+function mergeTests(persisted: Test[], cached: Test[]): Test[] {
+  const byId = new Map(persisted.map((test) => [test.id, test]));
+  for (const live of cached) {
+    const stored = byId.get(live.id);
+    if (!stored || statusProgress(live.status) > statusProgress(stored.status)) {
+      byId.set(live.id, live);
+    }
+  }
+  return [...byId.values()].sort(compareTests);
+}
+
+function mergeEntries(persisted: Entry[], cached: Entry[]): Entry[] {
+  const byAssertion = new Map(persisted.map((entry) => [entry.assertion_id, entry]));
+  for (const live of cached) {
+    const stored = byAssertion.get(live.assertion_id);
+    if (!stored) {
+      byAssertion.set(live.assertion_id, live);
+      continue;
+    }
+
+    const latest =
+      live.attempt_count > stored.attempt_count ||
+      (live.attempt_count === stored.attempt_count && live.timestamp > stored.timestamp)
+        ? live
+        : stored;
+    byAssertion.set(live.assertion_id, {
+      ...latest,
+      id: stored.id,
+      attempt_count: Math.max(stored.attempt_count, live.attempt_count),
+      failure_count: Math.max(stored.failure_count, live.failure_count),
+    });
+  }
+  return [...byAssertion.values()].sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
+  );
+}
+
+function mergeSpanLists(persisted: Span[], cached: Span[]): Span[] {
+  return mergeEvidenceRecords(
+    persisted,
+    cached,
+    (span) => `${span.trace_id}\u0000${span.span_id}`,
+    (left, right) => left.start_time_nanos - right.start_time_nanos,
+  );
+}
+
+function mergeSnapshotLists(persisted: Snapshot[], cached: Snapshot[]): Snapshot[] {
+  return mergeEvidenceRecords(
+    persisted,
+    cached,
+    (snapshot) =>
+      [
+        snapshot.run_id,
+        snapshot.test_id,
+        snapshot.system,
+        snapshot.captured_at,
+        snapshot.trigger,
+        snapshot.summary,
+        snapshot.state_json,
+      ].join("\u0000"),
+    (left, right) => (left.captured_at ?? "").localeCompare(right.captured_at ?? ""),
+  );
+}
+
+function mergeInteractions(
+  persisted: MockInteraction[],
+  cached: MockInteraction[],
+): MockInteraction[] {
+  return mergeEvidenceRecords(
+    persisted,
+    cached,
+    (interaction) =>
+      [
+        interaction.run_id,
+        interaction.test_id,
+        interaction.timestamp,
+        interaction.system,
+        interaction.protocol,
+        interaction.method,
+        interaction.target,
+        interaction.stub_id,
+        interaction.attribution,
+      ].join("\u0000"),
+    (left, right) => left.timestamp.localeCompare(right.timestamp),
+  );
+}
+
+function mergeWarnings(persisted: MockWarning[], cached: MockWarning[]): MockWarning[] {
+  return mergeEvidenceRecords(
+    persisted,
+    cached,
+    (warning) =>
+      [
+        warning.run_id,
+        warning.test_id,
+        warning.timestamp,
+        warning.system,
+        warning.kind,
+        warning.message,
+        warning.stub_id,
+        warning.target,
+      ].join("\u0000"),
+    (left, right) => left.timestamp.localeCompare(right.timestamp),
+  );
+}
+
+function mergeEvidenceRecords<T>(
+  persisted: T[],
+  cached: T[],
+  identity: (record: T) => string,
+  compare: (left: T, right: T) => number,
+): T[] {
+  const unmatchedPersisted = new Map<string, number>();
+  for (const record of persisted) {
+    const key = identity(record);
+    unmatchedPersisted.set(key, (unmatchedPersisted.get(key) ?? 0) + 1);
+  }
+
+  const merged = [...persisted];
+  for (const record of cached) {
+    const key = identity(record);
+    const remaining = unmatchedPersisted.get(key) ?? 0;
+    if (remaining > 0) {
+      unmatchedPersisted.set(key, remaining - 1);
+    } else {
+      merged.push(record);
+    }
+  }
+  return merged.sort(compare);
+}
+
+function statusProgress(status: Status): number {
+  return isRunningStatus(status) ? 0 : 1;
+}
+
+function isRunningStatus(status: Status): boolean {
+  return status === RUNNING;
 }
 
 function compareRuns(left: Run, right: Run): number {

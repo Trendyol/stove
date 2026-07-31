@@ -1,9 +1,13 @@
-export type Tab = "timeline" | "trace" | "snapshots" | "flow";
+import { Icon, type IconName } from "../../components/Icon";
+
+export type Tab = "timeline" | "mocks" | "trace" | "snapshots" | "flow";
 
 interface TabDef {
   id: Tab;
   label: string;
-  icon: string;
+  icon: IconName;
+  count?: number;
+  attention?: boolean;
 }
 
 interface TabBarProps {
@@ -14,25 +18,23 @@ interface TabBarProps {
 
 export function TabBar({ tabs, active, onSelect }: TabBarProps) {
   return (
-    <div
-      className="mt-4 flex gap-1 rounded-lg border border-stove-border bg-stove-base p-1"
-      role="tablist"
-    >
+    <div className="stove-tab-bar" role="tablist">
       {tabs.map((t) => (
         <button
           type="button"
           role="tab"
           key={t.id}
           aria-selected={active === t.id}
-          className={`stove-focus-ring rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-            active === t.id
-              ? "bg-stove-surface text-[var(--stove-text-heading)] shadow-sm"
-              : "text-[var(--stove-text-secondary)] hover:bg-[var(--stove-hover)] hover:text-[var(--stove-text)]"
-          }`}
+          className={`stove-focus-ring ${active === t.id ? "is-active" : ""}`}
           onClick={() => onSelect(t.id)}
         >
-          <span className="mr-1 opacity-80">{t.icon}</span>
-          {t.label}
+          <Icon name={t.icon} className="h-3.5 w-3.5" />
+          <span>{t.label}</span>
+          {t.count != null && (
+            <span className={`stove-tab-count ${t.attention ? "is-attention" : ""}`}>
+              {t.count}
+            </span>
+          )}
         </button>
       ))}
     </div>

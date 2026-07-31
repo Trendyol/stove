@@ -82,6 +82,9 @@ class StoveReporter(
   fun currentTestId(): String =
     resolveTestId() ?: DEFAULT_TEST_ID
 
+  /** Get current test ID, or null when no test context is active */
+  fun currentTestIdOrNull(): String? = resolveTestId()
+
   /** Check if current test has failures */
   fun hasFailures(): Boolean =
     currentTestOrNull()?.hasFailures() == true

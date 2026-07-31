@@ -88,6 +88,14 @@ http {
     }
 }
 
+// Full verb surface (GETs take optional queryParams; all take headers + token):
+// get / getResponse / getMany / getBodilessResponse / readJsonStream
+// postAndExpectJson / postAndExpectBody / postAndExpectBodilessResponse
+// putAndExpectJson / putAndExpectBody / putAndExpectBodilessResponse
+// patchAndExpectJson / patchAndExpectBody / patchAndExpectBodilessResponse
+// deleteAndExpectJson / deleteAndExpectBodilessResponse
+// headAndExpectBodilessResponse / postMultipartAndExpectResponse
+
 // Multipart upload
 http {
     postMultipartAndExpectResponse<UploadResponse>(
@@ -407,7 +415,8 @@ kafka {
     }
 }
 
-// Verify consumed (stove-spring-kafka only)
+// Verify consumed — requires the bridge/interceptor wired into the AUT
+// (Spring: TestSystemKafkaInterceptor bean; Go: stove-kafka bridge; other: gRPC observer)
 kafka {
     shouldBeConsumed<OrderCreatedEvent>(atLeastIn = 20.seconds) {
         actual.orderId == orderId
@@ -430,7 +439,7 @@ kafka {
     }
 }
 
-// Verify retries (stove-spring-kafka only)
+// Verify retries (needs retry topic-suffix conventions; bridge required)
 kafka {
     shouldBeRetried<FailingEvent>(atLeastIn = 1.minutes, times = 3) {
         actual.id == "789"
@@ -445,9 +454,142 @@ kafka {
         metadata.headers["correlation-id"] != null
     }
 }
+
+// Peek raw records on a topic (no deserialization to a type)
+kafka {
+    peekPublishedMessages(atLeastIn = 5.seconds, topic = "order-events") { record ->
+        record.key == "order-456"   // return true to stop peeking
+    }
+    // Also: peekConsumedMessages(...), peekCommittedMessages(...)
+}
+
+// Admin operations against the broker
+kafka {
+    adminOperations {
+        createTopics(listOf(NewTopic("audit", 3, 1))).all().get()
+    }
+}
+
+// Inflight consumer (stove-kafka standalone only, like peek*) — a real
+// KafkaConsumer inside the test, reading straight from the broker. Needs NO
+// bridge/interceptor in the AUT, so it works against .provided() clusters
+// (staging/pre-prod) as well as containers.
+kafka {
+    val seen = mutableListOf<ConsumerRecord<String, String>>()
+    consumer<String, String>(
+        topic = "order-events",
+        keepConsumingAtLeastFor = 10.seconds  // poll window (default: 5s)
+    ) { record ->
+        seen += record
+    }
+    seen.map { it.key() } shouldContain orderId
+}
+// Defaults: readOnly = true (no offset commits), autoOffsetReset = "earliest",
+// random groupId per call. Override deserializers/config/groupId as needed.
 ```
 
+`shouldBePublished` / `shouldBeConsumed` / `shouldBeFailed` / `shouldBeRetried` exist in both `stove-kafka` (standalone) and `stove-spring-kafka`. All of them only see what the AUT-side bridge reports: Spring apps register `TestSystemKafkaInterceptor`, Go apps use the `go/stove-kafka` bridge, JVM non-Spring apps put `cfg.interceptorClass` on the client's interceptor list.
+
 ## WireMock mocking
+
+Prefer the structured DSL for new tests in 0.26+. It requires no opt-in annotation. Stove APIs may evolve in minor releases; release notes provide migration guidance when they do.
+
+```kotlin
+wiremock {
+    mockGet("/inventory/$productId") {
+        respond {
+            status = 200
+            json(InventoryResponse(available = true))
+        }
+    }
+
+    mockPost("/payments/charge", name = "charge payment") {
+        request {
+            header("X-Tenant", "nl")
+            contentTypeJson()
+            jsonField("order.id", orderId)
+        }
+        respond {
+            status = 200
+            json(PaymentResult(success = true))
+        }
+    }
+}
+```
+
+String verb functions match the URL path. Use `path`, `exactUrl`, or `pathRegex` when building a reusable request:
+
+```kotlin
+wiremock {
+    val chargePayment = request(RequestMethod.POST, path("/payments/charge")) {
+        header("X-Tenant", "nl")
+        jsonField("order.id", orderId)
+    }
+
+    stub(chargePayment) {
+        respond {
+            status = 202
+            text("accepted")
+        }
+    }
+
+    // Exercise the AUT before point-in-time verification.
+
+    shouldHaveBeenCalled(chargePayment, exactly(1))
+    callsFor(chargePayment)
+}
+```
+
+Request blocks support `header`, `query`, `contentTypeJson`, `jsonEqualTo`, `jsonField`, and `jsonPath`. Response blocks support `json`, `jsonNull`, `rawJson`, `text`, `bytes`, `empty`, status, headers, and delay.
+
+Use `behaviour` for retry and recovery journeys. Transient responses are ordered; `thenAlways` is required and remains active:
+
+```kotlin
+wiremock {
+    mockPost("/payments") {
+        behaviour {
+            repeat(2) {
+                respond {
+                    status = 503
+                    json(mapOf("error" to "temporarily unavailable"))
+                }
+            }
+            thenAlways {
+                status = 200
+                json(mapOf("recovered" to true))
+            }
+        }
+    }
+
+    mockGet("/slow") {
+        behaviour {
+            repeat(2) { timeout(2.seconds) }
+            thenAlways { json(mapOf("recovered" to true)) }
+        }
+    }
+}
+```
+
+Use `rawStub(name?)` for native WireMock features while retaining Stove naming, test scoping, reporting, journaling, and cleanup:
+
+```kotlin
+wiremock {
+    rawStub("dynamic order response") {
+        post(urlPathEqualTo("/orders"))
+            .willReturn(aResponse().withTransformers("response-template"))
+    }
+
+    // Existing specialized APIs remain available.
+    mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
+    mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
+        aResponse().withStatus(201).withBody("""{"echo":${request.bodyAsString}}""")
+    }
+}
+```
+
+`rawStub` assigns a managed mapping ID and replaces any `.withId(...)` value from the native builder.
+
+The stable `mock*(statusCode = ...)`, `mock*Containing`, `behaviourFor`, and verification overloads remain available for existing tests:
 
 ```kotlin
 wiremock {
@@ -457,52 +599,27 @@ wiremock {
         responseBody = InventoryResponse(available = true).some()
     )
 
-    mockPost(
+    shouldHaveBeenCalled(RequestMethod.POST, "/payments/charge")
+
+    shouldHaveBeenCalled(
+        method = RequestMethod.POST,
         url = "/payments/charge",
-        statusCode = 200,
-        responseBody = PaymentResult(success = true).some()
-    )
-}
-
-// PUT, PATCH, DELETE mocks
-wiremock {
-    mockPut(url = "/products/123", statusCode = 200,
-        responseBody = Product("123", "Updated", 899.99).some())
-    mockPatch(url = "/users/123", statusCode = 200,
-        requestBody = mapOf("email" to "new@example.com").some())
-    mockDelete(url = "/products/123", statusCode = 204)
-    mockHead(url = "/products/exists/123", statusCode = 200)
-}
-
-// Partial body matching — match specific fields, ignore the rest
-wiremock {
-    mockPostContaining(
-        url = "/api/orders",
-        requestContaining = mapOf("productId" to 123),
-        statusCode = 201,
-        responseBody = OrderResponse(orderId = "order-123").some()
+        count = exactly(2),
+        requestContaining = mapOf("order.id" to orderId),
+        headers = mapOf("X-Api-Key" to "test"),
+        queryParams = mapOf("retry" to "true")
     )
 
-    // Deep nested matching with dot notation
-    mockPostContaining(
-        url = "/api/checkout",
-        requestContaining = mapOf(
-            "order.customer.id" to "cust-123",
-            "order.payment.method" to "credit_card"
-        ),
-        statusCode = 200
-    )
-}
-
-// Sequential responses (behavioral mocking)
-wiremock {
-    behaviourFor("/api/service", WireMock::get) {
-        initially { aResponse().withStatus(503) }
-        then { aResponse().withStatus(503) }
-        then { aResponse().withStatus(200).withBody(it.serialize(result)) }
+    shouldHaveBeenCalled(exactly(1)) {
+        postRequestedFor(urlEqualTo("/payments/charge"))
+            .withRequestBody(matchingJsonPath("$.amount"))
     }
+
+    shouldNotHaveBeenCalled(RequestMethod.DELETE, "/payments/charge")
 }
 ```
+
+Mock verification is point-in-time by design — there is no `within`/timeout parameter. Run it after the anchor assertion (Kafka `atLeastIn`, awaited HTTP call) has absorbed any async wait. `validate()` fails on unmatched requests scoped fail-open to the current test (untagged traffic counts for every test), and failures include near-miss diffs against the closest stubs.
 
 ## gRPC Mock
 
@@ -561,6 +678,38 @@ grpcMock {
     )
 }
 ```
+
+0.26+ additions — typed matching, descriptor stubbing, verification, resilience:
+
+```kotlin
+grpcMock {
+    // Descriptor-typed stubbing: no service/method name strings, no typo'd UNIMPLEMENTED
+    mockUnary(GreeterGrpc.getSayHelloMethod(), response = reply)
+
+    // Typed request matcher (parses bytes as the proto type; unparseable never matches)
+    mockUnary(
+        serviceName = "users.UserService",
+        methodName = "GetUser",
+        requestMatcher = RequestMatcher.message<GetUserRequest> { it.userId == "123" },
+        response = response
+    )
+
+    // Deadline testing: delay on any stub; client deadline yields DEADLINE_EXCEEDED
+    mockUnary(service, method, response = reply, delay = 2.seconds)
+
+    // Stream N items then fail mid-flight
+    mockServerStream(service, method, responses = items, thenFailWith = Status.UNAVAILABLE)
+
+    // Structured errors with trailers
+    mockError(service, method, status = Status.Code.FAILED_PRECONDITION, trailers = metadata)
+
+    // Typed, point-in-time, test-scoped verification (exact count; no timeout param)
+    shouldHaveBeenCalled<GetUserRequest>("users.UserService", "GetUser") { it.userId == "123" }
+    shouldNotHaveBeenCalled<GetUserRequest>(GreeterGrpc.getSayHelloMethod())
+}
+```
+
+Semantics to know (0.26+): among matching stubs the **last registered wins**; registering stubs of different RPC types for one method **fails fast** (`Error` stubs are type-agnostic and never conflict); bidi stubs **reject** `requestMatcher` (use `metadataMatcher` or inspect inside the handler); `validate()` is test-scoped fail-open and its failures name which matcher rejected each candidate stub.
 
 ## gRPC Client
 
@@ -708,11 +857,16 @@ test("staging smoke test — order flow") {
             }
         }
 
-        // Verify Kafka event on the remote cluster
+        // Verify Kafka event on the remote cluster.
+        // The deployed app has no Stove bridge/interceptor, so sink-based
+        // assertions (shouldBePublished/shouldBeConsumed) won't see its
+        // messages — use the inflight consumer to read from the broker directly.
         kafka {
-            shouldBePublished<OrderCreatedEvent>(10.seconds) {
-                actual.userId == userId
+            var found = false
+            consumer<String, String>(topic = "order-events", keepConsumingAtLeastFor = 10.seconds) { record ->
+                if (record.value().contains(userId)) found = true
             }
+            found shouldBe true
         }
     }
 }

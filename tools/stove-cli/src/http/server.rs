@@ -44,12 +44,40 @@ pub fn create_router_with_ingestor(
       get(super::routes::get_entries),
     )
     .route(
+      "/runs/{run_id}/tests/{test_id}/entries/raw",
+      get(super::routes::get_raw_entries),
+    )
+    .route(
       "/runs/{run_id}/tests/{test_id}/spans",
       get(super::routes::get_test_spans),
     )
     .route(
       "/runs/{run_id}/tests/{test_id}/snapshots",
       get(super::routes::get_snapshots),
+    )
+    .route(
+      "/runs/{run_id}/tests/{test_id}/interactions",
+      get(super::routes::get_test_interactions),
+    )
+    .route(
+      "/runs/{run_id}/tests/{test_id}/warnings",
+      get(super::routes::get_test_warnings),
+    )
+    .route(
+      "/runs/{run_id}/interactions",
+      get(super::routes::get_run_interactions),
+    )
+    .route(
+      "/runs/{run_id}/interactions/ambient",
+      get(super::routes::get_unattributed_run_interactions),
+    )
+    .route(
+      "/runs/{run_id}/warnings",
+      get(super::routes::get_run_warnings),
+    )
+    .route(
+      "/runs/{run_id}/warnings/ambient",
+      get(super::routes::get_unattributed_run_warnings),
     )
     .route("/traces/{trace_id}", get(super::routes::get_trace))
     .route("/events/stream", get(super::routes::sse_handler))

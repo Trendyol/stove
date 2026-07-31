@@ -19,8 +19,6 @@ dependencies {
   implementation(libs.io.grpc.kotlin)
   implementation(libs.io.grpc.netty)
   implementation(libs.google.protobuf.kotlin)
-  implementation(libs.caffeine)
-  implementation(libs.pprint)
 }
 
 dependencies {

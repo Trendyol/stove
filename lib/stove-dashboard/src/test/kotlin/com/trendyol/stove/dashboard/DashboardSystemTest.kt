@@ -2,6 +2,14 @@ package com.trendyol.stove.dashboard
 
 import com.trendyol.stove.dashboard.api.*
 import com.trendyol.stove.dashboard.api.DashboardEventServiceGrpcKt.DashboardEventServiceCoroutineImplBase
+import com.trendyol.stove.interactions.InteractionAttribution
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.interactions.MockInteractionPublisher
+import com.trendyol.stove.interactions.MockWarning
+import com.trendyol.stove.interactions.MockWarningKind
+import com.trendyol.stove.interactions.MockWarningListener
+import com.trendyol.stove.interactions.MockWarningPublisher
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.PluggedSystem
@@ -12,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -89,8 +98,110 @@ class DashboardSystemTest : FunSpec({
       system.stop()
       delay(1000.milliseconds)
 
-      received.any { it.hasTestEnded() && it.testEnded.testId == "test-still-running" } shouldBe true
-      received.first { it.hasRunEnded() }.runEnded.totalTests shouldBe 1
+      received.single {
+        it.hasTestEnded() && it.testEnded.testId == "test-still-running"
+      }.testEnded.status shouldBe "ERROR"
+      received.first { it.hasRunEnded() }.runEnded.let {
+        it.totalTests shouldBe 1
+        it.passed shouldBe 0
+        it.failed shouldBe 1
+      }
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("eventually-style attempts all reach the CLI while final test status stays passed") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      stove.getOrRegister(PostgreSqlSnapshotSystem(stove))
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+
+      system.run()
+      delay(200.milliseconds)
+
+      stove.startTest(StoveTestContext("test-eventually", "eventually passes", "MySpec"))
+      repeat(4) { attempt ->
+        stove.recordReport(
+          ReportEntry.failure("PostgreSQL", "test-eventually", "Query", "not ready: $attempt")
+        )
+      }
+      stove.recordReport(ReportEntry.success("PostgreSQL", "test-eventually", "Query"))
+      stove.endTest()
+      stove.recordReport(
+        ReportEntry.failure("PostgreSQL", "test-eventually", "Query", "late callback")
+      )
+
+      delay(300.milliseconds)
+      system.stop()
+
+      val entries = received.filter {
+        it.hasEntryRecorded() && it.entryRecorded.testId == "test-eventually"
+      }
+      entries.size shouldBe 5
+      entries.take(4).all { it.entryRecorded.result == "FAILED" } shouldBe true
+      entries.last().entryRecorded.result shouldBe "PASSED"
+      received.single {
+        it.hasTestEnded() && it.testEnded.testId == "test-eventually"
+      }.testEnded.status shouldBe "PASSED"
+      received.count {
+        it.hasSnapshot() &&
+          it.snapshot.testId == "test-eventually" &&
+          it.snapshot.trigger == "FAILURE"
+      } shouldBe 1
+      received.single { it.hasRunEnded() }.runEnded.failed shouldBe 0
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("exhausted attempts all reach the CLI and final test failure remains authoritative") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      stove.getOrRegister(PostgreSqlSnapshotSystem(stove))
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+
+      system.run()
+      delay(200.milliseconds)
+
+      stove.startTest(StoveTestContext("test-exhausted", "eventually fails", "MySpec"))
+      repeat(5) { attempt ->
+        stove.recordReport(
+          ReportEntry.failure("PostgreSQL", "test-exhausted", "Query", "not ready: $attempt")
+        )
+      }
+      system.onTestFailed("test-exhausted", "eventually timed out")
+      stove.endTest()
+
+      delay(300.milliseconds)
+      system.stop()
+
+      val entries = received.filter {
+        it.hasEntryRecorded() && it.entryRecorded.testId == "test-exhausted"
+      }
+      entries.size shouldBe 5
+      entries.all { it.entryRecorded.result == "FAILED" } shouldBe true
+      received.single {
+        it.hasTestEnded() && it.testEnded.testId == "test-exhausted"
+      }.testEnded.status shouldBe "FAILED"
+      received.count {
+        it.hasSnapshot() &&
+          it.snapshot.testId == "test-exhausted" &&
+          it.snapshot.trigger == "FAILURE"
+      } shouldBe 1
+      received.single { it.hasRunEnded() }.runEnded.failed shouldBe 1
     } finally {
       server.shutdownNow()
     }
@@ -138,6 +249,89 @@ class DashboardSystemTest : FunSpec({
       received.first { it.hasRunEnded() }.runEnded.totalTests shouldBe 1
       received.first { it.hasRunEnded() }.runEnded.passed shouldBe 1
       received.first { it.hasRunEnded() }.runEnded.failed shouldBe 0
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("mock interaction forwarding preserves diagnostic metadata") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+      system.run()
+      system.onInteraction(
+        MockInteraction(
+          system = "WireMock",
+          protocol = MockInteraction.Protocol.HTTP,
+          method = "POST",
+          target = "/payments",
+          matched = true,
+          stubId = "stub-1",
+          testId = "test-1",
+          attribution = InteractionAttribution.PROVEN_STUB,
+          requestBody = """{"amount":100}""",
+          requestBodyTruncated = false,
+          responseBody = """{"ok":true}""",
+          responseBodyTruncated = false,
+          status = "200",
+          latencyMs = 42,
+          nearMisses = emptyList(),
+          traceId = "0123456789abcdef0123456789abcdef",
+          timestamp = Instant.parse("2026-01-01T00:00:00Z"),
+          scenarioName = "payment retry",
+          scenarioState = "attempt-2",
+          nextScenarioState = "recovered",
+          configuredDelayMs = 250,
+          fault = "CONNECTION_RESET_BY_PEER",
+          clientDeadlineMs = 500
+        )
+      )
+      delay(300.milliseconds)
+      system.stop()
+
+      val event = received.first { it.hasMockInteraction() }.mockInteraction
+      event.scenarioName shouldBe "payment retry"
+      event.scenarioState shouldBe "attempt-2"
+      event.nextScenarioState shouldBe "recovered"
+      event.configuredDelayMs shouldBe 250
+      event.fault shouldBe "CONNECTION_RESET_BY_PEER"
+      event.clientDeadlineMs shouldBe 500
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("mock diagnostics stay inside the dashboard run lifecycle") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+
+    try {
+      val stove = Stove()
+      stove.getOrRegister(LifecycleDiagnosticSystem(stove))
+      val system = DashboardSystem(
+        stove,
+        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+      )
+
+      system.run()
+      stove.startTest(StoveTestContext("test-open", "open test", "LifecycleSpec"))
+      system.stop()
+      delay(500.milliseconds)
+
+      received.first().hasRunStarted() shouldBe true
+      received.any { it.hasMockInteraction() && it.mockInteraction.target == "/on-register" } shouldBe true
+      received.any { it.hasMockWarning() && it.mockWarning.target == "/on-register" } shouldBe true
+      received.none {
+        it.hasMockInteraction() && it.mockInteraction.target == "/during-finalization"
+      } shouldBe true
+      received.none { it.hasMockWarning() && it.mockWarning.target == "/during-finalization" } shouldBe true
+      received.last().hasRunEnded() shouldBe true
     } finally {
       server.shutdownNow()
     }
@@ -198,4 +392,89 @@ private class BlockingSnapshotSystem(
   }
 
   override fun close() = Unit
+}
+
+private class PostgreSqlSnapshotSystem(
+  override val stove: Stove
+) : PluggedSystem,
+  Reports {
+  override val reportSystemName: String = "PostgreSQL"
+
+  override fun snapshot(): SystemSnapshot = SystemSnapshot(
+    system = reportSystemName,
+    state = mapOf("ready" to true),
+    summary = "PostgreSQL state"
+  )
+
+  override fun close() = Unit
+}
+
+private class LifecycleDiagnosticSystem(
+  override val stove: Stove
+) : PluggedSystem,
+  Reports,
+  MockInteractionPublisher,
+  MockWarningPublisher {
+  private val interactionListeners = CopyOnWriteArrayList<MockInteractionListener>()
+  private val warningListeners = CopyOnWriteArrayList<MockWarningListener>()
+
+  override val reportSystemName: String = "Lifecycle diagnostics"
+
+  override fun addInteractionListener(listener: MockInteractionListener) {
+    interactionListeners.add(listener)
+    listener.onInteraction(interaction("/on-register"))
+  }
+
+  override fun removeInteractionListener(listener: MockInteractionListener) {
+    interactionListeners.remove(listener)
+  }
+
+  override fun addWarningListener(listener: MockWarningListener) {
+    warningListeners.add(listener)
+    listener.onWarning(warning("/on-register"))
+  }
+
+  override fun removeWarningListener(listener: MockWarningListener) {
+    warningListeners.remove(listener)
+  }
+
+  override fun snapshot(): SystemSnapshot {
+    interactionListeners.forEach { it.onInteraction(interaction("/during-finalization")) }
+    warningListeners.forEach { it.onWarning(warning("/during-finalization")) }
+    return SystemSnapshot(
+      system = reportSystemName,
+      state = emptyMap<String, Any>(),
+      summary = "lifecycle snapshot"
+    )
+  }
+
+  override fun close() = Unit
+
+  private fun interaction(target: String) = MockInteraction(
+    system = reportSystemName,
+    protocol = MockInteraction.Protocol.HTTP,
+    method = "GET",
+    target = target,
+    matched = true,
+    stubId = null,
+    testId = null,
+    attribution = InteractionAttribution.UNATTRIBUTED,
+    requestBody = "",
+    requestBodyTruncated = false,
+    responseBody = "",
+    responseBodyTruncated = false,
+    status = "200",
+    latencyMs = null,
+    nearMisses = emptyList(),
+    traceId = null,
+    timestamp = Instant.now()
+  )
+
+  private fun warning(target: String) = MockWarning(
+    system = reportSystemName,
+    kind = MockWarningKind.UNUSED_STUB,
+    testId = null,
+    message = "lifecycle warning",
+    target = target
+  )
 }

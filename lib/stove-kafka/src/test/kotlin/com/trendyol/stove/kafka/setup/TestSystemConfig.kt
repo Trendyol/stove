@@ -18,6 +18,8 @@ import org.testcontainers.kafka.ConfluentKafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.*
 
+private const val KAFKA_BOOTSTRAP_SERVERS = "kafka.bootstrapServers"
+
 // ============================================================================
 // Shared components
 // ============================================================================
@@ -28,7 +30,12 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
   private val consumers: MutableList<AutoCloseable> = mutableListOf()
 
   override suspend fun start(configurations: List<String>) {
-    val bootstrapServers = configurations.first { it.contains("kafka", true) }.split('=')[1]
+    val configuration = configurations
+      .mapNotNull { entry ->
+        val separator = entry.indexOf('=')
+        if (separator <= 0) null else entry.take(separator) to entry.substring(separator + 1)
+      }.toMap()
+    val bootstrapServers = configuration.getValue(KAFKA_BOOTSTRAP_SERVERS)
     logger.info("Starting Kafka application with bootstrap servers: $bootstrapServers")
 
     client = mapOf<String, Any>(
@@ -39,11 +46,17 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
       .flatMap { listOf(it.topic, it.retryTopic, it.deadLetterTopic) }
       .map { NewTopic(it, 1, 1) }
     client.createTopics(newTopics).all().get()
-    startConsumers(bootstrapServers)
+    startConsumers(
+      bootstrapServers,
+      configuration.filterKeys { it.startsWith("stove.kafka.bridge.") }
+    )
   }
 
-  private suspend fun startConsumers(bootStrapServers: String) {
-    val consumerSettings = mapOf(
+  private suspend fun startConsumers(
+    bootStrapServers: String,
+    bridgeProperties: Map<String, String>
+  ) {
+    val consumerSettings = mapOf<String, Any>(
       ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootStrapServers,
       ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to "2000",
       ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG to "true",
@@ -51,8 +64,9 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
       ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
       ConsumerConfig.GROUP_ID_CONFIG to "stove-application-consumers",
+      ConsumerConfig.CLIENT_ID_CONFIG to "stove-test-application-consumer",
       ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG to listOf("com.trendyol.stove.kafka.intercepting.StoveKafkaBridge")
-    )
+    ) + bridgeProperties
 
     val producerSettings = PublisherSettings<String, Any>(
       bootStrapServers,
@@ -63,6 +77,8 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
           ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
           listOf("com.trendyol.stove.kafka.intercepting.StoveKafkaBridge")
         )
+        put(ProducerConfig.CLIENT_ID_CONFIG, "stove-test-application-producer")
+        putAll(bridgeProperties)
       }
     )
 
@@ -148,7 +164,7 @@ class ContainerKafkaStrategy : KafkaTestStrategy {
       listenPublishedMessagesFromStove = true,
       containerOptions = KafkaContainerOptions(tag = "8.0.3"),
       configureExposedConfiguration = { cfg ->
-        listOf("kafka.servers=${cfg.bootstrapServers}")
+        listOf("$KAFKA_BOOTSTRAP_SERVERS=${cfg.bootstrapServers}")
       }
     ).migrations {
       register<CreateTestTopicsMigration>()
@@ -186,7 +202,7 @@ class EmbeddedKafkaStrategy : KafkaTestStrategy {
       useEmbeddedKafka = true,
       listenPublishedMessagesFromStove = true,
       configureExposedConfiguration = { cfg ->
-        listOf("kafka.servers=${cfg.bootstrapServers}")
+        listOf("$KAFKA_BOOTSTRAP_SERVERS=${cfg.bootstrapServers}")
       }
     ).migrations {
       register<CreateTestTopicsMigration>()
@@ -246,7 +262,7 @@ class ProvidedKafkaStrategy : KafkaTestStrategy {
           }
         },
         configureExposedConfiguration = { cfg ->
-          listOf("kafka.servers=${cfg.bootstrapServers}")
+          listOf("$KAFKA_BOOTSTRAP_SERVERS=${cfg.bootstrapServers}")
         }
       ).migrations {
         register<CreateTestTopicsMigration>()
@@ -273,7 +289,6 @@ class ProvidedKafkaStrategy : KafkaTestStrategy {
 
 private fun setupBridgePort() {
   stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
-  System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
 }
 
 // ============================================================================

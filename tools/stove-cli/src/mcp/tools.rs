@@ -92,9 +92,24 @@ impl ToolSpec {
           ),
         ),
       },
+      ToolName::Interactions => Self {
+        tool,
+        description: "Mock exchanges (WireMock / gRPC Mock) and mock warnings for one test or a whole run. Every request that reached a mock appears — matched or not — with status, latency, near-miss diagnoses, and proven-only attribution. Omit test_id for run scope, which includes the unattributed lane (evidence with no provable test owner).",
+        fields: vec![
+          FieldSpec::string(ArgName::RunId)
+            .required()
+            .description("Exact Stove run id."),
+          FieldSpec::string(ArgName::TestId).description(
+            "Optional exact test id. Omit for run scope including unattributed evidence.",
+          ),
+          FieldSpec::limit(),
+          FieldSpec::budget(),
+          FieldSpec::max_chars(),
+        ],
+      },
       ToolName::RawEvidence => Self {
         tool,
-        description: "Explicit capped raw evidence lookup by entry, span, or snapshot id. Prefer summary tools first.",
+        description: "Explicit capped raw evidence lookup by entry, span, snapshot, interaction, or warning id. Prefer summary tools first.",
         fields: vec![
           FieldSpec::string_enum(ArgName::Kind, SchemaEnum::RawEvidenceKind).required(),
           FieldSpec::integer(ArgName::Id).required(),
@@ -398,8 +413,22 @@ mod tests {
       json!([
         RawEvidenceKind::Entry.as_str(),
         RawEvidenceKind::Span.as_str(),
-        RawEvidenceKind::Snapshot.as_str()
+        RawEvidenceKind::Snapshot.as_str(),
+        RawEvidenceKind::Interaction.as_str(),
+        RawEvidenceKind::Warning.as_str()
       ])
+    );
+  }
+
+  #[test]
+  fn interactions_schema_requires_only_run_id() {
+    let interactions = ToolSpec::for_tool(ToolName::Interactions).to_json();
+    let required = interactions["inputSchema"]["required"].as_array().unwrap();
+
+    assert_eq!(required, &vec![json!(ArgName::RunId.as_str())]);
+    assert!(
+      interactions["inputSchema"]["properties"][ArgName::TestId.as_str()].is_object(),
+      "test_id must stay optional for run-scope queries"
     );
   }
 }

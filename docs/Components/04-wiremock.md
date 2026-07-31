@@ -90,6 +90,95 @@ stove {
 }
 ```
 
+## Structured DSL (0.26+)
+
+The structured DSL keeps request matching and response construction separate. String-based verb functions match the URL path, so query parameters can be declared independently. Stub names are inferred from the method and target unless you provide one.
+
+!!! note "API evolution"
+    Stove APIs are still evolving and may change in minor releases. When an API changes, the release notes will include a migration guide.
+
+```kotlin
+test("creates a payment") {
+  stove {
+    wiremock {
+      mockPost("/api/payments", name = "create payment") {
+        request {
+          header("X-Tenant", "nl")
+          query("dryRun", "false")
+          contentTypeJson()
+          jsonField("customer.id", "customer-1")
+        }
+        respond {
+          status = 201
+          header("X-Service", "payments")
+          json(PaymentResponse(paymentId = "payment-1"))
+        }
+      }
+    }
+  }
+}
+```
+
+Request targets are explicit when building a reusable specification:
+
+- `path("/api/payments")` matches the path and ignores undeclared query parameters.
+- `exactUrl("/api/payments?dryRun=false")` matches the complete URL.
+- `pathRegex("/api/payments/[0-9]+")` matches a path regex.
+
+Request blocks support `header`, `query`, `contentTypeJson`, `jsonEqualTo`, `jsonField`, and `jsonPath`. Response blocks support `json`, `jsonNull`, `rawJson`, `text`, `bytes`, `empty`, headers, status, and delay.
+
+### Reuse a request for stubbing and verification
+
+```kotlin
+test("calls the payment service") {
+  stove {
+    wiremock {
+      val createPayment = request(RequestMethod.POST, path("/api/payments")) {
+        header("X-Tenant", "nl")
+        jsonField("customer.id", "customer-1")
+      }
+
+      stub(createPayment) {
+        respond {
+          status = 202
+          text("accepted")
+        }
+      }
+
+      // Exercise the application.
+
+      shouldHaveBeenCalled(createPayment, exactly(1))
+      callsFor(createPayment)
+    }
+  }
+}
+```
+
+The same request specification also works with `shouldNotHaveBeenCalled`.
+
+### Managed access to native WireMock
+
+Use `rawStub` when WireMock exposes a feature that the structured DSL does not:
+
+```kotlin
+test("uses a native transformer") {
+  stove {
+    wiremock {
+      rawStub("transformed response") {
+        get(urlPathEqualTo("/api/transformed"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withTransformers("response-template")
+          )
+      }
+    }
+  }
+}
+```
+
+The name is optional and otherwise inferred from the mapping. Unlike direct `server()` access, `rawStub` retains Stove reporting, test scoping, verification, and cleanup. Stove assigns a managed mapping ID, replacing any `.withId(...)` value from the native builder.
+
 ## Advanced matching
 
 For URL patterns, regex bodies, header constraints:
@@ -198,32 +287,56 @@ Supports primitives, nested maps, arrays, dot paths, and `urlPatternFn` for rege
 
 ## Behavior sequences
 
-Test retry, circuit-breaker, and recovery flows:
+The structured DSL describes only observable behaviour; WireMock scenario and state names remain internal. Add transient responses, then finish with the response that stays active:
 
 ```kotlin
-test("service recovers after two failures") {
+test("service recovers after two timeouts") {
   stove {
     wiremock {
-      behaviourFor("/api/external-service", WireMock::get) {
-        initially { aResponse().withStatus(503) }
-        then      { aResponse().withStatus(503) }
-        then      {
-          aResponse()
-            .withStatus(200)
-            .withHeader("Content-Type", "application/json")
-            .withBody(it.serialize(ServiceResponse(status = "OK")))
+      mockGet("/api/external-service") {
+        behaviour {
+          repeat(2) {
+            timeout(1.seconds)
+          }
+          thenAlways {
+            status = 200
+            json(ServiceResponse(status = "OK"))
+          }
         }
       }
     }
 
-    http {
-      getResponse("/api/external-service") { it.status shouldBe 503 }
-      getResponse("/api/external-service") { it.status shouldBe 503 }
-      get<ServiceResponse>("/api/external-service") { it.status shouldBe "OK" }
+    // The first two calls time out; every later call receives the success response.
+  }
+}
+```
+
+Transient HTTP responses use the same response DSL:
+
+```kotlin
+test("service succeeds after two unavailable responses") {
+  stove {
+    wiremock {
+      mockPost("/api/payments") {
+        behaviour {
+          repeat(2) {
+            respond {
+              status = 503
+              json(mapOf("error" to "temporarily unavailable"))
+            }
+          }
+          thenAlways {
+            status = 200
+            json(mapOf("recovered" to true))
+          }
+        }
+      }
     }
   }
 }
 ```
+
+`thenAlways` is required and remains active for all later matching calls. The existing `behaviourFor` API remains available for tests that need direct `ResponseDefinitionBuilder` access.
 
 ## Simulating slow responses
 

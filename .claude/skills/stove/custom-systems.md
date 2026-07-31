@@ -7,7 +7,7 @@
 - [Register the listener](#4-register-the-listener)
 - [Use in tests](#5-use-in-tests)
 
-Complete working example: `recipes/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/.../setup/DbSchedulerSystem.kt`
+Complete working example: `recipes/jvm/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/.../setup/DbSchedulerSystem.kt`
 
 ## 1. Implement PluggedSystem
 

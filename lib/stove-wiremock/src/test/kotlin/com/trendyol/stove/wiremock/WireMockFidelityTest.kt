@@ -1,0 +1,180 @@
+package com.trendyol.stove.wiremock
+
+import arrow.core.some
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.http.Fault
+import com.github.tomakehurst.wiremock.http.RequestMethod
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.stove
+import com.trendyol.stove.tracing.TraceContext
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.delay
+import java.io.IOException
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse
+import java.net.http.HttpResponse.BodyHandlers
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+
+/**
+ * Fidelity features: network faults, response latency, retry journeys, and
+ * request-computed dynamic responses.
+ */
+class WireMockFidelityTest :
+  FunSpec({
+    val client = HttpClient.newBuilder().build()
+
+    suspend fun awaitInteractionCount(
+      interactions: List<MockInteraction>,
+      target: String,
+      expected: Int
+    ) {
+      val deadline = System.currentTimeMillis() + 5_000
+      while (interactions.count { it.target == target } < expected && System.currentTimeMillis() < deadline) {
+        delay(25)
+      }
+      interactions.count { it.target == target } shouldBe expected
+    }
+
+    fun request(url: String, body: String = "{}"): HttpRequest = HttpRequest
+      .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
+      .header("Content-Type", "application/json")
+      .header(TraceContext.STOVE_TEST_ID_HEADER, Stove.reporter().currentTestId())
+      .POST(BodyPublishers.ofString(body))
+      .build()
+
+    fun get(url: String): HttpRequest = HttpRequest
+      .newBuilder(URI("$WIREMOCK_BASE_URL$url"))
+      .header(TraceContext.STOVE_TEST_ID_HEADER, Stove.reporter().currentTestId())
+      .GET()
+      .build()
+
+    fun send(req: HttpRequest): HttpResponse<String> = client.send(req, BodyHandlers.ofString())
+
+    test("mockFault surfaces as a connection-level failure to the client") {
+      stove {
+        wiremock {
+          mockFault(RequestMethod.GET, "/fidelity/fault", Fault.CONNECTION_RESET_BY_PEER)
+        }
+      }
+
+      shouldThrow<IOException> { send(get("/fidelity/fault")) }
+    }
+
+    test("delay parameter holds the response for at least the configured duration") {
+      stove {
+        wiremock {
+          mockGet(
+            url = "/fidelity/slow",
+            statusCode = 200,
+            responseBody = mapOf("ok" to true).some(),
+            delay = 300.milliseconds
+          )
+        }
+      }
+
+      val start = System.nanoTime()
+      send(get("/fidelity/slow")).statusCode() shouldBe 200
+      val elapsedMs = (System.nanoTime() - start) / 1_000_000
+      elapsedMs shouldBeGreaterThanOrEqual 300
+    }
+
+    test("invalid response delays are rejected before WireMock conversion") {
+      stove {
+        wiremock {
+          shouldThrow<IllegalArgumentException> {
+            mockGet("/fidelity/negative-delay", 200, delay = (-1).milliseconds)
+          }
+          shouldThrow<IllegalArgumentException> {
+            mockGet("/fidelity/infinite-delay", 200, delay = Duration.INFINITE)
+          }
+          shouldThrow<IllegalArgumentException> {
+            mockGet(
+              "/fidelity/overflow-delay",
+              200,
+              delay = (Int.MAX_VALUE.toLong() + 1).milliseconds
+            )
+          }
+        }
+      }
+    }
+
+    test("failsTimes then thenSucceeds models a retry journey") {
+      val interactions = CopyOnWriteArrayList<MockInteraction>()
+      val listener = MockInteractionListener { interactions.add(it) }
+      stove {
+        wiremock {
+          addInteractionListener(listener)
+          behaviourFor("/fidelity/retry", ::post) { _ ->
+            failsTimes(2, withStatus = 503)
+            thenSucceeds {
+              aResponse().withStatus(200).withBody("""{"recovered":true}""")
+            }
+          }
+        }
+      }
+
+      try {
+        send(request("/fidelity/retry")).statusCode() shouldBe 503
+        send(request("/fidelity/retry")).statusCode() shouldBe 503
+        val recovered = send(request("/fidelity/retry"))
+        recovered.statusCode() shouldBe 200
+        recovered.body() shouldContain "recovered"
+        send(request("/fidelity/retry")).statusCode() shouldBe 200
+
+        // Interactions are emitted from WireMock's afterComplete hook so timing is final;
+        // that callback can finish just after the client receives the response body.
+        awaitInteractionCount(interactions, "/fidelity/retry", expected = 4)
+        val retryInteractions = interactions.filter { it.target == "/fidelity/retry" }
+        retryInteractions.map { it.scenarioName }.distinct().size shouldBe 1
+        retryInteractions.all { it.scenarioName != null } shouldBe true
+        retryInteractions.take(2).all { it.nextScenarioState != null } shouldBe true
+        retryInteractions.takeLast(2).all { it.nextScenarioState == null } shouldBe true
+      } finally {
+        stove { wiremock { removeInteractionListener(listener) } }
+      }
+    }
+
+    test("thenSucceeds completes the behaviour builder") {
+      stove {
+        wiremock {
+          val error = shouldThrow<IllegalStateException> {
+            behaviourFor("/fidelity/completed-retry", ::post) { _ ->
+              failsTimes(1)
+              thenSucceeds { aResponse().withStatus(200) }
+              then { aResponse().withStatus(201) }
+            }
+          }
+          error.message shouldBe WireMockBehaviourMessages.BEHAVIOUR_COMPLETED
+        }
+      }
+    }
+
+    test("mockDynamic computes the response from the received request") {
+      stove {
+        wiremock {
+          mockDynamic(RequestMethod.POST, "/fidelity/echo") { req, _ ->
+            aResponse()
+              .withStatus(201)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{"echoed":${req.bodyAsString}}""")
+          }
+        }
+      }
+
+      val response = send(request("/fidelity/echo", """{"orderId":42}"""))
+      response.statusCode() shouldBe 201
+      response.body() shouldBe """{"echoed":{"orderId":42}}"""
+    }
+  })

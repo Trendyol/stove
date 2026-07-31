@@ -265,7 +265,7 @@ pub(super) fn correlated_test_for_trace(
     .into_iter()
     .find(|test| {
       repository
-        .get_entries(&run.id, &test.id)
+        .get_raw_entries(&run.id, &test.id)
         .is_ok_and(|entries| {
           entries
             .iter()

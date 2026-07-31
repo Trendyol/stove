@@ -54,6 +54,7 @@ class StoveConfig : AbstractProjectConfig() {
           KafkaSystemOptions(
             useEmbeddedKafka = true,
             topicSuffixes = TopicSuffixes().copy(error = listOf(".error", ".DLT", "dlt")),
+            listenPublishedMessagesFromStove = true,
             serde = StoveSerde.jackson.anyByteArraySerde(ObjectMapperConfig.default),
             containerOptions = KafkaContainerOptions(tag = "8.0.3")
           ) {

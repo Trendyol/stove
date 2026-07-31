@@ -3,6 +3,8 @@
 package com.trendyol.stove.cassandra
 
 import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader
 import com.datastax.oss.driver.api.core.cql.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
@@ -11,6 +13,13 @@ import com.trendyol.stove.system.abstractions.*
 import kotlinx.coroutines.*
 import org.slf4j.*
 import java.net.InetSocketAddress
+import kotlin.time.toJavaDuration
+
+internal fun CassandraSystemOptions.createDriverConfigLoader(): DriverConfigLoader =
+  DriverConfigLoader
+    .programmaticBuilder()
+    .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, requestTimeout.toJavaDuration())
+    .build()
 
 /**
  * Cassandra database system for testing CQL operations.
@@ -270,6 +279,7 @@ class CassandraSystem internal constructor(
           .builder()
           .addContactPoint(InetSocketAddress(config.host, config.port))
           .withLocalDatacenter(config.datacenter)
+          .withConfigLoader(context.options.createDriverConfigLoader())
           .apply {
             if (useKeyspace) {
               withKeyspace(config.keyspace)

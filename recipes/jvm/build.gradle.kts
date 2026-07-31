@@ -11,6 +11,10 @@ plugins {
 }
 
 subprojects {
+  if (subprojects.isNotEmpty()) {
+    return@subprojects
+  }
+
   apply {
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
@@ -40,7 +44,7 @@ subprojects {
       target("src/**/*.java")
       palantirJavaFormat("2.86.0").style("GOOGLE").formatJavadoc(true)
       targetExcludeIfContentContains("generated")
-      targetExclude("build/**", "**/build/**", "**/generated/**")
+      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
       targetExcludeIfContentContainsRegex(".*generated.*")
     }
 
@@ -52,7 +56,7 @@ subprojects {
       target("src/**/*.kt")
       ktlint(libs.versions.ktlint.get())
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
-      targetExclude("build/**", "**/build/**", "**/generated/**")
+      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex(".*generated.*")
     }
@@ -66,6 +70,12 @@ subprojects {
   }
 
   tasks {
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.toVersion("25"))) {
+      withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+        enabled = false
+      }
+    }
+
     test {
       dependsOn(spotlessApply)
       useJUnitPlatform()

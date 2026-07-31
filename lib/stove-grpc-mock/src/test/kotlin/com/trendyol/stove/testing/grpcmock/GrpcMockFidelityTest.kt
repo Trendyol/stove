@@ -1,0 +1,147 @@
+package com.trendyol.stove.testing.grpcmock
+
+import com.trendyol.stove.grpc.grpc
+import com.trendyol.stove.interactions.MockInteraction
+import com.trendyol.stove.interactions.MockInteractionListener
+import com.trendyol.stove.system.stove
+import com.trendyol.stove.testing.grpcmock.test.*
+import io.grpc.Metadata
+import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.health.v1.HealthCheckRequest
+import io.grpc.health.v1.HealthCheckResponse
+import io.grpc.health.v1.HealthGrpc
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.delay
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
+
+/**
+ * Fidelity features: per-stub latency for deadline testing, streams that fail
+ * mid-flight, structured error trailers, and the built-in health service.
+ */
+class GrpcMockFidelityTest :
+  FunSpec({
+    test("per-stub delay makes client deadlines expire") {
+      val interactions = CopyOnWriteArrayList<MockInteraction>()
+      val listener = MockInteractionListener { interactions.add(it) }
+      stove {
+        grpcMock {
+          addInteractionListener(listener)
+        }
+        try {
+          grpcMock {
+            // Matcher pinned to this test's payload: a client deadline can cancel the call
+            // before the server consumes the stub, and an Any matcher would then leak into
+            // other tests' calls on the same method.
+            mockUnary(
+              serviceName = "test.TestService",
+              methodName = "Unary",
+              requestMatcher = RequestMatcher.message(TestRequest.parser()) { it.message == "deadline-probe" },
+              response = TestResponse.newBuilder().setMessage("late").build(),
+              delay = 1_000.milliseconds
+            )
+          }
+
+          grpc {
+            rawChannel { ch ->
+              // Establish the HTTP/2 connection before starting the deadline budget; under a
+              // loaded parallel test run, cold channel setup can otherwise consume it locally
+              // and no request reaches the mock to be observed.
+              HealthGrpc
+                .newBlockingStub(ch)
+                .check(HealthCheckRequest.getDefaultInstance())
+                .status shouldBe HealthCheckResponse.ServingStatus.SERVING
+              val stub = TestServiceGrpc
+                .newBlockingStub(ch)
+                .withDeadlineAfter(500, TimeUnit.MILLISECONDS)
+              val exception = shouldThrow<io.grpc.StatusRuntimeException> {
+                stub.unary(testRequest { message = "deadline-probe" })
+              }
+              exception.status.code shouldBe Status.Code.DEADLINE_EXCEEDED
+            }
+          }
+
+          val deadline = System.currentTimeMillis() + 5_000
+          while (interactions.none { it.target == "test.TestService/Unary" } && System.currentTimeMillis() < deadline) {
+            delay(25)
+          }
+          val interaction = interactions.single { it.target == "test.TestService/Unary" }
+          interaction.status shouldBe Status.Code.DEADLINE_EXCEEDED.name
+          interaction.configuredDelayMs shouldBe 1_000
+          (interaction.clientDeadlineMs != null) shouldBe true
+        } finally {
+          grpcMock { removeInteractionListener(listener) }
+        }
+      }
+    }
+
+    test("server stream can emit items and then fail mid-stream") {
+      stove {
+        grpcMock {
+          mockServerStream(
+            serviceName = "test.TestService",
+            methodName = "ServerStream",
+            responses = listOf(
+              Item.newBuilder().setId("1").build(),
+              Item.newBuilder().setId("2").build()
+            ),
+            thenFailWith = Status.UNAVAILABLE.withDescription("broker gone mid-stream")
+          )
+        }
+
+        grpc {
+          channel<TestServiceGrpcKt.TestServiceCoroutineStub> {
+            val received = mutableListOf<Item>()
+            val exception = shouldThrow<StatusException> {
+              serverStream(testRequest { message = "stream" }).collect { received.add(it) }
+            }
+            received shouldHaveSize 2
+            received.map { it.id } shouldBe listOf("1", "2")
+            exception.status.code shouldBe Status.Code.UNAVAILABLE
+            exception.status.description shouldContain "mid-stream"
+          }
+        }
+      }
+    }
+
+    test("error stubs carry trailers like real structured gRPC errors") {
+      val errorCodeKey = Metadata.Key.of("x-error-code", Metadata.ASCII_STRING_MARSHALLER)
+      stove {
+        grpcMock {
+          mockError(
+            serviceName = "test.TestService",
+            methodName = "Unary",
+            status = Status.Code.FAILED_PRECONDITION,
+            message = "insufficient funds",
+            trailers = Metadata().apply { put(errorCodeKey, "INSUFFICIENT_FUNDS") }
+          )
+        }
+
+        grpc {
+          channel<TestServiceGrpcKt.TestServiceCoroutineStub> {
+            val exception = shouldThrow<StatusException> { unary(testRequest { message = "charge" }) }
+            exception.status.code shouldBe Status.Code.FAILED_PRECONDITION
+            exception.trailers?.get(errorCodeKey) shouldBe "INSUFFICIENT_FUNDS"
+          }
+        }
+      }
+    }
+
+    test("built-in health service answers without any stubbing") {
+      stove {
+        grpc {
+          rawChannel { ch ->
+            val health = HealthGrpc.newBlockingStub(ch)
+            val response = health.check(HealthCheckRequest.getDefaultInstance())
+            response.status shouldBe HealthCheckResponse.ServingStatus.SERVING
+          }
+        }
+      }
+    }
+  })

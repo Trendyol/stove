@@ -1,6 +1,7 @@
 package com.trendyol.stove.kafka
 
 import com.trendyol.stove.messaging.MessageMetadata
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.apache.kafka.clients.producer.*
 import java.util.*
 import kotlin.coroutines.*
@@ -23,7 +24,7 @@ fun PublishedMessage.metadata(): MessageMetadata = MessageMetadata(
 
 suspend inline fun <reified K : Any, reified V : Any> KafkaProducer<K, V>.dispatch(
   record: ProducerRecord<K, V>
-): RecordMetadata = suspendCoroutine { continuation ->
+): RecordMetadata = suspendCancellableCoroutine { continuation ->
   val callback = Callback { metadata, exception ->
     if (exception != null) {
       continuation.resumeWithException(exception)

@@ -110,7 +110,17 @@ internal class WireMockVerification(
       actual = WireMockValidationMessages.requestCount(actualCount).some()
     ) {
       if (!count.match(actualCount)) {
-        throw VerificationException(requestPattern, count, actualCount)
+        val base = VerificationException(requestPattern, count, actualCount)
+        // Near misses only explain "nothing matched"; count mismatches over matched
+        // requests already carry their explanation in the base message.
+        if (actualCount == 0) {
+          val received = callJournal.requests(system.reporter.currentTestId())
+          throw VerificationException(
+            "${base.message}\n\nClosest received requests:\n" +
+              WireMockNearMisses.closestRequestsFor(requestPattern, received)
+          )
+        }
+        throw base
       }
     }
 
@@ -133,11 +143,7 @@ internal class WireMockVerification(
     val request = RequestPatternBuilder.newRequestPattern(method, urlPatternFn(url))
     requestBody.map {
       request.withRequestBody(
-        equalToJson(
-          serde.serialize(it).decodeToString(),
-          true,
-          false
-        )
+        createWireMockJsonEqualityMatcher(it, serde, true, false)
       )
     }
     request.configureBodyContaining(requestContaining, serde)

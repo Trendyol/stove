@@ -55,3 +55,18 @@ stoveTracing {
   testTaskNames.set(listOf("e2eTest"))
   otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
 }
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_25
+  targetCompatibility = JavaVersion.VERSION_25
+}
+
+kotlin {
+  jvmToolchain(25)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
+  }
+}

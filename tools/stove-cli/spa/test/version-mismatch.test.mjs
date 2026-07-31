@@ -4,7 +4,7 @@ import createJiti from "jiti";
 
 const jiti = createJiti(import.meta.url);
 const {
-  buildVersionMismatchBannerModel,
+  buildVersionMismatchWarningModel,
   compareVersions,
   summarizeVersionMismatches,
 } = await jiti.import(
@@ -66,8 +66,8 @@ test("summarizeVersionMismatches captures selected-app mismatch and all affected
   assert.equal(summary.selectedAppMismatch.kind, "runtime_older");
 });
 
-test("buildVersionMismatchBannerModel returns dependency alignment guidance for older runtimes", () => {
-  const model = buildVersionMismatchBannerModel({
+test("buildVersionMismatchWarningModel returns dependency alignment guidance for older runtimes", () => {
+  const model = buildVersionMismatchWarningModel({
     cliVersion: "0.23.2",
     mismatches: [
       {
@@ -86,8 +86,8 @@ test("buildVersionMismatchBannerModel returns dependency alignment guidance for 
     },
   });
 
-  assert.equal(model.selectedAppName, "alpha-api");
-  assert.deepEqual(model.remediationSteps, [
+  assert.equal(model.details[0].appName, "alpha-api");
+  assert.deepEqual(model.details[0].remediationSteps, [
     {
       kind: "text",
       value: "Align the Stove BOM or all Stove test dependencies to 0.23.2.",
@@ -95,8 +95,8 @@ test("buildVersionMismatchBannerModel returns dependency alignment guidance for 
   ]);
 });
 
-test("buildVersionMismatchBannerModel returns CLI upgrade commands when the runtime is newer", () => {
-  const model = buildVersionMismatchBannerModel({
+test("buildVersionMismatchWarningModel returns CLI upgrade commands when the runtime is newer", () => {
+  const model = buildVersionMismatchWarningModel({
     cliVersion: "0.23.2",
     mismatches: [
       {
@@ -115,17 +115,20 @@ test("buildVersionMismatchBannerModel returns CLI upgrade commands when the runt
     },
   });
 
-  assert.equal(model.remediationSteps[0].kind, "text");
-  assert.equal(model.remediationSteps[1].kind, "command");
-  assert.equal(model.remediationSteps[1].value, "brew upgrade Trendyol/trendyol-tap/stove");
+  assert.equal(model.details[0].remediationSteps[0].kind, "text");
+  assert.equal(model.details[0].remediationSteps[1].kind, "command");
   assert.equal(
-    model.remediationSteps[2].value,
+    model.details[0].remediationSteps[1].value,
+    "brew upgrade Trendyol/trendyol-tap/stove",
+  );
+  assert.equal(
+    model.details[0].remediationSteps[2].value,
     "curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh -s -- --version 0.23.5",
   );
 });
 
-test("buildVersionMismatchBannerModel stays summary-only when another app mismatches", () => {
-  const model = buildVersionMismatchBannerModel({
+test("buildVersionMismatchWarningModel keeps details when the selected app matches", () => {
+  const model = buildVersionMismatchWarningModel({
     cliVersion: "0.23.2",
     mismatches: [
       {
@@ -145,13 +148,16 @@ test("buildVersionMismatchBannerModel stays summary-only when another app mismat
     selectedAppMismatch: null,
   });
 
-  assert.deepEqual(model.affectedApps, ["alpha-api", "beta-api"]);
-  assert.equal(model.switchHint, "Switch to a mismatched app to see exact remediation.");
-  assert.deepEqual(model.remediationSteps, []);
+  assert.deepEqual(
+    model.details.map((detail) => detail.appName),
+    ["alpha-api", "beta-api"],
+  );
+  assert.ok(model.details.every((detail) => !detail.selected));
+  assert.ok(model.details.every((detail) => detail.remediationSteps.length > 0));
 });
 
-test("buildVersionMismatchBannerModel returns legacy guidance for missing runtime versions", () => {
-  const model = buildVersionMismatchBannerModel({
+test("buildVersionMismatchWarningModel returns legacy guidance for missing runtime versions", () => {
+  const model = buildVersionMismatchWarningModel({
     cliVersion: "0.23.2",
     mismatches: [
       {
@@ -170,7 +176,47 @@ test("buildVersionMismatchBannerModel returns legacy guidance for missing runtim
     },
   });
 
-  assert.equal(model.runtimeVersion, null);
-  assert.equal(model.remediationSteps[0].kind, "text");
-  assert.match(model.remediationSteps[0].value, /older or non-standard Stove runtime/);
+  assert.equal(model.details[0].runtimeVersion, null);
+  assert.equal(model.details[0].remediationSteps[0].kind, "text");
+  assert.match(
+    model.details[0].remediationSteps[0].value,
+    /older or non-standard Stove runtime/,
+  );
+});
+
+test("buildVersionMismatchWarningModel includes details for every mismatch and puts the selected app first", () => {
+  const model = buildVersionMismatchWarningModel({
+    cliVersion: "0.23.2",
+    mismatches: [
+      {
+        appName: "alpha-api",
+        cliVersion: "0.23.2",
+        runtimeVersion: "0.23.0",
+        kind: "runtime_older",
+      },
+      {
+        appName: "beta-api",
+        cliVersion: "0.23.2",
+        runtimeVersion: "0.23.5",
+        kind: "cli_older",
+      },
+    ],
+    affectedAppNames: ["alpha-api", "beta-api"],
+    selectedAppMismatch: {
+      appName: "beta-api",
+      cliVersion: "0.23.2",
+      runtimeVersion: "0.23.5",
+      kind: "cli_older",
+    },
+  });
+
+  assert.equal(model.mismatchCount, 2);
+  assert.deepEqual(
+    model.details.map((detail) => detail.appName),
+    ["beta-api", "alpha-api"],
+  );
+  assert.equal(model.details[0].selected, true);
+  assert.match(model.details[0].problem, /CLI is older/);
+  assert.match(model.details[1].problem, /runtime is older/);
+  assert.ok(model.details.every((detail) => detail.remediationSteps.length > 0));
 });

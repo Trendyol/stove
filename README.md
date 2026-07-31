@@ -13,8 +13,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/maven-central/v/com.trendyol/stove?versionPrefix=0&label=release&color=blue" alt="Release"/>
-  <a href="https://github.com/Trendyol/homebrew-trendyol-tap"><img src="https://img.shields.io/github/v/release/Trendyol/stove?label=StoveCLI(homebrew)&logo=homebrew&color=FBB040" alt="Homebrew"/></a>
-  <a href="https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fcom%2Ftrendyol%2Fstove%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=snapshot&color=orange" alt="Snapshot"/></a>
+  <a href="https://github.com/Trendyol/homebrew-trendyol-tap"><img src="https://img.shields.io/github/v/release/Trendyol/stove?label=stove(homebrew)&logo=homebrew&color=FBB040" alt="Homebrew"/></a>
+  <a href="https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fcom%2Ftrendyol%2Fstove%2Fmaven-metadata.xml&query=%2F%2Fmetadata%2Fversioning%2Flatest&label=SNAPSHOT%20%26%20stove-next%28homebrew%29&color=orange" alt="Snapshot"/></a>
   <a href="https://codecov.io/gh/Trendyol/stove"><img src="https://codecov.io/gh/Trendyol/stove/graph/badge.svg?token=HcKBT3chO7" alt="codecov"/></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove"><img src="https://img.shields.io/ossf-scorecard/github.com/Trendyol/stove?label=openssf%20scorecard&style=flat" alt="OpenSSF Scorecard"/></a>
 </p>
@@ -95,6 +95,7 @@ https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 ```bash
 # 1) Install and start the Dashboard CLI
 brew install Trendyol/trendyol-tap/stove
+# upgrade an existing install: brew update && brew upgrade stove
 stove
 
 # 2) Run your tests and open the dashboard

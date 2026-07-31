@@ -18,11 +18,7 @@ import stove.ktor.example.run
 class StoveConfig : AbstractProjectConfig() {
   companion object {
     private val appPort = PortFinder.findAvailablePort()
-
-    init {
-      stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
-      System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
-    }
+    private val kafkaBridgePort = PortFinder.findAvailablePort()
   }
 
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
@@ -51,6 +47,7 @@ class StoveConfig : AbstractProjectConfig() {
       }
       kafka {
         KafkaSystemOptions(
+          bridgeGrpcServerPort = kafkaBridgePort,
           serde = StoveSerde.jackson.anyByteArraySerde(objectMapperRef),
           containerOptions = KafkaContainerOptions(tag = "8.0.3")
         ) {

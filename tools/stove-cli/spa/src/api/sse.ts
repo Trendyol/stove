@@ -4,18 +4,19 @@ import type { LiveDashboardEvent } from "./types";
 interface UseSSEOptions {
   onEvent: (event: LiveDashboardEvent) => void;
   onGap?: (event: LiveDashboardEvent) => void;
+  onConnect?: () => void;
   onReconnect?: () => void;
   onDisconnect?: () => void;
 }
 
-export function useSSE({ onEvent, onGap, onReconnect, onDisconnect }: UseSSEOptions) {
-  const callbacksRef = useRef({ onEvent, onGap, onReconnect, onDisconnect });
+export function useSSE({ onEvent, onGap, onConnect, onReconnect, onDisconnect }: UseSSEOptions) {
+  const callbacksRef = useRef({ onEvent, onGap, onConnect, onReconnect, onDisconnect });
   const lastSeqRef = useRef<number | null>(null);
   const hasConnectedRef = useRef(false);
   const openRef = useRef(false);
   const [connected, setConnected] = useState(false);
 
-  callbacksRef.current = { onEvent, onGap, onReconnect, onDisconnect };
+  callbacksRef.current = { onEvent, onGap, onConnect, onReconnect, onDisconnect };
 
   useEffect(() => {
     let disposed = false;
@@ -34,6 +35,7 @@ export function useSSE({ onEvent, onGap, onReconnect, onDisconnect }: UseSSEOpti
         hasConnectedRef.current = true;
         openRef.current = true;
         setConnected(true);
+        callbacksRef.current.onConnect?.();
         if (isReconnect) {
           lastSeqRef.current = null;
           callbacksRef.current.onReconnect?.();

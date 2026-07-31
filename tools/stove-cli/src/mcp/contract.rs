@@ -27,11 +27,12 @@ pub(crate) enum ToolName {
   Timeline,
   Trace,
   Snapshot,
+  Interactions,
   RawEvidence,
 }
 
 impl ToolName {
-  pub(crate) const ALL: [Self; 8] = [
+  pub(crate) const ALL: [Self; 9] = [
     Self::Apps,
     Self::Runs,
     Self::Failures,
@@ -39,6 +40,7 @@ impl ToolName {
     Self::Timeline,
     Self::Trace,
     Self::Snapshot,
+    Self::Interactions,
     Self::RawEvidence,
   ];
 
@@ -51,6 +53,7 @@ impl ToolName {
       Self::Timeline => "stove_timeline",
       Self::Trace => "stove_trace",
       Self::Snapshot => "stove_snapshot",
+      Self::Interactions => "stove_interactions",
       Self::RawEvidence => "stove_raw_evidence",
     }
   }
@@ -165,16 +168,26 @@ pub(crate) enum RawEvidenceKind {
   Entry,
   Span,
   Snapshot,
+  Interaction,
+  Warning,
 }
 
 impl RawEvidenceKind {
-  pub(crate) const ALL: [Self; 3] = [Self::Entry, Self::Span, Self::Snapshot];
+  pub(crate) const ALL: [Self; 5] = [
+    Self::Entry,
+    Self::Span,
+    Self::Snapshot,
+    Self::Interaction,
+    Self::Warning,
+  ];
 
   pub(crate) const fn as_str(self) -> &'static str {
     match self {
       Self::Entry => "entry",
       Self::Span => "span",
       Self::Snapshot => "snapshot",
+      Self::Interaction => "interaction",
+      Self::Warning => "warning",
     }
   }
 

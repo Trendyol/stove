@@ -15,12 +15,12 @@ fn test_service() -> DashboardEventServiceImpl {
     repo,
     sse,
     /*max_batch_size*/ 50,
-    Duration::from_secs(60),
+    Duration::from_mins(1),
   )
 }
 
-fn ts(seconds: i64) -> Option<prost_types::Timestamp> {
-  Some(prost_types::Timestamp { seconds, nanos: 0 })
+fn ts(seconds: i64) -> prost_types::Timestamp {
+  prost_types::Timestamp { seconds, nanos: 0 }
 }
 
 #[tokio::test]
@@ -35,7 +35,7 @@ async fn no_broadcast_on_invalid_event_order() {
         test_id: "t-1".to_string(),
         test_name: "orphan test".to_string(),
         spec_name: "Spec".to_string(),
-        timestamp: ts(1_704_067_200),
+        timestamp: Some(ts(1_704_067_200)),
         test_path: vec![],
       },
     )),
@@ -61,7 +61,7 @@ async fn broadcast_fires_before_batch_flush() {
       run_id: "run-1".to_string(),
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
-          timestamp: ts(1_704_067_200),
+          timestamp: Some(ts(1_704_067_200)),
           app_name: "my-api".to_string(),
           systems: vec!["HTTP".to_string()],
           stove_version: "0.23.1".to_string(),
@@ -90,10 +90,7 @@ async fn process_run_started_event() {
     run_id: "run-1".to_string(),
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
-        timestamp: Some(prost_types::Timestamp {
-          seconds: 1_704_067_200,
-          nanos: 0,
-        }),
+        timestamp: Some(ts(1_704_067_200)),
         app_name: "product-api".to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
         stove_version: "0.23.2".to_string(),
@@ -119,10 +116,7 @@ async fn process_full_lifecycle() {
       run_id: "run-1".to_string(),
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_200,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_200)),
           app_name: "test-app".to_string(),
           stove_version: String::new(),
           systems: vec![],
@@ -139,40 +133,41 @@ async fn process_full_lifecycle() {
           test_id: "test-1".to_string(),
           test_name: "my test".to_string(),
           spec_name: "MySpec".to_string(),
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_201,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_201)),
           test_path: vec![],
         },
       )),
     })
     .unwrap();
 
-  svc
-    .process_event(&proto::DashboardEvent {
-      run_id: "run-1".to_string(),
-      event: Some(proto::dashboard_event::Event::EntryRecorded(
-        proto::EntryRecordedEvent {
-          test_id: "test-1".to_string(),
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_202,
-            nanos: 0,
-          }),
-          system: "HTTP".to_string(),
-          action: "GET /api".to_string(),
-          result: "PASSED".to_string(),
-          input: String::new(),
-          output: String::new(),
-          metadata: std::collections::HashMap::default(),
-          expected: String::new(),
-          actual: String::new(),
-          error: String::new(),
-          trace_id: String::new(),
-        },
-      )),
-    })
-    .unwrap();
+  for attempt in 1_i64..=5 {
+    let failed = attempt < 5;
+    svc
+      .process_event(&proto::DashboardEvent {
+        run_id: "run-1".to_string(),
+        event: Some(proto::dashboard_event::Event::EntryRecorded(
+          proto::EntryRecordedEvent {
+            test_id: "test-1".to_string(),
+            timestamp: Some(ts(1_704_067_201 + attempt)),
+            system: "HTTP".to_string(),
+            action: "GET /api".to_string(),
+            result: if failed { "FAILED" } else { "PASSED" }.to_string(),
+            input: String::new(),
+            output: String::new(),
+            metadata: std::collections::HashMap::default(),
+            expected: "200".to_string(),
+            actual: if failed { "503" } else { "200" }.to_string(),
+            error: if failed {
+              format!("not ready on attempt {attempt}")
+            } else {
+              String::new()
+            },
+            trace_id: String::new(),
+          },
+        )),
+      })
+      .unwrap();
+  }
 
   svc
     .process_event(&proto::DashboardEvent {
@@ -183,10 +178,7 @@ async fn process_full_lifecycle() {
           status: "PASSED".to_string(),
           duration_ms: 500,
           error: String::new(),
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_203,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_207)),
         },
       )),
     })
@@ -197,10 +189,7 @@ async fn process_full_lifecycle() {
       run_id: "run-1".to_string(),
       event: Some(proto::dashboard_event::Event::RunEnded(
         proto::RunEndedEvent {
-          timestamp: Some(prost_types::Timestamp {
-            seconds: 1_704_067_210,
-            nanos: 0,
-          }),
+          timestamp: Some(ts(1_704_067_210)),
           total_tests: 1,
           passed: 1,
           failed: 0,
@@ -222,4 +211,77 @@ async fn process_full_lifecycle() {
 
   let entries = svc.repository.get_entries("run-1", "test-1").unwrap();
   assert_eq!(entries.len(), 1);
+  assert_eq!(
+    entries[0].result,
+    crate::storage::models::TestStatus::Passed
+  );
+  assert_eq!(entries[0].attempt_count, 5);
+  assert_eq!(entries[0].failure_count, 4);
+  assert_eq!(entries[0].actual.as_deref(), Some("200"));
+}
+
+#[tokio::test]
+async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
+  let svc = test_service();
+
+  svc
+    .process_event(&proto::DashboardEvent {
+      run_id: "run-expectations".to_string(),
+      event: Some(proto::dashboard_event::Event::RunStarted(
+        proto::RunStartedEvent {
+          timestamp: Some(ts(1_704_067_200)),
+          app_name: "test-app".to_string(),
+          systems: vec!["HTTP".to_string()],
+          stove_version: String::new(),
+        },
+      )),
+    })
+    .unwrap();
+  svc
+    .process_event(&proto::DashboardEvent {
+      run_id: "run-expectations".to_string(),
+      event: Some(proto::dashboard_event::Event::TestStarted(
+        proto::TestStartedEvent {
+          test_id: "test-expectations".to_string(),
+          test_name: "checks two statuses".to_string(),
+          spec_name: "ExpectationSpec".to_string(),
+          timestamp: Some(ts(1_704_067_201)),
+          test_path: vec![],
+        },
+      )),
+    })
+    .unwrap();
+
+  for (offset, expected) in ["200", "201"].into_iter().enumerate() {
+    svc
+      .process_event(&proto::DashboardEvent {
+        run_id: "run-expectations".to_string(),
+        event: Some(proto::dashboard_event::Event::EntryRecorded(
+          proto::EntryRecordedEvent {
+            test_id: "test-expectations".to_string(),
+            timestamp: Some(ts(1_704_067_202 + i64::try_from(offset).unwrap())),
+            system: "HTTP".to_string(),
+            action: "GET /api".to_string(),
+            result: "FAILED".to_string(),
+            input: String::new(),
+            output: String::new(),
+            metadata: std::collections::HashMap::default(),
+            expected: expected.to_string(),
+            actual: "503".to_string(),
+            error: format!("expected {expected}"),
+            trace_id: String::new(),
+          },
+        )),
+      })
+      .unwrap();
+  }
+
+  svc.flush_pending().await.unwrap();
+
+  let entries = svc
+    .repository
+    .get_entries("run-expectations", "test-expectations")
+    .unwrap();
+  assert_eq!(entries.len(), 2);
+  assert_ne!(entries[0].assertion_id, entries[1].assertion_id);
 }

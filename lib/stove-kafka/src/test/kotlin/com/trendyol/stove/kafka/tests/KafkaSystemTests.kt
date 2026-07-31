@@ -6,13 +6,18 @@ import com.trendyol.stove.kafka.setup.example.DomainEvents.ProductCreated
 import com.trendyol.stove.kafka.setup.example.DomainEvents.ProductFailingCreated
 import com.trendyol.stove.system.stove
 import io.github.nomisRev.kafka.createTopic
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldNotContainAll
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.*
+import org.apache.kafka.common.utils.Utils
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -61,6 +66,146 @@ class KafkaSystemTests :
         }
       }
     }
+
+    test("default publishing uses Kafka partitioning") {
+      stove {
+        kafka {
+          val topic = "partitioning-${randomString()}"
+          val group = "group-${randomString()}"
+          val key = generateSequence(0) { it + 1 }
+            .map { "partition-one-$it" }
+            .first { candidate ->
+              Utils.toPositive(Utils.murmur2(candidate.toByteArray())) % 2 == 1
+            }
+
+          adminOperations {
+            createTopic(NewTopic(topic, 2, 1))
+          }
+          publish(topic, message = ProductCreated(key), key = key.some())
+
+          var consumedPartition: Int? = null
+          consumer<String, ProductCreated>(
+            topic = topic,
+            readOnly = false,
+            keyDeserializer = StringDeserializer(),
+            // Leave enough time for the first group join in all three Kafka runtimes.
+            keepConsumingAtLeastFor = 6.seconds,
+            pollTimeout = 250.milliseconds,
+            groupId = group
+          ) { record ->
+            consumedPartition = record.partition()
+          }
+
+          consumedPartition shouldBe 1
+        }
+      }
+    }
+
+    test("publishTombstone publishes a null value under the given key") {
+      stove {
+        kafka {
+          val key = randomString()
+          val topic = randomString()
+
+          adminOperations {
+            createTopic(NewTopic(topic, 1, 1))
+          }
+
+          publishTombstone(topic, key = key)
+
+          peekPublishedMessages(topic = topic) {
+            it.key == key && it.value.isEmpty()
+          }
+
+          var consumedKey: String? = null
+          var consumedValue: Any? = "sentinel"
+          consumer<String, Any>(
+            topic = topic,
+            readOnly = false,
+            keyDeserializer = StringDeserializer(),
+            keepConsumingAtLeastFor = 6.seconds,
+            pollTimeout = 250.milliseconds
+          ) { record ->
+            consumedKey = record.key()
+            consumedValue = record.value()
+          }
+
+          consumedKey shouldBe key
+          consumedValue shouldBe null
+        }
+      }
+    }
+
+    test("publishRaw publishes the given bytes unchanged") {
+      stove {
+        kafka {
+          val key = randomString()
+          val topic = randomString()
+          val poisonPill = "{not-valid-json!!".toByteArray()
+
+          adminOperations {
+            createTopic(NewTopic(topic, 1, 1))
+          }
+
+          publishRaw(topic, poisonPill, key = key.some())
+
+          peekPublishedMessages(topic = topic) {
+            it.key == key && it.value.contentEquals(poisonPill)
+          }
+
+          var consumed: ByteArray? = null
+          consumer<String, ByteArray>(
+            topic = topic,
+            readOnly = false,
+            keyDeserializer = StringDeserializer(),
+            valueDeserializer = ByteArrayDeserializer(),
+            keepConsumingAtLeastFor = 6.seconds,
+            pollTimeout = 250.milliseconds
+          ) { record ->
+            consumed = record.value()
+          }
+
+          consumed.shouldNotBeNull().contentEquals(poisonPill) shouldBe true
+        }
+      }
+    }
+
+    test("condition exceptions propagate unchanged") {
+      stove {
+        kafka {
+          val key = randomString()
+          val productId = "$key[productCreated]"
+          val topic = randomString()
+
+          adminOperations {
+            createTopic(NewTopic(topic, 1, 1))
+          }
+
+          publish(topic, message = ProductCreated(productId), key = key.some())
+
+          val failure = shouldThrow<IllegalStateException> {
+            shouldBePublished<ProductCreated> {
+              if (actual.productId == productId) error("condition failed")
+              false
+            }
+          }
+          failure.message shouldBe "condition failed"
+        }
+      }
+    }
+
+    test("parent cancellation is not converted to an assertion failure") {
+      stove {
+        kafka {
+          shouldThrow<TimeoutCancellationException> {
+            withTimeout(100.milliseconds) {
+              shouldBePublished<ProductCreated>(1.minutes) { false }
+            }
+          }
+        }
+      }
+    }
+
     test("lots of messages") {
       stove {
         kafka {
@@ -125,6 +270,37 @@ class KafkaSystemTests :
           shouldBeConsumed<ProductCreated> {
             actual.productId == productId
           }
+        }
+      }
+    }
+
+    test("in-flight consumer completes a started callback when its duration elapses") {
+      stove {
+        kafka {
+          val key = randomString()
+          val productId = "$key[productCreated]"
+          val topic = randomString()
+
+          adminOperations {
+            createTopic(NewTopic(topic, 1, 1))
+          }
+
+          publish(topic, message = ProductCreated(productId), key = key.some())
+          shouldBePublished<ProductCreated> { actual.productId == productId }
+
+          var callbackCompleted = false
+          consumer<String, ProductCreated>(
+            topic = topic,
+            readOnly = false,
+            keepConsumingAtLeastFor = 5.seconds,
+            pollTimeout = 250.milliseconds
+          ) {
+            delay(6.seconds)
+            callbackCompleted = true
+          }
+
+          callbackCompleted shouldBe true
+          shouldBeConsumed<ProductCreated> { actual.productId == productId }
         }
       }
     }

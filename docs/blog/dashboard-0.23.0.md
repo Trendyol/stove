@@ -27,6 +27,7 @@ It does not replace assertions, logs, or tracing setup. It gives you one place t
 
 ```bash
 brew install Trendyol/trendyol-tap/stove
+# upgrade an existing install: brew update && brew upgrade stove
 stove
 ```
 

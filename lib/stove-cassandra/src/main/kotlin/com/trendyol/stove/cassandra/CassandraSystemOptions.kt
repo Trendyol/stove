@@ -4,6 +4,8 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Context provided to Cassandra migrations.
@@ -45,6 +47,20 @@ open class CassandraSystemOptions(
   ConfiguresExposedConfiguration<CassandraExposedConfiguration>,
   SupportsMigrations<CassandraMigrationContext, CassandraSystemOptions> {
   override val migrationCollection: MigrationCollection<CassandraMigrationContext> = MigrationCollection()
+
+  var requestTimeout: Duration = 30.seconds
+    private set
+
+  /**
+   * Sets how long the Cassandra driver waits for a request to complete.
+   *
+   * The default is 30 seconds so schema changes against a newly started Cassandra instance have
+   * enough time to complete and reach schema agreement.
+   */
+  fun requestTimeout(timeout: Duration): CassandraSystemOptions = apply {
+    require(timeout.isFinite() && timeout.isPositive()) { "Cassandra request timeout must be finite and positive" }
+    requestTimeout = timeout
+  }
 
   companion object {
     /**

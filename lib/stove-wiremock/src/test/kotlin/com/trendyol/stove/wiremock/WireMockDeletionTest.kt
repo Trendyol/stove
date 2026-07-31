@@ -2,7 +2,9 @@ package com.trendyol.stove.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
+import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
+import com.trendyol.stove.tracing.TraceContext
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.net.URI
@@ -38,6 +40,7 @@ class WireMockDeletionTest :
       val reqBuilder = HttpRequest
         .newBuilder(URI("$WIREMOCK_BASE_URL/post-url"))
         .header("Content-Type", "application/json")
+        .header(TraceContext.STOVE_TEST_ID_HEADER, Stove.reporter().currentTestId())
 
       val request = reqBuilder.POST(BodyPublishers.ofString(reqBody)).build()
       val response = client.send(request, BodyHandlers.ofString())

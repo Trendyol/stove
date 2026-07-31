@@ -1,11 +1,49 @@
 package com.trendyol.stove.kafka
 
 import arrow.core.*
+import com.trendyol.stove.serialization.StoveSerde
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.producer.ProducerRecord
 
 class ExtensionsTests :
   FunSpec({
+    val serde = StoveSerde.jackson.anyByteArraySerde()
+
+    test("toStoveMessage observes a tombstone producer record as an empty payload") {
+      val record = ProducerRecord<String, Any?>("topic", null, "key-1", null)
+
+      val message = record.toStoveMessage(serde)
+
+      message.value.size shouldBe 0
+      message.key shouldBe "key-1"
+      message.topic shouldBe "topic"
+    }
+
+    test("toStoveMessage observes a tombstone consumer record as an empty payload") {
+      val record = ConsumerRecord<String, Any?>("topic", 0, 42L, "key-1", null)
+
+      val message = record.toStoveMessage(serde)
+
+      message.value.size shouldBe 0
+      message.offset shouldBe 42L
+    }
+
+    test("toStoveMessage passes raw ByteArray values through unchanged") {
+      val poisonPill = "{not-valid-json!!".toByteArray()
+      val record = ProducerRecord<String, Any?>("topic", null, "key-1", poisonPill)
+
+      val message = record.toStoveMessage(serde)
+
+      message.value.contentEquals(poisonPill) shouldBe true
+    }
+
+    test("toMetadata tolerates records without a key") {
+      val record = ProducerRecord<String, Any?>("topic", null, null, "value")
+
+      record.toMetadata().key shouldBe ""
+    }
 
     test("addTestCase should add testCase to map when not present") {
       val map = mutableMapOf<String, String>("existingKey" to "existingValue")

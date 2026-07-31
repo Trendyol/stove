@@ -3,15 +3,18 @@ package com.trendyol.stove.kafka
 import arrow.core.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.messaging.*
+import com.trendyol.stove.messaging.kafka.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.tracing.TraceContext
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.header.internals.RecordHeader
+import org.apache.kafka.common.serialization.*
 import org.slf4j.*
 import org.springframework.beans.factory.*
 import org.springframework.context.ApplicationContext
@@ -37,17 +40,31 @@ class KafkaSystem(
   private lateinit var admin: Admin
   val getInterceptor: () -> TestSystemKafkaInterceptor<Any, Any> = { applicationContext.getBean() }
 
+  // The application's value serializer would re-encode raw bytes, so publishRaw uses a
+  // Stove-owned producer that writes ByteArray values to the wire unchanged.
+  private val rawKafkaTemplate = lazy {
+    val producerFactory = DefaultKafkaProducerFactory<Any, Any>(
+      buildMap {
+        putAll(context.options.properties)
+        put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, exposedConfiguration.bootstrapServers)
+        put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
+        put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer::class.java)
+        put(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-raw-producer")
+      }
+    )
+    KafkaTemplate(producerFactory).also {
+      it.setProducerListener(getInterceptor())
+      it.setCloseTimeout(1.seconds.toJavaDuration())
+    }
+  }
+
   override fun snapshot(): SystemSnapshot {
     val currentTestId = reporter.currentTestId()
     val store = getInterceptor().getStore()
-    val belongsToTest: (Map<String, Any>) -> Boolean = { headers ->
-      val testId = headers[TraceContext.STOVE_TEST_ID_HEADER].toOption()
-      testId.isNone() || testId.isSome { it.toString() == currentTestId }
-    }
 
-    val consumed = store.consumedRecords().filter { belongsToTest(it.metadata.headers) }
-    val produced = store.producedRecords().filter { belongsToTest(it.metadata.headers) }
-    val failed = store.failedRecords().filter { belongsToTest(it.metadata.headers) }
+    val consumed = store.consumedRecords().filter { it.metadata.headers.belongsToTest(currentTestId) }
+    val produced = store.producedRecords().filter { it.metadata.headers.belongsToTest(currentTestId) }
+    val failed = store.failedRecords().filter { it.metadata.headers.belongsToTest(currentTestId) }
 
     return SystemSnapshot(
       system = reportSystemName,
@@ -103,7 +120,7 @@ class KafkaSystem(
    *   }
    * }
    * ```
-   * [BridgeSystem] should be enabled while configuring the [TestSystem].
+   * [BridgeSystem] should be enabled while configuring the [Stove].
    * @param topic The topic to publish the message to.
    * @param message The message to publish.
    * @param key The key of the message.
@@ -121,28 +138,109 @@ class KafkaSystem(
     headers: Map<String, String> = mapOf(),
     serde: Option<StoveSerde<Any, *>> = None,
     testCase: Option<String> = None
+  ): KafkaSystem = publishRecord(
+    template = kafkaTemplate,
+    action = "Publish to '$topic'",
+    input = Some(message),
+    topic = topic,
+    value = message,
+    key = key.getOrNull(),
+    partition = partition,
+    headers = headers,
+    testCase = testCase
+  )
+
+  /**
+   * Publishes a tombstone — a record with a null value — for [key] to [topic].
+   *
+   * Compacted topics treat a null value as a deletion marker for the key, so this is the way to
+   * exercise an application's compaction/deletion handling. The key is mandatory because a
+   * tombstone without a key deletes nothing.
+   *
+   * Sent through the application's KafkaTemplate, so key bytes match regular [publish] calls.
+   * Requires a value serializer that maps null to null; Kafka's and Spring's standard serializers do.
+   */
+  suspend fun publishTombstone(
+    topic: String,
+    key: String,
+    partition: Option<Int> = None,
+    headers: Map<String, String> = mapOf(),
+    testCase: Option<String> = None
+  ): KafkaSystem = publishRecord(
+    template = kafkaTemplate,
+    action = "Publish tombstone to '$topic'",
+    input = None,
+    topic = topic,
+    value = null,
+    key = key,
+    partition = partition,
+    headers = headers,
+    testCase = testCase
+  )
+
+  /**
+   * Publishes [message] to [topic] byte-for-byte, bypassing serialization.
+   *
+   * Intended for malformed/poison-pill payloads — e.g. asserting that a message the application
+   * cannot deserialize is handled by its error path.
+   *
+   * Sent through a dedicated Stove-owned producer (String keys, ByteArray values), because the
+   * application's own value serializer would re-encode the bytes.
+   */
+  suspend fun publishRaw(
+    topic: String,
+    message: ByteArray,
+    key: Option<String> = None,
+    partition: Option<Int> = None,
+    headers: Map<String, String> = mapOf(),
+    testCase: Option<String> = None
+  ): KafkaSystem = publishRecord(
+    template = rawKafkaTemplate.value,
+    action = "Publish raw bytes to '$topic'",
+    input = Some(String(message, Charsets.UTF_8)),
+    topic = topic,
+    value = message,
+    key = key.getOrNull(),
+    partition = partition,
+    headers = headers,
+    testCase = testCase,
+    extraMetadata = mapOf("sizeBytes" to message.size)
+  )
+
+  private suspend fun publishRecord(
+    template: KafkaTemplate<Any, Any>,
+    action: String,
+    input: Option<Any>,
+    topic: String,
+    value: Any?,
+    key: String?,
+    partition: Option<Int>,
+    headers: Map<String, String>,
+    testCase: Option<String>,
+    extraMetadata: Map<String, Any> = emptyMap()
   ): KafkaSystem {
     report(
-      action = "Publish to '$topic'",
-      input = arrow.core.Some(message),
-      metadata = mapOf(
-        "key" to (key.getOrNull() ?: ""),
-        "headers" to headers,
-        "partition" to (partition.getOrNull()?.toString() ?: "")
-      )
+      action = action,
+      input = input,
+      metadata = buildMap {
+        put("key", key ?: "")
+        put("headers", headers)
+        put("partition", partition.getOrNull()?.toString() ?: "")
+        putAll(extraMetadata)
+      }
     ) {
       val record = ProducerRecord<String, Any>(
         topic,
         partition.getOrNull(),
-        key.getOrNull(),
-        message,
+        key,
+        value,
         headers
           .toMutableMap()
           .addTestCase(testCase)
           .addTraceContext(TraceContext.current())
           .map { RecordHeader(it.key, it.value.toByteArray()) }
       )
-      context.options.ops.send(kafkaTemplate, record)
+      context.options.ops.send(template, record)
     }
     return this
   }
@@ -151,6 +249,62 @@ class KafkaSystem(
    * Admin operations for Kafka.
    */
   suspend fun adminOperations(block: suspend Admin.() -> Unit) = block(admin)
+
+  /**
+   * Waits until a published message on [topic] matches [condition] and returns it.
+   *
+   * Works on the raw observed message, so it can assert payloads the typed assertions cannot
+   * deserialize — tombstones (empty [MessageProperties.value]) and [publishRaw] bytes.
+   */
+  suspend fun peekPublishedMessages(
+    atLeastIn: Duration = 5.seconds,
+    topic: String,
+    condition: (MessageProperties) -> Boolean
+  ): MessageProperties = withTimeout(atLeastIn) {
+    getInterceptor()
+      .getStore()
+      .core
+      .publishedRecords()
+      .mapNotNull { it.source as? StoveMessage.Published }
+      .filter { it.topic == topic }
+      .first { condition(it) }
+  }
+
+  /**
+   * Waits until a consumed message on [topic] matches [condition] and returns it.
+   */
+  suspend fun peekConsumedMessages(
+    atLeastIn: Duration = 5.seconds,
+    topic: String,
+    condition: (MessageProperties) -> Boolean
+  ): MessageProperties = withTimeout(atLeastIn) {
+    getInterceptor()
+      .getStore()
+      .core
+      .consumedRecords()
+      .mapNotNull { it.source as? StoveMessage.Consumed }
+      .filter { it.topic == topic }
+      .first { condition(it) }
+  }
+
+  /**
+   * Waits until a failed message on [topic] matches [condition] and returns it.
+   *
+   * Useful for poison-pill scenarios where the payload cannot be deserialized to any type.
+   */
+  suspend fun peekFailedMessages(
+    atLeastIn: Duration = 5.seconds,
+    topic: String,
+    condition: (MessageProperties) -> Boolean
+  ): MessageProperties = withTimeout(atLeastIn) {
+    getInterceptor()
+      .getStore()
+      .core
+      .failedRecords()
+      .mapNotNull { it.source as? StoveMessage.Failed }
+      .filter { it.topic == topic }
+      .first { condition(it) }
+  }
 
   /**
    * Asserts that a message is consumed.
@@ -228,45 +382,14 @@ class KafkaSystem(
     expected: String,
     crossinline block: suspend ((T) -> Unit) -> Unit
   ): KafkaSystem {
-    var matchedMessage: T? = null
-
-    val result = runCatching {
-      coroutineScope {
-        block { matchedMessage = it }
-      }
-    }
-
-    val failure = result.exceptionOrNull()?.let { e ->
-      e as? AssertionError ?: AssertionError(
-        "Expected $assertionName<$typeName> matching condition within $timeout, but none was found",
-        e
-      )
-    }
-
-    if (result.isSuccess) {
-      reporter.record(
-        ReportEntry.success(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          output = matchedMessage.toOption(),
-          metadata = mapOf("timeout" to timeout.toString())
-        )
-      )
-    } else {
-      reporter.record(
-        ReportEntry.failure(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "$assertionName<$typeName>",
-          error = failure?.message ?: "No matching message found",
-          expected = expected.some(),
-          actual = (matchedMessage ?: "No matching message found").some()
-        )
-      )
-    }
-
-    failure?.let { throw it }
+    runKafkaAssertion(
+      reporter = reporter,
+      systemName = reportSystemName,
+      assertionName = assertionName,
+      typeName = typeName,
+      timeout = timeout,
+      expected = expected
+    ) { onMatch -> block(onMatch) }
     return this
   }
 
@@ -275,21 +398,21 @@ class KafkaSystem(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition) }
+  ): Unit = getInterceptor().waitUntilConsumed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBeFailedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { getInterceptor().waitUntilFailed(atLeastIn, clazz, condition) }
+  ): Unit = getInterceptor().waitUntilFailed(atLeastIn, clazz, condition)
 
   @PublishedApi
   internal suspend fun <T : Any> shouldBePublishedInternal(
     clazz: KClass<T>,
     atLeastIn: Duration,
     condition: (message: ParsedMessage<T>) -> Boolean
-  ): Unit = coroutineScope { getInterceptor().waitUntilPublished(atLeastIn, clazz, condition) }
+  ): Unit = getInterceptor().waitUntilPublished(atLeastIn, clazz, condition)
 
   override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
 
@@ -312,6 +435,7 @@ class KafkaSystem(
   override fun close(): Unit = runBlocking {
     Try {
       context.options.cleanup(admin)
+      if (rawKafkaTemplate.isInitialized()) rawKafkaTemplate.value.destroy()
       kafkaTemplate.destroy()
       executeWithReuseCheck { stop() }
     }.recover {

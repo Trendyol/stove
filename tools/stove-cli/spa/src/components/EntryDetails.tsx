@@ -4,6 +4,12 @@ import { Detail } from "./Detail";
 export function EntryDetails({ entry }: { entry: Entry }) {
   return (
     <>
+      {entry.attempt_count > 1 && (
+        <Detail
+          label="Retry history"
+          value={`${entry.attempt_count} attempts, ${entry.failure_count} failed`}
+        />
+      )}
       {entry.input && <Detail label="Input" value={entry.input} />}
       {entry.output && <Detail label="Output" value={entry.output} color="var(--stove-green)" />}
       {entry.expected && <Detail label="Expected" value={entry.expected} />}

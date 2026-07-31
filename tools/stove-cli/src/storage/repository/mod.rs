@@ -17,9 +17,14 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
+use self::sql::MOCK_INTERACTION_COLUMNS;
+use self::sql::MOCK_WARNING_COLUMNS;
 use self::sql::RUN_COLUMNS;
+use self::sql::SNAPSHOT_COLUMNS;
 use self::sql::SPAN_COLUMNS;
 use self::sql::entry_from_row;
+use self::sql::mock_interaction_from_row;
+use self::sql::mock_warning_from_row;
 use self::sql::parse_run_status;
 use self::sql::run_from_row;
 use self::sql::snapshot_from_row;
@@ -29,10 +34,15 @@ use crate::error::Result;
 use crate::storage::database::Database;
 use crate::storage::models::AppSummary;
 use crate::storage::models::Entry;
+use crate::storage::models::MockInteraction;
+use crate::storage::models::MockWarning;
 use crate::storage::models::Run;
 use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 use crate::storage::models::Test;
+
+const NORMALIZED_ASSERTION_ID_SQL: &str =
+  "CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END";
 
 pub struct Repository {
   write_db: Arc<Mutex<Database>>,
@@ -72,19 +82,16 @@ impl Repository {
              )
              ORDER BY app_name",
     )?;
-    let rows = stmt
-      .query_map([], |row| {
-        Ok(AppSummary {
-          app_name: row.get(0)?,
-          latest_run_id: row.get(1)?,
-          latest_status: parse_run_status(&row.get::<_, String>(2)?),
-          stove_version: row.get(3)?,
-          total_runs: row.get(4)?,
-        })
-      })?
-      .filter_map(|r| r.ok())
-      .collect();
-    Ok(rows)
+    let rows = stmt.query_map([], |row| {
+      Ok(AppSummary {
+        app_name: row.get(0)?,
+        latest_run_id: row.get(1)?,
+        latest_status: parse_run_status(&row.get::<_, String>(2)?),
+        stove_version: row.get(3)?,
+        total_runs: row.get(4)?,
+      })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 
   pub fn get_runs(&self, app_name: Option<&str>) -> Result<Vec<Run>> {
@@ -100,7 +107,7 @@ impl Repository {
       Some(name) => stmt.query_map(rusqlite::params![name], run_from_row)?,
       None => stmt.query_map([], run_from_row)?,
     };
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
@@ -108,7 +115,7 @@ impl Repository {
     let sql = format!("SELECT {RUN_COLUMNS} FROM runs WHERE id = ?1");
     let mut stmt = db.conn().prepare(&sql)?;
     let mut rows = stmt.query_map(rusqlite::params![run_id], run_from_row)?;
-    Ok(rows.next().and_then(|r| r.ok()))
+    Ok(rows.next().transpose()?)
   }
 
   pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
@@ -116,23 +123,59 @@ impl Repository {
     let mut stmt = db.conn().prepare(
             "SELECT id, run_id, test_name, spec_name, test_path, started_at, ended_at, status, duration_ms, error FROM tests WHERE run_id = ?1 ORDER BY started_at",
         )?;
-    let rows = stmt
-      .query_map(rusqlite::params![run_id], test_from_row)?
-      .filter_map(|r| r.ok())
-      .collect();
-    Ok(rows)
+    let rows = stmt.query_map(rusqlite::params![run_id], test_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 
   pub fn get_entries(&self, run_id: &str, test_id: &str) -> Result<Vec<Entry>> {
     let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(
-            "SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata, expected, actual, error, trace_id FROM entries WHERE run_id = ?1 AND test_id = ?2 ORDER BY timestamp",
-        )?;
-    let rows = stmt
-      .query_map(rusqlite::params![run_id, test_id], entry_from_row)?
-      .filter_map(|r| r.ok())
-      .collect();
-    Ok(rows)
+    let sql = format!(
+      "WITH correlated AS (
+         SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
+                metadata, expected, actual, error, trace_id,
+                {NORMALIZED_ASSERTION_ID_SQL} AS assertion_id
+           FROM entries
+          WHERE run_id = ?1 AND test_id = ?2
+       ),
+       ranked AS (
+         SELECT *,
+                COUNT(*) OVER (PARTITION BY assertion_id) AS attempt_count,
+                SUM(CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END)
+                  OVER (PARTITION BY assertion_id) AS failure_count,
+                ROW_NUMBER() OVER (
+                  PARTITION BY assertion_id
+                  ORDER BY id DESC
+                ) AS attempt_rank
+           FROM correlated
+       )
+       SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
+              metadata, expected, actual, error, trace_id, assertion_id,
+              attempt_count, failure_count
+         FROM ranked
+        WHERE attempt_rank = 1
+        ORDER BY timestamp, id"
+    );
+    let mut stmt = db.conn().prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![run_id, test_id], entry_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  /// Return the append-only entry history without assertion correlation.
+  pub fn get_raw_entries(&self, run_id: &str, test_id: &str) -> Result<Vec<Entry>> {
+    let db = self.lock_read_db();
+    let sql = format!(
+      "SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
+              metadata, expected, actual, error, trace_id,
+              {NORMALIZED_ASSERTION_ID_SQL} AS assertion_id,
+              1 AS attempt_count,
+              CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END AS failure_count
+         FROM entries
+        WHERE run_id = ?1 AND test_id = ?2
+        ORDER BY timestamp, id"
+    );
+    let mut stmt = db.conn().prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![run_id, test_id], entry_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 
   pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
@@ -152,11 +195,8 @@ impl Repository {
              ORDER BY start_time_nanos"
     );
     let mut stmt = db.conn().prepare(&sql)?;
-    let rows = stmt
-      .query_map(rusqlite::params![run_id, test_id], span_from_row)?
-      .filter_map(|r| r.ok())
-      .collect();
-    Ok(rows)
+    let rows = stmt.query_map(rusqlite::params![run_id, test_id], span_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 
   pub fn get_trace(&self, trace_id: &str) -> Result<Vec<Span>> {
@@ -164,23 +204,87 @@ impl Repository {
     let sql =
       format!("SELECT {SPAN_COLUMNS} FROM spans WHERE trace_id = ?1 ORDER BY start_time_nanos");
     let mut stmt = db.conn().prepare(&sql)?;
-    let rows = stmt
-      .query_map(rusqlite::params![trace_id], span_from_row)?
-      .filter_map(|r| r.ok())
-      .collect();
-    Ok(rows)
+    let rows = stmt.query_map(rusqlite::params![trace_id], span_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 
   pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
     let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(
-            "SELECT id, run_id, test_id, system, state_json, summary FROM snapshots WHERE run_id = ?1 AND test_id = ?2",
-        )?;
-    let rows = stmt
-      .query_map(rusqlite::params![run_id, test_id], snapshot_from_row)?
-      .filter_map(|r| r.ok())
-      .collect();
-    Ok(rows)
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {SNAPSHOT_COLUMNS} FROM snapshots WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(rusqlite::params![run_id, test_id], snapshot_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  pub fn get_mock_interactions_for_test(
+    &self,
+    run_id: &str,
+    test_id: &str,
+  ) -> Result<Vec<MockInteraction>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(
+      rusqlite::params![run_id, test_id],
+      mock_interaction_from_row,
+    )?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  /// All interactions of a run, including unattributed ones (`test_id IS NULL`) —
+  /// the run-level lane the UI renders instead of guessing ownership.
+  pub fn get_mock_interactions_for_run(&self, run_id: &str) -> Result<Vec<MockInteraction>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(rusqlite::params![run_id], mock_interaction_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  pub fn get_unattributed_mock_interactions_for_run(
+    &self,
+    run_id: &str,
+  ) -> Result<Vec<MockInteraction>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 AND test_id IS NULL ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(rusqlite::params![run_id], mock_interaction_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  pub fn get_mock_warnings_for_test(
+    &self,
+    run_id: &str,
+    test_id: &str,
+  ) -> Result<Vec<MockWarning>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(rusqlite::params![run_id, test_id], mock_warning_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  pub fn get_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(rusqlite::params![run_id], mock_warning_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+  }
+
+  pub fn get_unattributed_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
+    let db = self.lock_read_db();
+    let mut stmt = db.conn().prepare(&format!(
+      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 AND test_id IS NULL ORDER BY id"
+    ))?;
+    let rows = stmt.query_map(rusqlite::params![run_id], mock_warning_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
   }
 }
 

@@ -1,6 +1,7 @@
 package com.trendyol.stove.kafka.tests
 
 import com.trendyol.stove.kafka.*
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
@@ -76,6 +77,16 @@ class CoroutineExecutorServiceTests :
       executorService.shutdown()
     }
 
+    test("execute should reject commands after shutdown") {
+      val scope = CoroutineScope(Dispatchers.Default + Job())
+      val executorService = scope.asExecutorService
+      executorService.shutdown()
+
+      shouldThrow<RejectedExecutionException> {
+        executorService.execute {}
+      }
+    }
+
     test("StoveCoroutineExecutor should execute commands") {
       val scope = CoroutineScope(Dispatchers.Default + Job())
       val executor = scope.asExecutor
@@ -90,5 +101,15 @@ class CoroutineExecutorServiceTests :
       latch.await(2, TimeUnit.SECONDS) shouldBe true
       executed.get() shouldBe true
       scope.cancel()
+    }
+
+    test("StoveCoroutineExecutor should reject commands after scope cancellation") {
+      val scope = CoroutineScope(Dispatchers.Default + Job())
+      val executor = scope.asExecutor
+      scope.cancel()
+
+      shouldThrow<RejectedExecutionException> {
+        executor.execute {}
+      }
     }
   })
