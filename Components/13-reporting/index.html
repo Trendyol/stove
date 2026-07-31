@@ -3358,30 +3358,63 @@ Add the Kotest or JUnit extension. Failures print a timeline by default (pretty 
 </div>
 <p>The extension registers an <code>AfterTestListener</code> that intercepts failures and prints the report.</p>
 <h2 id="configure">Configure<a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
-<p>Default is on, prints to console, dumps only on failure. Override inside <code>Stove().with { }</code>:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">reporting</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="n">ReportingOptions</span><span class="p">(</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">            </span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">            </span><span class="n">dumpOnFailure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">                       </span><span class="c1">// false = dump every test</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">            </span><span class="n">failureRenderer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PrettyConsoleRenderer</span><span class="p">(),</span><span class="w">  </span><span class="c1">// or JsonReportRenderer()</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="p">)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="c1">// ... your systems</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
-</span></code></pre></div>
+<p>Default is on, prints to console, and dumps only on failure. Local runs include the complete pretty report. On CI, Stove automatically uses bounded compact output for each failure report.</p>
+<div class="language-text highlight"><pre><span></span><code>Stove().with {
+    reporting {
+        enabled()
+        dumpOnFailure()
+    }
+    // ... your systems
+}.run()
+</code></pre></div>
+<p>The CI-aware default recognizes common flags such as <code>CI</code>, <code>GITHUB_ACTIONS</code>, <code>GITLAB_CI</code>, <code>JENKINS_URL</code>, <code>TF_BUILD</code>, and <code>BUILDKITE</code>. Values that are blank, <code>false</code>, or <code>0</code> do not enable compact mode.</p>
+<p>Compact output keeps the complete pass/fail/total counts, then:</p>
+<ul>
+<li>keeps failed entries plus the most recent timeline context, up to 50 entries;</li>
+<li>keeps the most recent 10 items in every rendered collection, including timeline details and snapshots;</li>
+<li>keeps up to 20 entries from each rendered map and up to 10 system snapshots;</li>
+<li>keeps 2,000 characters from each large value, split between its beginning and end;</li>
+<li>stops nested diagnostic traversal after eight levels and detects cyclic values;</li>
+<li>caps the final composed console report at 50,000 characters, including an execution trace appended by a test extension;</li>
+<li>shortens Kafka's inline "Messages so far" assertion dump before the test framework prints it;</li>
+<li>prints an explicit omission notice for every shortened section.</li>
+</ul>
+<p>Tune the limits, force compact output everywhere, or force the complete console report:</p>
+<div class="language-text highlight"><pre><span></span><code>reporting {
+    failureRenderer(
+        PrettyConsoleRenderer.compact(
+            ConsoleReportLimits(
+                maxTimelineEntries = 25,
+                maxCollectionItems = 5,
+                maxMapEntries = 10,
+                maxSnapshots = 5,
+                maxValueCharacters = 1_000,
+                maxNestingDepth = 6,
+                maxOutputCharacters = 25_000
+            )
+        )
+    )
+
+    // Force complete output, including on CI:
+    // failureRenderer(PrettyConsoleRenderer)
+
+    // Restore the default explicitly:
+    // failureRenderer(PrettyConsoleRenderer.ciAware())
+}
+</code></pre></div>
+<p><code>JsonReportRenderer</code> is not shortened. Use it when the complete structured report should be saved as a CI artifact while console output stays compact.</p>
 <h2 id="renderers">Renderers<a class="headerlink" href="#renderers" title="Permanent link">&para;</a></h2>
 <div class="stove-compare" markdown="0">
   <div>
     <h4>PrettyConsoleRenderer (default)</h4>
-    <p>Human-friendly. Color, alignment, system snapshots inline. Built with Mordant.</p>
+    <p>Human-friendly. Color, alignment, system snapshots inline, with compact detail on CI. Built with Mordant.</p>
 
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>─── Stove Report ────────────
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>▶ http    POST /orders   201
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>▶ kafka   shouldBePublished
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        topic=order.created.v1
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        timeout=10s   (timed out)
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>─────────────────────────────
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>─── Stove Report ────────────
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>▶ http    POST /orders   201
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>▶ kafka   shouldBePublished
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        topic=order.created.v1
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        timeout=10s   (timed out)
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>─────────────────────────────
 </span></code></pre></div>
 
   </div>
@@ -3389,16 +3422,16 @@ Add the Kotest or JUnit extension. Failures print a timeline by default (pretty 
     <h4>JsonReportRenderer</h4>
     <p>Machine-readable. Pipe into CI artifacts, MCP, or your own analyzer.</p>
 
-<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;test&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OrderE2ETest.create&quot;</span><span class="p">,</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;entries&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST&quot;</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/orders&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">201</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;kafka&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;shouldBePublished&quot;</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="nt">&quot;topic&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;order.created.v1&quot;</span><span class="p">,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;timeout&quot;</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="p">]</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;test&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OrderE2ETest.create&quot;</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;entries&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/orders&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">201</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;kafka&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;shouldBePublished&quot;</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="nt">&quot;topic&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;order.created.v1&quot;</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;timeout&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">}</span>
 </span></code></pre></div>
 
   </div>
@@ -3415,11 +3448,11 @@ Add the Kotest or JUnit extension. Failures print a timeline by default (pretty 
 <tbody>
 <tr>
 <td>HTTP</td>
-<td>method, path, status, latency, request/response bodies (truncated)</td>
+<td>method, path, status, latency, request/response bodies</td>
 </tr>
 <tr>
 <td>Kafka</td>
-<td>producer publishes, consumer reads, topic, partition, offset, payload (truncated)</td>
+<td>producer publishes, consumer reads, topic, partition, offset, payload</td>
 </tr>
 <tr>
 <td>Databases (SQL + NoSQL)</td>
@@ -3479,8 +3512,16 @@ Add the Kotest or JUnit extension. Failures print a timeline by default (pretty 
 <td>Interceptor bean registered? See <a href="../02-kafka/">Kafka pitfalls</a></td>
 </tr>
 <tr>
+<td>Need the complete console report on CI</td>
+<td>Set <code>failureRenderer(PrettyConsoleRenderer)</code></td>
+</tr>
+<tr>
+<td>Need smaller local output too</td>
+<td>Set <code>failureRenderer(PrettyConsoleRenderer.compact())</code></td>
+</tr>
+<tr>
 <td>JSON empty in CI</td>
-<td>Use <code>JsonReportRenderer()</code>; pipe <code>System.out</code> to a file or use dashboard JSON export</td>
+<td>Use <code>JsonReportRenderer</code>; pipe <code>System.out</code> to a file or use dashboard JSON export</td>
 </tr>
 </tbody>
 </table>
