@@ -181,14 +181,16 @@ function EvidenceRow({
         <strong>{entry.action}</strong>
         <span>{entry.system}</span>
       </span>
-      {entry.attempt_count > 1 && (
-        <span className="ledger-attempt-stamp">
-          {entry.attempt_count} attempts · {entry.failure_count} failed
-        </span>
-      )}
-      {entry.trace_id && <span className="ledger-trace-stamp">trace</span>}
-      <span className={`ledger-result is-${issue ? "issue" : "success"}`}>{entry.result}</span>
-      <Icon name="chevron" className="h-4 w-4" />
+      <span className="ledger-row-tail">
+        {entry.attempt_count > 1 && (
+          <span className="ledger-attempt-stamp">
+            {entry.attempt_count} attempts · {entry.failure_count} failed
+          </span>
+        )}
+        {entry.trace_id && <span className="ledger-trace-stamp">trace</span>}
+        <span className={`ledger-result is-${issue ? "issue" : "success"}`}>{entry.result}</span>
+        <Icon name="chevron" className="h-4 w-4" />
+      </span>
     </button>
   );
 }
