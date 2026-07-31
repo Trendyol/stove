@@ -1,8 +1,7 @@
-import com.trendyol.stove.gradle.stoveTracing
-
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.three)
+  id("com.trendyol.stove.tracing")
   idea
   application
 }
@@ -43,8 +42,8 @@ dependencies {
 }
 
 stoveTracing {
-  serviceName = "spring-standalone-example"
-  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
+  serviceName.set("spring-standalone-example")
+  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
 }
 
 application { mainClass.set("stove.spring.standalone.example.ExampleAppKt") }

@@ -11,7 +11,7 @@ on:
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
-      - 'buildSrc/**'
+      - 'build-logic/**'
   pull_request:
     branches: [main]
     paths:
@@ -22,7 +22,7 @@ on:
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
-      - 'buildSrc/**'
+      - 'build-logic/**'
 
 # Cancel in-progress runs for the same branch
 concurrency:

@@ -1,11 +1,11 @@
 import com.google.protobuf.gradle.id
-import com.trendyol.stove.gradle.stoveTracing
 
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.three)
   alias(libs.plugins.spring.dependencyManagement)
   alias(libs.plugins.protobuf)
+  id("com.trendyol.stove.tracing")
   idea
   application
 }
@@ -80,6 +80,6 @@ configurations.matching { it.name == "detekt" }.all {
 }
 
 stoveTracing {
-  serviceName = "spring-streams-example"
-  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
+  serviceName.set("spring-streams-example")
+  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
 }
