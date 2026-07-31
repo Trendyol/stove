@@ -408,7 +408,8 @@ Stove(
   StoveOptions(
     reportingEnabled = true,           // Enable/disable reporting (default: true)
     dumpReportOnTestFailure = true,    // Enrich failures with report (default: true)
-    failureRenderer = PrettyConsoleRenderer  // Custom renderer (default: PrettyConsoleRenderer)
+    // Default: full pretty output locally, compact pretty output on CI
+    failureRenderer = PrettyConsoleRenderer.ciAware()
   )
 ).with { ... }
 ```

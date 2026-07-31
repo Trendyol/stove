@@ -21,6 +21,7 @@ private data class CommonEvent(val name: String)
 private val serde = StoveSerde.jackson.anyByteArraySerde()
 
 private fun record(
+  id: String = UUID.randomUUID().toString(),
   topic: String = "topic",
   partition: Int? = 0,
   offset: Long? = 0,
@@ -28,7 +29,7 @@ private fun record(
   event: CommonEvent = CommonEvent("event"),
   reason: Throwable? = null
 ) = DefaultKafkaRecord(
-  id = UUID.randomUUID().toString(),
+  id = id,
   value = serde.serialize(event),
   metadata = MessageMetadata(topic, "key", headers),
   partition = partition,
@@ -55,6 +56,19 @@ class KafkaMessagingTests :
 
       store.version.value shouldBe 3L
       collected shouldContainExactly listOf(first, second)
+    }
+
+    test("store snapshots retain record insertion order") {
+      val store = KafkaMessageStore<DefaultKafkaRecord>()
+      val first = record(id = "z-first", event = CommonEvent("first"))
+      val second = record(id = "a-second", offset = 1, event = CommonEvent("second"))
+      val third = record(id = "m-third", offset = 2, event = CommonEvent("third"))
+
+      store.recordConsumed(first)
+      store.recordConsumed(second)
+      store.recordConsumed(third)
+
+      store.consumedMessages() shouldContainExactly listOf(first, second, third)
     }
 
     test("test scoping supports explicit headers and percent-decoded baggage") {
@@ -129,6 +143,17 @@ class KafkaMessagingTests :
 
       failure.message shouldContain "consumed successfully"
       conditionCalls shouldBe 1
+    }
+
+    test("Kafka assertion dumps are shortened only on CI") {
+      val dump = "Messages so far:\n" + "x".repeat(100)
+
+      compactKafkaAssertionDump(dump, runningOnCI = false, maxCharacters = 24) shouldBe dump
+      compactKafkaAssertionDump(dump, runningOnCI = true, maxCharacters = 24).run {
+        shouldContain("Messages so far:")
+        shouldContain("character(s) omitted in compact output")
+        shouldContain("xxxxx")
+      }
     }
 
     test("failed assertions expose the transport failure reason") {

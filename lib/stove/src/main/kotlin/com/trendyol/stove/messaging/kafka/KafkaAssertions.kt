@@ -2,6 +2,9 @@ package com.trendyol.stove.messaging.kafka
 
 import arrow.core.some
 import com.trendyol.stove.messaging.*
+import com.trendyol.stove.reporting.ConsoleReportLimits
+import com.trendyol.stove.reporting.isRunningOnCI
+import com.trendyol.stove.reporting.limitReportValue
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.tracing.TraceContext
 import kotlinx.coroutines.flow.first
@@ -160,7 +163,11 @@ class KafkaAssertions<R : KafkaRecord>(
 
   private fun Collection<R>.scoped(testId: String?): List<R> = filter { it.headers.belongsToTest(testId) }
 
-  private fun dumpMessages(testId: String?): String = "Messages so far:\n${store.dump(testId)}"
+  private fun dumpMessages(testId: String?): String =
+    compactKafkaAssertionDump(
+      dump = "Messages so far:\n${store.dump(testId)}",
+      runningOnCI = isRunningOnCI()
+    )
 
   private sealed interface ConsumptionOutcome<out R : KafkaRecord> {
     val record: R
@@ -172,3 +179,10 @@ class KafkaAssertions<R : KafkaRecord>(
     data class Retried<R : KafkaRecord>(override val record: R) : ConsumptionOutcome<R>
   }
 }
+
+internal fun compactKafkaAssertionDump(
+  dump: String,
+  runningOnCI: Boolean,
+  maxCharacters: Int = ConsoleReportLimits().maxValueCharacters
+): String =
+  if (runningOnCI) limitReportValue(dump, maxCharacters) else dump

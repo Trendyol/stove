@@ -2,6 +2,8 @@ package com.trendyol.stove.messaging.kafka
 
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Signal-driven store shared by every Kafka integration.
@@ -10,12 +12,13 @@ import java.util.concurrent.ConcurrentHashMap
  * storage, replay, scoping, commit, and dump semantics remain common.
  */
 class KafkaMessageStore<R : KafkaRecord> {
-  private val consumed = ConcurrentHashMap<String, R>()
-  private val published = ConcurrentHashMap<String, R>()
-  private val committed = ConcurrentHashMap<String, R>()
-  private val retried = ConcurrentHashMap<String, R>()
-  private val failed = ConcurrentHashMap<String, R>()
-  private val acknowledged = ConcurrentHashMap<String, R>()
+  private val consumed = InsertionOrderedRecordStore<R>()
+  private val published = InsertionOrderedRecordStore<R>()
+  private val committed = InsertionOrderedRecordStore<R>()
+  private val retried = InsertionOrderedRecordStore<R>()
+  private val failed = InsertionOrderedRecordStore<R>()
+  private val acknowledged = InsertionOrderedRecordStore<R>()
+  private val nextSequence = AtomicLong()
 
   private val mutableVersion = MutableStateFlow(0L)
 
@@ -33,17 +36,17 @@ class KafkaMessageStore<R : KafkaRecord> {
 
   fun recordAcknowledged(record: R) = record(acknowledged, record)
 
-  fun consumedMessages(): Collection<R> = consumed.values
+  fun consumedMessages(): Collection<R> = consumed.values()
 
-  fun publishedMessages(): Collection<R> = published.values
+  fun publishedMessages(): Collection<R> = published.values()
 
-  fun committedMessages(): Collection<R> = committed.values
+  fun committedMessages(): Collection<R> = committed.values()
 
-  fun retriedMessages(): Collection<R> = retried.values
+  fun retriedMessages(): Collection<R> = retried.values()
 
-  fun failedMessages(): Collection<R> = failed.values
+  fun failedMessages(): Collection<R> = failed.values()
 
-  fun acknowledgedMessages(): Collection<R> = acknowledged.values
+  fun acknowledgedMessages(): Collection<R> = acknowledged.values()
 
   fun consumedRecords(): Flow<R> = replayThenLive(::consumedMessages)
 
@@ -115,10 +118,10 @@ class KafkaMessageStore<R : KafkaRecord> {
   )
 
   private fun record(
-    target: ConcurrentHashMap<String, R>,
+    target: InsertionOrderedRecordStore<R>,
     record: R
   ) {
-    target[record.id] = record
+    target.put(nextSequence.incrementAndGet(), record)
     mutableVersion.update { it + 1 }
   }
 
@@ -145,4 +148,19 @@ class KafkaMessageStore<R : KafkaRecord> {
     |Failed: $failed
     |Acknowledged: $acknowledged$suffix
   """.trimIndent().trimMargin()
+
+  private class InsertionOrderedRecordStore<R : KafkaRecord> {
+    private val sequenceById = ConcurrentHashMap<String, Long>()
+    private val recordsBySequence = ConcurrentSkipListMap<Long, R>()
+
+    fun put(sequence: Long, record: R) {
+      sequenceById.compute(record.id) { _, previousSequence ->
+        previousSequence?.let(recordsBySequence::remove)
+        recordsBySequence[sequence] = record
+        sequence
+      }
+    }
+
+    fun values(): Collection<R> = recordsBySequence.values
+  }
 }

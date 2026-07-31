@@ -33,7 +33,7 @@ object TraceReportBuilder {
     val options = Stove.options()
     val report = Stove.reporter().dumpIfFailed(options.failureRenderer)
     val traceTree = getColoredTraceTreeIfEnabled()
-    return buildReport(report, traceTree)
+    return options.failureRenderer.limitOutput(buildReport(report, traceTree))
   }
 
   /**

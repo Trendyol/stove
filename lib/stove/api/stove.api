@@ -562,6 +562,31 @@ public final class com/trendyol/stove/reporting/AssertionResult$Companion {
 	public final fun of (Z)Lcom/trendyol/stove/reporting/AssertionResult;
 }
 
+public final class com/trendyol/stove/reporting/ConsoleReportLimits {
+	public fun <init> ()V
+	public fun <init> (IIIIIII)V
+	public synthetic fun <init> (IIIIIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun copy (IIIIIII)Lcom/trendyol/stove/reporting/ConsoleReportLimits;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/reporting/ConsoleReportLimits;IIIIIIIILjava/lang/Object;)Lcom/trendyol/stove/reporting/ConsoleReportLimits;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxCollectionItems ()I
+	public final fun getMaxMapEntries ()I
+	public final fun getMaxNestingDepth ()I
+	public final fun getMaxOutputCharacters ()I
+	public final fun getMaxSnapshots ()I
+	public final fun getMaxTimelineEntries ()I
+	public final fun getMaxValueCharacters ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/trendyol/stove/reporting/JsonReportEntry {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -595,6 +620,7 @@ public final class com/trendyol/stove/reporting/JsonReportEntry {
 
 public final class com/trendyol/stove/reporting/JsonReportRenderer : com/trendyol/stove/reporting/ReportRenderer {
 	public static final field INSTANCE Lcom/trendyol/stove/reporting/JsonReportRenderer;
+	public fun limitOutput (Ljava/lang/String;)Ljava/lang/String;
 	public fun render (Lcom/trendyol/stove/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
 }
 
@@ -636,6 +662,11 @@ public final class com/trendyol/stove/reporting/JsonTestReport {
 
 public final class com/trendyol/stove/reporting/PrettyConsoleRenderer : com/trendyol/stove/reporting/ReportRenderer {
 	public static final field INSTANCE Lcom/trendyol/stove/reporting/PrettyConsoleRenderer;
+	public final fun ciAware (Lcom/trendyol/stove/reporting/ConsoleReportLimits;)Lcom/trendyol/stove/reporting/ReportRenderer;
+	public static synthetic fun ciAware$default (Lcom/trendyol/stove/reporting/PrettyConsoleRenderer;Lcom/trendyol/stove/reporting/ConsoleReportLimits;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportRenderer;
+	public final fun compact (Lcom/trendyol/stove/reporting/ConsoleReportLimits;)Lcom/trendyol/stove/reporting/ReportRenderer;
+	public static synthetic fun compact$default (Lcom/trendyol/stove/reporting/PrettyConsoleRenderer;Lcom/trendyol/stove/reporting/ConsoleReportLimits;ILjava/lang/Object;)Lcom/trendyol/stove/reporting/ReportRenderer;
+	public fun limitOutput (Ljava/lang/String;)Ljava/lang/String;
 	public fun render (Lcom/trendyol/stove/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
 }
 
@@ -704,7 +735,12 @@ public final class com/trendyol/stove/reporting/ReportEventListener$DefaultImpls
 }
 
 public abstract interface class com/trendyol/stove/reporting/ReportRenderer {
+	public fun limitOutput (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun render (Lcom/trendyol/stove/reporting/TestReport;Ljava/util/List;)Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/reporting/ReportRenderer$DefaultImpls {
+	public static fun limitOutput (Lcom/trendyol/stove/reporting/ReportRenderer;Ljava/lang/String;)Ljava/lang/String;
 }
 
 public abstract interface class com/trendyol/stove/reporting/Reports {

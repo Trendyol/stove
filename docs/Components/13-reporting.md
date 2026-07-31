@@ -37,27 +37,61 @@ The extension registers an `AfterTestListener` that intercepts failures and prin
 
 ## Configure
 
-Default is on, prints to console, dumps only on failure. Override inside `Stove().with { }`:
+Default is on, prints to console, and dumps only on failure. Local runs include the complete pretty report. On CI, Stove automatically uses bounded compact output for each failure report.
 
-```kotlin
-Stove().with {
+    Stove().with {
+        reporting {
+            enabled()
+            dumpOnFailure()
+        }
+        // ... your systems
+    }.run()
+
+The CI-aware default recognizes common flags such as `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `JENKINS_URL`, `TF_BUILD`, and `BUILDKITE`. Values that are blank, `false`, or `0` do not enable compact mode.
+
+Compact output keeps the complete pass/fail/total counts, then:
+
+- keeps failed entries plus the most recent timeline context, up to 50 entries;
+- keeps the most recent 10 items in every rendered collection, including timeline details and snapshots;
+- keeps up to 20 entries from each rendered map and up to 10 system snapshots;
+- keeps 2,000 characters from each large value, split between its beginning and end;
+- stops nested diagnostic traversal after eight levels and detects cyclic values;
+- caps the final composed console report at 50,000 characters, including an execution trace appended by a test extension;
+- shortens Kafka's inline "Messages so far" assertion dump before the test framework prints it;
+- prints an explicit omission notice for every shortened section.
+
+Tune the limits, force compact output everywhere, or force the complete console report:
+
     reporting {
-        ReportingOptions(
-            enabled = true,
-            dumpOnFailure = true,                       // false = dump every test
-            failureRenderer = PrettyConsoleRenderer(),  // or JsonReportRenderer()
+        failureRenderer(
+            PrettyConsoleRenderer.compact(
+                ConsoleReportLimits(
+                    maxTimelineEntries = 25,
+                    maxCollectionItems = 5,
+                    maxMapEntries = 10,
+                    maxSnapshots = 5,
+                    maxValueCharacters = 1_000,
+                    maxNestingDepth = 6,
+                    maxOutputCharacters = 25_000
+                )
+            )
         )
+
+        // Force complete output, including on CI:
+        // failureRenderer(PrettyConsoleRenderer)
+
+        // Restore the default explicitly:
+        // failureRenderer(PrettyConsoleRenderer.ciAware())
     }
-    // ... your systems
-}.run()
-```
+
+`JsonReportRenderer` is not shortened. Use it when the complete structured report should be saved as a CI artifact while console output stays compact.
 
 ## Renderers
 
 <div class="stove-compare" markdown="0">
   <div>
     <h4>PrettyConsoleRenderer (default)</h4>
-    <p>Human-friendly. Color, alignment, system snapshots inline. Built with Mordant.</p>
+    <p>Human-friendly. Color, alignment, system snapshots inline, with compact detail on CI. Built with Mordant.</p>
 
 ```
 ─── Stove Report ────────────
@@ -93,8 +127,8 @@ Stove().with {
 
 | Surface | Captured |
 |---|---|
-| HTTP | method, path, status, latency, request/response bodies (truncated) |
-| Kafka | producer publishes, consumer reads, topic, partition, offset, payload (truncated) |
+| HTTP | method, path, status, latency, request/response bodies |
+| Kafka | producer publishes, consumer reads, topic, partition, offset, payload |
 | Databases (SQL + NoSQL) | queries, bind args, rows affected, durations |
 | WireMock | stub matches and misses, request body |
 | gRPC | method, request, response, status |
@@ -123,4 +157,6 @@ Snapshots make root-cause analysis faster. A WireMock snapshot, for example, can
 | No report on failure | Extension registered? `StoveKotestExtension()` in `extensions` (Kotest) or `@ExtendWith(StoveJUnitExtension::class)` (JUnit) |
 | Report missing system entries | System registered before the runner block in `Stove().with { }` |
 | Empty Kafka snapshot | Interceptor bean registered? See [Kafka pitfalls](02-kafka.md) |
-| JSON empty in CI | Use `JsonReportRenderer()`; pipe `System.out` to a file or use dashboard JSON export |
+| Need the complete console report on CI | Set `failureRenderer(PrettyConsoleRenderer)` |
+| Need smaller local output too | Set `failureRenderer(PrettyConsoleRenderer.compact())` |
+| JSON empty in CI | Use `JsonReportRenderer`; pipe `System.out` to a file or use dashboard JSON export |
