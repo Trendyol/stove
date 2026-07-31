@@ -14,7 +14,7 @@ dependencies {
 
 dependencies {
   testImplementation(projects.lib.stoveWiremock)
-  testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.testExtensions.stoveExtensionsKotest)
   testImplementation(libs.jackson.jsr310)
   testImplementation(testFixtures(projects.lib.stove))
   testImplementation(libs.logback.classic)

@@ -54,12 +54,12 @@ mavenPublishing {
   publishToMavenCentral()
   pom {
     name.set(project.name)
-    description.set(project.properties["projectDescription"].toString())
-    url.set(project.properties["projectUrl"].toString())
+    description.set(project.findProperty("projectDescription").toString())
+    url.set(project.findProperty("projectUrl").toString())
     licenses {
       license {
-        name.set(project.properties["licence"].toString())
-        url.set(project.properties["licenceUrl"].toString())
+        name.set(project.findProperty("licence").toString())
+        url.set(project.findProperty("licenceUrl").toString())
       }
     }
     developers {
@@ -72,7 +72,7 @@ mavenPublishing {
     scm {
       connection.set("scm:git@github.com:Trendyol/stove.git")
       developerConnection.set("scm:git:ssh://github.com:Trendyol/stove.git")
-      url.set(project.properties["projectUrl"].toString())
+      url.set(project.findProperty("projectUrl").toString())
     }
   }
   if (hasSigningKey) signAllPublications()
