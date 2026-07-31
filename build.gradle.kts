@@ -2,6 +2,7 @@ import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+  id("com.trendyol.stove.build-logic")
   kotlin("jvm").version(libs.versions.kotlin)
   alias(libs.plugins.spotless)
   alias(libs.plugins.testLogger)

@@ -12,27 +12,12 @@ tracing { enableSpanReceiver() }
 
 ## 2. Attach the OpenTelemetry agent
 
-### Gradle Plugin (default)
-
 ```kotlin
 plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
 
 stoveTracing {
     serviceName.set("my-service")
     testTaskNames.set(listOf("e2eTest"))
-}
-```
-
-### buildSrc alternative
-
-Copy `StoveTracingConfiguration.kt` from the Stove repo to `buildSrc/src/main/kotlin/`, then use direct assignment:
-
-```kotlin
-import com.trendyol.stove.gradle.stoveTracing
-
-stoveTracing {
-    serviceName = "my-service"
-    testTaskNames = listOf("e2eTest")
 }
 ```
 

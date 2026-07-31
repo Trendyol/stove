@@ -1,11 +1,10 @@
-import com.trendyol.stove.gradle.stoveTracing
-
 plugins {
   kotlin("jvm") version libs.versions.kotlin
   kotlin("plugin.serialization") version libs.versions.kotlin
   alias(libs.plugins.google.ksp)
   alias(libs.plugins.micronaut.application)
   alias(libs.plugins.micronaut.aot)
+  id("com.trendyol.stove.tracing")
   application
   idea
 }
@@ -55,8 +54,8 @@ java {
 }
 
 stoveTracing {
-  serviceName = "micronaut-example"
-  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
+  serviceName.set("micronaut-example")
+  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
 }
 
 micronaut {

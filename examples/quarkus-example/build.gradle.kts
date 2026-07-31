@@ -1,5 +1,3 @@
-import com.trendyol.stove.gradle.stoveTracing
-
 @DisableCachingByDefault(because = "Creates an empty classes directory required by Quarkus code generation")
 abstract class EnsureDirectoryTask : DefaultTask() {
   @get:OutputDirectory
@@ -14,6 +12,7 @@ abstract class EnsureDirectoryTask : DefaultTask() {
 plugins {
   alias(libs.plugins.quarkus)
   alias(libs.plugins.allopen)
+  id("com.trendyol.stove.tracing")
   idea
   application
 }
@@ -71,6 +70,6 @@ kotlin {
 }
 
 stoveTracing {
-  serviceName = "quarkus-example"
-  otelAgentVersion = libs.versions.opentelemetry.instrumentation.get()
+  serviceName.set("quarkus-example")
+  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
 }

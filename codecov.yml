@@ -12,5 +12,5 @@ ignore:
   - "test-extensions/stove-extensions-kotest/src/test"
   - "test-extensions/stove-extensions-junit/src/test"
   - "recipes"
-  - buildSrc
+  - build-logic
   - starters/*/tests/*
