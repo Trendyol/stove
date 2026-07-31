@@ -39,15 +39,13 @@ The extension registers an `AfterTestListener` that intercepts failures and prin
 
 Default is on, prints to console, and dumps only on failure. Local runs include the complete pretty report. On CI, Stove automatically uses bounded compact output for each failure report.
 
-```kotlin
-Stove().with {
-    reporting {
-        enabled()
-        dumpOnFailure()
-    }
-    // ... your systems
-}.run()
-```
+    Stove().with {
+        reporting {
+            enabled()
+            dumpOnFailure()
+        }
+        // ... your systems
+    }.run()
 
 The CI-aware default recognizes common flags such as `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `JENKINS_URL`, `TF_BUILD`, and `BUILDKITE`. Values that are blank, `false`, or `0` do not enable compact mode.
 
@@ -64,29 +62,27 @@ Compact output keeps the complete pass/fail/total counts, then:
 
 Tune the limits, force compact output everywhere, or force the complete console report:
 
-```kotlin
-reporting {
-    failureRenderer(
-        PrettyConsoleRenderer.compact(
-            ConsoleReportLimits(
-                maxTimelineEntries = 25,
-                maxCollectionItems = 5,
-                maxMapEntries = 10,
-                maxSnapshots = 5,
-                maxValueCharacters = 1_000,
-                maxNestingDepth = 6,
-                maxOutputCharacters = 25_000
+    reporting {
+        failureRenderer(
+            PrettyConsoleRenderer.compact(
+                ConsoleReportLimits(
+                    maxTimelineEntries = 25,
+                    maxCollectionItems = 5,
+                    maxMapEntries = 10,
+                    maxSnapshots = 5,
+                    maxValueCharacters = 1_000,
+                    maxNestingDepth = 6,
+                    maxOutputCharacters = 25_000
+                )
             )
         )
-    )
 
-    // Force complete output, including on CI:
-    // failureRenderer(PrettyConsoleRenderer)
+        // Force complete output, including on CI:
+        // failureRenderer(PrettyConsoleRenderer)
 
-    // Restore the default explicitly:
-    // failureRenderer(PrettyConsoleRenderer.ciAware())
-}
-```
+        // Restore the default explicitly:
+        // failureRenderer(PrettyConsoleRenderer.ciAware())
+    }
 
 `JsonReportRenderer` is not shortened. Use it when the complete structured report should be saved as a CI artifact while console output stays compact.
 

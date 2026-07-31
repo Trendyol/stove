@@ -10,4 +10,18 @@ class ConsoleTextWrapperTest :
 
       wrapped.lines().first() shouldBe "Input: alpha"
     }
+
+    test("wraps when the continuation indent exceeds half the width") {
+      val width = 66
+      val continuationIndent = 34
+      val text =
+        "      abcdefghijklmnopqrstuvwxyz: " +
+          (1..12).joinToString(" ") { "value-$it" }
+
+      val lines = ConsoleTextWrapper.wrap(text, width).lines()
+
+      (lines.size > 1) shouldBe true
+      lines.all { ConsoleTextWrapper.visibleLength(it) <= width } shouldBe true
+      lines.drop(1).all { it.startsWith(" ".repeat(continuationIndent)) } shouldBe true
+    }
   })

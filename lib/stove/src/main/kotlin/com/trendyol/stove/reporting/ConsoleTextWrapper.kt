@@ -7,27 +7,27 @@ internal object ConsoleTextWrapper {
   fun visibleLength(value: String): Int = stripAnsi(value).length
 
   private fun wrapLine(line: String, width: Int): List<String> {
-    if (line.isEmpty() || visibleLength(line) <= width) return listOf(line)
+    if (width <= 0 || line.isEmpty() || visibleLength(line) <= width) return listOf(line)
 
     val continuationIndent = buildContinuationIndent(stripAnsi(line))
+      .coerceAtMost((width - MIN_CONTINUATION_WIDTH).coerceAtLeast(0))
+    val continuationPrefix = " ".repeat(continuationIndent)
     val wrapped = mutableListOf<String>()
     var remaining = line
-    var remainingWidth = width
+    var prefix = ""
 
-    while (visibleLength(remaining) > remainingWidth) {
+    while (visibleLength(prefix) + visibleLength(remaining) > width) {
+      val remainingWidth = (width - visibleLength(prefix)).coerceAtLeast(1)
       val breakAt = findWrapPosition(stripAnsi(remaining), remainingWidth)
       val rawBreakAt = rawIndexForVisibleIndex(remaining, breakAt)
-      wrapped += remaining.substring(0, rawBreakAt).trimEnd()
+      wrapped += prefix + remaining.substring(0, rawBreakAt).trimEnd()
 
       val nextRawStart = rawIndexAfterLeadingWhitespace(remaining, rawBreakAt)
-      remaining = " ".repeat(continuationIndent) + remaining.substring(nextRawStart)
-      remainingWidth = (width - continuationIndent).coerceAtLeast(MIN_CONTINUATION_WIDTH)
-      if (visibleLength(remaining) <= width) {
-        remainingWidth = width
-      }
+      remaining = remaining.substring(nextRawStart)
+      prefix = continuationPrefix
     }
 
-    wrapped += remaining
+    wrapped += prefix + remaining
     return wrapped
   }
 
