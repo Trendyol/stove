@@ -86,6 +86,7 @@ nav:
     - MCP: Components/21-mcp.md
   - Concepts:
     - Bridge: Components/10-bridge.md
+    - Chaos Testing: chaos-testing.md
     - Writing Custom Systems: writing-custom-systems.md
   - Reference:
     - Best Practices: best-practices.md

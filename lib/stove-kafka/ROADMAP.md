@@ -100,7 +100,7 @@ B1 parity in `starters/spring/stove-spring-kafka`: same `publishTombstone`/`publ
 
 ## Theme E — Differentiators (later bets)
 
-- **Chaos toolkit**: Toxiproxy layer — broker latency, connection cuts, mid-test broker death, forced rebalances; chaos events on the dashboard timeline.
+- **Chaos toolkit**: core now provides a transport-neutral network-partition experiment and an in-process controllable TCP proxy. Remaining: Toxiproxy-backed broker latency and connection cuts, mid-test broker death, forced rebalances, and chaos events on the dashboard timeline.
 - **Schema Registry add-on**: registry container + Avro/Proto serdes + schema-compatibility assertions.
 - **Record & replay**: captured choreography as replayable fixtures (falls out of the choreography view data).
 - **Modern embedded runtime**: KRaft-native / `apache/kafka-native` instead of the Scala `EmbeddedKafka` path.

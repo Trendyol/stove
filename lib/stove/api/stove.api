@@ -1,3 +1,39 @@
+public final class com/trendyol/stove/chaos/NetworkPartitionKt {
+	public static final fun withNetworkPartition ([Lcom/trendyol/stove/chaos/NetworkPartitionTarget;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/trendyol/stove/chaos/NetworkPartitionTarget {
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun heal ()V
+	public abstract fun partition ()V
+}
+
+public final class com/trendyol/stove/chaos/TcpChaosProxy : com/trendyol/stove/chaos/NetworkPartitionTarget, java/io/Closeable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun getEndpoint ()Lcom/trendyol/stove/chaos/TcpEndpoint;
+	public fun getName ()Ljava/lang/String;
+	public fun heal ()V
+	public fun partition ()V
+	public final fun start (Lcom/trendyol/stove/chaos/TcpEndpoint;)V
+}
+
+public final class com/trendyol/stove/chaos/TcpEndpoint {
+	public fun <init> (Ljava/lang/String;I)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun copy (Ljava/lang/String;I)Lcom/trendyol/stove/chaos/TcpEndpoint;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/chaos/TcpEndpoint;Ljava/lang/String;IILjava/lang/Object;)Lcom/trendyol/stove/chaos/TcpEndpoint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthority ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPort ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun uri (Ljava/lang/String;)Ljava/net/URI;
+}
+
 public abstract interface class com/trendyol/stove/containers/ContainerOptions {
 	public abstract fun getCompatibleSubstitute ()Ljava/lang/String;
 	public abstract fun getContainerFn ()Lkotlin/jvm/functions/Function1;
