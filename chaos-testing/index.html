@@ -11,28 +11,28 @@
       
       
       
-        <link rel="prev" href="../13-reporting/">
+        <link rel="prev" href="../Components/10-bridge/">
       
       
-        <link rel="next" href="../18-dashboard/">
+        <link rel="next" href="../writing-custom-systems/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/favicon.svg">
+      <link rel="icon" href="../assets/favicon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Tracing - Stove</title>
+        <title>Chaos Testing - Stove</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../../css/custom.css">
+      <link rel="stylesheet" href="../css/custom.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tracing" class="md-skip">
+        <a href="#chaos-testing" class="md-skip">
           Skip to content
         </a>
       
@@ -92,9 +92,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
+    <a href=".." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
       
-  <img src="../../assets/stove-mark.svg" alt="logo">
+  <img src="../assets/stove-mark.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tracing
+              Chaos Testing
             
           </span>
         </div>
@@ -229,7 +229,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
   
@@ -250,7 +250,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../wizard/" class="md-tabs__link">
+        <a href="../wizard/" class="md-tabs__link">
           
   
   
@@ -272,7 +272,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../frameworks/" class="md-tabs__link">
+        <a href="../frameworks/" class="md-tabs__link">
           
   
   
@@ -294,7 +294,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../other-languages/" class="md-tabs__link">
+        <a href="../other-languages/" class="md-tabs__link">
           
   
   
@@ -316,7 +316,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../" class="md-tabs__link">
+        <a href="../Components/" class="md-tabs__link">
           
   
   
@@ -334,13 +334,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../observability/when-it-fails/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../observability/when-it-fails/" class="md-tabs__link">
           
   
   
@@ -358,11 +356,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../10-bridge/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../Components/10-bridge/" class="md-tabs__link">
           
   
   
@@ -384,7 +384,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../best-practices/" class="md-tabs__link">
+        <a href="../best-practices/" class="md-tabs__link">
           
   
   
@@ -406,7 +406,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../recipes/" class="md-tabs__link">
+        <a href="../recipes/" class="md-tabs__link">
           
   
   
@@ -428,7 +428,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/polyglot-0.24.0/" class="md-tabs__link">
+        <a href="../blog/polyglot-0.24.0/" class="md-tabs__link">
           
   
   
@@ -450,7 +450,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../release-notes/0.26.0/" class="md-tabs__link">
+        <a href="../release-notes/0.26.0/" class="md-tabs__link">
           
   
   
@@ -486,9 +486,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
+    <a href=".." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
       
-  <img src="../../assets/stove-mark.svg" alt="logo">
+  <img src="../assets/stove-mark.svg" alt="logo">
 
     </a>
     Stove
@@ -515,7 +515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -604,7 +604,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../wizard/" class="md-nav__link">
+      <a href="../wizard/" class="md-nav__link">
         
   
   
@@ -632,7 +632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/" class="md-nav__link">
+      <a href="../cookbook/" class="md-nav__link">
         
   
   
@@ -660,7 +660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../playground/" class="md-nav__link">
+      <a href="../playground/" class="md-nav__link">
         
   
   
@@ -688,7 +688,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/" class="md-nav__link">
+      <a href="../getting-started/" class="md-nav__link">
         
   
   
@@ -754,7 +754,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../frameworks/" class="md-nav__link ">
+            <a href="../frameworks/" class="md-nav__link ">
               
   
   
@@ -798,7 +798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../frameworks/spring-boot/" class="md-nav__link">
+      <a href="../frameworks/spring-boot/" class="md-nav__link">
         
   
   
@@ -826,7 +826,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../frameworks/ktor/" class="md-nav__link">
+      <a href="../frameworks/ktor/" class="md-nav__link">
         
   
   
@@ -854,7 +854,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../frameworks/micronaut/" class="md-nav__link">
+      <a href="../frameworks/micronaut/" class="md-nav__link">
         
   
   
@@ -882,7 +882,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../frameworks/quarkus/" class="md-nav__link">
+      <a href="../frameworks/quarkus/" class="md-nav__link">
         
   
   
@@ -946,7 +946,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../other-languages/" class="md-nav__link ">
+            <a href="../other-languages/" class="md-nav__link ">
               
   
   
@@ -1050,7 +1050,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../other-languages/go/" class="md-nav__link">
+      <a href="../other-languages/go/" class="md-nav__link">
         
   
   
@@ -1078,7 +1078,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../other-languages/go-process/" class="md-nav__link">
+      <a href="../other-languages/go-process/" class="md-nav__link">
         
   
   
@@ -1106,7 +1106,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../other-languages/go-container/" class="md-nav__link">
+      <a href="../other-languages/go-container/" class="md-nav__link">
         
   
   
@@ -1142,7 +1142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../22-container/" class="md-nav__link">
+      <a href="../Components/22-container/" class="md-nav__link">
         
   
   
@@ -1170,7 +1170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../19-provided-application/" class="md-nav__link">
+      <a href="../Components/19-provided-application/" class="md-nav__link">
         
   
   
@@ -1240,7 +1240,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../Components/" class="md-nav__link ">
               
   
   
@@ -1354,7 +1354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../06-postgresql/" class="md-nav__link">
+      <a href="../Components/06-postgresql/" class="md-nav__link">
         
   
   
@@ -1382,7 +1382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../16-mysql/" class="md-nav__link">
+      <a href="../Components/16-mysql/" class="md-nav__link">
         
   
   
@@ -1410,7 +1410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../08-mssql/" class="md-nav__link">
+      <a href="../Components/08-mssql/" class="md-nav__link">
         
   
   
@@ -1438,7 +1438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../07-mongodb/" class="md-nav__link">
+      <a href="../Components/07-mongodb/" class="md-nav__link">
         
   
   
@@ -1466,7 +1466,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../01-couchbase/" class="md-nav__link">
+      <a href="../Components/01-couchbase/" class="md-nav__link">
         
   
   
@@ -1494,7 +1494,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../17-cassandra/" class="md-nav__link">
+      <a href="../Components/17-cassandra/" class="md-nav__link">
         
   
   
@@ -1522,7 +1522,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../09-redis/" class="md-nav__link">
+      <a href="../Components/09-redis/" class="md-nav__link">
         
   
   
@@ -1550,7 +1550,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../03-elasticsearch/" class="md-nav__link">
+      <a href="../Components/03-elasticsearch/" class="md-nav__link">
         
   
   
@@ -1642,7 +1642,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../02-kafka/" class="md-nav__link">
+      <a href="../Components/02-kafka/" class="md-nav__link">
         
   
   
@@ -1736,7 +1736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../05-http/" class="md-nav__link">
+      <a href="../Components/05-http/" class="md-nav__link">
         
   
   
@@ -1764,7 +1764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../12-grpc/" class="md-nav__link">
+      <a href="../Components/12-grpc/" class="md-nav__link">
         
   
   
@@ -1858,7 +1858,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../04-wiremock/" class="md-nav__link">
+      <a href="../Components/04-wiremock/" class="md-nav__link">
         
   
   
@@ -1886,7 +1886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../14-grpc-mock/" class="md-nav__link">
+      <a href="../Components/14-grpc-mock/" class="md-nav__link">
         
   
   
@@ -1922,7 +1922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../20-multiple-systems/" class="md-nav__link">
+      <a href="../Components/20-multiple-systems/" class="md-nav__link">
         
   
   
@@ -1950,7 +1950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../11-provided-instances/" class="md-nav__link">
+      <a href="../Components/11-provided-instances/" class="md-nav__link">
         
   
   
@@ -1958,6 +1958,217 @@
     
   
     Provided Instances
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Observability
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/when-it-fails/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    When a Test Fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Components/13-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Components/15-tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Components/18-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Components/21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
   
 
     
@@ -1995,10 +2206,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -2015,17 +2222,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    Observability
+    Concepts
   
 
     
@@ -2036,12 +2243,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Observability
+    Concepts
   
 
           </label>
@@ -2054,42 +2261,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/when-it-fails/" class="md-nav__link">
+      <a href="../Components/10-bridge/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    When a Test Fails
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../13-reporting/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Reporting
+    Bridge
   
 
     
@@ -2126,7 +2305,7 @@
   <span class="md-ellipsis">
     
   
-    Tracing
+    Chaos Testing
   
 
     
@@ -2144,7 +2323,7 @@
   <span class="md-ellipsis">
     
   
-    Tracing
+    Chaos Testing
   
 
     
@@ -2170,22 +2349,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#what-withnetworkpartition-means" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        What withNetworkPartition means
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Setup">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#make-one-elasticsearch-server-inaccessible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Make one Elasticsearch server inaccessible
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Make one Elasticsearch server inaccessible">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-gradle-plugin-recommended" class="md-nav__link">
+  <a href="#1-create-the-chaos-links" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Gradle plugin (recommended)
+        1. Create the chaos links
       
     </span>
   </a>
@@ -2193,10 +2383,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-enable-span-receiver-in-stove" class="md-nav__link">
+  <a href="#2-route-the-application-through-the-proxies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Enable span receiver in Stove
+        2. Route the application through the proxies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-run-the-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Run the experiment
       
     </span>
   </a>
@@ -2209,10 +2410,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-you-get" class="md-nav__link">
+  <a href="#create-another-network-partition-target" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What you get
+        Create another network-partition target
       
     </span>
   </a>
@@ -2220,65 +2421,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#assertions-on-spans" class="md-nav__link">
+  <a href="#practical-guidance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Assertions on spans
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#real-world-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Real-world example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#polyglot-apps-go-python" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Polyglot apps (Go, Python, ...)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pairs-well-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pairs well with
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
+        Practical guidance
       
     </span>
   </a>
@@ -2301,186 +2447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../18-dashboard/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Dashboard
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../21-mcp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    MCP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Concepts
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Concepts
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../10-bridge/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Bridge
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../chaos-testing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Chaos Testing
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../writing-custom-systems/" class="md-nav__link">
+      <a href="../writing-custom-systems/" class="md-nav__link">
         
   
   
@@ -2573,7 +2540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../best-practices/" class="md-nav__link">
+      <a href="../best-practices/" class="md-nav__link">
         
   
   
@@ -2601,7 +2568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../troubleshooting/" class="md-nav__link">
+      <a href="../troubleshooting/" class="md-nav__link">
         
   
   
@@ -2661,7 +2628,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../recipes/" class="md-nav__link ">
+            <a href="../recipes/" class="md-nav__link ">
               
   
   
@@ -2705,7 +2672,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../recipes/order-flow/" class="md-nav__link">
+      <a href="../recipes/order-flow/" class="md-nav__link">
         
   
   
@@ -2800,7 +2767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blog/polyglot-0.24.0/" class="md-nav__link">
+      <a href="../blog/polyglot-0.24.0/" class="md-nav__link">
         
   
   
@@ -2828,7 +2795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blog/dashboard-0.23.0/" class="md-nav__link">
+      <a href="../blog/dashboard-0.23.0/" class="md-nav__link">
         
   
   
@@ -2856,7 +2823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blog/tracing-0.21.0/" class="md-nav__link">
+      <a href="../blog/tracing-0.21.0/" class="md-nav__link">
         
   
   
@@ -2965,7 +2932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.26.0/" class="md-nav__link">
+      <a href="../release-notes/0.26.0/" class="md-nav__link">
         
   
   
@@ -2993,7 +2960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.25.0/" class="md-nav__link">
+      <a href="../release-notes/0.25.0/" class="md-nav__link">
         
   
   
@@ -3021,7 +2988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.24.0/" class="md-nav__link">
+      <a href="../release-notes/0.24.0/" class="md-nav__link">
         
   
   
@@ -3049,7 +3016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.23.0/" class="md-nav__link">
+      <a href="../release-notes/0.23.0/" class="md-nav__link">
         
   
   
@@ -3077,7 +3044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.22.2/" class="md-nav__link">
+      <a href="../release-notes/0.22.2/" class="md-nav__link">
         
   
   
@@ -3105,7 +3072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.21.2/" class="md-nav__link">
+      <a href="../release-notes/0.21.2/" class="md-nav__link">
         
   
   
@@ -3133,7 +3100,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.21.0/" class="md-nav__link">
+      <a href="../release-notes/0.21.0/" class="md-nav__link">
         
   
   
@@ -3161,7 +3128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.20.0/" class="md-nav__link">
+      <a href="../release-notes/0.20.0/" class="md-nav__link">
         
   
   
@@ -3189,7 +3156,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.19.0/" class="md-nav__link">
+      <a href="../release-notes/0.19.0/" class="md-nav__link">
         
   
   
@@ -3217,7 +3184,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release-notes/0.15.0/" class="md-nav__link">
+      <a href="../release-notes/0.15.0/" class="md-nav__link">
         
   
   
@@ -3272,22 +3239,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#what-withnetworkpartition-means" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        What withNetworkPartition means
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Setup">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#make-one-elasticsearch-server-inaccessible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Make one Elasticsearch server inaccessible
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Make one Elasticsearch server inaccessible">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-gradle-plugin-recommended" class="md-nav__link">
+  <a href="#1-create-the-chaos-links" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Gradle plugin (recommended)
+        1. Create the chaos links
       
     </span>
   </a>
@@ -3295,10 +3273,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-enable-span-receiver-in-stove" class="md-nav__link">
+  <a href="#2-route-the-application-through-the-proxies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Enable span receiver in Stove
+        2. Route the application through the proxies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-run-the-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Run the experiment
       
     </span>
   </a>
@@ -3311,10 +3300,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-you-get" class="md-nav__link">
+  <a href="#create-another-network-partition-target" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What you get
+        Create another network-partition target
       
     </span>
   </a>
@@ -3322,65 +3311,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#assertions-on-spans" class="md-nav__link">
+  <a href="#practical-guidance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Assertions on spans
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#real-world-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Real-world example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#polyglot-apps-go-python" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Polyglot apps (Go, Python, ...)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pairs-well-with" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pairs well with
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
+        Practical guidance
       
     </span>
   </a>
@@ -3412,7 +3346,7 @@
   
   
     <li class="md-path__item">
-      <a href="../.." class="md-path__link">
+      <a href=".." class="md-path__link">
         
   <span class="md-ellipsis">
     Home
@@ -3430,10 +3364,10 @@
     
     
       <li class="md-path__item">
-        <a href="../../observability/when-it-fails/" class="md-path__link">
+        <a href="../Components/10-bridge/" class="md-path__link">
           
   <span class="md-ellipsis">
-    Observability
+    Concepts
   </span>
 
         </a>
@@ -3455,229 +3389,149 @@
   
 
 
-<h1 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h1>
-<p>Test failed. Need to know what happened <em>inside the app</em>, not just at the test boundary. Stove tracing starts an OTLP receiver for the suite, correlates spans with the current test, and prints the captured span tree alongside the failure.</p>
+<h1 id="chaos-testing">Chaos Testing<a class="headerlink" href="#chaos-testing" title="Permanent link">&para;</a></h1>
+<p>Chaos tests introduce a controlled failure and verify how the application behaves while the failure is active and after
+it recovers. Stove's first chaos primitive is an application-to-dependency TCP network partition.</p>
 <div class="stove-tldr">
-<p><span class="stove-tldr-title">Two steps</span>
-1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. For JVM apps launched by Stove, the plugin can attach the OTel Java Agent; for process/container apps, wire your language's OTel SDK to the exposed endpoint. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.</p>
+<p><span class="stove-tldr-title">In 30 seconds</span>
+Put a <code>TcpChaosProxy</code> between the application and a real dependency, give the application the proxy endpoint,
+then run assertions inside <code>withNetworkPartition(proxy) { ... }</code>. The dependency stays alive, Stove keeps its
+direct test connection, and the link is healed even when the experiment fails.</p>
 </div>
-<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
-<p><a id="gradle-plugin"></a></p>
-<h3 id="1-gradle-plugin-recommended">1. Gradle plugin (recommended)<a class="headerlink" href="#1-gradle-plugin-recommended" title="Permanent link">&para;</a></h3>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">plugins</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="hll"><span class="w">    </span><span class="n">id</span><span class="p">(</span><span class="s">&quot;com.trendyol.stove.tracing&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="s">&quot;</span><span class="si">$</span><span class="n">stoveVersion</span><span class="s">&quot;</span>
-</span></span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="hll"><span class="w">    </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">&quot;my-service&quot;</span><span class="p">)</span>
-</span></span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="hll"><span class="w">    </span><span class="n">testTaskNames</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;e2eTest&quot;</span><span class="p">))</span>
-</span></span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="hll"><span class="p">}</span>
-</span></span></code></pre></div>
-<p>The plugin:</p>
+<h2 id="what-withnetworkpartition-means">What <code>withNetworkPartition</code> means<a class="headerlink" href="#what-withnetworkpartition-means" title="Permanent link">&para;</a></h2>
+<p>A network partition means that two running components cannot communicate. It differs from stopping Elasticsearch: the
+server remains healthy and directly observable, but the application cannot reach it through the selected link.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">withNetworkPartition</span><span class="p">(</span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">dc1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="c1">// dc1 is unreachable from the application in this block</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1">// dc1 is reachable again</span>
+</span></code></pre></div>
+<p><code>withNetworkPartition</code> partitions each distinct target in argument order and heals successfully partitioned targets in
+reverse order. Healing runs when the block succeeds, fails, or is cancelled. This makes the experiment safe to use in a
+test suite without leaking the failure into later tests.</p>
+<p>The current proxy models a complete, bidirectional TCP connectivity loss. It does not yet model latency, packet loss,
+bandwidth limits, process death, or Kafka rebalances.</p>
+<h2 id="make-one-elasticsearch-server-inaccessible">Make one Elasticsearch server inaccessible<a class="headerlink" href="#make-one-elasticsearch-server-inaccessible" title="Permanent link">&para;</a></h2>
+<p>This example starts two real Elasticsearch systems named <code>dc1</code> and <code>dc2</code>. Stove talks directly to both containers for
+migrations and assertions. Only the application receives their proxy endpoints.</p>
+<h3 id="1-create-the-chaos-links">1. Create the chaos links<a class="headerlink" href="#1-create-the-chaos-links" title="Permanent link">&para;</a></h3>
+<p>Keep proxies at suite scope so their lifecycle matches the physical dependencies and the application.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.TcpChaosProxy</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.abstractions.SystemKey</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">java.io.Closeable</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kd">object</span><span class="w"> </span><span class="nc">Dc1</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kd">object</span><span class="w"> </span><span class="nc">Dc2</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">SystemKey</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="kd">object</span><span class="w"> </span><span class="nc">ElasticsearchChaos</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Closeable</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="nv">dc1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TcpChaosProxy</span><span class="p">(</span><span class="s">&quot;dc1&quot;</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="nv">dc2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TcpChaosProxy</span><span class="p">(</span><span class="s">&quot;dc2&quot;</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="n">dc2</span><span class="p">.</span><span class="na">close</span><span class="p">()</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="n">dc1</span><span class="p">.</span><span class="na">close</span><span class="p">()</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="2-route-the-application-through-the-proxies">2. Route the application through the proxies<a class="headerlink" href="#2-route-the-application-through-the-proxies" title="Permanent link">&para;</a></h3>
+<p>Start each proxy from <code>configureExposedConfiguration</code>, where the real container host and port are available. Return the
+proxy URL as application configuration.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.TcpChaosProxy</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.TcpEndpoint</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.elasticsearch.ElasticsearchSystemOptions</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.elasticsearch.elasticsearch</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.spring.springBoot</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.system.Stove</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="n">Stove</span><span class="p">()</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">      </span><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">        </span><span class="n">elasticsearchOptions</span><span class="p">(</span><span class="s">&quot;elasticsearch.dc1.url&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">dc1</span><span class="p">)</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="n">elasticsearchOptions</span><span class="p">(</span><span class="s">&quot;elasticsearch.dc2.url&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">dc2</span><span class="p">)</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">      </span><span class="c1">// Register the application runner last. It receives the exposed proxy URLs.</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">      </span><span class="n">springBoot</span><span class="p">(</span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Application</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="p">}</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="kd">private</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">elasticsearchOptions</span><span class="p">(</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">  </span><span class="n">property</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="n">proxy</span><span class="p">:</span><span class="w"> </span><span class="n">TcpChaosProxy</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">  </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">dependency</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">    </span><span class="n">proxy</span><span class="p">.</span><span class="na">start</span><span class="p">(</span><span class="n">TcpEndpoint</span><span class="p">(</span><span class="n">dependency</span><span class="p">.</span><span class="na">host</span><span class="p">,</span><span class="w"> </span><span class="n">dependency</span><span class="p">.</span><span class="na">port</span><span class="p">))</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;</span><span class="si">$</span><span class="n">property</span><span class="s">=</span><span class="si">${</span><span class="n">proxy</span><span class="p">.</span><span class="na">endpoint</span><span class="p">.</span><span class="na">uri</span><span class="p">(</span><span class="s">&quot;</span><span class="n">http</span><span class="s">&quot;</span><span class="p">)</span><span class="si">}</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="p">)</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">afterProject</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">    </span><span class="n">Stove</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="w">    </span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">close</span><span class="p">()</span>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The separation is important:</p>
 <ul>
-<li>attaches the OpenTelemetry Java agent for in-process JVM test tasks</li>
-<li>boots an OTLP gRPC receiver on a free port</li>
-<li>exposes <code>OTEL_*</code> values that runners can pass to the AUT</li>
-<li>handles agent download + caching</li>
+<li>the application uses <code>ElasticsearchChaos.dc1.endpoint</code>;</li>
+<li><code>elasticsearch(Dc1) { ... }</code> keeps using the container's direct endpoint;</li>
+<li>partitioning the proxy isolates only the application, so the test can still inspect Elasticsearch.</li>
 </ul>
-<h3 id="2-enable-span-receiver-in-stove">2. Enable span receiver in Stove<a class="headerlink" href="#2-enable-span-receiver-in-stove" title="Permanent link">&para;</a></h3>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">enableSpanReceiver</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1">// ... your systems + runner</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+<h3 id="3-run-the-experiment">3. Run the experiment<a class="headerlink" href="#3-run-the-experiment" title="Permanent link">&para;</a></h3>
+<p>The test below makes the primary Elasticsearch server inaccessible, verifies that the application continues through
+<code>dc2</code>, and then verifies recovery after <code>dc1</code> is automatically healed.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.withNetworkPartition</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">test</span><span class="p">(</span><span class="s">&quot;continues indexing when dc1 Elasticsearch is inaccessible&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="nv">document</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contentDocument</span><span class="p">()</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="n">withNetworkPartition</span><span class="p">(</span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">dc1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="n">kafka</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">publishAndAwaitConsumption</span><span class="p">(</span><span class="n">document</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shouldContain</span><span class="p">(</span><span class="n">document</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">  </span><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shouldContain</span><span class="p">(</span><span class="n">document</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shouldContain</span><span class="p">(</span><span class="n">document</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>For in-process JVM apps, spans from agent-supported libraries such as Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, and MongoDB can show up in the failure report without application code changes. For separate processes or containers, the app must initialize an OTel SDK/exporter and send spans to the receiver.</p>
-<div class="admonition info">
-<p class="admonition-title">Why Gradle?</p>
-<p>The <code>stoveTracing</code> plugin handles JVM agent attachment and OTLP wiring per test task. Maven can replicate the receiver setup manually, but the agent-attach + per-task port allocation is plugin-only today.</p>
-</div>
-<h2 id="what-you-get">What you get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
-<div class="stove-ribbon" markdown="0">
-  <div class="stove-ribbon-item">
-    <div class="icon">🌲</div>
-    <strong>Full call chain on failure</strong>
-    <p>Failure reports include the span tree: controller → service → DB → Kafka, with timings per hop.</p>
-  </div>
-  <div class="stove-ribbon-item">
-    <div class="icon">🚀</div>
-    <strong>No app changes for JVM agent mode</strong>
-    <p>For in-process JVM apps launched by Stove, the OTel agent instruments supported libraries at bytecode level. Non-JVM apps need SDK wiring.</p>
-  </div>
-  <div class="stove-ribbon-item">
-    <div class="icon">🔗</div>
-    <strong>W3C propagation</strong>
-    <p><code>traceparent</code> headers and Kafka headers carry context when your clients and consumers propagate them.</p>
-  </div>
-  <div class="stove-ribbon-item">
-    <div class="icon">🧪</div>
-    <strong>Parallel-test safe</strong>
-    <p>Each test gets its own trace ID. Concurrent tests don't blur into one tree.</p>
-  </div>
-</div>
-
-<h2 id="assertions-on-spans">Assertions on spans<a class="headerlink" href="#assertions-on-spans" title="Permanent link">&para;</a></h2>
-<p><code>tracing { }</code> exposes a small DSL inside <code>stove { }</code>:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">http</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">post</span><span class="o">&lt;</span><span class="n">OrderResponse</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;/orders&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="n">shouldContainSpan</span><span class="p">(</span><span class="s">&quot;OrderService.place&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">            </span><span class="n">attributes</span><span class="o">[</span><span class="s">&quot;order.amount&quot;</span><span class="o">]</span><span class="w"> </span><span class="n">shouldBe</span><span class="w"> </span><span class="s">&quot;99.99&quot;</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="p">}</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="n">shouldNotHaveFailedSpans</span><span class="p">()</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="n">executionTimeShouldBeLessThan</span><span class="p">(</span><span class="m">2.</span><span class="n">seconds</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">}</span>
+<p><code>publishAndAwaitConsumption</code> and <code>shouldContain</code> are application-specific helpers in this example. They should wait for
+the asynchronous operation rather than rely on sleeps.</p>
+<p>Partition more than one link by passing multiple targets:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">withNetworkPartition</span><span class="p">(</span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">dc1</span><span class="p">,</span><span class="w"> </span><span class="n">ElasticsearchChaos</span><span class="p">.</span><span class="na">dc2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="c1">// verify behavior when every Elasticsearch link is unavailable</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">}</span>
 </span></code></pre></div>
-<table>
-<thead>
-<tr>
-<th>Assertion</th>
-<th>Use for</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>shouldContainSpan(name) { ... }</code></td>
-<td>A specific operation ran with expected attributes</td>
-</tr>
-<tr>
-<td><code>shouldNotHaveFailedSpans()</code></td>
-<td>No span ended in error state</td>
-</tr>
-<tr>
-<td><code>shouldHaveSpanCount(n)</code></td>
-<td>Span count matches expectation (regression guard)</td>
-</tr>
-<tr>
-<td><code>executionTimeShouldBeLessThan(d)</code></td>
-<td>Total trace duration under a budget</td>
-</tr>
-</tbody>
-</table>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p><code>stoveTracing { }</code> Gradle extension:</p>
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Default</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>serviceName</code></td>
-<td>project name</td>
-<td>shown in spans + dashboard</td>
-</tr>
-<tr>
-<td><code>testTaskNames</code></td>
-<td><code>["test"]</code></td>
-<td>tasks the plugin instruments</td>
-</tr>
-<tr>
-<td><code>spanCollectionTimeout</code></td>
-<td>5 seconds</td>
-<td>how long to wait for late spans after the test ends</td>
-</tr>
-<tr>
-<td><code>maxSpansPerTrace</code></td>
-<td>1000</td>
-<td>bounds memory; spans past the cap are dropped</td>
-</tr>
-<tr>
-<td><code>otelAgentVersion</code></td>
-<td>latest stable</td>
-<td>override if you need to pin</td>
-</tr>
-</tbody>
-</table>
-<p><code>tracing { }</code> runtime block options inside <code>Stove().with</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Default</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>enableSpanReceiver()</code></td>
-<td>required</td>
-<td>starts the OTLP receiver</td>
-</tr>
-<tr>
-<td><code>filterSpans { span -&gt; ... }</code></td>
-<td>none</td>
-<td>drop noise (e.g. health checks)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="real-world-example">Real-world example<a class="headerlink" href="#real-world-example" title="Permanent link">&para;</a></h2>
-<p>Order placement: HTTP → service → inventory check → DB insert → Kafka publish. When the test fails (no event published), the span tree shows <em>why</em>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>▾ POST /orders                       42ms
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  ├─ OrderController.create          2ms
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  ├─ ▾ OrderService.place           35ms
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  │    ├─ InventoryClient.fetch     7ms
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  │    ├─ ▾ StockGuard.check        1ms
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  │    │    └─ returned: INSUFFICIENT
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  │    └─ KafkaProducer.send         3ms
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  │         topic = order.failed.v1      ← !? expected order.created.v1
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  └─ HTTP 201 returned
+<h2 id="create-another-network-partition-target">Create another network-partition target<a class="headerlink" href="#create-another-network-partition-target" title="Permanent link">&para;</a></h2>
+<p><code>TcpChaosProxy</code> implements <code>NetworkPartitionTarget</code>. A different transport or infrastructure controller can participate
+in the same experiment by implementing that interface:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">ManagedNetworkLink</span><span class="p">(</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">name</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">controller</span><span class="p">:</span><span class="w"> </span><span class="n">NetworkController</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">NetworkPartitionTarget</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">partition</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">controller</span><span class="p">.</span><span class="na">disconnect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">heal</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">controller</span><span class="p">.</span><span class="na">reconnect</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Bug found: inventory shows out-of-stock, app published <code>order.failed.v1</code> instead. Walk the entire flow visually in <a href="../../observability/when-it-fails/">When a test fails</a>.</p>
-<h2 id="polyglot-apps-go-python">Polyglot apps (Go, Python, ...)<a class="headerlink" href="#polyglot-apps-go-python" title="Permanent link">&para;</a></h2>
-<p>For non-JVM AUTs, the plugin still boots the OTLP receiver. Process and container runners can pass the endpoint through env vars or CLI args; your language's OTel SDK must read that endpoint and export spans. Those spans can land in the same trace tree as the test when W3C context propagation is wired. See <a href="../../other-languages/">Polyglot overview</a>.</p>
-<h2 id="pairs-well-with">Pairs well with<a class="headerlink" href="#pairs-well-with" title="Permanent link">&para;</a></h2>
-<div class="grid cards">
+<p>Make <code>partition()</code> and <code>heal()</code> idempotent, keep the target narrowly scoped to one application-to-dependency link, and
+ensure <code>heal()</code> restores the state required by the next test. Prefer <code>withNetworkPartition</code> over manual lifecycle calls
+so cleanup remains guaranteed.</p>
+<h2 id="practical-guidance">Practical guidance<a class="headerlink" href="#practical-guidance" title="Permanent link">&para;</a></h2>
 <ul>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 16V4H3v12zm0-14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7v2h2v2H8v-2h2v-2H3a2 2 0 0 1-2-2V4c0-1.11.89-2 2-2zM5 6h9v5H5zm10 0h4v2h-4zm4 3v5h-4V9zM5 12h4v2H5zm5 0h4v2h-4z"/></svg></span> <strong><a href="../18-dashboard/">Dashboard</a></strong>. Interactive span tree, attribute search, timeline view.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.5 15.5c0 1.11-.89 2-2 2s-2-.89-2-2 .9-2 2-2 2 .9 2 2m-9-2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.89 2-2-.89-2-2-2M23 15v3c0 .55-.45 1-1 1h-1v1c0 1.11-.89 2-2 2H5a2 2 0 0 1-2-2v-1H2c-.55 0-1-.45-1-1v-3c0-.55.45-1 1-1h1c0-3.87 3.13-7 7-7h1V5.73c-.6-.34-1-.99-1-1.73 0-1.1.9-2 2-2s2 .9 2 2c0 .74-.4 1.39-1 1.73V7h1c3.87 0 7 3.13 7 7h1c.55 0 1 .45 1 1m-2 1h-2v-2c0-2.76-2.24-5-5-5h-4c-2.76 0-5 2.24-5 5v2H3v1h2v3h14v-3h2z"/></svg></span> <strong><a href="../21-mcp/">MCP</a></strong>. <code>stove_trace</code> exposes the tree to agents.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 12c2.5 0 4.5 2 4.5 4.5 0 .88-.25 1.71-.69 2.4l3.08 3.1L21 23.39l-3.12-3.07c-.69.43-1.51.68-2.38.68-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5m0 2a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5M5 3h14c1.11 0 2 .89 2 2v8.03c-.5-.8-1.19-1.49-2-2.03V5H5v14h4.5c.31.75.76 1.42 1.31 2H5c-1.11 0-2-.89-2-2V5c0-1.11.89-2 2-2m2 4h10v2H7zm0 4h5.03c-.8.5-1.49 1.19-2.03 2H7zm0 4h2.17c-.11.5-.17 1-.17 1.5v.5H7z"/></svg></span> <strong><a href="../13-reporting/">Reporting</a></strong>. Console output combines test entries + span summary.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m16.18 19.6-2.01-3.48c.98-.72 1.66-1.84 1.8-3.12H20a8.55 8.55 0 0 1-3.82 6.6M13 7.03V3c4.3.26 7.74 3.7 8 8h-4.03A4.49 4.49 0 0 0 13 7.03M7 12.5c0 .64.13 1.25.38 1.8L3.9 16.31A8.4 8.4 0 0 1 3 12.5C3 7.97 6.54 4.27 11 4v4.03c-2.25.25-4 2.15-4 4.47m4.5 8.5c-2.97 0-5.58-1.5-7.1-3.82l3.48-2.01A4.47 4.47 0 0 0 11.5 17c.64 0 1.25-.13 1.8-.38l2.01 3.48c-1.15.58-2.44.9-3.81.9"/></svg></span> <strong><a href="../../observability/when-it-fails/">When a test fails</a></strong>. The whole loop in one scroll.</p>
-</li>
+<li>Proxy only dependencies involved in a resilience scenario; do not add a proxy to every physical component by default.</li>
+<li>Use topology-neutral test names such as <code>dc1</code> and <code>dc2</code>, not production data-center names.</li>
+<li>Keep connection and request timeouts short enough that a partition fails within the test's assertion window.</li>
+<li>Assert degraded behavior while the partition is active and recovered behavior after the block.</li>
+<li>Close proxies after <code>Stove.stop()</code> so the application shuts down before its dependency links disappear.</li>
 </ul>
-</div>
-<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Symptom</th>
-<th>Check</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>No spans in failure report</td>
-<td><code>stoveTracing</code> plugin applied? Task name listed in <code>testTaskNames</code>? <code>tracing { enableSpanReceiver() }</code> in <code>Stove().with</code>?</td>
-</tr>
-<tr>
-<td>Test task hangs at end</td>
-<td>Span collection timeout too high; lower <code>spanCollectionTimeout</code></td>
-</tr>
-<tr>
-<td>Span tree too noisy</td>
-<td>Use <code>filterSpans { ... }</code> to drop health checks and trivial spans</td>
-</tr>
-<tr>
-<td>Different agent version needed</td>
-<td>Pin via <code>otelAgentVersion.set("...")</code></td>
-</tr>
-<tr>
-<td>Custom OTel SDK in app conflicts</td>
-<td>The plugin's agent takes precedence; remove the in-app SDK or use SDK-only mode (advanced)</td>
-</tr>
-</tbody>
-</table>
 
 
 
@@ -3715,7 +3569,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../13-reporting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Reporting">
+          <a href="../Components/10-bridge/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Bridge">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3725,20 +3579,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Reporting
+                Bridge
               </div>
             </div>
           </a>
         
         
           
-          <a href="../18-dashboard/" class="md-footer__link md-footer__link--next" aria-label="Next: Dashboard">
+          <a href="../writing-custom-systems/" class="md-footer__link md-footer__link--next" aria-label="Next: Writing Custom Systems">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Dashboard
+                Writing Custom Systems
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3804,20 +3658,20 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "navigation.path", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "navigation.path", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
-        <script src="../../assets/rough-notation.iife.js"></script>
+        <script src="../assets/rough-notation.iife.js"></script>
       
-        <script src="../../js/rough-notation-mkdocs.js"></script>
+        <script src="../js/rough-notation-mkdocs.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
       
-        <script src="../../js/wizard.js"></script>
+        <script src="../js/wizard.js"></script>
       
-        <script src="../../js/prism-init.js"></script>
+        <script src="../js/prism-init.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
       
@@ -3829,9 +3683,9 @@
       
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-properties.min.js"></script>
       
-        <script src="../../js/kotlin-playground-init.js"></script>
+        <script src="../js/kotlin-playground-init.js"></script>
       
-        <script src="../../js/stove-flow.js"></script>
+        <script src="../js/stove-flow.js"></script>
       
     
   </body>
