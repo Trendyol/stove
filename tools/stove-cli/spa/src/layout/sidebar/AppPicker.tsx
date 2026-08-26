@@ -25,7 +25,6 @@ export function AppPicker({ apps, mismatchedApps, selectedApp, onSelectApp }: Ap
             <option key={app.app_name} value={app.app_name}>
               {app.app_name}
               {mismatchedAppSet.has(app.app_name) ? " [mismatch]" : ""}
-              {` · ${app.total_runs} runs`}
             </option>
           ))}
         </select>

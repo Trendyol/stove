@@ -68,7 +68,19 @@ async fn mcp_lists_tools_and_initializes() {
 }
 
 #[tokio::test]
-async fn failures_are_grouped_by_app_and_run_with_exact_detail_calls() {
+async fn apps_omit_the_redundant_run_count() {
+  let server = TestServer::start().await;
+  server.seed_run("run-1", "checkout-api");
+
+  let response = mcp_tool(&server, "stove_apps", json!({})).await;
+  let app = &response["result"]["structuredContent"]["apps"][0];
+
+  assert_eq!(app["app_name"], "checkout-api");
+  assert!(app.get("total_runs").is_none());
+}
+
+#[tokio::test]
+async fn failures_include_only_the_latest_run_for_each_app() {
   let server = TestServer::start().await;
   seed_multi_app_failures(&server);
 
@@ -77,7 +89,7 @@ async fn failures_are_grouped_by_app_and_run_with_exact_detail_calls() {
     .as_array()
     .unwrap();
 
-  assert_eq!(groups.len(), 3);
+  assert_eq!(groups.len(), 2);
   assert_eq!(groups[0]["app_name"], "checkout-api");
   assert_eq!(groups[0]["failures"][0]["run_id"], "run-checkout-2");
   assert_eq!(
@@ -85,7 +97,6 @@ async fn failures_are_grouped_by_app_and_run_with_exact_detail_calls() {
     "duplicate-name"
   );
   assert_eq!(groups[1]["app_name"], "catalog-api");
-  assert_eq!(groups[2]["app_name"], "checkout-api");
 }
 
 #[tokio::test]

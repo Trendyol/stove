@@ -21,7 +21,6 @@ export interface AppSummary {
   latest_run_id: string;
   latest_status: Status;
   stove_version: string | null;
-  total_runs: number;
 }
 
 export interface MetaResponse {

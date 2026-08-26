@@ -71,7 +71,7 @@ impl Repository {
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
     let db = self.lock_read_db();
     let mut stmt = db.conn().prepare(
-      "SELECT r.app_name, r.id, r.status, r.stove_version, (SELECT COUNT(*) FROM runs r2 WHERE r2.app_name = r.app_name)
+      "SELECT r.app_name, r.id, r.status, r.stove_version
              FROM runs r
              WHERE r.id = (
                SELECT r3.id
@@ -88,7 +88,6 @@ impl Repository {
         latest_run_id: row.get(1)?,
         latest_status: parse_run_status(&row.get::<_, String>(2)?),
         stove_version: row.get(3)?,
-        total_runs: row.get(4)?,
       })
     })?;
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)

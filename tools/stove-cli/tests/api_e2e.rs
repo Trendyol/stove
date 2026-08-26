@@ -340,7 +340,7 @@ async fn apps_returns_app_summaries() {
   assert_eq!(apps[0]["latest_run_id"], "run-1");
   assert_eq!(apps[0]["latest_status"], "FAILED");
   assert!(apps[0]["stove_version"].is_null());
-  assert_eq!(apps[0]["total_runs"], 1);
+  assert!(apps[0].get("total_runs").is_none());
 }
 
 #[tokio::test]
@@ -1922,24 +1922,23 @@ async fn missing_spa_assets_return_404_instead_of_index_html() {
 }
 
 // ---------------------------------------------------------------------------
-// Multiple runs (ordering and latest-run logic)
+// Per-app run retention
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn runs_are_ordered_by_started_at_desc() {
+async fn starting_a_run_discards_the_previous_run_for_that_app() {
   let server = TestServer::start().await;
   server.seed_run_at("run-old", "my-app", "2024-01-01T00:00:00Z", &[]);
   server.seed_run_at("run-new", "my-app", "2024-06-01T00:00:00Z", &[]);
 
   let body = server.get_json("/runs?app=my-app").await;
   let runs = body.as_array().unwrap();
-  assert_eq!(runs.len(), 2);
+  assert_eq!(runs.len(), 1);
   assert_eq!(runs[0]["id"], "run-new");
-  assert_eq!(runs[1]["id"], "run-old");
 }
 
 #[tokio::test]
-async fn runs_with_same_started_at_use_latest_inserted_as_tie_breaker() {
+async fn starting_a_run_discards_the_previous_run_with_the_same_timestamp() {
   let server = TestServer::start().await;
   server.seed_run_at("run-1", "my-app", "2024-06-01T00:00:00Z", &[]);
   server.seed_run_at("run-2", "my-app", "2024-06-01T00:00:00Z", &[]);
@@ -1947,13 +1946,12 @@ async fn runs_with_same_started_at_use_latest_inserted_as_tie_breaker() {
   let body = server.get_json("/runs?app=my-app").await;
   let runs = body.as_array().unwrap();
 
-  assert_eq!(runs.len(), 2);
+  assert_eq!(runs.len(), 1);
   assert_eq!(runs[0]["id"], "run-2");
-  assert_eq!(runs[1]["id"], "run-1");
 }
 
 #[tokio::test]
-async fn apps_returns_latest_run_id_for_multi_run_app() {
+async fn apps_returns_only_the_current_run_for_an_app() {
   let server = TestServer::start().await;
   server.seed_run_at("run-1", "my-app", "2024-01-01T00:00:00Z", &[]);
   server.seed_run_at("run-2", "my-app", "2024-06-01T00:00:00Z", &[]);
@@ -1962,7 +1960,6 @@ async fn apps_returns_latest_run_id_for_multi_run_app() {
   let apps = body.as_array().unwrap();
   assert_eq!(apps.len(), 1);
   assert_eq!(apps[0]["latest_run_id"], "run-2");
-  assert_eq!(apps[0]["total_runs"], 2);
 }
 
 #[tokio::test]
@@ -1980,5 +1977,4 @@ async fn apps_does_not_duplicate_app_when_latest_runs_share_same_timestamp() {
     "same app should appear only once in the sidebar"
   );
   assert_eq!(apps[0]["latest_run_id"], "run-2");
-  assert_eq!(apps[0]["total_runs"], 2);
 }

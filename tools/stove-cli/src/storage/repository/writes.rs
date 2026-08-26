@@ -36,15 +36,10 @@ impl Repository {
     stove_version: Option<&str>,
     systems: &[String],
   ) -> Result<()> {
-    let db = self.lock_write_db();
-    save_run_start_on(
-      db.conn(),
-      run_id,
-      app_name,
-      started_at,
-      stove_version,
-      systems,
-    )?;
+    let mut db = self.lock_write_db();
+    let tx = db.conn_mut().unchecked_transaction()?;
+    save_run_start_on(&tx, run_id, app_name, started_at, stove_version, systems)?;
+    tx.commit()?;
     Ok(())
   }
 
@@ -275,10 +270,38 @@ fn save_run_start_on(
   stove_version: Option<&str>,
   systems: &[String],
 ) -> Result<()> {
+  delete_previous_runs_on(conn, app_name, run_id)?;
   let systems_json = serde_json::to_string(systems)?;
   conn.execute(
     "INSERT OR REPLACE INTO runs (id, app_name, started_at, stove_version, systems) VALUES (?1, ?2, ?3, ?4, ?5)",
     rusqlite::params![run_id, app_name, started_at, stove_version, systems_json],
+  )?;
+  Ok(())
+}
+
+fn delete_previous_runs_on(
+  conn: &rusqlite::Connection,
+  app_name: &str,
+  current_run_id: &str,
+) -> Result<()> {
+  const PREVIOUS_APP_RUNS: &str = "SELECT id FROM runs WHERE app_name = ?1 AND id <> ?2";
+
+  for table in [
+    "mock_warnings",
+    "mock_interactions",
+    "snapshots",
+    "spans",
+    "entries",
+    "tests",
+  ] {
+    conn.execute(
+      &format!("DELETE FROM {table} WHERE run_id IN ({PREVIOUS_APP_RUNS})"),
+      rusqlite::params![app_name, current_run_id],
+    )?;
+  }
+  conn.execute(
+    "DELETE FROM runs WHERE app_name = ?1 AND id <> ?2",
+    rusqlite::params![app_name, current_run_id],
   )?;
   Ok(())
 }
