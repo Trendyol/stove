@@ -463,9 +463,117 @@ fn latest_app_version_comes_from_latest_run() {
       latest_run_id: "run-2".into(),
       latest_status: RunStatus::Running,
       stove_version: Some("0.23.2".into()),
-      total_runs: 2,
+      total_runs: 1,
     }]
   );
+  assert!(repo.get_run("run-1").unwrap().is_none());
+}
+
+#[test]
+fn starting_a_run_removes_all_previous_results_for_that_app() {
+  let repo = test_repo();
+  repo
+    .save_run_start("old-run", "product-api", "2024-01-01T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_test_start(
+      "old-run",
+      "old-test",
+      "old test",
+      "ProductSpec",
+      &[],
+      "2024-01-01T00:00:01Z",
+    )
+    .unwrap();
+  repo
+    .save_entry(&NewEntry {
+      run_id: "old-run".into(),
+      test_id: "old-test".into(),
+      timestamp: "2024-01-01T00:00:02Z".into(),
+      system: "HTTP".into(),
+      action: "GET /products".into(),
+      result: "PASSED".into(),
+      input: String::new(),
+      output: String::new(),
+      metadata: String::new(),
+      expected: String::new(),
+      actual: String::new(),
+      error: String::new(),
+      trace_id: "old-trace".into(),
+      assertion_id: "old-assertion".into(),
+    })
+    .unwrap();
+  repo
+    .save_span(&NewSpan {
+      run_id: "old-run".into(),
+      trace_id: "old-trace".into(),
+      span_id: "old-span".into(),
+      operation_name: "GET /products".into(),
+      service_name: "product-api".into(),
+      ..Default::default()
+    })
+    .unwrap();
+  repo
+    .save_snapshot("old-run", "old-test", "PostgreSQL", "{}", "old state")
+    .unwrap();
+  repo
+    .save_mock_interaction(&NewMockInteraction {
+      run_id: "old-run".into(),
+      test_id: Some("old-test".into()),
+      timestamp: "2024-01-01T00:00:03Z".into(),
+      system: "WireMock".into(),
+      protocol: "HTTP".into(),
+      method: "GET".into(),
+      target: "/products".into(),
+      attribution: "PROVEN_STUB".into(),
+      status: "200".into(),
+      near_misses: "[]".into(),
+      ..Default::default()
+    })
+    .unwrap();
+  repo
+    .save_mock_warning(&NewMockWarning {
+      run_id: "old-run".into(),
+      test_id: Some("old-test".into()),
+      timestamp: "2024-01-01T00:00:04Z".into(),
+      system: "WireMock".into(),
+      kind: "UNUSED_STUB".into(),
+      message: "old warning".into(),
+      stub_id: None,
+      target: None,
+    })
+    .unwrap();
+
+  repo
+    .save_run_start("other-run", "order-api", "2024-01-01T00:00:05Z", &[])
+    .unwrap();
+  repo
+    .save_run_start("new-run", "product-api", "2024-01-01T00:00:06Z", &[])
+    .unwrap();
+
+  assert!(repo.get_run("old-run").unwrap().is_none());
+  assert!(repo.get_tests_for_run("old-run").unwrap().is_empty());
+  assert!(repo.get_run("new-run").unwrap().is_some());
+  assert!(repo.get_run("other-run").unwrap().is_some());
+
+  let db = repo.lock_write_db();
+  for table in [
+    "entries",
+    "spans",
+    "snapshots",
+    "mock_interactions",
+    "mock_warnings",
+  ] {
+    let count: i64 = db
+      .conn()
+      .query_row(
+        &format!("SELECT COUNT(*) FROM {table} WHERE run_id = 'old-run'"),
+        [],
+        |row| row.get(0),
+      )
+      .unwrap();
+    assert_eq!(count, 0, "{table} should not retain old app results");
+  }
 }
 
 #[test]
@@ -503,7 +611,7 @@ fn clear_all_removes_everything() {
 }
 
 #[test]
-fn get_apps_returns_single_latest_run_when_started_at_ties() {
+fn get_apps_returns_only_the_new_run_when_started_at_ties() {
   let repo = test_repo();
   repo
     .save_run_start("run-1", "my-app", "2024-06-01T00:00:00Z", &[])
@@ -519,13 +627,13 @@ fn get_apps_returns_single_latest_run_when_started_at_ties() {
       latest_run_id: "run-2".into(),
       latest_status: RunStatus::Running,
       stove_version: None,
-      total_runs: 2,
+      total_runs: 1,
     }]
   );
 }
 
 #[test]
-fn get_runs_orders_same_timestamp_runs_by_latest_inserted_first() {
+fn get_runs_returns_only_the_new_run_when_started_at_ties() {
   let repo = test_repo();
   repo
     .save_run_start("run-1", "my-app", "2024-06-01T00:00:00Z", &[])
@@ -536,9 +644,8 @@ fn get_runs_orders_same_timestamp_runs_by_latest_inserted_first() {
 
   let runs = repo.get_runs(Some("my-app")).unwrap();
 
-  assert_eq!(runs.len(), 2);
+  assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].id, "run-2");
-  assert_eq!(runs[1].id, "run-1");
 }
 
 #[test]

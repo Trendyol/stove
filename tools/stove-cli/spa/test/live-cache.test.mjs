@@ -212,6 +212,55 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   assert.equal(runWarnings.length, 0);
 });
 
+test("a live run start replaces the previous run for the app", () => {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["apps"], [
+    {
+      app_name: "live-app",
+      latest_run_id: "old-run",
+      latest_status: "PASSED",
+      stove_version: "0.23.1",
+      total_runs: 4,
+    },
+  ]);
+  queryClient.setQueryData(["runs", "live-app"], [
+    {
+      id: "old-run",
+      app_name: "live-app",
+      started_at: "2024-05-31T10:00:00Z",
+      ended_at: "2024-05-31T10:01:00Z",
+      status: "PASSED",
+      total_tests: 1,
+      passed: 1,
+      failed: 0,
+      duration_ms: 60_000,
+      stove_version: "0.23.1",
+      systems: ["HTTP"],
+    },
+  ]);
+
+  applyLiveDashboardEvent(queryClient, {
+    seq: 1,
+    run_id: "new-run",
+    event_type: "run_started",
+    payload: {
+      app_name: "live-app",
+      started_at: "2024-06-01T10:00:00Z",
+      stove_version: "0.23.2",
+      systems: ["HTTP"],
+    },
+  });
+
+  const apps = queryClient.getQueryData(["apps"]);
+  const runs = queryClient.getQueryData(["runs", "live-app"]);
+  assert.equal(apps[0].latest_run_id, "new-run");
+  assert.equal(apps[0].total_runs, 1);
+  assert.deepEqual(
+    runs.map((run) => run.id),
+    ["new-run"],
+  );
+});
+
 test("live assertion retries collapse to the latest attempt and retain failure history", () => {
   const queryClient = new QueryClient();
   const queryKey = ["entries", "run-retry", "test-retry"];

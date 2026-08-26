@@ -40,12 +40,10 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
           latest_run_id: event.run_id,
           latest_status: RUNNING,
           stove_version: event.payload.stove_version,
-          total_runs: nextRunCount(apps, event.payload.app_name, event.run_id),
+          total_runs: 1,
         }),
       );
-      queryClient.setQueryData<Run[]>(["runs", event.payload.app_name], (runs) =>
-        upsertRun(runs, run),
-      );
+      queryClient.setQueryData<Run[]>(["runs", event.payload.app_name], [run]);
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
       queryClient.setQueryData<MockInteraction[]>(
         ["interactions", event.run_id],
@@ -405,18 +403,6 @@ function upsertAppSummary(apps: AppSummary[] | undefined, incoming: AppSummary):
   return [...(apps ?? []).filter((app) => app.app_name !== incoming.app_name), incoming].sort(
     (left, right) => left.app_name.localeCompare(right.app_name),
   );
-}
-
-function nextRunCount(apps: AppSummary[] | undefined, appName: string, runId: string): number {
-  const existing = apps?.find((app) => app.app_name === appName);
-  if (!existing) {
-    return 1;
-  }
-  return existing.latest_run_id === runId ? existing.total_runs : existing.total_runs + 1;
-}
-
-function upsertRun(runs: Run[] | undefined, incoming: Run): Run[] {
-  return [...(runs ?? []).filter((run) => run.id !== incoming.id), incoming].sort(compareRuns);
 }
 
 function upsertTest(tests: Test[] | undefined, incoming: Test): Test[] {
