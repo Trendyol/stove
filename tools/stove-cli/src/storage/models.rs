@@ -82,7 +82,6 @@ pub struct AppSummary {
   pub latest_run_id: String,
   pub latest_status: RunStatus,
   pub stove_version: Option<String>,
-  pub total_runs: i32,
 }
 
 /// A single test run (one execution of a test suite).

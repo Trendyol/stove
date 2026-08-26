@@ -201,7 +201,6 @@ fn full_event_lifecycle() {
       latest_run_id: "run-1".into(),
       latest_status: RunStatus::Passed,
       stove_version: Some("0.23.2".into()),
-      total_runs: 1,
     }]
   );
 }
@@ -463,7 +462,6 @@ fn latest_app_version_comes_from_latest_run() {
       latest_run_id: "run-2".into(),
       latest_status: RunStatus::Running,
       stove_version: Some("0.23.2".into()),
-      total_runs: 1,
     }]
   );
   assert!(repo.get_run("run-1").unwrap().is_none());
@@ -627,7 +625,6 @@ fn get_apps_returns_only_the_new_run_when_started_at_ties() {
       latest_run_id: "run-2".into(),
       latest_status: RunStatus::Running,
       stove_version: None,
-      total_runs: 1,
     }]
   );
 }

@@ -68,6 +68,18 @@ async fn mcp_lists_tools_and_initializes() {
 }
 
 #[tokio::test]
+async fn apps_omit_the_redundant_run_count() {
+  let server = TestServer::start().await;
+  server.seed_run("run-1", "checkout-api");
+
+  let response = mcp_tool(&server, "stove_apps", json!({})).await;
+  let app = &response["result"]["structuredContent"]["apps"][0];
+
+  assert_eq!(app["app_name"], "checkout-api");
+  assert!(app.get("total_runs").is_none());
+}
+
+#[tokio::test]
 async fn failures_include_only_the_latest_run_for_each_app() {
   let server = TestServer::start().await;
   seed_multi_app_failures(&server);

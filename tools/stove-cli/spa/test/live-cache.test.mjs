@@ -220,7 +220,6 @@ test("a live run start replaces the previous run for the app", () => {
       latest_run_id: "old-run",
       latest_status: "PASSED",
       stove_version: "0.23.1",
-      total_runs: 4,
     },
   ]);
   queryClient.setQueryData(["runs", "live-app"], [
@@ -254,11 +253,21 @@ test("a live run start replaces the previous run for the app", () => {
   const apps = queryClient.getQueryData(["apps"]);
   const runs = queryClient.getQueryData(["runs", "live-app"]);
   assert.equal(apps[0].latest_run_id, "new-run");
-  assert.equal(apps[0].total_runs, 1);
+  assert.equal("total_runs" in apps[0], false);
   assert.deepEqual(
     runs.map((run) => run.id),
     ["new-run"],
   );
+
+  const reconciledApps = reconcileDashboardData(queryClient, ["apps"], [
+    {
+      app_name: "live-app",
+      latest_run_id: "old-run",
+      latest_status: "PASSED",
+      stove_version: "0.23.1",
+    },
+  ]);
+  assert.equal(reconciledApps[0].latest_run_id, "new-run");
 });
 
 test("live assertion retries collapse to the latest attempt and retain failure history", () => {

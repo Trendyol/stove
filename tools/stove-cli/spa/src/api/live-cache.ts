@@ -40,7 +40,6 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
           latest_run_id: event.run_id,
           latest_status: RUNNING,
           stove_version: event.payload.stove_version,
-          total_runs: 1,
         }),
       );
       queryClient.setQueryData<Run[]>(["runs", event.payload.app_name], [run]);
@@ -520,13 +519,9 @@ function mergeApps(persisted: AppSummary[], cached: AppSummary[]): AppSummary[] 
     const stored = byName.get(live.app_name);
     if (
       !stored ||
-      live.total_runs > stored.total_runs ||
-      (live.total_runs === stored.total_runs &&
-        live.latest_run_id === stored.latest_run_id &&
+      (live.latest_run_id === stored.latest_run_id &&
         statusProgress(live.latest_status) > statusProgress(stored.latest_status)) ||
-      (live.total_runs === stored.total_runs &&
-        live.latest_run_id !== stored.latest_run_id &&
-        isRunningStatus(live.latest_status))
+      (live.latest_run_id !== stored.latest_run_id && isRunningStatus(live.latest_status))
     ) {
       byName.set(live.app_name, live);
     }

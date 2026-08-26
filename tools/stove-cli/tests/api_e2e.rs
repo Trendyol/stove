@@ -340,7 +340,7 @@ async fn apps_returns_app_summaries() {
   assert_eq!(apps[0]["latest_run_id"], "run-1");
   assert_eq!(apps[0]["latest_status"], "FAILED");
   assert!(apps[0]["stove_version"].is_null());
-  assert_eq!(apps[0]["total_runs"], 1);
+  assert!(apps[0].get("total_runs").is_none());
 }
 
 #[tokio::test]
@@ -1960,7 +1960,6 @@ async fn apps_returns_only_the_current_run_for_an_app() {
   let apps = body.as_array().unwrap();
   assert_eq!(apps.len(), 1);
   assert_eq!(apps[0]["latest_run_id"], "run-2");
-  assert_eq!(apps[0]["total_runs"], 1);
 }
 
 #[tokio::test]
@@ -1978,5 +1977,4 @@ async fn apps_does_not_duplicate_app_when_latest_runs_share_same_timestamp() {
     "same app should appear only once in the sidebar"
   );
   assert_eq!(apps[0]["latest_run_id"], "run-2");
-  assert_eq!(apps[0]["total_runs"], 1);
 }

@@ -42,7 +42,6 @@ impl Analyzer {
           "latest_run_id": app.latest_run_id,
           "latest_status": app.latest_status,
           "stove_version": app.stove_version,
-          "total_runs": app.total_runs,
           "failed_runs": failed_runs_by_app.get(&app.app_name).copied().unwrap_or_default(),
           "runs_tool_call": tool_call(ToolName::Runs, tool_args([(ArgName::AppName, json!(&app.app_name))])),
           "failures_tool_call": tool_call(ToolName::Failures, tool_args([(ArgName::AppName, json!(&app.app_name))])),
