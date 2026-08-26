@@ -258,16 +258,29 @@ test("a live run start replaces the previous run for the app", () => {
     runs.map((run) => run.id),
     ["new-run"],
   );
+});
+
+test("app reconciliation retains the persisted run when a cached running run has a different id", () => {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["apps"], [
+    {
+      app_name: "live-app",
+      latest_run_id: "old-run",
+      latest_status: "RUNNING",
+      stove_version: "0.23.1",
+    },
+  ]);
 
   const reconciledApps = reconcileDashboardData(queryClient, ["apps"], [
     {
       app_name: "live-app",
-      latest_run_id: "old-run",
+      latest_run_id: "new-run",
       latest_status: "PASSED",
-      stove_version: "0.23.1",
+      stove_version: "0.23.2",
     },
   ]);
   assert.equal(reconciledApps[0].latest_run_id, "new-run");
+  assert.equal(reconciledApps[0].latest_status, "PASSED");
 });
 
 test("live assertion retries collapse to the latest attempt and retain failure history", () => {

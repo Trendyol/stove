@@ -520,8 +520,7 @@ function mergeApps(persisted: AppSummary[], cached: AppSummary[]): AppSummary[] 
     if (
       !stored ||
       (live.latest_run_id === stored.latest_run_id &&
-        statusProgress(live.latest_status) > statusProgress(stored.latest_status)) ||
-      (live.latest_run_id !== stored.latest_run_id && isRunningStatus(live.latest_status))
+        statusProgress(live.latest_status) > statusProgress(stored.latest_status))
     ) {
       byName.set(live.app_name, live);
     }
