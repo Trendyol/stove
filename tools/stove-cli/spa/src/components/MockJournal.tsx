@@ -26,6 +26,7 @@ export function MockJournal({
   const [includeAmbient, setIncludeAmbient] = useState(false);
   const [filter, setFilter] = useState<InteractionFilter>("all");
   const [search, setSearch] = useState("");
+  const [warningsExpanded, setWarningsExpanded] = useState(true);
   const [selectedId, setSelectedId] = useState<MockInteraction["id"] | null>(null);
   const [selectedWarningId, setSelectedWarningId] = useState<MockWarning["id"] | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -181,26 +182,48 @@ export function MockJournal({
 
       {allWarnings.length > 0 && (
         <section className="warning-ribbon" aria-label="Mock warnings">
-          <div className="warning-ribbon-label">
-            <Icon name="warning" className="h-4 w-4" />
-            <span>Warnings</span>
-            <strong>{allWarnings.length}</strong>
-          </div>
-          <div className="warning-ribbon-list">
-            {allWarnings.map((warning) => (
-              <button
-                type="button"
-                key={warning.id}
-                className={warning.id === selectedWarningId ? "is-selected" : ""}
-                onClick={() => selectWarning(warning)}
-              >
-                <span>{humanize(warning.kind)}</span>
-                <strong>{warning.target ?? warning.system}</strong>
-                <p>{warning.message}</p>
-                <Icon name="chevron" className="h-3.5 w-3.5" />
-              </button>
-            ))}
-          </div>
+          <header className="warning-ribbon-header">
+            <div className="warning-ribbon-title">
+              <span className="warning-ribbon-icon">
+                <Icon name="warning" className="h-4 w-4" />
+              </span>
+              <span className="warning-ribbon-copy">
+                <strong>Mock warnings</strong>
+                <small>Select a warning to inspect its related exchange</small>
+              </span>
+              <em>{allWarnings.length}</em>
+            </div>
+            <button
+              type="button"
+              className="warning-ribbon-toggle"
+              aria-controls="mock-warning-list"
+              aria-expanded={warningsExpanded}
+              onClick={() => setWarningsExpanded((expanded) => !expanded)}
+            >
+              {warningsExpanded ? "Collapse" : "Review"}
+              <Icon name="chevron" className="h-3.5 w-3.5" />
+            </button>
+          </header>
+          {warningsExpanded && (
+            <div id="mock-warning-list" className="warning-ribbon-list">
+              {allWarnings.map((warning) => (
+                <button
+                  type="button"
+                  key={warning.id}
+                  className={warning.id === selectedWarningId ? "is-selected" : ""}
+                  aria-pressed={warning.id === selectedWarningId}
+                  onClick={() => selectWarning(warning)}
+                >
+                  <span className="warning-ribbon-item-heading">
+                    <span>{humanize(warning.kind)}</span>
+                    <strong>{warning.target ?? warning.system}</strong>
+                  </span>
+                  <p>{warning.message}</p>
+                  <Icon name="chevron" className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
