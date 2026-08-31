@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.4.10"
 kotlinx = "1.11.0"
-exposed = "1.4.0"
+exposed = "1.5.0"
 hikari = "7.1.0"
 spring-boot = "2.7.18"
 spring-boot-3x = "3.5.16"
