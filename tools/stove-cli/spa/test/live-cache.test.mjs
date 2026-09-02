@@ -181,10 +181,10 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   const tests = queryClient.getQueryData(["tests", "run-live"]);
   const entries = queryClient.getQueryData(["entries", "run-live", "test-1"]);
   const spans = queryClient.getQueryData(["spans", "run-live", "test-1"]);
-  const testInteractions = queryClient.getQueryData(["interactions", "run-live", "test-1"]);
-  const runInteractions = queryClient.getQueryData(["interactions", "run-live"]);
-  const testWarnings = queryClient.getQueryData(["warnings", "run-live", "test-1"]);
-  const runWarnings = queryClient.getQueryData(["warnings", "run-live"]);
+  const testInteractions = queryClient.getQueryData(["mock-interactions", "run-live", "test-1"]);
+  const runInteractions = queryClient.getQueryData(["mock-interactions", "run-live"]);
+  const testWarnings = queryClient.getQueryData(["mock-warnings", "run-live", "test-1"]);
+  const runWarnings = queryClient.getQueryData(["mock-warnings", "run-live"]);
 
   assert.equal(apps.length, 1);
   assert.equal(apps[0].latest_run_id, "run-live");
@@ -459,7 +459,7 @@ test("a live event cancels the conflicting REST request before updating its cach
 
 test("persisted evidence replaces its temporary live duplicate during reconciliation", () => {
   const queryClient = new QueryClient();
-  const queryKey = ["interactions", "run-race", "test-live"];
+  const queryKey = ["mock-interactions", "run-race", "test-live"];
   const live = {
     id: -7,
     run_id: "run-race",
@@ -497,7 +497,7 @@ test("persisted evidence replaces its temporary live duplicate during reconcilia
 
 test("evidence reconciliation preserves persisted and cached multiplicity", () => {
   const queryClient = new QueryClient();
-  const queryKey = ["interactions", "run-race", "test-live"];
+  const queryKey = ["mock-interactions", "run-race", "test-live"];
   const interaction = {
     id: -7,
     run_id: "run-race",

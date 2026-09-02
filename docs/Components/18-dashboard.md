@@ -166,6 +166,10 @@ The CLI exposes REST endpoints for integration:
 | `GET /api/v1/apps` | list registered apps |
 | `GET /api/v1/runs?app=...&metadata=...` | list runs by app and/or an exact metadata subset |
 | `GET /api/v1/runs/{run}/tests` | tests in a run |
+| `GET /api/v1/runs/{run}/mock-interactions` | mock exchanges for a run; append `/ambient` for unattributed exchanges |
+| `GET /api/v1/runs/{run}/mock-warnings` | mock diagnostics for a run; append `/ambient` for unattributed diagnostics |
+| `GET /api/v1/runs/{run}/tests/{test}/mock-interactions` | mock exchanges attributed to a test |
+| `GET /api/v1/runs/{run}/tests/{test}/mock-warnings` | mock diagnostics attributed to a test |
 | `GET /api/v1/traces/{trace_id}` | span tree |
 | `GET /api/v1/events/stream` | SSE: live test events |
 

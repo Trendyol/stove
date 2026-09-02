@@ -47,11 +47,11 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       updateRunQueriesForStart(queryClient, run);
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
       queryClient.setQueryData<MockInteraction[]>(
-        ["interactions", event.run_id],
+        ["mock-interactions", event.run_id],
         (interactions) => interactions ?? [],
       );
       queryClient.setQueryData<MockWarning[]>(
-        ["warnings", event.run_id],
+        ["mock-warnings", event.run_id],
         (warnings) => warnings ?? [],
       );
       break;
@@ -105,11 +105,11 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         (snapshots) => snapshots ?? [],
       );
       queryClient.setQueryData<MockInteraction[]>(
-        ["interactions", event.run_id, event.payload.test_id],
+        ["mock-interactions", event.run_id, event.payload.test_id],
         (interactions) => interactions ?? [],
       );
       queryClient.setQueryData<MockWarning[]>(
-        ["warnings", event.run_id, event.payload.test_id],
+        ["mock-warnings", event.run_id, event.payload.test_id],
         (warnings) => warnings ?? [],
       );
       break;
@@ -242,12 +242,12 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
 
       if (event.payload.test_id) {
         queryClient.setQueryData<MockInteraction[]>(
-          ["interactions", event.run_id, event.payload.test_id],
+          ["mock-interactions", event.run_id, event.payload.test_id],
           (interactions) => appendInteractions(interactions, interaction),
         );
       } else {
         queryClient.setQueryData<MockInteraction[]>(
-          ["interactions", event.run_id],
+          ["mock-interactions", event.run_id],
           (interactions) => appendInteractions(interactions, interaction),
         );
       }
@@ -268,11 +268,11 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
 
       if (event.payload.test_id) {
         queryClient.setQueryData<MockWarning[]>(
-          ["warnings", event.run_id, event.payload.test_id],
+          ["mock-warnings", event.run_id, event.payload.test_id],
           (warnings) => appendWarnings(warnings, warning),
         );
       } else {
-        queryClient.setQueryData<MockWarning[]>(["warnings", event.run_id], (warnings) =>
+        queryClient.setQueryData<MockWarning[]>(["mock-warnings", event.run_id], (warnings) =>
           appendWarnings(warnings, warning),
         );
       }
@@ -310,9 +310,9 @@ export function reconcileDashboardData<T>(
       return mergeSpanLists(persisted as Span[], cached as Span[]) as T;
     case "snapshots":
       return mergeSnapshotLists(persisted as Snapshot[], cached as Snapshot[]) as T;
-    case "interactions":
+    case "mock-interactions":
       return mergeInteractions(persisted as MockInteraction[], cached as MockInteraction[]) as T;
-    case "warnings":
+    case "mock-warnings":
       return mergeWarnings(persisted as MockWarning[], cached as MockWarning[]) as T;
     default:
       return persisted;
@@ -327,8 +327,8 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
     queryClient.invalidateQueries({ queryKey: ["snapshots", runId] });
-    queryClient.invalidateQueries({ queryKey: ["interactions", runId] });
-    queryClient.invalidateQueries({ queryKey: ["warnings", runId] });
+    queryClient.invalidateQueries({ queryKey: ["mock-interactions", runId] });
+    queryClient.invalidateQueries({ queryKey: ["mock-warnings", runId] });
   } else {
     queryClient.invalidateQueries();
   }
@@ -343,8 +343,8 @@ function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboard
     cancel(["entries", runId], false);
     cancel(["spans", runId], false);
     cancel(["snapshots", runId], false);
-    cancel(["interactions", runId], false);
-    cancel(["warnings", runId], false);
+    cancel(["mock-interactions", runId], false);
+    cancel(["mock-warnings", runId], false);
   };
 
   switch (event.event_type) {
@@ -363,8 +363,8 @@ function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboard
       cancel(["entries", event.run_id, event.payload.test_id]);
       cancel(["spans", event.run_id, event.payload.test_id]);
       cancel(["snapshots", event.run_id, event.payload.test_id]);
-      cancel(["interactions", event.run_id, event.payload.test_id]);
-      cancel(["warnings", event.run_id, event.payload.test_id]);
+      cancel(["mock-interactions", event.run_id, event.payload.test_id]);
+      cancel(["mock-warnings", event.run_id, event.payload.test_id]);
       break;
     case EVENT_TYPE.TEST_ENDED:
       cancel(["tests", event.run_id]);
@@ -385,16 +385,16 @@ function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboard
       break;
     case EVENT_TYPE.MOCK_INTERACTION:
       if (event.payload.test_id) {
-        cancel(["interactions", event.run_id, event.payload.test_id]);
+        cancel(["mock-interactions", event.run_id, event.payload.test_id]);
       } else {
-        cancel(["interactions", event.run_id]);
+        cancel(["mock-interactions", event.run_id]);
       }
       break;
     case EVENT_TYPE.MOCK_WARNING:
       if (event.payload.test_id) {
-        cancel(["warnings", event.run_id, event.payload.test_id]);
+        cancel(["mock-warnings", event.run_id, event.payload.test_id]);
       } else {
-        cancel(["warnings", event.run_id]);
+        cancel(["mock-warnings", event.run_id]);
       }
       break;
   }

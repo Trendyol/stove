@@ -56,28 +56,28 @@ pub fn create_router_with_ingestor(
       get(super::routes::get_snapshots),
     )
     .route(
-      "/runs/{run_id}/tests/{test_id}/interactions",
-      get(super::routes::get_test_interactions),
+      "/runs/{run_id}/tests/{test_id}/mock-interactions",
+      get(super::routes::get_test_mock_interactions),
     )
     .route(
-      "/runs/{run_id}/tests/{test_id}/warnings",
-      get(super::routes::get_test_warnings),
+      "/runs/{run_id}/tests/{test_id}/mock-warnings",
+      get(super::routes::get_test_mock_warnings),
     )
     .route(
-      "/runs/{run_id}/interactions",
-      get(super::routes::get_run_interactions),
+      "/runs/{run_id}/mock-interactions",
+      get(super::routes::get_run_mock_interactions),
     )
     .route(
-      "/runs/{run_id}/interactions/ambient",
-      get(super::routes::get_unattributed_run_interactions),
+      "/runs/{run_id}/mock-interactions/ambient",
+      get(super::routes::get_unattributed_run_mock_interactions),
     )
     .route(
-      "/runs/{run_id}/warnings",
-      get(super::routes::get_run_warnings),
+      "/runs/{run_id}/mock-warnings",
+      get(super::routes::get_run_mock_warnings),
     )
     .route(
-      "/runs/{run_id}/warnings/ambient",
-      get(super::routes::get_unattributed_run_warnings),
+      "/runs/{run_id}/mock-warnings/ambient",
+      get(super::routes::get_unattributed_run_mock_warnings),
     )
     .route("/traces/{trace_id}", get(super::routes::get_trace))
     .route("/events/stream", get(super::routes::sse_handler))

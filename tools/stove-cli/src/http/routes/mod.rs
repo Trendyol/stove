@@ -1,5 +1,7 @@
 mod admin;
 mod meta;
+mod mock_interactions;
+mod mock_warnings;
 mod runs;
 mod sse;
 mod static_files;
@@ -8,6 +10,8 @@ mod traces;
 
 pub use admin::*;
 pub use meta::*;
+pub use mock_interactions::*;
+pub use mock_warnings::*;
 pub use runs::*;
 pub use sse::*;
 pub use static_files::*;

@@ -129,7 +129,7 @@ Since 0.26, every request that reaches a WireMock or gRPC Mock is recorded as a 
 - `stove_interactions` lists exchanges and warnings for one test (`run_id + test_id`) or a whole run (omit `test_id`), the run scope including the unattributed lane.
 - `stove_raw_evidence` accepts `kind: "interaction"` and `kind: "warning"` with `run_id + id`.
 
-The same data is on REST for the UI: `/api/v1/runs/{run_id}/interactions` (+ `/ambient`, per-test, and `warnings` variants).
+The same data is on REST for the UI through explicitly named resources: `/api/v1/runs/{run_id}/mock-interactions` and `/api/v1/runs/{run_id}/mock-warnings`, with corresponding per-test and `/ambient` variants.
 
 Interactions with no `test_id` are unattributed by design (attribution is proven-only — header, baggage, or matched-stub tag; never inferred). Do not guess an owner for them from timing or names. Snapshots carry a `trigger` (`TEST_END` or `FAILURE`); the `FAILURE` one is the state at the moment the first failing entry was recorded.
 

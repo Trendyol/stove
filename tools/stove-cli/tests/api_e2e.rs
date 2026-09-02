@@ -1459,7 +1459,7 @@ async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
 
   service.flush_pending().await.unwrap();
   let rest = server
-    .get_json("/runs/run-mocks/tests/test-1/interactions")
+    .get_json("/runs/run-mocks/tests/test-1/mock-interactions")
     .await;
   assert_eq!(
     rest[0]["near_misses"],
@@ -1494,24 +1494,30 @@ async fn ambient_mock_endpoints_return_only_unattributed_records() {
   }
   service.flush_pending().await.unwrap();
 
+  let run_interactions = server.get_json("/runs/run-ambient/mock-interactions").await;
+  assert_eq!(run_interactions.as_array().unwrap().len(), 2);
   let ambient_interactions = server
-    .get_json("/runs/run-ambient/interactions/ambient")
+    .get_json("/runs/run-ambient/mock-interactions/ambient")
     .await;
   assert_eq!(ambient_interactions.as_array().unwrap().len(), 1);
   assert!(ambient_interactions[0]["test_id"].is_null());
 
-  let ambient_warnings = server.get_json("/runs/run-ambient/warnings/ambient").await;
+  let run_warnings = server.get_json("/runs/run-ambient/mock-warnings").await;
+  assert_eq!(run_warnings.as_array().unwrap().len(), 2);
+  let ambient_warnings = server
+    .get_json("/runs/run-ambient/mock-warnings/ambient")
+    .await;
   assert_eq!(ambient_warnings.as_array().unwrap().len(), 1);
   assert!(ambient_warnings[0]["test_id"].is_null());
 
   let test_interactions = server
-    .get_json("/runs/run-ambient/tests/test-1/interactions")
+    .get_json("/runs/run-ambient/tests/test-1/mock-interactions")
     .await;
   assert_eq!(test_interactions.as_array().unwrap().len(), 1);
   assert_eq!(test_interactions[0]["test_id"], "test-1");
 
   let test_warnings = server
-    .get_json("/runs/run-ambient/tests/test-1/warnings")
+    .get_json("/runs/run-ambient/tests/test-1/mock-warnings")
     .await;
   assert_eq!(test_warnings.as_array().unwrap().len(), 1);
   assert_eq!(test_warnings[0]["test_id"], "test-1");

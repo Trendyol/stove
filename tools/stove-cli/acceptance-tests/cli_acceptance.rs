@@ -517,11 +517,11 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
     .await?;
   assert_eq!(snapshots[0]["system"], "Kafka");
   let interactions = stove
-    .get_json("/runs/pipeline-42/tests/test-failed/interactions")
+    .get_json("/runs/pipeline-42/tests/test-failed/mock-interactions")
     .await?;
   assert_eq!(interactions[0]["target"], "/payments");
   let warnings = stove
-    .get_json("/runs/pipeline-42/tests/test-failed/warnings")
+    .get_json("/runs/pipeline-42/tests/test-failed/mock-warnings")
     .await?;
   assert_eq!(warnings[0]["kind"], "UNUSED_STUB");
 

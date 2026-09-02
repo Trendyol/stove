@@ -57,21 +57,24 @@ export const api = {
     get<Span[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/spans`, signal),
   getSnapshots: (runId: string, testId: string, signal?: AbortSignal) =>
     get<Snapshot[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/snapshots`, signal),
-  getTestInteractions: (runId: string, testId: string, signal?: AbortSignal) =>
+  getTestMockInteractions: (runId: string, testId: string, signal?: AbortSignal) =>
     get<MockInteraction[]>(
-      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/interactions`,
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-interactions`,
       signal,
     ),
-  getRunInteractions: (runId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions`, signal),
-  getAmbientInteractions: (runId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions/ambient`, signal),
-  getTestWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/warnings`, signal),
-  getRunWarnings: (runId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings`, signal),
-  getAmbientWarnings: (runId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings/ambient`, signal),
+  getRunMockInteractions: (runId: string, signal?: AbortSignal) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/mock-interactions`, signal),
+  getAmbientMockInteractions: (runId: string, signal?: AbortSignal) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/mock-interactions/ambient`, signal),
+  getTestMockWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-warnings`,
+      signal,
+    ),
+  getRunMockWarnings: (runId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(`/runs/${encodePath(runId)}/mock-warnings`, signal),
+  getAmbientMockWarnings: (runId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(`/runs/${encodePath(runId)}/mock-warnings/ambient`, signal),
   getTrace: (traceId: string, signal?: AbortSignal) =>
     get<Span[]>(`/traces/${encodePath(traceId)}`, signal),
   clearAll: () => del("/data"),

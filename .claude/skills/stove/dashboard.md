@@ -92,6 +92,8 @@ MCP applies the same semantics through `stove_runs`:
 
 Use the returned `run_id` with `stove_failures` and the evidence tools. `stove_failures` does not accept metadata directly.
 
+Mock evidence uses explicit REST resource names. Query `/api/v1/runs/{run_id}/mock-interactions` and `/api/v1/runs/{run_id}/mock-warnings`; append `/ambient` for unattributed evidence, or place the resource below `/tests/{test_id}` for evidence attributed to one test.
+
 ## Administer evidence
 
 Open the dedicated `/admin` page to inspect storage, change runtime retention, preview a purge, purge selected runs, or clear all evidence. The UI requires confirmation for final destructive actions. Purge excludes running runs unless `include_running` is explicitly true.
