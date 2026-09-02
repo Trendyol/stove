@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -37,6 +39,7 @@ pub(crate) struct RunsArgs {
   pub(crate) common: CommonArgs,
   pub(crate) app_name: Option<String>,
   pub(crate) status: Option<String>,
+  pub(crate) metadata: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize, Default)]

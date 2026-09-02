@@ -1,0 +1,41 @@
+name: stove-postgres-local
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: stove
+      POSTGRES_USER: stove
+      POSTGRES_PASSWORD: stove
+    ports:
+      - "127.0.0.1:${STOVE_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # PostgreSQL 18 stores versioned clusters below this parent directory.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=stove --dbname=stove"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  stove:
+    build:
+      context: ../..
+      dockerfile: tools/stove-cli/Dockerfile
+      args:
+        STOVE_VERSION: local
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      STOVE_DATABASE_URL: postgresql://stove:stove@postgres:5432/stove?sslmode=disable
+      STOVE_RETENTION_RUNS_PER_APP: ${STOVE_RETENTION_RUNS_PER_APP:-50}
+    ports:
+      - "127.0.0.1:${STOVE_HTTP_PORT:-4040}:4040"
+      - "127.0.0.1:${STOVE_GRPC_PORT:-4041}:4041"
+    stop_grace_period: 15s
+
+volumes:
+  postgres-data:

@@ -41,6 +41,15 @@ export function RunSummary({ run, tests }: RunSummaryProps) {
         <Stat label="Passed" value={passed} color="var(--stove-green)" />
         <Stat label="Failed" value={failed} color="var(--stove-red)" />
       </div>
+      {Object.keys(run.metadata).length > 0 ? (
+        <section className="stove-run-metadata" aria-label="Run metadata">
+          {Object.entries(run.metadata).map(([key, value]) => (
+            <code key={key} title={`${key}=${value}`}>
+              {key}={value}
+            </code>
+          ))}
+        </section>
+      ) : null}
     </div>
   );
 }

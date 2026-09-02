@@ -7,16 +7,7 @@ use std::collections::HashMap;
 use tonic::Status;
 
 use crate::error::AppError;
-use crate::ingest::FlushBehavior;
-use crate::ingest::LiveDashboardEvent;
-use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::RunStatus;
-
-pub(super) struct PreparedDashboardEvent {
-  pub(super) live: LiveDashboardEvent,
-  pub(super) persisted: PersistedDashboardEvent,
-  pub(super) flush: FlushBehavior,
-}
 
 pub(super) fn extract_test_id(attributes: &HashMap<String, String>) -> Option<String> {
   [
@@ -61,6 +52,11 @@ pub(super) fn to_status(error: AppError) -> Status {
   match error {
     AppError::InvalidEvent(message) => Status::invalid_argument(message),
     AppError::Database(_)
+    | AppError::Diesel(_)
+    | AppError::DieselConnection(_)
+    | AppError::Migration(_)
+    | AppError::Postgres(_)
+    | AppError::PostgresTls(_)
     | AppError::GrpcTransport(_)
     | AppError::Serialization(_)
     | AppError::Startup(_) => Status::internal(error.to_string()),

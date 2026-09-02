@@ -42,6 +42,8 @@ class DashboardEmitterTest :
 
         received.size shouldBe 2
         received[0].runId shouldBe "run-1"
+        received.map { it.sequence } shouldBe listOf(1L, 2L)
+        received.map { it.eventId }.toSet().size shouldBe 2
       } finally {
         server.shutdownNow()
       }
@@ -95,6 +97,26 @@ class DashboardEmitterTest :
         emitter.close()
 
         received.size shouldBe totalEvents
+      } finally {
+        server.shutdownNow()
+      }
+    }
+
+    test("assigns per-run identities in queue order under concurrent producers") {
+      val received = CopyOnWriteArrayList<DashboardEvent>()
+      val server = startMockServer(received, port = 0)
+
+      try {
+        val emitter = DashboardEmitter("localhost", server.port)
+        val event = runStartedEvent(1).toBuilder().setRunId("shared-run").build()
+        val producers = List(100) { Thread { emitter.tryEmit(event) } }
+
+        producers.forEach(Thread::start)
+        producers.forEach(Thread::join)
+        emitter.close()
+
+        received.map { it.sequence } shouldBe (1L..100L).toList()
+        received.map { it.eventId }.toSet().size shouldBe 100
       } finally {
         server.shutdownNow()
       }

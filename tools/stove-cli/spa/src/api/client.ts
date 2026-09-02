@@ -1,9 +1,14 @@
 import type {
+  AdminStatus,
   AppSummary,
+  DatabaseQueryResult,
+  DatabaseSchema,
   Entry,
   MetaResponse,
   MockInteraction,
   MockWarning,
+  PurgePreview,
+  PurgeResult,
   Run,
   Snapshot,
   Span,
@@ -24,11 +29,26 @@ async function del(url: string): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 }
 
+async function send<T>(url: string, method: "POST" | "PUT", body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${url}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 export const api = {
   getMeta: (signal?: AbortSignal) => get<MetaResponse>("/meta", signal),
   getApps: (signal?: AbortSignal) => get<AppSummary[]>("/apps", signal),
-  getRuns: (app?: string, signal?: AbortSignal) =>
-    get<Run[]>(app ? `/runs?app=${encodeURIComponent(app)}` : "/runs", signal),
+  getRuns: (app?: string, metadata: Record<string, string> = {}, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (app) params.set("app", app);
+    if (Object.keys(metadata).length > 0) params.set("metadata", JSON.stringify(metadata));
+    const query = params.toString();
+    return get<Run[]>(query ? `/runs?${query}` : "/runs", signal);
+  },
   getRun: (runId: string, signal?: AbortSignal) =>
     get<Run | null>(`/runs/${encodePath(runId)}`, signal),
   getTests: (runId: string, signal?: AbortSignal) =>
@@ -39,22 +59,42 @@ export const api = {
     get<Span[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/spans`, signal),
   getSnapshots: (runId: string, testId: string, signal?: AbortSignal) =>
     get<Snapshot[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/snapshots`, signal),
-  getTestInteractions: (runId: string, testId: string, signal?: AbortSignal) =>
+  getTestMockInteractions: (runId: string, testId: string, signal?: AbortSignal) =>
     get<MockInteraction[]>(
-      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/interactions`,
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-interactions`,
       signal,
     ),
-  getRunInteractions: (runId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions`, signal),
-  getAmbientInteractions: (runId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(`/runs/${encodePath(runId)}/interactions/ambient`, signal),
-  getTestWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/warnings`, signal),
-  getRunWarnings: (runId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings`, signal),
-  getAmbientWarnings: (runId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/warnings/ambient`, signal),
+  getRunMockInteractions: (runId: string, signal?: AbortSignal) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/mock-interactions`, signal),
+  getAmbientMockInteractions: (runId: string, signal?: AbortSignal) =>
+    get<MockInteraction[]>(`/runs/${encodePath(runId)}/mock-interactions/ambient`, signal),
+  getTestMockWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-warnings`,
+      signal,
+    ),
+  getRunMockWarnings: (runId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(`/runs/${encodePath(runId)}/mock-warnings`, signal),
+  getAmbientMockWarnings: (runId: string, signal?: AbortSignal) =>
+    get<MockWarning[]>(`/runs/${encodePath(runId)}/mock-warnings/ambient`, signal),
   getTrace: (traceId: string, signal?: AbortSignal) =>
     get<Span[]>(`/traces/${encodePath(traceId)}`, signal),
   clearAll: () => del("/data"),
+  getAdminStatus: (signal?: AbortSignal) => get<AdminStatus>("/admin/status", signal),
+  getDatabaseSchema: (signal?: AbortSignal) =>
+    get<DatabaseSchema>("/admin/database/schema", signal),
+  executeDatabaseQuery: (sql: string, maxRows: number) =>
+    send<DatabaseQueryResult>("/admin/database/query", "POST", {
+      sql,
+      max_rows: maxRows,
+    }),
+  updateRetention: (runsPerApp: number) =>
+    send<AdminStatus>("/admin/retention", "PUT", { runs_per_app: runsPerApp }),
+  previewPurge: (selector: { app_name?: string; older_than?: string; include_running: boolean }) =>
+    send<PurgePreview>("/admin/purge/preview", "POST", selector),
+  purgeRuns: (runIds: string[], includeRunning: boolean) =>
+    send<PurgeResult>("/admin/purge", "POST", {
+      run_ids: runIds,
+      include_running: includeRunning,
+    }),
 };

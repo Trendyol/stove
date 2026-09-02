@@ -1,6 +1,6 @@
 # Stove MCP — Agent Triage
 
-The Stove CLI exposes a local **Model Context Protocol** endpoint at `http://localhost:4040/mcp`. Agents use it to inspect failed end-to-end tests through compact, structured tools instead of loading raw logs into context.
+The Stove CLI exposes a read-only **Model Context Protocol** endpoint at `/mcp`. Agents use it to inspect end-to-end test runs through compact, structured tools instead of loading raw logs into context. It works locally at `http://localhost:4040/mcp` or against a shared internal Stove server.
 
 Use MCP as an optimization, not a dependency. If MCP is unavailable, fall back to normal test output, Stove failure reports, and logs.
 
@@ -8,14 +8,14 @@ Use MCP as an optimization, not a dependency. If MCP is unavailable, fall back t
 
 - The user is testing with Stove and a recent run has failures
 - The user mentions "MCP", "stove failures", or asks for triage of a Stove run
-- An agent task instruction says to prefer the local Stove MCP endpoint
+- An agent task instruction says to prefer a Stove MCP endpoint
 
 ## Discovery
 
 When `stove` is running, the startup banner prints the endpoint:
 
 ```text
-Stove CLI v0.24.0 running
+Stove CLI v0.26.0 running
 UI:   http://localhost:4040
 REST: http://localhost:4040/api/v1
 MCP:  http://localhost:4040/mcp
@@ -30,7 +30,7 @@ curl -s http://localhost:4040/api/v1/meta
 
 ```json
 {
-  "stove_cli_version": "0.24.0",
+  "stove_cli_version": "0.26.0",
   "mcp": {
     "enabled": true,
     "transport": "streamable-http",
@@ -57,16 +57,57 @@ Claude Code uses `type = "http"` for Streamable HTTP MCP servers:
 
 Some clients call the same field `transport` and may accept `streamable-http`. The endpoint URL is the load-bearing value.
 
-## Agent Workflow (the only correct order)
+For a shared deployment, replace `localhost` with the internal server name:
 
-1. Call `stove_failures` first.
-2. Pick a specific `run_id` and `test_id` from the result. **Never infer a test selector from names alone** — multiple apps and runs can contain duplicate test names.
-3. Call `stove_failure_detail` with that exact `run_id + test_id` for the compact failure packet.
-4. Drill into `stove_timeline`, `stove_trace`, `stove_snapshot`, or `stove_interactions` only when needed. For "why did the mock not match" questions, the near-miss diagnoses are already in `stove_failure_detail`'s `unmatched_interactions`.
-5. Use `stove_raw_evidence` for one specific entry / span / snapshot / interaction / warning when the compact view isn't enough.
-6. If MCP is missing data, fall back to normal test output and logs.
+```json
+{
+  "mcpServers": {
+    "stove": {
+      "type": "http",
+      "url": "http://stove.internal:4040/mcp"
+    }
+  }
+}
+```
+
+## Agent workflow
+
+For a local server with one relevant run, call `stove_failures` first. For a shared server, do not survey unrelated failures:
+
+1. Call `stove_runs` with `app_name` and the metadata supplied by the CI job, such as project, pipeline, and team.
+2. Pick the exact `run_id` from the result. Metadata is supported by `stove_runs`, not directly by `stove_failures`.
+3. Call `stove_failures(run_id=...)`, then pick a `test_id`. **Never infer a selector from names alone** — multiple apps and runs can contain duplicate test names.
+4. Call `stove_failure_detail` with that exact `run_id + test_id` for the compact failure packet.
+5. Drill into `stove_timeline`, `stove_trace`, `stove_snapshot`, or `stove_interactions` only when needed. For "why did the mock not match" questions, the near-miss diagnoses are already in `stove_failure_detail`'s `unmatched_interactions`.
+6. Use `stove_raw_evidence` for one specific entry, span, snapshot, interaction, or warning when the compact view is not enough.
+7. If MCP is missing data, fall back to normal test output and logs.
 
 Every failure result includes ready-to-use next tool calls — use them, don't guess.
+
+### Selecting a shared-server run
+
+`stove_runs.metadata` accepts dynamic string key/value pairs. Matching is exact, every supplied pair is AND-combined, and only retained runs can be returned:
+
+```json
+{
+  "app_name": "checkout-api",
+  "status": "FAILED",
+  "metadata": {
+    "team": "checkout",
+    "gitlab.project": "commerce/checkout-api",
+    "gitlab.pipeline_id": "12345"
+  }
+}
+```
+
+Then query the selected execution:
+
+```text
+stove_failures(run_id="<returned-run-id>")
+stove_failure_detail(run_id="<returned-run-id>", test_id="<returned-test-id>")
+```
+
+Metadata originates in `DashboardSystemOptions(metadata = mapOf(...))`; see [dashboard.md](dashboard.md). Do not invent metadata values or silently broaden a failed lookup. Ask for the current CI dimensions or use `stove_runs` without metadata only when surveying all retained runs is intended.
 
 ## Data hierarchy
 
@@ -88,7 +129,7 @@ Since 0.26, every request that reaches a WireMock or gRPC Mock is recorded as a 
 - `stove_interactions` lists exchanges and warnings for one test (`run_id + test_id`) or a whole run (omit `test_id`), the run scope including the unattributed lane.
 - `stove_raw_evidence` accepts `kind: "interaction"` and `kind: "warning"` with `run_id + id`.
 
-The same data is on REST for the UI: `/api/v1/runs/{run_id}/interactions` (+ `/ambient`, per-test, and `warnings` variants).
+The same data is on REST for the UI through explicitly named resources: `/api/v1/runs/{run_id}/mock-interactions` and `/api/v1/runs/{run_id}/mock-warnings`, with corresponding per-test and `/ambient` variants.
 
 Interactions with no `test_id` are unattributed by design (attribution is proven-only — header, baggage, or matched-stub tag; never inferred). Do not guess an owner for them from timing or names. Snapshots carry a `trigger` (`TEST_END` or `FAILURE`); the `FAILURE` one is the state at the moment the first failing entry was recorded.
 
@@ -97,8 +138,8 @@ Interactions with no `test_id` are unattributed by design (attribution is proven
 | Tool | Purpose |
 |------|---------|
 | `stove_apps` | Apps recorded in the dashboard database |
-| `stove_runs` | Runs, filterable by app and status |
-| `stove_failures` | Default entrypoint — failed tests grouped by app and run |
+| `stove_runs` | Runs, filterable by app, status, and exact metadata subset |
+| `stove_failures` | Failed tests grouped by app and run; accepts an exact `run_id`, but not metadata |
 | `stove_failure_detail` | Compact detail for one exact failed test |
 | `stove_timeline` | Ordered test actions, failure-focused by default |
 | `stove_trace` | Critical path and exception evidence from correlated spans |
@@ -121,8 +162,9 @@ Tools that expose raw evidence also accept `max_chars`.
 ## Security
 
 - **Read-only**: no tools to clear data, retry tests, delete runs, or mutate snapshots.
-- **Local-only**: `/mcp` accepts loopback clients and localhost `Host`/`Origin` headers. Non-local hosts are rejected (mitigates DNS rebinding).
-- Safe to run on a dev machine; do not expose externally.
+- **No authentication or authorization**: remote clients and non-local `Host`/`Origin` headers are accepted.
+- **Trusted networks only**: HTTP, MCP, administration, and gRPC ingestion are reachable on all interfaces. Use a firewall, private ingress, or equivalent external boundary; never expose Stove directly to an untrusted network.
+- MCP cannot purge or change retention. Those mutations are available only through the dashboard Admin page and REST API.
 
 ## Troubleshooting
 
@@ -145,11 +187,12 @@ If MCP returns no failures:
 Add to your project's agent rules / system prompt:
 
 ```text
-When Stove is running, prefer the local Stove MCP endpoint for failed-test triage.
-Start with stove_failures, then use the returned run_id + test_id with
-stove_failure_detail. Drill into stove_timeline, stove_trace, or stove_snapshot
-only when needed. If MCP is unavailable, ambiguous, or incomplete, fall back to
-normal test output, Stove reports, and logs.
+When Stove is running, prefer its MCP endpoint for failed-test triage. On a
+shared server, first call stove_runs with the CI-provided app_name and metadata,
+then call stove_failures with the returned run_id. Use the exact run_id + test_id
+with stove_failure_detail, and drill into timeline, trace, snapshot, or
+interactions only when needed. If MCP is unavailable, ambiguous, or incomplete,
+fall back to normal test output, Stove reports, and logs.
 ```
 
 ## Reference

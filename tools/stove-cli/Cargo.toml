@@ -12,6 +12,14 @@ path = "src/lib.rs"
 name = "stove"
 path = "src/main.rs"
 
+[[test]]
+name = "acceptance"
+path = "acceptance-tests/cli_acceptance.rs"
+
+[[test]]
+name = "load"
+path = "acceptance-tests/load.rs"
+
 [dependencies]
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -27,18 +35,24 @@ axum = { version = "0.8", features = ["json"] }
 tower-http = { version = "0.7", features = ["cors"] }
 
 # SSE (live updates to browser)
-tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-stream = "0.1"
 
 # Database
-rusqlite = { version = "0.40", features = ["bundled"] }
-
+diesel = { version = "2.3", default-features = false, features = ["postgres", "sqlite", "serde_json", "returning_clauses_for_sqlite_3_35", "32-column-tables"] }
+refinery = { version = "0.9", default-features = false, features = ["postgres", "rusqlite-bundled"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
+postgres = "0.19"
+postgres-native-tls = "0.5"
+native-tls = "0.2"
+fallible-iterator = "0.2"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+config-rs = { package = "config", version = "0.15", default-features = false, features = ["json", "toml"] }
 
 # CLI argument parsing
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 
 # Embed SPA static files into binary
 rust-embed = "8"
@@ -61,6 +75,7 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "rus
 
 [dev-dependencies]
 tempfile = "3"
+testcontainers = "0.28"
 
 [build-dependencies]
 tonic-build = "0.14"

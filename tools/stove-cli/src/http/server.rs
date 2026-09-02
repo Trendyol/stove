@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use axum::Router;
-use axum::routing::{delete, get};
+use axum::routing::{delete, get, post, put};
 use tower_http::cors::CorsLayer;
 
-use crate::ingest::EventIngestor;
 use crate::sse::manager::SseManager;
 use crate::storage::repository::Repository;
 
@@ -13,27 +12,31 @@ use crate::storage::repository::Repository;
 pub struct AppState {
   pub repository: Arc<Repository>,
   pub sse_manager: Arc<SseManager>,
-  pub ingestor: Option<EventIngestor>,
 }
 
 /// Create the axum router with all API routes, SSE, and embedded SPA.
 pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Router {
-  create_router_with_ingestor(repository, sse_manager, None)
-}
-
-/// Create the axum router with an optional ingest flush handle for MCP reads.
-pub fn create_router_with_ingestor(
-  repository: Arc<Repository>,
-  sse_manager: Arc<SseManager>,
-  ingestor: Option<EventIngestor>,
-) -> Router {
   let state = AppState {
     repository,
     sse_manager,
-    ingestor,
   };
 
-  let api = Router::new()
+  Router::new()
+    .route(
+      "/mcp",
+      get(crate::mcp::handle_get).post(crate::mcp::handle_post),
+    )
+    .nest(
+      "/api/v1",
+      run_routes().merge(mock_routes()).merge(admin_routes()),
+    )
+    .fallback(super::routes::static_handler)
+    .layer(CorsLayer::permissive())
+    .with_state(state)
+}
+
+fn run_routes() -> Router<AppState> {
+  Router::new()
     .route("/meta", get(super::routes::get_meta))
     .route("/apps", get(super::routes::get_apps))
     .route("/runs", get(super::routes::get_runs))
@@ -55,41 +58,51 @@ pub fn create_router_with_ingestor(
       "/runs/{run_id}/tests/{test_id}/snapshots",
       get(super::routes::get_snapshots),
     )
-    .route(
-      "/runs/{run_id}/tests/{test_id}/interactions",
-      get(super::routes::get_test_interactions),
-    )
-    .route(
-      "/runs/{run_id}/tests/{test_id}/warnings",
-      get(super::routes::get_test_warnings),
-    )
-    .route(
-      "/runs/{run_id}/interactions",
-      get(super::routes::get_run_interactions),
-    )
-    .route(
-      "/runs/{run_id}/interactions/ambient",
-      get(super::routes::get_unattributed_run_interactions),
-    )
-    .route(
-      "/runs/{run_id}/warnings",
-      get(super::routes::get_run_warnings),
-    )
-    .route(
-      "/runs/{run_id}/warnings/ambient",
-      get(super::routes::get_unattributed_run_warnings),
-    )
     .route("/traces/{trace_id}", get(super::routes::get_trace))
     .route("/events/stream", get(super::routes::sse_handler))
-    .route("/data", delete(super::routes::clear_all));
+    .route("/data", delete(super::routes::clear_all))
+}
 
+fn mock_routes() -> Router<AppState> {
   Router::new()
     .route(
-      "/mcp",
-      get(crate::mcp::handle_get).post(crate::mcp::handle_post),
+      "/runs/{run_id}/tests/{test_id}/mock-interactions",
+      get(super::routes::get_test_mock_interactions),
     )
-    .nest("/api/v1", api)
-    .fallback(super::routes::static_handler)
-    .layer(CorsLayer::permissive())
-    .with_state(state)
+    .route(
+      "/runs/{run_id}/tests/{test_id}/mock-warnings",
+      get(super::routes::get_test_mock_warnings),
+    )
+    .route(
+      "/runs/{run_id}/mock-interactions",
+      get(super::routes::get_run_mock_interactions),
+    )
+    .route(
+      "/runs/{run_id}/mock-interactions/ambient",
+      get(super::routes::get_unattributed_run_mock_interactions),
+    )
+    .route(
+      "/runs/{run_id}/mock-warnings",
+      get(super::routes::get_run_mock_warnings),
+    )
+    .route(
+      "/runs/{run_id}/mock-warnings/ambient",
+      get(super::routes::get_unattributed_run_mock_warnings),
+    )
+}
+
+fn admin_routes() -> Router<AppState> {
+  Router::new()
+    .route("/admin/status", get(super::routes::get_admin_status))
+    .route(
+      "/admin/database/schema",
+      get(super::routes::get_database_schema),
+    )
+    .route(
+      "/admin/database/query",
+      post(super::routes::execute_database_query),
+    )
+    .route("/admin/retention", put(super::routes::update_retention))
+    .route("/admin/purge/preview", post(super::routes::preview_purge))
+    .route("/admin/purge", post(super::routes::purge_runs))
 }

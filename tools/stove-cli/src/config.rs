@@ -1,48 +1,104 @@
-use std::path::Path;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 
+use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
+use serde::Deserialize;
 
-/// CLI configuration parsed from command-line arguments.
-#[derive(Parser, Debug)]
+const DEFAULT_HTTP_PORT: u16 = 4040;
+const DEFAULT_GRPC_PORT: u16 = 4041;
+const DEFAULT_RETENTION_RUNS_PER_APP: usize = 1;
+
+/// Resolved server configuration. Command-line arguments and environment variables
+/// override values loaded from the optional TOML or JSON configuration file.
+#[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
+pub struct Config {
+  pub port: u16,
+  pub grpc_port: u16,
+  pub db: String,
+  pub database_url: Option<String>,
+  pub retention_runs_per_app: usize,
+  pub clear: bool,
+  pub fresh_start: bool,
+  pub update_skills: bool,
+  pub no_skills_check: bool,
+  pub command: Option<StoveCommand>,
+}
+
+/// Command-line and environment overrides. Optional value types preserve whether
+/// an override was supplied, which is required for deterministic file merging.
+#[derive(Parser)]
 #[command(
   name = "stove",
   about = "Stove CLI \u{2014} local e2e test observability",
   version = env!("STOVE_VERSION")
 )]
 #[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
-pub struct Config {
+struct CliConfig {
+  /// Path to a TOML server configuration file
+  #[arg(long, env = "STOVE_CONFIG_FILE", value_name = "PATH")]
+  config_file: Option<PathBuf>,
+
   /// HTTP port for the web UI and REST API
-  #[arg(long, default_value_t = 4040)]
-  pub port: u16,
+  #[arg(long, env = "STOVE_PORT")]
+  port: Option<u16>,
 
   /// gRPC port for receiving events from Stove test process
-  #[arg(long, default_value_t = 4041)]
-  pub grpc_port: u16,
+  #[arg(long, env = "STOVE_GRPC_PORT")]
+  grpc_port: Option<u16>,
 
   /// Path to `SQLite` database file
-  #[arg(long, default_value_t = default_db_path())]
-  pub db: String,
+  #[arg(long, env = "STOVE_DB")]
+  db: Option<PathBuf>,
+
+  /// `PostgreSQL` connection URL. When set, it replaces the local `SQLite` database.
+  #[arg(long, env = "STOVE_DATABASE_URL", conflicts_with = "database_url_file")]
+  database_url: Option<String>,
+
+  /// Read the `PostgreSQL` connection URL from this file
+  #[arg(
+    long,
+    env = "STOVE_DATABASE_URL_FILE",
+    value_name = "PATH",
+    conflicts_with = "database_url"
+  )]
+  database_url_file: Option<PathBuf>,
+
+  /// Number of completed runs retained per application. Zero disables automatic pruning.
+  #[arg(long, env = "STOVE_RETENTION_RUNS_PER_APP")]
+  retention_runs_per_app: Option<usize>,
 
   /// Clear all stored runs and exit
   #[arg(long)]
-  pub clear: bool,
+  clear: bool,
 
   /// Drop and recreate the database from scratch (backs up existing file first)
   #[arg(long)]
-  pub fresh_start: bool,
+  fresh_start: bool,
 
   /// Fetch and apply Stove agent skills from GitHub on startup without prompting.
   /// Useful for automation inside repositories.
   #[arg(long)]
-  pub update_skills: bool,
+  update_skills: bool,
 
   /// Skip the startup Stove agent skills check entirely.
   #[arg(long)]
-  pub no_skills_check: bool,
+  no_skills_check: bool,
 
   /// Optional subcommand. When omitted, the CLI runs the dashboard.
   #[command(subcommand)]
-  pub command: Option<StoveCommand>,
+  command: Option<StoveCommand>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileConfig {
+  port: Option<u16>,
+  grpc_port: Option<u16>,
+  db: Option<PathBuf>,
+  database_url: Option<String>,
+  database_url_file: Option<PathBuf>,
+  retention_runs_per_app: Option<usize>,
 }
 
 /// Top-level subcommands for the Stove CLI.
@@ -65,6 +121,170 @@ pub enum SkillsCommand {
     #[arg(long)]
     force: bool,
   },
+}
+
+impl Config {
+  pub fn parse() -> Result<Self> {
+    Self::resolve(CliConfig::parse())
+  }
+
+  pub fn try_parse_from<I, T>(arguments: I) -> Result<Self>
+  where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
+  {
+    Self::resolve(CliConfig::try_parse_from(arguments)?)
+  }
+
+  fn resolve(cli: CliConfig) -> Result<Self> {
+    let file = cli
+      .config_file
+      .as_deref()
+      .map(load_config_file)
+      .transpose()?;
+    let file_base = cli.config_file.as_deref().and_then(Path::parent);
+
+    let database_url = resolve_database_url(&cli, file.as_ref(), file_base)?;
+    let db = cli.db.map_or_else(
+      || {
+        file
+          .as_ref()
+          .and_then(|config| config.db.clone())
+          .map_or_else(default_db_path, |path| resolve_path(&path, file_base))
+      },
+      |path| path.to_string_lossy().into_owned(),
+    );
+
+    Ok(Self {
+      port: cli
+        .port
+        .or_else(|| file.as_ref().and_then(|config| config.port))
+        .unwrap_or(DEFAULT_HTTP_PORT),
+      grpc_port: cli
+        .grpc_port
+        .or_else(|| file.as_ref().and_then(|config| config.grpc_port))
+        .unwrap_or(DEFAULT_GRPC_PORT),
+      db,
+      database_url,
+      retention_runs_per_app: cli
+        .retention_runs_per_app
+        .or_else(|| {
+          file
+            .as_ref()
+            .and_then(|config| config.retention_runs_per_app)
+        })
+        .unwrap_or(DEFAULT_RETENTION_RUNS_PER_APP),
+      clear: cli.clear,
+      fresh_start: cli.fresh_start,
+      update_skills: cli.update_skills,
+      no_skills_check: cli.no_skills_check,
+      command: cli.command,
+    })
+  }
+}
+
+fn load_config_file(path: &Path) -> Result<FileConfig> {
+  let contents = std::fs::read_to_string(path)
+    .with_context(|| format!("read Stove configuration file {}", path.display()))?;
+  let extension = path
+    .extension()
+    .and_then(|extension| extension.to_str())
+    .map(str::to_ascii_lowercase);
+  match extension.as_deref() {
+    Some("json") => parse_config(&contents, config_rs::FileFormat::Json)
+      .with_context(|| format!("parse JSON Stove configuration file {}", path.display())),
+    Some("toml") => parse_config(&contents, config_rs::FileFormat::Toml)
+      .with_context(|| format!("parse TOML Stove configuration file {}", path.display())),
+    _ => parse_extensionless_config(&contents, path),
+  }
+}
+
+fn parse_extensionless_config(contents: &str, path: &Path) -> Result<FileConfig> {
+  match parse_config(contents, config_rs::FileFormat::Toml) {
+    Ok(config) => Ok(config),
+    Err(toml_error) => parse_config(contents, config_rs::FileFormat::Json).map_err(|json_error| {
+      anyhow::anyhow!(
+        "parse Stove configuration file {} as TOML or JSON; TOML: {}; JSON: {}",
+        path.display(),
+        toml_error,
+        json_error
+      )
+    }),
+  }
+}
+
+fn parse_config(contents: &str, format: config_rs::FileFormat) -> Result<FileConfig> {
+  config_rs::Config::builder()
+    .add_source(config_rs::File::from_str(contents, format))
+    .build()?
+    .try_deserialize()
+    .map_err(Into::into)
+}
+
+fn resolve_database_url(
+  cli: &CliConfig,
+  file: Option<&FileConfig>,
+  file_base: Option<&Path>,
+) -> Result<Option<String>> {
+  if cli.database_url.is_some() || cli.database_url_file.is_some() {
+    return database_url_from_sources(
+      cli.database_url.as_deref(),
+      cli.database_url_file.as_deref(),
+      None,
+    );
+  }
+
+  let Some(file) = file else {
+    return Ok(None);
+  };
+  database_url_from_sources(
+    file.database_url.as_deref(),
+    file.database_url_file.as_deref(),
+    file_base,
+  )
+}
+
+fn database_url_from_sources(
+  inline: Option<&str>,
+  file_path: Option<&Path>,
+  relative_to: Option<&Path>,
+) -> Result<Option<String>> {
+  match (inline, file_path) {
+    (Some(_), Some(_)) => bail!(
+      "configure only one of database_url and database_url_file (or their CLI/environment equivalents)"
+    ),
+    (Some(url), None) => validate_database_url(url).map(Some),
+    (None, Some(path)) => {
+      let path = rebase_path(path, relative_to);
+      let contents = std::fs::read_to_string(&path)
+        .with_context(|| format!("read PostgreSQL connection URL from {}", path.display()))?;
+      validate_database_url(contents.trim()).map(Some)
+    }
+    (None, None) => Ok(None),
+  }
+}
+
+fn validate_database_url(url: &str) -> Result<String> {
+  if url.is_empty() {
+    bail!("PostgreSQL connection URL must not be empty");
+  }
+  Ok(url.to_string())
+}
+
+fn resolve_path(path: &Path, relative_to: Option<&Path>) -> String {
+  rebase_path(path, relative_to)
+    .to_string_lossy()
+    .into_owned()
+}
+
+fn rebase_path(path: &Path, relative_to: Option<&Path>) -> PathBuf {
+  if path.is_absolute() {
+    path.to_path_buf()
+  } else if let Some(base) = relative_to {
+    base.join(path)
+  } else {
+    path.to_path_buf()
+  }
 }
 
 /// If `--fresh-start` is set, backs up the existing database file and deletes the original.
@@ -149,6 +369,8 @@ mod tests {
 
     assert_eq!(config.port, 4040);
     assert_eq!(config.grpc_port, 4041);
+    assert!(config.database_url.is_none());
+    assert_eq!(config.retention_runs_per_app, 1);
     assert!(!config.clear);
     assert!(!config.fresh_start);
   }
@@ -181,6 +403,156 @@ mod tests {
     let config = Config::try_parse_from(["stove", "--db", "/tmp/my.db"]).unwrap();
 
     assert_eq!(config.db, "/tmp/my.db");
+  }
+
+  #[test]
+  fn cli_parses_postgres_database_url() {
+    let config = Config::try_parse_from([
+      "stove",
+      "--database-url",
+      "postgresql://stove:secret@db.example/stove",
+    ])
+    .unwrap();
+
+    assert_eq!(
+      config.database_url.as_deref(),
+      Some("postgresql://stove:secret@db.example/stove")
+    );
+  }
+
+  #[test]
+  fn cli_reads_postgres_database_url_from_a_secret_file() {
+    let dir = TempDir::new().unwrap();
+    let secret_path = dir.path().join("database-url");
+    fs::write(&secret_path, "postgresql://stove:secret@db.example/stove\n").unwrap();
+
+    let config = Config::try_parse_from([
+      "stove",
+      "--database-url-file",
+      secret_path.to_str().unwrap(),
+    ])
+    .unwrap();
+
+    assert_eq!(
+      config.database_url.as_deref(),
+      Some("postgresql://stove:secret@db.example/stove")
+    );
+  }
+
+  #[test]
+  fn toml_config_resolves_relative_database_and_secret_paths() {
+    let dir = TempDir::new().unwrap();
+    let secret_path = dir.path().join("database-url");
+    let config_path = dir.path().join("stove.toml");
+    fs::write(&secret_path, "postgresql://stove:secret@postgres/stove\n").unwrap();
+    fs::write(
+      &config_path,
+      r#"
+port = 8080
+grpc_port = 8081
+db = "data/stove.db"
+database_url_file = "database-url"
+retention_runs_per_app = 50
+"#,
+    )
+    .unwrap();
+
+    let config =
+      Config::try_parse_from(["stove", "--config-file", config_path.to_str().unwrap()]).unwrap();
+
+    assert_eq!(config.port, 8080);
+    assert_eq!(config.grpc_port, 8081);
+    assert_eq!(
+      config.db,
+      dir.path().join("data/stove.db").to_string_lossy()
+    );
+    assert_eq!(
+      config.database_url.as_deref(),
+      Some("postgresql://stove:secret@postgres/stove")
+    );
+    assert_eq!(config.retention_runs_per_app, 50);
+  }
+
+  #[test]
+  fn json_config_uses_the_same_schema() {
+    let dir = TempDir::new().unwrap();
+    let config_path = dir.path().join("stove.json");
+    fs::write(
+      &config_path,
+      r#"{
+  "port": 7070,
+  "grpc_port": 7071,
+  "database_url": "postgresql://stove:secret@postgres/stove",
+  "retention_runs_per_app": 25
+}"#,
+    )
+    .unwrap();
+
+    let config =
+      Config::try_parse_from(["stove", "--config-file", config_path.to_str().unwrap()]).unwrap();
+
+    assert_eq!(config.port, 7070);
+    assert_eq!(config.grpc_port, 7071);
+    assert_eq!(
+      config.database_url.as_deref(),
+      Some("postgresql://stove:secret@postgres/stove")
+    );
+    assert_eq!(config.retention_runs_per_app, 25);
+  }
+
+  #[test]
+  fn cli_values_override_config_file_values_and_sources() {
+    let dir = TempDir::new().unwrap();
+    let config_path = dir.path().join("stove.toml");
+    fs::write(
+      &config_path,
+      "port = 5050\ndatabase_url_file = \"missing-secret\"\nretention_runs_per_app = 10\n",
+    )
+    .unwrap();
+
+    let config = Config::try_parse_from([
+      "stove",
+      "--config-file",
+      config_path.to_str().unwrap(),
+      "--port",
+      "6060",
+      "--database-url",
+      "postgresql://override/stove",
+      "--retention-runs-per-app",
+      "2",
+    ])
+    .unwrap();
+
+    assert_eq!(config.port, 6060);
+    assert_eq!(
+      config.database_url.as_deref(),
+      Some("postgresql://override/stove")
+    );
+    assert_eq!(config.retention_runs_per_app, 2);
+  }
+
+  #[test]
+  fn config_rejects_multiple_database_url_sources() {
+    let dir = TempDir::new().unwrap();
+    let config_path = dir.path().join("stove.json");
+    fs::write(
+      &config_path,
+      r#"{"database_url":"postgresql://inline/stove","database_url_file":"database-url"}"#,
+    )
+    .unwrap();
+
+    let error = Config::try_parse_from(["stove", "--config-file", config_path.to_str().unwrap()])
+      .err()
+      .expect("conflicting database URL sources should fail");
+
+    assert!(error.to_string().contains("configure only one"));
+  }
+
+  #[test]
+  fn cli_parses_custom_run_retention() {
+    let config = Config::try_parse_from(["stove", "--retention-runs-per-app", "25"]).unwrap();
+
+    assert_eq!(config.retention_runs_per_app, 25);
   }
 
   #[test]

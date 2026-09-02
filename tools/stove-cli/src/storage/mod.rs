@@ -1,3 +1,4 @@
-pub mod database;
+mod migrations;
 pub mod models;
 pub mod repository;
+mod schema;

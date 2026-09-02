@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::str::FromStr;
 
@@ -82,6 +83,7 @@ pub struct AppSummary {
   pub latest_run_id: String,
   pub latest_status: RunStatus,
   pub stove_version: Option<String>,
+  pub metadata: BTreeMap<String, String>,
 }
 
 /// A single test run (one execution of a test suite).
@@ -98,6 +100,7 @@ pub struct Run {
   pub duration_ms: Option<i64>,
   pub stove_version: Option<String>,
   pub systems: Vec<String>,
+  pub metadata: BTreeMap<String, String>,
 }
 
 /// A single test within a run.
@@ -219,6 +222,67 @@ pub struct MockWarning {
   pub target: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+pub struct EvidenceCounts {
+  pub tests: i64,
+  pub entries: i64,
+  pub spans: i64,
+  pub snapshots: i64,
+  pub mock_interactions: i64,
+  pub mock_warnings: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct StorageStats {
+  pub backend: String,
+  pub retention_runs_per_app: usize,
+  pub runs: i64,
+  pub running_runs: i64,
+  pub evidence: EvidenceCounts,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct PurgePreview {
+  pub run_ids: Vec<String>,
+  pub run_count: usize,
+  pub evidence: EvidenceCounts,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct PurgeResult {
+  pub purged_run_ids: Vec<String>,
+  pub purged_runs: usize,
+  pub evidence: EvidenceCounts,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseSchema {
+  pub backend: String,
+  pub tables: Vec<DatabaseTable>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseTable {
+  pub name: String,
+  pub columns: Vec<DatabaseColumn>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseColumn {
+  pub name: String,
+  pub data_type: String,
+  pub nullable: bool,
+  pub primary_key: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseQueryResult {
+  pub columns: Vec<String>,
+  pub rows: Vec<Vec<Option<String>>>,
+  pub affected_rows: u64,
+  pub truncated: bool,
+}
+
 // --- Input structs for write operations ---
 
 /// Data required to save a new report entry.
@@ -238,6 +302,15 @@ pub struct NewEntry {
   pub error: String,
   pub trace_id: String,
   pub assertion_id: String,
+  /// Stable semantic signature used to recover an open retry sequence across pods.
+  pub correlation_key: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OpenAssertion {
+  pub assertion_id: String,
+  pub attempt_count: i64,
+  pub failure_count: i64,
 }
 
 /// Data required to save a new mock interaction.

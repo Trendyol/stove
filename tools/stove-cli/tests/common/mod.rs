@@ -9,10 +9,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 use stove::http::server::create_router;
-use stove::http::server::create_router_with_ingestor;
-use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
-use stove::storage::database::Database;
 use stove::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use stove::storage::repository::Repository;
 
@@ -27,8 +24,8 @@ pub struct TestServer {
 impl TestServer {
   /// Start a test server on an OS-assigned port with an in-memory database.
   pub async fn start() -> Self {
-    let db = Database::open(":memory:").expect("in-memory database should open");
-    let repo = Arc::new(Repository::new(db));
+    let repo =
+      Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
     let sse_manager = Arc::new(SseManager::new());
     let router = create_router(repo.clone(), sse_manager.clone());
 
@@ -53,41 +50,6 @@ impl TestServer {
       sse: sse_manager,
       client: reqwest::Client::new(),
     }
-  }
-
-  /// Start a test server that shares an ingest queue with callers.
-  pub async fn start_with_ingestor() -> (Self, EventIngestor) {
-    let db = Database::open(":memory:").expect("in-memory database should open");
-    let repo = Arc::new(Repository::new(db));
-    let sse_manager = Arc::new(SseManager::new());
-    let ingestor = EventIngestor::with_config(repo.clone(), 50, std::time::Duration::from_secs(60));
-    let router =
-      create_router_with_ingestor(repo.clone(), sse_manager.clone(), Some(ingestor.clone()));
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-      .await
-      .expect("should bind to a free port");
-    let port = listener.local_addr().unwrap().port();
-    let base_url = format!("http://127.0.0.1:{port}");
-
-    tokio::spawn(async move {
-      axum::serve(
-        listener,
-        router.into_make_service_with_connect_info::<std::net::SocketAddr>(),
-      )
-      .await
-      .unwrap();
-    });
-
-    (
-      Self {
-        base_url,
-        repo,
-        sse: sse_manager,
-        client: reqwest::Client::new(),
-      },
-      ingestor,
-    )
   }
 
   // ── HTTP helpers ──────────────────────────────────────────────────
@@ -251,6 +213,7 @@ impl TestServer {
         error: error.into(),
         trace_id: trace_id.into(),
         assertion_id: format!("{test_id}\u{0}{system}\u{0}{action}\u{0}{input}\u{0}{expected}"),
+        correlation_key: String::new(),
       })
       .unwrap();
   }

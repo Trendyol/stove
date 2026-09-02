@@ -1,13 +1,17 @@
 use axum::Json;
 use axum::extract::{Path, Query, State};
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
+use crate::error::AppError;
 use crate::http::server::AppState;
 use crate::storage::models::{AppSummary, Run};
 
 #[derive(Deserialize)]
 pub struct RunsQuery {
   pub app: Option<String>,
+  /// URL-encoded JSON object containing an exact metadata subset to match.
+  pub metadata: Option<String>,
 }
 
 pub async fn get_apps(
@@ -21,7 +25,20 @@ pub async fn get_runs(
   State(state): State<AppState>,
   Query(query): Query<RunsQuery>,
 ) -> Result<Json<Vec<Run>>, crate::error::AppError> {
-  let runs = state.repository.get_runs(query.app.as_deref())?;
+  let metadata = query
+    .metadata
+    .as_deref()
+    .map(serde_json::from_str::<BTreeMap<String, String>>)
+    .transpose()
+    .map_err(|error| {
+      AppError::InvalidEvent(format!(
+        "metadata must be a JSON object with string values: {error}"
+      ))
+    })?
+    .unwrap_or_default();
+  let runs = state
+    .repository
+    .get_runs_filtered(query.app.as_deref(), &metadata)?;
   Ok(Json(runs))
 }
 

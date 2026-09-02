@@ -388,6 +388,7 @@ function InteractionInspector({
 }) {
   const [tab, setTab] = useState<InspectorTab>("overview");
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the selected interaction changes
   useEffect(() => {
     setTab(warning ? "diagnostics" : "overview");
   }, [interaction?.id, warning]);
@@ -589,6 +590,7 @@ function InteractionDiagnostics({
         </div>
       )}
       {interaction.near_misses.map((nearMiss, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: duplicate diagnostic candidates are meaningful and have no stable id
         <div className="diagnostic-block" key={`${index}-${nearMiss}`}>
           <span>Candidate {index + 1}</span>
           <pre>{nearMiss}</pre>

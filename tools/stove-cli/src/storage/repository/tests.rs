@@ -1,5 +1,4 @@
 use super::Repository;
-use crate::storage::database::Database;
 use crate::storage::models::AppSummary;
 use crate::storage::models::Entry;
 use crate::storage::models::NewEntry;
@@ -12,9 +11,22 @@ use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
+use diesel::connection::SimpleConnection;
+use diesel::prelude::*;
+use diesel::sql_types::BigInt;
+
+#[derive(QueryableByName)]
+struct CountRow {
+  #[diesel(sql_type = BigInt)]
+  count: i64,
+}
 
 fn test_repo() -> Repository {
-  Repository::new(Database::open(":memory:").unwrap())
+  Repository::connect_sqlite(":memory:", 1).unwrap()
+}
+
+fn test_repo_with_retention(retention_runs_per_app: usize) -> Repository {
+  Repository::connect_sqlite(":memory:", retention_runs_per_app).unwrap()
 }
 
 #[test]
@@ -59,6 +71,7 @@ fn full_event_lifecycle() {
       error: String::new(),
       trace_id: String::new(),
       assertion_id: "assertion-post-products".into(),
+      correlation_key: String::new(),
     })
     .unwrap();
 
@@ -114,6 +127,7 @@ fn full_event_lifecycle() {
     duration_ms: Some(10000),
     stove_version: Some("0.23.2".into()),
     systems: vec!["HTTP".into(), "Kafka".into()],
+    metadata: std::collections::BTreeMap::new(),
   };
   assert_eq!(repo.get_runs(None).unwrap(), vec![expected_run.clone()]);
   assert_eq!(repo.get_run("run-1").unwrap(), Some(expected_run));
@@ -201,6 +215,7 @@ fn full_event_lifecycle() {
       latest_run_id: "run-1".into(),
       latest_status: RunStatus::Passed,
       stove_version: Some("0.23.2".into()),
+      metadata: std::collections::BTreeMap::new(),
     }]
   );
 }
@@ -244,6 +259,7 @@ fn entries_return_latest_assertion_attempt_with_retry_counts() {
         },
         trace_id: String::new(),
         assertion_id: "assertion-query-products".into(),
+        correlation_key: String::new(),
       })
       .unwrap();
   }
@@ -420,10 +436,7 @@ fn malformed_rows_are_reported_instead_of_dropped() {
   repo
     .lock_write_db()
     .conn()
-    .execute(
-      "UPDATE mock_interactions SET near_misses = 'not-json' WHERE run_id = 'run-1'",
-      [],
-    )
+    .batch_execute("UPDATE mock_interactions SET near_misses = 'not-json' WHERE run_id = 'run-1'")
     .unwrap();
 
   assert!(
@@ -462,13 +475,15 @@ fn latest_app_version_comes_from_latest_run() {
       latest_run_id: "run-2".into(),
       latest_status: RunStatus::Running,
       stove_version: Some("0.23.2".into()),
+      metadata: std::collections::BTreeMap::new(),
     }]
   );
-  assert!(repo.get_run("run-1").unwrap().is_none());
+  assert!(repo.get_run("run-1").unwrap().is_some());
 }
 
 #[test]
-fn starting_a_run_removes_all_previous_results_for_that_app() {
+#[allow(clippy::too_many_lines)]
+fn ending_a_run_prunes_previous_completed_results_for_that_app() {
   let repo = test_repo();
   repo
     .save_run_start("old-run", "product-api", "2024-01-01T00:00:00Z", &[])
@@ -499,6 +514,7 @@ fn starting_a_run_removes_all_previous_results_for_that_app() {
       error: String::new(),
       trace_id: "old-trace".into(),
       assertion_id: "old-assertion".into(),
+      correlation_key: String::new(),
     })
     .unwrap();
   repo
@@ -541,12 +557,21 @@ fn starting_a_run_removes_all_previous_results_for_that_app() {
       target: None,
     })
     .unwrap();
+  repo
+    .save_run_end("old-run", "2024-01-01T00:00:05Z", 1, 1, 0, 5000)
+    .unwrap();
 
   repo
-    .save_run_start("other-run", "order-api", "2024-01-01T00:00:05Z", &[])
+    .save_run_start("other-run", "order-api", "2024-01-01T00:00:06Z", &[])
     .unwrap();
   repo
-    .save_run_start("new-run", "product-api", "2024-01-01T00:00:06Z", &[])
+    .save_run_start("new-run", "product-api", "2024-01-01T00:00:07Z", &[])
+    .unwrap();
+
+  assert!(repo.get_run("old-run").unwrap().is_some());
+
+  repo
+    .save_run_end("new-run", "2024-01-01T00:00:08Z", 0, 0, 0, 1000)
     .unwrap();
 
   assert!(repo.get_run("old-run").unwrap().is_none());
@@ -554,7 +579,7 @@ fn starting_a_run_removes_all_previous_results_for_that_app() {
   assert!(repo.get_run("new-run").unwrap().is_some());
   assert!(repo.get_run("other-run").unwrap().is_some());
 
-  let db = repo.lock_write_db();
+  let mut db = repo.lock_write_db();
   for table in [
     "entries",
     "spans",
@@ -562,14 +587,12 @@ fn starting_a_run_removes_all_previous_results_for_that_app() {
     "mock_interactions",
     "mock_warnings",
   ] {
-    let count: i64 = db
-      .conn()
-      .query_row(
-        &format!("SELECT COUNT(*) FROM {table} WHERE run_id = 'old-run'"),
-        [],
-        |row| row.get(0),
-      )
-      .unwrap();
+    let count = diesel::sql_query(format!(
+      "SELECT COUNT(*) AS count FROM {table} WHERE run_id = 'old-run'"
+    ))
+    .get_result::<CountRow>(db.conn())
+    .unwrap()
+    .count;
     assert_eq!(count, 0, "{table} should not retain old app results");
   }
 }
@@ -625,12 +648,13 @@ fn get_apps_returns_only_the_new_run_when_started_at_ties() {
       latest_run_id: "run-2".into(),
       latest_status: RunStatus::Running,
       stove_version: None,
+      metadata: std::collections::BTreeMap::new(),
     }]
   );
 }
 
 #[test]
-fn get_runs_returns_only_the_new_run_when_started_at_ties() {
+fn get_runs_keeps_overlapping_runs_when_started_at_ties() {
   let repo = test_repo();
   repo
     .save_run_start("run-1", "my-app", "2024-06-01T00:00:00Z", &[])
@@ -641,6 +665,168 @@ fn get_runs_returns_only_the_new_run_when_started_at_ties() {
 
   let runs = repo.get_runs(Some("my-app")).unwrap();
 
+  assert_eq!(runs.len(), 2);
+  assert_eq!(runs[0].id, "run-2");
+  assert_eq!(runs[1].id, "run-1");
+}
+
+#[test]
+fn configurable_retention_keeps_the_latest_completed_runs() {
+  let repo = test_repo_with_retention(2);
+
+  for index in 1..=3 {
+    let run_id = format!("run-{index}");
+    repo
+      .save_run_start(
+        &run_id,
+        "my-app",
+        &format!("2024-06-0{index}T00:00:00Z"),
+        &[],
+      )
+      .unwrap();
+    repo
+      .save_run_end(
+        &run_id,
+        &format!("2024-06-0{index}T00:01:00Z"),
+        0,
+        0,
+        0,
+        60_000,
+      )
+      .unwrap();
+  }
+
+  let runs = repo.get_runs(Some("my-app")).unwrap();
+  assert_eq!(
+    runs.iter().map(|run| run.id.as_str()).collect::<Vec<_>>(),
+    vec!["run-3", "run-2"]
+  );
+}
+
+#[test]
+fn retention_never_prunes_an_active_run() {
+  let repo = test_repo_with_retention(1);
+
+  repo
+    .save_run_start("old-run", "my-app", "2024-06-01T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_run_end("old-run", "2024-06-01T00:01:00Z", 0, 0, 0, 60_000)
+    .unwrap();
+  repo
+    .save_run_start("active-run", "my-app", "2024-06-02T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_run_start("new-run", "my-app", "2024-06-03T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_run_end("new-run", "2024-06-03T00:01:00Z", 0, 0, 0, 60_000)
+    .unwrap();
+
+  assert!(repo.get_run("old-run").unwrap().is_none());
+  assert_eq!(
+    repo
+      .get_runs(Some("my-app"))
+      .unwrap()
+      .iter()
+      .map(|run| run.id.as_str())
+      .collect::<Vec<_>>(),
+    vec!["new-run", "active-run"]
+  );
+}
+
+#[test]
+fn an_older_run_finishing_last_does_not_evict_a_newer_run() {
+  let repo = test_repo_with_retention(1);
+
+  repo
+    .save_run_start("old-run", "my-app", "2024-06-01T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_run_start("new-run", "my-app", "2024-06-02T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_run_end("new-run", "2024-06-02T00:01:00Z", 0, 0, 0, 60_000)
+    .unwrap();
+  repo
+    .save_run_end("old-run", "2024-06-03T00:01:00Z", 0, 0, 0, 60_000)
+    .unwrap();
+
+  assert!(repo.get_run("old-run").unwrap().is_none());
+  assert!(repo.get_run("new-run").unwrap().is_some());
+}
+
+#[test]
+fn ending_an_unknown_run_remains_a_no_op() {
+  let repo = test_repo();
+
+  repo
+    .save_run_end("unknown-run", "2024-06-01T00:01:00Z", 0, 0, 0, 60_000)
+    .unwrap();
+
+  assert!(repo.get_runs(None).unwrap().is_empty());
+}
+
+#[test]
+fn zero_retention_disables_automatic_pruning() {
+  let repo = test_repo_with_retention(0);
+
+  for index in 1..=2 {
+    let run_id = format!("run-{index}");
+    repo
+      .save_run_start(
+        &run_id,
+        "my-app",
+        &format!("2024-06-0{index}T00:00:00Z"),
+        &[],
+      )
+      .unwrap();
+    repo
+      .save_run_end(
+        &run_id,
+        &format!("2024-06-0{index}T00:01:00Z"),
+        0,
+        0,
+        0,
+        60_000,
+      )
+      .unwrap();
+  }
+
+  assert_eq!(repo.get_runs(Some("my-app")).unwrap().len(), 2);
+}
+
+#[test]
+fn retention_can_be_changed_while_the_repository_is_running() {
+  let repo = test_repo_with_retention(2);
+  assert_eq!(repo.retention_runs_per_app(), 2);
+
+  repo.set_retention_runs_per_app(1);
+  assert_eq!(repo.retention_runs_per_app(), 1);
+
+  for index in 1..=2 {
+    let run_id = format!("run-{index}");
+    repo
+      .save_run_start(
+        &run_id,
+        "my-app",
+        &format!("2024-06-0{index}T00:00:00Z"),
+        &[],
+      )
+      .unwrap();
+    repo
+      .save_run_end(
+        &run_id,
+        &format!("2024-06-0{index}T00:01:00Z"),
+        0,
+        0,
+        0,
+        60_000,
+      )
+      .unwrap();
+  }
+
+  let runs = repo.get_runs(Some("my-app")).unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].id, "run-2");
 }
@@ -689,4 +875,81 @@ fn get_spans_for_test_does_not_cross_match_similar_test_ids() {
   let spans = repo.get_spans_for_test("run-1", "test-1").unwrap();
 
   assert!(spans.is_empty());
+}
+
+#[test]
+fn sqlite_database_explorer_discovers_schema_and_executes_crud() {
+  let repo = test_repo_with_retention(0);
+  let schema = repo.database_schema().unwrap();
+  let runs = schema
+    .tables
+    .iter()
+    .find(|table| table.name == "runs")
+    .expect("runs table should be discoverable");
+  assert!(
+    runs
+      .columns
+      .iter()
+      .any(|column| column.name == "id" && column.primary_key)
+  );
+  assert!(
+    runs
+      .columns
+      .iter()
+      .any(|column| column.name == "metadata" && !column.nullable)
+  );
+
+  let inserted = repo
+    .execute_database_query(
+      "INSERT INTO runs (id, app_name, started_at) \
+       VALUES ('explorer-run', 'before', '2024-06-01T00:00:00Z')",
+      100,
+    )
+    .unwrap();
+  assert_eq!(inserted.affected_rows, 1);
+  let selected = repo
+    .execute_database_query(
+      "SELECT id, app_name FROM runs WHERE id = 'explorer-run'",
+      100,
+    )
+    .unwrap();
+  assert_eq!(selected.columns, ["id", "app_name"]);
+  assert_eq!(
+    selected.rows,
+    vec![vec![Some("explorer-run".into()), Some("before".into())]]
+  );
+
+  let updated = repo
+    .execute_database_query(
+      "UPDATE runs SET app_name = 'after' WHERE id = 'explorer-run'",
+      100,
+    )
+    .unwrap();
+  assert_eq!(updated.affected_rows, 1);
+  assert_eq!(
+    repo.get_run("explorer-run").unwrap().unwrap().app_name,
+    "after"
+  );
+
+  let deleted = repo
+    .execute_database_query("DELETE FROM runs WHERE id = 'explorer-run'", 100)
+    .unwrap();
+  assert_eq!(deleted.affected_rows, 1);
+  assert!(repo.get_run("explorer-run").unwrap().is_none());
+}
+
+#[test]
+fn sqlite_database_explorer_caps_results_and_rejects_multiple_statements() {
+  let repo = test_repo();
+  let result = repo
+    .execute_database_query("SELECT 1 AS value UNION ALL SELECT 2", 1)
+    .unwrap();
+  assert_eq!(result.rows, vec![vec![Some("1".into())]]);
+  assert!(result.truncated);
+
+  assert!(
+    repo
+      .execute_database_query("SELECT 1; SELECT 2", 100)
+      .is_err()
+  );
 }

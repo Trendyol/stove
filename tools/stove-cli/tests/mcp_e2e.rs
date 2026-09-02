@@ -5,6 +5,7 @@ mod common;
 use common::TestServer;
 use reqwest::StatusCode;
 use serde_json::{Value, json};
+use std::collections::BTreeMap;
 use stove::grpc::service::DashboardEventServiceImpl;
 use stove::proto;
 use stove::proto::dashboard_event_service_server::DashboardEventService;
@@ -77,6 +78,67 @@ async fn apps_omit_the_redundant_run_count() {
 
   assert_eq!(app["app_name"], "checkout-api");
   assert!(app.get("total_runs").is_none());
+}
+
+#[tokio::test]
+async fn agents_can_filter_runs_by_dynamic_metadata_pairs() {
+  let server = TestServer::start().await;
+  server.repo.update_retention(0).unwrap();
+  let checkout_metadata = BTreeMap::from([
+    ("team".to_string(), "checkout".to_string()),
+    ("tribe".to_string(), "commerce".to_string()),
+    ("gitlab.pipeline_id".to_string(), "42".to_string()),
+  ]);
+  let catalog_metadata = BTreeMap::from([
+    ("team".to_string(), "catalog".to_string()),
+    ("gitlab.pipeline_id".to_string(), "84".to_string()),
+  ]);
+  server
+    .repo
+    .save_run_start_with_metadata(
+      "run-checkout",
+      "service-tests",
+      "2024-06-01T10:00:00Z",
+      Some("0.23.2"),
+      &[],
+      &checkout_metadata,
+    )
+    .unwrap();
+  server
+    .repo
+    .save_run_start_with_metadata(
+      "run-catalog",
+      "service-tests",
+      "2024-06-01T11:00:00Z",
+      Some("0.23.2"),
+      &[],
+      &catalog_metadata,
+    )
+    .unwrap();
+
+  let response = mcp_tool(
+    &server,
+    "stove_runs",
+    json!({
+      "metadata": {
+        "team": "checkout",
+        "gitlab.pipeline_id": "42"
+      }
+    }),
+  )
+  .await;
+  let runs = response["result"]["structuredContent"]["runs"]
+    .as_array()
+    .unwrap();
+  assert_eq!(runs.len(), 1);
+  assert_eq!(runs[0]["run_id"], "run-checkout");
+  assert_eq!(runs[0]["metadata"]["tribe"], "commerce");
+
+  let apps = mcp_tool(&server, "stove_apps", json!({})).await;
+  assert_eq!(
+    apps["result"]["structuredContent"]["apps"][0]["metadata"]["team"],
+    "catalog"
+  );
 }
 
 #[tokio::test]
@@ -366,10 +428,9 @@ async fn mcp_handles_no_failures_and_caps_oversized_detail() {
 }
 
 #[tokio::test]
-async fn mcp_flushes_pending_ingest_before_reads() {
-  let (server, ingestor) = TestServer::start_with_ingestor().await;
-  let service =
-    DashboardEventServiceImpl::new_with_ingestor(server.repo.clone(), server.sse.clone(), ingestor);
+async fn mcp_reads_transactionally_committed_ingest() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
 
   send_event(&service, run_started("run-pending", "checkout-api")).await;
   send_event(&service, test_started("run-pending", "test-pending")).await;
@@ -391,13 +452,14 @@ async fn mcp_flushes_pending_ingest_before_reads() {
 }
 
 #[tokio::test]
-async fn mcp_rejects_non_local_host_headers() {
+async fn mcp_accepts_non_local_host_and_origin_headers() {
   let server = TestServer::start().await;
 
   let response = server
     .client
     .post(server.mcp_url())
     .header(reqwest::header::HOST, "example.com")
+    .header(reqwest::header::ORIGIN, "https://example.com")
     .json(&json!({
       "jsonrpc": "2.0",
       "id": 1,
@@ -407,7 +469,7 @@ async fn mcp_rejects_non_local_host_headers() {
     .await
     .expect("request should complete");
 
-  assert_eq!(response.status(), StatusCode::FORBIDDEN);
+  assert_eq!(response.status(), StatusCode::OK);
 }
 
 fn seed_multi_app_failures(server: &TestServer) {
@@ -483,12 +545,15 @@ fn timestamp() -> Option<prost_types::Timestamp> {
 fn run_started(run_id: &str, app_name: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
         timestamp: timestamp(),
         app_name: app_name.to_string(),
         systems: vec!["HTTP".to_string()],
         stove_version: "0.23.2".to_string(),
+        metadata: Default::default(),
       },
     )),
   }
@@ -497,6 +562,8 @@ fn run_started(run_id: &str, app_name: &str) -> proto::DashboardEvent {
 fn test_started(run_id: &str, test_id: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestStarted(
       proto::TestStartedEvent {
         test_id: test_id.to_string(),
@@ -512,6 +579,8 @@ fn test_started(run_id: &str, test_id: &str) -> proto::DashboardEvent {
 fn test_ended_failed(run_id: &str, test_id: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestEnded(
       proto::TestEndedEvent {
         test_id: test_id.to_string(),

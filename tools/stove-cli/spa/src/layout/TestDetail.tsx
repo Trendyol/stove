@@ -79,12 +79,12 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     isLoading: interactionsLoading,
     error: interactionsError,
   } = useQuery({
-    queryKey: ["interactions", runId, test.id],
+    queryKey: ["mock-interactions", runId, test.id],
     queryFn: async ({ signal }) =>
       reconcileDashboardData<MockInteraction[]>(
         queryClient,
-        ["interactions", runId, test.id],
-        await api.getTestInteractions(runId, test.id, signal),
+        ["mock-interactions", runId, test.id],
+        await api.getTestMockInteractions(runId, test.id, signal),
       ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
@@ -95,36 +95,36 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     isLoading: warningsLoading,
     error: warningsError,
   } = useQuery({
-    queryKey: ["warnings", runId, test.id],
+    queryKey: ["mock-warnings", runId, test.id],
     queryFn: async ({ signal }) =>
       reconcileDashboardData<MockWarning[]>(
         queryClient,
-        ["warnings", runId, test.id],
-        await api.getTestWarnings(runId, test.id, signal),
+        ["mock-warnings", runId, test.id],
+        await api.getTestMockWarnings(runId, test.id, signal),
       ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const { data: runInteractions = [], error: runInteractionsError } = useQuery({
-    queryKey: ["interactions", runId],
+    queryKey: ["mock-interactions", runId],
     queryFn: async ({ signal }) =>
       reconcileDashboardData<MockInteraction[]>(
         queryClient,
-        ["interactions", runId],
-        await api.getAmbientInteractions(runId, signal),
+        ["mock-interactions", runId],
+        await api.getAmbientMockInteractions(runId, signal),
       ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const { data: runWarnings = [], error: runWarningsError } = useQuery({
-    queryKey: ["warnings", runId],
+    queryKey: ["mock-warnings", runId],
     queryFn: async ({ signal }) =>
       reconcileDashboardData<MockWarning[]>(
         queryClient,
-        ["warnings", runId],
-        await api.getAmbientWarnings(runId, signal),
+        ["mock-warnings", runId],
+        await api.getAmbientMockWarnings(runId, signal),
       ),
     refetchInterval: liveRefetchInterval,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
@@ -142,6 +142,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     interactions.length + ambientInteractions.length + warnings.length + ambientWarnings.length;
   const hasMockEvidence = mockEvidenceCount > 0;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the selected test changes
   useEffect(() => {
     setTab("timeline");
   }, [runId, test.id]);

@@ -1,289 +1,105 @@
-//! Thread-safe SQLite-backed storage for dashboard runs, tests, entries,
-//! spans, and snapshots.
+//! Thread-safe storage facade for dashboard runs, tests, entries, spans, and
+//! snapshots.
 //!
-//! Writes and reads use separate `SQLite` connections so the UI can keep
-//! polling while ingestion is busy. Each side is still serialized through its
-//! own mutex because a single `rusqlite::Connection` is not `Sync`.
+//! Writes and reads use separate database connections so the UI can keep
+//! polling while ingestion is busy. Each side is serialized through its own
+//! mutex because Diesel connections are not `Sync`.
 //!
-//! Implementation is split across this module: `mod.rs` owns the struct,
-//! constructors, lock helpers, and read-side methods; `writes.rs` owns the
-//! write-side methods plus the batched event replay; `sql.rs` owns the SQL
-//! column lists and row→struct converters shared by both.
+//! This module owns backend selection and exposes backend-neutral operations.
+//! Engine-specific connections, queries, writes, and administration live in
+//! parallel `sqlite_backend/` and `postgres_backend/` modules.
 
-mod sql;
+mod admin;
+mod distributed;
+mod explorer;
+mod mapping;
+mod postgres_backend;
+mod reads;
+mod sqlite_backend;
+mod write_models;
 mod writes;
 
-use std::sync::Arc;
-use std::sync::Mutex;
+#[cfg(test)]
 use std::sync::MutexGuard;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
 
-use self::sql::MOCK_INTERACTION_COLUMNS;
-use self::sql::MOCK_WARNING_COLUMNS;
-use self::sql::RUN_COLUMNS;
-use self::sql::SNAPSHOT_COLUMNS;
-use self::sql::SPAN_COLUMNS;
-use self::sql::entry_from_row;
-use self::sql::mock_interaction_from_row;
-use self::sql::mock_warning_from_row;
-use self::sql::parse_run_status;
-use self::sql::run_from_row;
-use self::sql::snapshot_from_row;
-use self::sql::span_from_row;
-use self::sql::test_from_row;
 use crate::error::Result;
-use crate::storage::database::Database;
-use crate::storage::models::AppSummary;
-use crate::storage::models::Entry;
-use crate::storage::models::MockInteraction;
-use crate::storage::models::MockWarning;
-use crate::storage::models::Run;
-use crate::storage::models::Snapshot;
-use crate::storage::models::Span;
-use crate::storage::models::Test;
-
-const NORMALIZED_ASSERTION_ID_SQL: &str =
-  "CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END";
+enum Backend {
+  Sqlite(sqlite_backend::SqliteBackend),
+  Postgres(Box<postgres_backend::PostgresBackend>),
+}
 
 pub struct Repository {
-  write_db: Arc<Mutex<Database>>,
-  read_db: Arc<Mutex<Database>>,
+  backend: Backend,
+  retention_runs_per_app: AtomicUsize,
 }
 
 impl Repository {
-  pub fn new(db: Database) -> Self {
-    let read_db = db
-      .open_peer()
-      .expect("peer database connection should open for repository reads");
-    Self {
-      write_db: Arc::new(Mutex::new(db)),
-      read_db: Arc::new(Mutex::new(read_db)),
+  pub fn connect_sqlite(database_path: &str, retention_runs_per_app: usize) -> Result<Self> {
+    Ok(Self {
+      backend: Backend::Sqlite(sqlite_backend::SqliteBackend::connect(database_path)?),
+      retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
+    })
+  }
+
+  pub fn connect_postgres(database_url: &str, retention_runs_per_app: usize) -> Result<Self> {
+    Ok(Self {
+      backend: Backend::Postgres(Box::new(run_blocking(|| {
+        postgres_backend::PostgresBackend::connect(database_url, retention_runs_per_app)
+      })?)),
+      retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
+    })
+  }
+
+  #[must_use]
+  pub fn backend_kind(&self) -> &'static str {
+    match self.backend {
+      Backend::Sqlite(_) => "sqlite",
+      Backend::Postgres(_) => "postgresql",
     }
   }
 
-  pub(super) fn lock_write_db(&self) -> MutexGuard<'_, Database> {
-    self.write_db.lock().expect("write database lock poisoned")
+  #[must_use]
+  pub fn retention_runs_per_app(&self) -> usize {
+    match &self.backend {
+      Backend::Sqlite(_) => self.retention_runs_per_app.load(Ordering::Relaxed),
+      Backend::Postgres(postgres) => run_blocking(|| postgres.retention_runs_per_app())
+        .unwrap_or_else(|_| self.retention_runs_per_app.load(Ordering::Relaxed)),
+    }
   }
 
-  fn lock_read_db(&self) -> MutexGuard<'_, Database> {
-    self.read_db.lock().expect("read database lock poisoned")
+  pub fn set_retention_runs_per_app(&self, retention_runs_per_app: usize) {
+    self
+      .retention_runs_per_app
+      .store(retention_runs_per_app, Ordering::Relaxed);
   }
 
-  pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(
-      "SELECT r.app_name, r.id, r.status, r.stove_version
-             FROM runs r
-             WHERE r.id = (
-               SELECT r3.id
-               FROM runs r3
-               WHERE r3.app_name = r.app_name
-               ORDER BY r3.started_at DESC, r3.rowid DESC
-               LIMIT 1
-             )
-             ORDER BY app_name",
-    )?;
-    let rows = stmt.query_map([], |row| {
-      Ok(AppSummary {
-        app_name: row.get(0)?,
-        latest_run_id: row.get(1)?,
-        latest_status: parse_run_status(&row.get::<_, String>(2)?),
-        stove_version: row.get(3)?,
-      })
-    })?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_runs(&self, app_name: Option<&str>) -> Result<Vec<Run>> {
-    let db = self.lock_read_db();
-    let filter = match app_name {
-      Some(_) => " WHERE app_name = ?1",
-      None => "",
+  #[cfg(test)]
+  pub(in crate::storage::repository) fn lock_write_db(
+    &self,
+  ) -> MutexGuard<'_, sqlite_backend::database::SqliteDatabase> {
+    let Backend::Sqlite(sqlite) = &self.backend else {
+      panic!("SQLite test connection requested from PostgreSQL repository")
     };
-    let sql =
-      format!("SELECT {RUN_COLUMNS} FROM runs{filter} ORDER BY started_at DESC, rowid DESC");
-    let mut stmt = db.conn().prepare(&sql)?;
-    let rows = match app_name {
-      Some(name) => stmt.query_map(rusqlite::params![name], run_from_row)?,
-      None => stmt.query_map([], run_from_row)?,
-    };
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    sqlite.lock_write()
   }
+}
 
-  pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
-    let db = self.lock_read_db();
-    let sql = format!("SELECT {RUN_COLUMNS} FROM runs WHERE id = ?1");
-    let mut stmt = db.conn().prepare(&sql)?;
-    let mut rows = stmt.query_map(rusqlite::params![run_id], run_from_row)?;
-    Ok(rows.next().transpose()?)
-  }
-
-  pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(
-            "SELECT id, run_id, test_name, spec_name, test_path, started_at, ended_at, status, duration_ms, error FROM tests WHERE run_id = ?1 ORDER BY started_at",
-        )?;
-    let rows = stmt.query_map(rusqlite::params![run_id], test_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_entries(&self, run_id: &str, test_id: &str) -> Result<Vec<Entry>> {
-    let db = self.lock_read_db();
-    let sql = format!(
-      "WITH correlated AS (
-         SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
-                metadata, expected, actual, error, trace_id,
-                {NORMALIZED_ASSERTION_ID_SQL} AS assertion_id
-           FROM entries
-          WHERE run_id = ?1 AND test_id = ?2
-       ),
-       ranked AS (
-         SELECT *,
-                COUNT(*) OVER (PARTITION BY assertion_id) AS attempt_count,
-                SUM(CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END)
-                  OVER (PARTITION BY assertion_id) AS failure_count,
-                ROW_NUMBER() OVER (
-                  PARTITION BY assertion_id
-                  ORDER BY id DESC
-                ) AS attempt_rank
-           FROM correlated
-       )
-       SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
-              metadata, expected, actual, error, trace_id, assertion_id,
-              attempt_count, failure_count
-         FROM ranked
-        WHERE attempt_rank = 1
-        ORDER BY timestamp, id"
-    );
-    let mut stmt = db.conn().prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params![run_id, test_id], entry_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  /// Return the append-only entry history without assertion correlation.
-  pub fn get_raw_entries(&self, run_id: &str, test_id: &str) -> Result<Vec<Entry>> {
-    let db = self.lock_read_db();
-    let sql = format!(
-      "SELECT id, run_id, test_id, timestamp, system, action, result, input, output,
-              metadata, expected, actual, error, trace_id,
-              {NORMALIZED_ASSERTION_ID_SQL} AS assertion_id,
-              1 AS attempt_count,
-              CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END AS failure_count
-         FROM entries
-        WHERE run_id = ?1 AND test_id = ?2
-        ORDER BY timestamp, id"
-    );
-    let mut stmt = db.conn().prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params![run_id, test_id], entry_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
-    let db = self.lock_read_db();
-    let sql = format!(
-      "SELECT {SPAN_COLUMNS} FROM spans \
-             WHERE run_id = ?1 AND trace_id IN ( \
-               SELECT trace_id FROM entries WHERE run_id = ?1 AND test_id = ?2 AND trace_id != '' \
-               UNION \
-               SELECT DISTINCT trace_id FROM spans WHERE run_id = ?1 AND ( \
-                 json_extract(attributes, '$.\"x-stove-test-id\"') = ?2 OR \
-                 json_extract(attributes, '$.\"X-Stove-Test-Id\"') = ?2 OR \
-                 json_extract(attributes, '$.\"stove.test.id\"') = ?2 OR \
-                 json_extract(attributes, '$.\"stove_test_id\"') = ?2 \
-               ) \
-             ) \
-             ORDER BY start_time_nanos"
-    );
-    let mut stmt = db.conn().prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params![run_id, test_id], span_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_trace(&self, trace_id: &str) -> Result<Vec<Span>> {
-    let db = self.lock_read_db();
-    let sql =
-      format!("SELECT {SPAN_COLUMNS} FROM spans WHERE trace_id = ?1 ORDER BY start_time_nanos");
-    let mut stmt = db.conn().prepare(&sql)?;
-    let rows = stmt.query_map(rusqlite::params![trace_id], span_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {SNAPSHOT_COLUMNS} FROM snapshots WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(rusqlite::params![run_id, test_id], snapshot_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_mock_interactions_for_test(
-    &self,
-    run_id: &str,
-    test_id: &str,
-  ) -> Result<Vec<MockInteraction>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(
-      rusqlite::params![run_id, test_id],
-      mock_interaction_from_row,
-    )?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  /// All interactions of a run, including unattributed ones (`test_id IS NULL`) —
-  /// the run-level lane the UI renders instead of guessing ownership.
-  pub fn get_mock_interactions_for_run(&self, run_id: &str) -> Result<Vec<MockInteraction>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(rusqlite::params![run_id], mock_interaction_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_unattributed_mock_interactions_for_run(
-    &self,
-    run_id: &str,
-  ) -> Result<Vec<MockInteraction>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {MOCK_INTERACTION_COLUMNS} FROM mock_interactions WHERE run_id = ?1 AND test_id IS NULL ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(rusqlite::params![run_id], mock_interaction_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_mock_warnings_for_test(
-    &self,
-    run_id: &str,
-    test_id: &str,
-  ) -> Result<Vec<MockWarning>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 AND test_id = ?2 ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(rusqlite::params![run_id, test_id], mock_warning_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(rusqlite::params![run_id], mock_warning_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
-  }
-
-  pub fn get_unattributed_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
-    let db = self.lock_read_db();
-    let mut stmt = db.conn().prepare(&format!(
-      "SELECT {MOCK_WARNING_COLUMNS} FROM mock_warnings WHERE run_id = ?1 AND test_id IS NULL ORDER BY id"
-    ))?;
-    let rows = stmt.query_map(rusqlite::params![run_id], mock_warning_from_row)?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+fn run_blocking<T, F>(operation: F) -> T
+where
+  T: Send,
+  F: FnOnce() -> T + Send,
+{
+  match tokio::runtime::Handle::try_current().map(|handle| handle.runtime_flavor()) {
+    Ok(tokio::runtime::RuntimeFlavor::MultiThread) => tokio::task::block_in_place(operation),
+    Ok(_) => std::thread::scope(|scope| {
+      scope
+        .spawn(operation)
+        .join()
+        .unwrap_or_else(|payload| std::panic::resume_unwind(payload))
+    }),
+    Err(_) => operation(),
   }
 }
 

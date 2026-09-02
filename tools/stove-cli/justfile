@@ -14,12 +14,38 @@ clippy:
     cargo clippy --all-targets -- -D warnings
 
 test:
-    SKIP_SPA_BUILD=1 cargo test
+    SKIP_SPA_BUILD=1 cargo test --lib --test api_e2e --test mcp_e2e
 
 test-lib:
     SKIP_SPA_BUILD=1 cargo test --lib
 
+# Black-box tests that launch the compiled stove binary and use its public APIs.
+acceptance:
+    SKIP_SPA_BUILD=1 cargo test --test acceptance
+
+# PostgreSQL JSONB/index and dashboard-query performance under concurrent reads.
+load-test:
+    SKIP_SPA_BUILD=1 cargo test --test load -- --nocapture
+
+# Build and start Stove with a persistent local PostgreSQL database.
+postgres-up:
+    docker compose -f compose.postgres.yml up --build --detach
+    @echo "Stove: http://localhost:${STOVE_HTTP_PORT:-4040}"
+    @echo "PostgreSQL: localhost:${STOVE_POSTGRES_PORT:-5433} (database/user/password: stove)"
+
+# Follow logs from the local PostgreSQL-backed Stove server.
+postgres-logs:
+    docker compose -f compose.postgres.yml logs --follow stove
+
+# Stop the local stack without deleting its PostgreSQL data.
+postgres-down:
+    docker compose -f compose.postgres.yml down --remove-orphans
+
+# Stop the local stack and permanently delete its PostgreSQL volume.
+postgres-reset:
+    docker compose -f compose.postgres.yml down --volumes --remove-orphans
+
 build:
     SKIP_SPA_BUILD=1 cargo build
 
-verify: fmt-check clippy test
+verify: fmt-check clippy test acceptance load-test

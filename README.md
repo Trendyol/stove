@@ -83,8 +83,8 @@ each stack.
 ## Dashboard (New in 0.23.0)
 
 Stove Dashboard is a local UI and API for end-to-end test runs. When the `stove` CLI is running and `dashboard { }` is
-registered, it receives events from your test JVM, stores run data in SQLite, and shows timelines, system snapshots, and
-traces in one place. Trace data still requires the tracing setup shown below.
+registered, it receives events from your test JVM, stores run data in local SQLite or configured PostgreSQL, and shows
+timelines, system snapshots, and traces in one place. Trace data still requires the tracing setup shown below.
 
 https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 
@@ -96,10 +96,18 @@ brew install Trendyol/trendyol-tap/stove
 # upgrade an existing install: brew update && brew upgrade stove
 stove
 
+# Or run the matching version as a container (SQLite persists in stove-data)
+docker run -d --name stove -p 4040:4040 -p 4041:4041 \
+  -v stove-data:/data ghcr.io/trendyol/stove-cli:0.26.0
+
 # 2) Run your tests and open the dashboard
 ./gradlew test
 # http://localhost:4040
 ```
+
+For shared or multi-pod deployments, use one PostgreSQL database for every replica and load-balance both ports; no session affinity, Redis, or message broker is required. PostgreSQL coordinates ordered, idempotent ingestion, shared retention, and durable cross-pod live updates. Production settings can be mounted as TOML or JSON, with the PostgreSQL URL read from a separate secret file. See the [Dashboard deployment guide](https://trendyol.github.io/stove/Components/18-dashboard/#configuration-files-and-secrets).
+
+For local PostgreSQL development, run `just postgres-up` from `tools/stove-cli`; the Compose stack builds Stove and starts a persistent PostgreSQL 18 instance. The dedicated `/admin` page includes a native SQLite/PostgreSQL schema browser and SQL workbench running inside the Stove process. It has direct database write access and no built-in authentication, so expose it only on a trusted network.
 
 ```kotlin
 // build.gradle.kts
@@ -460,7 +468,7 @@ application under test.
 
 Stove's execution reports and tracing data are structured and deterministic, making them ideal for **AI agent workflows**. When an AI agent runs e2e tests during implementation, it can parse the failure reports — including the full execution trace, system snapshots, and timeline — to understand exactly what went wrong inside the application. This enables agents to iterate on fixes with precise feedback rather than guessing from opaque test failures.
 
-When `stove` is running, it also exposes a local read-only MCP endpoint at `http://localhost:4040/mcp`. Agents can call `stove_failures` first, then drill into a specific `run_id + test_id` for timeline, trace, and snapshot evidence. MCP is optional: if it is unavailable or incomplete, agents should fall back to normal test output, Stove failure reports, and logs.
+When `stove` is running, it also exposes a read-only MCP endpoint at `http://localhost:4040/mcp`, or at the equivalent URL on a shared internal server. For a single local run, agents can start with `stove_failures`. On a shared server they first call `stove_runs` with `app_name` and exact metadata such as GitLab project and pipeline ID, then use the returned `run_id + test_id` for failure, timeline, trace, snapshot, and interaction evidence. MCP is optional: if it is unavailable or incomplete, agents should fall back to normal test output, Stove failure reports, and logs. Stove has no authentication or authorization, so shared deployments must stay behind a trusted network boundary.
 
 **Agent Skills:** Stove ships with a ready-to-use [Claude Code skill](https://github.com/Trendyol/stove/tree/main/.claude/skills/stove) that teaches AI agents how to set up and write Stove e2e tests. Copy the `.claude/skills/stove/` directory into your project's `.claude/skills/` folder, and your AI coding agent will know how to configure systems, write tests, enable tracing, and build custom systems — following all Stove conventions automatically.
 

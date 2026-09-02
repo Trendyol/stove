@@ -1,14 +1,23 @@
+import type { MouseEventHandler } from "react";
 import stoveMarkUrl from "../assets/stove-mark.svg";
 import { VersionMismatchWarning } from "../components/VersionMismatchWarning";
 import { useTheme } from "../hooks/useTheme";
+import type { StoveRoute } from "../utils/routes";
 import type { VersionMismatchSummary } from "../utils/version-mismatch";
 
 interface HeaderProps {
+  activeRoute: StoveRoute;
   liveConnected: boolean;
   versionMismatchSummary: VersionMismatchSummary | null;
+  onNavigateAdmin: MouseEventHandler<HTMLAnchorElement>;
 }
 
-export function Header({ liveConnected, versionMismatchSummary }: HeaderProps) {
+export function Header({
+  activeRoute,
+  liveConnected,
+  versionMismatchSummary,
+  onNavigateAdmin,
+}: HeaderProps) {
   const { theme, toggle } = useTheme();
 
   return (
@@ -41,6 +50,18 @@ export function Header({ liveConnected, versionMismatchSummary }: HeaderProps) {
         <code className="stove-endpoint" title={`MCP endpoint: ${window.location.origin}/mcp`}>
           MCP · /mcp
         </code>
+        <a
+          aria-current={activeRoute === "admin" ? "page" : undefined}
+          className={`stove-topbar-link stove-focus-ring ${activeRoute === "admin" ? "is-active" : ""}`}
+          href="/admin"
+          onClick={onNavigateAdmin}
+          title="Administration"
+        >
+          <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M6.7 1h2.6l.4 1.5 1.1.6 1.5-.5 1.3 2.2-1.1 1.1v1.2l1.1 1.1-1.3 2.2-1.5-.5-1.1.6-.4 1.5H6.7l-.4-1.5-1.1-.6-1.5.5-1.3-2.2 1.1-1.1V5.9L2.4 4.8l1.3-2.2 1.5.5 1.1-.6L6.7 1zM8 5a2 2 0 100 4 2 2 0 000-4z" />
+          </svg>
+          <span>Admin</span>
+        </a>
         <a
           href="https://trendyol.github.io/stove/"
           target="_blank"

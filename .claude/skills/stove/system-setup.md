@@ -868,6 +868,11 @@ Streams test events to the stove CLI for real-time visualization. Requires `stov
 dashboard {
     DashboardSystemOptions(
         appName = "my-service",
+        metadata = mapOf(
+            "team" to "checkout",
+            "gitlab.project" to (System.getenv("CI_PROJECT_PATH") ?: "local"),
+            "gitlab.pipeline_id" to (System.getenv("CI_PIPELINE_ID") ?: "local")
+        ),
         cliHost = "localhost",  // default
         cliPort = 4041          // default
     )
@@ -875,6 +880,8 @@ dashboard {
 ```
 
 Run `stove` CLI separately, then run your tests — the dashboard at `http://localhost:4040` shows a live tree of specs, test hierarchy, timeline entries, traces, and snapshots.
+
+Metadata values must be strings. Use stable, namespaced keys for CI dimensions that agents and humans will filter on. For shared-server deployment, PostgreSQL, retention, UI filters, REST queries, and administration, read [dashboard.md](dashboard.md). For agent triage, read [mcp.md](mcp.md).
 
 ## Reporting
 

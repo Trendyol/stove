@@ -82,6 +82,7 @@ class DashboardSystem(
           .setTimestamp(now())
           .setAppName(options.appName)
           .addAllSystems(stove.systemsOf<Reports>().map { it.reportSystemName })
+          .putAllMetadata(options.metadata)
           .apply {
             StoveCompatibilityVersion.VALUE
               .takeIf(String::isNotBlank)
