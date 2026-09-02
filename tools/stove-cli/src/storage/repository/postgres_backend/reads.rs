@@ -1,29 +1,75 @@
 use std::collections::BTreeMap;
 
-use crate::error::Result;
-use crate::storage::models::{
-  AppSummary, Entry, MockInteraction, MockWarning, Run, Snapshot, Span, Test,
-};
+use diesel::PgJsonbExpressionMethods;
+use diesel::prelude::*;
+use diesel::sql_types::Text;
 
 use super::PostgresBackend;
-use super::mapping::{
-  app_summary_from_row, entry_from_row, mock_interaction_from_row, mock_warning_from_row,
-  run_from_row, snapshot_from_row, span_from_row, test_from_row,
+use crate::error::Result;
+use crate::storage::models::{
+  AppSummary, Entry, MockInteraction, MockWarning, OpenAssertion, Run, Snapshot, Span, Test,
+};
+use crate::storage::repository::mapping::{
+  AppSummaryRow, EntryRow, MockInteractionRow, MockWarningRow, OpenAssertionRow, RunRow,
+  SnapshotRow, SpanRow, TestRow,
+};
+use crate::storage::repository::reads::EvidenceScope;
+use crate::storage::schema::postgres::{
+  entries, mock_interactions, mock_warnings, runs, snapshots, spans, tests,
 };
 
-const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed,
-   duration_ms, stove_version, systems, metadata::text";
-
 impl PostgresBackend {
+  pub fn get_open_assertion(
+    &self,
+    run_id: &str,
+    test_id: &str,
+    correlation_key: &str,
+  ) -> Result<Option<OpenAssertion>> {
+    let mut conn = self.lock_read();
+    let row = diesel::sql_query(
+      "WITH latest AS (
+         SELECT assertion_id, result FROM entries
+          WHERE run_id = $1 AND test_id = $2 AND correlation_key = $3
+          ORDER BY id DESC LIMIT 1
+       )
+       SELECT latest.assertion_id AS assertion_id, COUNT(entries.id) AS attempt_count,
+              SUM(CASE WHEN entries.result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END)::bigint AS failure_count
+         FROM latest JOIN entries ON entries.run_id = $1 AND entries.test_id = $2
+          AND entries.assertion_id = latest.assertion_id
+        WHERE latest.result IN ('FAILED', 'ERROR') GROUP BY latest.assertion_id",
+    )
+    .bind::<Text, _>(run_id)
+    .bind::<Text, _>(test_id)
+    .bind::<Text, _>(correlation_key)
+    .get_result::<OpenAssertionRow>(&mut *conn)
+    .optional()?;
+    Ok(row.map(OpenAssertion::from))
+  }
+
+  pub fn get_test_id_for_trace(&self, run_id: &str, trace_id: &str) -> Result<Option<String>> {
+    let mut conn = self.lock_read();
+    Ok(
+      entries::table
+        .filter(entries::run_id.eq(run_id))
+        .filter(entries::trace_id.eq(trace_id))
+        .order(entries::id.desc())
+        .select(entries::test_id)
+        .first(&mut *conn)
+        .optional()?,
+    )
+  }
+
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
-    let mut client = self.lock_read();
-    let rows = client.query(
-      "SELECT DISTINCT ON (app_name) app_name, id, status, stove_version, metadata::text
-       FROM runs
-      ORDER BY app_name, started_at DESC, id DESC",
-      &[],
-    )?;
-    Ok(rows.iter().map(app_summary_from_row).collect())
+    let mut conn = self.lock_read();
+    diesel::sql_query(
+      "SELECT DISTINCT ON (app_name) app_name, id AS latest_run_id,
+              status AS latest_status, stove_version, metadata::text AS metadata
+         FROM runs ORDER BY app_name, started_at DESC, id DESC",
+    )
+    .load::<AppSummaryRow>(&mut *conn)?
+    .into_iter()
+    .map(|row| Ok(row.into_domain()?))
+    .collect()
   }
 
   pub fn get_runs_filtered(
@@ -31,156 +77,107 @@ impl PostgresBackend {
     app_name: Option<&str>,
     metadata: &BTreeMap<String, String>,
   ) -> Result<Vec<Run>> {
-    let mut client = self.lock_read();
-    let metadata_json = serde_json::to_string(metadata)?;
-    let rows = match (app_name, metadata.is_empty()) {
-      (Some(app_name), true) => client.query(
-        &format!(
-          "SELECT {RUN_COLUMNS} FROM runs WHERE app_name = $1 ORDER BY started_at DESC, id DESC"
-        ),
-        &[&app_name],
-      )?,
-      (Some(app_name), false) => client.query(
-        &format!(
-          "SELECT {RUN_COLUMNS} FROM runs
-          WHERE app_name = $1 AND metadata @> $2::text::jsonb
-          ORDER BY started_at DESC, id DESC"
-        ),
-        &[&app_name, &metadata_json],
-      )?,
-      (None, true) => client.query(
-        &format!("SELECT {RUN_COLUMNS} FROM runs ORDER BY started_at DESC, id DESC"),
-        &[],
-      )?,
-      (None, false) => client.query(
-        &format!(
-          "SELECT {RUN_COLUMNS} FROM runs
-          WHERE metadata @> $1::text::jsonb ORDER BY started_at DESC, id DESC"
-        ),
-        &[&metadata_json],
-      )?,
-    };
-    Ok(rows.iter().map(run_from_row).collect())
+    let mut conn = self.lock_read();
+    let mut query = runs::table.into_boxed::<diesel::pg::Pg>();
+    if let Some(app_name) = app_name {
+      query = query.filter(runs::app_name.eq(app_name));
+    }
+    if !metadata.is_empty() {
+      query = query.filter(runs::metadata.contains(serde_json::to_value(metadata)?));
+    }
+    Ok(
+      query
+        .order((runs::started_at.desc(), runs::id.desc()))
+        .select(runs::all_columns)
+        .load::<RunRow<serde_json::Value>>(&mut *conn)?
+        .into_iter()
+        .map(Run::from)
+        .collect(),
+    )
   }
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
-    let mut client = self.lock_read();
+    let mut conn = self.lock_read();
     Ok(
-      client
-        .query_opt(
-          &format!("SELECT {RUN_COLUMNS} FROM runs WHERE id = $1"),
-          &[&run_id],
-        )?
-        .as_ref()
-        .map(run_from_row),
+      runs::table
+        .find(run_id)
+        .select(runs::all_columns)
+        .first::<RunRow<serde_json::Value>>(&mut *conn)
+        .optional()?
+        .map(Run::from),
     )
   }
 
   pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
-    let mut client = self.lock_read();
+    let mut conn = self.lock_read();
     Ok(
-      client
-        .query(
-          "SELECT id, run_id, test_name, spec_name, test_path, started_at, ended_at, status,
-                duration_ms, error FROM tests WHERE run_id = $1 ORDER BY started_at, id",
-          &[&run_id],
-        )?
-        .iter()
-        .map(test_from_row)
+      tests::table
+        .filter(tests::run_id.eq(run_id))
+        .order(tests::started_at)
+        .select(tests::all_columns)
+        .load::<TestRow>(&mut *conn)?
+        .into_iter()
+        .map(Test::from)
         .collect(),
     )
   }
 
   pub fn get_entries(&self, run_id: &str, test_id: &str, raw: bool) -> Result<Vec<Entry>> {
-    let mut client = self.lock_read();
     let sql = if raw {
-      "SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
-            expected, actual, error, trace_id,
-            CASE WHEN assertion_id = '' THEN 'legacy:' || id::text ELSE assertion_id END,
-            1::bigint,
-            CASE WHEN result IN ('FAILED', 'ERROR') THEN 1::bigint ELSE 0::bigint END
-       FROM entries WHERE run_id = $1 AND test_id = $2 ORDER BY timestamp, id"
+      RAW_ENTRIES_SQL
     } else {
-      "WITH correlated AS (
-       SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
-              expected, actual, error, trace_id,
-              CASE WHEN assertion_id = '' THEN 'legacy:' || id::text ELSE assertion_id END AS assertion_id
-         FROM entries WHERE run_id = $1 AND test_id = $2
-     ), ranked AS (
-       SELECT *, COUNT(*) OVER (PARTITION BY assertion_id) AS attempt_count,
-              SUM(CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END)
-                OVER (PARTITION BY assertion_id) AS failure_count,
-              ROW_NUMBER() OVER (PARTITION BY assertion_id ORDER BY id DESC) AS attempt_rank
-         FROM correlated
-     )
-     SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
-            expected, actual, error, trace_id, assertion_id, attempt_count, failure_count
-       FROM ranked WHERE attempt_rank = 1 ORDER BY timestamp, id"
+      COLLAPSED_ENTRIES_SQL
     };
+    let mut conn = self.lock_read();
     Ok(
-      client
-        .query(sql, &[&run_id, &test_id])?
-        .iter()
-        .map(entry_from_row)
+      diesel::sql_query(sql)
+        .bind::<Text, _>(run_id)
+        .bind::<Text, _>(test_id)
+        .load::<EntryRow>(&mut *conn)?
+        .into_iter()
+        .map(Entry::from)
         .collect(),
     )
   }
 
   pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
-    let mut client = self.lock_read();
+    let mut conn = self.lock_read();
     Ok(
-      client
-        .query(
-          "SELECT id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name,
-            start_time_nanos, end_time_nanos, status, attributes, exception_type,
-            exception_message, exception_stack_trace
-       FROM spans
-      WHERE run_id = $1 AND trace_id IN (
-        SELECT trace_id FROM entries WHERE run_id = $1 AND test_id = $2 AND trace_id <> ''
-        UNION
-        SELECT DISTINCT trace_id FROM spans WHERE run_id = $1 AND (
-          attributes::jsonb ->> 'x-stove-test-id' = $2 OR
-          attributes::jsonb ->> 'X-Stove-Test-Id' = $2 OR
-          attributes::jsonb ->> 'stove.test.id' = $2 OR
-          attributes::jsonb ->> 'stove_test_id' = $2
-        )
-      ) ORDER BY start_time_nanos",
-          &[&run_id, &test_id],
-        )?
-        .iter()
-        .map(span_from_row)
+      diesel::sql_query(SPANS_FOR_TEST_SQL)
+        .bind::<Text, _>(run_id)
+        .bind::<Text, _>(test_id)
+        .load::<SpanRow>(&mut *conn)?
+        .into_iter()
+        .map(Span::from)
         .collect(),
     )
   }
 
   pub fn get_trace(&self, trace_id: &str) -> Result<Vec<Span>> {
-    let mut client = self.lock_read();
+    let mut conn = self.lock_read();
     Ok(
-      client
-        .query(
-          "SELECT id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name,
-            start_time_nanos, end_time_nanos, status, attributes, exception_type,
-            exception_message, exception_stack_trace
-       FROM spans WHERE trace_id = $1 ORDER BY start_time_nanos",
-          &[&trace_id],
-        )?
-        .iter()
-        .map(span_from_row)
+      spans::table
+        .filter(spans::trace_id.eq(trace_id))
+        .order(spans::start_time_nanos)
+        .select(spans::all_columns)
+        .load::<SpanRow>(&mut *conn)?
+        .into_iter()
+        .map(Span::from)
         .collect(),
     )
   }
 
   pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
-    let mut client = self.lock_read();
+    let mut conn = self.lock_read();
     Ok(
-      client
-        .query(
-          "SELECT id, run_id, test_id, system, state_json, summary, captured_at, trigger_kind
-       FROM snapshots WHERE run_id = $1 AND test_id = $2 ORDER BY id",
-          &[&run_id, &test_id],
-        )?
-        .iter()
-        .map(snapshot_from_row)
+      snapshots::table
+        .filter(snapshots::run_id.eq(run_id))
+        .filter(snapshots::test_id.eq(test_id))
+        .order(snapshots::id)
+        .select(snapshots::all_columns)
+        .load::<SnapshotRow>(&mut *conn)?
+        .into_iter()
+        .map(Snapshot::from)
         .collect(),
     )
   }
@@ -188,61 +185,92 @@ impl PostgresBackend {
   pub fn get_mock_interactions(
     &self,
     run_id: &str,
-    test_id: Option<&str>,
-    unattributed_only: bool,
+    scope: EvidenceScope<'_>,
   ) -> Result<Vec<MockInteraction>> {
-    let mut client = self.lock_read();
-    let columns = "id, run_id, test_id, timestamp, system, protocol, method, target, matched,
-    stub_id, attribution, request_body, request_body_truncated, response_body,
-    response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name,
-    scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms";
-    let rows = match test_id {
-    Some(test_id) => client.query(
-      &format!(
-        "SELECT {columns} FROM mock_interactions WHERE run_id = $1 AND test_id = $2 ORDER BY id"
-      ),
-      &[&run_id, &test_id],
-    )?,
-    None if unattributed_only => client.query(
-      &format!(
-        "SELECT {columns} FROM mock_interactions WHERE run_id = $1 AND test_id IS NULL ORDER BY id"
-      ),
-      &[&run_id],
-    )?,
-    None => client.query(
-      &format!("SELECT {columns} FROM mock_interactions WHERE run_id = $1 ORDER BY id"),
-      &[&run_id],
-    )?,
-  };
-    Ok(rows.iter().map(mock_interaction_from_row).collect())
+    let mut conn = self.lock_read();
+    let mut query = mock_interactions::table
+      .filter(mock_interactions::run_id.eq(run_id))
+      .into_boxed::<diesel::pg::Pg>();
+    match scope {
+      EvidenceScope::Run => {}
+      EvidenceScope::Test(test_id) => {
+        query = query.filter(mock_interactions::test_id.eq(test_id));
+      }
+      EvidenceScope::Unattributed => {
+        query = query.filter(mock_interactions::test_id.is_null());
+      }
+    }
+    query
+      .order(mock_interactions::id)
+      .select(mock_interactions::all_columns)
+      .load::<MockInteractionRow>(&mut *conn)?
+      .into_iter()
+      .map(|row| Ok(row.into_domain()?))
+      .collect()
   }
 
   pub fn get_mock_warnings(
     &self,
     run_id: &str,
-    test_id: Option<&str>,
-    unattributed_only: bool,
+    scope: EvidenceScope<'_>,
   ) -> Result<Vec<MockWarning>> {
-    let mut client = self.lock_read();
-    let columns = "id, run_id, test_id, timestamp, system, kind, message, stub_id, target";
-    let rows = match test_id {
-      Some(test_id) => client.query(
-        &format!(
-          "SELECT {columns} FROM mock_warnings WHERE run_id = $1 AND test_id = $2 ORDER BY id"
-        ),
-        &[&run_id, &test_id],
-      )?,
-      None if unattributed_only => client.query(
-        &format!(
-          "SELECT {columns} FROM mock_warnings WHERE run_id = $1 AND test_id IS NULL ORDER BY id"
-        ),
-        &[&run_id],
-      )?,
-      None => client.query(
-        &format!("SELECT {columns} FROM mock_warnings WHERE run_id = $1 ORDER BY id"),
-        &[&run_id],
-      )?,
-    };
-    Ok(rows.iter().map(mock_warning_from_row).collect())
+    let mut conn = self.lock_read();
+    let mut query = mock_warnings::table
+      .filter(mock_warnings::run_id.eq(run_id))
+      .into_boxed::<diesel::pg::Pg>();
+    match scope {
+      EvidenceScope::Run => {}
+      EvidenceScope::Test(test_id) => {
+        query = query.filter(mock_warnings::test_id.eq(test_id));
+      }
+      EvidenceScope::Unattributed => {
+        query = query.filter(mock_warnings::test_id.is_null());
+      }
+    }
+    Ok(
+      query
+        .order(mock_warnings::id)
+        .select(mock_warnings::all_columns)
+        .load::<MockWarningRow>(&mut *conn)?
+        .into_iter()
+        .map(MockWarning::from)
+        .collect(),
+    )
   }
 }
+
+const RAW_ENTRIES_SQL: &str = "SELECT id, run_id, test_id, timestamp, system, action, result,
+  input, output, metadata, expected, actual, error, trace_id,
+  CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END AS assertion_id,
+  1::bigint AS attempt_count,
+  CASE WHEN result IN ('FAILED', 'ERROR') THEN 1::bigint ELSE 0::bigint END AS failure_count
+  FROM entries WHERE run_id = $1 AND test_id = $2 ORDER BY timestamp, id";
+
+const COLLAPSED_ENTRIES_SQL: &str = "WITH correlated AS (
+  SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
+         expected, actual, error, trace_id,
+         CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END AS assertion_id
+    FROM entries WHERE run_id = $1 AND test_id = $2
+), ranked AS (
+  SELECT *, COUNT(*) OVER (PARTITION BY assertion_id) AS attempt_count,
+         SUM(CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END)
+           OVER (PARTITION BY assertion_id)::bigint AS failure_count,
+         ROW_NUMBER() OVER (PARTITION BY assertion_id ORDER BY id DESC) AS attempt_rank
+    FROM correlated
+)
+SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
+       expected, actual, error, trace_id, assertion_id, attempt_count, failure_count
+  FROM ranked WHERE attempt_rank = 1 ORDER BY timestamp, id";
+
+const SPANS_FOR_TEST_SQL: &str = "SELECT id, run_id, trace_id, span_id, parent_span_id,
+  operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes,
+  exception_type, exception_message, exception_stack_trace FROM spans
+  WHERE run_id = $1 AND trace_id IN (
+    SELECT trace_id FROM entries WHERE run_id = $1 AND test_id = $2 AND trace_id <> ''
+    UNION SELECT DISTINCT trace_id FROM spans WHERE run_id = $1 AND (
+      attributes::jsonb ->> 'x-stove-test-id' = $2 OR
+      attributes::jsonb ->> 'X-Stove-Test-Id' = $2 OR
+      attributes::jsonb ->> 'stove.test.id' = $2 OR
+      attributes::jsonb ->> 'stove_test_id' = $2
+    )
+  ) ORDER BY start_time_nanos";

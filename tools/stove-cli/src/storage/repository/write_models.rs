@@ -3,6 +3,10 @@ use std::collections::BTreeMap;
 use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan, RunStatus};
 
+pub(super) fn non_empty(value: &str) -> Option<&str> {
+  (!value.is_empty()).then_some(value)
+}
+
 pub(super) struct RunStart<'a> {
   pub run_id: &'a str,
   pub app_name: &'a str,

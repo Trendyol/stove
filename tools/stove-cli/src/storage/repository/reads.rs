@@ -3,10 +3,44 @@ use std::collections::BTreeMap;
 use super::{Backend, Repository, run_blocking};
 use crate::error::Result;
 use crate::storage::models::{
-  AppSummary, Entry, MockInteraction, MockWarning, Run, Snapshot, Span, Test,
+  AppSummary, Entry, MockInteraction, MockWarning, OpenAssertion, Run, Snapshot, Span, Test,
 };
 
+#[derive(Clone, Copy)]
+pub(super) enum EvidenceScope<'a> {
+  Run,
+  Test(&'a str),
+  Unattributed,
+}
+
 impl Repository {
+  pub(crate) fn get_open_assertion(
+    &self,
+    run_id: &str,
+    test_id: &str,
+    correlation_key: &str,
+  ) -> Result<Option<OpenAssertion>> {
+    match &self.backend {
+      Backend::Sqlite(sqlite) => sqlite.get_open_assertion(run_id, test_id, correlation_key),
+      Backend::Postgres(postgres) => {
+        run_blocking(|| postgres.get_open_assertion(run_id, test_id, correlation_key))
+      }
+    }
+  }
+
+  pub(crate) fn get_test_id_for_trace(
+    &self,
+    run_id: &str,
+    trace_id: &str,
+  ) -> Result<Option<String>> {
+    match &self.backend {
+      Backend::Sqlite(sqlite) => sqlite.get_test_id_for_trace(run_id, trace_id),
+      Backend::Postgres(postgres) => {
+        run_blocking(|| postgres.get_test_id_for_trace(run_id, trace_id))
+      }
+    }
+  }
+
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
     match &self.backend {
       Backend::Sqlite(sqlite) => sqlite.get_apps(),
@@ -86,31 +120,28 @@ impl Repository {
     run_id: &str,
     test_id: &str,
   ) -> Result<Vec<MockInteraction>> {
-    self.mock_interactions(run_id, Some(test_id), false)
+    self.mock_interactions(run_id, EvidenceScope::Test(test_id))
   }
 
   pub fn get_mock_interactions_for_run(&self, run_id: &str) -> Result<Vec<MockInteraction>> {
-    self.mock_interactions(run_id, None, false)
+    self.mock_interactions(run_id, EvidenceScope::Run)
   }
 
   pub fn get_unattributed_mock_interactions_for_run(
     &self,
     run_id: &str,
   ) -> Result<Vec<MockInteraction>> {
-    self.mock_interactions(run_id, None, true)
+    self.mock_interactions(run_id, EvidenceScope::Unattributed)
   }
 
   fn mock_interactions(
     &self,
     run_id: &str,
-    test_id: Option<&str>,
-    unattributed_only: bool,
+    scope: EvidenceScope<'_>,
   ) -> Result<Vec<MockInteraction>> {
     match &self.backend {
-      Backend::Sqlite(sqlite) => sqlite.get_mock_interactions(run_id, test_id, unattributed_only),
-      Backend::Postgres(postgres) => {
-        run_blocking(|| postgres.get_mock_interactions(run_id, test_id, unattributed_only))
-      }
+      Backend::Sqlite(sqlite) => sqlite.get_mock_interactions(run_id, scope),
+      Backend::Postgres(postgres) => run_blocking(|| postgres.get_mock_interactions(run_id, scope)),
     }
   }
 
@@ -119,28 +150,21 @@ impl Repository {
     run_id: &str,
     test_id: &str,
   ) -> Result<Vec<MockWarning>> {
-    self.mock_warnings(run_id, Some(test_id), false)
+    self.mock_warnings(run_id, EvidenceScope::Test(test_id))
   }
 
   pub fn get_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
-    self.mock_warnings(run_id, None, false)
+    self.mock_warnings(run_id, EvidenceScope::Run)
   }
 
   pub fn get_unattributed_mock_warnings_for_run(&self, run_id: &str) -> Result<Vec<MockWarning>> {
-    self.mock_warnings(run_id, None, true)
+    self.mock_warnings(run_id, EvidenceScope::Unattributed)
   }
 
-  fn mock_warnings(
-    &self,
-    run_id: &str,
-    test_id: Option<&str>,
-    unattributed_only: bool,
-  ) -> Result<Vec<MockWarning>> {
+  fn mock_warnings(&self, run_id: &str, scope: EvidenceScope<'_>) -> Result<Vec<MockWarning>> {
     match &self.backend {
-      Backend::Sqlite(sqlite) => sqlite.get_mock_warnings(run_id, test_id, unattributed_only),
-      Backend::Postgres(postgres) => {
-        run_blocking(|| postgres.get_mock_warnings(run_id, test_id, unattributed_only))
-      }
+      Backend::Sqlite(sqlite) => sqlite.get_mock_warnings(run_id, scope),
+      Backend::Postgres(postgres) => run_blocking(|| postgres.get_mock_warnings(run_id, scope)),
     }
   }
 }

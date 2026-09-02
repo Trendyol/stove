@@ -9,6 +9,15 @@ pub enum AppError {
   #[error("Database error: {0}")]
   Database(#[from] rusqlite::Error),
 
+  #[error("ORM error: {0}")]
+  Diesel(#[from] diesel::result::Error),
+
+  #[error("Database connection error: {0}")]
+  DieselConnection(#[from] diesel::ConnectionError),
+
+  #[error("Migration error: {0}")]
+  Migration(#[from] refinery::Error),
+
   #[error("PostgreSQL error: {0}")]
   Postgres(#[from] postgres::Error),
 
@@ -37,6 +46,9 @@ impl axum::response::IntoResponse for AppError {
       AppError::GrpcTransport(_) => axum::http::StatusCode::BAD_GATEWAY,
       AppError::Serialization(_) | AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,
       AppError::Database(_)
+      | AppError::Diesel(_)
+      | AppError::DieselConnection(_)
+      | AppError::Migration(_)
       | AppError::Postgres(_)
       | AppError::PostgresTls(_)
       | AppError::Startup(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,

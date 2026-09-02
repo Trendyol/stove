@@ -4,7 +4,10 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
 const propsPath = resolve(import.meta.dirname, "../../../gradle.properties");
-const version = readFileSync(propsPath, "utf-8").match(/^version=(.+)$/m)?.[1] ?? "dev";
+const version =
+  process.env.STOVE_VERSION ??
+  readFileSync(propsPath, "utf-8").match(/^version=(.+)$/m)?.[1] ??
+  "dev";
 
 export default defineConfig({
   plugins: [react()],

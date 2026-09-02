@@ -1,15 +1,17 @@
 //! Thread-safe storage facade for dashboard runs, tests, entries, spans, and
 //! snapshots.
 //!
-//! Writes and reads use separate `SQLite` connections so the UI can keep
-//! polling while ingestion is busy. Each side is still serialized through its
-//! own mutex because a single `rusqlite::Connection` is not `Sync`.
+//! Writes and reads use separate database connections so the UI can keep
+//! polling while ingestion is busy. Each side is serialized through its own
+//! mutex because Diesel connections are not `Sync`.
 //!
 //! This module owns backend selection and exposes backend-neutral operations.
 //! Engine-specific connections, queries, writes, and administration live in
 //! parallel `sqlite_backend/` and `postgres_backend/` modules.
 
 mod admin;
+mod distributed;
+mod mapping;
 mod postgres_backend;
 mod reads;
 mod sqlite_backend;
@@ -43,7 +45,7 @@ impl Repository {
   pub fn connect_postgres(database_url: &str, retention_runs_per_app: usize) -> Result<Self> {
     Ok(Self {
       backend: Backend::Postgres(Box::new(run_blocking(|| {
-        postgres_backend::PostgresBackend::connect(database_url)
+        postgres_backend::PostgresBackend::connect(database_url, retention_runs_per_app)
       })?)),
       retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })
@@ -59,7 +61,11 @@ impl Repository {
 
   #[must_use]
   pub fn retention_runs_per_app(&self) -> usize {
-    self.retention_runs_per_app.load(Ordering::Relaxed)
+    match &self.backend {
+      Backend::Sqlite(_) => self.retention_runs_per_app.load(Ordering::Relaxed),
+      Backend::Postgres(postgres) => run_blocking(|| postgres.retention_runs_per_app())
+        .unwrap_or_else(|_| self.retention_runs_per_app.load(Ordering::Relaxed)),
+    }
   }
 
   pub fn set_retention_runs_per_app(&self, retention_runs_per_app: usize) {

@@ -1,51 +1,42 @@
 use std::sync::{Mutex, MutexGuard};
 
-use native_tls::TlsConnector;
-use postgres::{Client, NoTls};
-use postgres_native_tls::MakeTlsConnector;
+use diesel::prelude::*;
 
 use crate::error::Result;
-use crate::storage::migrations::postgres::run_migrations;
 
 mod admin;
-mod mapping;
+mod database;
+mod distributed;
 mod reads;
 mod writes;
 
 pub(super) struct PostgresBackend {
-  write: Mutex<Client>,
-  read: Mutex<Client>,
+  write: Mutex<PgConnection>,
+  read: Mutex<PgConnection>,
+  database_url: String,
 }
 
 impl PostgresBackend {
-  pub(super) fn connect(database_url: &str) -> Result<Self> {
-    let mut write = connect(database_url)?;
-    run_migrations(&mut write)?;
-    let read = connect(database_url)?;
+  pub(super) fn connect(database_url: &str, default_retention: usize) -> Result<Self> {
+    let connections = database::open(database_url, default_retention)?;
     Ok(Self {
-      write: Mutex::new(write),
-      read: Mutex::new(read),
+      write: Mutex::new(connections.write),
+      read: Mutex::new(connections.read),
+      database_url: database_url.to_string(),
     })
   }
 
-  fn lock_write(&self) -> MutexGuard<'_, Client> {
+  pub(super) fn database_url(&self) -> &str {
+    &self.database_url
+  }
+
+  fn lock_write(&self) -> MutexGuard<'_, PgConnection> {
     self.write.lock().expect("PostgreSQL write lock poisoned")
   }
 
-  fn lock_read(&self) -> MutexGuard<'_, Client> {
+  fn lock_read(&self) -> MutexGuard<'_, PgConnection> {
     self.read.lock().expect("PostgreSQL read lock poisoned")
   }
-}
-
-fn connect(database_url: &str) -> Result<Client> {
-  if database_url.contains("sslmode=disable") {
-    return Ok(Client::connect(database_url, NoTls)?);
-  }
-  let connector = TlsConnector::builder().build()?;
-  Ok(Client::connect(
-    database_url,
-    MakeTlsConnector::new(connector),
-  )?)
 }
 
 #[cfg(test)]

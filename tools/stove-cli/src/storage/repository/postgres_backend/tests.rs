@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use postgres::Client;
 
-use super::connect;
+use super::database::connect_driver;
 use crate::storage::migrations::postgres::migration_count;
 use crate::storage::models::{NewEntry, NewSpan};
 use crate::storage::repository::Repository;
@@ -17,7 +17,7 @@ impl TestSchema {
   fn from_env() -> Option<Self> {
     let database_url = std::env::var("STOVE_TEST_POSTGRES_URL").ok()?;
     let name = format!("stove_test_{}", uuid::Uuid::new_v4().simple());
-    let mut root = connect(&database_url).expect("connect to test PostgreSQL");
+    let mut root = connect_driver(&database_url).expect("connect to test PostgreSQL");
     root
       .batch_execute(&format!("CREATE SCHEMA {name}"))
       .expect("create isolated test schema");
@@ -112,6 +112,7 @@ fn entry() -> NewEntry {
     error: String::new(),
     trace_id: "trace-1".into(),
     assertion_id: "assertion-1".into(),
+    correlation_key: String::new(),
   }
 }
 
@@ -181,9 +182,9 @@ fn assert_admin_operations(repo: &Repository) {
 fn assert_migrations_are_idempotent_and_indexed(database: &TestSchema) {
   let repo = database.repository();
   assert_eq!(repo.get_runs(None).unwrap().len(), 2);
-  let mut client = connect(&database.url).unwrap();
+  let mut client = connect_driver(&database.url).unwrap();
   let version: i64 = client
-    .query_one("SELECT MAX(version) FROM schema_migrations", &[])
+    .query_one("SELECT MAX(version) FROM refinery_schema_history", &[])
     .unwrap()
     .get(0);
   assert_eq!(version, i64::try_from(migration_count()).unwrap());

@@ -8,6 +8,12 @@ import "google/protobuf/timestamp.proto";
 
 message DashboardEvent {
   string run_id = 1;
+  // Stable producer identity used to make retries idempotent.
+  // Empty values are accepted for compatibility with older Stove clients.
+  string event_id = 2;
+  // Monotonically increasing within one run, starting at 1.
+  // Zero is reserved for legacy clients that do not provide ordering metadata.
+  uint64 sequence = 3;
   oneof event {
     RunStartedEvent run_started = 10;
     RunEndedEvent run_ended = 11;
@@ -151,4 +157,7 @@ enum MockInteractionAttribution {
 
 message EventAck {
   bool accepted = 1;
+  string event_id = 2;
+  uint64 sequence = 3;
+  bool duplicate = 4;
 }

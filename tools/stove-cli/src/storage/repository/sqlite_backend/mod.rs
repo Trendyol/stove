@@ -6,7 +6,7 @@ pub(super) mod database;
 use database::SqliteDatabase;
 
 pub(super) mod admin;
-pub(super) mod mapping;
+pub(super) mod distributed;
 pub(super) mod reads;
 pub(super) mod writes;
 

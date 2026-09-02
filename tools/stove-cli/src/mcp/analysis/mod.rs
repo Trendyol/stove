@@ -3,7 +3,7 @@
 //! Each user-facing MCP tool lives in its own per-tool module (`apps`,
 //! `runs`, `failures`, `timeline`, `trace`, `snapshot`, `raw_evidence`) as
 //! an `impl Analyzer` block. This module owns the shared `Analyzer` handle,
-//! the `call_tool` dispatcher, the queued-event flush, and `resolve_test`
+//! the `call_tool` dispatcher, and `resolve_test`
 //! which several tools share.
 
 mod apps;
@@ -17,19 +17,14 @@ mod snapshot;
 mod timeline;
 mod trace;
 
-use std::sync::Arc;
-use std::time::Duration;
-
 use serde_json::Value;
+use std::sync::Arc;
 
 use self::common::display_error;
-use crate::ingest::EventIngestor;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Run;
 use crate::storage::models::Test;
 use crate::storage::repository::Repository;
-
-const FLUSH_TIMEOUT: Duration = Duration::from_millis(500);
 
 #[derive(Debug, Clone)]
 pub struct ToolOutput {
@@ -40,20 +35,15 @@ pub struct ToolOutput {
 #[derive(Clone)]
 pub struct Analyzer {
   repository: Arc<Repository>,
-  ingestor: Option<EventIngestor>,
 }
 
 impl Analyzer {
   #[must_use]
-  pub fn new(repository: Arc<Repository>, ingestor: Option<EventIngestor>) -> Self {
-    Self {
-      repository,
-      ingestor,
-    }
+  pub fn new(repository: Arc<Repository>) -> Self {
+    Self { repository }
   }
 
-  pub async fn call_tool(&self, name: &str, arguments: Value) -> Result<ToolOutput, String> {
-    self.flush_pending().await;
+  pub fn call_tool(&self, name: &str, arguments: Value) -> Result<ToolOutput, String> {
     match ToolName::from_str(name) {
       Some(ToolName::Apps) => self.apps(arguments),
       Some(ToolName::Runs) => self.runs(arguments),
@@ -66,14 +56,6 @@ impl Analyzer {
       Some(ToolName::RawEvidence) => self.raw_evidence(arguments),
       None => Err(format!("unknown Stove MCP tool: {name}")),
     }
-  }
-
-  async fn flush_pending(&self) {
-    let Some(ingestor) = &self.ingestor else {
-      return;
-    };
-
-    let _ = tokio::time::timeout(FLUSH_TIMEOUT, ingestor.flush_pending()).await;
   }
 
   pub(super) fn resolve_test(&self, run_id: &str, test_id: &str) -> Result<(Run, Test), String> {

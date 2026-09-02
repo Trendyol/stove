@@ -7,6 +7,10 @@ gRPC for ingestion, REST and MCP for reads and administration, and HTTP for the
 embedded SPA. Direct PostgreSQL queries additionally verify the migrated column
 and index definitions.
 
+Refinery owns migration history in `refinery_schema_history`, while Diesel owns
+normal persistence. The tests intentionally start with empty databases; legacy
+databases using the removed `schema_migrations` table are not supported.
+
 Run them from `tools/stove-cli`:
 
 ```shell
@@ -26,7 +30,11 @@ The suite covers:
 - default and runtime retention with overlapping active runs;
 - purge preview counts, exact IDs, active-run protection, purge, and clear;
 - PostgreSQL migrations, JSONB storage and GIN indexing, metadata filters,
-  retention, and administration against a disposable PostgreSQL container.
+  retention, and administration against a disposable PostgreSQL container;
+- two simultaneously started CLI pods sharing PostgreSQL, including alternating
+  and concurrent ingestion, ordered cross-pod SSE without duplicate frames,
+  `Last-Event-ID` replay, shared retention, concurrent pruning, and continuation
+  after one pod stops.
 
 Run the PostgreSQL load test separately:
 

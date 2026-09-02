@@ -1,12 +1,11 @@
 //! Per-event preparation logic.
 //!
-//! Each `prepare_*` function validates the incoming protobuf event against
-//! the live state, mutates the state for downstream events, and builds the
-//! `PreparedDashboardEvent` that the service will fan out to both the SSE
-//! broadcast and the persistence queue.
+//! Each `prepare_*` function translates one protobuf event into the durable
+//! domain mutation and its corresponding live dashboard payload.
+
+use std::collections::BTreeMap;
 
 use crate::error::Result as AppResult;
-use crate::ingest::FlushBehavior;
 use crate::ingest::LiveDashboardEvent;
 use crate::ingest::LiveDashboardPayload;
 use crate::ingest::LiveEntryRecordedPayload;
@@ -19,68 +18,62 @@ use crate::ingest::LiveSpanRecordedPayload;
 use crate::ingest::LiveTestEndedPayload;
 use crate::ingest::LiveTestStartedPayload;
 use crate::ingest::PersistedDashboardEvent;
+use crate::ingest::PreparedDashboardEvent;
 use crate::proto;
 use crate::storage::models::NewEntry;
 use crate::storage::models::NewMockInteraction;
 use crate::storage::models::NewMockWarning;
 use crate::storage::models::NewSpan;
+use crate::storage::models::OpenAssertion;
 use uuid::Uuid;
 
-use super::convert::PreparedDashboardEvent;
 use super::convert::extract_test_id;
 use super::convert::format_timestamp;
 use super::convert::non_empty;
 use super::convert::run_status;
-use super::state::AssertionAttempts;
-use super::state::LiveState;
-use super::state::ensure_run_known;
-use super::state::ensure_test_known;
-use super::state::event_type;
 
 pub(super) fn prepare_run_started(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::RunStartedEvent,
 ) -> PreparedDashboardEvent {
   let started_at = format_timestamp(event.timestamp.as_ref());
-  state.runs.insert(run_id.to_string());
+  let stove_version = non_empty(&event.stove_version);
+  let metadata = event
+    .metadata
+    .clone()
+    .into_iter()
+    .collect::<BTreeMap<_, _>>();
   PreparedDashboardEvent {
-    live: live_event(
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::RUN_STARTED,
       LiveDashboardPayload::RunStarted(LiveRunStartedPayload {
         app_name: event.app_name.clone(),
         started_at: started_at.clone(),
-        stove_version: non_empty(&event.stove_version),
+        stove_version: stove_version.clone(),
         systems: event.systems.clone(),
-        metadata: event.metadata.clone().into_iter().collect(),
+        metadata: metadata.clone(),
       }),
     ),
     persisted: PersistedDashboardEvent::RunStarted {
       run_id: run_id.to_string(),
       app_name: event.app_name.clone(),
       started_at,
-      stove_version: non_empty(&event.stove_version),
+      stove_version,
       systems: event.systems.clone(),
-      metadata: event.metadata.clone().into_iter().collect(),
+      metadata,
     },
-    flush: FlushBehavior::Deferred,
   }
 }
 
 pub(super) fn prepare_run_ended(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::RunEndedEvent,
-) -> AppResult<PreparedDashboardEvent> {
-  ensure_run_known(state, run_id)?;
+) -> PreparedDashboardEvent {
   let ended_at = format_timestamp(event.timestamp.as_ref());
   let status = run_status(event.failed).to_string();
-  state.clear_run(run_id);
-  Ok(PreparedDashboardEvent {
-    live: live_event(
+  PreparedDashboardEvent {
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::RUN_ENDED,
       LiveDashboardPayload::RunEnded(LiveRunEndedPayload {
         ended_at: ended_at.clone(),
         status,
@@ -98,24 +91,17 @@ pub(super) fn prepare_run_ended(
       failed: event.failed,
       duration_ms: event.duration_ms,
     },
-    flush: FlushBehavior::Immediate,
-  })
+  }
 }
 
 pub(super) fn prepare_test_started(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::TestStartedEvent,
-) -> AppResult<PreparedDashboardEvent> {
-  ensure_run_known(state, run_id)?;
+) -> PreparedDashboardEvent {
   let started_at = format_timestamp(event.timestamp.as_ref());
-  state
-    .tests
-    .insert((run_id.to_string(), event.test_id.clone()));
-  Ok(PreparedDashboardEvent {
-    live: live_event(
+  PreparedDashboardEvent {
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::TEST_STARTED,
       LiveDashboardPayload::TestStarted(LiveTestStartedPayload {
         test_id: event.test_id.clone(),
         test_name: event.test_name.clone(),
@@ -133,22 +119,17 @@ pub(super) fn prepare_test_started(
       test_path: event.test_path.clone(),
       started_at,
     },
-    flush: FlushBehavior::Deferred,
-  })
+  }
 }
 
 pub(super) fn prepare_test_ended(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::TestEndedEvent,
-) -> AppResult<PreparedDashboardEvent> {
-  ensure_test_known(state, run_id, &event.test_id)?;
+) -> PreparedDashboardEvent {
   let ended_at = format_timestamp(event.timestamp.as_ref());
-  state.end_test(run_id, &event.test_id);
-  Ok(PreparedDashboardEvent {
-    live: live_event(
+  PreparedDashboardEvent {
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::TEST_ENDED,
       LiveDashboardPayload::TestEnded(LiveTestEndedPayload {
         test_id: event.test_id.clone(),
         status: event.status.clone(),
@@ -165,46 +146,17 @@ pub(super) fn prepare_test_ended(
       error: non_empty(&event.error),
       ended_at,
     },
-    flush: FlushBehavior::Deferred,
-  })
+  }
 }
 
 pub(super) fn prepare_entry_recorded(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::EntryRecordedEvent,
+  open_assertion: Option<OpenAssertion>,
 ) -> AppResult<PreparedDashboardEvent> {
-  ensure_test_known(state, run_id, &event.test_id)?;
-  if !event.trace_id.is_empty() {
-    state.traces.insert(
-      (run_id.to_string(), event.trace_id.clone()),
-      event.test_id.clone(),
-    );
-  }
-
   let metadata = serde_json::to_string(&event.metadata)?;
   let timestamp = format_timestamp(event.timestamp.as_ref());
-  let correlation_id = assertion_correlation_key(event)?;
-  let occurrence_id = Uuid::new_v4().to_string();
-  let correlated_attempts = state.record_assertion_attempt(
-    run_id,
-    &event.test_id,
-    &correlation_id,
-    &occurrence_id,
-    matches!(event.result.as_str(), "FAILED" | "ERROR"),
-  );
-  // A passing entry with no preceding failed attempt is a standalone operation,
-  // not a retry. Give it a unique ID so repeated successful calls stay visible.
-  let (assertion_id, attempts) = match correlated_attempts {
-    Some(correlated) => correlated,
-    None => (
-      occurrence_id,
-      AssertionAttempts {
-        attempt_count: 1,
-        failure_count: 0,
-      },
-    ),
-  };
+  let (assertion_id, attempt_count, failure_count) = assertion_attempt(event, open_assertion);
   let entry = NewEntry {
     run_id: run_id.to_string(),
     test_id: event.test_id.clone(),
@@ -220,40 +172,22 @@ pub(super) fn prepare_entry_recorded(
     error: event.error.clone(),
     trace_id: event.trace_id.clone(),
     assertion_id: assertion_id.clone(),
+    correlation_key: assertion_correlation_key(event)?,
   };
 
   Ok(PreparedDashboardEvent {
-    live: live_event(
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::ENTRY_RECORDED,
-      LiveDashboardPayload::EntryRecorded(LiveEntryRecordedPayload {
-        id: 0,
-        test_id: event.test_id.clone(),
-        timestamp,
-        system: event.system.clone(),
-        action: event.action.clone(),
-        result: event.result.clone(),
-        input: non_empty(&event.input),
-        output: non_empty(&event.output),
-        metadata: non_empty(&metadata),
-        expected: non_empty(&event.expected),
-        actual: non_empty(&event.actual),
-        error: non_empty(&event.error),
-        trace_id: non_empty(&event.trace_id),
-        assertion_id,
-        attempt_count: attempts.attempt_count,
-        failure_count: attempts.failure_count,
-      }),
+      LiveDashboardPayload::EntryRecorded(live_entry(&entry, attempt_count, failure_count)),
     ),
     persisted: PersistedDashboardEvent::EntryRecorded(entry),
-    flush: FlushBehavior::Deferred,
   })
 }
 
 /// The current reporting protocol does not carry a call-site identity, so the CLI
 /// derives a best-effort correlation signature from the assertion's semantic
 /// action, input, and expectation. Result-specific fields are deliberately excluded.
-fn assertion_correlation_key(event: &proto::EntryRecordedEvent) -> AppResult<String> {
+pub(super) fn assertion_correlation_key(event: &proto::EntryRecordedEvent) -> AppResult<String> {
   Ok(serde_json::to_string(&[
     &event.test_id,
     &event.system,
@@ -264,89 +198,35 @@ fn assertion_correlation_key(event: &proto::EntryRecordedEvent) -> AppResult<Str
 }
 
 pub(super) fn prepare_span_recorded(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::SpanRecordedEvent,
+  trace_test_id: Option<String>,
 ) -> AppResult<PreparedDashboardEvent> {
-  ensure_run_known(state, run_id)?;
-  let test_id = extract_test_id(&event.attributes).or_else(|| {
-    state
-      .traces
-      .get(&(run_id.to_string(), event.trace_id.clone()))
-      .cloned()
-  });
-
-  let attributes = serde_json::to_string(&event.attributes)?;
-  let (exception_type, exception_message, exception_stack_trace) = event
-    .exception
-    .as_ref()
-    .map(|exception| {
-      (
-        exception.r#type.clone(),
-        exception.message.clone(),
-        exception.stack_trace.join("\n"),
-      )
-    })
-    .unwrap_or_default();
-
-  let span = NewSpan {
-    run_id: run_id.to_string(),
-    trace_id: event.trace_id.clone(),
-    span_id: event.span_id.clone(),
-    parent_span_id: event.parent_span_id.clone(),
-    operation_name: event.operation_name.clone(),
-    service_name: event.service_name.clone(),
-    start_time_nanos: event.start_time_nanos,
-    end_time_nanos: event.end_time_nanos,
-    status: event.status.clone(),
-    attributes: attributes.clone(),
-    exception_type: exception_type.clone(),
-    exception_message: exception_message.clone(),
-    exception_stack_trace: exception_stack_trace.clone(),
-  };
+  let test_id = extract_test_id(&event.attributes).or(trace_test_id);
+  let span = new_span(run_id, event)?;
 
   Ok(PreparedDashboardEvent {
-    live: live_event(
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::SPAN_RECORDED,
-      LiveDashboardPayload::SpanRecorded(LiveSpanRecordedPayload {
-        id: 0,
-        test_id,
-        trace_id: event.trace_id.clone(),
-        span_id: event.span_id.clone(),
-        parent_span_id: non_empty(&event.parent_span_id),
-        operation_name: event.operation_name.clone(),
-        service_name: event.service_name.clone(),
-        start_time_nanos: event.start_time_nanos,
-        end_time_nanos: event.end_time_nanos,
-        status: event.status.clone(),
-        attributes: non_empty(&attributes),
-        exception_type: non_empty(&exception_type),
-        exception_message: non_empty(&exception_message),
-        exception_stack_trace: non_empty(&exception_stack_trace),
-      }),
+      LiveDashboardPayload::SpanRecorded(live_span(&span, test_id)),
     ),
     persisted: PersistedDashboardEvent::SpanRecorded(span),
-    flush: FlushBehavior::Deferred,
   })
 }
 
 pub(super) fn prepare_snapshot(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::SnapshotEvent,
-) -> AppResult<PreparedDashboardEvent> {
-  ensure_test_known(state, run_id, &event.test_id)?;
+) -> PreparedDashboardEvent {
   let captured_at = format_timestamp(event.timestamp.as_ref());
   let trigger = if event.trigger.is_empty() {
     "TEST_END".to_string()
   } else {
     event.trigger.clone()
   };
-  Ok(PreparedDashboardEvent {
-    live: live_event(
+  PreparedDashboardEvent {
+    live: LiveDashboardEvent::new(
       run_id,
-      event_type::SNAPSHOT,
       LiveDashboardPayload::Snapshot(LiveSnapshotPayload {
         id: 0,
         test_id: event.test_id.clone(),
@@ -366,25 +246,162 @@ pub(super) fn prepare_snapshot(
       captured_at,
       trigger,
     },
-    flush: FlushBehavior::Deferred,
-  })
+  }
 }
 
 /// Interactions and warnings are diagnostics: unlike entries, they may reference tests the
 /// CLI has never seen (fail-open evidence, cross-test warnings naming another test id), so
 /// only the run is validated and the test id is carried through as-is.
 pub(super) fn prepare_mock_interaction(
-  state: &mut LiveState,
   run_id: &str,
   event: &proto::MockInteractionEvent,
 ) -> AppResult<PreparedDashboardEvent> {
-  ensure_run_known(state, run_id)?;
+  let interaction = new_mock_interaction(run_id, event)?;
+
+  Ok(PreparedDashboardEvent {
+    live: LiveDashboardEvent::new(
+      run_id,
+      LiveDashboardPayload::MockInteraction(live_mock_interaction(
+        &interaction,
+        event.near_misses.clone(),
+      )),
+    ),
+    persisted: PersistedDashboardEvent::MockInteraction(interaction),
+  })
+}
+
+pub(super) fn prepare_mock_warning(
+  run_id: &str,
+  event: &proto::MockWarningEvent,
+) -> PreparedDashboardEvent {
   let timestamp = format_timestamp(event.timestamp.as_ref());
-  let near_misses_json = serde_json::to_string(&event.near_misses)?;
-  let interaction = NewMockInteraction {
+  let warning = NewMockWarning {
     run_id: run_id.to_string(),
     test_id: non_empty(&event.test_id),
     timestamp: timestamp.clone(),
+    system: event.system.clone(),
+    kind: event.kind.clone(),
+    message: event.message.clone(),
+    stub_id: non_empty(&event.stub_id),
+    target: non_empty(&event.target),
+  };
+
+  PreparedDashboardEvent {
+    live: LiveDashboardEvent::new(
+      run_id,
+      LiveDashboardPayload::MockWarning(LiveMockWarningPayload {
+        id: 0,
+        test_id: warning.test_id.clone(),
+        timestamp,
+        system: warning.system.clone(),
+        kind: warning.kind.clone(),
+        message: warning.message.clone(),
+        stub_id: warning.stub_id.clone(),
+        target: warning.target.clone(),
+      }),
+    ),
+    persisted: PersistedDashboardEvent::MockWarning(warning),
+  }
+}
+
+fn assertion_attempt(
+  event: &proto::EntryRecordedEvent,
+  open_assertion: Option<OpenAssertion>,
+) -> (String, i64, i64) {
+  let failed = i64::from(matches!(event.result.as_str(), "FAILED" | "ERROR"));
+  open_assertion.map_or_else(
+    || (Uuid::new_v4().to_string(), 1, failed),
+    |open| {
+      (
+        open.assertion_id,
+        open.attempt_count + 1,
+        open.failure_count + failed,
+      )
+    },
+  )
+}
+
+fn live_entry(
+  entry: &NewEntry,
+  attempt_count: i64,
+  failure_count: i64,
+) -> LiveEntryRecordedPayload {
+  LiveEntryRecordedPayload {
+    id: 0,
+    test_id: entry.test_id.clone(),
+    timestamp: entry.timestamp.clone(),
+    system: entry.system.clone(),
+    action: entry.action.clone(),
+    result: entry.result.clone(),
+    input: non_empty(&entry.input),
+    output: non_empty(&entry.output),
+    metadata: non_empty(&entry.metadata),
+    expected: non_empty(&entry.expected),
+    actual: non_empty(&entry.actual),
+    error: non_empty(&entry.error),
+    trace_id: non_empty(&entry.trace_id),
+    assertion_id: entry.assertion_id.clone(),
+    attempt_count,
+    failure_count,
+  }
+}
+
+fn new_span(run_id: &str, event: &proto::SpanRecordedEvent) -> AppResult<NewSpan> {
+  let (exception_type, exception_message, exception_stack_trace) = event
+    .exception
+    .as_ref()
+    .map(|exception| {
+      (
+        exception.r#type.clone(),
+        exception.message.clone(),
+        exception.stack_trace.join("\n"),
+      )
+    })
+    .unwrap_or_default();
+  Ok(NewSpan {
+    run_id: run_id.to_string(),
+    trace_id: event.trace_id.clone(),
+    span_id: event.span_id.clone(),
+    parent_span_id: event.parent_span_id.clone(),
+    operation_name: event.operation_name.clone(),
+    service_name: event.service_name.clone(),
+    start_time_nanos: event.start_time_nanos,
+    end_time_nanos: event.end_time_nanos,
+    status: event.status.clone(),
+    attributes: serde_json::to_string(&event.attributes)?,
+    exception_type,
+    exception_message,
+    exception_stack_trace,
+  })
+}
+
+fn live_span(span: &NewSpan, test_id: Option<String>) -> LiveSpanRecordedPayload {
+  LiveSpanRecordedPayload {
+    id: 0,
+    test_id,
+    trace_id: span.trace_id.clone(),
+    span_id: span.span_id.clone(),
+    parent_span_id: non_empty(&span.parent_span_id),
+    operation_name: span.operation_name.clone(),
+    service_name: span.service_name.clone(),
+    start_time_nanos: span.start_time_nanos,
+    end_time_nanos: span.end_time_nanos,
+    status: span.status.clone(),
+    attributes: non_empty(&span.attributes),
+    exception_type: non_empty(&span.exception_type),
+    exception_message: non_empty(&span.exception_message),
+    exception_stack_trace: non_empty(&span.exception_stack_trace),
+  }
+}
+
+fn new_mock_interaction(
+  run_id: &str,
+  event: &proto::MockInteractionEvent,
+) -> AppResult<NewMockInteraction> {
+  Ok(NewMockInteraction {
+    run_id: run_id.to_string(),
+    test_id: non_empty(&event.test_id),
+    timestamp: format_timestamp(event.timestamp.as_ref()),
     system: event.system.clone(),
     protocol: event.protocol.clone(),
     method: event.method.clone(),
@@ -398,7 +415,7 @@ pub(super) fn prepare_mock_interaction(
     response_body_truncated: event.response_body_truncated,
     status: event.status.clone(),
     latency_ms: (event.latency_ms >= 0).then_some(event.latency_ms),
-    near_misses: near_misses_json,
+    near_misses: serde_json::to_string(&event.near_misses)?,
     trace_id: non_empty(&event.trace_id),
     scenario_name: non_empty(&event.scenario_name),
     scenario_state: non_empty(&event.scenario_state),
@@ -406,87 +423,37 @@ pub(super) fn prepare_mock_interaction(
     configured_delay_ms: (event.configured_delay_ms >= 0).then_some(event.configured_delay_ms),
     fault: non_empty(&event.fault),
     client_deadline_ms: (event.client_deadline_ms >= 0).then_some(event.client_deadline_ms),
-  };
-
-  Ok(PreparedDashboardEvent {
-    live: live_event(
-      run_id,
-      event_type::MOCK_INTERACTION,
-      LiveDashboardPayload::MockInteraction(LiveMockInteractionPayload {
-        id: 0,
-        test_id: interaction.test_id.clone(),
-        timestamp,
-        system: interaction.system.clone(),
-        protocol: interaction.protocol.clone(),
-        method: interaction.method.clone(),
-        target: interaction.target.clone(),
-        matched: interaction.matched,
-        stub_id: interaction.stub_id.clone(),
-        attribution: interaction.attribution.clone(),
-        request_body: non_empty(&interaction.request_body),
-        request_body_truncated: interaction.request_body_truncated,
-        response_body: non_empty(&interaction.response_body),
-        response_body_truncated: interaction.response_body_truncated,
-        status: interaction.status.clone(),
-        latency_ms: interaction.latency_ms,
-        near_misses: event.near_misses.clone(),
-        trace_id: interaction.trace_id.clone(),
-        scenario_name: interaction.scenario_name.clone(),
-        scenario_state: interaction.scenario_state.clone(),
-        next_scenario_state: interaction.next_scenario_state.clone(),
-        configured_delay_ms: interaction.configured_delay_ms,
-        fault: interaction.fault.clone(),
-        client_deadline_ms: interaction.client_deadline_ms,
-      }),
-    ),
-    persisted: PersistedDashboardEvent::MockInteraction(interaction),
-    flush: FlushBehavior::Deferred,
   })
 }
 
-pub(super) fn prepare_mock_warning(
-  state: &mut LiveState,
-  run_id: &str,
-  event: &proto::MockWarningEvent,
-) -> AppResult<PreparedDashboardEvent> {
-  ensure_run_known(state, run_id)?;
-  let timestamp = format_timestamp(event.timestamp.as_ref());
-  let warning = NewMockWarning {
-    run_id: run_id.to_string(),
-    test_id: non_empty(&event.test_id),
-    timestamp: timestamp.clone(),
-    system: event.system.clone(),
-    kind: event.kind.clone(),
-    message: event.message.clone(),
-    stub_id: non_empty(&event.stub_id),
-    target: non_empty(&event.target),
-  };
-
-  Ok(PreparedDashboardEvent {
-    live: live_event(
-      run_id,
-      event_type::MOCK_WARNING,
-      LiveDashboardPayload::MockWarning(LiveMockWarningPayload {
-        id: 0,
-        test_id: warning.test_id.clone(),
-        timestamp,
-        system: warning.system.clone(),
-        kind: warning.kind.clone(),
-        message: warning.message.clone(),
-        stub_id: warning.stub_id.clone(),
-        target: warning.target.clone(),
-      }),
-    ),
-    persisted: PersistedDashboardEvent::MockWarning(warning),
-    flush: FlushBehavior::Deferred,
-  })
-}
-
-fn live_event(run_id: &str, event_type: &str, payload: LiveDashboardPayload) -> LiveDashboardEvent {
-  LiveDashboardEvent {
-    seq: 0,
-    run_id: run_id.to_string(),
-    event_type: event_type.to_string(),
-    payload,
+fn live_mock_interaction(
+  interaction: &NewMockInteraction,
+  near_misses: Vec<String>,
+) -> LiveMockInteractionPayload {
+  LiveMockInteractionPayload {
+    id: 0,
+    test_id: interaction.test_id.clone(),
+    timestamp: interaction.timestamp.clone(),
+    system: interaction.system.clone(),
+    protocol: interaction.protocol.clone(),
+    method: interaction.method.clone(),
+    target: interaction.target.clone(),
+    matched: interaction.matched,
+    stub_id: interaction.stub_id.clone(),
+    attribution: interaction.attribution.clone(),
+    request_body: non_empty(&interaction.request_body),
+    request_body_truncated: interaction.request_body_truncated,
+    response_body: non_empty(&interaction.response_body),
+    response_body_truncated: interaction.response_body_truncated,
+    status: interaction.status.clone(),
+    latency_ms: interaction.latency_ms,
+    near_misses,
+    trace_id: interaction.trace_id.clone(),
+    scenario_name: interaction.scenario_name.clone(),
+    scenario_state: interaction.scenario_state.clone(),
+    next_scenario_state: interaction.next_scenario_state.clone(),
+    configured_delay_ms: interaction.configured_delay_ms,
+    fault: interaction.fault.clone(),
+    client_deadline_ms: interaction.client_deadline_ms,
   }
 }

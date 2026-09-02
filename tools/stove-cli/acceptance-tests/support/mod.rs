@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::io::Read;
 use std::net::TcpListener;
 use std::process::{Child, Command, Stdio};
@@ -29,19 +30,27 @@ pub struct RunningStove {
 
 impl RunningStove {
   pub async fn start(retention_runs_per_app: Option<usize>) -> Result<Self> {
-    Self::start_with_database(retention_runs_per_app, None).await
+    Self::start_with_database(retention_runs_per_app, None, false).await
   }
 
   pub async fn start_postgres(
     database_url: &str,
     retention_runs_per_app: Option<usize>,
   ) -> Result<Self> {
-    Self::start_with_database(retention_runs_per_app, Some(database_url)).await
+    Self::start_with_database(retention_runs_per_app, Some(database_url), false).await
+  }
+
+  pub async fn start_postgres_with_config_file(
+    database_url: &str,
+    retention_runs_per_app: Option<usize>,
+  ) -> Result<Self> {
+    Self::start_with_database(retention_runs_per_app, Some(database_url), true).await
   }
 
   async fn start_with_database(
     retention_runs_per_app: Option<usize>,
     database_url: Option<&str>,
+    use_config_file: bool,
   ) -> Result<Self> {
     let http_port = free_port()?;
     let grpc_port = free_port()?;
@@ -58,12 +67,25 @@ impl RunningStove {
       .env("RUST_LOG", "warn")
       .stdout(Stdio::piped())
       .stderr(Stdio::piped());
-    if let Some(database_url) = database_url {
+    if let Some(database_url) = database_url
+      && use_config_file
+    {
+      let secret_path = database_dir.path().join("database-url");
+      let config_path = database_dir.path().join("stove.toml");
+      fs::write(&secret_path, format!("{database_url}\n"))
+        .context("write acceptance PostgreSQL URL secret")?;
+      let mut file_config = "database_url_file = \"database-url\"\n".to_string();
+      if let Some(retention) = retention_runs_per_app {
+        file_config.push_str(&format!("retention_runs_per_app = {retention}\n"));
+      }
+      fs::write(&config_path, file_config).context("write acceptance Stove configuration")?;
+      command.arg("--config-file").arg(config_path);
+    } else if let Some(database_url) = database_url {
       command.arg("--database-url").arg(database_url);
     } else {
       command.arg("--db").arg(&database_path);
     }
-    if let Some(retention) = retention_runs_per_app {
+    if !use_config_file && let Some(retention) = retention_runs_per_app {
       command
         .arg("--retention-runs-per-app")
         .arg(retention.to_string());
@@ -282,6 +304,8 @@ pub fn run_started(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
         timestamp: timestamp(seconds),
@@ -306,6 +330,8 @@ pub fn run_ended(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunEnded(
       proto::RunEndedEvent {
         timestamp: timestamp(seconds),
@@ -326,6 +352,8 @@ pub fn test_started(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestStarted(
       proto::TestStartedEvent {
         test_id: test_id.to_string(),
@@ -347,6 +375,8 @@ pub fn test_ended(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestEnded(
       proto::TestEndedEvent {
         test_id: test_id.to_string(),
@@ -362,6 +392,8 @@ pub fn test_ended(
 pub fn failed_entry(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::EntryRecorded(
       proto::EntryRecordedEvent {
         test_id: test_id.to_string(),
@@ -384,6 +416,8 @@ pub fn failed_entry(run_id: &str, test_id: &str, seconds: i64) -> proto::Dashboa
 pub fn failed_span(run_id: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::SpanRecorded(
       proto::SpanRecordedEvent {
         trace_id: "trace-42".to_string(),
@@ -408,6 +442,8 @@ pub fn failed_span(run_id: &str) -> proto::DashboardEvent {
 pub fn snapshot(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::Snapshot(
       proto::SnapshotEvent {
         test_id: test_id.to_string(),
@@ -424,6 +460,8 @@ pub fn snapshot(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEv
 pub fn mock_interaction(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::MockInteraction(
       proto::MockInteractionEvent {
         test_id: test_id.to_string(),
@@ -457,6 +495,8 @@ pub fn mock_interaction(run_id: &str, test_id: &str, seconds: i64) -> proto::Das
 pub fn mock_warning(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::MockWarning(
       proto::MockWarningEvent {
         test_id: test_id.to_string(),

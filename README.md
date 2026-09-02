@@ -83,8 +83,8 @@ each stack.
 ## Dashboard (New in 0.23.0)
 
 Stove Dashboard is a local UI and API for end-to-end test runs. When the `stove` CLI is running and `dashboard { }` is
-registered, it receives events from your test JVM, stores run data in SQLite, and shows timelines, system snapshots, and
-traces in one place. Trace data still requires the tracing setup shown below.
+registered, it receives events from your test JVM, stores run data in local SQLite or configured PostgreSQL, and shows
+timelines, system snapshots, and traces in one place. Trace data still requires the tracing setup shown below.
 
 https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 
@@ -96,10 +96,16 @@ brew install Trendyol/trendyol-tap/stove
 # upgrade an existing install: brew update && brew upgrade stove
 stove
 
+# Or run the matching version as a container (SQLite persists in stove-data)
+docker run -d --name stove -p 4040:4040 -p 4041:4041 \
+  -v stove-data:/data ghcr.io/trendyol/stove-cli:0.26.0
+
 # 2) Run your tests and open the dashboard
 ./gradlew test
 # http://localhost:4040
 ```
+
+For shared or multi-pod deployments, use one PostgreSQL database for every replica and load-balance both ports; no session affinity, Redis, or message broker is required. PostgreSQL coordinates ordered, idempotent ingestion, shared retention, and durable cross-pod live updates. Production settings can be mounted as TOML or JSON, with the PostgreSQL URL read from a separate secret file. See the [Dashboard deployment guide](https://trendyol.github.io/stove/Components/18-dashboard/#configuration-files-and-secrets).
 
 ```kotlin
 // build.gradle.kts

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::{Backend, Repository, run_blocking};
 use crate::error::Result;
 use crate::storage::models::{PurgePreview, PurgeResult, StorageStats};
@@ -7,6 +9,17 @@ pub(super) struct PurgeCandidate {
   pub app_name: String,
   pub started_at: String,
   pub status: String,
+}
+
+impl From<(String, String, String, String)> for PurgeCandidate {
+  fn from((run_id, app_name, started_at, status): (String, String, String, String)) -> Self {
+    Self {
+      run_id,
+      app_name,
+      started_at,
+      status,
+    }
+  }
 }
 
 pub(super) fn select_purge_candidates(
@@ -30,12 +43,28 @@ pub(super) fn is_purgeable(status: &str, include_running: bool) -> bool {
   include_running || status != "RUNNING"
 }
 
+pub(super) fn select_requested_run_ids(
+  requested: &[String],
+  available: impl IntoIterator<Item = (String, String)>,
+  include_running: bool,
+) -> Vec<String> {
+  let available = available.into_iter().collect::<HashMap<_, _>>();
+  requested
+    .iter()
+    .filter(|run_id| {
+      available
+        .get(*run_id)
+        .is_some_and(|status| is_purgeable(status, include_running))
+    })
+    .cloned()
+    .collect()
+}
+
 impl Repository {
   pub fn storage_stats(&self) -> Result<StorageStats> {
-    let retention = self.retention_runs_per_app();
     match &self.backend {
-      Backend::Sqlite(sqlite) => sqlite.storage_stats(retention),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.storage_stats(retention)),
+      Backend::Sqlite(sqlite) => sqlite.storage_stats(self.retention_runs_per_app()),
+      Backend::Postgres(postgres) => run_blocking(|| postgres.storage_stats()),
     }
   }
 

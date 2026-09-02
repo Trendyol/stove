@@ -44,14 +44,53 @@ It stores data at `~/.stove-dashboard.db` unless `--db` is set. For a shared ser
 ```bash
 stove --database-url 'postgresql://stove:secret@db.example/stove'
 STOVE_DATABASE_URL='postgresql://stove:secret@db.example/stove' stove
+stove --database-url-file /run/secrets/stove/database-url
 ```
+
+For production, prefer `stove --config-file /etc/stove/stove.toml` (or `STOVE_CONFIG_FILE`) with ordinary settings in TOML or JSON and `database_url_file = "/run/secrets/stove/database-url"` pointing to a separately mounted secret. The same key is available as `--database-url-file` or `STOVE_DATABASE_URL_FILE`. CLI/environment values override the file, which overrides defaults. Relative paths declared in the config resolve from its directory; files are read once at startup.
 
 PostgreSQL uses TLS by default. Add `sslmode=disable` only for an intentionally non-TLS endpoint on a trusted network. Stove applies versioned migrations at startup:
 
 - SQLite: `tools/stove-cli/src/storage/migrations/sqlite/`
 - PostgreSQL: `tools/stove-cli/src/storage/migrations/postgres/`
 
+Refinery discovers those migrations and records them in `refinery_schema_history`. Diesel handles ordinary persistence; raw SQL is reserved for database-specific coordination and complex queries. This is a clean storage break: databases with the former `schema_migrations` history must be deleted (SQLite) or recreated (PostgreSQL), not upgraded in place.
+
 PostgreSQL stores metadata as `JSONB` and indexes it with GIN `jsonb_path_ops`. SQLite provides the same exact-subset behavior through application filtering. `--fresh-start` is SQLite-only; `--clear` operates on whichever backend is selected.
+
+### Multiple server replicas
+
+Use only PostgreSQL when running more than one Stove server replica, and configure every replica with the same database URL and Stove image version. Put both the HTTP and gRPC ports behind services; neither requires session affinity. Do not share a SQLite file between pods.
+
+PostgreSQL coordinates per-run event ordering, live-event commit order, and per-application retention with advisory locks. Each ACK follows one transaction containing the domain write, event inbox record, and durable live event. UUID-based retry deduplication prevents a retried event from being applied twice. Cross-pod SSE uses `LISTEN/NOTIFY` for wake-ups and durable polling plus `Last-Event-ID` replay for correctness. No Redis or broker is needed.
+
+Budget three PostgreSQL connections per replica plus headroom. The first replica on a new database seeds the shared retention setting; Admin-page changes persist in PostgreSQL and all replicas observe them. Use `/api/v1/meta` for startup/readiness and allow at least 10 seconds after SIGTERM for graceful drain.
+
+## Run the packaged server
+
+Stable releases publish `ghcr.io/trendyol/stove-cli` for Linux AMD64 and ARM64. Pin the exact Stove version used by the tests.
+
+For SQLite, mount `/data`; the image defaults to `/data/stove.db`:
+
+```bash
+docker run -d --name stove --restart unless-stopped \
+  -p 4040:4040 -p 4041:4041 \
+  -v stove-data:/data \
+  ghcr.io/trendyol/stove-cli:0.26.0
+```
+
+For PostgreSQL, mount the connection URL as a read-only secret and omit the SQLite volume:
+
+```bash
+docker run -d --name stove --restart unless-stopped \
+  -p 4040:4040 -p 4041:4041 \
+  -v /secure/stove/database-url:/run/secrets/stove-database-url:ro \
+  -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
+  -e STOVE_RETENTION_RUNS_PER_APP=50 \
+  ghcr.io/trendyol/stove-cli:0.26.0
+```
+
+Port `4040` serves the UI, REST, admin page, and Streamable HTTP MCP endpoint (`/mcp`). Port `4041` is the gRPC ingestion endpoint configured through `DashboardSystemOptions(cliHost, cliPort)`. Both ports must remain on a trusted internal network because Stove intentionally provides no authentication or authorization.
 
 ## Configure retention
 
@@ -63,7 +102,7 @@ STOVE_RETENTION_RUNS_PER_APP=50 stove
 stove --retention-runs-per-app 0  # unlimited
 ```
 
-Only retained runs are visible to the UI, REST, and MCP. A runtime change on the Admin page prunes excess completed runs immediately but does not persist after process restart; use the CLI flag or environment variable for a durable startup setting.
+Only retained runs are visible to the UI, REST, and MCP. A runtime Admin change prunes excess completed runs immediately. It is process-local for SQLite and shared and persistent for PostgreSQL.
 
 ## Find runs
 

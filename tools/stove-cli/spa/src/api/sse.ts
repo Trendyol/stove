@@ -20,7 +20,6 @@ export function useSSE({ onEvent, onGap, onConnect, onReconnect, onDisconnect }:
 
   useEffect(() => {
     let disposed = false;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let source: EventSource | null = null;
 
     function connect() {
@@ -37,7 +36,6 @@ export function useSSE({ onEvent, onGap, onConnect, onReconnect, onDisconnect }:
         setConnected(true);
         callbacksRef.current.onConnect?.();
         if (isReconnect) {
-          lastSeqRef.current = null;
           callbacksRef.current.onReconnect?.();
         }
       };
@@ -64,16 +62,13 @@ export function useSSE({ onEvent, onGap, onConnect, onReconnect, onDisconnect }:
       };
 
       source.onerror = () => {
-        source?.close();
-        source = null;
         if (openRef.current) {
           openRef.current = false;
           setConnected(false);
           callbacksRef.current.onDisconnect?.();
         }
-        if (!disposed) {
-          reconnectTimer = setTimeout(connect, 3000);
-        }
+        // Native EventSource reconnection preserves Last-Event-ID, allowing the
+        // server to replay durable events committed while this connection was down.
       };
     }
 
@@ -81,9 +76,6 @@ export function useSSE({ onEvent, onGap, onConnect, onReconnect, onDisconnect }:
 
     return () => {
       disposed = true;
-      if (reconnectTimer != null) {
-        clearTimeout(reconnectTimer);
-      }
       openRef.current = false;
       setConnected(false);
       source?.close();

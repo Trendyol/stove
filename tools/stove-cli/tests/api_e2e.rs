@@ -12,7 +12,6 @@ use reqwest::StatusCode;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
 use stove::grpc::service::DashboardEventServiceImpl;
 use stove::proto;
 use stove::proto::dashboard_event_service_server::DashboardEventService;
@@ -40,6 +39,8 @@ fn run_started_event_with_version(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
         timestamp: Some(ts(seconds, nanos)),
@@ -79,6 +80,8 @@ fn run_ended_event(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunEnded(
       proto::RunEndedEvent {
         timestamp: Some(ts(seconds, nanos)),
@@ -101,6 +104,8 @@ fn test_started_event(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestStarted(
       proto::TestStartedEvent {
         test_id: test_id.to_string(),
@@ -124,6 +129,8 @@ fn test_ended_event(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestEnded(
       proto::TestEndedEvent {
         test_id: test_id.to_string(),
@@ -147,6 +154,8 @@ fn entry_recorded_event(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::EntryRecorded(
       proto::EntryRecordedEvent {
         test_id: test_id.to_string(),
@@ -178,6 +187,8 @@ fn span_recorded_event(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::SpanRecorded(
       proto::SpanRecordedEvent {
         trace_id: trace_id.to_string(),
@@ -198,6 +209,8 @@ fn span_recorded_event(
 fn mock_interaction_event(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::MockInteraction(
       proto::MockInteractionEvent {
         test_id: test_id.to_string(),
@@ -231,6 +244,8 @@ fn mock_interaction_event(run_id: &str, test_id: &str, seconds: i64) -> proto::D
 fn mock_warning_event(run_id: &str, test_id: &str, seconds: i64) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::MockWarning(
       proto::MockWarningEvent {
         test_id: test_id.to_string(),
@@ -256,6 +271,8 @@ fn snapshot_event(
 ) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::Snapshot(
       proto::SnapshotEvent {
         test_id: test_id.to_string(),
@@ -276,13 +293,6 @@ async fn send_event(
   DashboardEventService::send_event(service, Request::new(event))
     .await
     .map(|_| ())
-}
-
-async fn flush_events(service: &DashboardEventServiceImpl) {
-  service
-    .flush_pending()
-    .await
-    .expect("queued dashboard events should flush");
 }
 
 fn extract_sse_data_frame(frame: &str) -> Option<String> {
@@ -603,8 +613,6 @@ async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress()
   )
   .unwrap();
 
-  flush_events(service.as_ref()).await;
-
   let run = server.get_json("/runs/run-concurrent").await;
   assert_eq!(run["status"], "RUNNING");
 
@@ -836,8 +844,6 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   )
   .await
   .unwrap();
-
-  flush_events(service.as_ref()).await;
 
   let run = server.get_json("/runs/run-interleaved").await;
   assert_eq!(run["status"], "FAILED");
@@ -1423,12 +1429,7 @@ async fn snapshot_state_json_preserves_complex_json() {
 #[tokio::test]
 async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
   let server = TestServer::start().await;
-  let service = DashboardEventServiceImpl::new_with_ingest_config(
-    server.repo.clone(),
-    server.sse.clone(),
-    50,
-    Duration::from_secs(60),
-  );
+  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
   let mut live = server.sse.subscribe();
 
   service
@@ -1450,14 +1451,13 @@ async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
     .await
     .unwrap();
 
-  let live_json: Value = serde_json::from_str(&live.recv().await.unwrap()).unwrap();
+  let live_json: Value = serde_json::from_str(&live.recv().await.unwrap().json).unwrap();
   assert_eq!(
     live_json["payload"]["near_misses"],
     serde_json::json!(["body matcher rejected"])
   );
   assert_eq!(live_json["payload"]["configured_delay_ms"], 250);
 
-  service.flush_pending().await.unwrap();
   let rest = server
     .get_json("/runs/run-mocks/tests/test-1/mock-interactions")
     .await;
@@ -1476,12 +1476,7 @@ async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
 #[tokio::test]
 async fn ambient_mock_endpoints_return_only_unattributed_records() {
   let server = TestServer::start().await;
-  let service = DashboardEventServiceImpl::new_with_ingest_config(
-    server.repo.clone(),
-    server.sse.clone(),
-    50,
-    Duration::from_secs(60),
-  );
+  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
 
   for event in [
     run_started_event("run-ambient", "product-api", 1_704_067_200, 0),
@@ -1492,8 +1487,6 @@ async fn ambient_mock_endpoints_return_only_unattributed_records() {
   ] {
     service.send_event(Request::new(event)).await.unwrap();
   }
-  service.flush_pending().await.unwrap();
-
   let run_interactions = server.get_json("/runs/run-ambient/mock-interactions").await;
   assert_eq!(run_interactions.as_array().unwrap().len(), 2);
   let ambient_interactions = server
@@ -1570,13 +1563,11 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
 }
 
 #[tokio::test]
-async fn sse_stream_pushes_full_events_before_database_flush() {
+async fn sse_stream_pushes_full_events_only_after_their_database_commit() {
   let server = TestServer::start().await;
-  let service = Arc::new(DashboardEventServiceImpl::new_with_ingest_config(
+  let service = Arc::new(DashboardEventServiceImpl::new(
     server.repo.clone(),
     server.sse.clone(),
-    50,
-    Duration::from_secs(60),
   ));
   let mut resp = server.get("/events/stream").await;
   let mut buffer = String::new();
@@ -1619,12 +1610,10 @@ async fn sse_stream_pushes_full_events_before_database_flush() {
   assert_eq!(second_event["payload"]["status"], "RUNNING");
 
   let run_before_flush = server.get_json("/runs/run-live-sse").await;
-  assert_eq!(run_before_flush, Value::Null);
+  assert_eq!(run_before_flush["status"], "RUNNING");
 
   let tests_before_flush = server.get_json("/runs/run-live-sse/tests").await;
-  assert_eq!(tests_before_flush, Value::Array(vec![]));
-
-  flush_events(service.as_ref()).await;
+  assert_eq!(tests_before_flush.as_array().map(Vec::len), Some(1));
 
   let run_after_flush = server.get_json("/runs/run-live-sse").await;
   assert_eq!(run_after_flush["status"], "RUNNING");
@@ -1652,13 +1641,14 @@ async fn sse_broadcast_data_is_readable_after_notification() {
   server.seed_test("run-sse", "t-1", "my test", "Spec");
 
   // Broadcast an SSE event (simulates what process_event does after writing)
-  server
-    .sse
-    .broadcast(r#"{"run_id":"run-sse","event_type":"test_started"}"#);
+  server.sse.broadcast(stove::ingest::StoredLiveEvent {
+    id: 1,
+    json: r#"{"run_id":"run-sse","event_type":"test_started"}"#.to_string(),
+  });
 
   // Subscriber receives the notification
   let msg = rx.try_recv().expect("should receive broadcast");
-  assert!(msg.contains("run-sse"));
+  assert!(msg.json.contains("run-sse"));
 
   // Immediately refetch — data must be present (this is what the browser does)
   let body = server.get_json("/runs/run-sse/tests").await;
@@ -1857,8 +1847,6 @@ async fn sse_stream_delivers_interleaved_notifications_for_concurrent_test_load(
   assert_eq!(event_counts.get("test_ended"), Some(&2));
   assert_eq!(event_counts.get("run_ended"), Some(&1));
 
-  flush_events(service.as_ref()).await;
-
   let tests = server.get_json("/runs/run-sse-load/tests").await;
   let tests = tests.as_array().unwrap();
   assert_eq!(tests.len(), 2);
@@ -2033,7 +2021,6 @@ async fn run_metadata_round_trips_from_proto_and_filters_by_exact_subset() {
   )
   .await
   .unwrap();
-  flush_events(&service).await;
 
   let run = server.get_json("/runs/pipeline-42").await;
   assert_eq!(run["metadata"]["team"], "checkout");

@@ -274,6 +274,15 @@ pub struct NewEntry {
   pub error: String,
   pub trace_id: String,
   pub assertion_id: String,
+  /// Stable semantic signature used to recover an open retry sequence across pods.
+  pub correlation_key: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OpenAssertion {
+  pub assertion_id: String,
+  pub attempt_count: i64,
+  pub failure_count: i64,
 }
 
 /// Data required to save a new mock interaction.

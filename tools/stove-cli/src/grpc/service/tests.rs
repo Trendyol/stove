@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use super::DashboardEventServiceImpl;
 use crate::proto;
@@ -9,12 +8,7 @@ use crate::storage::repository::Repository;
 fn test_service() -> DashboardEventServiceImpl {
   let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
   let sse = Arc::new(SseManager::new());
-  DashboardEventServiceImpl::new_with_ingest_config(
-    repo,
-    sse,
-    /*max_batch_size*/ 50,
-    Duration::from_mins(1),
-  )
+  DashboardEventServiceImpl::new(repo, sse)
 }
 
 fn ts(seconds: i64) -> prost_types::Timestamp {
@@ -28,6 +22,8 @@ async fn no_broadcast_on_invalid_event_order() {
 
   let result = svc.process_event(&proto::DashboardEvent {
     run_id: "nonexistent-run".to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestStarted(
       proto::TestStartedEvent {
         test_id: "t-1".to_string(),
@@ -45,18 +41,18 @@ async fn no_broadcast_on_invalid_event_order() {
     "invalid events must not be broadcast"
   );
   assert!(svc.repository.get_runs(None).unwrap().is_empty());
-  svc.flush_pending().await.unwrap();
   assert!(svc.repository.get_runs(None).unwrap().is_empty());
 }
 
 #[tokio::test]
-async fn broadcast_fires_before_batch_flush() {
+async fn acknowledgement_requires_a_committed_domain_and_outbox_event() {
   let svc = test_service();
-  let mut rx = svc.sse_manager.subscribe();
 
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
           timestamp: Some(ts(1_704_067_200)),
@@ -69,17 +65,9 @@ async fn broadcast_fires_before_batch_flush() {
     })
     .unwrap();
 
-  let msg = rx.try_recv().expect("broadcast should be sent on success");
-  assert!(msg.contains("run_started"));
-  assert!(
-    svc.repository.get_runs(None).unwrap().is_empty(),
-    "run should not be visible in SQLite before an explicit flush"
-  );
-
-  svc.flush_pending().await.unwrap();
-
   let runs = svc.repository.get_runs(None).unwrap();
   assert_eq!(runs.len(), 1);
+  assert_eq!(svc.repository.latest_live_event_id().unwrap(), 1);
 }
 
 #[tokio::test]
@@ -87,6 +75,8 @@ async fn process_run_started_event() {
   let svc = test_service();
   let event = proto::DashboardEvent {
     run_id: "run-1".to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
         timestamp: Some(ts(1_704_067_200)),
@@ -99,7 +89,6 @@ async fn process_run_started_event() {
   };
 
   svc.process_event(&event).unwrap();
-  svc.flush_pending().await.unwrap();
 
   let runs = svc.repository.get_runs(None).unwrap();
   assert_eq!(runs.len(), 1);
@@ -119,6 +108,8 @@ async fn process_full_lifecycle() {
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
           timestamp: Some(ts(1_704_067_200)),
@@ -134,6 +125,8 @@ async fn process_full_lifecycle() {
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::TestStarted(
         proto::TestStartedEvent {
           test_id: "test-1".to_string(),
@@ -151,6 +144,8 @@ async fn process_full_lifecycle() {
     svc
       .process_event(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
+        event_id: String::new(),
+        sequence: 0,
         event: Some(proto::dashboard_event::Event::EntryRecorded(
           proto::EntryRecordedEvent {
             test_id: "test-1".to_string(),
@@ -178,6 +173,8 @@ async fn process_full_lifecycle() {
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::TestEnded(
         proto::TestEndedEvent {
           test_id: "test-1".to_string(),
@@ -193,6 +190,8 @@ async fn process_full_lifecycle() {
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::RunEnded(
         proto::RunEndedEvent {
           timestamp: Some(ts(1_704_067_210)),
@@ -204,8 +203,6 @@ async fn process_full_lifecycle() {
       )),
     })
     .unwrap();
-
-  svc.flush_pending().await.unwrap();
 
   let runs = svc.repository.get_runs(None).unwrap();
   assert_eq!(runs.len(), 1);
@@ -233,6 +230,8 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-expectations".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
           timestamp: Some(ts(1_704_067_200)),
@@ -247,6 +246,8 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
   svc
     .process_event(&proto::DashboardEvent {
       run_id: "run-expectations".to_string(),
+      event_id: String::new(),
+      sequence: 0,
       event: Some(proto::dashboard_event::Event::TestStarted(
         proto::TestStartedEvent {
           test_id: "test-expectations".to_string(),
@@ -263,6 +264,8 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
     svc
       .process_event(&proto::DashboardEvent {
         run_id: "run-expectations".to_string(),
+        event_id: String::new(),
+        sequence: 0,
         event: Some(proto::dashboard_event::Event::EntryRecorded(
           proto::EntryRecordedEvent {
             test_id: "test-expectations".to_string(),
@@ -282,8 +285,6 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
       })
       .unwrap();
   }
-
-  svc.flush_pending().await.unwrap();
 
   let entries = svc
     .repository

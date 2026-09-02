@@ -11,6 +11,15 @@ use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
+use diesel::connection::SimpleConnection;
+use diesel::prelude::*;
+use diesel::sql_types::BigInt;
+
+#[derive(QueryableByName)]
+struct CountRow {
+  #[diesel(sql_type = BigInt)]
+  count: i64,
+}
 
 fn test_repo() -> Repository {
   Repository::connect_sqlite(":memory:", 1).unwrap()
@@ -62,6 +71,7 @@ fn full_event_lifecycle() {
       error: String::new(),
       trace_id: String::new(),
       assertion_id: "assertion-post-products".into(),
+      correlation_key: String::new(),
     })
     .unwrap();
 
@@ -249,6 +259,7 @@ fn entries_return_latest_assertion_attempt_with_retry_counts() {
         },
         trace_id: String::new(),
         assertion_id: "assertion-query-products".into(),
+        correlation_key: String::new(),
       })
       .unwrap();
   }
@@ -425,10 +436,7 @@ fn malformed_rows_are_reported_instead_of_dropped() {
   repo
     .lock_write_db()
     .conn()
-    .execute(
-      "UPDATE mock_interactions SET near_misses = 'not-json' WHERE run_id = 'run-1'",
-      [],
-    )
+    .batch_execute("UPDATE mock_interactions SET near_misses = 'not-json' WHERE run_id = 'run-1'")
     .unwrap();
 
   assert!(
@@ -506,6 +514,7 @@ fn ending_a_run_prunes_previous_completed_results_for_that_app() {
       error: String::new(),
       trace_id: "old-trace".into(),
       assertion_id: "old-assertion".into(),
+      correlation_key: String::new(),
     })
     .unwrap();
   repo
@@ -570,7 +579,7 @@ fn ending_a_run_prunes_previous_completed_results_for_that_app() {
   assert!(repo.get_run("new-run").unwrap().is_some());
   assert!(repo.get_run("other-run").unwrap().is_some());
 
-  let db = repo.lock_write_db();
+  let mut db = repo.lock_write_db();
   for table in [
     "entries",
     "spans",
@@ -578,14 +587,12 @@ fn ending_a_run_prunes_previous_completed_results_for_that_app() {
     "mock_interactions",
     "mock_warnings",
   ] {
-    let count: i64 = db
-      .conn()
-      .query_row(
-        &format!("SELECT COUNT(*) FROM {table} WHERE run_id = 'old-run'"),
-        [],
-        |row| row.get(0),
-      )
-      .unwrap();
+    let count = diesel::sql_query(format!(
+      "SELECT COUNT(*) AS count FROM {table} WHERE run_id = 'old-run'"
+    ))
+    .get_result::<CountRow>(db.conn())
+    .unwrap()
+    .count;
     assert_eq!(count, 0, "{table} should not retain old app results");
   }
 }

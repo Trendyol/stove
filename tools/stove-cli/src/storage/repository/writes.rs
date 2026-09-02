@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use super::write_models::{RunEnd, RunStart, SnapshotWrite, TestEnd, TestStart};
 use super::{Backend, Repository, run_blocking};
 use crate::error::Result;
-use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 
 impl Repository {
@@ -67,11 +66,10 @@ impl Repository {
     failed: i32,
     duration_ms: i64,
   ) -> Result<()> {
-    let retention = self.retention_runs_per_app();
     let run = RunEnd::new(run_id, ended_at, total_tests, passed, failed, duration_ms);
     match &self.backend {
-      Backend::Sqlite(sqlite) => sqlite.save_run_end(&run, retention),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.save_run_end(&run, retention)),
+      Backend::Sqlite(sqlite) => sqlite.save_run_end(&run, self.retention_runs_per_app()),
+      Backend::Postgres(postgres) => run_blocking(|| postgres.save_run_end(&run)),
     }
   }
 
@@ -154,16 +152,6 @@ impl Repository {
     match &self.backend {
       Backend::Sqlite(sqlite) => sqlite.clear_all(),
       Backend::Postgres(postgres) => run_blocking(|| postgres.clear_all()),
-    }
-  }
-
-  pub fn apply_persisted_events(&self, events: &[PersistedDashboardEvent]) -> Result<()> {
-    let retention = self.retention_runs_per_app();
-    match &self.backend {
-      Backend::Sqlite(sqlite) => sqlite.apply_persisted_events(events, retention),
-      Backend::Postgres(postgres) => {
-        run_blocking(|| postgres.apply_persisted_events(events, retention))
-      }
     }
   }
 }

@@ -8,6 +8,7 @@ import io.grpc.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.LoggerFactory
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -39,6 +40,7 @@ class DashboardEmitter(
   private val disabled = AtomicBoolean(false)
   private val consecutiveFailures = AtomicInteger(0)
   private val rejectionLogged = AtomicBoolean(false)
+  private val sequenceByRun = mutableMapOf<String, Long>()
   private val drainJob: Job
 
   init {
@@ -48,9 +50,16 @@ class DashboardEmitter(
   /**
    * Non-blocking emit. Drops the event only if the emitter is disabled or already closed.
    */
+  @Synchronized
   fun tryEmit(event: DashboardEvent) {
     if (disabled.get()) return
-    val result = eventQueue.trySend(event)
+    val sequence = sequenceByRun.getOrDefault(event.runId, 0) + 1
+    sequenceByRun[event.runId] = sequence
+    val identifiedEvent = event.toBuilder()
+      .setEventId(UUID.randomUUID().toString())
+      .setSequence(sequence)
+      .build()
+    val result = eventQueue.trySend(identifiedEvent)
     if (result.isFailure) {
       if (!disabled.get()) {
         logger.debug("Dropping dashboard event because emitter queue is closed")
@@ -82,30 +91,35 @@ class DashboardEmitter(
   private suspend fun drainLoop() {
     for (event in eventQueue) {
       if (!scope.isActive || disabled.get()) break
-      sendSafe(event)
+      sendUntilAcknowledged(event)
     }
   }
 
-  private suspend fun sendSafe(event: DashboardEvent): EventAck? =
-    try {
-      val ack = stub.sendEvent(event)
-      consecutiveFailures.set(0)
-      ack
-    } catch (e: StatusException) {
-      if (e.status.code == Status.Code.INVALID_ARGUMENT) {
-        // Per-event validation rejection (e.g. an entry for an unknown/`default` test),
-        // not a transport outage. Drop this single event without counting it toward the
-        // consecutive-failure auto-disable, otherwise a burst of bad events would silently
-        // kill the whole dashboard for the run.
-        handleRejection(e)
-      } else {
+  private suspend fun sendUntilAcknowledged(event: DashboardEvent) {
+    while (scope.isActive && !disabled.get()) {
+      try {
+        val ack = stub.sendEvent(event)
+        if (ack.accepted) {
+          consecutiveFailures.set(0)
+          return
+        }
+        handleFailure(IllegalStateException("Dashboard CLI did not commit event ${event.eventId}"), isGrpc = true)
+      } catch (e: StatusException) {
+        if (e.status.code == Status.Code.INVALID_ARGUMENT) {
+          handleRejection(e)
+          return
+        }
         handleFailure(e, isGrpc = true)
+      } catch (e: Exception) {
+        handleFailure(e, isGrpc = false)
       }
-      null
-    } catch (e: Exception) {
-      handleFailure(e, isGrpc = false)
-      null
+
+      if (!disabled.get()) {
+        val attempt = consecutiveFailures.get().coerceAtLeast(1).coerceAtMost(5)
+        delay((RETRY_BASE_DELAY_MS shl (attempt - 1)).milliseconds)
+      }
     }
+  }
 
   private fun handleRejection(e: StatusException) {
     // A rejection means the server responded, so the transport is healthy: reset the counter.
@@ -134,5 +148,6 @@ class DashboardEmitter(
     private const val MAX_FAILURES = 5
     private const val DRAIN_TIMEOUT_MS = 30000L
     private const val SHUTDOWN_TIMEOUT_SECONDS = 5L
+    private const val RETRY_BASE_DELAY_MS = 100L
   }
 }

@@ -1,107 +1,79 @@
-//! Write path for the dashboard repository.
-//!
-//! All `INSERT` / `UPDATE` SQL lives here, plus the dispatcher that replays a
-//! batch of `PersistedDashboardEvent` items inside a single transaction. The
-//! free `*_on` functions take a `&rusqlite::Connection` so they can be invoked
-//! either against the long-lived write connection or against a transaction.
+//! Diesel-backed `SQLite` writes. Explicit SQL is reserved for the set-based
+//! retention query, whose ordering depends on `SQLite`'s `rowid`.
+
+use diesel::prelude::*;
+use diesel::sql_types::Text;
 
 use super::super::write_models::{
-  RunEnd, RunStart, SnapshotWrite, TestEnd, TestStart, WriteOperation,
+  RunEnd, RunStart, SnapshotWrite, TestEnd, TestStart, WriteOperation, non_empty,
 };
 use super::SqliteBackend;
-use super::mapping::non_empty;
 use crate::error::Result;
 use crate::ingest::PersistedDashboardEvent;
-use crate::storage::models::NewEntry;
-use crate::storage::models::NewMockInteraction;
-use crate::storage::models::NewMockWarning;
-use crate::storage::models::NewSpan;
-use rusqlite::OptionalExtension;
+use crate::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
+use crate::storage::schema::sqlite::{
+  entries, mock_interactions, mock_warnings, runs, snapshots, spans, tests,
+};
+
+#[derive(QueryableByName)]
+struct RunId {
+  #[diesel(sql_type = Text)]
+  id: String,
+}
+
 impl SqliteBackend {
   pub fn save_run_start(&self, run: &RunStart<'_>) -> Result<()> {
     let mut db = self.lock_write();
-    let tx = db.conn_mut().unchecked_transaction()?;
-    save_run_start_on(&tx, run)?;
-    tx.commit()?;
-    Ok(())
+    db.conn().transaction(|conn| save_run_start_on(conn, run))
   }
 
   pub fn save_run_end(&self, run: &RunEnd<'_>, retention_runs_per_app: usize) -> Result<()> {
     let mut db = self.lock_write();
-    let tx = db.conn_mut().unchecked_transaction()?;
-    save_run_end_on(&tx, run)?;
-    prune_completed_runs_on(&tx, run.run_id, retention_runs_per_app)?;
-    tx.commit()?;
-    Ok(())
+    db.conn().transaction(|conn| {
+      save_run_end_on(conn, run)?;
+      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app)
+    })
   }
 
   pub fn save_test_start(&self, test: &TestStart<'_>) -> Result<()> {
-    let db = self.lock_write();
-    save_test_start_on(db.conn(), test)?;
-    Ok(())
+    save_test_start_on(self.lock_write().conn(), test)
   }
 
   pub fn save_test_end(&self, test: &TestEnd<'_>) -> Result<()> {
-    let db = self.lock_write();
-    save_test_end_on(db.conn(), test)?;
-    Ok(())
+    save_test_end_on(self.lock_write().conn(), test)
   }
 
   pub fn save_entry(&self, entry: &NewEntry) -> Result<()> {
-    let db = self.lock_write();
-    save_entry_on(db.conn(), entry)?;
-    Ok(())
+    save_entry_on(self.lock_write().conn(), entry)
   }
 
   pub fn save_span(&self, span: &NewSpan) -> Result<()> {
-    let db = self.lock_write();
-    save_span_on(db.conn(), span)?;
-    Ok(())
+    save_span_on(self.lock_write().conn(), span)
   }
 
   pub fn save_snapshot(&self, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-    let db = self.lock_write();
-    save_snapshot_on(db.conn(), snapshot)?;
-    Ok(())
+    save_snapshot_on(self.lock_write().conn(), snapshot)
   }
 
   pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
-    let db = self.lock_write();
-    save_mock_interaction_on(db.conn(), interaction)?;
-    Ok(())
+    save_mock_interaction_on(self.lock_write().conn(), interaction)
   }
 
   pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
-    let db = self.lock_write();
-    save_mock_warning_on(db.conn(), warning)?;
-    Ok(())
+    save_mock_warning_on(self.lock_write().conn(), warning)
   }
 
   pub fn clear_all(&self) -> Result<()> {
-    let db = self.lock_write();
-    db.conn().execute_batch(
-      "DELETE FROM mock_warnings; DELETE FROM mock_interactions; DELETE FROM snapshots; DELETE FROM spans; DELETE FROM entries; DELETE FROM tests; DELETE FROM runs;",
-    )?;
-    Ok(())
-  }
-
-  pub fn apply_persisted_events(
-    &self,
-    events: &[PersistedDashboardEvent],
-    retention_runs_per_app: usize,
-  ) -> Result<()> {
-    let mut db = self.lock_write();
-    let tx = db.conn_mut().unchecked_transaction()?;
-    for event in events {
-      apply_persisted_event(&tx, event, retention_runs_per_app)?;
-    }
-    tx.commit()?;
-    Ok(())
+    self.lock_write().conn().transaction(|conn| {
+      delete_all_evidence(conn)?;
+      diesel::delete(runs::table).execute(conn)?;
+      Ok(())
+    })
   }
 }
 
-fn apply_persisted_event(
-  conn: &rusqlite::Connection,
+pub(super) fn apply_persisted_event(
+  conn: &mut SqliteConnection,
   event: &PersistedDashboardEvent,
   retention_runs_per_app: usize,
 ) -> Result<()> {
@@ -121,47 +93,52 @@ fn apply_persisted_event(
   }
 }
 
-fn save_run_start_on(conn: &rusqlite::Connection, run: &RunStart<'_>) -> Result<()> {
+fn save_run_start_on(conn: &mut SqliteConnection, run: &RunStart<'_>) -> Result<()> {
   let systems_json = serde_json::to_string(run.systems)?;
   let metadata_json = serde_json::to_string(run.metadata)?;
-  conn.execute(
-    "INSERT OR REPLACE INTO runs (id, app_name, started_at, stove_version, systems, metadata) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-    rusqlite::params![
-      run.run_id,
-      run.app_name,
-      run.started_at,
-      run.stove_version,
-      systems_json,
-      metadata_json
-    ],
-  )?;
+  diesel::insert_into(runs::table)
+    .values((
+      runs::id.eq(run.run_id),
+      runs::app_name.eq(run.app_name),
+      runs::started_at.eq(run.started_at),
+      runs::stove_version.eq(run.stove_version),
+      runs::systems.eq(&systems_json),
+      runs::metadata.eq(&metadata_json),
+    ))
+    .on_conflict(runs::id)
+    .do_update()
+    .set((
+      runs::app_name.eq(run.app_name),
+      runs::started_at.eq(run.started_at),
+      runs::stove_version.eq(run.stove_version),
+      runs::systems.eq(&systems_json),
+      runs::metadata.eq(&metadata_json),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
 fn prune_completed_runs_on(
-  conn: &rusqlite::Connection,
+  conn: &mut SqliteConnection,
   completed_run_id: &str,
   retention_runs_per_app: usize,
 ) -> Result<()> {
   if retention_runs_per_app == 0 {
     return Ok(());
   }
-
-  let app_name = conn
-    .query_row(
-      "SELECT app_name FROM runs WHERE id = ?1",
-      rusqlite::params![completed_run_id],
-      |row| row.get::<_, String>(0),
-    )
+  let app_name = runs::table
+    .find(completed_run_id)
+    .select(runs::app_name)
+    .first::<String>(conn)
     .optional()?;
-  let Some(app_name) = app_name else {
-    return Ok(());
-  };
-  prune_completed_runs_for_app_on(conn, &app_name, retention_runs_per_app)
+  if let Some(app_name) = app_name {
+    prune_completed_runs_for_app_on(conn, &app_name, retention_runs_per_app)?;
+  }
+  Ok(())
 }
 
 pub(super) fn prune_completed_runs_for_app_on(
-  conn: &rusqlite::Connection,
+  conn: &mut SqliteConnection,
   app_name: &str,
   retention_runs_per_app: usize,
 ) -> Result<()> {
@@ -169,206 +146,204 @@ pub(super) fn prune_completed_runs_for_app_on(
     return Ok(());
   }
   let offset = i64::try_from(retention_runs_per_app).unwrap_or(i64::MAX);
-  let mut stmt = conn.prepare(
-    "SELECT id
-      FROM runs
-      WHERE app_name = ?1 AND status <> 'RUNNING'
-      ORDER BY started_at DESC, ended_at DESC, rowid DESC
-      LIMIT -1 OFFSET ?2",
-  )?;
-  let expired_run_ids = stmt
-    .query_map(rusqlite::params![app_name, offset], |row| {
-      row.get::<_, String>(0)
-    })?
-    .collect::<rusqlite::Result<Vec<_>>>()?;
-  drop(stmt);
-
-  delete_runs_on(conn, &expired_run_ids)
+  let expired = diesel::sql_query(
+    "SELECT id FROM runs WHERE app_name = ? AND status <> 'RUNNING' \
+     ORDER BY started_at DESC, ended_at DESC, rowid DESC LIMIT -1 OFFSET ?",
+  )
+  .bind::<Text, _>(app_name)
+  .bind::<diesel::sql_types::BigInt, _>(offset)
+  .load::<RunId>(conn)?
+  .into_iter()
+  .map(|row| row.id)
+  .collect::<Vec<_>>();
+  delete_runs_on(conn, &expired)
 }
 
-pub(super) fn delete_runs_on(conn: &rusqlite::Connection, run_ids: &[String]) -> Result<()> {
+pub(super) fn delete_runs_on(conn: &mut SqliteConnection, run_ids: &[String]) -> Result<()> {
   if run_ids.is_empty() {
     return Ok(());
   }
-  let run_ids = serde_json::to_string(run_ids)?;
-  for table in [
-    "mock_warnings",
-    "mock_interactions",
-    "snapshots",
-    "spans",
-    "entries",
-    "tests",
-  ] {
-    conn.execute(
-      &format!("DELETE FROM {table} WHERE run_id IN (SELECT value FROM json_each(?1))"),
-      rusqlite::params![run_ids],
-    )?;
-  }
-  conn.execute(
-    "DELETE FROM runs WHERE id IN (SELECT value FROM json_each(?1))",
-    rusqlite::params![run_ids],
-  )?;
+  diesel::delete(mock_warnings::table.filter(mock_warnings::run_id.eq_any(run_ids)))
+    .execute(conn)?;
+  diesel::delete(mock_interactions::table.filter(mock_interactions::run_id.eq_any(run_ids)))
+    .execute(conn)?;
+  diesel::delete(snapshots::table.filter(snapshots::run_id.eq_any(run_ids))).execute(conn)?;
+  diesel::delete(spans::table.filter(spans::run_id.eq_any(run_ids))).execute(conn)?;
+  diesel::delete(entries::table.filter(entries::run_id.eq_any(run_ids))).execute(conn)?;
+  diesel::delete(tests::table.filter(tests::run_id.eq_any(run_ids))).execute(conn)?;
+  diesel::delete(runs::table.filter(runs::id.eq_any(run_ids))).execute(conn)?;
   Ok(())
 }
 
-fn save_run_end_on(conn: &rusqlite::Connection, run: &RunEnd<'_>) -> Result<()> {
-  let status = run.status();
-  conn.execute(
-    "UPDATE runs SET ended_at = ?1, status = ?2, total_tests = ?3, passed = ?4, failed = ?5, duration_ms = ?6 WHERE id = ?7",
-    rusqlite::params![
-      run.ended_at,
-      status.to_string(),
-      run.total_tests,
-      run.passed,
-      run.failed,
-      run.duration_ms,
-      run.run_id
-    ],
-  )?;
+fn delete_all_evidence(conn: &mut SqliteConnection) -> Result<()> {
+  diesel::delete(mock_warnings::table).execute(conn)?;
+  diesel::delete(mock_interactions::table).execute(conn)?;
+  diesel::delete(snapshots::table).execute(conn)?;
+  diesel::delete(spans::table).execute(conn)?;
+  diesel::delete(entries::table).execute(conn)?;
+  diesel::delete(tests::table).execute(conn)?;
   Ok(())
 }
 
-fn save_test_start_on(conn: &rusqlite::Connection, test: &TestStart<'_>) -> Result<()> {
-  let test_path_json = serde_json::to_string(test.test_path)?;
-  conn.execute(
-    "INSERT OR REPLACE INTO tests (id, run_id, test_name, spec_name, test_path, started_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-    rusqlite::params![
-      test.test_id,
-      test.run_id,
-      test.test_name,
-      test.spec_name,
-      test_path_json,
-      test.started_at
-    ],
-  )?;
+fn save_run_end_on(conn: &mut SqliteConnection, run: &RunEnd<'_>) -> Result<()> {
+  diesel::update(runs::table.find(run.run_id))
+    .set((
+      runs::ended_at.eq(run.ended_at),
+      runs::status.eq(run.status().to_string()),
+      runs::total_tests.eq(run.total_tests),
+      runs::passed.eq(run.passed),
+      runs::failed.eq(run.failed),
+      runs::duration_ms.eq(run.duration_ms),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_test_end_on(conn: &rusqlite::Connection, test: &TestEnd<'_>) -> Result<()> {
-  conn.execute(
-    "UPDATE tests SET ended_at = ?1, status = ?2, duration_ms = ?3, error = ?4 WHERE run_id = ?5 AND id = ?6",
-    rusqlite::params![
-      test.ended_at,
-      test.status,
-      test.duration_ms,
-      non_empty(test.error),
-      test.run_id,
-      test.test_id
-    ],
-  )?;
+fn save_test_start_on(conn: &mut SqliteConnection, test: &TestStart<'_>) -> Result<()> {
+  let test_path = serde_json::to_string(test.test_path)?;
+  diesel::insert_into(tests::table)
+    .values((
+      tests::id.eq(test.test_id),
+      tests::run_id.eq(test.run_id),
+      tests::test_name.eq(test.test_name),
+      tests::spec_name.eq(test.spec_name),
+      tests::test_path.eq(&test_path),
+      tests::started_at.eq(test.started_at),
+    ))
+    .on_conflict((tests::run_id, tests::id))
+    .do_update()
+    .set((
+      tests::test_name.eq(test.test_name),
+      tests::spec_name.eq(test.spec_name),
+      tests::test_path.eq(&test_path),
+      tests::started_at.eq(test.started_at),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_entry_on(conn: &rusqlite::Connection, entry: &NewEntry) -> Result<()> {
-  conn.execute(
-    "INSERT INTO entries (run_id, test_id, timestamp, system, action, result, input, output, metadata, expected, actual, error, trace_id, assertion_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
-    rusqlite::params![
-      entry.run_id,
-      entry.test_id,
-      entry.timestamp,
-      entry.system,
-      entry.action,
-      entry.result,
-      non_empty(&entry.input),
-      non_empty(&entry.output),
-      non_empty(&entry.metadata),
-      non_empty(&entry.expected),
-      non_empty(&entry.actual),
-      non_empty(&entry.error),
-      non_empty(&entry.trace_id),
-      entry.assertion_id
-    ],
-  )?;
+fn save_test_end_on(conn: &mut SqliteConnection, test: &TestEnd<'_>) -> Result<()> {
+  diesel::update(
+    tests::table
+      .filter(tests::run_id.eq(test.run_id))
+      .filter(tests::id.eq(test.test_id)),
+  )
+  .set((
+    tests::ended_at.eq(test.ended_at),
+    tests::status.eq(test.status),
+    tests::duration_ms.eq(test.duration_ms),
+    tests::error.eq(non_empty(test.error)),
+  ))
+  .execute(conn)?;
   Ok(())
 }
 
-fn save_span_on(conn: &rusqlite::Connection, span: &NewSpan) -> Result<()> {
-  conn.execute(
-    "INSERT INTO spans (run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
-    rusqlite::params![
-      span.run_id,
-      span.trace_id,
-      span.span_id,
-      non_empty(&span.parent_span_id),
-      span.operation_name,
-      span.service_name,
-      span.start_time_nanos,
-      span.end_time_nanos,
-      span.status,
-      non_empty(&span.attributes),
-      non_empty(&span.exception_type),
-      non_empty(&span.exception_message),
-      non_empty(&span.exception_stack_trace)
-    ],
-  )?;
+fn save_entry_on(conn: &mut SqliteConnection, entry: &NewEntry) -> Result<()> {
+  diesel::insert_into(entries::table)
+    .values((
+      entries::run_id.eq(&entry.run_id),
+      entries::test_id.eq(&entry.test_id),
+      entries::timestamp.eq(&entry.timestamp),
+      entries::system.eq(&entry.system),
+      entries::action.eq(&entry.action),
+      entries::result.eq(&entry.result),
+      entries::input.eq(non_empty(&entry.input)),
+      entries::output.eq(non_empty(&entry.output)),
+      entries::metadata.eq(non_empty(&entry.metadata)),
+      entries::expected.eq(non_empty(&entry.expected)),
+      entries::actual.eq(non_empty(&entry.actual)),
+      entries::error.eq(non_empty(&entry.error)),
+      entries::trace_id.eq(non_empty(&entry.trace_id)),
+      entries::assertion_id.eq(&entry.assertion_id),
+      entries::correlation_key.eq(&entry.correlation_key),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_snapshot_on(conn: &rusqlite::Connection, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-  conn.execute(
-    "INSERT INTO snapshots (run_id, test_id, system, state_json, summary, captured_at, trigger_kind) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-    rusqlite::params![
-      snapshot.run_id,
-      snapshot.test_id,
-      snapshot.system,
-      snapshot.state_json,
-      snapshot.summary,
-      non_empty(snapshot.captured_at),
-      snapshot.trigger
-    ],
-  )?;
+fn save_span_on(conn: &mut SqliteConnection, span: &NewSpan) -> Result<()> {
+  diesel::insert_into(spans::table)
+    .values((
+      spans::run_id.eq(&span.run_id),
+      spans::trace_id.eq(&span.trace_id),
+      spans::span_id.eq(&span.span_id),
+      spans::parent_span_id.eq(non_empty(&span.parent_span_id)),
+      spans::operation_name.eq(&span.operation_name),
+      spans::service_name.eq(&span.service_name),
+      spans::start_time_nanos.eq(span.start_time_nanos),
+      spans::end_time_nanos.eq(span.end_time_nanos),
+      spans::status.eq(&span.status),
+      spans::attributes.eq(non_empty(&span.attributes)),
+      spans::exception_type.eq(non_empty(&span.exception_type)),
+      spans::exception_message.eq(non_empty(&span.exception_message)),
+      spans::exception_stack_trace.eq(non_empty(&span.exception_stack_trace)),
+    ))
+    .execute(conn)?;
+  Ok(())
+}
+
+fn save_snapshot_on(conn: &mut SqliteConnection, snapshot: &SnapshotWrite<'_>) -> Result<()> {
+  diesel::insert_into(snapshots::table)
+    .values((
+      snapshots::run_id.eq(snapshot.run_id),
+      snapshots::test_id.eq(snapshot.test_id),
+      snapshots::system.eq(snapshot.system),
+      snapshots::state_json.eq(snapshot.state_json),
+      snapshots::summary.eq(snapshot.summary),
+      snapshots::captured_at.eq(non_empty(snapshot.captured_at)),
+      snapshots::trigger_kind.eq(snapshot.trigger),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
 fn save_mock_interaction_on(
-  conn: &rusqlite::Connection,
+  conn: &mut SqliteConnection,
   interaction: &NewMockInteraction,
 ) -> Result<()> {
-  conn.execute(
-    "INSERT INTO mock_interactions (run_id, test_id, timestamp, system, protocol, method, target, matched, stub_id, attribution, request_body, request_body_truncated, response_body, response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name, scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
-    rusqlite::params![
-      interaction.run_id,
-      interaction.test_id,
-      interaction.timestamp,
-      interaction.system,
-      interaction.protocol,
-      interaction.method,
-      interaction.target,
-      interaction.matched,
-      interaction.stub_id,
-      interaction.attribution,
-      non_empty(&interaction.request_body),
-      interaction.request_body_truncated,
-      non_empty(&interaction.response_body),
-      interaction.response_body_truncated,
-      interaction.status,
-      interaction.latency_ms,
-      non_empty(&interaction.near_misses),
-      interaction.trace_id,
-      interaction.scenario_name,
-      interaction.scenario_state,
-      interaction.next_scenario_state,
-      interaction.configured_delay_ms,
-      interaction.fault,
-      interaction.client_deadline_ms
-    ],
-  )?;
+  diesel::insert_into(mock_interactions::table)
+    .values((
+      mock_interactions::run_id.eq(&interaction.run_id),
+      mock_interactions::test_id.eq(&interaction.test_id),
+      mock_interactions::timestamp.eq(&interaction.timestamp),
+      mock_interactions::system.eq(&interaction.system),
+      mock_interactions::protocol.eq(&interaction.protocol),
+      mock_interactions::method.eq(&interaction.method),
+      mock_interactions::target.eq(&interaction.target),
+      mock_interactions::matched.eq(interaction.matched),
+      mock_interactions::stub_id.eq(&interaction.stub_id),
+      mock_interactions::attribution.eq(&interaction.attribution),
+      mock_interactions::request_body.eq(non_empty(&interaction.request_body)),
+      mock_interactions::request_body_truncated.eq(interaction.request_body_truncated),
+      mock_interactions::response_body.eq(non_empty(&interaction.response_body)),
+      mock_interactions::response_body_truncated.eq(interaction.response_body_truncated),
+      mock_interactions::status.eq(&interaction.status),
+      mock_interactions::latency_ms.eq(interaction.latency_ms),
+      mock_interactions::near_misses.eq(non_empty(&interaction.near_misses)),
+      mock_interactions::trace_id.eq(&interaction.trace_id),
+      mock_interactions::scenario_name.eq(&interaction.scenario_name),
+      mock_interactions::scenario_state.eq(&interaction.scenario_state),
+      mock_interactions::next_scenario_state.eq(&interaction.next_scenario_state),
+      mock_interactions::configured_delay_ms.eq(interaction.configured_delay_ms),
+      mock_interactions::fault.eq(&interaction.fault),
+      mock_interactions::client_deadline_ms.eq(interaction.client_deadline_ms),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_mock_warning_on(conn: &rusqlite::Connection, warning: &NewMockWarning) -> Result<()> {
-  conn.execute(
-    "INSERT INTO mock_warnings (run_id, test_id, timestamp, system, kind, message, stub_id, target) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-    rusqlite::params![
-      warning.run_id,
-      warning.test_id,
-      warning.timestamp,
-      warning.system,
-      warning.kind,
-      warning.message,
-      warning.stub_id,
-      warning.target
-    ],
-  )?;
+fn save_mock_warning_on(conn: &mut SqliteConnection, warning: &NewMockWarning) -> Result<()> {
+  diesel::insert_into(mock_warnings::table)
+    .values((
+      mock_warnings::run_id.eq(&warning.run_id),
+      mock_warnings::test_id.eq(&warning.test_id),
+      mock_warnings::timestamp.eq(&warning.timestamp),
+      mock_warnings::system.eq(&warning.system),
+      mock_warnings::kind.eq(&warning.kind),
+      mock_warnings::message.eq(&warning.message),
+      mock_warnings::stub_id.eq(&warning.stub_id),
+      mock_warnings::target.eq(&warning.target),
+    ))
+    .execute(conn)?;
   Ok(())
 }

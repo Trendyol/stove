@@ -1,0 +1,126 @@
+name: Stove CLI Container Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Image version (for example 0.26.0; defaults to gradle.properties)'
+        required: false
+        type: string
+      publish_latest:
+        description: 'Also move latest (stable semantic versions only)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: stove-cli-image-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: trendyol/stove-cli
+
+jobs:
+  publish:
+    name: Publish multi-platform image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve image version and aliases
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PUBLISH_LATEST: ${{ inputs.publish_latest }}
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            raw_version="${GITHUB_REF_NAME#v}"
+          elif [[ -n "${INPUT_VERSION}" ]]; then
+            raw_version="${INPUT_VERSION#v}"
+          else
+            raw_version="$(sed -n 's/^version=//p' gradle.properties)"
+          fi
+
+          if [[ ! "${raw_version}" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "Invalid container version: ${raw_version}" >&2
+            exit 1
+          fi
+
+          stable=false
+          major=""
+          major_minor=""
+          if [[ "${raw_version}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            stable=true
+            major="${BASH_REMATCH[1]}"
+            major_minor="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+          fi
+
+          publish_latest=false
+          if [[ "${stable}" == "true" ]] && \
+             { [[ "${GITHUB_EVENT_NAME}" == "push" ]] || [[ "${INPUT_PUBLISH_LATEST}" == "true" ]]; }; then
+            publish_latest=true
+          fi
+
+          {
+            echo "version=${raw_version}"
+            echo "stable=${stable}"
+            echo "major=${major}"
+            echo "major_minor=${major_minor}"
+            echo "publish_latest=${publish_latest}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.major_minor }},enable=${{ steps.version.outputs.stable }}
+            type=raw,value=${{ steps.version.outputs.major }},enable=${{ steps.version.outputs.stable }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.publish_latest }}
+          labels: |
+            org.opencontainers.image.title=Stove CLI
+            org.opencontainers.image.description=Dashboard, API, MCP server, and event ingestion for Stove test runs
+            org.opencontainers.image.source=https://github.com/Trendyol/stove
+            org.opencontainers.image.licenses=Apache-2.0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: tools/stove-cli/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          build-args: |
+            STOVE_VERSION=${{ steps.version.outputs.version }}
+          cache-from: type=gha,scope=stove-cli-image
+          cache-to: type=gha,mode=max,scope=stove-cli-image
+          provenance: mode=max
+          sbom: true

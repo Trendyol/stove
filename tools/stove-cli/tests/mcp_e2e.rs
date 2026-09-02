@@ -428,10 +428,9 @@ async fn mcp_handles_no_failures_and_caps_oversized_detail() {
 }
 
 #[tokio::test]
-async fn mcp_flushes_pending_ingest_before_reads() {
-  let (server, ingestor) = TestServer::start_with_ingestor().await;
-  let service =
-    DashboardEventServiceImpl::new_with_ingestor(server.repo.clone(), server.sse.clone(), ingestor);
+async fn mcp_reads_transactionally_committed_ingest() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
 
   send_event(&service, run_started("run-pending", "checkout-api")).await;
   send_event(&service, test_started("run-pending", "test-pending")).await;
@@ -546,6 +545,8 @@ fn timestamp() -> Option<prost_types::Timestamp> {
 fn run_started(run_id: &str, app_name: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::RunStarted(
       proto::RunStartedEvent {
         timestamp: timestamp(),
@@ -561,6 +562,8 @@ fn run_started(run_id: &str, app_name: &str) -> proto::DashboardEvent {
 fn test_started(run_id: &str, test_id: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestStarted(
       proto::TestStartedEvent {
         test_id: test_id.to_string(),
@@ -576,6 +579,8 @@ fn test_started(run_id: &str, test_id: &str) -> proto::DashboardEvent {
 fn test_ended_failed(run_id: &str, test_id: &str) -> proto::DashboardEvent {
   proto::DashboardEvent {
     run_id: run_id.to_string(),
+    event_id: String::new(),
+    sequence: 0,
     event: Some(proto::dashboard_event::Event::TestEnded(
       proto::TestEndedEvent {
         test_id: test_id.to_string(),

@@ -1,13 +1,13 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use clap::Parser;
+use tokio::sync::watch;
+use tokio::task::JoinHandle;
 use tracing::info;
 
 use stove::config;
 use stove::grpc;
 use stove::http;
-use stove::ingest;
 use stove::proto;
 use stove::skills;
 use stove::sse;
@@ -16,7 +16,7 @@ use stove::storage;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
   initialize_logging();
-  let config = config::Config::parse();
+  let config = config::Config::parse()?;
 
   // Handle a `skills` subcommand if requested. Returns true when handled.
   if skills::handle_skills_command(&config).await? {
@@ -38,17 +38,48 @@ async fn main() -> anyhow::Result<()> {
   skills::maybe_update_skills(&config).await;
 
   let sse_manager = Arc::new(sse::manager::SseManager::new());
-  let ingestor = ingest::EventIngestor::new(repository.clone());
+  let live_event_relay = sse::relay::spawn(repository.clone(), sse_manager.clone());
+  let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
   let grpc_handle = tokio::spawn(serve_grpc(
     config.grpc_port,
     repository.clone(),
     sse_manager.clone(),
-    ingestor.clone(),
+    shutdown_rx.clone(),
   ));
-  let http_handle = tokio::spawn(serve_http(config.port, repository, sse_manager, ingestor));
+  let http_handle = tokio::spawn(serve_http(
+    config.port,
+    repository,
+    sse_manager,
+    shutdown_rx,
+  ));
   print_endpoints(config.port, config.grpc_port);
-  wait_for_server(grpc_handle, http_handle).await
+  run_until_shutdown(grpc_handle, http_handle, live_event_relay, shutdown_tx).await
+}
+
+async fn run_until_shutdown(
+  mut grpc_handle: JoinHandle<anyhow::Result<()>>,
+  mut http_handle: JoinHandle<anyhow::Result<()>>,
+  live_event_relay: JoinHandle<()>,
+  shutdown_tx: watch::Sender<bool>,
+) -> anyhow::Result<()> {
+  let server_result = tokio::select! {
+    result = &mut grpc_handle => result?,
+    result = &mut http_handle => result?,
+    () = termination_signal() => Ok(()),
+  };
+  let _ = shutdown_tx.send(true);
+  let _ = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+    if !grpc_handle.is_finished() {
+      let _ = (&mut grpc_handle).await;
+    }
+    if !http_handle.is_finished() {
+      let _ = (&mut http_handle).await;
+    }
+  })
+  .await;
+  live_event_relay.abort();
+  server_result
 }
 
 fn initialize_logging() {
@@ -89,15 +120,14 @@ async fn serve_grpc(
   port: u16,
   repository: Arc<storage::repository::Repository>,
   sse_manager: Arc<sse::manager::SseManager>,
-  ingestor: ingest::EventIngestor,
+  shutdown: watch::Receiver<bool>,
 ) -> anyhow::Result<()> {
   let address = SocketAddr::from(([0, 0, 0, 0], port));
-  let service =
-    grpc::service::DashboardEventServiceImpl::new_with_ingestor(repository, sse_manager, ingestor);
+  let service = grpc::service::DashboardEventServiceImpl::new(repository, sse_manager);
   info!("gRPC server listening on {}", address);
   tonic::transport::Server::builder()
     .add_service(proto::dashboard_event_service_server::DashboardEventServiceServer::new(service))
-    .serve(address)
+    .serve_with_shutdown(address, wait_for_shutdown(shutdown))
     .await?;
   Ok(())
 }
@@ -106,16 +136,17 @@ async fn serve_http(
   port: u16,
   repository: Arc<storage::repository::Repository>,
   sse_manager: Arc<sse::manager::SseManager>,
-  ingestor: ingest::EventIngestor,
+  shutdown: watch::Receiver<bool>,
 ) -> anyhow::Result<()> {
   let address = SocketAddr::from(([0, 0, 0, 0], port));
-  let router = http::server::create_router_with_ingestor(repository, sse_manager, Some(ingestor));
+  let router = http::server::create_router(repository, sse_manager);
   info!("HTTP server listening on {}", address);
   let listener = tokio::net::TcpListener::bind(address).await?;
   axum::serve(
     listener,
     router.into_make_service_with_connect_info::<SocketAddr>(),
   )
+  .with_graceful_shutdown(wait_for_shutdown(shutdown))
   .await?;
   Ok(())
 }
@@ -131,13 +162,25 @@ fn print_endpoints(http_port: u16, grpc_port: u16) {
   );
 }
 
-async fn wait_for_server(
-  grpc_handle: tokio::task::JoinHandle<anyhow::Result<()>>,
-  http_handle: tokio::task::JoinHandle<anyhow::Result<()>>,
-) -> anyhow::Result<()> {
-  tokio::select! {
-      result = grpc_handle => result??,
-      result = http_handle => result??,
+async fn wait_for_shutdown(mut shutdown: watch::Receiver<bool>) {
+  while !*shutdown.borrow() {
+    if shutdown.changed().await.is_err() {
+      break;
+    }
   }
-  Ok(())
+}
+
+#[cfg(unix)]
+async fn termination_signal() {
+  let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+    .expect("install SIGTERM handler");
+  tokio::select! {
+    _ = tokio::signal::ctrl_c() => {}
+    _ = terminate.recv() => {}
+  }
+}
+
+#[cfg(not(unix))]
+async fn termination_signal() {
+  let _ = tokio::signal::ctrl_c().await;
 }

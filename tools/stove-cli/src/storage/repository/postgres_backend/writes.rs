@@ -1,320 +1,295 @@
-use postgres::GenericClient;
+//! Diesel-backed `PostgreSQL` writes. Retention remains a set-based operation;
+//! all ordinary inserts and updates use Diesel's query builder.
 
-use crate::error::Result;
+use diesel::prelude::*;
+
+use super::PostgresBackend;
+use crate::error::{AppError, Result};
 use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use crate::storage::repository::write_models::{
-  RunEnd, RunStart, SnapshotWrite, TestEnd, TestStart, WriteOperation,
+  RunEnd, RunStart, SnapshotWrite, TestEnd, TestStart, WriteOperation, non_empty,
 };
-
-use super::PostgresBackend;
+use crate::storage::schema::postgres::{
+  dashboard_settings, entries, mock_interactions, mock_warnings, runs, snapshots, spans, tests,
+};
 
 impl PostgresBackend {
   pub fn save_run_start(&self, run: &RunStart<'_>) -> Result<()> {
-    let mut client = self.lock_write();
-    let mut tx = client.transaction()?;
-    save_run_start_on(&mut tx, run)?;
-    tx.commit()?;
-    Ok(())
+    self
+      .lock_write()
+      .transaction(|conn| save_run_start_on(conn, run))
   }
 
-  pub fn save_run_end(&self, run: &RunEnd<'_>, retention: usize) -> Result<()> {
-    let mut client = self.lock_write();
-    let mut tx = client.transaction()?;
-    save_run_end_on(&mut tx, run)?;
-    prune_for_completed_run(&mut tx, run.run_id, retention)?;
-    tx.commit()?;
-    Ok(())
+  pub fn save_run_end(&self, run: &RunEnd<'_>) -> Result<()> {
+    self.lock_write().transaction(|conn| {
+      let retention = retention_on(conn)?;
+      save_run_end_on(conn, run)?;
+      prune_for_completed_run(conn, run.run_id, retention)
+    })
   }
 
   pub fn save_test_start(&self, test: &TestStart<'_>) -> Result<()> {
-    let mut client = self.lock_write();
-    save_test_start_on(&mut *client, test)
+    save_test_start_on(&mut self.lock_write(), test)
   }
 
   pub fn save_test_end(&self, test: &TestEnd<'_>) -> Result<()> {
-    let mut client = self.lock_write();
-    save_test_end_on(&mut *client, test)
+    save_test_end_on(&mut self.lock_write(), test)
   }
 
   pub fn save_entry(&self, entry: &NewEntry) -> Result<()> {
-    save_entry_on(&mut *self.lock_write(), entry)
+    save_entry_on(&mut self.lock_write(), entry)
   }
 
   pub fn save_span(&self, span: &NewSpan) -> Result<()> {
-    save_span_on(&mut *self.lock_write(), span)
+    save_span_on(&mut self.lock_write(), span)
   }
 
   pub fn save_snapshot(&self, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-    save_snapshot_on(&mut *self.lock_write(), snapshot)
+    save_snapshot_on(&mut self.lock_write(), snapshot)
   }
 
   pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
-    save_mock_interaction_on(&mut *self.lock_write(), interaction)
+    save_mock_interaction_on(&mut self.lock_write(), interaction)
   }
 
   pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
-    save_mock_warning_on(&mut *self.lock_write(), warning)
+    save_mock_warning_on(&mut self.lock_write(), warning)
   }
 
   pub fn clear_all(&self) -> Result<()> {
-    self.lock_write().execute("DELETE FROM runs", &[])?;
-    Ok(())
-  }
-
-  pub fn apply_persisted_events(
-    &self,
-    events: &[PersistedDashboardEvent],
-    retention: usize,
-  ) -> Result<()> {
-    let mut client = self.lock_write();
-    let mut tx = client.transaction()?;
-    for event in events {
-      apply_event(&mut tx, event, retention)?;
-    }
-    tx.commit()?;
+    let mut conn = self.lock_write();
+    diesel::delete(runs::table).execute(&mut *conn)?;
     Ok(())
   }
 }
 
-fn apply_event<C: GenericClient>(
-  client: &mut C,
+pub(super) fn apply_event(
+  conn: &mut PgConnection,
   event: &PersistedDashboardEvent,
   retention: usize,
 ) -> Result<()> {
   match WriteOperation::from(event) {
-    WriteOperation::RunStarted(run) => save_run_start_on(client, &run),
+    WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
-      save_run_end_on(client, &run)?;
-      prune_for_completed_run(client, run.run_id, retention)
+      save_run_end_on(conn, &run)?;
+      prune_for_completed_run(conn, run.run_id, retention)
     }
-    WriteOperation::TestStarted(test) => save_test_start_on(client, &test),
-    WriteOperation::TestEnded(test) => save_test_end_on(client, &test),
-    WriteOperation::Entry(entry) => save_entry_on(client, entry),
-    WriteOperation::Span(span) => save_span_on(client, span),
-    WriteOperation::Snapshot(snapshot) => save_snapshot_on(client, &snapshot),
-    WriteOperation::MockInteraction(interaction) => save_mock_interaction_on(client, interaction),
-    WriteOperation::MockWarning(warning) => save_mock_warning_on(client, warning),
+    WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
+    WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
+    WriteOperation::Entry(entry) => save_entry_on(conn, entry),
+    WriteOperation::Span(span) => save_span_on(conn, span),
+    WriteOperation::Snapshot(snapshot) => save_snapshot_on(conn, &snapshot),
+    WriteOperation::MockInteraction(interaction) => save_mock_interaction_on(conn, interaction),
+    WriteOperation::MockWarning(warning) => save_mock_warning_on(conn, warning),
   }
 }
 
-fn save_run_start_on<C: GenericClient>(client: &mut C, run: &RunStart<'_>) -> Result<()> {
+fn save_run_start_on(conn: &mut PgConnection, run: &RunStart<'_>) -> Result<()> {
   let systems = serde_json::to_string(run.systems)?;
-  let metadata = serde_json::to_string(run.metadata)?;
-  client.execute(
-    "INSERT INTO runs (id, app_name, started_at, stove_version, systems, metadata)
-     VALUES ($1, $2, $3, $4, $5, $6::text::jsonb)
-     ON CONFLICT (id) DO UPDATE SET app_name = EXCLUDED.app_name,
-       started_at = EXCLUDED.started_at, stove_version = EXCLUDED.stove_version,
-       systems = EXCLUDED.systems, metadata = EXCLUDED.metadata",
-    &[
-      &run.run_id,
-      &run.app_name,
-      &run.started_at,
-      &run.stove_version,
-      &systems,
-      &metadata,
-    ],
-  )?;
+  let metadata = serde_json::to_value(run.metadata)?;
+  diesel::insert_into(runs::table)
+    .values((
+      runs::id.eq(run.run_id),
+      runs::app_name.eq(run.app_name),
+      runs::started_at.eq(run.started_at),
+      runs::stove_version.eq(run.stove_version),
+      runs::systems.eq(&systems),
+      runs::metadata.eq(&metadata),
+    ))
+    .on_conflict(runs::id)
+    .do_update()
+    .set((
+      runs::app_name.eq(run.app_name),
+      runs::started_at.eq(run.started_at),
+      runs::stove_version.eq(run.stove_version),
+      runs::systems.eq(&systems),
+      runs::metadata.eq(&metadata),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_run_end_on<C: GenericClient>(client: &mut C, run: &RunEnd<'_>) -> Result<()> {
-  let status = run.status().to_string();
-  client.execute(
-    "UPDATE runs SET ended_at = $1, status = $2, total_tests = $3, passed = $4,
-       failed = $5, duration_ms = $6 WHERE id = $7",
-    &[
-      &run.ended_at,
-      &status,
-      &run.total_tests,
-      &run.passed,
-      &run.failed,
-      &run.duration_ms,
-      &run.run_id,
-    ],
-  )?;
+fn save_run_end_on(conn: &mut PgConnection, run: &RunEnd<'_>) -> Result<()> {
+  diesel::update(runs::table.find(run.run_id))
+    .set((
+      runs::ended_at.eq(run.ended_at),
+      runs::status.eq(run.status().to_string()),
+      runs::total_tests.eq(run.total_tests),
+      runs::passed.eq(run.passed),
+      runs::failed.eq(run.failed),
+      runs::duration_ms.eq(run.duration_ms),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_test_start_on<C: GenericClient>(client: &mut C, test: &TestStart<'_>) -> Result<()> {
+fn save_test_start_on(conn: &mut PgConnection, test: &TestStart<'_>) -> Result<()> {
   let test_path = serde_json::to_string(test.test_path)?;
-  client.execute(
-    "INSERT INTO tests (id, run_id, test_name, spec_name, test_path, started_at)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (run_id, id) DO UPDATE SET test_name = EXCLUDED.test_name,
-       spec_name = EXCLUDED.spec_name, test_path = EXCLUDED.test_path,
-       started_at = EXCLUDED.started_at",
-    &[
-      &test.test_id,
-      &test.run_id,
-      &test.test_name,
-      &test.spec_name,
-      &test_path,
-      &test.started_at,
-    ],
-  )?;
+  diesel::insert_into(tests::table)
+    .values((
+      tests::id.eq(test.test_id),
+      tests::run_id.eq(test.run_id),
+      tests::test_name.eq(test.test_name),
+      tests::spec_name.eq(test.spec_name),
+      tests::test_path.eq(&test_path),
+      tests::started_at.eq(test.started_at),
+    ))
+    .on_conflict((tests::run_id, tests::id))
+    .do_update()
+    .set((
+      tests::test_name.eq(test.test_name),
+      tests::spec_name.eq(test.spec_name),
+      tests::test_path.eq(&test_path),
+      tests::started_at.eq(test.started_at),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_test_end_on<C: GenericClient>(client: &mut C, test: &TestEnd<'_>) -> Result<()> {
-  client.execute(
-    "UPDATE tests SET ended_at = $1, status = $2, duration_ms = $3, error = $4
-      WHERE run_id = $5 AND id = $6",
-    &[
-      &test.ended_at,
-      &test.status,
-      &test.duration_ms,
-      &non_empty(test.error),
-      &test.run_id,
-      &test.test_id,
-    ],
-  )?;
+fn save_test_end_on(conn: &mut PgConnection, test: &TestEnd<'_>) -> Result<()> {
+  diesel::update(
+    tests::table
+      .filter(tests::run_id.eq(test.run_id))
+      .filter(tests::id.eq(test.test_id)),
+  )
+  .set((
+    tests::ended_at.eq(test.ended_at),
+    tests::status.eq(test.status),
+    tests::duration_ms.eq(test.duration_ms),
+    tests::error.eq(non_empty(test.error)),
+  ))
+  .execute(conn)?;
   Ok(())
 }
 
-fn save_entry_on<C: GenericClient>(client: &mut C, entry: &NewEntry) -> Result<()> {
-  client.execute(
-    "INSERT INTO entries (run_id, test_id, timestamp, system, action, result, input, output,
-      metadata, expected, actual, error, trace_id, assertion_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
-    &[
-      &entry.run_id,
-      &entry.test_id,
-      &entry.timestamp,
-      &entry.system,
-      &entry.action,
-      &entry.result,
-      &non_empty(&entry.input),
-      &non_empty(&entry.output),
-      &non_empty(&entry.metadata),
-      &non_empty(&entry.expected),
-      &non_empty(&entry.actual),
-      &non_empty(&entry.error),
-      &non_empty(&entry.trace_id),
-      &entry.assertion_id,
-    ],
-  )?;
+fn save_entry_on(conn: &mut PgConnection, entry: &NewEntry) -> Result<()> {
+  diesel::insert_into(entries::table)
+    .values((
+      entries::run_id.eq(&entry.run_id),
+      entries::test_id.eq(&entry.test_id),
+      entries::timestamp.eq(&entry.timestamp),
+      entries::system.eq(&entry.system),
+      entries::action.eq(&entry.action),
+      entries::result.eq(&entry.result),
+      entries::input.eq(non_empty(&entry.input)),
+      entries::output.eq(non_empty(&entry.output)),
+      entries::metadata.eq(non_empty(&entry.metadata)),
+      entries::expected.eq(non_empty(&entry.expected)),
+      entries::actual.eq(non_empty(&entry.actual)),
+      entries::error.eq(non_empty(&entry.error)),
+      entries::trace_id.eq(non_empty(&entry.trace_id)),
+      entries::assertion_id.eq(&entry.assertion_id),
+      entries::correlation_key.eq(&entry.correlation_key),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_span_on<C: GenericClient>(client: &mut C, span: &NewSpan) -> Result<()> {
-  client.execute(
-    "INSERT INTO spans (run_id, trace_id, span_id, parent_span_id, operation_name, service_name,
-      start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message,
-      exception_stack_trace) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
-    &[
-      &span.run_id,
-      &span.trace_id,
-      &span.span_id,
-      &non_empty(&span.parent_span_id),
-      &span.operation_name,
-      &span.service_name,
-      &span.start_time_nanos,
-      &span.end_time_nanos,
-      &span.status,
-      &non_empty(&span.attributes),
-      &non_empty(&span.exception_type),
-      &non_empty(&span.exception_message),
-      &non_empty(&span.exception_stack_trace),
-    ],
-  )?;
+fn save_span_on(conn: &mut PgConnection, span: &NewSpan) -> Result<()> {
+  diesel::insert_into(spans::table)
+    .values((
+      spans::run_id.eq(&span.run_id),
+      spans::trace_id.eq(&span.trace_id),
+      spans::span_id.eq(&span.span_id),
+      spans::parent_span_id.eq(non_empty(&span.parent_span_id)),
+      spans::operation_name.eq(&span.operation_name),
+      spans::service_name.eq(&span.service_name),
+      spans::start_time_nanos.eq(span.start_time_nanos),
+      spans::end_time_nanos.eq(span.end_time_nanos),
+      spans::status.eq(&span.status),
+      spans::attributes.eq(non_empty(&span.attributes)),
+      spans::exception_type.eq(non_empty(&span.exception_type)),
+      spans::exception_message.eq(non_empty(&span.exception_message)),
+      spans::exception_stack_trace.eq(non_empty(&span.exception_stack_trace)),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_snapshot_on<C: GenericClient>(client: &mut C, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-  client.execute(
-    "INSERT INTO snapshots (run_id, test_id, system, state_json, summary, captured_at, trigger_kind)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)",
-    &[
-      &snapshot.run_id,
-      &snapshot.test_id,
-      &snapshot.system,
-      &snapshot.state_json,
-      &snapshot.summary,
-      &non_empty(snapshot.captured_at),
-      &snapshot.trigger,
-    ],
-  )?;
+fn save_snapshot_on(conn: &mut PgConnection, snapshot: &SnapshotWrite<'_>) -> Result<()> {
+  diesel::insert_into(snapshots::table)
+    .values((
+      snapshots::run_id.eq(snapshot.run_id),
+      snapshots::test_id.eq(snapshot.test_id),
+      snapshots::system.eq(snapshot.system),
+      snapshots::state_json.eq(snapshot.state_json),
+      snapshots::summary.eq(snapshot.summary),
+      snapshots::captured_at.eq(non_empty(snapshot.captured_at)),
+      snapshots::trigger_kind.eq(snapshot.trigger),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_mock_interaction_on<C: GenericClient>(
-  client: &mut C,
+fn save_mock_interaction_on(
+  conn: &mut PgConnection,
   interaction: &NewMockInteraction,
 ) -> Result<()> {
-  client.execute(
-    "INSERT INTO mock_interactions (run_id, test_id, timestamp, system, protocol, method, target,
-      matched, stub_id, attribution, request_body, request_body_truncated, response_body,
-      response_body_truncated, status, latency_ms, near_misses, trace_id, scenario_name,
-      scenario_state, next_scenario_state, configured_delay_ms, fault, client_deadline_ms)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-             $16, $17, $18, $19, $20, $21, $22, $23, $24)",
-    &[
-      &interaction.run_id,
-      &interaction.test_id,
-      &interaction.timestamp,
-      &interaction.system,
-      &interaction.protocol,
-      &interaction.method,
-      &interaction.target,
-      &interaction.matched,
-      &interaction.stub_id,
-      &interaction.attribution,
-      &non_empty(&interaction.request_body),
-      &interaction.request_body_truncated,
-      &non_empty(&interaction.response_body),
-      &interaction.response_body_truncated,
-      &interaction.status,
-      &interaction.latency_ms,
-      &non_empty(&interaction.near_misses),
-      &interaction.trace_id,
-      &interaction.scenario_name,
-      &interaction.scenario_state,
-      &interaction.next_scenario_state,
-      &interaction.configured_delay_ms,
-      &interaction.fault,
-      &interaction.client_deadline_ms,
-    ],
-  )?;
+  diesel::insert_into(mock_interactions::table)
+    .values((
+      mock_interactions::run_id.eq(&interaction.run_id),
+      mock_interactions::test_id.eq(&interaction.test_id),
+      mock_interactions::timestamp.eq(&interaction.timestamp),
+      mock_interactions::system.eq(&interaction.system),
+      mock_interactions::protocol.eq(&interaction.protocol),
+      mock_interactions::method.eq(&interaction.method),
+      mock_interactions::target.eq(&interaction.target),
+      mock_interactions::matched.eq(interaction.matched),
+      mock_interactions::stub_id.eq(&interaction.stub_id),
+      mock_interactions::attribution.eq(&interaction.attribution),
+      mock_interactions::request_body.eq(non_empty(&interaction.request_body)),
+      mock_interactions::request_body_truncated.eq(interaction.request_body_truncated),
+      mock_interactions::response_body.eq(non_empty(&interaction.response_body)),
+      mock_interactions::response_body_truncated.eq(interaction.response_body_truncated),
+      mock_interactions::status.eq(&interaction.status),
+      mock_interactions::latency_ms.eq(interaction.latency_ms),
+      mock_interactions::near_misses.eq(non_empty(&interaction.near_misses)),
+      mock_interactions::trace_id.eq(&interaction.trace_id),
+      mock_interactions::scenario_name.eq(&interaction.scenario_name),
+      mock_interactions::scenario_state.eq(&interaction.scenario_state),
+      mock_interactions::next_scenario_state.eq(&interaction.next_scenario_state),
+      mock_interactions::configured_delay_ms.eq(interaction.configured_delay_ms),
+      mock_interactions::fault.eq(&interaction.fault),
+      mock_interactions::client_deadline_ms.eq(interaction.client_deadline_ms),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn save_mock_warning_on<C: GenericClient>(client: &mut C, warning: &NewMockWarning) -> Result<()> {
-  client.execute(
-    "INSERT INTO mock_warnings (run_id, test_id, timestamp, system, kind, message, stub_id, target)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-    &[
-      &warning.run_id,
-      &warning.test_id,
-      &warning.timestamp,
-      &warning.system,
-      &warning.kind,
-      &warning.message,
-      &warning.stub_id,
-      &warning.target,
-    ],
-  )?;
+fn save_mock_warning_on(conn: &mut PgConnection, warning: &NewMockWarning) -> Result<()> {
+  diesel::insert_into(mock_warnings::table)
+    .values((
+      mock_warnings::run_id.eq(&warning.run_id),
+      mock_warnings::test_id.eq(&warning.test_id),
+      mock_warnings::timestamp.eq(&warning.timestamp),
+      mock_warnings::system.eq(&warning.system),
+      mock_warnings::kind.eq(&warning.kind),
+      mock_warnings::message.eq(&warning.message),
+      mock_warnings::stub_id.eq(&warning.stub_id),
+      mock_warnings::target.eq(&warning.target),
+    ))
+    .execute(conn)?;
   Ok(())
 }
 
-fn prune_for_completed_run<C: GenericClient>(
-  client: &mut C,
-  run_id: &str,
-  retention: usize,
-) -> Result<()> {
+fn prune_for_completed_run(conn: &mut PgConnection, run_id: &str, retention: usize) -> Result<()> {
   if retention == 0 {
     return Ok(());
   }
-  if let Some(row) = client.query_opt("SELECT app_name FROM runs WHERE id = $1", &[&run_id])? {
-    let app_name: String = row.get(0);
-    prune_app(client, &app_name, retention)?;
+  if let Some(app_name) = runs::table
+    .find(run_id)
+    .select(runs::app_name)
+    .first::<String>(conn)
+    .optional()?
+  {
+    prune_app(conn, &app_name, retention)?;
   }
   Ok(())
 }
 
-pub(in crate::storage::repository) fn prune_app<C: GenericClient>(
-  client: &mut C,
+pub(in crate::storage::repository) fn prune_app(
+  conn: &mut PgConnection,
   app_name: &str,
   retention: usize,
 ) -> Result<()> {
@@ -322,17 +297,29 @@ pub(in crate::storage::repository) fn prune_app<C: GenericClient>(
     return Ok(());
   }
   let offset = i64::try_from(retention).unwrap_or(i64::MAX);
-  client.execute(
-    "DELETE FROM runs
-      WHERE id IN (
-        SELECT id FROM runs WHERE app_name = $1 AND status <> 'RUNNING'
-        ORDER BY started_at DESC, ended_at DESC NULLS LAST, id DESC OFFSET $2
-      )",
-    &[&app_name, &offset],
-  )?;
+  let expired = runs::table
+    .filter(runs::app_name.eq(app_name))
+    .filter(runs::status.ne("RUNNING"))
+    .order((
+      runs::started_at.desc(),
+      runs::ended_at.desc(),
+      runs::id.desc(),
+    ))
+    .offset(offset)
+    .select(runs::id)
+    .load::<String>(conn)?;
+  diesel::delete(runs::table.filter(runs::id.eq_any(expired))).execute(conn)?;
   Ok(())
 }
 
-fn non_empty(value: &str) -> Option<&str> {
-  (!value.is_empty()).then_some(value)
+pub(in crate::storage::repository) fn retention_on(conn: &mut PgConnection) -> Result<usize> {
+  let value = dashboard_settings::table
+    .find("retention_runs_per_app")
+    .select(dashboard_settings::setting_value)
+    .first::<String>(conn)?;
+  value.parse().map_err(|error| {
+    AppError::Startup(format!(
+      "invalid PostgreSQL retention setting `{value}`: {error}"
+    ))
+  })
 }

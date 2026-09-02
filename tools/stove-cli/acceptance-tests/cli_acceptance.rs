@@ -6,6 +6,9 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use reqwest::Method;
 use serde_json::{Value, json};
+use stove::proto;
+use stove::proto::dashboard_event_service_client::DashboardEventServiceClient;
+use tonic::transport::Channel;
 
 use support::{
   PostgresTestDatabase, RunningStove, failed_entry, failed_span, mock_interaction, mock_warning,
@@ -296,7 +299,7 @@ async fn local_cli_default_retention_keeps_one_completed_run_and_all_active_runs
 async fn postgres_cli_runs_migrations_jsonb_filters_retention_and_admin_in_testcontainer()
 -> Result<()> {
   let database = PostgresTestDatabase::start().await?;
-  let stove = RunningStove::start_postgres(&database.url, Some(0)).await?;
+  let stove = RunningStove::start_postgres_with_config_file(&database.url, Some(0)).await?;
   let mut grpc = stove.grpc_client().await?;
   send_events(
     &mut grpc,
@@ -375,7 +378,7 @@ async fn postgres_cli_runs_migrations_jsonb_filters_retention_and_admin_in_testc
   database
     .with_client(|postgres| {
       let migrations: i64 = postgres
-        .query_one("SELECT COUNT(*) FROM schema_migrations", &[])?
+        .query_one("SELECT COUNT(*) FROM refinery_schema_history", &[])?
         .get(0);
       assert!(migrations > 0);
       let metadata_type: String = postgres
@@ -454,6 +457,331 @@ async fn postgres_cli_runs_migrations_jsonb_filters_retention_and_admin_in_testc
 
   drop(stove);
   drop(database);
+  Ok(())
+}
+
+#[tokio::test]
+async fn two_postgres_pods_share_ordered_live_events_deduplication_and_retention() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let (first, second) = tokio::try_join!(
+    RunningStove::start_postgres(&database.url, Some(5)),
+    RunningStove::start_postgres(&database.url, Some(5)),
+  )?;
+  let mut first_grpc = first.grpc_client().await?;
+  let mut second_grpc = second.grpc_client().await?;
+  let mut first_sse = SseStream::connect(&first, None).await?;
+  let mut second_sse = SseStream::connect(&second, None).await?;
+  let mut shared_events = Vec::new();
+
+  let started = identified(
+    run_started(
+      "distributed-run",
+      "distributed-app",
+      1_704_067_200,
+      &[("team", "checkout"), ("gitlab.pipeline_id", "9001")],
+    ),
+    "00000000-0000-4000-8000-000000000001",
+    1,
+  );
+  let ack = first_grpc.send_event(started).await?.into_inner();
+  assert!(ack.accepted);
+  assert!(!ack.duplicate);
+
+  let (live_id, live) = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(live["run_id"], "distributed-run");
+  assert_eq!(live["event_type"], "run_started");
+  assert_eq!(live["seq"], live_id);
+  shared_events.push((live_id, live));
+
+  send_events(
+    &mut second_grpc,
+    [identified(
+      test_started(
+        "distributed-run",
+        "distributed-test",
+        1_704_067_201,
+        "survives a pod loss",
+      ),
+      "00000000-0000-4000-8000-000000000002",
+      2,
+    )],
+  )
+  .await?;
+  let test_started = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(test_started.1["event_type"], "test_started");
+  shared_events.push(test_started);
+
+  let failed = identified(
+    failed_entry("distributed-run", "distributed-test", 1_704_067_202),
+    "00000000-0000-4000-8000-000000000003",
+    3,
+  );
+  first_grpc.send_event(failed.clone()).await?;
+  let failed_live = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(failed_live.1["event_type"], "entry_recorded");
+  assert_eq!(failed_live.1["payload"]["result"], "FAILED");
+  shared_events.push(failed_live);
+
+  let duplicate = second_grpc.send_event(failed).await?.into_inner();
+  assert!(duplicate.accepted);
+  assert!(duplicate.duplicate);
+
+  let mut passing = failed_entry("distributed-run", "distributed-test", 1_704_067_203);
+  if let Some(proto::dashboard_event::Event::EntryRecorded(entry)) = passing.event.as_mut() {
+    entry.result = "PASSED".to_string();
+    entry.error.clear();
+    entry.actual = entry.expected.clone();
+  }
+  second_grpc
+    .send_event(identified(
+      passing,
+      "00000000-0000-4000-8000-000000000004",
+      4,
+    ))
+    .await?;
+  let passing_live = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(passing_live.1["event_type"], "entry_recorded");
+  assert_eq!(passing_live.1["payload"]["result"], "PASSED");
+  shared_events.push(passing_live);
+
+  let mut replay = SseStream::connect(&first, Some(live_id)).await?;
+  for expected in shared_events.iter().skip(1) {
+    assert_eq!(&replay.next().await?, expected);
+  }
+
+  let last_live_id =
+    assert_concurrent_live_delivery(&first_grpc, &second_grpc, &mut first_sse, &mut second_sse)
+      .await?;
+
+  assert_eq!(
+    first.get_json("/runs/distributed-run").await?["metadata"]["team"],
+    "checkout"
+  );
+  assert_eq!(
+    second.get_json("/runs/distributed-run").await?["metadata"]["gitlab.pipeline_id"],
+    "9001"
+  );
+
+  first
+    .request_json(Method::PUT, "/admin/retention", json!({"runs_per_app": 2}))
+    .await?;
+  assert_eq!(
+    second.get_json("/admin/status").await?["retention_runs_per_app"],
+    2
+  );
+
+  drop(first_grpc);
+  drop(first_sse);
+  drop(replay);
+  drop(first);
+
+  send_events(
+    &mut second_grpc,
+    [
+      identified(
+        test_ended(
+          "distributed-run",
+          "distributed-test",
+          1_704_067_204,
+          "PASSED",
+          "",
+        ),
+        "00000000-0000-4000-8000-000000000005",
+        5,
+      ),
+      identified(
+        run_ended("distributed-run", 1_704_067_205, 1, 1, 0),
+        "00000000-0000-4000-8000-000000000006",
+        6,
+      ),
+    ],
+  )
+  .await?;
+
+  let test_ended = second_sse.next().await?;
+  assert_eq!(test_ended.1["event_type"], "test_ended");
+  assert!(test_ended.0 > last_live_id);
+  let run_ended = second_sse.next().await?;
+  assert_eq!(run_ended.1["event_type"], "run_ended");
+  assert!(run_ended.0 > test_ended.0);
+
+  let run = second.get_json("/runs/distributed-run").await?;
+  assert_eq!(run["status"], "PASSED");
+  let entries = second
+    .get_json("/runs/distributed-run/tests/distributed-test/entries")
+    .await?;
+  assert_eq!(entries.as_array().map(Vec::len), Some(1));
+  assert_eq!(entries[0]["attempt_count"], 2);
+  assert_eq!(entries[0]["failure_count"], 1);
+
+  assert_exact_concurrent_retention(&database.url, &second).await?;
+  Ok(())
+}
+
+fn identified(
+  mut event: proto::DashboardEvent,
+  event_id: &str,
+  sequence: u64,
+) -> proto::DashboardEvent {
+  event.event_id = event_id.to_string();
+  event.sequence = sequence;
+  event
+}
+
+struct SseStream {
+  response: reqwest::Response,
+  buffer: String,
+}
+
+impl SseStream {
+  async fn connect(stove: &RunningStove, last_event_id: Option<u64>) -> Result<Self> {
+    let mut request = stove.client.get(stove.api_url("/events/stream"));
+    if let Some(last_event_id) = last_event_id {
+      request = request.header("Last-Event-ID", last_event_id);
+    }
+    let response = request.send().await?;
+    anyhow::ensure!(
+      response.status().is_success(),
+      "SSE endpoint is unavailable"
+    );
+    Ok(Self {
+      response,
+      buffer: String::new(),
+    })
+  }
+
+  async fn next(&mut self) -> Result<(u64, Value)> {
+    next_sse_frame(&mut self.response, &mut self.buffer).await
+  }
+}
+
+async fn next_shared_sse_frame(
+  first: &mut SseStream,
+  second: &mut SseStream,
+) -> Result<(u64, Value)> {
+  let (first_event, second_event) = tokio::try_join!(first.next(), second.next())?;
+  assert_eq!(first_event, second_event);
+  Ok(first_event)
+}
+
+async fn assert_concurrent_live_delivery(
+  first_grpc: &DashboardEventServiceClient<Channel>,
+  second_grpc: &DashboardEventServiceClient<Channel>,
+  first_sse: &mut SseStream,
+  second_sse: &mut SseStream,
+) -> Result<u64> {
+  const EVENT_COUNT: usize = 32;
+
+  let mut sends = tokio::task::JoinSet::new();
+  for index in 0..EVENT_COUNT {
+    let mut client = if index % 2 == 0 {
+      first_grpc.clone()
+    } else {
+      second_grpc.clone()
+    };
+    sends.spawn(async move {
+      let run_id = format!("live-load-{index}");
+      let event_id = format!("00000000-0000-4000-9000-{index:012}");
+      client
+        .send_event(identified(
+          run_started(
+            &run_id,
+            "distributed-live-load",
+            1_704_068_000 + index as i64,
+            &[],
+          ),
+          &event_id,
+          1,
+        ))
+        .await
+        .map(tonic::Response::into_inner)
+    });
+  }
+  while let Some(result) = sends.join_next().await {
+    let acknowledgement = result.context("join concurrent live-event sender")??;
+    assert!(acknowledgement.accepted);
+    assert!(!acknowledgement.duplicate);
+  }
+
+  let mut previous_id = 0;
+  let mut run_ids = BTreeSet::new();
+  for _ in 0..EVENT_COUNT {
+    let (id, event) = next_shared_sse_frame(first_sse, second_sse).await?;
+    assert!(id > previous_id, "live-event IDs must be strictly ordered");
+    assert_eq!(event["seq"], id);
+    assert_eq!(event["event_type"], "run_started");
+    run_ids.insert(event["run_id"].as_str().unwrap_or_default().to_string());
+    previous_id = id;
+  }
+  assert_eq!(run_ids.len(), EVENT_COUNT);
+  Ok(previous_id)
+}
+
+async fn next_sse_frame(
+  response: &mut reqwest::Response,
+  buffer: &mut String,
+) -> Result<(u64, Value)> {
+  tokio::time::timeout(Duration::from_secs(10), async {
+    loop {
+      if let Some(boundary) = buffer.find("\n\n") {
+        let frame = buffer[..boundary].to_string();
+        buffer.drain(..boundary + 2);
+        if let Some(data) = frame.lines().find_map(|line| line.strip_prefix("data: ")) {
+          let id = frame
+            .lines()
+            .find_map(|line| line.strip_prefix("id: "))
+            .context("SSE event has an id")?
+            .parse()
+            .context("parse SSE event id")?;
+          let data = serde_json::from_str(data).context("parse SSE data")?;
+          return Ok((id, data));
+        }
+      }
+      let chunk = response.chunk().await?.context("SSE stream ended")?;
+      buffer.push_str(&String::from_utf8_lossy(&chunk));
+    }
+  })
+  .await
+  .context("wait for cross-pod SSE event")?
+}
+
+async fn assert_exact_concurrent_retention(
+  database_url: &str,
+  reader: &RunningStove,
+) -> Result<()> {
+  let first = RunningStove::start_postgres(database_url, None).await?;
+  let second = RunningStove::start_postgres(database_url, None).await?;
+  let mut start_client = first.grpc_client().await?;
+  for (index, run_id) in ["retention-a", "retention-b", "retention-c"]
+    .into_iter()
+    .enumerate()
+  {
+    send_events(
+      &mut start_client,
+      [run_started(
+        run_id,
+        "distributed-retention",
+        1_704_100_000 + i64::try_from(index)?,
+        &[],
+      )],
+    )
+    .await?;
+  }
+
+  let mut client_a = first.grpc_client().await?;
+  let mut client_b = second.grpc_client().await?;
+  let mut client_c = second.grpc_client().await?;
+  let (a, b, c) = tokio::join!(
+    client_a.send_event(run_ended("retention-a", 1_704_100_010, 0, 0, 0)),
+    client_b.send_event(run_ended("retention-b", 1_704_100_011, 0, 0, 0)),
+    client_c.send_event(run_ended("retention-c", 1_704_100_012, 0, 0, 0)),
+  );
+  a?;
+  b?;
+  c?;
+
+  let retained = reader.get_json("/runs?app=distributed-retention").await?;
+  assert_eq!(retained.as_array().map(Vec::len), Some(2));
   Ok(())
 }
 
