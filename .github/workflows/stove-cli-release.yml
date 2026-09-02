@@ -101,9 +101,12 @@ jobs:
           restore-keys: cargo-release-${{ matrix.target }}-
 
       - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --locked --features vendored-postgres --target ${{ matrix.target }}
         env:
           SKIP_SPA_BUILD: "1"
+
+      - name: Verify standalone release binary
+        run: ./scripts/verify-release-linkage.sh "target/${{ matrix.target }}/release/stove"
 
       - name: Package tarball
         env:
