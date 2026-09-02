@@ -2281,10 +2281,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-agent-workflow" class="md-nav__link">
+  <a href="#recommended-agent-workflows" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended agent workflow
+        Recommended agent workflows
       
     </span>
   </a>
@@ -3310,10 +3310,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-agent-workflow" class="md-nav__link">
+  <a href="#recommended-agent-workflows" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended agent workflow
+        Recommended agent workflows
       
     </span>
   </a>
@@ -3422,16 +3422,16 @@
 
 
 <h1 id="mcp">MCP<a class="headerlink" href="#mcp" title="Permanent link">&para;</a></h1>
-<p><code>stove-cli</code> exposes a local Model Context Protocol endpoint. AI agents (Claude Code, Cursor, ...) query failed runs through compact, structured tools instead of grepping raw logs.</p>
+<p><code>stove-cli</code> exposes a Model Context Protocol endpoint. AI agents (Claude Code, Cursor, ...) query failed runs through compact, structured tools instead of grepping raw logs.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <code>stove_failures</code>, <code>stove_failure_detail</code>, <code>stove_trace</code>, <code>stove_snapshot</code> against the same SQLite the <a href="../18-dashboard/">Dashboard</a> reads. Token-aware, read-only, loopback-only.</p>
+Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <code>stove_failures</code>, <code>stove_failure_detail</code>, <code>stove_trace</code>, <code>stove_snapshot</code> against the same database the <a href="../18-dashboard/">Dashboard</a> reads. Token-aware and read-only.</p>
 </div>
 <h2 id="discovery">Discovery<a class="headerlink" href="#discovery" title="Permanent link">&para;</a></h2>
 <p>Banner on <code>stove</code> shows the endpoint:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>stove
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Stove CLI v0.24.0 running
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Stove CLI v0.26.0 running
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>UI:   http://localhost:4040
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>REST: http://localhost:4040/api/v1
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>MCP:  http://localhost:4040/mcp
@@ -3439,7 +3439,7 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </span></code></pre></div>
 <p>Or hit <code>GET /api/v1/meta</code> for metadata:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"stove_cli_version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.24.0"</span><span class="p">,</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"stove_cli_version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.26.0"</span><span class="p">,</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"mcp"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">"transport"</span><span class="p">:</span><span class="w"> </span><span class="s2">"streamable-http"</span><span class="p">,</span>
@@ -3468,6 +3468,7 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </div>
 </div>
 </div>
+<p>For a shared deployment, use the server's internal address instead, for example <code>http://stove.internal:4040/mcp</code>.</p>
 <h2 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3483,7 +3484,7 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </tr>
 <tr>
 <td><code>stove_runs</code></td>
-<td>runs, filterable by app and status</td>
+<td>runs, filterable by app, status, and dynamic metadata key/value pairs</td>
 </tr>
 <tr>
 <td><code>stove_failures</code></td>
@@ -3506,6 +3507,10 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 <td>system state at failure (Kafka topics, WireMock unmatched, ...)</td>
 </tr>
 <tr>
+<td><code>stove_interactions</code></td>
+<td>mock exchanges and warnings for a test or whole run, including unattributed evidence</td>
+</tr>
+<tr>
 <td><code>stove_raw_evidence</code></td>
 <td>full untruncated entry / payload (rarely needed)</td>
 </tr>
@@ -3516,11 +3521,24 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>└── apps           (one per appName)
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    └── runs       (one per test suite execution)
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        └── tests  (one per test case)
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>            ├── entries     HTTP/DB/Kafka/...
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>            ├── spans       OTel tree
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>            └── snapshots   system state at failure
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>            ├── entries        HTTP/DB/Kafka/...
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>            ├── spans          OTel tree
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>            ├── snapshots      system state at failure
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            └── interactions   WireMock/gRPC Mock exchanges and warnings
 </span></code></pre></div>
-<p>Most tools take <code>app</code>, <code>run_id</code>, or <code>test_id</code> to drill down. Start broad with <code>stove_failures</code>, then narrow.</p>
+<p>Tools use <code>app_name</code>, <code>run_id</code>, or <code>test_id</code> to drill down. For one local run, start with <code>stove_failures</code>. On a shared server, select the run by metadata first.</p>
+<p>When multiple GitLab jobs or teams publish to one Stove server, use <code>stove_runs.metadata</code> to select an exact metadata subset. The keys are dynamic and all values are strings:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAILED"</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>All supplied key/value pairs must match exactly and only retained runs are searchable. <code>stove_failures</code> does not accept metadata directly: pass a returned <code>run_id</code> to it, then use that same run ID with the failure, timeline, trace, snapshot, interaction, and raw-evidence tools.</p>
 <h2 id="token-budgeting">Token budgeting<a class="headerlink" href="#token-budgeting" title="Permanent link">&para;</a></h2>
 <p>Each tool ships in three modes:</p>
 <ul>
@@ -3529,24 +3547,43 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 <li><strong><code>full</code></strong>. Untruncated. Costs tokens; only when needed.</li>
 </ul>
 <p>Sensitive keys are auto-redacted (passwords, JWTs, common secret patterns).</p>
-<h2 id="recommended-agent-workflow">Recommended agent workflow<a class="headerlink" href="#recommended-agent-workflow" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>1. stove_failures(limit=5, app="my-service")
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>   → list of recent failures, with test_id and run_id
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>2. stove_failure_detail(test_id, run_id, mode="compact")
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>   → assertion, entries leading up to it, snapshot summary
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>3. (optional) stove_trace(test_id, run_id)
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>   → call chain inside the app
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>4. (optional) stove_snapshot(test_id, run_id, system="kafka")
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>   → drill into one system if root cause unclear
+<h2 id="recommended-agent-workflows">Recommended agent workflows<a class="headerlink" href="#recommended-agent-workflows" title="Permanent link">&para;</a></h2>
+<p>For a local server with one relevant run:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>1. stove_failures(limit=5, app_name="my-service")
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   → list of recent failures, with test_id and run_id
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>2. stove_failure_detail(test_id, run_id, budget="compact")
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>   → assertion, entries leading up to it, snapshot summary
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>3. (optional) stove_trace(test_id, run_id)
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>   → call chain inside the app
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>4. (optional) stove_snapshot(test_id, run_id, system="kafka")
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>   → drill into one system if root cause unclear
 </span></code></pre></div>
+<p>For a shared server receiving several teams or CI jobs:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>1. stove_runs(
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>       app_name="checkout-api",
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>       status="FAILED",
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>       metadata={"gitlab.project":"commerce/checkout-api", "gitlab.pipeline_id":"12345"}
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>   )
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>   → select the exact run_id
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>2. stove_failures(run_id="...")
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>   → select the exact test_id
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>3. stove_failure_detail(run_id="...", test_id="...", budget="compact")
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>   → focused failure packet for that CI run
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>4. (optional) stove_timeline / stove_trace / stove_snapshot / stove_interactions
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>   → query more evidence with the same run_id and test_id
+</span></code></pre></div>
+<p>Do not silently remove metadata after an empty result; confirm the key/value pairs produced by the CI job. The metadata is configured by the test suite's <a href="../18-dashboard/#wire-your-tests"><code>DashboardSystemOptions</code></a>.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Loopback-only access.</strong> MCP rejects non-loopback clients and non-local <code>Host</code> / <code>Origin</code> headers.</li>
 <li><strong>Read-only.</strong> No mutations. No exec. No file writes.</li>
 <li><strong>No outbound calls.</strong> Agent reads what <code>stove</code> already stored.</li>
+<li><strong>No authentication or authorization.</strong> Remote clients and non-local <code>Host</code> / <code>Origin</code> headers are accepted so agents can query a shared internal server. Expose Stove only on a trusted network and enforce any network boundary outside Stove.</li>
 </ul>
 <h2 id="pairs-well-with">Pairs well with<a class="headerlink" href="#pairs-well-with" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
@@ -3588,7 +3625,7 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </tr>
 <tr>
 <td>Payloads truncated</td>
-<td>Use <code>mode="full"</code> for full detail (token cost)</td>
+<td>Use <code>budget="full"</code> for full detail (token cost)</td>
 </tr>
 </tbody>
 </table>

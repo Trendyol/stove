@@ -4180,17 +4180,26 @@ the application configuration.</p>
 <td>Endpoint is on the CLI, not the test JVM. Verify <code>http://localhost:4040/api/v1/meta</code> returns <code>"mcp": { "enabled": true }</code></td>
 </tr>
 <tr>
+<td>Shared server shows unrelated runs</td>
+<td>Attach <code>metadata</code> in <code>DashboardSystemOptions</code>, then filter by exact key/value pairs in the run picker, <code>GET /api/v1/runs?metadata=...</code>, or <code>stove_runs</code></td>
+</tr>
+<tr>
+<td>PostgreSQL won't connect</td>
+<td>Verify <code>--database-url</code> / <code>STOVE_DATABASE_URL</code>; TLS is the default. Add <code>sslmode=disable</code> only when the server intentionally has no TLS</td>
+</tr>
+<tr>
 <td><code>stove_trace</code> returns nothing</td>
 <td><a href="../Components/15-tracing/">Tracing</a> not enabled</td>
 </tr>
 <tr>
 <td>Disk filling with old run data</td>
-<td>Run <code>stove --clear</code> to wipe stored runs from <code>~/.stove-dashboard.db</code></td>
+<td>Set <code>--retention-runs-per-app</code> (or <code>STOVE_RETENTION_RUNS_PER_APP</code>) to limit completed runs per app; use <code>stove --clear</code> for a full wipe</td>
 </tr>
 </tbody>
 </table>
 <p>MCP is optional. It gives agents a structured way to read the same failure evidence humans see in the console and
 dashboard.</p>
+<p>The CLI intentionally has no authentication or authorization and accepts remote MCP clients. Run shared deployments only on a trusted internal network. Use the dashboard's <strong>Admin</strong> page at <code>/admin</code> to inspect storage, change runtime retention, preview a purge, or remove data; active runs are excluded from purge unless explicitly included.</p>
 <h2 id="migrating-versions">Migrating versions<a class="headerlink" href="#migrating-versions" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
