@@ -23,6 +23,14 @@ pub struct Config {
   #[arg(long, default_value_t = default_db_path())]
   pub db: String,
 
+  /// `PostgreSQL` connection URL. When set, it replaces the local `SQLite` database.
+  #[arg(long, env = "STOVE_DATABASE_URL")]
+  pub database_url: Option<String>,
+
+  /// Number of completed runs retained per application. Zero disables automatic pruning.
+  #[arg(long, env = "STOVE_RETENTION_RUNS_PER_APP", default_value_t = 1)]
+  pub retention_runs_per_app: usize,
+
   /// Clear all stored runs and exit
   #[arg(long)]
   pub clear: bool,
@@ -149,6 +157,8 @@ mod tests {
 
     assert_eq!(config.port, 4040);
     assert_eq!(config.grpc_port, 4041);
+    assert!(config.database_url.is_none());
+    assert_eq!(config.retention_runs_per_app, 1);
     assert!(!config.clear);
     assert!(!config.fresh_start);
   }
@@ -181,6 +191,28 @@ mod tests {
     let config = Config::try_parse_from(["stove", "--db", "/tmp/my.db"]).unwrap();
 
     assert_eq!(config.db, "/tmp/my.db");
+  }
+
+  #[test]
+  fn cli_parses_postgres_database_url() {
+    let config = Config::try_parse_from([
+      "stove",
+      "--database-url",
+      "postgresql://stove:secret@db.example/stove",
+    ])
+    .unwrap();
+
+    assert_eq!(
+      config.database_url.as_deref(),
+      Some("postgresql://stove:secret@db.example/stove")
+    );
+  }
+
+  #[test]
+  fn cli_parses_custom_run_retention() {
+    let config = Config::try_parse_from(["stove", "--retention-runs-per-app", "25"]).unwrap();
+
+    assert_eq!(config.retention_runs_per_app, 25);
   }
 
   #[test]

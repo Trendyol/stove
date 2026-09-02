@@ -66,6 +66,16 @@ jobs:
           SKIP_SPA_BUILD: "1"
 
       - name: Run tests
-        run: cargo test
+        run: cargo test --lib --test api_e2e --test mcp_e2e
+        env:
+          SKIP_SPA_BUILD: "1"
+
+      - name: Run CLI acceptance tests
+        run: cargo test --test acceptance
+        env:
+          SKIP_SPA_BUILD: "1"
+
+      - name: Run PostgreSQL load test
+        run: cargo test --test load -- --nocapture
         env:
           SKIP_SPA_BUILD: "1"

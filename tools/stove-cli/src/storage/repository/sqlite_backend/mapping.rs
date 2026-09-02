@@ -1,4 +1,4 @@
-//! SQL column lists and row→struct converters shared by the read and write
+//! `SQLite` column lists and row→struct converters shared by the read and write
 //! paths of the dashboard repository. Kept separate so neither the read impl
 //! nor the write impl has to depend on the other's internals.
 
@@ -12,7 +12,7 @@ use crate::storage::models::Span;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
 
-pub(super) const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, stove_version, systems";
+pub(super) const RUN_COLUMNS: &str = "id, app_name, started_at, ended_at, status, total_tests, passed, failed, duration_ms, stove_version, systems, metadata";
 pub(super) const SPAN_COLUMNS: &str = "id, run_id, trace_id, span_id, parent_span_id, operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes, exception_type, exception_message, exception_stack_trace";
 pub(super) const SNAPSHOT_COLUMNS: &str =
   "id, run_id, test_id, system, state_json, summary, captured_at, trigger_kind";
@@ -38,6 +38,8 @@ pub(super) fn parse_test_status(s: &str) -> TestStatus {
 pub(super) fn run_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
   let systems_json: String = row.get(10)?;
   let systems: Vec<String> = serde_json::from_str(&systems_json).unwrap_or_default();
+  let metadata_json: String = row.get(11)?;
+  let metadata = serde_json::from_str(&metadata_json).unwrap_or_default();
   Ok(Run {
     id: row.get(0)?,
     app_name: row.get(1)?,
@@ -50,6 +52,7 @@ pub(super) fn run_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
     duration_ms: row.get(8)?,
     stove_version: row.get(9)?,
     systems,
+    metadata,
   })
 }
 

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::Router;
-use axum::routing::{delete, get};
+use axum::routing::{delete, get, post, put};
 use tower_http::cors::CorsLayer;
 
 use crate::ingest::EventIngestor;
@@ -81,7 +81,11 @@ pub fn create_router_with_ingestor(
     )
     .route("/traces/{trace_id}", get(super::routes::get_trace))
     .route("/events/stream", get(super::routes::sse_handler))
-    .route("/data", delete(super::routes::clear_all));
+    .route("/data", delete(super::routes::clear_all))
+    .route("/admin/status", get(super::routes::get_admin_status))
+    .route("/admin/retention", put(super::routes::update_retention))
+    .route("/admin/purge/preview", post(super::routes::preview_purge))
+    .route("/admin/purge", post(super::routes::purge_runs));
 
   Router::new()
     .route(

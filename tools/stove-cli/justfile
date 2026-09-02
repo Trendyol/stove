@@ -14,12 +14,20 @@ clippy:
     cargo clippy --all-targets -- -D warnings
 
 test:
-    SKIP_SPA_BUILD=1 cargo test
+    SKIP_SPA_BUILD=1 cargo test --lib --test api_e2e --test mcp_e2e
 
 test-lib:
     SKIP_SPA_BUILD=1 cargo test --lib
 
+# Black-box tests that launch the compiled stove binary and use its public APIs.
+acceptance:
+    SKIP_SPA_BUILD=1 cargo test --test acceptance
+
+# PostgreSQL JSONB/index and dashboard-query performance under concurrent reads.
+load-test:
+    SKIP_SPA_BUILD=1 cargo test --test load -- --nocapture
+
 build:
     SKIP_SPA_BUILD=1 cargo build
 
-verify: fmt-check clippy test
+verify: fmt-check clippy test acceptance load-test

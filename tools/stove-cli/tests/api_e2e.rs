@@ -46,9 +46,26 @@ fn run_started_event_with_version(
         app_name: app_name.to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
         stove_version: stove_version.to_string(),
+        metadata: Default::default(),
       },
     )),
   }
+}
+
+fn run_started_event_with_metadata(
+  run_id: &str,
+  app_name: &str,
+  metadata: &[(&str, &str)],
+) -> proto::DashboardEvent {
+  let mut event = run_started_event_with_version(run_id, app_name, "0.23.2", 1_704_067_200, 0);
+  let Some(proto::dashboard_event::Event::RunStarted(run_started)) = event.event.as_mut() else {
+    unreachable!("helper always creates a run-started event");
+  };
+  run_started.metadata = metadata
+    .iter()
+    .map(|(key, value)| ((*key).to_string(), (*value).to_string()))
+    .collect();
+  event
 }
 
 fn run_ended_event(
@@ -1926,10 +1943,16 @@ async fn missing_spa_assets_return_404_instead_of_index_html() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn starting_a_run_discards_the_previous_run_for_that_app() {
+async fn ending_a_run_discards_the_previous_completed_run_for_that_app() {
   let server = TestServer::start().await;
   server.seed_run_at("run-old", "my-app", "2024-01-01T00:00:00Z", &[]);
+  server.end_run("run-old", 1, 0, 1000);
   server.seed_run_at("run-new", "my-app", "2024-06-01T00:00:00Z", &[]);
+
+  let while_running = server.get_json("/runs?app=my-app").await;
+  assert_eq!(while_running.as_array().unwrap().len(), 2);
+
+  server.end_run("run-new", 1, 0, 1000);
 
   let body = server.get_json("/runs?app=my-app").await;
   let runs = body.as_array().unwrap();
@@ -1938,10 +1961,12 @@ async fn starting_a_run_discards_the_previous_run_for_that_app() {
 }
 
 #[tokio::test]
-async fn starting_a_run_discards_the_previous_run_with_the_same_timestamp() {
+async fn retention_uses_ingestion_order_when_timestamps_are_equal() {
   let server = TestServer::start().await;
   server.seed_run_at("run-1", "my-app", "2024-06-01T00:00:00Z", &[]);
+  server.end_run("run-1", 1, 0, 1000);
   server.seed_run_at("run-2", "my-app", "2024-06-01T00:00:00Z", &[]);
+  server.end_run("run-2", 1, 0, 1000);
 
   let body = server.get_json("/runs?app=my-app").await;
   let runs = body.as_array().unwrap();
@@ -1977,4 +2002,228 @@ async fn apps_does_not_duplicate_app_when_latest_runs_share_same_timestamp() {
     "same app should appear only once in the sidebar"
   );
   assert_eq!(apps[0]["latest_run_id"], "run-2");
+}
+
+// ---------------------------------------------------------------------------
+// Run metadata and administration
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn run_metadata_round_trips_from_proto_and_filters_by_exact_subset() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
+
+  send_event(
+    &service,
+    run_started_event_with_metadata(
+      "pipeline-42",
+      "checkout-api",
+      &[
+        ("team", "checkout"),
+        ("tribe", "commerce"),
+        ("gitlab.pipeline_id", "42"),
+      ],
+    ),
+  )
+  .await
+  .unwrap();
+  flush_events(&service).await;
+
+  let run = server.get_json("/runs/pipeline-42").await;
+  assert_eq!(run["metadata"]["team"], "checkout");
+  assert_eq!(run["metadata"]["gitlab.pipeline_id"], "42");
+
+  let mut matching_url = reqwest::Url::parse(&server.url("/runs")).unwrap();
+  matching_url
+    .query_pairs_mut()
+    .append_pair("app", "checkout-api")
+    .append_pair(
+      "metadata",
+      r#"{"team":"checkout","gitlab.pipeline_id":"42"}"#,
+    );
+  let matching = server
+    .client
+    .get(matching_url)
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(matching.as_array().unwrap().len(), 1);
+  assert_eq!(matching[0]["id"], "pipeline-42");
+
+  let mut missing_url = reqwest::Url::parse(&server.url("/runs")).unwrap();
+  missing_url
+    .query_pairs_mut()
+    .append_pair("metadata", r#"{"team":"catalog"}"#);
+  let missing = server
+    .client
+    .get(missing_url)
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert!(missing.as_array().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
+  let server = TestServer::start().await;
+  server.repo.update_retention(0).unwrap();
+
+  for (id, started_at) in [
+    ("run-old", "2024-01-01T00:00:00Z"),
+    ("run-middle", "2024-02-01T00:00:00Z"),
+    ("run-latest", "2024-03-01T00:00:00Z"),
+  ] {
+    server.seed_run_at(id, "checkout-api", started_at, &[]);
+    server.end_run(id, 1, 0, 100);
+  }
+  server.seed_run_at("run-active", "checkout-api", "2024-04-01T00:00:00Z", &[]);
+
+  let initial = server.get_json("/admin/status").await;
+  assert_eq!(initial["backend"], "sqlite");
+  assert_eq!(initial["retention_runs_per_app"], 0);
+  assert_eq!(initial["runs"], 4);
+  assert_eq!(initial["running_runs"], 1);
+
+  let updated = server
+    .client
+    .put(server.url("/admin/retention"))
+    .json(&serde_json::json!({ "runs_per_app": 2 }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(updated["retention_runs_per_app"], 2);
+  assert_eq!(updated["runs"], 3);
+  assert_eq!(updated["running_runs"], 1);
+  assert!(server.repo.get_run("run-old").unwrap().is_none());
+  assert!(server.repo.get_run("run-middle").unwrap().is_some());
+  assert!(server.repo.get_run("run-latest").unwrap().is_some());
+  assert!(server.repo.get_run("run-active").unwrap().is_some());
+}
+
+#[tokio::test]
+async fn admin_preview_and_purge_use_exact_ids_and_protect_running_runs() {
+  let server = TestServer::start().await;
+  server.repo.update_retention(0).unwrap();
+
+  server.seed_run_at("run-old", "checkout-api", "2024-01-01T00:00:00Z", &[]);
+  server.seed_test("run-old", "test-old", "old test", "CheckoutSpec");
+  server.seed_entry("run-old", "test-old", "HTTP", "GET /checkout", "PASSED");
+  server.seed_span(
+    "run-old",
+    "trace-old",
+    "span-old",
+    "",
+    "GET /checkout",
+    "checkout",
+  );
+  server.seed_snapshot(
+    "run-old",
+    "test-old",
+    "Kafka",
+    r#"{"messages":1}"#,
+    "1 message",
+  );
+  server.seed_mock_interaction(
+    "run-old",
+    Some("test-old"),
+    "/payments",
+    true,
+    "200",
+    "PROVEN_STUB",
+    &[],
+  );
+  server.seed_mock_warning("run-old", Some("test-old"), "UNUSED_STUB", "unused");
+  server.end_test("run-old", "test-old", 100);
+  server.end_run("run-old", 1, 0, 100);
+
+  server.seed_run_at("run-new", "checkout-api", "2024-06-01T00:00:00Z", &[]);
+  server.end_run("run-new", 1, 0, 100);
+  server.seed_run_at("run-active", "checkout-api", "2024-07-01T00:00:00Z", &[]);
+
+  let preview = server
+    .client
+    .post(server.url("/admin/purge/preview"))
+    .json(&serde_json::json!({
+      "app_name": "checkout-api",
+      "older_than": "2024-05-01T00:00:00Z"
+    }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(preview["run_ids"], serde_json::json!(["run-old"]));
+  assert_eq!(preview["run_count"], 1);
+  assert_eq!(preview["evidence"]["tests"], 1);
+  assert_eq!(preview["evidence"]["entries"], 1);
+  assert_eq!(preview["evidence"]["spans"], 1);
+  assert_eq!(preview["evidence"]["snapshots"], 1);
+  assert_eq!(preview["evidence"]["mock_interactions"], 1);
+  assert_eq!(preview["evidence"]["mock_warnings"], 1);
+
+  let purged = server
+    .client
+    .post(server.url("/admin/purge"))
+    .json(&serde_json::json!({ "run_ids": preview["run_ids"] }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(purged["purged_run_ids"], serde_json::json!(["run-old"]));
+  assert!(server.repo.get_run("run-old").unwrap().is_none());
+
+  let completed_only = server
+    .client
+    .post(server.url("/admin/purge/preview"))
+    .json(&serde_json::json!({ "app_name": "checkout-api" }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(completed_only["run_ids"], serde_json::json!(["run-new"]));
+
+  let including_active = server
+    .client
+    .post(server.url("/admin/purge/preview"))
+    .json(&serde_json::json!({
+      "app_name": "checkout-api",
+      "include_running": true
+    }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(
+    including_active["run_ids"],
+    serde_json::json!(["run-new", "run-active"])
+  );
+
+  let protected = server
+    .client
+    .post(server.url("/admin/purge"))
+    .json(&serde_json::json!({ "run_ids": ["run-active"] }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(protected["purged_runs"], 0);
+  assert!(server.repo.get_run("run-active").unwrap().is_some());
 }

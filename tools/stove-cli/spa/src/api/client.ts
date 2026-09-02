@@ -1,9 +1,12 @@
 import type {
+  AdminStatus,
   AppSummary,
   Entry,
   MetaResponse,
   MockInteraction,
   MockWarning,
+  PurgePreview,
+  PurgeResult,
   Run,
   Snapshot,
   Span,
@@ -24,11 +27,26 @@ async function del(url: string): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 }
 
+async function send<T>(url: string, method: "POST" | "PUT", body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${url}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 export const api = {
   getMeta: (signal?: AbortSignal) => get<MetaResponse>("/meta", signal),
   getApps: (signal?: AbortSignal) => get<AppSummary[]>("/apps", signal),
-  getRuns: (app?: string, signal?: AbortSignal) =>
-    get<Run[]>(app ? `/runs?app=${encodeURIComponent(app)}` : "/runs", signal),
+  getRuns: (app?: string, metadata: Record<string, string> = {}, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (app) params.set("app", app);
+    if (Object.keys(metadata).length > 0) params.set("metadata", JSON.stringify(metadata));
+    const query = params.toString();
+    return get<Run[]>(query ? `/runs?${query}` : "/runs", signal);
+  },
   getRun: (runId: string, signal?: AbortSignal) =>
     get<Run | null>(`/runs/${encodePath(runId)}`, signal),
   getTests: (runId: string, signal?: AbortSignal) =>
@@ -57,4 +75,14 @@ export const api = {
   getTrace: (traceId: string, signal?: AbortSignal) =>
     get<Span[]>(`/traces/${encodePath(traceId)}`, signal),
   clearAll: () => del("/data"),
+  getAdminStatus: (signal?: AbortSignal) => get<AdminStatus>("/admin/status", signal),
+  updateRetention: (runsPerApp: number) =>
+    send<AdminStatus>("/admin/retention", "PUT", { runs_per_app: runsPerApp }),
+  previewPurge: (selector: { app_name?: string; older_than?: string; include_running: boolean }) =>
+    send<PurgePreview>("/admin/purge/preview", "POST", selector),
+  purgeRuns: (runIds: string[], includeRunning: boolean) =>
+    send<PurgeResult>("/admin/purge", "POST", {
+      run_ids: runIds,
+      include_running: includeRunning,
+    }),
 };

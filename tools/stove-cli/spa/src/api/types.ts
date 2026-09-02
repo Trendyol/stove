@@ -21,6 +21,7 @@ export interface AppSummary {
   latest_run_id: string;
   latest_status: Status;
   stove_version: string | null;
+  metadata: Record<string, string>;
 }
 
 export interface MetaResponse {
@@ -41,6 +42,36 @@ export interface Run {
   duration_ms: number | null;
   stove_version: string | null;
   systems: string[];
+  metadata: Record<string, string>;
+}
+
+export interface EvidenceCounts {
+  tests: number;
+  entries: number;
+  spans: number;
+  snapshots: number;
+  mock_interactions: number;
+  mock_warnings: number;
+}
+
+export interface AdminStatus {
+  backend: string;
+  retention_runs_per_app: number;
+  runs: number;
+  running_runs: number;
+  evidence: EvidenceCounts;
+}
+
+export interface PurgePreview {
+  run_ids: string[];
+  run_count: number;
+  evidence: EvidenceCounts;
+}
+
+export interface PurgeResult {
+  purged_run_ids: string[];
+  purged_runs: number;
+  evidence: EvidenceCounts;
 }
 
 export interface Test {
@@ -149,6 +180,7 @@ export interface LiveRunStartedPayload {
   started_at: string;
   stove_version: string | null;
   systems: string[];
+  metadata: Record<string, string>;
 }
 
 export interface LiveRunEndedPayload {

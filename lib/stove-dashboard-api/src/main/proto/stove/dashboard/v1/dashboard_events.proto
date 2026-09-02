@@ -26,6 +26,7 @@ message RunStartedEvent {
   string app_name = 2;
   repeated string systems = 3;
   string stove_version = 4;
+  map<string, string> metadata = 5;
 }
 
 message RunEndedEvent {

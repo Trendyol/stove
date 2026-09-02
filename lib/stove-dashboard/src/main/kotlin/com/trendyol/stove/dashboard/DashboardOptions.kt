@@ -9,9 +9,11 @@ import com.trendyol.stove.system.abstractions.SystemOptions
  *   Required — identifies which application this test suite targets.
  * @param cliHost Hostname where the stove CLI is running.
  * @param cliPort gRPC port where the stove CLI is listening.
+ * @param metadata Immutable run metadata exposed by the dashboard and MCP server.
  */
 data class DashboardSystemOptions(
   val appName: String,
   val cliHost: String = "localhost",
-  val cliPort: Int = 4041
+  val cliPort: Int = 4041,
+  val metadata: Map<String, String> = emptyMap()
 ) : SystemOptions

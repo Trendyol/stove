@@ -28,7 +28,8 @@ Use this file as the entrypoint only. Open the focused guide that matches the us
 | Go or other non-JVM process mode | `other-languages.md`, then `go-setup.md` for Go |
 | Docker-image AUT / Testcontainers runner | `container.md` |
 | OpenTelemetry setup, Gradle plugin wiring, and trace assertions | `tracing.md`, then `gradle-config.md` for task wiring |
-| Stove CLI dashboard and agent triage over MCP | `mcp.md` |
+| Dashboard metadata, shared server, PostgreSQL, retention, or administration | `dashboard.md` |
+| Agent queries and failed-run triage over MCP | `mcp.md` |
 | New Stove system implementation | `custom-systems.md` |
 | Integration examples and full flows | `docs/recipes/` |
 | Failure diagnosis and common symptoms | `docs/troubleshooting.md` |
@@ -99,13 +100,15 @@ providedApplication {
 
 Run the CLI with `stove`.
 
-| Surface | URL / port |
+| Surface | Default |
 |---|---|
 | UI / REST / MCP | `http://localhost:4040` |
 | gRPC event ingestion | `localhost:4041` |
-| Database | `~/.stove-dashboard.db` |
+| Storage | SQLite at `~/.stove-dashboard.db`; set `--database-url` for PostgreSQL |
+| Completed-run retention | `1` per app; set `--retention-runs-per-app`, where `0` means unlimited |
+| Administration | dedicated `/admin` page |
 
-In test code, `DashboardSystemOptions.cliHost` defaults to `localhost`; `cliPort` is the gRPC port, so the default is `4041`.
+In test code, `DashboardSystemOptions.cliHost` defaults to `localhost`; `cliPort` is the gRPC port, so the default is `4041`. Shared servers intentionally have no authentication or authorization, so expose every Stove surface only on a trusted internal network.
 
 ## Guardrails for agents
 

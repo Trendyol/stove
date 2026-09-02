@@ -1,3 +1,4 @@
+mod admin;
 mod meta;
 mod runs;
 mod sse;
@@ -5,6 +6,7 @@ mod static_files;
 mod tests;
 mod traces;
 
+pub use admin::*;
 pub use meta::*;
 pub use runs::*;
 pub use sse::*;

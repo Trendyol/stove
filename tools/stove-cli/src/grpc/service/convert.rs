@@ -61,6 +61,8 @@ pub(super) fn to_status(error: AppError) -> Status {
   match error {
     AppError::InvalidEvent(message) => Status::invalid_argument(message),
     AppError::Database(_)
+    | AppError::Postgres(_)
+    | AppError::PostgresTls(_)
     | AppError::GrpcTransport(_)
     | AppError::Serialization(_)
     | AppError::Startup(_) => Status::internal(error.to_string()),

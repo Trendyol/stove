@@ -559,6 +559,11 @@ button {
   color: var(--stove-text-heading);
 }
 
+.stove-topbar-link.is-active {
+  color: var(--stove-blue);
+  background: var(--stove-blue-soft);
+}
+
 .stove-topbar-link svg,
 .stove-theme-toggle svg {
   width: 14px;
@@ -646,6 +651,78 @@ button {
   width: 14px;
   color: var(--stove-text-muted);
   pointer-events: none;
+}
+
+.stove-run-picker {
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid var(--stove-border);
+  padding: 12px 14px;
+}
+
+.stove-run-picker > select,
+.stove-metadata-filter-row select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--stove-surface);
+  padding: 7px 8px;
+  color: var(--stove-text);
+  font-size: 10px;
+}
+
+.stove-metadata-filter-row select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.stove-metadata-filter-heading,
+.stove-metadata-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stove-metadata-filter-heading {
+  margin-top: 2px;
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.stove-metadata-filter-heading button,
+.stove-metadata-filter-actions button,
+.stove-metadata-filter-row button {
+  cursor: pointer;
+  border: 1px solid var(--stove-border);
+  border-radius: 7px;
+  background: var(--stove-card);
+  padding: 5px 7px;
+  color: var(--stove-text-secondary);
+  font-size: 9px;
+}
+
+.stove-metadata-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 5px;
+}
+
+.stove-metadata-filter-row button {
+  padding-inline: 8px;
+}
+
+.stove-metadata-filter-actions {
+  justify-content: flex-start;
+}
+
+.stove-metadata-filter-actions button:first-child {
+  border-color: color-mix(in srgb, var(--stove-ember) 50%, var(--stove-border));
+  color: var(--stove-ember);
 }
 
 .stove-run-summary {
@@ -3368,6 +3445,237 @@ button {
 
   .mock-exchange-list::before {
     display: none;
+  }
+}
+
+/* ── Administration ─────────────────────────────────────────────── */
+
+.stove-run-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.stove-run-metadata code {
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--stove-border);
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: var(--stove-text-secondary);
+  background: var(--stove-surface);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-admin-page {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 32px 24px 64px;
+}
+
+.stove-admin-page-content {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+}
+
+.stove-admin-header,
+.stove-admin-actions,
+.stove-admin-danger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stove-admin-header h2 {
+  margin: 4px 0 0;
+  color: var(--stove-text-heading);
+  font-size: 22px;
+}
+
+.stove-admin-back,
+.stove-admin-card button,
+.stove-admin-danger button {
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--stove-card);
+  cursor: pointer;
+}
+
+.stove-admin-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--stove-text-secondary);
+  text-decoration: none;
+}
+
+.stove-admin-back:hover {
+  color: var(--stove-text-heading);
+  background: var(--stove-hover);
+}
+
+.stove-admin-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.stove-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.stove-admin-card {
+  margin-top: 14px;
+  border: 1px solid var(--stove-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--stove-card) 52%, transparent);
+}
+
+.stove-admin-grid .stove-admin-card {
+  margin-top: 0;
+}
+
+.stove-admin-card h3 {
+  margin: 0 0 6px;
+  color: var(--stove-text-heading);
+  font-size: 14px;
+}
+
+.stove-admin-card p,
+.stove-admin-danger span {
+  margin: 0 0 14px;
+  color: var(--stove-text-secondary);
+  font-size: 12px;
+}
+
+.stove-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.stove-admin-stats div {
+  display: grid;
+  gap: 3px;
+}
+
+.stove-admin-stats dt,
+.stove-admin-field span {
+  color: var(--stove-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stove-admin-stats dd {
+  margin: 0;
+  color: var(--stove-text-heading);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.stove-admin-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.stove-admin-field input,
+.stove-admin-field select {
+  min-width: 0;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--stove-text);
+  background: var(--stove-surface);
+}
+
+.stove-admin-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.stove-admin-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  font-size: 12px;
+}
+
+.stove-admin-actions {
+  justify-content: flex-start;
+}
+
+.stove-admin-page .is-danger {
+  border-color: color-mix(in srgb, var(--stove-red) 45%, var(--stove-border));
+  color: var(--stove-red);
+  background: var(--stove-red-bg);
+}
+
+.stove-admin-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--stove-text-secondary);
+  font-size: 12px;
+}
+
+.stove-admin-preview code {
+  max-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.stove-admin-danger {
+  margin-top: 18px;
+  border-top: 1px solid var(--stove-border);
+  padding-top: 18px;
+}
+
+.stove-admin-danger div {
+  display: grid;
+  gap: 3px;
+}
+
+.stove-admin-danger span {
+  margin: 0;
+}
+
+.stove-admin-error {
+  margin-top: 14px;
+  border: 1px solid color-mix(in srgb, var(--stove-red) 35%, var(--stove-border));
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--stove-red);
+  background: var(--stove-red-bg);
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .stove-admin-page {
+    padding: 22px 14px 40px;
+  }
+
+  .stove-admin-header {
+    align-items: flex-start;
+  }
+
+  .stove-admin-grid,
+  .stove-admin-controls {
+    grid-template-columns: 1fr;
   }
 }
 

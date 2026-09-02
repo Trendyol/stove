@@ -142,6 +142,7 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     interactions.length + ambientInteractions.length + warnings.length + ambientWarnings.length;
   const hasMockEvidence = mockEvidenceCount > 0;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the selected test changes
   useEffect(() => {
     setTab("timeline");
   }, [runId, test.id]);

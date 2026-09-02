@@ -35,7 +35,11 @@ class DashboardSystemTest : FunSpec({
 
     try {
       val stove = Stove()
-      val options = DashboardSystemOptions(appName = "test-api", cliPort = port)
+      val options = DashboardSystemOptions(
+        appName = "test-api",
+        cliPort = port,
+        metadata = mapOf("team" to "checkout", "gitlab.pipeline_id" to "42")
+      )
       val system = DashboardSystem(stove, options)
 
       // Start the system — should emit RunStartedEvent
@@ -71,6 +75,10 @@ class DashboardSystemTest : FunSpec({
       types.contains("RunStarted") shouldBe true
       received.first { it.hasRunStarted() }.runStarted.appName shouldBe "test-api"
       received.first { it.hasRunStarted() }.runStarted.stoveVersion shouldBe StoveCompatibilityVersion.VALUE
+      received.first { it.hasRunStarted() }.runStarted.metadataMap shouldBe mapOf(
+        "team" to "checkout",
+        "gitlab.pipeline_id" to "42"
+      )
       types.contains("TestStarted") shouldBe true
       types.contains("EntryRecorded") shouldBe true
     } finally {

@@ -15,12 +15,7 @@ use stove::storage;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-  tracing_subscriber::fmt()
-    .with_env_filter(
-      tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-    )
-    .init();
-
+  initialize_logging();
   let config = config::Config::parse();
 
   // Handle a `skills` subcommand if requested. Returns true when handled.
@@ -28,18 +23,8 @@ async fn main() -> anyhow::Result<()> {
     return Ok(());
   }
 
-  // Handle --fresh-start: back up and delete the existing database
-  if config.fresh_start {
-    if let Some(backup_path) = config::handle_fresh_start(&config.db)? {
-      info!("Backed up database to {}", backup_path);
-      println!("  Backed up database to {backup_path}");
-    }
-    println!("  Starting fresh — database will be recreated.");
-  }
-
-  // Initialize database
-  let db = storage::database::Database::open(&config.db)?;
-  let repository = Arc::new(storage::repository::Repository::new(db));
+  prepare_fresh_start(&config)?;
+  let repository = open_repository(&config)?;
 
   // Handle --clear flag
   if config.clear {
@@ -55,54 +40,104 @@ async fn main() -> anyhow::Result<()> {
   let sse_manager = Arc::new(sse::manager::SseManager::new());
   let ingestor = ingest::EventIngestor::new(repository.clone());
 
-  // Start gRPC server
-  let grpc_addr: SocketAddr = format!("0.0.0.0:{}", config.grpc_port).parse()?;
-  let grpc_service = grpc::service::DashboardEventServiceImpl::new_with_ingestor(
+  let grpc_handle = tokio::spawn(serve_grpc(
+    config.grpc_port,
     repository.clone(),
     sse_manager.clone(),
     ingestor.clone(),
-  );
-  let grpc_handle = tokio::spawn(async move {
-    info!("gRPC server listening on {}", grpc_addr);
-    tonic::transport::Server::builder()
-      .add_service(
-        proto::dashboard_event_service_server::DashboardEventServiceServer::new(grpc_service),
-      )
-      .serve(grpc_addr)
-      .await
-  });
+  ));
+  let http_handle = tokio::spawn(serve_http(config.port, repository, sse_manager, ingestor));
+  print_endpoints(config.port, config.grpc_port);
+  wait_for_server(grpc_handle, http_handle).await
+}
 
-  // Start HTTP server
-  let http_addr: SocketAddr = format!("0.0.0.0:{}", config.port).parse()?;
-  let router = http::server::create_router_with_ingestor(repository, sse_manager, Some(ingestor));
-  let http_handle = tokio::spawn(async move {
-    info!("HTTP server listening on {}", http_addr);
-    let listener = tokio::net::TcpListener::bind(http_addr).await?;
-    axum::serve(
-      listener,
-      router.into_make_service_with_connect_info::<SocketAddr>(),
+fn initialize_logging() {
+  tracing_subscriber::fmt()
+    .with_env_filter(
+      tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
     )
-    .await
-  });
+    .init();
+}
 
+fn prepare_fresh_start(config: &config::Config) -> anyhow::Result<()> {
+  if !config.fresh_start {
+    return Ok(());
+  }
+  if config.database_url.is_some() {
+    anyhow::bail!("--fresh-start is only supported for the local SQLite database");
+  }
+  if let Some(backup_path) = config::handle_fresh_start(&config.db)? {
+    info!("Backed up database to {}", backup_path);
+    println!("  Backed up database to {backup_path}");
+  }
+  println!("  Starting fresh — database will be recreated.");
+  Ok(())
+}
+
+fn open_repository(
+  config: &config::Config,
+) -> anyhow::Result<Arc<storage::repository::Repository>> {
+  let repository = if let Some(database_url) = &config.database_url {
+    storage::repository::Repository::connect_postgres(database_url, config.retention_runs_per_app)?
+  } else {
+    storage::repository::Repository::connect_sqlite(&config.db, config.retention_runs_per_app)?
+  };
+  Ok(Arc::new(repository))
+}
+
+async fn serve_grpc(
+  port: u16,
+  repository: Arc<storage::repository::Repository>,
+  sse_manager: Arc<sse::manager::SseManager>,
+  ingestor: ingest::EventIngestor,
+) -> anyhow::Result<()> {
+  let address = SocketAddr::from(([0, 0, 0, 0], port));
+  let service =
+    grpc::service::DashboardEventServiceImpl::new_with_ingestor(repository, sse_manager, ingestor);
+  info!("gRPC server listening on {}", address);
+  tonic::transport::Server::builder()
+    .add_service(proto::dashboard_event_service_server::DashboardEventServiceServer::new(service))
+    .serve(address)
+    .await?;
+  Ok(())
+}
+
+async fn serve_http(
+  port: u16,
+  repository: Arc<storage::repository::Repository>,
+  sse_manager: Arc<sse::manager::SseManager>,
+  ingestor: ingest::EventIngestor,
+) -> anyhow::Result<()> {
+  let address = SocketAddr::from(([0, 0, 0, 0], port));
+  let router = http::server::create_router_with_ingestor(repository, sse_manager, Some(ingestor));
+  info!("HTTP server listening on {}", address);
+  let listener = tokio::net::TcpListener::bind(address).await?;
+  axum::serve(
+    listener,
+    router.into_make_service_with_connect_info::<SocketAddr>(),
+  )
+  .await?;
+  Ok(())
+}
+
+fn print_endpoints(http_port: u16, grpc_port: u16) {
   println!(
     "\n  Stove CLI v{} running\n  UI:   http://localhost:{}\n  REST: http://localhost:{}/api/v1\n  MCP:  http://localhost:{}/mcp\n  gRPC: localhost:{}\n",
     env!("STOVE_VERSION"),
-    config.port,
-    config.port,
-    config.port,
-    config.grpc_port
+    http_port,
+    http_port,
+    http_port,
+    grpc_port
   );
+}
 
-  // Wait for either server to finish (or error)
+async fn wait_for_server(
+  grpc_handle: tokio::task::JoinHandle<anyhow::Result<()>>,
+  http_handle: tokio::task::JoinHandle<anyhow::Result<()>>,
+) -> anyhow::Result<()> {
   tokio::select! {
-      result = grpc_handle => {
-          result??;
-      }
-      result = http_handle => {
-          result??;
-      }
+      result = grpc_handle => result??,
+      result = http_handle => result??,
   }
-
   Ok(())
 }

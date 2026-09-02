@@ -9,6 +9,12 @@ pub enum AppError {
   #[error("Database error: {0}")]
   Database(#[from] rusqlite::Error),
 
+  #[error("PostgreSQL error: {0}")]
+  Postgres(#[from] postgres::Error),
+
+  #[error("PostgreSQL TLS error: {0}")]
+  PostgresTls(#[from] native_tls::Error),
+
   #[error("gRPC transport error: {0}")]
   GrpcTransport(#[from] tonic::transport::Error),
 
@@ -30,7 +36,10 @@ impl axum::response::IntoResponse for AppError {
     let status = match &self {
       AppError::GrpcTransport(_) => axum::http::StatusCode::BAD_GATEWAY,
       AppError::Serialization(_) | AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,
-      AppError::Database(_) | AppError::Startup(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+      AppError::Database(_)
+      | AppError::Postgres(_)
+      | AppError::PostgresTls(_)
+      | AppError::Startup(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     let body = axum::Json(serde_json::json!({ "error": self.to_string() }));
     (status, body).into_response()

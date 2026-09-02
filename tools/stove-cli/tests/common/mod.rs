@@ -12,7 +12,6 @@ use stove::http::server::create_router;
 use stove::http::server::create_router_with_ingestor;
 use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
-use stove::storage::database::Database;
 use stove::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use stove::storage::repository::Repository;
 
@@ -27,8 +26,8 @@ pub struct TestServer {
 impl TestServer {
   /// Start a test server on an OS-assigned port with an in-memory database.
   pub async fn start() -> Self {
-    let db = Database::open(":memory:").expect("in-memory database should open");
-    let repo = Arc::new(Repository::new(db));
+    let repo =
+      Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
     let sse_manager = Arc::new(SseManager::new());
     let router = create_router(repo.clone(), sse_manager.clone());
 
@@ -57,8 +56,8 @@ impl TestServer {
 
   /// Start a test server that shares an ingest queue with callers.
   pub async fn start_with_ingestor() -> (Self, EventIngestor) {
-    let db = Database::open(":memory:").expect("in-memory database should open");
-    let repo = Arc::new(Repository::new(db));
+    let repo =
+      Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
     let sse_manager = Arc::new(SseManager::new());
     let ingestor = EventIngestor::with_config(repo.clone(), 50, std::time::Duration::from_secs(60));
     let router =

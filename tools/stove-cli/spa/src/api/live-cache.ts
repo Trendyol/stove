@@ -32,6 +32,7 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         duration_ms: null,
         stove_version: event.payload.stove_version,
         systems: event.payload.systems,
+        metadata: event.payload.metadata,
       };
 
       queryClient.setQueryData<AppSummary[]>(["apps"], (apps) =>
@@ -40,9 +41,10 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
           latest_run_id: event.run_id,
           latest_status: RUNNING,
           stove_version: event.payload.stove_version,
+          metadata: event.payload.metadata,
         }),
       );
-      queryClient.setQueryData<Run[]>(["runs", event.payload.app_name], [run]);
+      updateRunQueriesForStart(queryClient, run);
       queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
       queryClient.setQueryData<MockInteraction[]>(
         ["interactions", event.run_id],
@@ -348,7 +350,7 @@ function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboard
   switch (event.event_type) {
     case EVENT_TYPE.RUN_STARTED:
       cancel(["apps"]);
-      cancel(["runs", event.payload.app_name]);
+      cancel(["runs", event.payload.app_name], false);
       cancelRunDetails(event.run_id);
       break;
     case EVENT_TYPE.RUN_ENDED:
@@ -406,6 +408,33 @@ function upsertAppSummary(apps: AppSummary[] | undefined, incoming: AppSummary):
 
 function upsertTest(tests: Test[] | undefined, incoming: Test): Test[] {
   return [...(tests ?? []).filter((test) => test.id !== incoming.id), incoming].sort(compareTests);
+}
+
+function updateRunQueriesForStart(queryClient: QueryClient, incoming: Run) {
+  const matchingQueries = queryClient.getQueriesData<Run[]>({
+    queryKey: ["runs", incoming.app_name],
+  });
+  if (matchingQueries.length === 0) {
+    queryClient.setQueryData<Run[]>(["runs", incoming.app_name], [incoming]);
+    return;
+  }
+
+  for (const [queryKey, runs] of matchingQueries) {
+    const encodedFilter = queryKey[2];
+    const metadataFilter =
+      typeof encodedFilter === "string"
+        ? (JSON.parse(encodedFilter) as Record<string, string>)
+        : {};
+    const matches = Object.entries(metadataFilter).every(
+      ([key, value]) => incoming.metadata[key] === value,
+    );
+    if (matches) {
+      queryClient.setQueryData(
+        queryKey,
+        [...(runs ?? []).filter((run) => run.id !== incoming.id), incoming].sort(compareRuns),
+      );
+    }
+  }
 }
 
 function updateCachedRuns(queryClient: QueryClient, runId: string, updater: (run: Run) => Run) {

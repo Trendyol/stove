@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -20,6 +21,7 @@ pub enum PersistedDashboardEvent {
     started_at: String,
     stove_version: Option<String>,
     systems: Vec<String>,
+    metadata: BTreeMap<String, String>,
   },
   RunEnded {
     run_id: String,
@@ -108,6 +110,7 @@ pub struct LiveRunStartedPayload {
   pub started_at: String,
   pub stove_version: Option<String>,
   pub systems: Vec<String>,
+  pub metadata: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Serialize)]

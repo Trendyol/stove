@@ -22,9 +22,11 @@ impl Analyzer {
     let args: RunsArgs = parse(arguments)?;
     let limit = args.common.limit();
     let status_filter = args.status.as_deref().map(str::to_ascii_uppercase);
+    let empty_metadata = std::collections::BTreeMap::new();
+    let metadata = args.metadata.as_ref().unwrap_or(&empty_metadata);
     let mut runs = self
       .repository
-      .get_runs(args.app_name.as_deref())
+      .get_runs_filtered(args.app_name.as_deref(), metadata)
       .map_err(display_error)?;
 
     if let Some(status) = &status_filter {
@@ -48,6 +50,7 @@ impl Analyzer {
           "duration_ms": run.duration_ms,
           "stove_version": run.stove_version,
           "systems": run.systems,
+          "metadata": run.metadata,
           "failures_tool_call": tool_call(ToolName::Failures, tool_args([(ArgName::RunId, json!(&run.id))])),
         })
       })

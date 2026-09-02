@@ -4,12 +4,10 @@ use std::time::Duration;
 use super::DashboardEventServiceImpl;
 use crate::proto;
 use crate::sse::manager::SseManager;
-use crate::storage::database::Database;
 use crate::storage::repository::Repository;
 
 fn test_service() -> DashboardEventServiceImpl {
-  let db = Database::open(":memory:").unwrap();
-  let repo = Arc::new(Repository::new(db));
+  let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
   let sse = Arc::new(SseManager::new());
   DashboardEventServiceImpl::new_with_ingest_config(
     repo,
@@ -65,6 +63,7 @@ async fn broadcast_fires_before_batch_flush() {
           app_name: "my-api".to_string(),
           systems: vec!["HTTP".to_string()],
           stove_version: "0.23.1".to_string(),
+          metadata: std::collections::HashMap::new(),
         },
       )),
     })
@@ -94,6 +93,7 @@ async fn process_run_started_event() {
         app_name: "product-api".to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
         stove_version: "0.23.2".to_string(),
+        metadata: [("team".to_string(), "checkout".to_string())].into(),
       },
     )),
   };
@@ -105,9 +105,14 @@ async fn process_run_started_event() {
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].app_name, "product-api");
   assert_eq!(runs[0].stove_version.as_deref(), Some("0.23.2"));
+  assert_eq!(
+    runs[0].metadata.get("team").map(String::as_str),
+    Some("checkout")
+  );
 }
 
 #[tokio::test]
+#[allow(clippy::too_many_lines)]
 async fn process_full_lifecycle() {
   let svc = test_service();
 
@@ -120,6 +125,7 @@ async fn process_full_lifecycle() {
           app_name: "test-app".to_string(),
           stove_version: String::new(),
           systems: vec![],
+          metadata: std::collections::HashMap::new(),
         },
       )),
     })
@@ -233,6 +239,7 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
           app_name: "test-app".to_string(),
           systems: vec!["HTTP".to_string()],
           stove_version: String::new(),
+          metadata: std::collections::HashMap::new(),
         },
       )),
     })

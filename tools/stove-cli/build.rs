@@ -11,7 +11,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   );
   tonic_prost_build::configure()
     .build_server(true)
-    .build_client(false)
+    // The generated client is used by the black-box acceptance suite to send
+    // events to the real CLI process over its public gRPC boundary.
+    .build_client(true)
     .compile_protos(
       &[
         "../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_events.proto",

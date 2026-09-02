@@ -53,6 +53,7 @@ pub(super) fn prepare_run_started(
         started_at: started_at.clone(),
         stove_version: non_empty(&event.stove_version),
         systems: event.systems.clone(),
+        metadata: event.metadata.clone().into_iter().collect(),
       }),
     ),
     persisted: PersistedDashboardEvent::RunStarted {
@@ -61,6 +62,7 @@ pub(super) fn prepare_run_started(
       started_at,
       stove_version: non_empty(&event.stove_version),
       systems: event.systems.clone(),
+      metadata: event.metadata.clone().into_iter().collect(),
     },
     flush: FlushBehavior::Deferred,
   }

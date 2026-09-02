@@ -86,11 +86,13 @@ test(<span class="ok">"order is published after POST /orders"</span>) {
   <div class="story-step">
     <div>
       <h3>5. AI agent triages via MCP</h3>
-      <p>The same data is exposed over a loopback MCP endpoint. An agent (Claude Code, Cursor, etc.) can fetch failures and traces directly. No shell-out, no log scraping, no token waste on noisy stdout.</p>
+      <p>The same data is exposed over a read-only MCP endpoint. An agent (Claude Code, Cursor, etc.) can fetch failures and traces directly; on a shared internal server it can first select the exact run by metadata. No shell-out, no log scraping, no token waste on noisy stdout.</p>
       <p>It can return a focused diagnosis when the stored evidence is sufficient.</p>
     </div>
-    <pre class="story-frame">$ curl localhost:4040/mcp/tools/stove_failure_detail \
-       -d '{"test_id":"OrderE2ETest#order-publish"}'
+    <pre class="story-frame">$ agent → stove_runs(metadata={"gitlab.pipeline_id":"12345"})
+$ agent → stove_failure_detail(
+    run_id="run-12345",
+    test_id="OrderE2ETest#order-publish")
 
 <span class="ok">{</span>
   failure: <span class="err">"kafka.shouldBePublished timeout"</span>,

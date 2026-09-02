@@ -22,104 +22,10 @@ struct ToolSpec {
 
 impl ToolSpec {
   fn for_tool(tool: ToolName) -> Self {
-    match tool {
-      ToolName::Apps => Self {
-        tool,
-        description: "List apps recorded in the Stove dashboard database. Use this when multiple apps may have test runs.",
-        fields: list_fields(),
-      },
-      ToolName::Runs => Self {
-        tool,
-        description: "List Stove runs, optionally filtered by app_name and status. run_id is the canonical execution boundary for detail tools.",
-        fields: vec![
-          FieldSpec::string(ArgName::AppName).description("Optional app grouping label."),
-          FieldSpec::string_enum(ArgName::Status, SchemaEnum::RunStatus),
-          FieldSpec::limit(),
-          FieldSpec::budget(),
-          FieldSpec::max_chars(),
-        ],
-      },
-      ToolName::Failures => Self {
-        tool,
-        description: "Default entrypoint for agents. Return failed or errored tests grouped by app and run, with ready-to-use detail tool calls.",
-        fields: vec![
-          FieldSpec::string(ArgName::AppName)
-            .description("Optional app grouping label. Does not uniquely identify a run."),
-          FieldSpec::string(ArgName::RunId).description("Optional exact run id."),
-          FieldSpec::limit(),
-          FieldSpec::budget(),
-          FieldSpec::max_chars(),
-        ],
-      },
-      ToolName::FailureDetail => Self {
-        tool,
-        description: "Return compact failure, timeline, trace, and snapshot summaries for one exact failed test.",
-        fields: exact_test_fields(),
-      },
-      ToolName::Timeline => Self {
-        tool,
-        description: "Return ordered report entries for one exact test. Failure-focused by default.",
-        fields: with_extra(
-          exact_test_fields(),
-          FieldSpec::string_enum(ArgName::Focus, SchemaEnum::TimelineFocus)
-            .string_default(TimelineFocus::Failure.as_str()),
-        ),
-      },
-      ToolName::Trace => Self {
-        tool,
-        description: "Return trace evidence by run_id + test_id or explicit trace_id. Multiple trace IDs are ranked with failed-entry traces first.",
-        fields: vec![
-          FieldSpec::string(ArgName::RunId),
-          FieldSpec::string(ArgName::TestId),
-          FieldSpec::string(ArgName::TraceId),
-          FieldSpec::string_enum(ArgName::View, SchemaEnum::TraceView)
-            .string_default(TraceView::CriticalPath.as_str()),
-          FieldSpec::budget(),
-          FieldSpec::max_chars(),
-        ],
-      },
-      ToolName::Snapshot => Self {
-        tool,
-        description: "Return snapshot summaries and targeted state drill-down for one exact test.",
-        fields: with_extra(
-          with_extra(
-            exact_test_fields(),
-            FieldSpec::string(ArgName::System)
-              .description("Optional system name such as Kafka or WireMock."),
-          ),
-          FieldSpec::string(ArgName::JsonPointer).description(
-            "Optional RFC 6901 JSON pointer into snapshot state, for example /published/0.",
-          ),
-        ),
-      },
-      ToolName::Interactions => Self {
-        tool,
-        description: "Mock exchanges (WireMock / gRPC Mock) and mock warnings for one test or a whole run. Every request that reached a mock appears — matched or not — with status, latency, near-miss diagnoses, and proven-only attribution. Omit test_id for run scope, which includes the unattributed lane (evidence with no provable test owner).",
-        fields: vec![
-          FieldSpec::string(ArgName::RunId)
-            .required()
-            .description("Exact Stove run id."),
-          FieldSpec::string(ArgName::TestId).description(
-            "Optional exact test id. Omit for run scope including unattributed evidence.",
-          ),
-          FieldSpec::limit(),
-          FieldSpec::budget(),
-          FieldSpec::max_chars(),
-        ],
-      },
-      ToolName::RawEvidence => Self {
-        tool,
-        description: "Explicit capped raw evidence lookup by entry, span, snapshot, interaction, or warning id. Prefer summary tools first.",
-        fields: vec![
-          FieldSpec::string_enum(ArgName::Kind, SchemaEnum::RawEvidenceKind).required(),
-          FieldSpec::integer(ArgName::Id).required(),
-          FieldSpec::string(ArgName::RunId),
-          FieldSpec::string(ArgName::TestId),
-          FieldSpec::string(ArgName::TraceId),
-          FieldSpec::budget(),
-          FieldSpec::max_chars(),
-        ],
-      },
+    Self {
+      tool,
+      description: tool_description(tool),
+      fields: tool_fields(tool),
     }
   }
 
@@ -129,6 +35,105 @@ impl ToolSpec {
       "description": self.description,
       "inputSchema": InputSchema::from_fields(&self.fields).to_json(),
     })
+  }
+}
+
+fn tool_description(tool: ToolName) -> &'static str {
+  match tool {
+    ToolName::Apps => {
+      "List apps recorded in the Stove dashboard database. Use this when multiple apps may have test runs."
+    }
+    ToolName::Runs => {
+      "List Stove runs, optionally filtered by app_name, status, and an exact metadata subset. run_id is the canonical execution boundary for detail tools."
+    }
+    ToolName::Failures => {
+      "Default entrypoint for agents. Return failed or errored tests grouped by app and run, with ready-to-use detail tool calls."
+    }
+    ToolName::FailureDetail => {
+      "Return compact failure, timeline, trace, and snapshot summaries for one exact failed test."
+    }
+    ToolName::Timeline => {
+      "Return ordered report entries for one exact test. Failure-focused by default."
+    }
+    ToolName::Trace => {
+      "Return trace evidence by run_id + test_id or explicit trace_id. Multiple trace IDs are ranked with failed-entry traces first."
+    }
+    ToolName::Snapshot => {
+      "Return snapshot summaries and targeted state drill-down for one exact test."
+    }
+    ToolName::Interactions => {
+      "Mock exchanges (WireMock / gRPC Mock) and mock warnings for one test or a whole run. Every request that reached a mock appears — matched or not — with status, latency, near-miss diagnoses, and proven-only attribution. Omit test_id for run scope, which includes the unattributed lane (evidence with no provable test owner)."
+    }
+    ToolName::RawEvidence => {
+      "Explicit capped raw evidence lookup by entry, span, snapshot, interaction, or warning id. Prefer summary tools first."
+    }
+  }
+}
+
+fn tool_fields(tool: ToolName) -> Vec<FieldSpec> {
+  match tool {
+    ToolName::Apps => list_fields(),
+    ToolName::Runs => vec![
+      FieldSpec::string(ArgName::AppName).description("Optional app grouping label."),
+      FieldSpec::string_enum(ArgName::Status, SchemaEnum::RunStatus),
+      FieldSpec::object(ArgName::Metadata)
+        .description("Optional string key/value pairs that must all match run metadata."),
+      FieldSpec::limit(),
+      FieldSpec::budget(),
+      FieldSpec::max_chars(),
+    ],
+    ToolName::Failures => vec![
+      FieldSpec::string(ArgName::AppName)
+        .description("Optional app grouping label. Does not uniquely identify a run."),
+      FieldSpec::string(ArgName::RunId).description("Optional exact run id."),
+      FieldSpec::limit(),
+      FieldSpec::budget(),
+      FieldSpec::max_chars(),
+    ],
+    ToolName::FailureDetail => exact_test_fields(),
+    ToolName::Timeline => with_extra(
+      exact_test_fields(),
+      FieldSpec::string_enum(ArgName::Focus, SchemaEnum::TimelineFocus)
+        .string_default(TimelineFocus::Failure.as_str()),
+    ),
+    ToolName::Trace => vec![
+      FieldSpec::string(ArgName::RunId),
+      FieldSpec::string(ArgName::TestId),
+      FieldSpec::string(ArgName::TraceId),
+      FieldSpec::string_enum(ArgName::View, SchemaEnum::TraceView)
+        .string_default(TraceView::CriticalPath.as_str()),
+      FieldSpec::budget(),
+      FieldSpec::max_chars(),
+    ],
+    ToolName::Snapshot => with_extra(
+      with_extra(
+        exact_test_fields(),
+        FieldSpec::string(ArgName::System)
+          .description("Optional system name such as Kafka or WireMock."),
+      ),
+      FieldSpec::string(ArgName::JsonPointer).description(
+        "Optional RFC 6901 JSON pointer into snapshot state, for example /published/0.",
+      ),
+    ),
+    ToolName::Interactions => vec![
+      FieldSpec::string(ArgName::RunId)
+        .required()
+        .description("Exact Stove run id."),
+      FieldSpec::string(ArgName::TestId)
+        .description("Optional exact test id. Omit for run scope including unattributed evidence."),
+      FieldSpec::limit(),
+      FieldSpec::budget(),
+      FieldSpec::max_chars(),
+    ],
+    ToolName::RawEvidence => vec![
+      FieldSpec::string_enum(ArgName::Kind, SchemaEnum::RawEvidenceKind).required(),
+      FieldSpec::integer(ArgName::Id).required(),
+      FieldSpec::string(ArgName::RunId),
+      FieldSpec::string(ArgName::TestId),
+      FieldSpec::string(ArgName::TraceId),
+      FieldSpec::budget(),
+      FieldSpec::max_chars(),
+    ],
   }
 }
 
@@ -181,6 +186,10 @@ impl FieldSpec {
 
   fn integer(name: ArgName) -> Self {
     Self::new(name, FieldKind::Integer)
+  }
+
+  fn object(name: ArgName) -> Self {
+    Self::new(name, FieldKind::StringMap)
   }
 
   fn limit() -> Self {
@@ -264,6 +273,10 @@ impl FieldSpec {
         "enum": enum_kind.values(),
       }),
       FieldKind::Integer => json!({ "type": "integer" }),
+      FieldKind::StringMap => json!({
+        "type": "object",
+        "additionalProperties": { "type": "string" },
+      }),
       FieldKind::IntegerWithBounds { minimum, maximum } => {
         let mut property = json!({ "type": "integer" });
         if let Some(minimum) = minimum {
@@ -291,6 +304,7 @@ enum FieldKind {
   String,
   StringEnum(SchemaEnum),
   Integer,
+  StringMap,
   IntegerWithBounds {
     minimum: Option<i64>,
     maximum: Option<i64>,

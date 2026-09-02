@@ -1,9 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
-import { api } from "../api/client";
 import type { AppSummary, Run, Test } from "../api/types";
 import { filterTests } from "../utils/filters";
 import { AppPicker } from "./sidebar/AppPicker";
+import { RunPicker } from "./sidebar/RunPicker";
 import { RunSummary } from "./sidebar/RunSummary";
 import type { FilterValue } from "./sidebar/TestFilters";
 import { TestFilters } from "./sidebar/TestFilters";
@@ -28,6 +27,12 @@ interface SidebarProps {
   mismatchedApps: string[];
   selectedApp: string | null;
   onSelectApp: (name: string) => void;
+  runs: Run[];
+  availableRuns: Run[];
+  selectedRunId: string | null;
+  onSelectRun: (runId: string) => void;
+  metadataFilter: Record<string, string>;
+  onMetadataFilterChange: (metadata: Record<string, string>) => void;
   run: Run | null;
   tests: Test[];
   selectedTestId: string | null;
@@ -39,28 +44,21 @@ export function Sidebar({
   mismatchedApps,
   selectedApp,
   onSelectApp,
+  runs,
+  availableRuns,
+  selectedRunId,
+  onSelectRun,
+  metadataFilter,
+  onMetadataFilterChange,
   run,
   tests,
   selectedTestId,
   onSelectTest,
 }: SidebarProps) {
-  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
-  const [clearing, setClearing] = useState(false);
   const [width, setWidth] = useState(loadSidebarWidth);
   const draggingRef = useRef(false);
-
-  const handleClear = async () => {
-    if (!confirm("Clear all stored data? This cannot be undone.")) return;
-    setClearing(true);
-    try {
-      await api.clearAll();
-      await queryClient.resetQueries();
-    } finally {
-      setClearing(false);
-    }
-  };
 
   const filteredTests = filterTests(tests, filter, search);
 
@@ -108,6 +106,14 @@ export function Sidebar({
         selectedApp={selectedApp}
         onSelectApp={onSelectApp}
       />
+      <RunPicker
+        runs={runs}
+        availableRuns={availableRuns}
+        selectedRunId={selectedRunId}
+        onSelectRun={onSelectRun}
+        metadataFilter={metadataFilter}
+        onMetadataFilterChange={onMetadataFilterChange}
+      />
       {run && <RunSummary run={run} tests={tests} />}
       <TestFilters
         filter={filter}
@@ -125,23 +131,6 @@ export function Sidebar({
           selectedTestId={selectedTestId}
           onSelectTest={onSelectTest}
         />
-      </div>
-      <div className="stove-sidebar-footer">
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={clearing}
-          className="stove-clear-button stove-focus-ring"
-        >
-          <svg aria-hidden="true" className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z" />
-            <path
-              fillRule="evenodd"
-              d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 010-2H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM7 1.5a.5.5 0 00-.5.5h3a.5.5 0 00-.5-.5H7z"
-            />
-          </svg>
-          {clearing ? "Clearing..." : "Clear data"}
-        </button>
       </div>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: resize drag handle */}
       <div className="stove-sidebar-resizer" onMouseDown={handleMouseDown} />

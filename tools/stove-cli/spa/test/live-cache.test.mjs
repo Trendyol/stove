@@ -20,6 +20,7 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
       started_at: "2024-06-01T10:00:00Z",
       stove_version: "0.23.2",
       systems: ["HTTP"],
+      metadata: { team: "checkout" },
     },
   });
 
@@ -192,6 +193,7 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   assert.equal(runs.length, 1);
   assert.equal(runs[0].status, "RUNNING");
   assert.equal(runs[0].stove_version, "0.23.2");
+  assert.deepEqual(runs[0].metadata, { team: "checkout" });
 
   assert.equal(tests.length, 1);
   assert.equal(tests[0].status, "PASSED");
@@ -212,7 +214,7 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   assert.equal(runWarnings.length, 0);
 });
 
-test("a live run start replaces the previous run for the app", () => {
+test("a live run start is added to unfiltered and matching metadata run caches", () => {
   const queryClient = new QueryClient();
   queryClient.setQueryData(["apps"], [
     {
@@ -220,6 +222,7 @@ test("a live run start replaces the previous run for the app", () => {
       latest_run_id: "old-run",
       latest_status: "PASSED",
       stove_version: "0.23.1",
+      metadata: { team: "checkout" },
     },
   ]);
   queryClient.setQueryData(["runs", "live-app"], [
@@ -235,8 +238,11 @@ test("a live run start replaces the previous run for the app", () => {
       duration_ms: 60_000,
       stove_version: "0.23.1",
       systems: ["HTTP"],
+      metadata: { team: "checkout" },
     },
   ]);
+  queryClient.setQueryData(["runs", "live-app", '{"team":"checkout"}'], []);
+  queryClient.setQueryData(["runs", "live-app", '{"team":"catalog"}'], []);
 
   applyLiveDashboardEvent(queryClient, {
     seq: 1,
@@ -247,17 +253,27 @@ test("a live run start replaces the previous run for the app", () => {
       started_at: "2024-06-01T10:00:00Z",
       stove_version: "0.23.2",
       systems: ["HTTP"],
+      metadata: { team: "checkout", "gitlab.pipeline_id": "42" },
     },
   });
 
   const apps = queryClient.getQueryData(["apps"]);
   const runs = queryClient.getQueryData(["runs", "live-app"]);
+  const matchingRuns = queryClient.getQueryData([
+    "runs",
+    "live-app",
+    '{"team":"checkout"}',
+  ]);
+  const excludedRuns = queryClient.getQueryData([
+    "runs",
+    "live-app",
+    '{"team":"catalog"}',
+  ]);
   assert.equal(apps[0].latest_run_id, "new-run");
   assert.equal("total_runs" in apps[0], false);
-  assert.deepEqual(
-    runs.map((run) => run.id),
-    ["new-run"],
-  );
+  assert.deepEqual(runs.map((run) => run.id), ["new-run", "old-run"]);
+  assert.deepEqual(matchingRuns.map((run) => run.id), ["new-run"]);
+  assert.deepEqual(excludedRuns, []);
 });
 
 test("app reconciliation retains the persisted run when a cached running run has a different id", () => {
