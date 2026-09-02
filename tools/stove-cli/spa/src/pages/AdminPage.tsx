@@ -1,6 +1,7 @@
 import type { MouseEventHandler } from "react";
 import type { AppSummary } from "../api/types";
 import { ClearAllCard, PurgeCard, RetentionCard, StorageCard } from "./admin/AdminSections";
+import { DatabaseExplorer } from "./admin/DatabaseExplorer";
 import { useAdminController } from "./admin/useAdminController";
 
 interface AdminPageProps {
@@ -47,6 +48,7 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
           onPreview={admin.previewPurge}
           onPurge={admin.purge}
         />
+        <DatabaseExplorer onDatabaseChange={admin.refresh} />
         <ClearAllCard busy={admin.busy} onClear={admin.clearAll} />
       </div>
     </main>

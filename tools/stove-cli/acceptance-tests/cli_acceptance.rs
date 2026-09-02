@@ -375,6 +375,91 @@ async fn postgres_cli_runs_migrations_jsonb_filters_retention_and_admin_in_testc
   assert_eq!(status["runs"], 4);
   assert_eq!(status["running_runs"], 1);
 
+  let schema = stove.get_json("/admin/database/schema").await?;
+  assert_eq!(schema["backend"], "postgresql");
+  let runs_table = schema["tables"]
+    .as_array()
+    .context("database schema should contain tables")?
+    .iter()
+    .find(|table| table["name"] == "runs")
+    .context("database schema should contain runs")?;
+  assert!(runs_table["columns"].as_array().is_some_and(|columns| {
+    columns
+      .iter()
+      .any(|column| column["name"] == "metadata" && column["data_type"] == "jsonb")
+  }));
+
+  let selected = stove
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({
+        "sql": "SELECT id, metadata ->> 'team' AS team FROM runs WHERE id = 'postgres-pipeline-42'",
+        "max_rows": 100
+      }),
+    )
+    .await?;
+  assert_eq!(
+    selected["rows"],
+    json!([["postgres-pipeline-42", "checkout"]])
+  );
+
+  let bounded = stove
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({
+        "sql": "SELECT value FROM generate_series(1, 10000) AS value",
+        "max_rows": 5
+      }),
+    )
+    .await?;
+  assert_eq!(bounded["rows"].as_array().map(Vec::len), Some(5));
+  assert_eq!(bounded["affected_rows"], 5);
+  assert_eq!(bounded["truncated"], true);
+
+  let inserted = stove
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({
+        "sql": "INSERT INTO runs (id, app_name, started_at) VALUES ('explorer-insert', 'postgres-app', '2024-01-01T00:00:00Z')"
+      }),
+    )
+    .await?;
+  assert_eq!(inserted["affected_rows"], 1);
+
+  let updated = stove
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({
+        "sql": "UPDATE runs SET app_name = 'explorer-check' WHERE id = 'postgres-other'"
+      }),
+    )
+    .await?;
+  assert_eq!(updated["affected_rows"], 1);
+  let restored = stove
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({
+        "sql": "UPDATE runs SET app_name = 'postgres-app' WHERE id = 'postgres-other'"
+      }),
+    )
+    .await?;
+  assert_eq!(restored["affected_rows"], 1);
+  let deleted = stove
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({
+        "sql": "DELETE FROM runs WHERE id = 'explorer-insert'"
+      }),
+    )
+    .await?;
+  assert_eq!(deleted["affected_rows"], 1);
+
   database
     .with_client(|postgres| {
       let migrations: i64 = postgres

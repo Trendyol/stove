@@ -2103,6 +2103,56 @@ async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
 }
 
 #[tokio::test]
+async fn admin_database_explorer_exposes_schema_and_executes_queries() {
+  let server = TestServer::start().await;
+  server.seed_run("explorer-run", "checkout-api");
+
+  let schema = server.get_json("/admin/database/schema").await;
+  assert_eq!(schema["backend"], "sqlite");
+  let runs = schema["tables"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|table| table["name"] == "runs")
+    .expect("runs table should be returned");
+  assert!(
+    runs["columns"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|column| { column["name"] == "id" && column["primary_key"] == true })
+  );
+
+  let selected = server
+    .client
+    .post(server.url("/admin/database/query"))
+    .json(&serde_json::json!({
+      "sql": "SELECT id, app_name FROM runs WHERE id = 'explorer-run'",
+      "max_rows": 100
+    }))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(selected["columns"], serde_json::json!(["id", "app_name"]));
+  assert_eq!(
+    selected["rows"],
+    serde_json::json!([["explorer-run", "checkout-api"]])
+  );
+
+  let empty = server
+    .client
+    .post(server.url("/admin/database/query"))
+    .json(&serde_json::json!({ "sql": "  " }))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(empty.status(), reqwest::StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
 async fn admin_preview_and_purge_use_exact_ids_and_protect_running_runs() {
   let server = TestServer::start().await;
   server.repo.update_retention(0).unwrap();

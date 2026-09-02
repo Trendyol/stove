@@ -11,6 +11,7 @@
 
 mod admin;
 mod distributed;
+mod explorer;
 mod mapping;
 mod postgres_backend;
 mod reads;

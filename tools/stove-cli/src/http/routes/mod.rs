@@ -1,4 +1,5 @@
 mod admin;
+mod database_explorer;
 mod meta;
 mod mock_interactions;
 mod mock_warnings;
@@ -9,6 +10,7 @@ mod tests;
 mod traces;
 
 pub use admin::*;
+pub use database_explorer::*;
 pub use meta::*;
 pub use mock_interactions::*;
 pub use mock_warnings::*;

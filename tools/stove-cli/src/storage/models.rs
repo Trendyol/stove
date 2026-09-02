@@ -255,6 +255,34 @@ pub struct PurgeResult {
   pub evidence: EvidenceCounts,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseSchema {
+  pub backend: String,
+  pub tables: Vec<DatabaseTable>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseTable {
+  pub name: String,
+  pub columns: Vec<DatabaseColumn>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseColumn {
+  pub name: String,
+  pub data_type: String,
+  pub nullable: bool,
+  pub primary_key: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DatabaseQueryResult {
+  pub columns: Vec<String>,
+  pub rows: Vec<Vec<Option<String>>>,
+  pub affected_rows: u64,
+  pub truncated: bool,
+}
+
 // --- Input structs for write operations ---
 
 /// Data required to save a new report entry.

@@ -49,6 +49,12 @@ impl SqliteDatabase {
       _migration_keeper: None,
     })
   }
+
+  pub(super) fn open_driver_peer(&self) -> Result<MigrationConnection> {
+    let connection = open_migration_connection(&self.path, self.use_uri)?;
+    apply_migration_pragmas(&connection, self.use_uri)?;
+    Ok(connection)
+  }
 }
 
 fn normalize_path(path: &str) -> (String, bool) {

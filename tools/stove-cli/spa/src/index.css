@@ -3664,6 +3664,171 @@ button {
   font-size: 12px;
 }
 
+.stove-database-explorer {
+  padding: 0;
+  overflow: hidden;
+}
+
+.stove-database-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--stove-border);
+}
+
+.stove-database-header p {
+  margin-bottom: 0;
+}
+
+.stove-database-header > span {
+  border: 1px solid var(--stove-border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.stove-database-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.28fr) minmax(0, 1fr);
+  min-height: 430px;
+}
+
+.stove-database-schema {
+  max-height: 620px;
+  overflow: auto;
+  border-right: 1px solid var(--stove-border);
+  padding: 10px;
+}
+
+.stove-database-schema > button {
+  width: 100%;
+  border: 0;
+  padding: 7px 8px;
+  color: var(--stove-text-secondary);
+  background: transparent;
+  text-align: left;
+}
+
+.stove-database-schema > button.is-selected {
+  color: var(--stove-text-heading);
+  background: var(--stove-hover);
+}
+
+.stove-database-schema ul {
+  display: grid;
+  gap: 5px;
+  margin: 4px 0 10px;
+  padding: 0 8px 4px 16px;
+  list-style: none;
+}
+
+.stove-database-schema li {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.stove-database-schema li code {
+  overflow: hidden;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.stove-database-schema li span {
+  color: var(--stove-text-muted);
+  font-size: 9px;
+}
+
+.stove-database-workbench {
+  min-width: 0;
+  padding: 14px;
+}
+
+.stove-database-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.stove-database-workbench textarea {
+  min-height: 130px;
+  resize: vertical;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--stove-text);
+  background: var(--stove-surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.stove-database-runner {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.stove-database-runner .stove-admin-field {
+  width: 130px;
+  margin: 0;
+}
+
+.stove-database-results {
+  margin-top: 14px;
+}
+
+.stove-database-summary {
+  margin: 10px 0 6px;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+}
+
+.stove-database-table-scroll {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+}
+
+.stove-database-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.stove-database-table-scroll th,
+.stove-database-table-scroll td {
+  max-width: 320px;
+  overflow: hidden;
+  border-right: 1px solid var(--stove-border);
+  border-bottom: 1px solid var(--stove-border);
+  padding: 6px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.stove-database-table-scroll th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: var(--stove-text-heading);
+  background: var(--stove-card);
+}
+
+.stove-database-table-scroll .is-null {
+  color: var(--stove-text-muted);
+  font-style: italic;
+}
+
 @media (max-width: 700px) {
   .stove-admin-page {
     padding: 22px 14px 40px;
@@ -3676,6 +3841,16 @@ button {
   .stove-admin-grid,
   .stove-admin-controls {
     grid-template-columns: 1fr;
+  }
+
+  .stove-database-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stove-database-schema {
+    max-height: 220px;
+    border-right: 0;
+    border-bottom: 1px solid var(--stove-border);
   }
 }
 

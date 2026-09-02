@@ -10,16 +10,21 @@ use crate::storage::schema::postgres::dashboard_settings;
 pub(super) struct PostgresConnections {
   pub write: PgConnection,
   pub read: PgConnection,
+  pub explorer: Client,
 }
 
 pub(super) fn open(database_url: &str, default_retention: usize) -> Result<PostgresConnections> {
-  let mut migration_connection = connect_driver(database_url)?;
-  run_migrations(&mut migration_connection)?;
+  let mut explorer = connect_driver(database_url)?;
+  run_migrations(&mut explorer)?;
 
   let mut write = PgConnection::establish(database_url)?;
   seed_default_retention(&mut write, default_retention)?;
   let read = PgConnection::establish(database_url)?;
-  Ok(PostgresConnections { write, read })
+  Ok(PostgresConnections {
+    write,
+    read,
+    explorer,
+  })
 }
 
 pub(super) fn connect_driver(database_url: &str) -> Result<Client> {

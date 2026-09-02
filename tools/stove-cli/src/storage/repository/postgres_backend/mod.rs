@@ -7,12 +7,14 @@ use crate::error::Result;
 mod admin;
 mod database;
 mod distributed;
+mod explorer;
 mod reads;
 mod writes;
 
 pub(super) struct PostgresBackend {
   write: Mutex<PgConnection>,
   read: Mutex<PgConnection>,
+  explorer: Mutex<postgres::Client>,
   database_url: String,
 }
 
@@ -22,6 +24,7 @@ impl PostgresBackend {
     Ok(Self {
       write: Mutex::new(connections.write),
       read: Mutex::new(connections.read),
+      explorer: Mutex::new(connections.explorer),
       database_url: database_url.to_string(),
     })
   }
@@ -36,6 +39,13 @@ impl PostgresBackend {
 
   fn lock_read(&self) -> MutexGuard<'_, PgConnection> {
     self.read.lock().expect("PostgreSQL read lock poisoned")
+  }
+
+  fn lock_explorer(&self) -> MutexGuard<'_, postgres::Client> {
+    self
+      .explorer
+      .lock()
+      .expect("PostgreSQL explorer lock poisoned")
   }
 }
 

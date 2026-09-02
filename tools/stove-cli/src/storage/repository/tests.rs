@@ -876,3 +876,80 @@ fn get_spans_for_test_does_not_cross_match_similar_test_ids() {
 
   assert!(spans.is_empty());
 }
+
+#[test]
+fn sqlite_database_explorer_discovers_schema_and_executes_crud() {
+  let repo = test_repo_with_retention(0);
+  let schema = repo.database_schema().unwrap();
+  let runs = schema
+    .tables
+    .iter()
+    .find(|table| table.name == "runs")
+    .expect("runs table should be discoverable");
+  assert!(
+    runs
+      .columns
+      .iter()
+      .any(|column| column.name == "id" && column.primary_key)
+  );
+  assert!(
+    runs
+      .columns
+      .iter()
+      .any(|column| column.name == "metadata" && !column.nullable)
+  );
+
+  let inserted = repo
+    .execute_database_query(
+      "INSERT INTO runs (id, app_name, started_at) \
+       VALUES ('explorer-run', 'before', '2024-06-01T00:00:00Z')",
+      100,
+    )
+    .unwrap();
+  assert_eq!(inserted.affected_rows, 1);
+  let selected = repo
+    .execute_database_query(
+      "SELECT id, app_name FROM runs WHERE id = 'explorer-run'",
+      100,
+    )
+    .unwrap();
+  assert_eq!(selected.columns, ["id", "app_name"]);
+  assert_eq!(
+    selected.rows,
+    vec![vec![Some("explorer-run".into()), Some("before".into())]]
+  );
+
+  let updated = repo
+    .execute_database_query(
+      "UPDATE runs SET app_name = 'after' WHERE id = 'explorer-run'",
+      100,
+    )
+    .unwrap();
+  assert_eq!(updated.affected_rows, 1);
+  assert_eq!(
+    repo.get_run("explorer-run").unwrap().unwrap().app_name,
+    "after"
+  );
+
+  let deleted = repo
+    .execute_database_query("DELETE FROM runs WHERE id = 'explorer-run'", 100)
+    .unwrap();
+  assert_eq!(deleted.affected_rows, 1);
+  assert!(repo.get_run("explorer-run").unwrap().is_none());
+}
+
+#[test]
+fn sqlite_database_explorer_caps_results_and_rejects_multiple_statements() {
+  let repo = test_repo();
+  let result = repo
+    .execute_database_query("SELECT 1 AS value UNION ALL SELECT 2", 1)
+    .unwrap();
+  assert_eq!(result.rows, vec![vec![Some("1".into())]]);
+  assert!(result.truncated);
+
+  assert!(
+    repo
+      .execute_database_query("SELECT 1; SELECT 2", 100)
+      .is_err()
+  );
+}

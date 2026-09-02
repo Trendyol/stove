@@ -64,7 +64,7 @@ Use only PostgreSQL when running more than one Stove server replica, and configu
 
 PostgreSQL coordinates per-run event ordering, live-event commit order, and per-application retention with advisory locks. Each ACK follows one transaction containing the domain write, event inbox record, and durable live event. UUID-based retry deduplication prevents a retried event from being applied twice. Cross-pod SSE uses `LISTEN/NOTIFY` for wake-ups and durable polling plus `Last-Event-ID` replay for correctness. No Redis or broker is needed.
 
-Budget three PostgreSQL connections per replica plus headroom. The first replica on a new database seeds the shared retention setting; Admin-page changes persist in PostgreSQL and all replicas observe them. Use `/api/v1/meta` for startup/readiness and allow at least 10 seconds after SIGTERM for graceful drain.
+Budget four PostgreSQL connections per replica (read, write, database explorer, and live-event listener) plus headroom. The first replica on a new database seeds the shared retention setting; Admin-page changes persist in PostgreSQL and all replicas observe them. Use `/api/v1/meta` for startup/readiness and allow at least 10 seconds after SIGTERM for graceful drain.
 
 ## Run the packaged server
 
@@ -137,21 +137,25 @@ Mock evidence uses explicit REST resource names. Query `/api/v1/runs/{run_id}/mo
 
 ## Administer evidence
 
-Open the dedicated `/admin` page to inspect storage, change runtime retention, preview a purge, purge selected runs, or clear all evidence. The UI requires confirmation for final destructive actions. Purge excludes running runs unless `include_running` is explicitly true.
+Open the dedicated `/admin` page to inspect storage, browse tables, run SQL, change runtime retention, preview a purge, purge selected runs, or clear all evidence. The UI requires confirmation for SQL mutations and final destructive actions. Purge excludes running runs unless `include_running` is explicitly true.
 
 | Endpoint | Purpose |
 |---|---|
 | `GET /api/v1/admin/status` | Backend, retention, run, and evidence counts |
+| `GET /api/v1/admin/database/schema` | Active backend, tables, columns, nullability, and primary keys |
+| `POST /api/v1/admin/database/query` | Execute one statement with `{"sql":"SELECT ...","max_rows":100}` |
 | `PUT /api/v1/admin/retention` | Set runtime retention with `{"runs_per_app": 50}` |
 | `POST /api/v1/admin/purge/preview` | Preview by optional `app_name`, RFC 3339 `older_than`, and `include_running` |
 | `POST /api/v1/admin/purge` | Delete exact `run_ids`, optionally including active runs |
 | `DELETE /api/v1/data` | Clear all runs and evidence |
 
-MCP is intentionally read-only. Use only the Admin UI or REST endpoints for mutations.
+The database explorer is native to the Stove Rust process; it needs no sidecar. It discovers the SQLite or PostgreSQL schema and provides SELECT/INSERT/UPDATE/DELETE templates. Queries are limited to one 64-KiB statement and 1–500 returned rows (default 100). PostgreSQL applies a 10-second statement timeout and uses a server-side cursor for SELECT results, so truncation does not materialize the full result in Stove. Row values are strings or `null`; non-row statements report `affected_rows`.
+
+MCP is intentionally read-only. Use only the Admin UI or REST endpoints for mutations. The database explorer can bypass application invariants, and its browser confirmation is not an authorization boundary.
 
 ## Deployment boundary
 
-Stove intentionally has no authentication or authorization. The HTTP server, MCP, gRPC ingestion, and admin operations accept remote clients. Deploy only on a trusted internal network, and enforce exposure with a firewall, private ingress, or equivalent boundary outside Stove.
+Stove intentionally has no authentication or authorization. The HTTP server, MCP, gRPC ingestion, database explorer, and admin operations accept remote clients. Deploy only on a trusted internal network, and enforce exposure with a firewall, private ingress, or equivalent boundary outside Stove.
 
 ## Verify changes
 

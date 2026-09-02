@@ -1,6 +1,8 @@
 import type {
   AdminStatus,
   AppSummary,
+  DatabaseQueryResult,
+  DatabaseSchema,
   Entry,
   MetaResponse,
   MockInteraction,
@@ -79,6 +81,13 @@ export const api = {
     get<Span[]>(`/traces/${encodePath(traceId)}`, signal),
   clearAll: () => del("/data"),
   getAdminStatus: (signal?: AbortSignal) => get<AdminStatus>("/admin/status", signal),
+  getDatabaseSchema: (signal?: AbortSignal) =>
+    get<DatabaseSchema>("/admin/database/schema", signal),
+  executeDatabaseQuery: (sql: string, maxRows: number) =>
+    send<DatabaseQueryResult>("/admin/database/query", "POST", {
+      sql,
+      max_rows: maxRows,
+    }),
   updateRetention: (runsPerApp: number) =>
     send<AdminStatus>("/admin/retention", "PUT", { runs_per_app: runsPerApp }),
   previewPurge: (selector: { app_name?: string; older_than?: string; include_running: boolean }) =>

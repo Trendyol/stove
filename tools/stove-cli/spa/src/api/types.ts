@@ -74,6 +74,30 @@ export interface PurgeResult {
   evidence: EvidenceCounts;
 }
 
+export interface DatabaseSchema {
+  backend: string;
+  tables: DatabaseTable[];
+}
+
+export interface DatabaseTable {
+  name: string;
+  columns: DatabaseColumn[];
+}
+
+export interface DatabaseColumn {
+  name: string;
+  data_type: string;
+  nullable: boolean;
+  primary_key: boolean;
+}
+
+export interface DatabaseQueryResult {
+  columns: string[];
+  rows: Array<Array<string | null>>;
+  affected_rows: number;
+  truncated: boolean;
+}
+
 export interface Test {
   id: string;
   run_id: string;

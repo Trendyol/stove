@@ -94,6 +94,14 @@ fn mock_routes() -> Router<AppState> {
 fn admin_routes() -> Router<AppState> {
   Router::new()
     .route("/admin/status", get(super::routes::get_admin_status))
+    .route(
+      "/admin/database/schema",
+      get(super::routes::get_database_schema),
+    )
+    .route(
+      "/admin/database/query",
+      post(super::routes::execute_database_query),
+    )
     .route("/admin/retention", put(super::routes::update_retention))
     .route("/admin/purge/preview", post(super::routes::preview_purge))
     .route("/admin/purge", post(super::routes::purge_runs))

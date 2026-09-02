@@ -228,7 +228,7 @@ pub struct PostgresTestDatabase {
 
 impl PostgresTestDatabase {
   pub async fn start() -> Result<Self> {
-    let container = GenericImage::new("postgres", "17-alpine")
+    let container = GenericImage::new("postgres", "18-alpine")
       .with_exposed_port(5432.tcp())
       .with_wait_for(WaitFor::message_on_stdout(
         "PostgreSQL init process complete; ready for start up.",

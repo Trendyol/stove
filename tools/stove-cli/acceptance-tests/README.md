@@ -30,7 +30,8 @@ The suite covers:
 - default and runtime retention with overlapping active runs;
 - purge preview counts, exact IDs, active-run protection, purge, and clear;
 - PostgreSQL migrations, JSONB storage and GIN indexing, metadata filters,
-  retention, and administration against a disposable PostgreSQL container;
+  retention, administration, schema discovery, SQL mutations, and bounded
+  explorer queries against a disposable PostgreSQL 18 container;
 - two simultaneously started CLI pods sharing PostgreSQL, including alternating
   and concurrent ingestion, ordered cross-pod SSE without duplicate frames,
   `Last-Event-ID` replay, shared retention, concurrent pruning, and continuation

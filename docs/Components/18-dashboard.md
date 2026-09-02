@@ -165,7 +165,7 @@ Multiple Stove pods must all use the same PostgreSQL database. SQLite is intenti
 
 Each dashboard event carries a stable UUID and a per-run sequence. A pod commits the domain update, deduplication record, and durable live event in one PostgreSQL transaction before acknowledging it. PostgreSQL advisory locks serialize events for the same run, preserve commit order in the live-event log, and coordinate retention pruning for the same application. The UI receives cross-pod updates through PostgreSQL `LISTEN/NOTIFY`, with durable outbox polling and `Last-Event-ID` replay as the correctness fallback. PostgreSQL is therefore both the data store and the coordination dependency; no Redis or message broker is required.
 
-Allow three PostgreSQL connections per replica (read, write, and notification listener), plus operational headroom. Run the same Stove image version on every replica. Concurrent first starts are safe because migrations are serialized in PostgreSQL.
+Allow four PostgreSQL connections per replica (read, write, database explorer, and notification listener), plus operational headroom. Run the same Stove image version on every replica. Concurrent first starts are safe because migrations are serialized in PostgreSQL.
 
 For Kubernetes, use `/api/v1/meta` as a startup/readiness endpoint, expose `4040` for UI/REST/MCP and `4041` for gRPC, and give SIGTERM at least 10 seconds to drain. Mount ordinary settings from a `ConfigMap` and the connection URL from a `Secret`:
 
@@ -354,20 +354,38 @@ Agents can apply the same dynamic filter through `stove_runs`:
 
 ## Administration
 
-Select **Admin** in the dashboard header to open the dedicated `/admin` page, where you can inspect storage, change runtime retention, preview and purge matching runs, or clear all data. Destructive operations require confirmation. A retention change prunes excess completed runs immediately. It lasts for the current process with SQLite and is persisted as a shared setting with PostgreSQL.
+Select **Admin** in the dashboard header to open the dedicated `/admin` page, where you can inspect storage, browse the active database, run SQL, change runtime retention, preview and purge matching runs, or clear all data. SQL mutations and destructive administration operations require confirmation. A retention change prunes excess completed runs immediately. It lasts for the current process with SQLite and is persisted as a shared setting with PostgreSQL.
 
 Purge preview accepts an optional application and RFC 3339 `older_than` cutoff, then returns the exact run IDs and evidence counts. Purging uses those IDs. Both preview and purge exclude active runs unless `include_running` is explicitly `true`.
 
 | Endpoint | Use |
 |---|---|
 | `GET /api/v1/admin/status` | backend, retention, run, and evidence counts |
+| `GET /api/v1/admin/database/schema` | active backend, tables, columns, nullability, and primary keys |
+| `POST /api/v1/admin/database/query` | run one SQL statement with `sql` and optional `max_rows` |
 | `PUT /api/v1/admin/retention` | set runtime retention with `{"runs_per_app": 50}` |
 | `POST /api/v1/admin/purge/preview` | preview with `app_name`, `older_than`, and `include_running` |
 | `POST /api/v1/admin/purge` | delete exact `run_ids`; active runs still require `include_running` |
 | `DELETE /api/v1/data` | clear every run and all evidence |
 
+### Database explorer
+
+The database explorer is implemented by Stove itself and runs inside the Rust process; it does not require a sidecar or separate admin service. The UI provides table and column discovery, editable SELECT/INSERT/UPDATE/DELETE templates, a result grid, and confirmation before running a statement it considers mutating. The same operations are available through REST:
+
+```bash
+curl http://localhost:4040/api/v1/admin/database/schema
+
+curl -X POST http://localhost:4040/api/v1/admin/database/query \
+  -H 'Content-Type: application/json' \
+  -d '{"sql":"SELECT id, app_name FROM runs ORDER BY started_at DESC","max_rows":100}'
+```
+
+The query endpoint accepts one statement up to 64 KiB. `max_rows` defaults to 100 and is clamped to 1–500. PostgreSQL SELECT results use a server-side cursor and fetch only `max_rows + 1` records, so the `truncated` flag does not require materializing an unbounded result in Stove. PostgreSQL statements have a 10-second timeout. SQLite uses a dedicated peer connection and stops stepping through the result after the truncation check. Non-row statements return `affected_rows`; row values are returned as strings or `null`.
+
+The explorer has direct write access to Stove's tables. Confirmation in the browser is a safety prompt, not an authorization boundary, and direct SQL changes can violate application invariants. Keep the endpoint on a trusted operator network and prefer the purpose-built retention, purge, and clear controls for routine operations.
+
 !!! warning "Trusted networks only"
-    The dashboard, REST API, admin operations, gRPC ingestion, and MCP endpoint intentionally have no authentication or authorization. The servers listen on all interfaces so remote CI jobs and agents can connect. Deploy Stove only on an internal trusted network and control exposure outside Stove (for example with firewall rules or a private ingress).
+    The dashboard, REST API, database explorer, admin operations, gRPC ingestion, and MCP endpoint intentionally have no authentication or authorization. The servers listen on all interfaces so remote CI jobs and agents can connect. Deploy Stove only on an internal trusted network and control exposure outside Stove (for example with firewall rules or a private ingress).
 
 ## CLI options reference
 

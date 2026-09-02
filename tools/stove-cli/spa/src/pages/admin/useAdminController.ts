@@ -103,6 +103,7 @@ export function useAdminController() {
     previewPurge,
     purge,
     clearAll,
+    refresh,
   };
 }
 
