@@ -79,6 +79,8 @@ docker run -d --name stove --restart unless-stopped \
   ghcr.io/trendyol/stove-cli:0.26.0
 ```
 
+For a current-source local server backed by PostgreSQL, run `just postgres-up` from `tools/stove-cli`. It builds the image and exposes HTTP/MCP on `4040`, gRPC on `4041`, and PostgreSQL on `5433`. Use `just postgres-down` to preserve data or `just postgres-reset` to delete the local PostgreSQL volume.
+
 For PostgreSQL, mount the connection URL as a read-only secret and omit the SQLite volume:
 
 ```bash

@@ -126,6 +126,23 @@ docker run -d \
   ghcr.io/trendyol/stove-cli:0.26.0
 ```
 
+### Local PostgreSQL stack
+
+To run the current source against PostgreSQL without preparing a database manually:
+
+```bash
+cd tools/stove-cli
+just postgres-up
+```
+
+This builds the local Stove image, starts PostgreSQL 18, waits for it to become healthy, applies Stove migrations, and exposes:
+
+- dashboard, REST, admin, and MCP at `http://localhost:4040`;
+- gRPC ingestion at `localhost:4041`;
+- PostgreSQL at `localhost:5433`, using `stove` for the local-only database, user, and password.
+
+The PostgreSQL volume survives normal restarts. Use `just postgres-logs` to follow Stove, `just postgres-down` to stop both containers, or `just postgres-reset` to stop them and permanently delete the local database volume. Override ports or retention with `STOVE_HTTP_PORT`, `STOVE_GRPC_PORT`, `STOVE_POSTGRES_PORT`, and `STOVE_RETENTION_RUNS_PER_APP` before running `just postgres-up`.
+
 For a shared installation, mount a PostgreSQL URL secret and choose how many completed runs to retain per application:
 
 ```bash
