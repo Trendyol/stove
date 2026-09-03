@@ -1,7 +1,6 @@
 package com.stove.spring.example4x.e2e
 
-import com.trendyol.stove.dashboard.DashboardSystemOptions
-import com.trendyol.stove.dashboard.dashboard
+import com.trendyol.stove.dashboard.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
@@ -46,7 +45,12 @@ class StoveConfig : AbstractProjectConfig() {
         // Enable tracing - starts OTLP gRPC receiver on port 4317
         // Service name is automatically extracted from incoming spans (set by OTel agent)
         tracing { enableSpanReceiver() }
-        dashboard { DashboardSystemOptions(appName = "spring-4x-example") }
+        dashboard {
+          DashboardSystemOptions(
+            appName = "spring-4x-example",
+            ingestion = DashboardIngestion.Http("http://localhost:4040")
+          )
+        }
 
         wiremock {
           WireMockSystemOptions(

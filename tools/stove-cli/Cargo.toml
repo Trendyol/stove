@@ -42,6 +42,8 @@ prost-types = "0.14"
 # HTTP server (serves REST API + SPA to browser)
 axum = { version = "0.8", features = ["json"] }
 tower-http = { version = "0.7", features = ["cors"] }
+utoipa = "5"
+utoipa-swagger-ui = { version = "9", features = ["axum", "vendored"] }
 
 # SSE (live updates to browser)
 tokio-stream = "0.1"

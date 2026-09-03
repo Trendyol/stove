@@ -33,7 +33,7 @@ _STALE_SNIPPET_PATTERNS = [
     (re.compile(r"ReadinessStrategy\.HttpGet\s*\(\s*path\s*="), "HttpGet now requires a full url"),
     (re.compile(r"\bstove\s+serve\b"), "CLI now starts the dashboard with bare `stove`"),
     (re.compile(r"--port\s+8086\b"), "dashboard HTTP/MCP default port is now 4040"),
-    (re.compile(r"\bcliPort\s*=\s*8086\b"), "DashboardSystemOptions.cliPort is the gRPC port, default 4041"),
+    (re.compile(r"\bcli(?:Host|Port)\s*="), "use DashboardIngestion.Grpc(host = ..., port = ...)"),
 ]
 
 

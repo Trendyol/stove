@@ -3,9 +3,10 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::Serialize;
+use utoipa::ToSchema;
 
 /// Status of a test run.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub enum RunStatus {
   #[serde(rename = "RUNNING")]
   Running,
@@ -39,7 +40,7 @@ impl fmt::Display for RunStatus {
 }
 
 /// Status of an individual test or entry result.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub enum TestStatus {
   #[serde(rename = "RUNNING")]
   Running,
@@ -77,7 +78,7 @@ impl fmt::Display for TestStatus {
 }
 
 /// Summary of an application known to the dashboard.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct AppSummary {
   pub app_name: String,
   pub latest_run_id: String,
@@ -87,7 +88,7 @@ pub struct AppSummary {
 }
 
 /// A single test run (one execution of a test suite).
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Run {
   pub id: String,
   pub app_name: String,
@@ -104,7 +105,7 @@ pub struct Run {
 }
 
 /// A single test within a run.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Test {
   pub id: String,
   pub run_id: String,
@@ -119,7 +120,7 @@ pub struct Test {
 }
 
 /// A report entry (action + result) within a test.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Entry {
   pub id: i64,
   pub run_id: String,
@@ -142,7 +143,7 @@ pub struct Entry {
 }
 
 /// A span in a distributed trace.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Span {
   pub id: i64,
   pub run_id: String,
@@ -161,7 +162,7 @@ pub struct Span {
 }
 
 /// A system snapshot captured during a test.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Snapshot {
   pub id: i64,
   pub run_id: String,
@@ -178,7 +179,7 @@ pub struct Snapshot {
 /// One completed exchange observed by a mock system (`WireMock` / gRPC Mock).
 /// `test_id` is `None` for unattributed evidence — attribution is proven-only,
 /// so those render in a run-level lane instead of being guessed into a test.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct MockInteraction {
   pub id: i64,
   pub run_id: String,
@@ -209,7 +210,7 @@ pub struct MockInteraction {
 }
 
 /// A diagnostic a mock system observed — never a test failure.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct MockWarning {
   pub id: i64,
   pub run_id: String,
@@ -222,7 +223,7 @@ pub struct MockWarning {
   pub target: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, ToSchema, PartialEq, Eq)]
 pub struct EvidenceCounts {
   pub tests: i64,
   pub entries: i64,
@@ -232,7 +233,7 @@ pub struct EvidenceCounts {
   pub mock_warnings: i64,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct StorageStats {
   pub backend: String,
   pub retention_runs_per_app: usize,
@@ -241,33 +242,33 @@ pub struct StorageStats {
   pub evidence: EvidenceCounts,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct PurgePreview {
   pub run_ids: Vec<String>,
   pub run_count: usize,
   pub evidence: EvidenceCounts,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct PurgeResult {
   pub purged_run_ids: Vec<String>,
   pub purged_runs: usize,
   pub evidence: EvidenceCounts,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct DatabaseSchema {
   pub backend: String,
   pub tables: Vec<DatabaseTable>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct DatabaseTable {
   pub name: String,
   pub columns: Vec<DatabaseColumn>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct DatabaseColumn {
   pub name: String,
   pub data_type: String,
@@ -275,7 +276,7 @@ pub struct DatabaseColumn {
   pub primary_key: bool,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct DatabaseQueryResult {
   pub columns: Vec<String>,
   pub rows: Vec<Vec<Option<String>>>,

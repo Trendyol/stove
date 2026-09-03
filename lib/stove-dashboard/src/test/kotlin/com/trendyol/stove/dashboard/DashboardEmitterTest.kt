@@ -23,7 +23,7 @@ class DashboardEmitterTest :
       val port = server.port
 
       try {
-        val emitter = DashboardEmitter("localhost", port)
+        val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = port))
         val event = DashboardEvent.newBuilder()
           .setRunId("run-1")
           .setRunStarted(
@@ -51,7 +51,7 @@ class DashboardEmitterTest :
 
     test("auto-disables after consecutive failures without throwing") {
       // Connect to a port that is not listening
-      val emitter = DashboardEmitter("localhost", 1, maxFailures = 2)
+      val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = 1), maxFailures = 2)
 
       // These should not throw
       repeat(10) {
@@ -83,7 +83,7 @@ class DashboardEmitterTest :
       val port = server.port
 
       try {
-        val emitter = DashboardEmitter("localhost", port)
+        val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = port))
         val totalEvents = 700
 
         repeat(totalEvents) { index ->
@@ -107,7 +107,7 @@ class DashboardEmitterTest :
       val server = startMockServer(received, port = 0)
 
       try {
-        val emitter = DashboardEmitter("localhost", server.port)
+        val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = server.port))
         val event = runStartedEvent(1).toBuilder().setRunId("shared-run").build()
         val producers = List(100) { Thread { emitter.tryEmit(event) } }
 
@@ -135,7 +135,7 @@ class DashboardEmitterTest :
       val port = server.port
 
       try {
-        val emitter = DashboardEmitter("localhost", port, maxFailures = 2)
+        val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = port), maxFailures = 2)
 
         // More consecutive rejections than maxFailures — must not disable the emitter.
         repeat(5) { index -> emitter.tryEmit(runStartedEvent(index).toBuilder().setRunId("bad-$index").build()) }
@@ -160,7 +160,7 @@ class DashboardEmitterTest :
       val port = server.port
 
       try {
-        val emitter = DashboardEmitter("localhost", port, maxFailures = 3)
+        val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = port), maxFailures = 3)
 
         repeat(10) { index -> emitter.tryEmit(runStartedEvent(index)) }
 
@@ -182,7 +182,7 @@ class DashboardEmitterTest :
       val port = server.port
 
       try {
-        val emitter = DashboardEmitter("localhost", port)
+        val emitter = DashboardEmitter(DashboardIngestion.Grpc(port = port))
         val totalEvents = 350
 
         repeat(totalEvents) { index ->

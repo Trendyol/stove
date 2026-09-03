@@ -22,6 +22,13 @@ const CLIENT_BUFFER_SIZE: usize = 256;
 ///
 /// Sends a keep-alive comment every 15 seconds to prevent proxies and browsers
 /// from closing the connection during long-running tests.
+#[utoipa::path(
+  get,
+  path = "/api/v1/events/stream",
+  tag = "events",
+  params(("last-event-id" = Option<u64>, Header, description = "Resume after this event")),
+  responses((status = 200, description = "Live dashboard event stream", content_type = "text/event-stream"))
+)]
 pub async fn sse_handler(
   State(state): State<AppState>,
   headers: HeaderMap,

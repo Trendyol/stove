@@ -4,6 +4,7 @@ use axum::Router;
 use axum::routing::{delete, get, post, put};
 use tower_http::cors::CorsLayer;
 
+use crate::ingest::EventIngestor;
 use crate::sse::manager::SseManager;
 use crate::storage::repository::Repository;
 
@@ -12,11 +13,13 @@ use crate::storage::repository::Repository;
 pub struct AppState {
   pub repository: Arc<Repository>,
   pub sse_manager: Arc<SseManager>,
+  pub(crate) ingestor: EventIngestor,
 }
 
 /// Create the axum router with all API routes, SSE, and embedded SPA.
 pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Router {
   let state = AppState {
+    ingestor: EventIngestor::new(repository.clone(), sse_manager.clone()),
     repository,
     sse_manager,
   };
@@ -30,6 +33,7 @@ pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) 
       "/api/v1",
       run_routes().merge(mock_routes()).merge(admin_routes()),
     )
+    .merge(super::openapi::router())
     .fallback(super::routes::static_handler)
     .layer(CorsLayer::permissive())
     .with_state(state)
@@ -39,6 +43,7 @@ fn run_routes() -> Router<AppState> {
   Router::new()
     .route("/meta", get(super::routes::get_meta))
     .route("/apps", get(super::routes::get_apps))
+    .route("/events", post(super::routes::post_event))
     .route("/runs", get(super::routes::get_runs))
     .route("/runs/{run_id}", get(super::routes::get_run))
     .route("/runs/{run_id}/tests", get(super::routes::get_tests))

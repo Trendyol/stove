@@ -2,16 +2,17 @@ use axum::Json;
 use axum::http::HeaderMap;
 use axum::http::header::HOST;
 use serde::Serialize;
+use utoipa::ToSchema;
 
 use crate::STOVE_CLI_VERSION;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct MetaResponse {
   pub stove_cli_version: &'static str,
   pub mcp: McpMeta,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct McpMeta {
   pub enabled: bool,
   pub transport: &'static str,
@@ -19,6 +20,12 @@ pub struct McpMeta {
   pub scope: &'static str,
 }
 
+#[utoipa::path(
+  get,
+  path = "/api/v1/meta",
+  tag = "system",
+  responses((status = 200, description = "Server version and capabilities", body = MetaResponse))
+)]
 pub async fn get_meta(headers: HeaderMap) -> Json<MetaResponse> {
   let endpoint = headers
     .get(HOST)
