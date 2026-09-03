@@ -430,7 +430,7 @@ async fn mcp_handles_no_failures_and_caps_oversized_detail() {
 #[tokio::test]
 async fn mcp_reads_transactionally_committed_ingest() {
   let server = TestServer::start().await;
-  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
+  let service = DashboardEventServiceImpl::new(server.ingestor.clone());
 
   send_event(&service, run_started("run-pending", "checkout-api")).await;
   send_event(&service, test_started("run-pending", "test-pending")).await;

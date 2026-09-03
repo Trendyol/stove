@@ -8,6 +8,7 @@ use tracing::info;
 use stove::config;
 use stove::grpc;
 use stove::http;
+use stove::ingest::EventIngestor;
 use stove::proto;
 use stove::skills;
 use stove::sse;
@@ -39,18 +40,19 @@ async fn main() -> anyhow::Result<()> {
 
   let sse_manager = Arc::new(sse::manager::SseManager::new());
   let live_event_relay = sse::relay::spawn(repository.clone(), sse_manager.clone());
+  let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
   let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
   let grpc_handle = tokio::spawn(serve_grpc(
     config.grpc_port,
-    repository.clone(),
-    sse_manager.clone(),
+    ingestor.clone(),
     shutdown_rx.clone(),
   ));
   let http_handle = tokio::spawn(serve_http(
     config.port,
     repository,
     sse_manager,
+    ingestor,
     shutdown_rx,
   ));
   print_endpoints(config.port, config.grpc_port);
@@ -118,12 +120,11 @@ fn open_repository(
 
 async fn serve_grpc(
   port: u16,
-  repository: Arc<storage::repository::Repository>,
-  sse_manager: Arc<sse::manager::SseManager>,
+  ingestor: EventIngestor,
   shutdown: watch::Receiver<bool>,
 ) -> anyhow::Result<()> {
   let address = SocketAddr::from(([0, 0, 0, 0], port));
-  let service = grpc::service::DashboardEventServiceImpl::new(repository, sse_manager);
+  let service = grpc::service::DashboardEventServiceImpl::new(ingestor);
   info!("gRPC server listening on {}", address);
   tonic::transport::Server::builder()
     .add_service(proto::dashboard_event_service_server::DashboardEventServiceServer::new(service))
@@ -136,10 +137,11 @@ async fn serve_http(
   port: u16,
   repository: Arc<storage::repository::Repository>,
   sse_manager: Arc<sse::manager::SseManager>,
+  ingestor: EventIngestor,
   shutdown: watch::Receiver<bool>,
 ) -> anyhow::Result<()> {
   let address = SocketAddr::from(([0, 0, 0, 0], port));
-  let router = http::server::create_router(repository, sse_manager);
+  let router = http::server::create_router(repository, sse_manager, ingestor);
   info!("HTTP server listening on {}", address);
   let listener = tokio::net::TcpListener::bind(address).await?;
   axum::serve(

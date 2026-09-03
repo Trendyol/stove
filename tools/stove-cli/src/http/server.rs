@@ -17,11 +17,15 @@ pub struct AppState {
 }
 
 /// Create the axum router with all API routes, SSE, and embedded SPA.
-pub fn create_router(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Router {
+pub fn create_router(
+  repository: Arc<Repository>,
+  sse_manager: Arc<SseManager>,
+  ingestor: EventIngestor,
+) -> Router {
   let state = AppState {
-    ingestor: EventIngestor::new(repository.clone(), sse_manager.clone()),
     repository,
     sse_manager,
+    ingestor,
   };
 
   Router::new()

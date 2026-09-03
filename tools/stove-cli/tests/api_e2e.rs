@@ -531,10 +531,7 @@ async fn get_tests_returns_empty_for_unknown_run() {
 #[tokio::test]
 async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress() {
   let server = TestServer::start().await;
-  let service = Arc::new(DashboardEventServiceImpl::new(
-    server.repo.clone(),
-    server.sse.clone(),
-  ));
+  let service = Arc::new(DashboardEventServiceImpl::new(server.ingestor.clone()));
 
   send_event(
     service.as_ref(),
@@ -646,10 +643,7 @@ async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress()
 #[tokio::test]
 async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views() {
   let server = TestServer::start().await;
-  let service = Arc::new(DashboardEventServiceImpl::new(
-    server.repo.clone(),
-    server.sse.clone(),
-  ));
+  let service = Arc::new(DashboardEventServiceImpl::new(server.ingestor.clone()));
 
   send_event(
     service.as_ref(),
@@ -1429,7 +1423,7 @@ async fn snapshot_state_json_preserves_complex_json() {
 #[tokio::test]
 async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
   let server = TestServer::start().await;
-  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
+  let service = DashboardEventServiceImpl::new(server.ingestor.clone());
   let mut live = server.sse.subscribe();
 
   service
@@ -1476,7 +1470,7 @@ async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
 #[tokio::test]
 async fn ambient_mock_endpoints_return_only_unattributed_records() {
   let server = TestServer::start().await;
-  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
+  let service = DashboardEventServiceImpl::new(server.ingestor.clone());
 
   for event in [
     run_started_event("run-ambient", "product-api", 1_704_067_200, 0),
@@ -1565,10 +1559,7 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
 #[tokio::test]
 async fn sse_stream_pushes_full_events_only_after_their_database_commit() {
   let server = TestServer::start().await;
-  let service = Arc::new(DashboardEventServiceImpl::new(
-    server.repo.clone(),
-    server.sse.clone(),
-  ));
+  let service = Arc::new(DashboardEventServiceImpl::new(server.ingestor.clone()));
   let mut resp = server.get("/events/stream").await;
   let mut buffer = String::new();
 
@@ -1687,10 +1678,7 @@ async fn sse_stream_sends_keep_alive() {
 #[tokio::test]
 async fn sse_stream_delivers_interleaved_notifications_for_concurrent_test_load() {
   let server = TestServer::start().await;
-  let service = Arc::new(DashboardEventServiceImpl::new(
-    server.repo.clone(),
-    server.sse.clone(),
-  ));
+  let service = Arc::new(DashboardEventServiceImpl::new(server.ingestor.clone()));
   let mut resp = server.get("/events/stream").await;
   let mut buffer = String::new();
   let entry_count_per_test = 80usize;
@@ -2005,7 +1993,7 @@ async fn apps_does_not_duplicate_app_when_latest_runs_share_same_timestamp() {
 #[tokio::test]
 async fn run_metadata_round_trips_from_proto_and_filters_by_exact_subset() {
   let server = TestServer::start().await;
-  let service = DashboardEventServiceImpl::new(server.repo.clone(), server.sse.clone());
+  let service = DashboardEventServiceImpl::new(server.ingestor.clone());
 
   send_event(
     &service,
