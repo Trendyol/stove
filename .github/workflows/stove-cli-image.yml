@@ -130,6 +130,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Persist BuildKit cache mounts (cargo registry + target dir) across runs.
+      # cache-from/cache-to: type=gha only caches image layers, NOT cache mounts,
+      # so without this every run recompiles all dependencies from scratch.
+      # Keyed by run_id so the cache is always re-saved (incremental progress
+      # is kept); restore-keys falls back to the most recent entry.
+      - name: Restore BuildKit cache mounts
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/buildkit-cache-mounts
+          key: stove-cli-cargo-${{ matrix.platform.slug }}-${{ github.run_id }}
+          restore-keys: stove-cli-cargo-${{ matrix.platform.slug }}-
+
+      - name: Inject BuildKit cache mounts
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          cache-source: ${{ runner.temp }}/buildkit-cache-mounts
+
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
