@@ -29,10 +29,15 @@ env:
   IMAGE_NAME: trendyol/stove-cli
 
 jobs:
-  publish:
-    name: Publish multi-platform image
+  prepare:
+    name: Resolve image version and aliases
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      stable: ${{ steps.version.outputs.stable }}
+      major: ${{ steps.version.outputs.major }}
+      major_minor: ${{ steps.version.outputs.major_minor }}
+      publish_latest: ${{ steps.version.outputs.publish_latest }}
     steps:
       - uses: actions/checkout@v7
 
@@ -79,6 +84,25 @@ jobs:
             echo "publish_latest=${publish_latest}"
           } >> "${GITHUB_OUTPUT}"
 
+  build:
+    name: Build ${{ matrix.platform.name }}
+    needs: prepare
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: linux/amd64
+            slug: amd64
+            runner: ubuntu-latest
+          # Apple Silicon / ARM support is disabled for now.
+          # To re-enable, add (builds natively, no QEMU):
+          # - name: linux/arm64
+          #   slug: arm64
+          #   runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -93,34 +117,98 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: latest=false
           tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=${{ steps.version.outputs.major_minor }},enable=${{ steps.version.outputs.stable }}
-            type=raw,value=${{ steps.version.outputs.major }},enable=${{ steps.version.outputs.stable }}
-            type=raw,value=latest,enable=${{ steps.version.outputs.publish_latest }}
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=${{ needs.prepare.outputs.major_minor }},enable=${{ needs.prepare.outputs.stable }}
+            type=raw,value=${{ needs.prepare.outputs.major }},enable=${{ needs.prepare.outputs.stable }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest }}
           labels: |
             org.opencontainers.image.title=Stove CLI
             org.opencontainers.image.description=Dashboard, API, MCP server, and event ingestion for Stove test runs
             org.opencontainers.image.source=https://github.com/Trendyol/stove
             org.opencontainers.image.licenses=Apache-2.0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push image
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: tools/stove-cli/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
+          platforms: ${{ matrix.platform.name }}
           build-args: |
-            STOVE_VERSION=${{ steps.version.outputs.version }}
-          cache-from: type=gha,scope=stove-cli-image
-          cache-to: type=gha,mode=max,scope=stove-cli-image
-          provenance: mode=max
-          sbom: true
+            STOVE_VERSION=${{ needs.prepare.outputs.version }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=stove-cli-image-${{ matrix.platform.slug }}
+          cache-to: type=gha,mode=max,scope=stove-cli-image-${{ matrix.platform.slug }}
+          # Attestations are disabled: with push-by-digest + manifest merge they
+          # would be orphaned from the final manifest list.
+          provenance: false
+          sbom: false
+
+      - name: Export digest
+        shell: bash
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.platform.slug }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Merge manifests and push tags
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=${{ needs.prepare.outputs.major_minor }},enable=${{ needs.prepare.outputs.stable }}
+            type=raw,value=${{ needs.prepare.outputs.major }},enable=${{ needs.prepare.outputs.stable }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        shell: bash
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.metadata.outputs.json }}
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "${DOCKER_METADATA_OUTPUT_JSON}") \
+            $(printf "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s " *)
+
+      - name: Inspect image
+        shell: bash
+        run: |
+          docker buildx imagetools inspect \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}
