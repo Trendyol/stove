@@ -15,7 +15,6 @@ RUN STOVE_VERSION="${STOVE_VERSION}" npm run build
 FROM rust:1-bookworm AS rust-builder
 
 ARG STOVE_VERSION
-ARG TARGETARCH
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
       libssl-dev \
@@ -40,7 +39,7 @@ COPY --from=spa-builder /source/tools/stove-cli/spa/dist/ tools/stove-cli/spa/di
 WORKDIR /source/tools/stove-cli
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,id=stove-cli-target-${TARGETARCH},target=/source/tools/stove-cli/target \
+    --mount=type=cache,target=/source/tools/stove-cli/target \
     STOVE_VERSION="${STOVE_VERSION}" SKIP_SPA_BUILD=1 cargo build --locked --release \
     && cp target/release/stove /usr/local/bin/stove
 
