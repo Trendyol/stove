@@ -1,17 +1,18 @@
 use axum::Json;
 use axum::extract::State;
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 use crate::error::{AppError, Result};
 use crate::http::server::AppState;
 use crate::storage::models::{PurgePreview, PurgeResult, StorageStats};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct RetentionRequest {
   pub runs_per_app: usize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct PurgePreviewRequest {
   pub app_name: Option<String>,
   pub older_than: Option<String>,
@@ -19,17 +20,30 @@ pub struct PurgePreviewRequest {
   pub include_running: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct PurgeRequest {
   pub run_ids: Vec<String>,
   #[serde(default)]
   pub include_running: bool,
 }
 
+#[utoipa::path(
+  get,
+  path = "/api/v1/admin/status",
+  tag = "admin",
+  responses((status = 200, description = "Storage and retention status", body = StorageStats))
+)]
 pub async fn get_admin_status(State(state): State<AppState>) -> Result<Json<StorageStats>> {
   Ok(Json(state.repository.storage_stats()?))
 }
 
+#[utoipa::path(
+  put,
+  path = "/api/v1/admin/retention",
+  tag = "admin",
+  request_body = RetentionRequest,
+  responses((status = 200, description = "Updated storage and retention status", body = StorageStats))
+)]
 pub async fn update_retention(
   State(state): State<AppState>,
   Json(request): Json<RetentionRequest>,
@@ -38,6 +52,16 @@ pub async fn update_retention(
   Ok(Json(state.repository.storage_stats()?))
 }
 
+#[utoipa::path(
+  post,
+  path = "/api/v1/admin/purge/preview",
+  tag = "admin",
+  request_body = PurgePreviewRequest,
+  responses(
+    (status = 200, description = "Data that would be purged", body = PurgePreview),
+    (status = 400, description = "Invalid purge criteria")
+  )
+)]
 pub async fn preview_purge(
   State(state): State<AppState>,
   Json(request): Json<PurgePreviewRequest>,
@@ -54,6 +78,13 @@ pub async fn preview_purge(
   )?))
 }
 
+#[utoipa::path(
+  post,
+  path = "/api/v1/admin/purge",
+  tag = "admin",
+  request_body = PurgeRequest,
+  responses((status = 200, description = "Purged data summary", body = PurgeResult))
+)]
 pub async fn purge_runs(
   State(state): State<AppState>,
   Json(request): Json<PurgeRequest>,

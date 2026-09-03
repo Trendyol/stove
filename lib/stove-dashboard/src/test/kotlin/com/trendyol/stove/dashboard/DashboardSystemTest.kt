@@ -37,8 +37,8 @@ class DashboardSystemTest : FunSpec({
       val stove = Stove()
       val options = DashboardSystemOptions(
         appName = "test-api",
-        cliPort = port,
-        metadata = mapOf("team" to "checkout", "gitlab.pipeline_id" to "42")
+        metadata = mapOf("team" to "checkout", "gitlab.pipeline_id" to "42"),
+        ingestion = DashboardIngestion.Grpc(port = port)
       )
       val system = DashboardSystem(stove, options)
 
@@ -93,7 +93,10 @@ class DashboardSystemTest : FunSpec({
 
     try {
       val stove = Stove()
-      val options = DashboardSystemOptions(appName = "test-api", cliPort = port)
+      val options = DashboardSystemOptions(
+        appName = "test-api",
+        ingestion = DashboardIngestion.Grpc(port = port)
+      )
       val system = DashboardSystem(stove, options)
 
       system.run()
@@ -128,7 +131,10 @@ class DashboardSystemTest : FunSpec({
       stove.getOrRegister(PostgreSqlSnapshotSystem(stove))
       val system = DashboardSystem(
         stove,
-        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+        DashboardSystemOptions(
+          appName = "test-api",
+          ingestion = DashboardIngestion.Grpc(port = server.port)
+        )
       )
 
       system.run()
@@ -178,7 +184,10 @@ class DashboardSystemTest : FunSpec({
       stove.getOrRegister(PostgreSqlSnapshotSystem(stove))
       val system = DashboardSystem(
         stove,
-        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+        DashboardSystemOptions(
+          appName = "test-api",
+          ingestion = DashboardIngestion.Grpc(port = server.port)
+        )
       )
 
       system.run()
@@ -225,7 +234,10 @@ class DashboardSystemTest : FunSpec({
       val snapshotSystem = BlockingSnapshotSystem(stove)
       stove.getOrRegister(snapshotSystem)
 
-      val options = DashboardSystemOptions(appName = "test-api", cliPort = port)
+      val options = DashboardSystemOptions(
+        appName = "test-api",
+        ingestion = DashboardIngestion.Grpc(port = port)
+      )
       val system = DashboardSystem(stove, options)
 
       system.run()
@@ -270,7 +282,10 @@ class DashboardSystemTest : FunSpec({
       val stove = Stove()
       val system = DashboardSystem(
         stove,
-        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+        DashboardSystemOptions(
+          appName = "test-api",
+          ingestion = DashboardIngestion.Grpc(port = server.port)
+        )
       )
       system.run()
       system.onInteraction(
@@ -324,7 +339,10 @@ class DashboardSystemTest : FunSpec({
       stove.getOrRegister(LifecycleDiagnosticSystem(stove))
       val system = DashboardSystem(
         stove,
-        DashboardSystemOptions(appName = "test-api", cliPort = server.port)
+        DashboardSystemOptions(
+          appName = "test-api",
+          ingestion = DashboardIngestion.Grpc(port = server.port)
+        )
       )
 
       system.run()

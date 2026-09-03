@@ -1,12 +1,8 @@
 //! Conversion helpers between protobuf wire types and the dashboard's
-//! internal event representation, plus the small `PreparedDashboardEvent`
-//! struct shared by every preparer.
+//! internal event representation, shared by every preparer.
 
 use std::collections::HashMap;
 
-use tonic::Status;
-
-use crate::error::AppError;
 use crate::storage::models::RunStatus;
 
 pub(super) fn extract_test_id(attributes: &HashMap<String, String>) -> Option<String> {
@@ -44,21 +40,5 @@ pub(super) fn non_empty(value: &str) -> Option<String> {
     None
   } else {
     Some(value.to_string())
-  }
-}
-
-#[allow(clippy::needless_pass_by_value)]
-pub(super) fn to_status(error: AppError) -> Status {
-  match error {
-    AppError::InvalidEvent(message) => Status::invalid_argument(message),
-    AppError::Database(_)
-    | AppError::Diesel(_)
-    | AppError::DieselConnection(_)
-    | AppError::Migration(_)
-    | AppError::Postgres(_)
-    | AppError::PostgresTls(_)
-    | AppError::GrpcTransport(_)
-    | AppError::Serialization(_)
-    | AppError::Startup(_) => Status::internal(error.to_string()),
   }
 }

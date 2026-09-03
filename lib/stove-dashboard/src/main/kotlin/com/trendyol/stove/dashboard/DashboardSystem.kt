@@ -39,7 +39,8 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Dashboard system that streams test events to the stove CLI via gRPC.
+ * Dashboard system that streams test events to the stove CLI using the configured
+ * [DashboardSystemOptions.ingestion] transport.
  *
  * Add to your Stove config:
  * ```kotlin
@@ -74,7 +75,7 @@ class DashboardSystem(
   private val acceptingEvents = AtomicBoolean(false)
 
   override suspend fun run() {
-    emitter = DashboardEmitter(options.cliHost, options.cliPort)
+    emitter = DashboardEmitter(options.ingestion)
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {

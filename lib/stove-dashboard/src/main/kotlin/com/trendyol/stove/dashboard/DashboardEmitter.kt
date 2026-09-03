@@ -1,20 +1,26 @@
-@file:Suppress("TooGenericExceptionCaught")
-
 package com.trendyol.stove.dashboard
 
-import com.trendyol.stove.dashboard.api.*
-import com.trendyol.stove.dashboard.api.DashboardEventServiceGrpcKt.DashboardEventServiceCoroutineStub
-import io.grpc.*
-import kotlinx.coroutines.*
+import com.trendyol.stove.dashboard.api.DashboardEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import java.util.UUID
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.*
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 
+private const val DEFAULT_MAX_FAILURES = 5
+
 /**
- * Emits dashboard events to the CLI via gRPC.
+ * Queues dashboard events and sends them using the selected [ingestion] transport.
  *
  * Events are buffered in a coroutine channel and drained by a background coroutine.
  * On connection failure, retries with auto-disable after [maxFailures] consecutive failures.
@@ -22,37 +28,28 @@ import kotlin.time.Duration.Companion.milliseconds
  * Thread-safe: [tryEmit] can be called from any thread.
  */
 class DashboardEmitter(
-  host: String,
-  port: Int,
-  private val maxFailures: Int = MAX_FAILURES
+  ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
+  private val maxFailures: Int = DEFAULT_MAX_FAILURES
 ) {
-  private val logger = LoggerFactory.getLogger(DashboardEmitter::class.java)
-  private val channel: ManagedChannel = ManagedChannelBuilder
-    .forAddress(host, port)
-    .usePlaintext()
-    .build()
-  private val stub = DashboardEventServiceCoroutineStub(channel)
+  init {
+    require(maxFailures > 0) { "maxFailures must be greater than zero: $maxFailures" }
+  }
 
-  // Test runs can emit thousands of spans/entries in a short burst.
-  // A bounded queue silently drops lifecycle events and leaves the CLI in a stale state.
+  private val transport = ingestion.createTransport()
+  private val logger = LoggerFactory.getLogger(DashboardEmitter::class.java)
   private val eventQueue = Channel<DashboardEvent>(Channel.UNLIMITED)
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
   private val disabled = AtomicBoolean(false)
-  private val consecutiveFailures = AtomicInteger(0)
-  private val rejectionLogged = AtomicBoolean(false)
+  private val closed = AtomicBoolean(false)
+  private var consecutiveFailures = 0
+  private var rejectionLogged = false
   private val sequenceByRun = mutableMapOf<String, Long>()
-  private val drainJob: Job
+  private val drainJob: Job = scope.launch { drainLoop() }
 
-  init {
-    drainJob = scope.launch { drainLoop() }
-  }
-
-  /**
-   * Non-blocking emit. Drops the event only if the emitter is disabled or already closed.
-   */
+  /** Non-blocking emit. Drops the event only if the emitter is disabled or closed. */
   @Synchronized
   fun tryEmit(event: DashboardEvent) {
-    if (disabled.get()) return
+    if (disabled.get() || closed.get()) return
     val sequence = sequenceByRun.getOrDefault(event.runId, 0) + 1
     sequenceByRun[event.runId] = sequence
     val identifiedEvent = event.toBuilder()
@@ -60,32 +57,18 @@ class DashboardEmitter(
       .setSequence(sequence)
       .build()
     val result = eventQueue.trySend(identifiedEvent)
-    if (result.isFailure) {
-      if (!disabled.get()) {
-        logger.debug("Dropping dashboard event because emitter queue is closed")
-      }
+    if (result.isFailure && !disabled.get()) {
+      logger.debug("Dropping dashboard event because emitter queue is closed")
     }
   }
 
-  /**
-   * Graceful shutdown: drains remaining events (with timeout), then closes the gRPC channel.
-   */
+  /** Graceful, idempotent shutdown: drains queued events, then closes the transport. */
   fun close() {
+    if (!closed.compareAndSet(false, true)) return
     eventQueue.close()
-    // Wait for the existing drainLoop to finish consuming buffered events.
-    // Closing the channel causes the `for (event in eventQueue)` iterator to terminate
-    // once all buffered events are consumed, so drainJob completes naturally.
     runBlocking { withTimeoutOrNull(DRAIN_TIMEOUT_MS.milliseconds) { drainJob.join() } }
     scope.cancel()
-    channel.shutdown()
-    try {
-      channel.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    } catch (_: InterruptedException) {
-      Thread.currentThread().interrupt()
-    }
-    if (!channel.isTerminated) {
-      channel.shutdownNow()
-    }
+    transport.close()
   }
 
   private suspend fun drainLoop() {
@@ -97,57 +80,52 @@ class DashboardEmitter(
 
   private suspend fun sendUntilAcknowledged(event: DashboardEvent) {
     while (scope.isActive && !disabled.get()) {
-      try {
-        val ack = stub.sendEvent(event)
-        if (ack.accepted) {
-          consecutiveFailures.set(0)
+      when (val outcome = transport.send(event)) {
+        SendOutcome.Accepted -> {
+          consecutiveFailures = 0
           return
         }
-        handleFailure(IllegalStateException("Dashboard CLI did not commit event ${event.eventId}"), isGrpc = true)
-      } catch (e: StatusException) {
-        if (e.status.code == Status.Code.INVALID_ARGUMENT) {
-          handleRejection(e)
+
+        is SendOutcome.Rejected -> {
+          consecutiveFailures = 0
+          if (!rejectionLogged) {
+            rejectionLogged = true
+            logger.warn(
+              "Dashboard CLI rejected an event: ${outcome.reason}. " +
+                "Such events are dropped; tests continue normally."
+            )
+          }
           return
         }
-        handleFailure(e, isGrpc = true)
-      } catch (e: Exception) {
-        handleFailure(e, isGrpc = false)
+
+        is SendOutcome.Failed -> handleFailure(outcome.cause)
       }
 
       if (!disabled.get()) {
-        val attempt = consecutiveFailures.get().coerceAtLeast(1).coerceAtMost(5)
+        val attempt = consecutiveFailures.coerceAtLeast(1).coerceAtMost(5)
         delay((RETRY_BASE_DELAY_MS shl (attempt - 1)).milliseconds)
       }
     }
   }
 
-  private fun handleRejection(e: StatusException) {
-    // A rejection means the server responded, so the transport is healthy: reset the counter.
-    consecutiveFailures.set(0)
-    if (rejectionLogged.compareAndSet(false, true)) {
-      logger.warn("Dashboard CLI rejected an event: ${e.status.description}. Such events are dropped; tests continue normally.")
+  private fun handleFailure(error: Exception) {
+    consecutiveFailures++
+    if (consecutiveFailures == 1) {
+      logger.warn(
+        "Dashboard CLI ${transport.name} error: ${error.message}. " +
+          "Events will be dropped after $maxFailures consecutive failures."
+      )
     }
-  }
-
-  private fun handleFailure(e: Exception, isGrpc: Boolean) {
-    val count = consecutiveFailures.incrementAndGet()
-    if (count == 1) {
-      if (isGrpc) {
-        logger.warn("Dashboard CLI gRPC error: ${e.message}. Events will be dropped after $maxFailures consecutive failures.")
-      } else {
-        logger.error("Unexpected dashboard emitter error: ${e.message}", e)
-      }
-    }
-    if (count >= maxFailures) {
+    if (consecutiveFailures >= maxFailures) {
       disabled.set(true)
-      logger.info("Dashboard emitter disabled after $count consecutive failures. Tests will continue normally.")
+      logger.info(
+        "Dashboard emitter disabled after $consecutiveFailures consecutive failures. Tests will continue normally."
+      )
     }
   }
 
-  companion object {
-    private const val MAX_FAILURES = 5
+  private companion object {
     private const val DRAIN_TIMEOUT_MS = 30000L
-    private const val SHUTDOWN_TIMEOUT_SECONDS = 5L
     private const val RETRY_BASE_DELAY_MS = 100L
   }
 }

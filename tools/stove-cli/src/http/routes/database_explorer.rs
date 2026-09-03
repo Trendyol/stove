@@ -1,6 +1,7 @@
 use axum::Json;
 use axum::extract::State;
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 use crate::error::{AppError, Result};
 use crate::http::server::AppState;
@@ -10,17 +11,33 @@ const DEFAULT_MAX_ROWS: usize = 100;
 const MAX_ROWS: usize = 500;
 const MAX_SQL_BYTES: usize = 64 * 1024;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct DatabaseQueryRequest {
   pub sql: String,
   #[serde(default = "default_max_rows")]
   pub max_rows: usize,
 }
 
+#[utoipa::path(
+  get,
+  path = "/api/v1/admin/database/schema",
+  tag = "admin",
+  responses((status = 200, description = "Queryable database schema", body = DatabaseSchema))
+)]
 pub async fn get_database_schema(State(state): State<AppState>) -> Result<Json<DatabaseSchema>> {
   Ok(Json(state.repository.database_schema()?))
 }
 
+#[utoipa::path(
+  post,
+  path = "/api/v1/admin/database/query",
+  tag = "admin",
+  request_body = DatabaseQueryRequest,
+  responses(
+    (status = 200, description = "Database query result", body = DatabaseQueryResult),
+    (status = 400, description = "Invalid or rejected query")
+  )
+)]
 pub async fn execute_database_query(
   State(state): State<AppState>,
   Json(request): Json<DatabaseQueryRequest>,

@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use super::DashboardEventServiceImpl;
+use super::EventIngestor;
 use crate::proto;
 use crate::sse::manager::SseManager;
 use crate::storage::repository::Repository;
 
-fn test_service() -> DashboardEventServiceImpl {
+fn test_service() -> EventIngestor {
   let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
   let sse = Arc::new(SseManager::new());
-  DashboardEventServiceImpl::new(repo, sse)
+  EventIngestor::new(repo, sse)
 }
 
 fn ts(seconds: i64) -> prost_types::Timestamp {

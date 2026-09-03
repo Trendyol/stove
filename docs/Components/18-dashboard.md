@@ -220,7 +220,7 @@ After deployment:
 
 - Users open `http://stove.internal:4040` and administer retained evidence at `/admin`.
 - Agents connect to the Streamable HTTP MCP endpoint at `http://stove.internal:4040/mcp`.
-- Test processes set `DashboardSystemOptions(cliHost = "stove.internal", cliPort = 4041)` so events reach the exposed gRPC port.
+- Test processes set `ingestion = DashboardIngestion.Grpc(host = "stove.internal", port = 4041)` so events reach the exposed gRPC port.
 
 The release workflow publishes exact (`0.26.0`), minor (`0.26`), major (`0`), and `latest` tags for stable releases. Pin the exact tag in production so a restart cannot pull a different server version. Keep that version aligned with the Stove dependencies used by the test process.
 
@@ -242,7 +242,10 @@ Stove().with {
             )
         )
         // If you start the CLI with `stove --grpc-port 9001`, match that here:
-        // DashboardSystemOptions(appName = "my-service", cliHost = "localhost", cliPort = 9001)
+        // DashboardSystemOptions(
+        //     appName = "my-service",
+        //     ingestion = DashboardIngestion.Grpc(port = 9001)
+        // )
     }
     // ... other systems + runner
 }.run()
@@ -251,6 +254,22 @@ Stove().with {
 Now the registered Stove systems stream test events to the dashboard while the CLI is running.
 
 Metadata is an immutable set of string key/value pairs attached when a run starts. Keys are intentionally open-ended, so CI jobs can describe a run with team, project, pipeline, branch, environment, or any other useful dimensions without a server schema change.
+
+### Ingestion over HTTP(S)
+
+By default events are streamed to the CLI over plaintext gRPC at `localhost:4041`. Configure another gRPC endpoint with `DashboardIngestion.Grpc(host, port)`. When the CLI sits behind an HTTPS-only ingress or API gateway that cannot forward gRPC — for example a shared dashboard server for CI pipelines — select HTTP ingestion instead:
+
+```kotlin
+DashboardSystemOptions(
+    appName = "checkout-api",
+    ingestion = DashboardIngestion.Http("https://stove-gateway.internal/stove"),
+    metadata = mapOf("gitlab.pipeline_id" to (System.getenv("CI_PIPELINE_ID") ?: "local"))
+)
+```
+
+With `DashboardIngestion.Http`, each event is sent as a protobuf-encoded `DashboardEvent` in the body of `POST <baseUrl>/api/v1/events` (`Content-Type: application/x-protobuf`) and acknowledged with a protobuf `EventAck`. The base URL may include the gateway path prefix but must not include `/api/v1/events`, a query, or a fragment. Queueing, retry, and auto-disable semantics are identical to the default `DashboardIngestion.Grpc` transport, and the server applies the same validation, deduplication, and live broadcast pipeline to both.
+
+The server exposes its HTTP API documentation at `/swagger-ui` and its OpenAPI document at `/api-docs/openapi.json`. The ingestion request and response are binary protobuf payloads; the shared `.proto` files in `stove-dashboard-api` remain the authoritative message schema.
 
 ## What you see
 
@@ -309,8 +328,8 @@ This storage rewrite is intentionally a clean break. Databases created by a CLI 
 
 Dashboard is **opt-in** and **non-blocking**:
 
-- Events queue locally; gRPC publish happens in the background.
-- If the CLI is down or unreachable, the gRPC client auto-disables for the rest of the suite. Tests continue. No flakes.
+- Events queue locally; publishing (gRPC or HTTP) happens in the background.
+- If the CLI is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.
 - Tests never wait on the dashboard.
 
 ## REST API
@@ -321,6 +340,7 @@ The CLI exposes REST endpoints for integration:
 |---|---|
 | `GET /api/v1/meta` | discovery; version, capabilities, MCP availability |
 | `GET /api/v1/apps` | list registered apps |
+| `POST /api/v1/events` | ingest a protobuf-encoded `DashboardEvent`; responds with a protobuf `EventAck` |
 | `GET /api/v1/runs?app=...&metadata=...` | list runs by app and/or an exact metadata subset |
 | `GET /api/v1/runs/{run}/tests` | tests in a run |
 | `GET /api/v1/runs/{run}/mock-interactions` | mock exchanges for a run; append `/ambient` for unattributed exchanges |
@@ -431,6 +451,6 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 | Symptom | Check |
 |---|---|
 | Dashboard empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
-| Events not arriving | Port mismatch. `cliPort` in `DashboardSystemOptions` must match `--grpc-port` |
+| Events not arriving | Port mismatch. `DashboardIngestion.Grpc(port = ...)` must match `--grpc-port` |
 | "gRPC disabled" warning | Expected if CLI started after tests; restart in correct order |
 | Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |

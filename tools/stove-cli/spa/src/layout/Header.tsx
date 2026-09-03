@@ -19,6 +19,8 @@ export function Header({
   onNavigateAdmin,
 }: HeaderProps) {
   const { theme, toggle } = useTheme();
+  const basePath = window.location.pathname.replace(/\/admin\/?$/, "").replace(/\/$/, "");
+  const swaggerUrl = `${basePath}/swagger-ui/`;
 
   return (
     <header className="stove-topbar">
@@ -61,6 +63,26 @@ export function Header({
             <path d="M6.7 1h2.6l.4 1.5 1.1.6 1.5-.5 1.3 2.2-1.1 1.1v1.2l1.1 1.1-1.3 2.2-1.5-.5-1.1.6-.4 1.5H6.7l-.4-1.5-1.1-.6-1.5.5-1.3-2.2 1.1-1.1V5.9L2.4 4.8l1.3-2.2 1.5.5 1.1-.6L6.7 1zM8 5a2 2 0 100 4 2 2 0 000-4z" />
           </svg>
           <span>Admin</span>
+        </a>
+        <a
+          href={swaggerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="stove-topbar-link"
+          title="API documentation"
+        >
+          <svg
+            aria-hidden="true"
+            className="w-3.5 h-3.5"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5.5 3 1.5 8l4 5M10.5 3l4 5-4 5M9.25 1.5l-2.5 13" />
+          </svg>
+          <span>API</span>
         </a>
         <a
           href="https://trendyol.github.io/stove/"
