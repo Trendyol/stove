@@ -21,14 +21,14 @@ use crate::storage::repository::Repository;
 /// Shared by the gRPC service and the HTTP ingestion endpoint so both
 /// transports apply identical validation, deduplication, and broadcast rules.
 #[derive(Clone)]
-pub(crate) struct EventIngestor {
+pub struct EventIngestor {
   repository: Arc<Repository>,
   sse_manager: Arc<SseManager>,
 }
 
 impl EventIngestor {
   #[must_use]
-  pub(crate) fn new(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Self {
+  pub fn new(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Self {
     Self {
       repository,
       sse_manager,
@@ -36,7 +36,7 @@ impl EventIngestor {
   }
 
   /// Commit an event transactionally before acknowledging it to the producer.
-  pub(crate) fn process_event(&self, event: &proto::DashboardEvent) -> AppResult<CommitOutcome> {
+  pub(crate) fn ingest(&self, event: &proto::DashboardEvent) -> AppResult<proto::EventAck> {
     let Some(prepared) = self.prepare_event(event)? else {
       return Err(AppError::InvalidEvent(
         "dashboard event has no payload".to_string(),
@@ -56,7 +56,18 @@ impl EventIngestor {
     if !outcome.duplicate {
       self.broadcast_committed_events();
     }
-    Ok(outcome)
+    let mut acknowledgement = Self::accepted_ack();
+    acknowledgement.event_id.clone_from(&event.event_id);
+    acknowledgement.sequence = event.sequence;
+    acknowledgement.duplicate = outcome.duplicate;
+    Ok(acknowledgement)
+  }
+
+  pub(crate) fn accepted_ack() -> proto::EventAck {
+    proto::EventAck {
+      accepted: true,
+      ..Default::default()
+    }
   }
 
   fn broadcast_committed_events(&self) {

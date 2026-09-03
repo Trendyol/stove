@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 use stove::http::server::create_router;
+use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
 use stove::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use stove::storage::repository::Repository;
@@ -18,6 +19,7 @@ pub struct TestServer {
   pub base_url: String,
   pub repo: Arc<Repository>,
   pub sse: Arc<SseManager>,
+  pub ingestor: EventIngestor,
   pub client: reqwest::Client,
 }
 
@@ -27,7 +29,8 @@ impl TestServer {
     let repo =
       Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
     let sse_manager = Arc::new(SseManager::new());
-    let router = create_router(repo.clone(), sse_manager.clone());
+    let ingestor = EventIngestor::new(repo.clone(), sse_manager.clone());
+    let router = create_router(repo.clone(), sse_manager.clone(), ingestor.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
       .await
@@ -48,6 +51,7 @@ impl TestServer {
       base_url,
       repo,
       sse: sse_manager,
+      ingestor,
       client: reqwest::Client::new(),
     }
   }

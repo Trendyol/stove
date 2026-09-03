@@ -42,13 +42,7 @@ use crate::proto;
 pub async fn post_event(State(state): State<AppState>, body: Bytes) -> Result<impl IntoResponse> {
   let event = proto::DashboardEvent::decode(body.as_ref())
     .map_err(|error| AppError::InvalidEvent(format!("invalid protobuf DashboardEvent: {error}")))?;
-  let outcome = state.ingestor.process_event(&event)?;
-  let ack = proto::EventAck {
-    accepted: true,
-    event_id: event.event_id,
-    sequence: event.sequence,
-    duplicate: outcome.duplicate,
-  };
+  let ack = state.ingestor.ingest(&event)?;
   Ok((
     [(header::CONTENT_TYPE, "application/x-protobuf")],
     ack.encode_to_vec(),
@@ -63,13 +57,15 @@ mod tests {
 
   use super::*;
   use crate::http::server::create_router;
+  use crate::ingest::EventIngestor;
   use crate::sse::manager::SseManager;
   use crate::storage::repository::Repository;
 
   async fn spawn_server() -> (String, Arc<Repository>) {
     let repository = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
     let sse_manager = Arc::new(SseManager::new());
-    let router = create_router(repository.clone(), sse_manager);
+    let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
+    let router = create_router(repository.clone(), sse_manager, ingestor);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
     tokio::spawn(async move {
@@ -187,9 +183,11 @@ mod tests {
   #[tokio::test]
   async fn swagger_ui_documents_protobuf_ingestion() {
     let repository = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
+    let sse_manager = Arc::new(SseManager::new());
+    let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
     let router = axum::Router::new().nest(
       "/gateway/stove",
-      create_router(repository, Arc::new(SseManager::new())),
+      create_router(repository, sse_manager, ingestor),
     );
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base_url = format!("http://{}/gateway/stove", listener.local_addr().unwrap());

@@ -20,7 +20,7 @@ async fn no_broadcast_on_invalid_event_order() {
   let svc = test_service();
   let mut rx = svc.sse_manager.subscribe();
 
-  let result = svc.process_event(&proto::DashboardEvent {
+  let result = svc.ingest(&proto::DashboardEvent {
     run_id: "nonexistent-run".to_string(),
     event_id: String::new(),
     sequence: 0,
@@ -48,11 +48,11 @@ async fn no_broadcast_on_invalid_event_order() {
 async fn acknowledgement_requires_a_committed_domain_and_outbox_event() {
   let svc = test_service();
 
-  svc
-    .process_event(&proto::DashboardEvent {
+  let acknowledgement = svc
+    .ingest(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
-      event_id: String::new(),
-      sequence: 0,
+      event_id: "event-1".to_string(),
+      sequence: 1,
       event: Some(proto::dashboard_event::Event::RunStarted(
         proto::RunStartedEvent {
           timestamp: Some(ts(1_704_067_200)),
@@ -65,6 +65,15 @@ async fn acknowledgement_requires_a_committed_domain_and_outbox_event() {
     })
     .unwrap();
 
+  assert_eq!(
+    acknowledgement,
+    proto::EventAck {
+      accepted: true,
+      event_id: "event-1".to_string(),
+      sequence: 1,
+      duplicate: false,
+    }
+  );
   let runs = svc.repository.get_runs(None).unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(svc.repository.latest_live_event_id().unwrap(), 1);
@@ -88,7 +97,7 @@ async fn process_run_started_event() {
     )),
   };
 
-  svc.process_event(&event).unwrap();
+  svc.ingest(&event).unwrap();
 
   let runs = svc.repository.get_runs(None).unwrap();
   assert_eq!(runs.len(), 1);
@@ -106,7 +115,7 @@ async fn process_full_lifecycle() {
   let svc = test_service();
 
   svc
-    .process_event(&proto::DashboardEvent {
+    .ingest(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
       event_id: String::new(),
       sequence: 0,
@@ -123,7 +132,7 @@ async fn process_full_lifecycle() {
     .unwrap();
 
   svc
-    .process_event(&proto::DashboardEvent {
+    .ingest(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
       event_id: String::new(),
       sequence: 0,
@@ -142,7 +151,7 @@ async fn process_full_lifecycle() {
   for attempt in 1_i64..=5 {
     let failed = attempt < 5;
     svc
-      .process_event(&proto::DashboardEvent {
+      .ingest(&proto::DashboardEvent {
         run_id: "run-1".to_string(),
         event_id: String::new(),
         sequence: 0,
@@ -171,7 +180,7 @@ async fn process_full_lifecycle() {
   }
 
   svc
-    .process_event(&proto::DashboardEvent {
+    .ingest(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
       event_id: String::new(),
       sequence: 0,
@@ -188,7 +197,7 @@ async fn process_full_lifecycle() {
     .unwrap();
 
   svc
-    .process_event(&proto::DashboardEvent {
+    .ingest(&proto::DashboardEvent {
       run_id: "run-1".to_string(),
       event_id: String::new(),
       sequence: 0,
@@ -228,7 +237,7 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
   let svc = test_service();
 
   svc
-    .process_event(&proto::DashboardEvent {
+    .ingest(&proto::DashboardEvent {
       run_id: "run-expectations".to_string(),
       event_id: String::new(),
       sequence: 0,
@@ -244,7 +253,7 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
     })
     .unwrap();
   svc
-    .process_event(&proto::DashboardEvent {
+    .ingest(&proto::DashboardEvent {
       run_id: "run-expectations".to_string(),
       event_id: String::new(),
       sequence: 0,
@@ -262,7 +271,7 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
 
   for (offset, expected) in ["200", "201"].into_iter().enumerate() {
     svc
-      .process_event(&proto::DashboardEvent {
+      .ingest(&proto::DashboardEvent {
         run_id: "run-expectations".to_string(),
         event_id: String::new(),
         sequence: 0,
