@@ -129,7 +129,7 @@ jobs:
 
       - name: Set up Docker Buildx
         id: setup-buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Persist BuildKit cache mounts (cargo registry + target dir) across runs.
       # cache-from/cache-to: type=gha only caches image layers, NOT cache mounts,
@@ -217,7 +217,7 @@ jobs:
             type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
