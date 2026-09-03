@@ -2312,6 +2312,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Wire your tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ingestion-over-https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ingestion over HTTP(S)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3514,6 +3531,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Wire your tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ingestion-over-https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ingestion over HTTP(S)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4039,7 +4073,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 <ul>
 <li>Users open <code>http://stove.internal:4040</code> and administer retained evidence at <code>/admin</code>.</li>
 <li>Agents connect to the Streamable HTTP MCP endpoint at <code>http://stove.internal:4040/mcp</code>.</li>
-<li>Test processes set <code>DashboardSystemOptions(cliHost = "stove.internal", cliPort = 4041)</code> so events reach the exposed gRPC port.</li>
+<li>Test processes set <code>ingestion = DashboardIngestion.Grpc(host = "stove.internal", port = 4041)</code> so events reach the exposed gRPC port.</li>
 </ul>
 <p>The release workflow publishes exact (<code>0.26.0</code>), minor (<code>0.26</code>), major (<code>0</code>), and <code>latest</code> tags for stable releases. Pin the exact tag in production so a restart cannot pull a different server version. Keep that version aligned with the Stove dependencies used by the test process.</p>
 <div class="admonition warning">
@@ -4059,13 +4093,26 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">            </span><span class="p">)</span>
 </span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">        </span><span class="p">)</span>
 </span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">        </span><span class="c1">// If you start the CLI with `stove --grpc-port 9001`, match that here:</span>
-</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">        </span><span class="c1">// DashboardSystemOptions(appName = "my-service", cliHost = "localhost", cliPort = 9001)</span>
-</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">    </span><span class="c1">// ... other systems + runner</span>
-</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">        </span><span class="c1">// DashboardSystemOptions(</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">        </span><span class="c1">//     appName = "my-service",</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">        </span><span class="c1">//     ingestion = DashboardIngestion.Grpc(port = 9001)</span>
+</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">        </span><span class="c1">// )</span>
+</span><span id="__span-13-17"><a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">    </span><span class="c1">// ... other systems + runner</span>
+</span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <p>Now the registered Stove systems stream test events to the dashboard while the CLI is running.</p>
 <p>Metadata is an immutable set of string key/value pairs attached when a run starts. Keys are intentionally open-ended, so CI jobs can describe a run with team, project, pipeline, branch, environment, or any other useful dimensions without a server schema change.</p>
+<h3 id="ingestion-over-https">Ingestion over HTTP(S)<a class="headerlink" href="#ingestion-over-https" title="Permanent link">&para;</a></h3>
+<p>By default events are streamed to the CLI over plaintext gRPC at <code>localhost:4041</code>. Configure another gRPC endpoint with <code>DashboardIngestion.Grpc(host, port)</code>. When the CLI sits behind an HTTPS-only ingress or API gateway that cannot forward gRPC — for example a shared dashboard server for CI pipelines — select HTTP ingestion instead:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">DashboardSystemOptions</span><span class="p">(</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="n">ingestion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DashboardIngestion</span><span class="p">.</span><span class="na">Http</span><span class="p">(</span><span class="s">"https://stove-gateway.internal/stove"</span><span class="p">),</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="n">metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mapOf</span><span class="p">(</span><span class="s">"gitlab.pipeline_id"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"CI_PIPELINE_ID"</span><span class="p">)</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">"local"</span><span class="p">))</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>With <code>DashboardIngestion.Http</code>, each event is sent as a protobuf-encoded <code>DashboardEvent</code> in the body of <code>POST &lt;baseUrl&gt;/api/v1/events</code> (<code>Content-Type: application/x-protobuf</code>) and acknowledged with a protobuf <code>EventAck</code>. The base URL may include the gateway path prefix but must not include <code>/api/v1/events</code>, a query, or a fragment. Queueing, retry, and auto-disable semantics are identical to the default <code>DashboardIngestion.Grpc</code> transport, and the server applies the same validation, deduplication, and live broadcast pipeline to both.</p>
+<p>The server exposes its HTTP API documentation at <code>/swagger-ui</code> and its OpenAPI document at <code>/api-docs/openapi.json</code>. The ingestion request and response are binary protobuf payloads; the shared <code>.proto</code> files in <code>stove-dashboard-api</code> remain the authoritative message schema.</p>
 <h2 id="what-you-see">What you see<a class="headerlink" href="#what-you-see" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
   <div class="stove-sys-card">
@@ -4087,21 +4134,21 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </div>
 
 <h2 id="data-model">Data model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>database
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>└── apps (one per appName)
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    └── runs (one per test suite execution)
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>        └── tests (one per test case)
-</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>            ├── entries  (HTTP, DB, Kafka, ...)
-</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>            ├── spans    (OTel tree)
-</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>            └── snapshots (system state at failure)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>database
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>└── apps (one per appName)
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    └── runs (one per test suite execution)
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>        └── tests (one per test case)
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>            ├── entries  (HTTP, DB, Kafka, ...)
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>            ├── spans    (OTel tree)
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>            └── snapshots (system state at failure)
 </span></code></pre></div>
 <p>The sidebar can switch between retained runs and filter them by any number of metadata key/value pairs. Keys and values are selectable from those present in the application's retained runs, so users do not have to type CI identifiers manually. Every pair uses exact string matching and all supplied pairs must match.</p>
 <p>By default, Stove retains the newest completed run for each application, preserving the previous local behavior. Set <code>--retention-runs-per-app N</code> or <code>STOVE_RETENTION_RUNS_PER_APP=N</code> to keep more; <code>0</code> keeps unlimited history. Running runs are not removed by automatic retention. In PostgreSQL mode the value is shared and persisted; in SQLite mode it belongs to the current process.</p>
 <h2 id="storage-backends">Storage backends<a class="headerlink" href="#storage-backends" title="Permanent link">&para;</a></h2>
 <p>SQLite remains the zero-configuration default and stores data at <code>~/.stove-dashboard.db</code>. For a server shared by CI jobs, teams, and agents, configure PostgreSQL with either form:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>stove<span class="w"> </span>--database-url<span class="w"> </span><span class="s1">'postgresql://stove:secret@db.example/stove'</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nv">STOVE_DATABASE_URL</span><span class="o">=</span><span class="s1">'postgresql://stove:secret@db.example/stove'</span><span class="w"> </span>stove
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>stove<span class="w"> </span>--database-url-file<span class="w"> </span>/run/secrets/stove/database-url
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>stove<span class="w"> </span>--database-url<span class="w"> </span><span class="s1">'postgresql://stove:secret@db.example/stove'</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nv">STOVE_DATABASE_URL</span><span class="o">=</span><span class="s1">'postgresql://stove:secret@db.example/stove'</span><span class="w"> </span>stove
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>stove<span class="w"> </span>--database-url-file<span class="w"> </span>/run/secrets/stove/database-url
 </span></code></pre></div>
 <p>PostgreSQL connections use TLS by default. Add <code>?sslmode=disable</code> only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. <a href="https://github.com/rust-db/refinery">Refinery</a> owns migration discovery and history (<code>refinery_schema_history</code>); backend-specific SQL lives in parallel <code>tools/stove-cli/src/storage/migrations/sqlite/</code> and <code>tools/stove-cli/src/storage/migrations/postgres/</code> directories. <a href="https://github.com/diesel-rs/diesel">Diesel</a> owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite <code>rowid</code> behavior is not usefully expressed by the ORM.</p>
 <p>This storage rewrite is intentionally a clean break. Databases created by a CLI version that recorded migrations in <code>schema_migrations</code> are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as <code>JSONB</code> with a GIN <code>jsonb_path_ops</code> index, so dynamic exact-subset filters remain efficient without predeclaring keys.</p>
@@ -4109,8 +4156,8 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 <h2 id="fault-tolerance">Fault tolerance<a class="headerlink" href="#fault-tolerance" title="Permanent link">&para;</a></h2>
 <p>Dashboard is <strong>opt-in</strong> and <strong>non-blocking</strong>:</p>
 <ul>
-<li>Events queue locally; gRPC publish happens in the background.</li>
-<li>If the CLI is down or unreachable, the gRPC client auto-disables for the rest of the suite. Tests continue. No flakes.</li>
+<li>Events queue locally; publishing (gRPC or HTTP) happens in the background.</li>
+<li>If the CLI is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.</li>
 <li>Tests never wait on the dashboard.</li>
 </ul>
 <h2 id="rest-api">REST API<a class="headerlink" href="#rest-api" title="Permanent link">&para;</a></h2>
@@ -4130,6 +4177,10 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 <tr>
 <td><code>GET /api/v1/apps</code></td>
 <td>list registered apps</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/events</code></td>
+<td>ingest a protobuf-encoded <code>DashboardEvent</code>; responds with a protobuf <code>EventAck</code></td>
 </tr>
 <tr>
 <td><code>GET /api/v1/runs?app=...&amp;metadata=...</code></td>
@@ -4167,18 +4218,18 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </table>
 <p>Useful for CI artifact extraction, custom analyzers, or building tooling on top.</p>
 <p>The <code>metadata</code> query value is a URL-encoded JSON object whose values must be strings. Every supplied pair must match:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>--get<span class="w"> </span><span class="s1">'http://localhost:4040/api/v1/runs'</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'app=checkout-api'</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'metadata={"team":"checkout","gitlab.pipeline_id":"12345"}'</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>curl<span class="w"> </span>--get<span class="w"> </span><span class="s1">'http://localhost:4040/api/v1/runs'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'app=checkout-api'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'metadata={"team":"checkout","gitlab.pipeline_id":"12345"}'</span>
 </span></code></pre></div>
 <p>Agents can apply the same dynamic filter through <code>stove_runs</code>:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="p">{</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="p">{</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="administration">Administration<a class="headerlink" href="#administration" title="Permanent link">&para;</a></h2>
 <p>Select <strong>Admin</strong> in the dashboard header to open the dedicated <code>/admin</code> page, where you can inspect storage, browse the active database, run SQL, change runtime retention, preview and purge matching runs, or clear all data. SQL mutations and destructive administration operations require confirmation. A retention change prunes excess completed runs immediately. It lasts for the current process with SQLite and is persisted as a shared setting with PostgreSQL.</p>
@@ -4223,11 +4274,11 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </table>
 <h3 id="database-explorer">Database explorer<a class="headerlink" href="#database-explorer" title="Permanent link">&para;</a></h3>
 <p>The database explorer is implemented by Stove itself and runs inside the Rust process; it does not require a sidecar or separate admin service. The UI provides table and column discovery, editable SELECT/INSERT/UPDATE/DELETE templates, a result grid, and confirmation before running a statement it considers mutating. The same operations are available through REST:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>curl<span class="w"> </span>http://localhost:4040/api/v1/admin/database/schema
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:4040/api/v1/admin/database/query<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"sql":"SELECT id, app_name FROM runs ORDER BY started_at DESC","max_rows":100}'</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>curl<span class="w"> </span>http://localhost:4040/api/v1/admin/database/schema
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:4040/api/v1/admin/database/query<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"sql":"SELECT id, app_name FROM runs ORDER BY started_at DESC","max_rows":100}'</span>
 </span></code></pre></div>
 <p>The query endpoint accepts one statement up to 64 KiB. <code>max_rows</code> defaults to 100 and is clamped to 1–500. PostgreSQL SELECT results use a server-side cursor and fetch only <code>max_rows + 1</code> records, so the <code>truncated</code> flag does not require materializing an unbounded result in Stove. PostgreSQL statements have a 10-second timeout. SQLite uses a dedicated peer connection and stops stepping through the result after the truncation check. Non-row statements return <code>affected_rows</code>; row values are returned as strings or <code>null</code>.</p>
 <p>The explorer has direct write access to Stove's tables. Confirmation in the browser is a safety prompt, not an authorization boundary, and direct SQL changes can violate application invariants. Keep the endpoint on a trusted operator network and prefer the purpose-built retention, purge, and clear controls for routine operations.</p>
@@ -4294,8 +4345,8 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </table>
 <h2 id="acceptance-and-load-tests">Acceptance and load tests<a class="headerlink" href="#acceptance-and-load-tests" title="Permanent link">&para;</a></h2>
 <p>From <code>tools/stove-cli</code>, run the public-boundary acceptance suite with a Docker-compatible daemon available:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--test<span class="w"> </span>acceptance
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--test<span class="w"> </span>load<span class="w"> </span>--<span class="w"> </span>--nocapture
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--test<span class="w"> </span>acceptance
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--test<span class="w"> </span>load<span class="w"> </span>--<span class="w"> </span>--nocapture
 </span></code></pre></div>
 <p>The acceptance suite verifies the same ingestion, filtering, retention, administration, UI, and MCP behavior against SQLite and a disposable PostgreSQL instance created with <code>testcontainers</code> 0.28.0. The separate load test seeds 50,000 PostgreSQL runs, requires the planner to use the metadata GIN index, and mixes concurrent dashboard, REST, admin, and MCP reads under a configurable p95 latency budget. See <code>tools/stove-cli/acceptance-tests/README.md</code> for tuning variables and the manual browser workflow.</p>
 <h2 id="pairs-well-with">Pairs well with<a class="headerlink" href="#pairs-well-with" title="Permanent link">&para;</a></h2>
@@ -4330,7 +4381,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </tr>
 <tr>
 <td>Events not arriving</td>
-<td>Port mismatch. <code>cliPort</code> in <code>DashboardSystemOptions</code> must match <code>--grpc-port</code></td>
+<td>Port mismatch. <code>DashboardIngestion.Grpc(port = ...)</code> must match <code>--grpc-port</code></td>
 </tr>
 <tr>
 <td>"gRPC disabled" warning</td>
