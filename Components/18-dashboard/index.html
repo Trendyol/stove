@@ -3749,7 +3749,7 @@
 <p>A web UI for evidence emitted by registered Stove systems. Timelines, span trees, snapshots, and Kafka explorer views live in SQLite by default, or in PostgreSQL for a shared deployment. Live updates stream via SSE.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.</p>
+Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.</p>
 </div>
 <p>Current CLI versions start the dashboard with bare <code>stove</code>; older docs and scripts may still show <code>stove serve</code>.</p>
 <h2 id="preview">Preview<a class="headerlink" href="#preview" title="Permanent link">&para;</a></h2>
@@ -3929,7 +3929,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -3937,7 +3937,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </div>
 <div class="tabbed-block">
 <p>Pull a versioned multi-platform image from GHCR:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/trendyol/stove-cli:0.26.0
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/trendyol/stove-server:0.26.0
 </span></code></pre></div>
 <p>Replace <code>0.26.0</code> with the Stove version used by your tests.</p>
 </div>
@@ -3994,11 +3994,11 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">4040</span>:4040<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">4041</span>:4041<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span>-v<span class="w"> </span>stove-data:/data<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span>ghcr.io/trendyol/stove-cli:0.26.0
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span>ghcr.io/trendyol/stove-server:0.26.0
 </span></code></pre></div>
 <h3 id="local-postgresql-stack">Local PostgreSQL stack<a class="headerlink" href="#local-postgresql-stack" title="Permanent link">&para;</a></h3>
 <p>To run the current source against PostgreSQL without preparing a database manually:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">cd</span><span class="w"> </span>tools/stove-cli
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">cd</span><span class="w"> </span>server/stove-server
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>just<span class="w"> </span>postgres-up
 </span></code></pre></div>
 <p>This builds the local Stove image, starts PostgreSQL 18, waits for it to become healthy, applies Stove migrations, and exposes:</p>
@@ -4017,7 +4017,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span>-v<span class="w"> </span>/secure/stove/database-url:/run/secrets/stove-database-url:ro<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">STOVE_DATABASE_URL_FILE</span><span class="o">=</span>/run/secrets/stove-database-url<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">STOVE_RETENTION_RUNS_PER_APP</span><span class="o">=</span><span class="m">50</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span>ghcr.io/trendyol/stove-cli:0.26.0
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span>ghcr.io/trendyol/stove-server:0.26.0
 </span></code></pre></div>
 <p>The container applies database migrations when it starts. PostgreSQL uses TLS by default; append <code>?sslmode=disable</code> only when the database intentionally has no TLS and the connection stays inside a trusted private network. No <code>/data</code> volume is needed with PostgreSQL.</p>
 <h3 id="run-multiple-replicas">Run multiple replicas<a class="headerlink" href="#run-multiple-replicas" title="Permanent link">&para;</a></h3>
@@ -4048,7 +4048,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span><span id="__span-12-21"><a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="w">      </span><span class="nt">terminationGracePeriodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15</span>
 </span><span id="__span-12-22"><a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="w">      </span><span class="nt">containers</span><span class="p">:</span>
 </span><span id="__span-12-23"><a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stove</span>
-</span><span id="__span-12-24"><a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/trendyol/stove-cli:0.26.0</span>
+</span><span id="__span-12-24"><a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/trendyol/stove-server:0.26.0</span>
 </span><span id="__span-12-25"><a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a><span class="w">          </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"--config-file"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"/etc/stove/stove.toml"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"--no-skills-check"</span><span class="p p-Indicator">]</span>
 </span><span id="__span-12-26"><a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="w">          </span><span class="nt">ports</span><span class="p">:</span>
 </span><span id="__span-12-27"><a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">http</span><span class="p p-Indicator">,</span><span class="nt"> containerPort</span><span class="p">:</span><span class="w"> </span><span class="nv">4040</span><span class="w"> </span><span class="p p-Indicator">}</span>
@@ -4150,7 +4150,7 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nv">STOVE_DATABASE_URL</span><span class="o">=</span><span class="s1">'postgresql://stove:secret@db.example/stove'</span><span class="w"> </span>stove
 </span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>stove<span class="w"> </span>--database-url-file<span class="w"> </span>/run/secrets/stove/database-url
 </span></code></pre></div>
-<p>PostgreSQL connections use TLS by default. Add <code>?sslmode=disable</code> only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. <a href="https://github.com/rust-db/refinery">Refinery</a> owns migration discovery and history (<code>refinery_schema_history</code>); backend-specific SQL lives in parallel <code>tools/stove-cli/src/storage/migrations/sqlite/</code> and <code>tools/stove-cli/src/storage/migrations/postgres/</code> directories. <a href="https://github.com/diesel-rs/diesel">Diesel</a> owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite <code>rowid</code> behavior is not usefully expressed by the ORM.</p>
+<p>PostgreSQL connections use TLS by default. Add <code>?sslmode=disable</code> only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. <a href="https://github.com/rust-db/refinery">Refinery</a> owns migration discovery and history (<code>refinery_schema_history</code>); backend-specific SQL lives in parallel <code>server/stove-server/src/storage/migrations/sqlite/</code> and <code>server/stove-server/src/storage/migrations/postgres/</code> directories. <a href="https://github.com/diesel-rs/diesel">Diesel</a> owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite <code>rowid</code> behavior is not usefully expressed by the ORM.</p>
 <p>This storage rewrite is intentionally a clean break. Databases created by a CLI version that recorded migrations in <code>schema_migrations</code> are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as <code>JSONB</code> with a GIN <code>jsonb_path_ops</code> index, so dynamic exact-subset filters remain efficient without predeclaring keys.</p>
 <p><code>--db</code> and <code>--fresh-start</code> are SQLite-only; Stove rejects <code>--fresh-start</code> when PostgreSQL is selected. <code>--clear</code> operates on the selected backend.</p>
 <h2 id="fault-tolerance">Fault tolerance<a class="headerlink" href="#fault-tolerance" title="Permanent link">&para;</a></h2>
@@ -4344,11 +4344,11 @@ Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }<
 </tbody>
 </table>
 <h2 id="acceptance-and-load-tests">Acceptance and load tests<a class="headerlink" href="#acceptance-and-load-tests" title="Permanent link">&para;</a></h2>
-<p>From <code>tools/stove-cli</code>, run the public-boundary acceptance suite with a Docker-compatible daemon available:</p>
+<p>From <code>server/stove-server</code>, run the public-boundary acceptance suite with a Docker-compatible daemon available:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--test<span class="w"> </span>acceptance
 </span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>cargo<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--test<span class="w"> </span>load<span class="w"> </span>--<span class="w"> </span>--nocapture
 </span></code></pre></div>
-<p>The acceptance suite verifies the same ingestion, filtering, retention, administration, UI, and MCP behavior against SQLite and a disposable PostgreSQL instance created with <code>testcontainers</code> 0.28.0. The separate load test seeds 50,000 PostgreSQL runs, requires the planner to use the metadata GIN index, and mixes concurrent dashboard, REST, admin, and MCP reads under a configurable p95 latency budget. See <code>tools/stove-cli/acceptance-tests/README.md</code> for tuning variables and the manual browser workflow.</p>
+<p>The acceptance suite verifies the same ingestion, filtering, retention, administration, UI, and MCP behavior against SQLite and a disposable PostgreSQL instance created with <code>testcontainers</code> 0.28.0. The separate load test seeds 50,000 PostgreSQL runs, requires the planner to use the metadata GIN index, and mixes concurrent dashboard, REST, admin, and MCP reads under a configurable p95 latency budget. See <code>server/stove-server/acceptance-tests/README.md</code> for tuning variables and the manual browser workflow.</p>
 <h2 id="pairs-well-with">Pairs well with<a class="headerlink" href="#pairs-well-with" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
