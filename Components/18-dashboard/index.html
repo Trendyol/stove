@@ -2209,15 +2209,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#install-the-cli" class="md-nav__link">
+  <a href="#install-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Install the CLI
+        Install the server
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Install the CLI">
+    <nav class="md-nav" aria-label="Install the server">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2415,10 +2415,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cli-options-reference" class="md-nav__link">
+  <a href="#server-options-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CLI options reference
+        Server options reference
       
     </span>
   </a>
@@ -3428,15 +3428,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#install-the-cli" class="md-nav__link">
+  <a href="#install-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Install the CLI
+        Install the server
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Install the CLI">
+    <nav class="md-nav" aria-label="Install the server">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3634,10 +3634,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cli-options-reference" class="md-nav__link">
+  <a href="#server-options-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CLI options reference
+        Server options reference
       
     </span>
   </a>
@@ -3749,9 +3749,9 @@
 <p>A web UI for evidence emitted by registered Stove systems. Timelines, span trees, snapshots, and Kafka explorer views live in SQLite by default, or in PostgreSQL for a shared deployment. Live updates stream via SSE.</p>
 <div class="stove-tldr">
 <p><span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.</p>
+Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the server.</p>
 </div>
-<p>Current CLI versions start the dashboard with bare <code>stove</code>; older docs and scripts may still show <code>stove serve</code>.</p>
+<p>Current server versions start the dashboard with bare <code>stove</code>; older docs and scripts may still show <code>stove serve</code>.</p>
 <h2 id="preview">Preview<a class="headerlink" href="#preview" title="Permanent link">&para;</a></h2>
 <p>The dashboard is useful because the test timeline, trace tree, and system evidence stay linked to the same run instead of living in separate tools.</p>
 <div class="stove-dashboard-showcase" aria-label="Static Stove Dashboard preview showing a failed order flow with timeline, trace tree, and system evidence">
@@ -3921,7 +3921,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
   </div>
 </div>
 
-<h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
+<h2 id="install-the-server">Install the server<a class="headerlink" href="#install-the-server" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="homebrew" name="__tabbed_1" type="radio" /><input id="curl" name="__tabbed_1" type="radio" /><input id="manual" name="__tabbed_1" type="radio" /><input id="docker" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="homebrew">Homebrew</label><label for="curl">curl</label><label for="manual">Manual</label><label for="docker">Docker</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3949,7 +3949,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>brew<span class="w"> </span>upgrade<span class="w"> </span>stove
 </span></code></pre></div>
 <h3 id="dev-channel-stove-next">Dev channel (<code>stove-next</code>)<a class="headerlink" href="#dev-channel-stove-next" title="Permanent link">&para;</a></h3>
-<p>Want the latest changes before a release? Every Maven snapshot publish also ships the CLI as a rolling dev channel, versioned to match the snapshot (e.g. <code>1.0.0.57-SNAPSHOT</code>):</p>
+<p>Want the latest changes before a release? Every Maven snapshot publish also ships the server as a rolling dev channel, versioned to match the snapshot (e.g. <code>1.0.0.57-SNAPSHOT</code>):</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>brew<span class="w"> </span>install<span class="w"> </span>trendyol/trendyol-tap/stove-next
 </span></code></pre></div>
 <p>Both formulae install the same <code>stove</code> binary, so they conflict — switch channels by uninstalling one first:</p>
@@ -4092,7 +4092,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">                </span><span class="s">"gitlab.pipeline_id"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"CI_PIPELINE_ID"</span><span class="p">)</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">"local"</span><span class="p">)</span>
 </span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">            </span><span class="p">)</span>
 </span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">        </span><span class="p">)</span>
-</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">        </span><span class="c1">// If you start the CLI with `stove --grpc-port 9001`, match that here:</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">        </span><span class="c1">// If you start the server with `stove --grpc-port 9001`, match that here:</span>
 </span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">        </span><span class="c1">// DashboardSystemOptions(</span>
 </span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">        </span><span class="c1">//     appName = "my-service",</span>
 </span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">        </span><span class="c1">//     ingestion = DashboardIngestion.Grpc(port = 9001)</span>
@@ -4101,10 +4101,10 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">    </span><span class="c1">// ... other systems + runner</span>
 </span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
-<p>Now the registered Stove systems stream test events to the dashboard while the CLI is running.</p>
+<p>Now the registered Stove systems stream test events to the dashboard while the server is running.</p>
 <p>Metadata is an immutable set of string key/value pairs attached when a run starts. Keys are intentionally open-ended, so CI jobs can describe a run with team, project, pipeline, branch, environment, or any other useful dimensions without a server schema change.</p>
 <h3 id="ingestion-over-https">Ingestion over HTTP(S)<a class="headerlink" href="#ingestion-over-https" title="Permanent link">&para;</a></h3>
-<p>By default events are streamed to the CLI over plaintext gRPC at <code>localhost:4041</code>. Configure another gRPC endpoint with <code>DashboardIngestion.Grpc(host, port)</code>. When the CLI sits behind an HTTPS-only ingress or API gateway that cannot forward gRPC — for example a shared dashboard server for CI pipelines — select HTTP ingestion instead:</p>
+<p>By default events are streamed to the server over plaintext gRPC at <code>localhost:4041</code>. Configure another gRPC endpoint with <code>DashboardIngestion.Grpc(host, port)</code>. When the server sits behind an HTTPS-only ingress or API gateway that cannot forward gRPC — for example a shared dashboard server for CI pipelines — select HTTP ingestion instead:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">DashboardSystemOptions</span><span class="p">(</span>
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"checkout-api"</span><span class="p">,</span>
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="n">ingestion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DashboardIngestion</span><span class="p">.</span><span class="na">Http</span><span class="p">(</span><span class="s">"https://stove-gateway.internal/stove"</span><span class="p">),</span>
@@ -4151,17 +4151,17 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>stove<span class="w"> </span>--database-url-file<span class="w"> </span>/run/secrets/stove/database-url
 </span></code></pre></div>
 <p>PostgreSQL connections use TLS by default. Add <code>?sslmode=disable</code> only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. <a href="https://github.com/rust-db/refinery">Refinery</a> owns migration discovery and history (<code>refinery_schema_history</code>); backend-specific SQL lives in parallel <code>server/stove-server/src/storage/migrations/sqlite/</code> and <code>server/stove-server/src/storage/migrations/postgres/</code> directories. <a href="https://github.com/diesel-rs/diesel">Diesel</a> owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite <code>rowid</code> behavior is not usefully expressed by the ORM.</p>
-<p>This storage rewrite is intentionally a clean break. Databases created by a CLI version that recorded migrations in <code>schema_migrations</code> are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as <code>JSONB</code> with a GIN <code>jsonb_path_ops</code> index, so dynamic exact-subset filters remain efficient without predeclaring keys.</p>
+<p>This storage rewrite is intentionally a clean break. Databases created by a server version that recorded migrations in <code>schema_migrations</code> are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as <code>JSONB</code> with a GIN <code>jsonb_path_ops</code> index, so dynamic exact-subset filters remain efficient without predeclaring keys.</p>
 <p><code>--db</code> and <code>--fresh-start</code> are SQLite-only; Stove rejects <code>--fresh-start</code> when PostgreSQL is selected. <code>--clear</code> operates on the selected backend.</p>
 <h2 id="fault-tolerance">Fault tolerance<a class="headerlink" href="#fault-tolerance" title="Permanent link">&para;</a></h2>
 <p>Dashboard is <strong>opt-in</strong> and <strong>non-blocking</strong>:</p>
 <ul>
 <li>Events queue locally; publishing (gRPC or HTTP) happens in the background.</li>
-<li>If the CLI is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.</li>
+<li>If the server is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.</li>
 <li>Tests never wait on the dashboard.</li>
 </ul>
 <h2 id="rest-api">REST API<a class="headerlink" href="#rest-api" title="Permanent link">&para;</a></h2>
-<p>The CLI exposes REST endpoints for integration:</p>
+<p>The server exposes REST endpoints for integration:</p>
 <table>
 <thead>
 <tr>
@@ -4286,7 +4286,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <p class="admonition-title">Trusted networks only</p>
 <p>The dashboard, REST API, database explorer, admin operations, gRPC ingestion, and MCP endpoint intentionally have no authentication or authorization. The servers listen on all interfaces so remote CI jobs and agents can connect. Deploy Stove only on an internal trusted network and control exposure outside Stove (for example with firewall rules or a private ingress).</p>
 </div>
-<h2 id="cli-options-reference">CLI options reference<a class="headerlink" href="#cli-options-reference" title="Permanent link">&para;</a></h2>
+<h2 id="server-options-reference">Server options reference<a class="headerlink" href="#server-options-reference" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -4385,7 +4385,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </tr>
 <tr>
 <td>"gRPC disabled" warning</td>
-<td>Expected if CLI started after tests; restart in correct order</td>
+<td>Expected if the server started after tests; restart in correct order</td>
 </tr>
 <tr>
 <td>Disk filling up</td>

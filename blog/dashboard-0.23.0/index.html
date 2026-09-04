@@ -2737,10 +2737,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-install-and-start-the-cli" class="md-nav__link">
+  <a href="#1-install-and-start-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1) Install and start the CLI
+        1) Install and start the server
       
     </span>
   </a>
@@ -3284,10 +3284,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-install-and-start-the-cli" class="md-nav__link">
+  <a href="#1-install-and-start-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1) Install and start the CLI
+        1) Install and start the server
       
     </span>
   </a>
@@ -3475,7 +3475,7 @@
 </p>
 
 <h2 id="quick-setup-5-minutes">Quick Setup (5 Minutes)<a class="headerlink" href="#quick-setup-5-minutes" title="Permanent link">&para;</a></h2>
-<h3 id="1-install-and-start-the-cli">1) Install and start the CLI<a class="headerlink" href="#1-install-and-start-the-cli" title="Permanent link">&para;</a></h3>
+<h3 id="1-install-and-start-the-server">1) Install and start the server<a class="headerlink" href="#1-install-and-start-the-server" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>brew<span class="w"> </span>install<span class="w"> </span>Trendyol/trendyol-tap/stove
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># upgrade an existing install: brew update &amp;&amp; brew upgrade stove</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>stove
@@ -3497,7 +3497,7 @@
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"product-api"</span><span class="p">)</span>
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>The dashboard dependency streams Stove timeline entries and snapshots to the CLI. The trace view also needs <code>stove-tracing</code> plus the tracing Gradle plugin for in-process JVM apps. Process and container apps can appear in the same dashboard, but they must export OpenTelemetry spans to the receiver themselves.</p>
+<p>The dashboard dependency streams Stove timeline entries and snapshots to the server. The trace view also needs <code>stove-tracing</code> plus the tracing Gradle plugin for in-process JVM apps. Process and container apps can appear in the same dashboard, but they must export OpenTelemetry spans to the receiver themselves.</p>
 <h3 id="3-register-dashboard-in-stove-config">3) Register Dashboard in Stove config<a class="headerlink" href="#3-register-dashboard-in-stove-config" title="Permanent link">&para;</a></h3>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Stove</span><span class="p">()</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p">.</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
@@ -3523,13 +3523,13 @@
 <h2 id="daily-workflow-that-works-well">Daily Workflow That Works Well<a class="headerlink" href="#daily-workflow-that-works-well" title="Permanent link">&para;</a></h2>
 <p>Use Dashboard as a local companion while iterating:</p>
 <ol>
-<li>Start CLI once: <code>stove</code></li>
+<li>Start server once: <code>stove</code></li>
 <li>Keep it running in a separate terminal</li>
 <li>Run focused tests repeatedly (class or test-level)</li>
 <li>Inspect changes immediately in Timeline/Trace views</li>
 <li>Use Reporting + Tracing in CI; use Dashboard primarily for local debugging speed</li>
 </ol>
-<p>Dashboard is fault-tolerant by design. If the CLI is not running, tests continue normally and Dashboard emission disables itself for the rest of the suite instead of breaking test execution.</p>
+<p>Dashboard is fault-tolerant by design. If the server is not running, tests continue normally and Dashboard emission disables itself for the rest of the suite instead of breaking test execution.</p>
 <h2 id="minimal-end-to-end-example">Minimal End-to-End Example<a class="headerlink" href="#minimal-end-to-end-example" title="Permanent link">&para;</a></h2>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">class</span><span class="w"> </span><span class="nc">StoveConfig</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">AbstractProjectConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kd">override</span><span class="w"> </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">beforeProject</span><span class="p">()</span><span class="w"> </span><span class="o">=</span>
@@ -3553,7 +3553,7 @@
 <ul>
 <li><strong>UI stuck at waiting state:</strong> ensure <code>stove</code> is running before tests.</li>
 <li><strong>No events appear:</strong> verify <code>stove-dashboard</code> dependency and <code>dashboard {}</code> registration.</li>
-<li><strong>Port mismatch:</strong> align <code>DashboardSystemOptions(cliPort = ...)</code> with CLI <code>--grpc-port</code>.</li>
+<li><strong>Port mismatch:</strong> align <code>DashboardIngestion.Grpc(port = ...)</code> with the server's <code>--grpc-port</code>.</li>
 <li><strong>Too much historical data:</strong> run <code>stove --clear</code>.</li>
 </ul>
 <h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h2>

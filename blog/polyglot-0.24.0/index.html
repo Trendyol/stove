@@ -3686,9 +3686,9 @@
 <h2 id="mcp-failure-triage-for-ai-agents">MCP — failure triage for AI agents<a class="headerlink" href="#mcp-failure-triage-for-ai-agents" title="Permanent link">&para;</a></h2>
 <p>The other big addition in 0.24.0 has nothing to do with non-JVM apps and everything to do with how people debug failed e2e runs in 2026.</p>
 <p>If you're using an AI agent in your editor or CI bot, you've probably watched it try to triage a failed test by reading the entire stdout, then the entire stderr, then <code>tail</code>-ing logs, then guessing at trace IDs. It works, but it burns tokens proportional to log size, and it hallucinates when names are ambiguous.</p>
-<p>When <code>dashboard { }</code> is enabled and the CLI is running, Stove records the evidence it receives from registered systems in a local SQLite database: timeline entries, snapshots, traces when tracing is enabled and spans are exported, and Kafka evidence when Kafka observation is configured. 0.24.0 adds a <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> endpoint on the same <code>stove</code> CLI that exposes that data as structured tools:</p>
+<p>When <code>dashboard { }</code> is enabled and the server is running, Stove records the evidence it receives from registered systems in a local SQLite database: timeline entries, snapshots, traces when tracing is enabled and spans are exported, and Kafka evidence when Kafka observation is configured. 0.24.0 adds a <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> endpoint on the same <code>stove</code> CLI that exposes that data as structured tools:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>$ stove
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Stove CLI v0.24.0 running
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Stove Server v0.24.0 running
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>UI:   http://localhost:4040
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>REST: http://localhost:4040/api/v1
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>MCP:  http://localhost:4040/mcp
@@ -3724,7 +3724,7 @@
 <p>Three integrations, one feedback loop. That's the release.</p>
 <hr />
 <h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<p>Upgrade the CLI:</p>
+<p>Upgrade the server:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>brew<span class="w"> </span>upgrade<span class="w"> </span>stove
 </span></code></pre></div>
 <p>Add the modules you need to your test classpath:</p>

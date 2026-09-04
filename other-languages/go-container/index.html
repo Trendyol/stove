@@ -3684,7 +3684,7 @@ This page is the <strong>Go-specific recipe</strong>. The language-agnostic <cod
 </span></code></pre></div>
 <p><code>signal.Ignore(syscall.SIGPIPE)</code> in <code>main()</code> matters here too. Stove sends SIGTERM to stop the container; Go must finish flushing coverage data before the process dies.</p>
 <h2 id="dashboard-mcp">Dashboard &amp; MCP<a class="headerlink" href="#dashboard-mcp" title="Permanent link">&para;</a></h2>
-<p>Container mode emits to the <a href="../../Components/18-dashboard/">Dashboard</a> and <a href="../../Components/21-mcp/">MCP server</a> when <code>dashboard { }</code> is registered and the <code>stove</code> CLI is running. The <code>appName</code> you set in <code>DashboardSystemOptions</code> is the label MCP uses to find runs:</p>
+<p>Container mode emits to the <a href="../../Components/18-dashboard/">Dashboard</a> and <a href="../../Components/21-mcp/">MCP server</a> when <code>dashboard { }</code> is registered and the <code>stove</code> server is running. The <code>appName</code> you set in <code>DashboardSystemOptions</code> is the label MCP uses to find runs:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Agent calls stove_failures
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  → finds failed runs for app_name=go-showcase
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  → calls stove_failure_detail with run_id + test_id

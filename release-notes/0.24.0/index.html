@@ -2996,10 +2996,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mcp-server-in-stove-cli" class="md-nav__link">
+  <a href="#mcp-server-in-the-stove-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MCP server in stove CLI
+        MCP server in the stove server
       
     </span>
   </a>
@@ -3450,10 +3450,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mcp-server-in-stove-cli" class="md-nav__link">
+  <a href="#mcp-server-in-the-stove-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MCP server in stove CLI
+        MCP server in the stove server
       
     </span>
   </a>
@@ -3847,10 +3847,10 @@
 </tbody>
 </table>
 <p>Other clients (e.g. confluent-kafka-go) can use the library-agnostic core: <code>bridge.ReportPublished()</code>, <code>bridge.ReportConsumed()</code>, <code>bridge.ReportCommitted()</code>. All <code>Bridge</code> methods are nil-safe — the bridge disappears in production where <code>STOVE_KAFKA_BRIDGE_PORT</code> is unset.</p>
-<h3 id="mcp-server-in-stove-cli">MCP server in <code>stove</code> CLI<a class="headerlink" href="#mcp-server-in-stove-cli" title="Permanent link">&para;</a></h3>
-<p>The CLI now exposes a local <strong>Model Context Protocol</strong> endpoint so AI agents can triage failed tests through compact, structured tools instead of loading entire logs into context.</p>
+<h3 id="mcp-server-in-the-stove-server">MCP server in the <code>stove</code> server<a class="headerlink" href="#mcp-server-in-the-stove-server" title="Permanent link">&para;</a></h3>
+<p>The server now exposes a local <strong>Model Context Protocol</strong> endpoint so AI agents can triage failed tests through compact, structured tools instead of loading entire logs into context.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>$ stove
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Stove CLI v0.24.0 running
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Stove Server v0.24.0 running
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>UI:   http://localhost:4040
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>REST: http://localhost:4040/api/v1
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>MCP:  http://localhost:4040/mcp
@@ -3958,7 +3958,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>go<span class="w"> </span>get<span class="w"> </span>github.com/trendyol/stove/go/stove-kafka
 </span></code></pre></div>
 <h4 id="adopt-mcp">Adopt MCP<a class="headerlink" href="#adopt-mcp" title="Permanent link">&para;</a></h4>
-<p>Upgrade the <code>stove</code> CLI to 0.24.0:</p>
+<p>Upgrade the <code>stove</code> server to 0.24.0:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>brew<span class="w"> </span>upgrade<span class="w"> </span>stove
 </span></code></pre></div>
 <p>Point your agent runtime at <code>http://localhost:4040/mcp</code>. No test code changes required — MCP reads from the same dashboard database that already records your runs.</p>

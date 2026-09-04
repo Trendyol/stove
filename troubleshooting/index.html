@@ -4169,15 +4169,15 @@ the application configuration.</p>
 <tbody>
 <tr>
 <td>Dashboard at <code>http://localhost:4040</code> empty</td>
-<td><code>stove</code> CLI running? <code>dashboard { }</code> registered in <code>Stove().with</code>? <code>appName</code> set?</td>
+<td><code>stove</code> server running? <code>dashboard { }</code> registered in <code>Stove().with</code>? <code>appName</code> set?</td>
 </tr>
 <tr>
 <td><code>gRPC disabled</code> warning in logs</td>
-<td>CLI started after tests; start the CLI before the test suite</td>
+<td>Server started after tests; start it before the test suite</td>
 </tr>
 <tr>
 <td>Agent can't connect to MCP</td>
-<td>Endpoint is on the CLI, not the test JVM. Verify <code>http://localhost:4040/api/v1/meta</code> returns <code>"mcp": { "enabled": true }</code></td>
+<td>Endpoint is on the server, not the test JVM. Verify <code>http://localhost:4040/api/v1/meta</code> returns <code>"mcp": { "enabled": true }</code></td>
 </tr>
 <tr>
 <td>Shared server shows unrelated runs</td>
@@ -4199,7 +4199,7 @@ the application configuration.</p>
 </table>
 <p>MCP is optional. It gives agents a structured way to read the same failure evidence humans see in the console and
 dashboard.</p>
-<p>The CLI intentionally has no authentication or authorization and accepts remote MCP clients. Run shared deployments only on a trusted internal network. Use the dashboard's <strong>Admin</strong> page at <code>/admin</code> to inspect storage, change runtime retention, preview a purge, or remove data; active runs are excluded from purge unless explicitly included.</p>
+<p>The server intentionally has no authentication or authorization and accepts remote MCP clients. Run shared deployments only on a trusted internal network. Use the dashboard's <strong>Admin</strong> page at <code>/admin</code> to inspect storage, change runtime retention, preview a purge, or remove data; active runs are excluded from purge unless explicitly included.</p>
 <h2 id="migrating-versions">Migrating versions<a class="headerlink" href="#migrating-versions" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
