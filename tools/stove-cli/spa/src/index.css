@@ -660,8 +660,7 @@ button {
   padding: 12px 14px;
 }
 
-.stove-run-picker > select,
-.stove-metadata-filter-row select {
+.stove-run-picker > select {
   min-width: 0;
   width: 100%;
   border: 1px solid var(--stove-border);
@@ -673,56 +672,329 @@ button {
   font-size: 10px;
 }
 
-.stove-metadata-filter-row select:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
+.stove-metadata-filters {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
 }
 
-.stove-metadata-filter-heading,
-.stove-metadata-filter-actions {
+.stove-metadata-filter-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.stove-metadata-filter-toggle,
+.stove-metadata-clear,
+.stove-metadata-active-chip,
+.stove-metadata-value {
+  cursor: pointer;
+  border: 1px solid var(--stove-border);
+  color: var(--stove-text-secondary);
+}
+
+.stove-metadata-filter-toggle {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 27px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  background: var(--stove-surface);
+  padding: 7px 8px;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.stove-metadata-filter-toggle:hover {
+  border-color: var(--stove-border-strong);
+  background: var(--stove-hover);
+}
+
+.stove-filter-glyph {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-content: center;
+  gap: 3px;
+  border-radius: 7px;
+  background: var(--stove-blue-soft);
+}
+
+.stove-filter-glyph i {
+  display: block;
+  height: 1px;
+  border-radius: 999px;
+  background: var(--stove-blue);
+}
+
+.stove-filter-glyph i:nth-child(1) {
+  width: 13px;
+}
+
+.stove-filter-glyph i:nth-child(2) {
+  width: 9px;
+}
+
+.stove-filter-glyph i:nth-child(3) {
+  width: 5px;
+}
+
+.stove-metadata-filter-copy {
+  min-width: 0;
+}
+
+.stove-metadata-filter-copy strong,
+.stove-metadata-filter-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-filter-copy strong {
+  color: var(--stove-text-heading);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.stove-metadata-filter-copy small {
+  margin-top: 2px;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+}
+
+.stove-metadata-filter-count {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--stove-blue);
+  color: var(--stove-surface);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.stove-metadata-filter-chevron {
+  color: var(--stove-text-muted);
+  font-size: 17px;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 140ms ease;
+}
+
+.stove-metadata-filter-chevron.is-expanded {
+  transform: rotate(-90deg);
+}
+
+.stove-metadata-clear {
+  border-radius: 8px;
+  background: transparent;
+  padding: 7px 8px;
+  color: var(--stove-ember);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.stove-metadata-clear:hover {
+  border-color: color-mix(in srgb, var(--stove-ember) 55%, var(--stove-border));
+  background: color-mix(in srgb, var(--stove-ember) 8%, transparent);
+}
+
+.stove-metadata-active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stove-metadata-active li {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stove-metadata-active-chip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  border-color: color-mix(in srgb, var(--stove-blue) 36%, var(--stove-border));
+  border-radius: 999px;
+  background: var(--stove-blue-soft);
+  padding: 3px 6px 3px 7px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.stove-metadata-active-chip span:first-child {
+  overflow: hidden;
+  color: var(--stove-text-muted);
+  text-overflow: ellipsis;
+}
+
+.stove-metadata-active-chip strong {
+  overflow: hidden;
+  color: var(--stove-blue);
+  font-weight: 650;
+  text-overflow: ellipsis;
+}
+
+.stove-metadata-active-chip span:last-child {
+  color: var(--stove-blue);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.stove-metadata-active-chip:hover {
+  border-color: var(--stove-blue);
+}
+
+.stove-metadata-facet-panel {
+  display: grid;
+  gap: 9px;
+  overflow: hidden;
+  border: 1px solid var(--stove-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--stove-card) 62%, transparent);
+  padding: 9px;
+}
+
+.stove-metadata-facet-panel[hidden] {
+  display: none;
+}
+
+.stove-metadata-facet-panel > p {
+  margin: 0;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.stove-metadata-facet-list {
+  display: grid;
+  max-height: 210px;
+  gap: 11px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.stove-metadata-facet {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.stove-metadata-facet legend {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  color: var(--stove-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.stove-metadata-facet legend span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-facet legend strong {
+  flex: none;
+  color: var(--stove-blue);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stove-metadata-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.stove-metadata-value {
+  display: inline-grid;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: minmax(0, auto) auto;
+  align-items: center;
+  gap: 6px;
+  border-radius: 7px;
+  background: var(--stove-surface);
+  padding: 4px 5px 4px 7px;
+  font-size: 8px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.stove-metadata-value:hover {
+  border-color: var(--stove-border-strong);
+  color: var(--stove-text-heading);
+}
+
+.stove-metadata-value.is-selected {
+  border-color: color-mix(in srgb, var(--stove-blue) 58%, var(--stove-border));
+  background: var(--stove-blue-soft);
+  color: var(--stove-blue);
+}
+
+.stove-metadata-value-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-value-count {
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--stove-card);
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 7px;
+}
+
+.stove-metadata-value.is-selected .stove-metadata-value-count {
+  background: var(--stove-blue);
+  color: var(--stove-surface);
+}
+
+.stove-metadata-empty {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-}
-
-.stove-metadata-filter-heading {
   margin-top: 2px;
+  border-top: 1px dashed var(--stove-border);
+  padding-top: 8px;
   color: var(--stove-text-muted);
+  font-size: 8px;
+}
+
+.stove-metadata-empty span {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.stove-metadata-filter-heading button,
-.stove-metadata-filter-actions button,
-.stove-metadata-filter-row button {
-  cursor: pointer;
-  border: 1px solid var(--stove-border);
-  border-radius: 7px;
-  background: var(--stove-card);
-  padding: 5px 7px;
-  color: var(--stove-text-secondary);
-  font-size: 9px;
-}
-
-.stove-metadata-filter-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: 5px;
-}
-
-.stove-metadata-filter-row button {
-  padding-inline: 8px;
-}
-
-.stove-metadata-filter-actions {
-  justify-content: flex-start;
-}
-
-.stove-metadata-filter-actions button:first-child {
-  border-color: color-mix(in srgb, var(--stove-ember) 50%, var(--stove-border));
-  color: var(--stove-ember);
 }
 
 .stove-run-summary {
@@ -3714,17 +3986,72 @@ button {
   margin-top: 10px;
 }
 
-.stove-run-metadata code {
+.stove-run-metadata-heading {
+  display: flex;
+  flex: 0 0 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 1px;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+}
+
+.stove-run-metadata-heading span {
+  font-family: var(--font-mono);
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stove-run-metadata-chip {
+  display: inline-flex;
   max-width: 100%;
+  cursor: pointer;
   overflow: hidden;
   border: 1px solid var(--stove-border);
   border-radius: 999px;
+  gap: 3px;
   padding: 3px 7px;
   color: var(--stove-text-secondary);
   background: var(--stove-surface);
+  font-family: var(--font-mono);
   font-size: 9px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.stove-run-metadata-chip:hover {
+  border-color: var(--stove-blue);
+  color: var(--stove-text-heading);
+}
+
+.stove-run-metadata-chip.is-selected {
+  border-color: color-mix(in srgb, var(--stove-blue) 54%, var(--stove-border));
+  background: var(--stove-blue-soft);
+}
+
+.stove-run-metadata-chip span,
+.stove-run-metadata-chip strong {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.stove-run-metadata-chip span {
+  color: var(--stove-text-muted);
+  font-weight: 400;
+}
+
+.stove-run-metadata-chip span::after {
+  content: ":";
+}
+
+.stove-run-metadata-chip strong {
+  color: inherit;
+  font-weight: 650;
 }
 
 .stove-admin-page {

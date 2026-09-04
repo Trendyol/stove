@@ -1,6 +1,7 @@
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import type { AppSummary, Run, Test } from "../api/types";
 import { filterTests } from "../utils/filters";
+import type { MetadataFilter } from "../utils/metadata-filter";
 import { AppPicker } from "./sidebar/AppPicker";
 import { RunPicker } from "./sidebar/RunPicker";
 import { RunSummary } from "./sidebar/RunSummary";
@@ -31,8 +32,8 @@ interface SidebarProps {
   availableRuns: Run[];
   selectedRunId: string | undefined;
   onSelectRun: (runId: string) => void;
-  metadataFilter: Record<string, string>;
-  onMetadataFilterChange: (metadata: Record<string, string>) => void;
+  metadataFilter: MetadataFilter;
+  onMetadataFilterChange: (metadata: MetadataFilter) => void;
   run: Run | undefined;
   tests: Test[];
   selectedTestId: string | undefined;
@@ -114,7 +115,14 @@ export function Sidebar({
         metadataFilter={metadataFilter}
         onMetadataFilterChange={onMetadataFilterChange}
       />
-      {run && <RunSummary run={run} tests={tests} />}
+      {run && (
+        <RunSummary
+          run={run}
+          tests={tests}
+          metadataFilter={metadataFilter}
+          onMetadataFilterChange={onMetadataFilterChange}
+        />
+      )}
       <TestFilters
         filter={filter}
         onFilterChange={setFilter}

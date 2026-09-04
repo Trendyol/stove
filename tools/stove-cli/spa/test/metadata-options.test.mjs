@@ -13,9 +13,21 @@ test("metadata filter options collect and sort dynamic keys and distinct values"
   ];
 
   assert.deepEqual(metadataOptionsForRuns(runs), [
-    { key: "gitlab.pipeline_id", values: ["10", "20"] },
-    { key: "team", values: ["checkout", "payments"] },
-    { key: "tribe", values: ["commerce"] },
+    {
+      key: "gitlab.pipeline_id",
+      values: [
+        { value: "10", count: 1 },
+        { value: "20", count: 1 },
+      ],
+    },
+    {
+      key: "team",
+      values: [
+        { value: "checkout", count: 2 },
+        { value: "payments", count: 1 },
+      ],
+    },
+    { key: "tribe", values: [{ value: "commerce", count: 1 }] },
   ]);
 });
 

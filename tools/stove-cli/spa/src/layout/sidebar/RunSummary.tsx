@@ -1,14 +1,26 @@
 import type { Run, Test } from "../../api/types";
 import { Badge } from "../../components/Badge";
 import { formatDuration } from "../../utils/format";
+import {
+  isMetadataValueSelected,
+  type MetadataFilter,
+  toggleMetadataValue,
+} from "../../utils/metadata-filter";
 import { isFailed, isPassed, isRunning } from "../../utils/status";
 
 interface RunSummaryProps {
   run: Run;
   tests: Test[];
+  metadataFilter: MetadataFilter;
+  onMetadataFilterChange: (metadata: MetadataFilter) => void;
 }
 
-export function RunSummary({ run, tests }: RunSummaryProps) {
+export function RunSummary({
+  run,
+  tests,
+  metadataFilter,
+  onMetadataFilterChange,
+}: RunSummaryProps) {
   const hasLiveTests = tests.length > 0;
   const total = hasLiveTests ? tests.length : run.total_tests;
   const passed = hasLiveTests ? tests.filter((t) => isPassed(t.status)).length : run.passed;
@@ -43,10 +55,26 @@ export function RunSummary({ run, tests }: RunSummaryProps) {
       </div>
       {Object.keys(run.metadata).length > 0 ? (
         <section className="stove-run-metadata" aria-label="Run metadata">
+          <div className="stove-run-metadata-heading">
+            <span>Metadata</span>
+            <small>Click to filter</small>
+          </div>
           {Object.entries(run.metadata).map(([key, value]) => (
-            <code key={key} title={`${key}=${value}`}>
-              {key}={value}
-            </code>
+            <button
+              type="button"
+              className={`stove-run-metadata-chip stove-focus-ring ${
+                isMetadataValueSelected(metadataFilter, key, value) ? "is-selected" : ""
+              }`}
+              key={key}
+              title={`${key}=${value}`}
+              aria-pressed={isMetadataValueSelected(metadataFilter, key, value)}
+              onClick={() =>
+                onMetadataFilterChange(toggleMetadataValue(metadataFilter, key, value))
+              }
+            >
+              <span>{key}</span>
+              <strong>{value}</strong>
+            </button>
           ))}
         </section>
       ) : null}

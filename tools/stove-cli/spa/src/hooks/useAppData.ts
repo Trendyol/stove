@@ -9,6 +9,7 @@ import {
 import { dashboardKeys } from "../api/query-keys";
 import { useSSE } from "../api/sse";
 import type { LiveDashboardEvent, Run, Test } from "../api/types";
+import { filterRunsByMetadata } from "../utils/metadata-filter";
 import { isRunning } from "../utils/status";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 import { useDashboardSelection } from "./useDashboardSelection";
@@ -46,17 +47,11 @@ export function useAppData() {
 
   const activeApp = selectedApp ?? apps[0]?.app_name;
   const cliVersion = meta?.stove_cli_version ?? null;
-  const metadataFilterKey = useMemo(() => JSON.stringify(metadataFilter), [metadataFilter]);
-  const hasMetadataFilter = metadataFilterKey !== "{}";
-  const allRuns = useRunsQuery(queryClient, activeApp, {}, liveConnected);
-  const filteredRuns = useRunsQuery(
-    queryClient,
-    activeApp && hasMetadataFilter ? activeApp : undefined,
-    metadataFilter,
-    liveConnected,
+  const allRuns = useRunsQuery(queryClient, activeApp, liveConnected);
+  const runs = useMemo(
+    () => filterRunsByMetadata(allRuns, metadataFilter),
+    [allRuns, metadataFilter],
   );
-
-  const runs = hasMetadataFilter ? filteredRuns : allRuns;
 
   const latestRun = runs.find((run) => run.id === selectedRunId) ?? runs[0];
 
@@ -126,21 +121,12 @@ export function useAppData() {
 function useRunsQuery(
   queryClient: QueryClient,
   appName: string | undefined,
-  metadata: Record<string, string>,
   liveConnected: boolean,
 ): Run[] {
-  const metadataKey = JSON.stringify(metadata);
-  const hasMetadata = metadataKey !== "{}";
-  const queryKey = appName
-    ? hasMetadata
-      ? dashboardKeys.filteredRuns(appName, metadataKey)
-      : dashboardKeys.runs(appName)
-    : dashboardKeys.runsRoot;
+  const queryKey = appName ? dashboardKeys.runs(appName) : dashboardKeys.runsRoot;
   const queryFn = appName
     ? ({ signal }: { signal: AbortSignal }) =>
-        loadAndReconcileDashboardData(queryClient, queryKey, () =>
-          api.getRuns(appName, metadata, signal),
-        )
+        loadAndReconcileDashboardData(queryClient, queryKey, () => api.getRuns(appName, {}, signal))
     : skipToken;
   const { data = [] } = useQuery({
     queryKey,

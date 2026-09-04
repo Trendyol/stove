@@ -1,4 +1,5 @@
 import type { AppSummary, Run, Test } from "../api/types";
+import type { MetadataFilter } from "../utils/metadata-filter";
 import { Sidebar } from "./Sidebar";
 import { TestDetail } from "./TestDetail";
 
@@ -9,14 +10,14 @@ interface DashboardWorkspaceProps {
   runs: Run[];
   allRuns: Run[];
   selectedRunId: string | undefined;
-  metadataFilter: Record<string, string>;
+  metadataFilter: MetadataFilter;
   latestRun: Run | undefined;
   tests: Test[];
   selectedTest: Test | undefined;
   liveConnected: boolean;
   onSelectApp: (appName: string) => void;
   onSelectRun: (runId: string) => void;
-  onMetadataFilterChange: (metadata: Record<string, string>) => void;
+  onMetadataFilterChange: (metadata: MetadataFilter) => void;
   onSelectTest: (testId: string) => void;
 }
 

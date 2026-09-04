@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import type { MetadataFilter } from "../utils/metadata-filter";
 
 type Selection<T> = { kind: "automatic" } | { kind: "explicit"; value: T };
 
@@ -6,7 +7,7 @@ interface DashboardSelectionState {
   app: Selection<string>;
   run: Selection<string>;
   test: Selection<string>;
-  metadataFilter: Record<string, string>;
+  metadataFilter: MetadataFilter;
 }
 
 const AUTOMATIC = { kind: "automatic" } as const;
@@ -58,11 +59,9 @@ export function useDashboardSelection() {
     }));
   }, []);
 
-  const filterRunsByMetadata = useCallback((metadataFilter: Record<string, string>) => {
+  const filterRunsByMetadata = useCallback((metadataFilter: MetadataFilter) => {
     setState((current) => ({
       ...current,
-      run: AUTOMATIC,
-      test: AUTOMATIC,
       metadataFilter,
     }));
   }, []);
