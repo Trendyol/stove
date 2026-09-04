@@ -9,12 +9,18 @@ import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Status
 import io.grpc.StatusException
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.accept
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import java.io.IOException
 import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 internal interface DashboardTransport {
@@ -51,7 +57,9 @@ private class GrpcDashboardTransport(
   override val name: String = "gRPC"
 
   override suspend fun send(event: DashboardEvent): SendOutcome = try {
-    val ack = stub.sendEvent(event)
+    val ack = stub
+      .withDeadlineAfter(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+      .sendEvent(event)
     if (ack.accepted) {
       SendOutcome.Accepted
     } else {
@@ -78,29 +86,31 @@ private class GrpcDashboardTransport(
   }
 
   private companion object {
+    private const val REQUEST_TIMEOUT_SECONDS = 10L
     private const val SHUTDOWN_TIMEOUT_SECONDS = 5L
   }
 }
 
 private class HttpDashboardTransport(private val eventsUri: URI) : DashboardTransport {
-  private val client = HttpClient.newBuilder()
-    .connectTimeout(CONNECT_TIMEOUT)
-    .build()
+  private val client = HttpClient(CIO) {
+    expectSuccess = false
+    install(HttpTimeout) {
+      connectTimeoutMillis = CONNECT_TIMEOUT_MS
+      requestTimeoutMillis = REQUEST_TIMEOUT_MS
+    }
+  }
 
   override val name: String = "HTTP"
 
   override suspend fun send(event: DashboardEvent): SendOutcome = try {
-    val response = client.send(
-      HttpRequest.newBuilder(eventsUri)
-        .timeout(REQUEST_TIMEOUT)
-        .header("Content-Type", PROTOBUF_MEDIA_TYPE)
-        .header("Accept", PROTOBUF_MEDIA_TYPE)
-        .POST(HttpRequest.BodyPublishers.ofByteArray(event.toByteArray()))
-        .build(),
-      HttpResponse.BodyHandlers.ofByteArray()
-    )
-    when (response.statusCode()) {
-      HTTP_OK -> EventAck.parseFrom(response.body()).let { ack ->
+    val response = client.post(eventsUri.toString()) {
+      contentType(PROTOBUF_CONTENT_TYPE)
+      accept(PROTOBUF_CONTENT_TYPE)
+      setBody(event.toByteArray())
+    }
+    val responseBody = response.bodyAsBytes()
+    when (response.status) {
+      HttpStatusCode.OK -> EventAck.parseFrom(responseBody).let { ack ->
         if (ack.accepted) {
           SendOutcome.Accepted
         } else {
@@ -108,21 +118,19 @@ private class HttpDashboardTransport(private val eventsUri: URI) : DashboardTran
         }
       }
 
-      HTTP_BAD_REQUEST -> SendOutcome.Rejected(String(response.body(), Charsets.UTF_8))
+      HttpStatusCode.BadRequest -> SendOutcome.Rejected(String(responseBody, Charsets.UTF_8))
 
-      else -> SendOutcome.Failed(IOException("Dashboard server responded with HTTP ${response.statusCode()}"))
+      else -> SendOutcome.Failed(IOException("Dashboard server responded with HTTP ${response.status.value}"))
     }
   } catch (error: Exception) {
     SendOutcome.Failed(error)
   }
 
-  override fun close() = Unit
+  override fun close() = client.close()
 
   private companion object {
-    private const val PROTOBUF_MEDIA_TYPE = "application/x-protobuf"
-    private const val HTTP_OK = 200
-    private const val HTTP_BAD_REQUEST = 400
-    private val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(5)
-    private val REQUEST_TIMEOUT: Duration = Duration.ofSeconds(10)
+    private val PROTOBUF_CONTENT_TYPE = ContentType.parse("application/x-protobuf")
+    private const val CONNECT_TIMEOUT_MS = 5_000L
+    private const val REQUEST_TIMEOUT_MS = 10_000L
   }
 }

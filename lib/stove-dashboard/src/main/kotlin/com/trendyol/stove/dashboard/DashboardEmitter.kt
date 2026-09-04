@@ -27,12 +27,21 @@ private const val DEFAULT_MAX_FAILURES = 5
  *
  * Thread-safe: [tryEmit] can be called from any thread.
  */
-class DashboardEmitter(
-  ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
-  private val maxFailures: Int = DEFAULT_MAX_FAILURES
+class DashboardEmitter internal constructor(
+  ingestion: DashboardIngestion,
+  private val maxFailures: Int,
+  private val drainWarningIntervalMs: Long
 ) {
+  constructor(
+    ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
+    maxFailures: Int = DEFAULT_MAX_FAILURES
+  ) : this(ingestion, maxFailures, DRAIN_WARNING_INTERVAL_MS)
+
   init {
     require(maxFailures > 0) { "maxFailures must be greater than zero: $maxFailures" }
+    require(drainWarningIntervalMs > 0) {
+      "drainWarningIntervalMs must be greater than zero: $drainWarningIntervalMs"
+    }
   }
 
   private val transport = ingestion.createTransport()
@@ -66,7 +75,17 @@ class DashboardEmitter(
   fun close() {
     if (!closed.compareAndSet(false, true)) return
     eventQueue.close()
-    runBlocking { withTimeoutOrNull(DRAIN_TIMEOUT_MS.milliseconds) { drainJob.join() } }
+    runBlocking {
+      while (!drainJob.isCompleted) {
+        val drained = withTimeoutOrNull(drainWarningIntervalMs.milliseconds) {
+          drainJob.join()
+          true
+        } ?: false
+        if (!drained) {
+          logger.warn("Still waiting for queued dashboard events to be acknowledged")
+        }
+      }
+    }
     scope.cancel()
     transport.close()
   }
@@ -125,7 +144,7 @@ class DashboardEmitter(
   }
 
   private companion object {
-    private const val DRAIN_TIMEOUT_MS = 30000L
+    private const val DRAIN_WARNING_INTERVAL_MS = 30000L
     private const val RETRY_BASE_DELAY_MS = 100L
   }
 }

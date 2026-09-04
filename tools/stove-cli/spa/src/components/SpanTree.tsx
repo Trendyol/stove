@@ -1,22 +1,42 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Span } from "../api/types";
-import { formatNanosDuration } from "../utils/format";
-import { parseAttrs } from "../utils/json";
 import { getResultTone, isFailed } from "../utils/result";
+import { buildSpanTreeRows } from "./span-tree/model";
+import { SpanInspector } from "./span-tree/SpanInspector";
+import { SpanTreeRow } from "./span-tree/SpanTreeRow";
+import { VirtualList } from "./VirtualList";
 
 interface SpanTreeProps {
   spans: Span[];
 }
 
-interface SpanNode {
-  span: Span;
-  children: SpanNode[];
-}
+type SpanSelection = { kind: "none" } | { kind: "span"; spanId: string };
 
 export function SpanTree({ spans }: SpanTreeProps) {
-  const tree = useMemo(() => buildTree(spans), [spans]);
-  const totalFailed = spans.filter((s) => isFailed(s.status)).length;
-  const totalNeutral = spans.filter((s) => getResultTone(s.status) === "neutral").length;
+  const [collapsedSpanIds, setCollapsedSpanIds] = useState<Set<string>>(new Set());
+  const [selection, setSelection] = useState<SpanSelection>({ kind: "none" });
+  const rows = useMemo(() => buildSpanTreeRows(spans, collapsedSpanIds), [collapsedSpanIds, spans]);
+  const totalFailed = useMemo(() => spans.filter((span) => isFailed(span.status)).length, [spans]);
+  const totalNeutral = useMemo(
+    () => spans.filter((span) => getResultTone(span.status) === "neutral").length,
+    [spans],
+  );
+  const selectedSpan =
+    selection.kind === "span" ? spans.find((span) => span.span_id === selection.spanId) : undefined;
+
+  useEffect(() => {
+    if (selection.kind === "span" && !selectedSpan) setSelection({ kind: "none" });
+  }, [selectedSpan, selection]);
+
+  const toggleSpan = useCallback((spanId: string) => {
+    setCollapsedSpanIds((current) => {
+      const next = new Set(current);
+      if (next.has(spanId)) next.delete(spanId);
+      else next.add(spanId);
+      return next;
+    });
+  }, []);
+  const closeInspector = useCallback(() => setSelection({ kind: "none" }), []);
 
   if (spans.length === 0) {
     return (
@@ -27,118 +47,30 @@ export function SpanTree({ spans }: SpanTreeProps) {
   }
 
   return (
-    <div className="space-y-1 p-4">
-      {tree.map((node) => (
-        <SpanNodeView key={node.span.span_id} node={node} depth={0} />
-      ))}
-      <div className="mt-4 flex gap-4 rounded-xl border border-stove-border bg-stove-surface px-3 py-2 text-xs text-[var(--stove-text-secondary)]">
+    <div className="span-tree-workbench">
+      <VirtualList
+        className="span-tree-list"
+        ariaLabel="Recorded trace spans"
+        items={rows}
+        getKey={(row) => `${row.span.trace_id}:${row.span.span_id}`}
+        getItemSize={44}
+        windowThreshold={120}
+        renderItem={(row) => (
+          <SpanTreeRow
+            row={row}
+            selected={row.span.span_id === selectedSpan?.span_id}
+            onToggle={() => toggleSpan(row.span.span_id)}
+            onInspect={() => setSelection({ kind: "span", spanId: row.span.span_id })}
+          />
+        )}
+      />
+      <footer className="span-tree-summary">
         <span>{spans.length} spans</span>
         {totalFailed > 0 && <span className="text-[var(--stove-red)]">{totalFailed} failed</span>}
         {totalNeutral > 0 && <span>{totalNeutral} unset</span>}
-        {tree[0] && <span>root: {tree[0].span.operation_name}</span>}
-      </div>
+        {rows[0] && <span>root: {rows[0].span.operation_name}</span>}
+      </footer>
+      <SpanInspector span={selectedSpan} onClose={closeInspector} />
     </div>
   );
-}
-
-function SpanNodeView({ node, depth }: { node: SpanNode; depth: number }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const s = node.span;
-  const tone = getResultTone(s.status);
-  const isError = tone === "failed";
-  const duration = formatNanosDuration(s.start_time_nanos, s.end_time_nanos);
-  const attrs = parseAttrs(s.attributes);
-  const relevantAttrs = Object.entries(attrs).filter(([k]) =>
-    ["db.", "http.", "rpc.", "messaging."].some((p) => k.startsWith(p)),
-  );
-  const statusColor =
-    tone === "failed"
-      ? "var(--stove-red)"
-      : tone === "success"
-        ? "var(--stove-green)"
-        : "var(--stove-text-secondary)";
-  const statusIcon = tone === "failed" ? "\u2717" : tone === "success" ? "\u2713" : "\u2022";
-
-  return (
-    <div style={{ marginLeft: depth * 18 }}>
-      <button
-        type="button"
-        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-[var(--stove-hover)] ${
-          isError ? "border-red-500/40 bg-red-500/10" : "border-transparent bg-transparent"
-        }`}
-        aria-expanded={!collapsed}
-        onClick={() => setCollapsed(!collapsed)}
-      >
-        {node.children.length > 0 && (
-          <span
-            className="text-[var(--stove-text-secondary)] text-xs transition-transform"
-            style={{ transform: collapsed ? "rotate(-90deg)" : "" }}
-          >
-            {"\u25bc"}
-          </span>
-        )}
-        <span style={{ color: statusColor }}>{statusIcon}</span>
-        <span className="text-[var(--stove-text)]">{s.operation_name}</span>
-        <span className="text-[var(--stove-text-secondary)] font-mono text-xs">[{duration}]</span>
-        <span className="text-[var(--stove-text-muted)] text-xs">{s.service_name}</span>
-        {tone === "neutral" && (
-          <span className="text-[var(--stove-text-secondary)] text-[10px] font-mono uppercase">
-            {s.status}
-          </span>
-        )}
-      </button>
-
-      {!collapsed && (
-        <>
-          {isError && s.exception_type && (
-            <div className="ml-8 mt-1 text-xs">
-              <span className="text-[var(--stove-amber)]">{s.exception_type}: </span>
-              <span className="text-[var(--stove-red)]">{s.exception_message}</span>
-              {s.exception_stack_trace && (
-                <pre className="mt-1 text-[var(--stove-text-muted)] text-[10px] whitespace-pre-wrap">
-                  {s.exception_stack_trace}
-                </pre>
-              )}
-            </div>
-          )}
-
-          {relevantAttrs.length > 0 && (
-            <div className="ml-8 mt-0.5 text-xs text-[var(--stove-text-muted)] flex flex-wrap gap-2">
-              {relevantAttrs.map(([k, v]) => (
-                <span key={k}>
-                  {k}=<span className="text-[var(--stove-text-secondary)]">{v}</span>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {node.children.map((child) => (
-            <SpanNodeView key={child.span.span_id} node={child} depth={depth + 1} />
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-
-function buildTree(spans: Span[]): SpanNode[] {
-  const map = new Map<string, SpanNode>();
-  const roots: SpanNode[] = [];
-
-  for (const span of spans) {
-    map.set(span.span_id, { span, children: [] });
-  }
-
-  for (const span of spans) {
-    const node = map.get(span.span_id);
-    if (!node) continue;
-    const parent = span.parent_span_id ? map.get(span.parent_span_id) : undefined;
-    if (parent) {
-      parent.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  return roots;
 }

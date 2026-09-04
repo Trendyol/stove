@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::{Backend, Repository, run_blocking};
+use super::{Backend, Repository};
 use crate::error::Result;
 use crate::storage::models::{PurgePreview, PurgeResult, StorageStats};
 
@@ -62,17 +62,17 @@ pub(super) fn select_requested_run_ids(
 
 impl Repository {
   pub fn storage_stats(&self) -> Result<StorageStats> {
-    match &self.backend {
+    self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.storage_stats(self.retention_runs_per_app()),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.storage_stats()),
-    }
+      Backend::Postgres(postgres) => postgres.storage_stats(),
+    })
   }
 
   pub fn update_retention(&self, runs_per_app: usize) -> Result<()> {
-    match &self.backend {
-      Backend::Sqlite(sqlite) => sqlite.update_retention(runs_per_app)?,
-      Backend::Postgres(postgres) => run_blocking(|| postgres.update_retention(runs_per_app))?,
-    }
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.update_retention(runs_per_app),
+      Backend::Postgres(postgres) => postgres.update_retention(runs_per_app),
+    })?;
     self.set_retention_runs_per_app(runs_per_app);
     Ok(())
   }
@@ -83,18 +83,16 @@ impl Repository {
     older_than: Option<&str>,
     include_running: bool,
   ) -> Result<PurgePreview> {
-    match &self.backend {
+    self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.preview_purge(app_name, older_than, include_running),
-      Backend::Postgres(postgres) => {
-        run_blocking(|| postgres.preview_purge(app_name, older_than, include_running))
-      }
-    }
+      Backend::Postgres(postgres) => postgres.preview_purge(app_name, older_than, include_running),
+    })
   }
 
   pub fn purge_runs(&self, run_ids: &[String], include_running: bool) -> Result<PurgeResult> {
-    match &self.backend {
+    self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.purge_runs(run_ids, include_running),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.purge_runs(run_ids, include_running)),
-    }
+      Backend::Postgres(postgres) => postgres.purge_runs(run_ids, include_running),
+    })
   }
 }

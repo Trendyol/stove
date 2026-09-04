@@ -63,7 +63,8 @@ impl PostgresBackend {
     let mut conn = self.lock_read();
     diesel::sql_query(
       "SELECT DISTINCT ON (app_name) app_name, id AS latest_run_id,
-              status AS latest_status, stove_version, metadata::text AS metadata
+              started_at AS latest_run_started_at, status AS latest_status,
+              stove_version, metadata::text AS metadata
          FROM runs ORDER BY app_name, started_at DESC, id DESC",
     )
     .load::<AppSummaryRow>(&mut *conn)?

@@ -288,6 +288,8 @@ pub(super) struct AppSummaryRow {
   #[diesel(sql_type = Text)]
   latest_run_id: String,
   #[diesel(sql_type = Text)]
+  latest_run_started_at: String,
+  #[diesel(sql_type = Text)]
   latest_status: String,
   #[diesel(sql_type = Nullable<Text>)]
   stove_version: Option<String>,
@@ -300,6 +302,7 @@ impl AppSummaryRow {
     Ok(AppSummary {
       app_name: self.app_name,
       latest_run_id: self.latest_run_id,
+      latest_run_started_at: self.latest_run_started_at,
       latest_status: parse_run_status(&self.latest_status),
       stove_version: self.stove_version,
       metadata: serde_json::from_str(&self.metadata)?,

@@ -96,6 +96,6 @@ test("partitionSnapshotsByDetail separates hidden summary-only snapshots from de
 
   const result = partitionSnapshotsByDetail(snapshots);
 
-  assert.deepEqual(result.detailedSnapshots, [snapshots[2]]);
-  assert.equal(result.hiddenCount, 2);
+  assert.deepEqual(result.detailedSnapshots, [snapshots[1], snapshots[2]]);
+  assert.equal(result.hiddenCount, 1);
 });

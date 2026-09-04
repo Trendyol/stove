@@ -25,17 +25,17 @@ function loadSidebarWidth(): number {
 interface SidebarProps {
   apps: AppSummary[];
   mismatchedApps: string[];
-  selectedApp: string | null;
+  selectedApp: string | undefined;
   onSelectApp: (name: string) => void;
   runs: Run[];
   availableRuns: Run[];
-  selectedRunId: string | null;
+  selectedRunId: string | undefined;
   onSelectRun: (runId: string) => void;
   metadataFilter: Record<string, string>;
   onMetadataFilterChange: (metadata: Record<string, string>) => void;
-  run: Run | null;
+  run: Run | undefined;
   tests: Test[];
-  selectedTestId: string | null;
+  selectedTestId: string | undefined;
   onSelectTest: (testId: string) => void;
 }
 
@@ -121,7 +121,7 @@ export function Sidebar({
         search={search}
         onSearchChange={setSearch}
       />
-      <div className="stove-test-tree-scroll">
+      <div className="stove-test-tree-panel">
         <div className="stove-sidebar-section-label">
           <span>Run navigator</span>
           <span>{filteredTests.length}</span>

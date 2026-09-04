@@ -196,6 +196,36 @@ class DashboardEmitterTest :
         server.shutdownNow()
       }
     }
+
+    test("close does not abandon the terminal event when draining takes longer than the warning interval") {
+      val received = CopyOnWriteArrayList<DashboardEvent>()
+      val server = startMockServer(received, port = 0) {
+        delay(40.milliseconds)
+      }
+
+      try {
+        val emitter = DashboardEmitter(
+          DashboardIngestion.Grpc(port = server.port),
+          maxFailures = 5,
+          drainWarningIntervalMs = 25
+        )
+        emitter.tryEmit(runStartedEvent(1))
+        emitter.tryEmit(runStartedEvent(2))
+        emitter.tryEmit(
+          DashboardEvent.newBuilder()
+            .setRunId("run-2")
+            .setRunEnded(RunEndedEvent.getDefaultInstance())
+            .build()
+        )
+
+        emitter.close()
+
+        received.size shouldBe 3
+        received.last().hasRunEnded() shouldBe true
+      } finally {
+        server.shutdownNow()
+      }
+    }
   })
 
 private fun startMockServer(

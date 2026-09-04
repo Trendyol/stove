@@ -66,7 +66,12 @@ export function getKafkaSnapshotMetrics(
 export function partitionSnapshotsByDetail<TSnapshot extends Pick<Snapshot, "state_json">>(
   snapshots: TSnapshot[],
 ): SnapshotPartition<TSnapshot> {
-  const detailedSnapshots = snapshots.filter((snapshot) => hasDetailedSnapshotState(snapshot));
+  // Keep the list path cheap. Deep JSON parsing is deferred until the user opens
+  // one snapshot in the state dialog.
+  const detailedSnapshots = snapshots.filter((snapshot) => {
+    const rawState = snapshot.state_json.trim();
+    return rawState.length > 0 && rawState !== "{}" && rawState !== "[]";
+  });
 
   return {
     detailedSnapshots,

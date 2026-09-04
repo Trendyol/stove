@@ -25,6 +25,7 @@ test("summarizeVersionMismatches returns null when every latest app matches the 
       {
         app_name: "alpha-api",
         latest_run_id: "run-1",
+        latest_run_started_at: "2024-06-01T10:00:00Z",
         latest_status: "PASSED",
         stove_version: "0.23.2",
       },
@@ -42,12 +43,14 @@ test("summarizeVersionMismatches captures selected-app mismatch and all affected
       {
         app_name: "alpha-api",
         latest_run_id: "run-1",
+        latest_run_started_at: "2024-06-01T10:00:00Z",
         latest_status: "PASSED",
         stove_version: "0.23.0",
       },
       {
         app_name: "beta-api",
         latest_run_id: "run-2",
+        latest_run_started_at: "2024-06-01T11:00:00Z",
         latest_status: "FAILED",
         stove_version: "0.23.5",
       },

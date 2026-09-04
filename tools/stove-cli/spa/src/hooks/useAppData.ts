@@ -1,13 +1,14 @@
-import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
 import { api } from "../api/client";
 import {
-  applyLiveDashboardEvent,
+  applyLiveDashboardEvents,
   invalidateDashboardQueries,
-  reconcileDashboardData,
+  loadAndReconcileDashboardData,
 } from "../api/live-cache";
+import { dashboardKeys } from "../api/query-keys";
 import { useSSE } from "../api/sse";
-import { EVENT_TYPE, type LiveDashboardEvent, type Run, type Test } from "../api/types";
+import type { LiveDashboardEvent, Run, Test } from "../api/types";
 import { isRunning } from "../utils/status";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 import { useDashboardSelection } from "./useDashboardSelection";
@@ -17,74 +18,58 @@ export function useAppData() {
   const selection = useDashboardSelection();
   const { selectedApp, selectedRunId, selectedTestId, metadataFilter } = selection;
 
-  const handleLiveEvent = useCallback(
-    (event: LiveDashboardEvent) => {
-      applyLiveDashboardEvent(queryClient, event);
-      if (event.event_type === EVENT_TYPE.RUN_STARTED) {
-        selection.selectApp(event.payload.app_name);
-      }
-    },
-    [queryClient, selection.selectApp],
+  const handleLiveEvents = useCallback(
+    (events: readonly LiveDashboardEvent[]) => applyLiveDashboardEvents(queryClient, events),
+    [queryClient],
   );
 
   const { connected: liveConnected } = useSSE({
-    onEvent: handleLiveEvent,
+    onEvents: handleLiveEvents,
     onGap: (event) => invalidateDashboardQueries(queryClient, event.run_id),
+    onOverflow: () => invalidateDashboardQueries(queryClient),
     onConnect: () => invalidateDashboardQueries(queryClient),
   });
 
   const { data: apps = [] } = useQuery({
-    queryKey: ["apps"],
-    queryFn: async ({ signal }) =>
-      reconcileDashboardData(queryClient, ["apps"], await api.getApps(signal)),
+    queryKey: dashboardKeys.apps,
+    queryFn: ({ signal }) =>
+      loadAndReconcileDashboardData(queryClient, dashboardKeys.apps, () => api.getApps(signal)),
     refetchInterval: liveConnected ? false : 5000,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
   const { data: meta } = useQuery({
-    queryKey: ["meta"],
+    queryKey: dashboardKeys.meta,
     queryFn: ({ signal }) => api.getMeta(signal),
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  const activeApp = selectedApp ?? apps[0]?.app_name ?? null;
+  const activeApp = selectedApp ?? apps[0]?.app_name;
   const cliVersion = meta?.stove_cli_version ?? null;
   const metadataFilterKey = useMemo(() => JSON.stringify(metadataFilter), [metadataFilter]);
   const hasMetadataFilter = metadataFilterKey !== "{}";
-  const allRunsQueryKey = ["runs", activeApp] as const;
-
-  const allRuns = useRunsQuery(
-    queryClient,
-    allRunsQueryKey,
-    activeApp,
-    {},
-    !!activeApp,
-    liveConnected,
-  );
-
-  const filteredRunsQueryKey = ["runs", activeApp, metadataFilterKey] as const;
+  const allRuns = useRunsQuery(queryClient, activeApp, {}, liveConnected);
   const filteredRuns = useRunsQuery(
     queryClient,
-    filteredRunsQueryKey,
-    activeApp,
+    activeApp && hasMetadataFilter ? activeApp : undefined,
     metadataFilter,
-    !!activeApp && hasMetadataFilter,
     liveConnected,
   );
 
   const runs = hasMetadataFilter ? filteredRuns : allRuns;
 
-  const latestRun = runs.find((run) => run.id === selectedRunId) ?? runs[0] ?? null;
+  const latestRun = runs.find((run) => run.id === selectedRunId) ?? runs[0];
 
+  const testsQueryKey = latestRun ? dashboardKeys.tests(latestRun.id) : dashboardKeys.testsRoot;
+  const testsQueryFn = latestRun
+    ? ({ signal }: { signal: AbortSignal }) =>
+        loadAndReconcileDashboardData(queryClient, testsQueryKey, () =>
+          api.getTests(latestRun.id, signal),
+        )
+    : skipToken;
   const { data: tests = [] } = useQuery({
-    queryKey: ["tests", latestRun?.id],
-    queryFn: async ({ signal }) =>
-      reconcileDashboardData(
-        queryClient,
-        ["tests", latestRun?.id],
-        await api.getTests(latestRun!.id, signal),
-      ),
-    enabled: !!latestRun,
+    queryKey: testsQueryKey,
+    queryFn: testsQueryFn,
     refetchInterval: (query) => {
       if (!latestRun || liveConnected) return false;
       const cachedTests = query.state.data as Test[] | undefined;
@@ -109,11 +94,11 @@ export function useAppData() {
 
   useEffect(() => {
     if (selectedTestId && !tests.some((test) => test.id === selectedTestId)) {
-      selection.selectTest(tests[0]?.id ?? null);
+      selection.clearTest();
     }
-  }, [selectedTestId, selection.selectTest, tests]);
+  }, [selectedTestId, selection.clearTest, tests]);
 
-  const selectedTest = tests.find((test) => test.id === selectedTestId) ?? tests[0] ?? null;
+  const selectedTest = tests.find((test) => test.id === selectedTestId) ?? tests[0];
   const versionMismatchSummary = summarizeVersionMismatches(apps, cliVersion, activeApp);
   const mismatchedApps = versionMismatchSummary?.affectedAppNames ?? [];
 
@@ -124,7 +109,7 @@ export function useAppData() {
     latestRun,
     runs,
     allRuns,
-    selectedRunId: latestRun?.id ?? null,
+    selectedRunId: latestRun?.id,
     metadataFilter,
     tests,
     selectedTest,
@@ -140,18 +125,27 @@ export function useAppData() {
 
 function useRunsQuery(
   queryClient: QueryClient,
-  queryKey: readonly unknown[],
-  appName: string | null,
+  appName: string | undefined,
   metadata: Record<string, string>,
-  enabled: boolean,
   liveConnected: boolean,
 ): Run[] {
+  const metadataKey = JSON.stringify(metadata);
+  const hasMetadata = metadataKey !== "{}";
+  const queryKey = appName
+    ? hasMetadata
+      ? dashboardKeys.filteredRuns(appName, metadataKey)
+      : dashboardKeys.runs(appName)
+    : dashboardKeys.runsRoot;
+  const queryFn = appName
+    ? ({ signal }: { signal: AbortSignal }) =>
+        loadAndReconcileDashboardData(queryClient, queryKey, () =>
+          api.getRuns(appName, metadata, signal),
+        )
+    : skipToken;
   const { data = [] } = useQuery({
     queryKey,
-    queryFn: async ({ signal }) =>
-      reconcileDashboardData(queryClient, queryKey, await api.getRuns(appName!, metadata, signal)),
-    enabled,
-    refetchInterval: enabled && !liveConnected ? 5000 : false,
+    queryFn,
+    refetchInterval: appName && !liveConnected ? 5000 : false,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
   return data;

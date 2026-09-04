@@ -1,5 +1,4 @@
 import type { Snapshot } from "../api/types";
-import { describeJsonValue, getJsonPreviewKeys, parseJsonDeep } from "../utils/json";
 import { getSystemInfo } from "../utils/systems";
 
 interface CapturedStateLaneProps {
@@ -39,8 +38,6 @@ function SnapshotLaneCard({
   onSelect: (snapshot: Snapshot) => void;
 }) {
   const info = getSystemInfo(snapshot.system);
-  const parsedState = parseJsonDeep(snapshot.state_json);
-  const previewKeys = getJsonPreviewKeys(parsedState, 3);
   return (
     <button
       type="button"
@@ -58,21 +55,8 @@ function SnapshotLaneCard({
       </div>
 
       <div className="mt-2 text-[10px] text-[var(--stove-text-secondary)]">
-        {parsedState ? describeJsonValue(parsedState) : "raw text"}
+        Open to inspect captured state
       </div>
-
-      {previewKeys.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {previewKeys.map((key) => (
-            <span
-              key={key}
-              className="rounded-full border border-stove-border px-1.5 py-0.5 font-mono text-[10px] text-[var(--stove-text-secondary)]"
-            >
-              {key}
-            </span>
-          ))}
-        </div>
-      )}
     </button>
   );
 }

@@ -82,6 +82,7 @@ impl fmt::Display for TestStatus {
 pub struct AppSummary {
   pub app_name: String,
   pub latest_run_id: String,
+  pub latest_run_started_at: String,
   pub latest_status: RunStatus,
   pub stove_version: Option<String>,
   pub metadata: BTreeMap<String, String>,

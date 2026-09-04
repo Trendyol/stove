@@ -1,9 +1,6 @@
 import { useState } from "react";
 import type { Snapshot } from "../api/types";
-import { describeJsonValue, getJsonPreviewKeys, parseJsonDeep } from "../utils/json";
-import { getKafkaSnapshotMetrics } from "../utils/snapshot-state";
 import { getSystemInfo } from "../utils/systems";
-import { SnapshotMetricTiles } from "./SnapshotMetricTiles";
 import { SnapshotStateDialog } from "./SnapshotStateDialog";
 
 interface SnapshotCardsProps {
@@ -11,8 +8,10 @@ interface SnapshotCardsProps {
   hiddenCount?: number;
 }
 
+type SnapshotSelection = { kind: "none" } | { kind: "snapshot"; snapshot: Snapshot };
+
 export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps) {
-  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
+  const [selection, setSelection] = useState<SnapshotSelection>({ kind: "none" });
 
   if (snapshots.length === 0) {
     return (
@@ -37,15 +36,15 @@ export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps
             <DetailedSnapshotCard
               key={snap.id}
               snapshot={snap}
-              onOpen={() => setSelectedSnapshot(snap)}
+              onOpen={() => setSelection({ kind: "snapshot", snapshot: snap })}
             />
           );
         })}
       </div>
-      {selectedSnapshot && (
+      {selection.kind === "snapshot" && (
         <SnapshotStateDialog
-          snapshot={selectedSnapshot}
-          onClose={() => setSelectedSnapshot(null)}
+          snapshot={selection.snapshot}
+          onClose={() => setSelection({ kind: "none" })}
         />
       )}
     </div>
@@ -54,10 +53,7 @@ export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps
 
 function DetailedSnapshotCard({ snapshot, onOpen }: { snapshot: Snapshot; onOpen: () => void }) {
   const info = getSystemInfo(snapshot.system);
-  const parsedState = parseJsonDeep(snapshot.state_json);
-  const previewKeys = getJsonPreviewKeys(parsedState);
-  const kafkaMetrics =
-    snapshot.system === "Kafka" ? getKafkaSnapshotMetrics(snapshot, parsedState) : [];
+  const payloadSize = new Blob([snapshot.state_json]).size;
 
   return (
     <div
@@ -74,32 +70,18 @@ function DetailedSnapshotCard({ snapshot, onOpen }: { snapshot: Snapshot; onOpen
       <pre className="text-xs text-[var(--stove-text-secondary)] whitespace-pre-wrap">
         {snapshot.summary}
       </pre>
-      {kafkaMetrics.length > 0 && <SnapshotMetricTiles metrics={kafkaMetrics} compact />}
       <div className="rounded-lg border border-stove-border bg-stove-base p-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--stove-text-muted)]">
             State
           </span>
           <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--stove-text-secondary)]">
-            {parsedState ? describeJsonValue(parsedState) : "raw text"}
+            {formatBytes(payloadSize)}
           </span>
         </div>
-        {previewKeys.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {previewKeys.map((key) => (
-              <span
-                key={key}
-                className="rounded-full border border-stove-border px-2 py-1 text-[10px] font-mono text-[var(--stove-text-secondary)]"
-              >
-                {key}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-2 text-xs text-[var(--stove-text-secondary)]">
-            Open the state explorer to inspect the captured payload.
-          </div>
-        )}
+        <div className="mt-2 text-xs text-[var(--stove-text-secondary)]">
+          Parsing and search start only when the state explorer is opened.
+        </div>
         <button
           type="button"
           className="stove-focus-ring mt-3 w-full cursor-pointer rounded-md border border-stove-border bg-stove-card px-3 py-2 text-left text-xs font-medium text-[var(--stove-text)] hover:bg-[var(--stove-hover)]"
@@ -110,6 +92,12 @@ function DetailedSnapshotCard({ snapshot, onOpen }: { snapshot: Snapshot; onOpen
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 102.4) / 10} KB`;
+  return `${Math.round(bytes / (1024 * 102.4)) / 10} MB`;
 }
 
 function HiddenSnapshotNotice({

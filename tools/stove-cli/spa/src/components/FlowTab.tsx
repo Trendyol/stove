@@ -1,8 +1,8 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Entry, Snapshot, Span } from "../api/types";
 import type { FlowNodeData, GapNodeData, SystemNodeData } from "../utils/flow";
-import { applyDagreLayout, entriesToDag, spansToTraceDag } from "../utils/flow";
+import { applyLinearTimelineLayout, entriesToDag } from "../utils/flow";
 import { CapturedStateLane } from "./CapturedStateLane";
 import { FlowDag } from "./FlowDag";
 import { NodePopup } from "./NodePopup";
@@ -16,6 +16,11 @@ interface FlowTabProps {
 }
 
 type FlowMode = "timeline" | "trace";
+type FlowSelection =
+  | { kind: "none" }
+  | { kind: "node"; node: SystemNodeData }
+  | { kind: "snapshot"; snapshot: Snapshot };
+const TRACE_NODE_LIMIT = 1_000;
 
 function modeButtonClass(active: boolean): string {
   return `stove-focus-ring cursor-pointer rounded-md px-2.5 py-1 text-xs border-0 transition-colors ${
@@ -27,27 +32,51 @@ function modeButtonClass(active: boolean): string {
 
 export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabProps) {
   const [mode, setMode] = useState<FlowMode>("timeline");
-  const [selectedNode, setSelectedNode] = useState<SystemNodeData | null>(null);
-  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
+  const [selection, setSelection] = useState<FlowSelection>({ kind: "none" });
+  const [traceGraph, setTraceGraph] = useState<{
+    nodes: ReturnType<typeof entriesToDag>["nodes"];
+    edges: ReturnType<typeof entriesToDag>["edges"];
+  }>({ nodes: [], edges: [] });
 
-  const { nodes, edges } = useMemo(() => {
-    if (mode === "trace" && spans.length > 0) {
-      const dag = spansToTraceDag(spans);
-      return { nodes: applyDagreLayout(dag.nodes, dag.edges), edges: dag.edges };
-    }
+  const timelineGraph = useMemo(() => {
     const dag = entriesToDag(entries);
-    return { nodes: applyDagreLayout(dag.nodes, dag.edges), edges: dag.edges };
-  }, [mode, entries, spans]);
+    return { nodes: applyLinearTimelineLayout(dag.nodes), edges: dag.edges };
+  }, [entries]);
+
+  useEffect(() => {
+    if (mode !== "trace" || spans.length === 0) return;
+    let worker: Worker | undefined;
+    const timer = window.setTimeout(() => {
+      const layoutWorker = new Worker(
+        new URL("../workers/flow-layout.worker.ts", import.meta.url),
+        {
+          type: "module",
+        },
+      );
+      worker = layoutWorker;
+      layoutWorker.onmessage = (message) => {
+        setTraceGraph(message.data);
+        layoutWorker.terminate();
+      };
+      layoutWorker.postMessage(spans.slice(-TRACE_NODE_LIMIT));
+    }, 100);
+    return () => {
+      window.clearTimeout(timer);
+      worker?.terminate();
+    };
+  }, [mode, spans]);
+
+  const { nodes, edges } = mode === "trace" ? traceGraph : timelineGraph;
 
   const handleNodeClick = useCallback((data: FlowNodeData) => {
     if (!data.inspectable) {
       return;
     }
-    setSelectedNode(data);
+    setSelection({ kind: "node", node: data });
   }, []);
 
   const handleOpenTraceTab = useCallback(() => {
-    setSelectedNode(null);
+    setSelection({ kind: "none" });
     onOpenTraceTab?.();
   }, [onOpenTraceTab]);
 
@@ -122,21 +151,24 @@ export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabPr
       </div>
 
       {mode === "timeline" && (
-        <CapturedStateLane snapshots={snapshots} onSelect={setSelectedSnapshot} />
-      )}
-
-      {selectedNode && (
-        <NodePopup
-          entries={selectedNode.entries}
-          traceId={selectedNode.traceId}
-          onClose={() => setSelectedNode(null)}
-          onOpenTrace={selectedNode.traceId ? handleOpenTraceTab : undefined}
+        <CapturedStateLane
+          snapshots={snapshots}
+          onSelect={(snapshot) => setSelection({ kind: "snapshot", snapshot })}
         />
       )}
-      {selectedSnapshot && (
+
+      {selection.kind === "node" && (
+        <NodePopup
+          entries={selection.node.entries}
+          traceId={selection.node.traceId}
+          onClose={() => setSelection({ kind: "none" })}
+          onOpenTrace={selection.node.traceId ? handleOpenTraceTab : undefined}
+        />
+      )}
+      {selection.kind === "snapshot" && (
         <SnapshotStateDialog
-          snapshot={selectedSnapshot}
-          onClose={() => setSelectedSnapshot(null)}
+          snapshot={selection.snapshot}
+          onClose={() => setSelection({ kind: "none" })}
         />
       )}
     </div>

@@ -63,11 +63,12 @@ impl SqliteBackend {
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
     let mut db = self.lock_read();
     diesel::sql_query(
-      "SELECT r.app_name AS app_name, r.id AS latest_run_id, r.status AS latest_status,
+      "SELECT r.app_name AS app_name, r.id AS latest_run_id,
+              r.started_at AS latest_run_started_at, r.status AS latest_status,
               r.stove_version AS stove_version, r.metadata AS metadata
          FROM runs r WHERE r.id = (
            SELECT r3.id FROM runs r3 WHERE r3.app_name = r.app_name
-           ORDER BY r3.started_at DESC, r3.rowid DESC LIMIT 1
+           ORDER BY r3.started_at DESC, r3.id DESC LIMIT 1
          ) ORDER BY app_name",
     )
     .load::<AppSummaryRow>(db.conn())?

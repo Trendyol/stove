@@ -892,11 +892,26 @@ button {
   color: var(--stove-text-muted);
 }
 
+.stove-test-tree-panel {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 5px 12px;
+}
+
 .stove-test-tree-scroll {
   min-height: 0;
   flex: 1;
+  margin: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  padding: 8px 5px 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.stove-test-tree-scroll.virtual-list-window {
+  height: auto;
 }
 
 .stove-sidebar-section-label {
@@ -1481,6 +1496,208 @@ button {
   overflow: hidden;
 }
 
+.span-tree-workbench {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.span-tree-list {
+  min-height: 0;
+  flex: 1;
+  margin: 0;
+  overflow: auto;
+  padding: 12px 16px;
+  list-style: none;
+}
+
+.span-tree-list.virtual-list-window {
+  height: min(68vh, 760px);
+}
+
+.span-tree-row {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  gap: 3px;
+  margin: 2px 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--stove-text-secondary);
+}
+
+.span-tree-row:hover,
+.span-tree-row.is-selected {
+  border-color: var(--stove-border);
+  background: var(--stove-hover);
+}
+
+.span-tree-row.is-failed {
+  border-color: color-mix(in srgb, var(--stove-red) 30%, transparent);
+  background: color-mix(in srgb, var(--stove-red) 7%, transparent);
+}
+
+.span-tree-toggle,
+.span-tree-toggle-placeholder {
+  width: 22px;
+  flex: 0 0 22px;
+}
+
+.span-tree-toggle {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: var(--stove-text-muted);
+  font-size: 9px;
+  transition: transform 120ms ease;
+}
+
+.span-tree-toggle.is-open {
+  transform: rotate(90deg);
+}
+
+.span-tree-primary {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  align-self: stretch;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.span-tree-primary strong {
+  overflow: hidden;
+  color: var(--stove-text);
+  font-size: 12px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.span-tree-primary > span:not(.span-tree-status) {
+  overflow: hidden;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.span-tree-primary em {
+  border-radius: 999px;
+  background: var(--stove-red-bg);
+  padding: 2px 6px;
+  color: var(--stove-red);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-style: normal;
+}
+
+.span-tree-primary time {
+  margin-left: auto;
+  padding-right: 9px;
+  color: var(--stove-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.span-tree-status {
+  color: var(--stove-text-secondary);
+}
+
+.span-tree-row.is-success .span-tree-status {
+  color: var(--stove-green);
+}
+
+.span-tree-row.is-failed .span-tree-status {
+  color: var(--stove-red);
+}
+
+.span-tree-summary {
+  display: flex;
+  gap: 16px;
+  border-top: 1px solid var(--stove-border);
+  padding: 9px 18px;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+}
+
+.trace-dialog-id {
+  overflow: hidden;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-dialog-body {
+  display: grid;
+  gap: 14px;
+}
+
+.trace-exception {
+  border: 1px solid color-mix(in srgb, var(--stove-red) 28%, var(--stove-border));
+  border-radius: 9px;
+  background: var(--stove-red-bg);
+  padding: 12px;
+}
+
+.trace-exception strong,
+.trace-exception p {
+  color: var(--stove-red);
+}
+
+.trace-exception p {
+  margin-top: 5px;
+  font-size: 11px;
+}
+
+.trace-exception pre {
+  margin-top: 10px;
+  overflow: auto;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+  white-space: pre-wrap;
+}
+
+.trace-attributes {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--stove-border);
+  border-radius: 9px;
+  background: var(--stove-border);
+}
+
+.trace-attributes > div {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(0, 1.3fr);
+  gap: 12px;
+  background: var(--stove-surface);
+  padding: 8px 10px;
+}
+
+.trace-attributes dt,
+.trace-attributes dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.trace-attributes dt {
+  color: var(--stove-text-muted);
+}
+
+.trace-attributes dd {
+  color: var(--stove-text-secondary);
+}
+
 .evidence-page {
   width: 100%;
   padding: 22px;
@@ -1754,9 +1971,49 @@ button {
   position: relative;
   overflow: hidden;
   min-width: 0;
+  margin-right: 0;
+  margin-left: 0;
   border: 1px solid var(--stove-border);
   border-radius: 12px;
   background: color-mix(in srgb, var(--stove-surface) 68%, transparent);
+  padding: 0;
+  list-style: none;
+}
+
+.virtual-list-window {
+  position: relative;
+  height: min(62vh, 720px);
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+  list-style: none;
+  scrollbar-gutter: stable;
+}
+
+.evidence-ledger:not(.virtual-list-window),
+.mock-ledger:not(.virtual-list-window),
+.stove-test-tree-scroll:not(.virtual-list-window) {
+  margin-right: 0;
+  margin-left: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.virtual-list-space {
+  width: 1px;
+  pointer-events: none;
+}
+
+.virtual-list-row {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
+.virtual-list-row > button {
+  height: 100%;
 }
 
 .evidence-ledger::before,

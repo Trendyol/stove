@@ -1,4 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query";
+import { notifyManager, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import type { Status } from "../utils/status";
 import type {
   AppSummary,
@@ -15,9 +15,135 @@ import { EVENT_TYPE } from "./types";
 
 const RUNNING: Status = "RUNNING";
 
-export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDashboardEvent) {
-  cancelConflictingQueries(queryClient, event);
+type CacheUpdater<T> = T | undefined | ((current: T | undefined) => T | undefined);
 
+interface LiveCacheClient {
+  readonly mutableArrays: boolean;
+  getQueryData<T>(queryKey: QueryKey): T | undefined;
+  getQueriesData<T>(filters: { queryKey: QueryKey }): Array<[QueryKey, T | undefined]>;
+  hasQuery(queryKey: QueryKey): boolean;
+  setQueryData<T>(queryKey: QueryKey, updater: CacheUpdater<T>): void;
+}
+
+export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDashboardEvent) {
+  applyEvent(createDirectCacheClient(queryClient), event);
+}
+
+/**
+ * Reduces one browser-frame worth of SSE messages into a single cache write per
+ * affected query. Arrays are cloned once and then updated in place inside this
+ * private buffer, so a burst does not repeatedly copy growing evidence lists.
+ */
+export function applyLiveDashboardEvents(
+  queryClient: QueryClient,
+  events: readonly LiveDashboardEvent[],
+) {
+  if (events.length === 0) return;
+  if (events.length === 1) {
+    applyLiveDashboardEvent(queryClient, events[0]);
+    return;
+  }
+
+  const cache = new BufferedLiveCacheClient(queryClient);
+  for (const event of events) {
+    applyEvent(cache, event);
+  }
+  cache.flush();
+}
+
+export async function loadAndReconcileDashboardData<T>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  load: () => Promise<T>,
+): Promise<T> {
+  return reconcileDashboardData(queryClient, queryKey, await load());
+}
+
+function createDirectCacheClient(queryClient: QueryClient): LiveCacheClient {
+  return {
+    mutableArrays: false,
+    getQueryData: <T>(queryKey: QueryKey) => queryClient.getQueryData<T>(queryKey),
+    getQueriesData: <T>(filters: { queryKey: QueryKey }) => queryClient.getQueriesData<T>(filters),
+    hasQuery: (queryKey) =>
+      queryClient.getQueryCache().find({ queryKey, exact: true }) !== undefined,
+    setQueryData: <T>(queryKey: QueryKey, updater: CacheUpdater<T>) => {
+      queryClient.setQueryData<T>(queryKey, updater as T | ((current: T | undefined) => T));
+    },
+  };
+}
+
+class BufferedLiveCacheClient implements LiveCacheClient {
+  readonly mutableArrays = true;
+  private readonly pending = new Map<string, { queryKey: QueryKey; data: unknown }>();
+
+  constructor(private readonly queryClient: QueryClient) {}
+
+  getQueryData<T>(queryKey: QueryKey): T | undefined {
+    const pending = this.pending.get(queryHash(queryKey));
+    return pending ? (pending.data as T | undefined) : this.queryClient.getQueryData<T>(queryKey);
+  }
+
+  getQueriesData<T>(filters: { queryKey: QueryKey }): Array<[QueryKey, T | undefined]> {
+    const merged = new Map<string, [QueryKey, T | undefined]>();
+    for (const [queryKey, data] of this.queryClient.getQueriesData<T>(filters)) {
+      merged.set(queryHash(queryKey), [queryKey, data]);
+    }
+    for (const pending of this.pending.values()) {
+      if (queryKeyStartsWith(pending.queryKey, filters.queryKey)) {
+        merged.set(queryHash(pending.queryKey), [pending.queryKey, pending.data as T | undefined]);
+      }
+    }
+    return [...merged.values()];
+  }
+
+  hasQuery(queryKey: QueryKey): boolean {
+    return (
+      this.pending.has(queryHash(queryKey)) ||
+      this.queryClient.getQueryCache().find({ queryKey, exact: true }) !== undefined
+    );
+  }
+
+  setQueryData<T>(queryKey: QueryKey, updater: CacheUpdater<T>): void {
+    const hash = queryHash(queryKey);
+    let current = this.getQueryData<T>(queryKey);
+    if (!this.pending.has(hash) && Array.isArray(current)) {
+      current = [...current] as T;
+    }
+    const data =
+      typeof updater === "function"
+        ? (updater as (value: T | undefined) => T | undefined)(current)
+        : updater;
+    this.pending.set(hash, { queryKey, data });
+  }
+
+  flush(): void {
+    notifyManager.batch(() => {
+      for (const { queryKey, data } of this.pending.values()) {
+        this.queryClient.setQueryData(queryKey, data);
+      }
+    });
+  }
+}
+
+function updateExistingQueryData<T>(
+  queryClient: LiveCacheClient,
+  queryKey: QueryKey,
+  updater: CacheUpdater<T>,
+) {
+  if (queryClient.hasQuery(queryKey)) {
+    queryClient.setQueryData(queryKey, updater);
+  }
+}
+
+function queryHash(queryKey: QueryKey): string {
+  return JSON.stringify(queryKey);
+}
+
+function queryKeyStartsWith(queryKey: QueryKey, prefix: QueryKey): boolean {
+  return prefix.every((part, index) => Object.is(part, queryKey[index]));
+}
+
+function applyEvent(queryClient: LiveCacheClient, event: LiveDashboardEvent) {
   switch (event.event_type) {
     case EVENT_TYPE.RUN_STARTED: {
       const run: Run = {
@@ -39,21 +165,13 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         upsertAppSummary(apps, {
           app_name: event.payload.app_name,
           latest_run_id: event.run_id,
+          latest_run_started_at: event.payload.started_at,
           latest_status: RUNNING,
           stove_version: event.payload.stove_version,
           metadata: event.payload.metadata,
         }),
       );
       updateRunQueriesForStart(queryClient, run);
-      queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => tests ?? []);
-      queryClient.setQueryData<MockInteraction[]>(
-        ["mock-interactions", event.run_id],
-        (interactions) => interactions ?? [],
-      );
-      queryClient.setQueryData<MockWarning[]>(
-        ["mock-warnings", event.run_id],
-        (warnings) => warnings ?? [],
-      );
       break;
     }
     case EVENT_TYPE.RUN_ENDED: {
@@ -91,26 +209,8 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         error: null,
       };
 
-      queryClient.setQueryData<Test[]>(["tests", event.run_id], (tests) => upsertTest(tests, test));
-      queryClient.setQueryData<Entry[]>(
-        ["entries", event.run_id, event.payload.test_id],
-        (entries) => entries ?? [],
-      );
-      queryClient.setQueryData<Span[]>(
-        ["spans", event.run_id, event.payload.test_id],
-        (spans) => spans ?? [],
-      );
-      queryClient.setQueryData<Snapshot[]>(
-        ["snapshots", event.run_id, event.payload.test_id],
-        (snapshots) => snapshots ?? [],
-      );
-      queryClient.setQueryData<MockInteraction[]>(
-        ["mock-interactions", event.run_id, event.payload.test_id],
-        (interactions) => interactions ?? [],
-      );
-      queryClient.setQueryData<MockWarning[]>(
-        ["mock-warnings", event.run_id, event.payload.test_id],
-        (warnings) => warnings ?? [],
+      updateExistingQueryData<Test[]>(queryClient, ["tests", event.run_id], (tests) =>
+        upsertTest(tests, test, queryClient.mutableArrays),
       );
       break;
     }
@@ -145,17 +245,19 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         failure_count: event.payload.failure_count,
       };
 
-      queryClient.setQueryData<Entry[]>(
+      updateExistingQueryData<Entry[]>(
+        queryClient,
         ["entries", event.run_id, event.payload.test_id],
-        (entries) => appendEntries(entries, entry),
+        (entries) => appendEntries(entries, entry, queryClient.mutableArrays),
       );
 
       if (event.payload.trace_id) {
         const traceSpans = queryClient.getQueryData<Span[]>(["trace", event.payload.trace_id]);
         if (traceSpans?.length) {
-          queryClient.setQueryData<Span[]>(
+          updateExistingQueryData<Span[]>(
+            queryClient,
             ["spans", event.run_id, event.payload.test_id],
-            (spans) => mergeSpans(spans, traceSpans),
+            (spans) => mergeSpans(spans, traceSpans, queryClient.mutableArrays),
           );
         }
       }
@@ -179,16 +281,16 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         exception_stack_trace: event.payload.exception_stack_trace,
       };
 
-      queryClient.setQueryData<Span[]>(["trace", event.payload.trace_id], (trace) =>
-        appendSpan(trace, span),
+      updateExistingQueryData<Span[]>(queryClient, ["trace", event.payload.trace_id], (trace) =>
+        appendSpan(trace, span, queryClient.mutableArrays),
       );
 
       const testId =
         event.payload.test_id ??
         findTestIdForTrace(queryClient, event.run_id, event.payload.trace_id);
       if (testId) {
-        queryClient.setQueryData<Span[]>(["spans", event.run_id, testId], (spans) =>
-          appendSpan(spans, span),
+        updateExistingQueryData<Span[]>(queryClient, ["spans", event.run_id, testId], (spans) =>
+          appendSpan(spans, span, queryClient.mutableArrays),
         );
       }
       break;
@@ -205,9 +307,10 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
         trigger: event.payload.trigger,
       };
 
-      queryClient.setQueryData<Snapshot[]>(
+      updateExistingQueryData<Snapshot[]>(
+        queryClient,
         ["snapshots", event.run_id, event.payload.test_id],
-        (snapshots) => appendSnapshots(snapshots, snapshot),
+        (snapshots) => appendSnapshots(snapshots, snapshot, queryClient.mutableArrays),
       );
       break;
     }
@@ -241,14 +344,18 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       };
 
       if (event.payload.test_id) {
-        queryClient.setQueryData<MockInteraction[]>(
+        updateExistingQueryData<MockInteraction[]>(
+          queryClient,
           ["mock-interactions", event.run_id, event.payload.test_id],
-          (interactions) => appendInteractions(interactions, interaction),
+          (interactions) =>
+            appendInteractions(interactions, interaction, queryClient.mutableArrays),
         );
       } else {
-        queryClient.setQueryData<MockInteraction[]>(
+        updateExistingQueryData<MockInteraction[]>(
+          queryClient,
           ["mock-interactions", event.run_id],
-          (interactions) => appendInteractions(interactions, interaction),
+          (interactions) =>
+            appendInteractions(interactions, interaction, queryClient.mutableArrays),
         );
       }
       break;
@@ -267,13 +374,16 @@ export function applyLiveDashboardEvent(queryClient: QueryClient, event: LiveDas
       };
 
       if (event.payload.test_id) {
-        queryClient.setQueryData<MockWarning[]>(
+        updateExistingQueryData<MockWarning[]>(
+          queryClient,
           ["mock-warnings", event.run_id, event.payload.test_id],
-          (warnings) => appendWarnings(warnings, warning),
+          (warnings) => appendWarnings(warnings, warning, queryClient.mutableArrays),
         );
       } else {
-        queryClient.setQueryData<MockWarning[]>(["mock-warnings", event.run_id], (warnings) =>
-          appendWarnings(warnings, warning),
+        updateExistingQueryData<MockWarning[]>(
+          queryClient,
+          ["mock-warnings", event.run_id],
+          (warnings) => appendWarnings(warnings, warning, queryClient.mutableArrays),
         );
       }
       break;
@@ -334,88 +444,25 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
   }
 }
 
-function cancelConflictingQueries(queryClient: QueryClient, event: LiveDashboardEvent) {
-  const cancel = (queryKey: readonly unknown[], exact = true) => {
-    void queryClient.cancelQueries({ queryKey, exact }, { revert: false });
-  };
-  const cancelRunDetails = (runId: string) => {
-    cancel(["tests", runId]);
-    cancel(["entries", runId], false);
-    cancel(["spans", runId], false);
-    cancel(["snapshots", runId], false);
-    cancel(["mock-interactions", runId], false);
-    cancel(["mock-warnings", runId], false);
-  };
-
-  switch (event.event_type) {
-    case EVENT_TYPE.RUN_STARTED:
-      cancel(["apps"]);
-      cancel(["runs", event.payload.app_name], false);
-      cancelRunDetails(event.run_id);
-      break;
-    case EVENT_TYPE.RUN_ENDED:
-      cancel(["apps"]);
-      cancel(["runs"], false);
-      cancelRunDetails(event.run_id);
-      break;
-    case EVENT_TYPE.TEST_STARTED:
-      cancel(["tests", event.run_id]);
-      cancel(["entries", event.run_id, event.payload.test_id]);
-      cancel(["spans", event.run_id, event.payload.test_id]);
-      cancel(["snapshots", event.run_id, event.payload.test_id]);
-      cancel(["mock-interactions", event.run_id, event.payload.test_id]);
-      cancel(["mock-warnings", event.run_id, event.payload.test_id]);
-      break;
-    case EVENT_TYPE.TEST_ENDED:
-      cancel(["tests", event.run_id]);
-      break;
-    case EVENT_TYPE.ENTRY_RECORDED:
-      cancel(["entries", event.run_id, event.payload.test_id]);
-      break;
-    case EVENT_TYPE.SPAN_RECORDED:
-      cancel(["trace", event.payload.trace_id]);
-      if (event.payload.test_id) {
-        cancel(["spans", event.run_id, event.payload.test_id]);
-      } else {
-        cancel(["spans", event.run_id], false);
-      }
-      break;
-    case EVENT_TYPE.SNAPSHOT:
-      cancel(["snapshots", event.run_id, event.payload.test_id]);
-      break;
-    case EVENT_TYPE.MOCK_INTERACTION:
-      if (event.payload.test_id) {
-        cancel(["mock-interactions", event.run_id, event.payload.test_id]);
-      } else {
-        cancel(["mock-interactions", event.run_id]);
-      }
-      break;
-    case EVENT_TYPE.MOCK_WARNING:
-      if (event.payload.test_id) {
-        cancel(["mock-warnings", event.run_id, event.payload.test_id]);
-      } else {
-        cancel(["mock-warnings", event.run_id]);
-      }
-      break;
-  }
-}
-
 function upsertAppSummary(apps: AppSummary[] | undefined, incoming: AppSummary): AppSummary[] {
   return [...(apps ?? []).filter((app) => app.app_name !== incoming.app_name), incoming].sort(
     (left, right) => left.app_name.localeCompare(right.app_name),
   );
 }
 
-function upsertTest(tests: Test[] | undefined, incoming: Test): Test[] {
-  return [...(tests ?? []).filter((test) => test.id !== incoming.id), incoming].sort(compareTests);
+function upsertTest(tests: Test[] | undefined, incoming: Test, mutable: boolean): Test[] {
+  const result = mutable ? (tests ?? []) : [...(tests ?? [])];
+  const existingIndex = result.findIndex((test) => test.id === incoming.id);
+  if (existingIndex >= 0) result.splice(existingIndex, 1);
+  insertSorted(result, incoming, compareTests);
+  return result;
 }
 
-function updateRunQueriesForStart(queryClient: QueryClient, incoming: Run) {
+function updateRunQueriesForStart(queryClient: LiveCacheClient, incoming: Run) {
   const matchingQueries = queryClient.getQueriesData<Run[]>({
     queryKey: ["runs", incoming.app_name],
   });
   if (matchingQueries.length === 0) {
-    queryClient.setQueryData<Run[]>(["runs", incoming.app_name], [incoming]);
     return;
   }
 
@@ -437,7 +484,7 @@ function updateRunQueriesForStart(queryClient: QueryClient, incoming: Run) {
   }
 }
 
-function updateCachedRuns(queryClient: QueryClient, runId: string, updater: (run: Run) => Run) {
+function updateCachedRuns(queryClient: LiveCacheClient, runId: string, updater: (run: Run) => Run) {
   for (const [queryKey, runs] of queryClient.getQueriesData<Run[]>({ queryKey: ["runs"] })) {
     if (!runs?.some((run) => run.id === runId)) {
       continue;
@@ -450,19 +497,20 @@ function updateCachedRuns(queryClient: QueryClient, runId: string, updater: (run
 }
 
 function updateCachedTests(
-  queryClient: QueryClient,
+  queryClient: LiveCacheClient,
   runId: string,
   testId: string,
   updater: (test: Test) => Test,
 ) {
-  queryClient.setQueryData<Test[]>(
+  updateExistingQueryData<Test[]>(
+    queryClient,
     ["tests", runId],
     (tests) =>
       tests?.map((test) => (test.id === testId ? updater(test) : test)).sort(compareTests) ?? tests,
   );
 }
 
-function appendEntries(entries: Entry[] | undefined, incoming: Entry): Entry[] {
+function appendEntries(entries: Entry[] | undefined, incoming: Entry, mutable: boolean): Entry[] {
   if (incoming.id !== 0 && entries?.some((entry) => entry.id === incoming.id)) {
     return entries;
   }
@@ -472,9 +520,9 @@ function appendEntries(entries: Entry[] | undefined, incoming: Entry): Entry[] {
     (entry) => entry.assertion_id === incoming.assertion_id,
   );
   if (assertionIndex < 0) {
-    return [...existing, incoming].sort((left, right) =>
-      left.timestamp.localeCompare(right.timestamp),
-    );
+    const result = mutable ? existing : [...existing];
+    insertSorted(result, incoming, (left, right) => left.timestamp.localeCompare(right.timestamp));
+    return result;
   }
 
   const previous = existing[assertionIndex];
@@ -489,25 +537,30 @@ function appendEntries(entries: Entry[] | undefined, incoming: Entry): Entry[] {
     attempt_count: Math.max(previous.attempt_count, incoming.attempt_count),
     failure_count: Math.max(previous.failure_count, incoming.failure_count),
   };
-  return existing
-    .map((entry, index) => (index === assertionIndex ? correlated : entry))
-    .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
+  const result = mutable ? existing : [...existing];
+  result.splice(assertionIndex, 1);
+  insertSorted(result, correlated, (left, right) => left.timestamp.localeCompare(right.timestamp));
+  return result;
 }
 
-function appendSpan(spans: Span[] | undefined, incoming: Span): Span[] {
+function appendSpan(spans: Span[] | undefined, incoming: Span, mutable: boolean): Span[] {
   if (spans?.some((span) => isSameSpan(span, incoming))) {
     return spans;
   }
-  return [...(spans ?? []), incoming].sort(
-    (left, right) => left.start_time_nanos - right.start_time_nanos,
-  );
+  const result = mutable ? (spans ?? []) : [...(spans ?? [])];
+  insertSorted(result, incoming, (left, right) => left.start_time_nanos - right.start_time_nanos);
+  return result;
 }
 
-function mergeSpans(existing: Span[] | undefined, incoming: Span[]): Span[] {
-  return incoming.reduce<Span[]>((acc, span) => appendSpan(acc, span), existing ?? []);
+function mergeSpans(existing: Span[] | undefined, incoming: Span[], mutable: boolean): Span[] {
+  return incoming.reduce<Span[]>((acc, span) => appendSpan(acc, span, mutable), existing ?? []);
 }
 
-function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot): Snapshot[] {
+function appendSnapshots(
+  snapshots: Snapshot[] | undefined,
+  incoming: Snapshot,
+  mutable: boolean,
+): Snapshot[] {
   if (
     snapshots?.some(
       (snapshot) =>
@@ -518,28 +571,35 @@ function appendSnapshots(snapshots: Snapshot[] | undefined, incoming: Snapshot):
   ) {
     return snapshots;
   }
-  return [...(snapshots ?? []), incoming];
+  const result = mutable ? (snapshots ?? []) : [...(snapshots ?? [])];
+  result.push(incoming);
+  return result;
 }
 
 function appendInteractions(
   interactions: MockInteraction[] | undefined,
   incoming: MockInteraction,
+  mutable: boolean,
 ): MockInteraction[] {
   if (interactions?.some((interaction) => interaction.id === incoming.id)) {
     return interactions;
   }
-  return [...(interactions ?? []), incoming].sort((left, right) =>
-    left.timestamp.localeCompare(right.timestamp),
-  );
+  const result = mutable ? (interactions ?? []) : [...(interactions ?? [])];
+  insertSorted(result, incoming, (left, right) => left.timestamp.localeCompare(right.timestamp));
+  return result;
 }
 
-function appendWarnings(warnings: MockWarning[] | undefined, incoming: MockWarning): MockWarning[] {
+function appendWarnings(
+  warnings: MockWarning[] | undefined,
+  incoming: MockWarning,
+  mutable: boolean,
+): MockWarning[] {
   if (warnings?.some((warning) => warning.id === incoming.id)) {
     return warnings;
   }
-  return [...(warnings ?? []), incoming].sort((left, right) =>
-    left.timestamp.localeCompare(right.timestamp),
-  );
+  const result = mutable ? (warnings ?? []) : [...(warnings ?? [])];
+  insertSorted(result, incoming, (left, right) => left.timestamp.localeCompare(right.timestamp));
+  return result;
 }
 
 function mergeApps(persisted: AppSummary[], cached: AppSummary[]): AppSummary[] {
@@ -548,6 +608,7 @@ function mergeApps(persisted: AppSummary[], cached: AppSummary[]): AppSummary[] 
     const stored = byName.get(live.app_name);
     if (
       !stored ||
+      compareAppRecency(live, stored) > 0 ||
       (live.latest_run_id === stored.latest_run_id &&
         statusProgress(live.latest_status) > statusProgress(stored.latest_status))
     ) {
@@ -555,6 +616,13 @@ function mergeApps(persisted: AppSummary[], cached: AppSummary[]): AppSummary[] 
     }
   }
   return [...byName.values()].sort((left, right) => left.app_name.localeCompare(right.app_name));
+}
+
+function compareAppRecency(left: AppSummary, right: AppSummary): number {
+  return (
+    left.latest_run_started_at.localeCompare(right.latest_run_started_at) ||
+    left.latest_run_id.localeCompare(right.latest_run_id)
+  );
 }
 
 function mergeRuns(persisted: Run[], cached: Run[]): Run[] {
@@ -720,7 +788,7 @@ function isSameSpan(left: Span, right: Span): boolean {
 }
 
 function findTestIdForTrace(
-  queryClient: QueryClient,
+  queryClient: LiveCacheClient,
   runId: string,
   traceId: string,
 ): string | null {
@@ -735,4 +803,18 @@ function findTestIdForTrace(
     }
   }
   return null;
+}
+
+function insertSorted<T>(items: T[], incoming: T, compare: (left: T, right: T) => number): void {
+  let low = 0;
+  let high = items.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (compare(items[middle], incoming) <= 0) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+  items.splice(low, 0, incoming);
 }

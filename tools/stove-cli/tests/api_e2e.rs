@@ -365,6 +365,7 @@ async fn apps_returns_app_summaries() {
   assert_eq!(apps.len(), 1);
   assert_eq!(apps[0]["app_name"], "product-api");
   assert_eq!(apps[0]["latest_run_id"], "run-1");
+  assert_eq!(apps[0]["latest_run_started_at"], "2024-06-01T10:00:00Z");
   assert_eq!(apps[0]["latest_status"], "FAILED");
   assert!(apps[0]["stove_version"].is_null());
   assert!(apps[0].get("total_runs").is_none());

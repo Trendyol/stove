@@ -40,6 +40,7 @@ impl Analyzer {
         json!({
           "app_name": app.app_name,
           "latest_run_id": app.latest_run_id,
+          "latest_run_started_at": app.latest_run_started_at,
           "latest_status": app.latest_status,
           "stove_version": app.stove_version,
           "metadata": app.metadata,

@@ -29,6 +29,7 @@ impl TestServer {
     let repo =
       Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
     let sse_manager = Arc::new(SseManager::new());
+    let _live_event_relay = stove::sse::relay::spawn(repo.clone(), sse_manager.clone());
     let ingestor = EventIngestor::new(repo.clone(), sse_manager.clone());
     let router = create_router(repo.clone(), sse_manager.clone(), ingestor.clone());
 

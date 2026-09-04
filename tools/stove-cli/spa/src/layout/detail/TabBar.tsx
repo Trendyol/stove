@@ -2,7 +2,7 @@ import { Icon, type IconName } from "../../components/Icon";
 
 export type Tab = "timeline" | "mocks" | "trace" | "snapshots" | "flow";
 
-interface TabDef {
+export interface TabDef {
   id: Tab;
   label: string;
   icon: IconName;
@@ -30,7 +30,7 @@ export function TabBar({ tabs, active, onSelect }: TabBarProps) {
         >
           <Icon name={t.icon} className="h-3.5 w-3.5" />
           <span>{t.label}</span>
-          {t.count != null && (
+          {t.count !== undefined && (
             <span className={`stove-tab-count ${t.attention ? "is-attention" : ""}`}>
               {t.count}
             </span>

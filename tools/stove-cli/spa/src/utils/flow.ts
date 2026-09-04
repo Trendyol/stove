@@ -264,6 +264,25 @@ export function applyDagreLayout(
   });
 }
 
+/** Timeline data is already ordered, so a general graph solver only adds quadratic work. */
+export function applyLinearTimelineLayout(nodes: Node<FlowNodeData>[]): Node<FlowNodeData>[] {
+  let timelineIndex = 0;
+  let arrangeIndex = 0;
+  return nodes.map((node) => {
+    const arrange = node.type === "systemNode" && node.data.kind === "arrange";
+    if (arrange) {
+      arrangeIndex += 1;
+      return {
+        ...node,
+        position: { x: 24, y: -(arrangeIndex * (ARRANGE_NODE_SIZE.height + 48)) },
+      };
+    }
+    const position = { x: 24 + timelineIndex * (STEP_NODE_SIZE.width + 176), y: 24 };
+    timelineIndex += 1;
+    return { ...node, position };
+  });
+}
+
 export function getNodeLayoutSize(node: Node<FlowNodeData>): { width: number; height: number } {
   switch (node.type) {
     case "gapNode":

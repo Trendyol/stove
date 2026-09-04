@@ -75,6 +75,15 @@ impl Repository {
       .store(retention_runs_per_app, Ordering::Relaxed);
   }
 
+  /// Execute one synchronous backend operation without occupying a Tokio core worker.
+  fn with_backend<T, F>(&self, operation: F) -> T
+  where
+    T: Send,
+    F: FnOnce(&Backend) -> T + Send,
+  {
+    run_blocking(|| operation(&self.backend))
+  }
+
   #[cfg(test)]
   pub(in crate::storage::repository) fn lock_write_db(
     &self,
@@ -83,6 +92,24 @@ impl Repository {
       panic!("SQLite test connection requested from PostgreSQL repository")
     };
     sqlite.lock_write()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn with_write_db_locked<T>(&self, operation: impl FnOnce() -> T) -> T {
+    let _guard = match &self.backend {
+      Backend::Sqlite(sqlite) => sqlite.lock_write(),
+      Backend::Postgres(_) => panic!("SQLite test connection requested from PostgreSQL repository"),
+    };
+    operation()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn with_read_db_locked<T>(&self, operation: impl FnOnce() -> T) -> T {
+    let _guard = match &self.backend {
+      Backend::Sqlite(sqlite) => sqlite.lock_read(),
+      Backend::Postgres(_) => panic!("SQLite test connection requested from PostgreSQL repository"),
+    };
+    operation()
   }
 }
 

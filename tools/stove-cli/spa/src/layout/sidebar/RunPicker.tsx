@@ -12,7 +12,7 @@ interface FilterRow {
 interface RunPickerProps {
   runs: Run[];
   availableRuns: Run[];
-  selectedRunId: string | null;
+  selectedRunId: string | undefined;
   onSelectRun: (runId: string) => void;
   metadataFilter: Record<string, string>;
   onMetadataFilterChange: (metadata: Record<string, string>) => void;

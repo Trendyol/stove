@@ -71,7 +71,7 @@ export function compareVersions(
 export function summarizeVersionMismatches(
   apps: AppSummary[],
   cliVersion: string | null,
-  selectedApp: string | null,
+  selectedApp: string | undefined,
 ): VersionMismatchSummary | null {
   if (!cliVersion) {
     return null;

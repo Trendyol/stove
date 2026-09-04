@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use super::EventIngestor;
 use crate::proto;
@@ -13,6 +14,83 @@ fn test_service() -> EventIngestor {
 
 fn ts(seconds: i64) -> prost_types::Timestamp {
   prost_types::Timestamp { seconds, nanos: 0 }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn sqlite_ingestion_waiting_for_the_writer_does_not_starve_async_work() {
+  let svc = test_service();
+  let locked_repository = svc.repository.clone();
+  let (locked_tx, locked_rx) = std::sync::mpsc::sync_channel(1);
+  let blocker = std::thread::spawn(move || {
+    locked_repository.with_write_db_locked(|| {
+      locked_tx.send(()).unwrap();
+      std::thread::sleep(Duration::from_millis(300));
+    });
+  });
+  locked_rx.recv().unwrap();
+
+  let ingest = tokio::spawn(async move {
+    svc.ingest(&proto::DashboardEvent {
+      run_id: "run-responsive".to_string(),
+      event_id: "event-responsive".to_string(),
+      sequence: 1,
+      event: Some(proto::dashboard_event::Event::RunStarted(
+        proto::RunStartedEvent {
+          timestamp: Some(ts(1_704_067_200)),
+          app_name: "responsive-app".to_string(),
+          ..Default::default()
+        },
+      )),
+    })
+  });
+
+  let started = Instant::now();
+  tokio::time::sleep(Duration::from_millis(50)).await;
+  assert!(
+    started.elapsed() < Duration::from_millis(200),
+    "a synchronous SQLite lock wait starved the single Tokio worker for {:?}",
+    started.elapsed()
+  );
+
+  blocker.join().unwrap();
+  ingest.await.unwrap().unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn acknowledgement_does_not_wait_for_the_sse_read_lane() {
+  let svc = test_service();
+  let locked_repository = svc.repository.clone();
+  let (locked_tx, locked_rx) = std::sync::mpsc::sync_channel(1);
+  let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
+  let blocker = std::thread::spawn(move || {
+    locked_repository.with_read_db_locked(|| {
+      locked_tx.send(()).unwrap();
+      release_rx.recv().unwrap();
+    });
+  });
+  locked_rx.recv().unwrap();
+
+  let acknowledgement = tokio::time::timeout(Duration::from_millis(250), async move {
+    svc.ingest(&proto::DashboardEvent {
+      run_id: "run-independent-ack".to_string(),
+      event_id: "event-independent-ack".to_string(),
+      sequence: 1,
+      event: Some(proto::dashboard_event::Event::RunStarted(
+        proto::RunStartedEvent {
+          timestamp: Some(ts(1_704_067_200)),
+          app_name: "responsive-app".to_string(),
+          ..Default::default()
+        },
+      )),
+    })
+  })
+  .await
+  .expect("the ACK must not wait for the SSE relay's read connection")
+  .unwrap();
+
+  assert!(acknowledgement.accepted);
+  release_tx.send(()).unwrap();
+  blocker.join().unwrap();
 }
 
 #[tokio::test]

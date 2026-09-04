@@ -213,6 +213,7 @@ fn full_event_lifecycle() {
     vec![AppSummary {
       app_name: "product-api".into(),
       latest_run_id: "run-1".into(),
+      latest_run_started_at: "2024-01-01T00:00:00Z".into(),
       latest_status: RunStatus::Passed,
       stove_version: Some("0.23.2".into()),
       metadata: std::collections::BTreeMap::new(),
@@ -473,6 +474,7 @@ fn latest_app_version_comes_from_latest_run() {
     vec![AppSummary {
       app_name: "product-api".into(),
       latest_run_id: "run-2".into(),
+      latest_run_started_at: "2024-01-02T00:00:00Z".into(),
       latest_status: RunStatus::Running,
       stove_version: Some("0.23.2".into()),
       metadata: std::collections::BTreeMap::new(),
@@ -646,6 +648,7 @@ fn get_apps_returns_only_the_new_run_when_started_at_ties() {
     vec![AppSummary {
       app_name: "my-app".into(),
       latest_run_id: "run-2".into(),
+      latest_run_started_at: "2024-06-01T00:00:00Z".into(),
       latest_status: RunStatus::Running,
       stove_version: None,
       metadata: std::collections::BTreeMap::new(),

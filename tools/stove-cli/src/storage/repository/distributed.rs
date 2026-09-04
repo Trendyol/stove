@@ -1,4 +1,4 @@
-use super::{Backend, Repository, run_blocking};
+use super::{Backend, Repository};
 use crate::error::{AppError, Result};
 use crate::ingest::{CommitOutcome, EventIdentity, PreparedDashboardEvent, StoredLiveEvent};
 use tokio::sync::mpsc;
@@ -54,27 +54,25 @@ impl Repository {
     identity: &EventIdentity,
     event: &PreparedDashboardEvent,
   ) -> Result<CommitOutcome> {
-    match &self.backend {
+    self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => {
         sqlite.commit_dashboard_event(identity, event, self.retention_runs_per_app())
       }
-      Backend::Postgres(postgres) => {
-        run_blocking(|| postgres.commit_dashboard_event(identity, event))
-      }
-    }
+      Backend::Postgres(postgres) => postgres.commit_dashboard_event(identity, event),
+    })
   }
 
   pub fn latest_live_event_id(&self) -> Result<u64> {
-    match &self.backend {
+    self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.latest_live_event_id(),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.latest_live_event_id()),
-    }
+      Backend::Postgres(postgres) => postgres.latest_live_event_id(),
+    })
   }
 
   pub fn live_events_after(&self, after_id: u64, limit: usize) -> Result<Vec<StoredLiveEvent>> {
-    match &self.backend {
+    self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.live_events_after(after_id, limit),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.live_events_after(after_id, limit)),
-    }
+      Backend::Postgres(postgres) => postgres.live_events_after(after_id, limit),
+    })
   }
 }

@@ -19,6 +19,7 @@ export type EventType = (typeof EVENT_TYPE)[keyof typeof EVENT_TYPE];
 export interface AppSummary {
   app_name: string;
   latest_run_id: string;
+  latest_run_started_at: string;
   latest_status: Status;
   stove_version: string | null;
   metadata: Record<string, string>;

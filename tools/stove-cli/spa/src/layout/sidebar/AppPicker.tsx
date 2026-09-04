@@ -3,7 +3,7 @@ import type { AppSummary } from "../../api/types";
 interface AppPickerProps {
   apps: AppSummary[];
   mismatchedApps: string[];
-  selectedApp: string | null;
+  selectedApp: string | undefined;
   onSelectApp: (name: string) => void;
 }
 

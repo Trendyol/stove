@@ -54,7 +54,7 @@ impl EventIngestor {
       .repository
       .commit_dashboard_event(&identity, &prepared)?;
     if !outcome.duplicate {
-      self.broadcast_committed_events();
+      self.sse_manager.notify_commit();
     }
     let mut acknowledgement = Self::accepted_ack();
     acknowledgement.event_id.clone_from(&event.event_id);
@@ -67,17 +67,6 @@ impl EventIngestor {
     proto::EventAck {
       accepted: true,
       ..Default::default()
-    }
-  }
-
-  fn broadcast_committed_events(&self) {
-    let mut cursor = self.sse_manager.last_broadcast_id();
-    if let Err(error) = crate::sse::relay::broadcast_available(
-      self.repository.as_ref(),
-      self.sse_manager.as_ref(),
-      &mut cursor,
-    ) {
-      warn!(%error, "Failed to broadcast committed dashboard events");
     }
   }
 

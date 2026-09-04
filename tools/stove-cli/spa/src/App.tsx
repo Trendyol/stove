@@ -1,8 +1,7 @@
 import { type MouseEvent, useEffect, useState } from "react";
 import { useAppData } from "./hooks/useAppData";
+import { DashboardWorkspace } from "./layout/DashboardWorkspace";
 import { Header } from "./layout/Header";
-import { Sidebar } from "./layout/Sidebar";
-import { TestDetail } from "./layout/TestDetail";
 import { AdminPage } from "./pages/AdminPage";
 import { pathForRoute, routeForPath, type StoveRoute } from "./utils/routes";
 
@@ -55,46 +54,23 @@ export default function App() {
       {route === "admin" ? (
         <AdminPage apps={apps} onNavigateDashboard={(event) => navigate(event, "dashboard")} />
       ) : (
-        <div className="stove-workspace">
-          <Sidebar
-            apps={apps}
-            mismatchedApps={mismatchedApps}
-            selectedApp={activeApp}
-            onSelectApp={selectApp}
-            runs={runs}
-            availableRuns={allRuns}
-            selectedRunId={selectedRunId}
-            onSelectRun={selectRun}
-            metadataFilter={metadataFilter}
-            onMetadataFilterChange={filterRunsByMetadata}
-            run={latestRun}
-            tests={tests}
-            selectedTestId={selectedTest?.id ?? null}
-            onSelectTest={selectTest}
-          />
-          {latestRun && selectedTest ? (
-            <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
-          ) : (
-            <div className="workspace-empty">
-              <div className="workspace-empty-mark">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="stove-kicker">
-                {apps.length === 0 ? "Listening for a run" : "Evidence workspace"}
-              </div>
-              <h1>
-                {apps.length === 0 ? "Waiting for the first signal" : "Choose a test to inspect"}
-              </h1>
-              <p>
-                {apps.length === 0
-                  ? "The dashboard will assemble the run as test, trace, state and mock events arrive."
-                  : "Select a test from the run navigator to open its evidence dossier."}
-              </p>
-            </div>
-          )}
-        </div>
+        <DashboardWorkspace
+          apps={apps}
+          activeApp={activeApp}
+          mismatchedApps={mismatchedApps}
+          runs={runs}
+          allRuns={allRuns}
+          selectedRunId={selectedRunId}
+          metadataFilter={metadataFilter}
+          latestRun={latestRun}
+          tests={tests}
+          selectedTest={selectedTest}
+          liveConnected={liveConnected}
+          onSelectApp={selectApp}
+          onSelectRun={selectRun}
+          onMetadataFilterChange={filterRunsByMetadata}
+          onSelectTest={selectTest}
+        />
       )}
     </div>
   );

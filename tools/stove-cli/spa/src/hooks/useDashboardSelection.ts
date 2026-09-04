@@ -1,52 +1,87 @@
 import { useCallback, useState } from "react";
 
+type Selection<T> = { kind: "automatic" } | { kind: "explicit"; value: T };
+
+interface DashboardSelectionState {
+  app: Selection<string>;
+  run: Selection<string>;
+  test: Selection<string>;
+  metadataFilter: Record<string, string>;
+}
+
+const AUTOMATIC = { kind: "automatic" } as const;
+
+const INITIAL_SELECTION: DashboardSelectionState = {
+  app: AUTOMATIC,
+  run: AUTOMATIC,
+  test: AUTOMATIC,
+  metadataFilter: {},
+};
+
+/** Owns valid dashboard navigation transitions; child selections reset atomically. */
 export function useDashboardSelection() {
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
-  const [metadataFilter, setMetadataFilter] = useState<Record<string, string>>({});
+  const [state, setState] = useState<DashboardSelectionState>(INITIAL_SELECTION);
 
   const clearRun = useCallback(() => {
-    setSelectedRunId(null);
-    setSelectedTestId(null);
+    setState((current) => ({ ...current, run: AUTOMATIC, test: AUTOMATIC }));
   }, []);
 
   const clearApp = useCallback(() => {
-    setSelectedApp(null);
-    clearRun();
-    setMetadataFilter({});
-  }, [clearRun]);
-
-  const selectApp = useCallback(
-    (appName: string) => {
-      setSelectedApp(appName);
-      clearRun();
-      setMetadataFilter({});
-    },
-    [clearRun],
-  );
-
-  const selectRun = useCallback((runId: string) => {
-    setSelectedRunId(runId);
-    setSelectedTestId(null);
+    setState(INITIAL_SELECTION);
   }, []);
 
-  const filterRunsByMetadata = useCallback((metadata: Record<string, string>) => {
-    setMetadataFilter(metadata);
-    setSelectedRunId(null);
-    setSelectedTestId(null);
+  const clearTest = useCallback(() => {
+    setState((current) => ({ ...current, test: AUTOMATIC }));
+  }, []);
+
+  const selectApp = useCallback((appName: string) => {
+    setState({
+      app: { kind: "explicit", value: appName },
+      run: AUTOMATIC,
+      test: AUTOMATIC,
+      metadataFilter: {},
+    });
+  }, []);
+
+  const selectRun = useCallback((runId: string) => {
+    setState((current) => ({
+      ...current,
+      run: { kind: "explicit", value: runId },
+      test: AUTOMATIC,
+    }));
+  }, []);
+
+  const selectTest = useCallback((testId: string) => {
+    setState((current) => ({
+      ...current,
+      test: { kind: "explicit", value: testId },
+    }));
+  }, []);
+
+  const filterRunsByMetadata = useCallback((metadataFilter: Record<string, string>) => {
+    setState((current) => ({
+      ...current,
+      run: AUTOMATIC,
+      test: AUTOMATIC,
+      metadataFilter,
+    }));
   }, []);
 
   return {
-    selectedApp,
-    selectedRunId,
-    selectedTestId,
-    metadataFilter,
+    selectedApp: explicitValue(state.app),
+    selectedRunId: explicitValue(state.run),
+    selectedTestId: explicitValue(state.test),
+    metadataFilter: state.metadataFilter,
     selectApp,
     selectRun,
-    selectTest: setSelectedTestId,
+    selectTest,
     filterRunsByMetadata,
     clearApp,
     clearRun,
+    clearTest,
   };
+}
+
+function explicitValue<T>(selection: Selection<T>): T | undefined {
+  return selection.kind === "explicit" ? selection.value : undefined;
 }

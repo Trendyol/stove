@@ -4,12 +4,24 @@ import createJiti from "jiti";
 import { QueryClient } from "@tanstack/react-query";
 
 const jiti = createJiti(import.meta.url);
-const { applyLiveDashboardEvent, reconcileDashboardData } = await jiti.import(
-  "../src/api/live-cache.ts",
-);
+const {
+  applyLiveDashboardEvent,
+  applyLiveDashboardEvents,
+  loadAndReconcileDashboardData,
+  reconcileDashboardData,
+} = await jiti.import("../src/api/live-cache.ts");
 
 test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE payloads", () => {
   const queryClient = new QueryClient();
+  queryClient.setQueryData(["apps"], []);
+  queryClient.setQueryData(["runs", "live-app"], []);
+  queryClient.setQueryData(["tests", "run-live"], []);
+  queryClient.setQueryData(["entries", "run-live", "test-1"], []);
+  queryClient.setQueryData(["spans", "run-live", "test-1"], []);
+  queryClient.setQueryData(["mock-interactions", "run-live", "test-1"], []);
+  queryClient.setQueryData(["mock-interactions", "run-live"], []);
+  queryClient.setQueryData(["mock-warnings", "run-live", "test-1"], []);
+  queryClient.setQueryData(["mock-warnings", "run-live"], []);
 
   applyLiveDashboardEvent(queryClient, {
     seq: 1,
@@ -220,6 +232,7 @@ test("a live run start is added to unfiltered and matching metadata run caches",
     {
       app_name: "live-app",
       latest_run_id: "old-run",
+      latest_run_started_at: "2024-05-31T10:00:00Z",
       latest_status: "PASSED",
       stove_version: "0.23.1",
       metadata: { team: "checkout" },
@@ -276,12 +289,13 @@ test("a live run start is added to unfiltered and matching metadata run caches",
   assert.deepEqual(excludedRuns, []);
 });
 
-test("app reconciliation retains the persisted run when a cached running run has a different id", () => {
+test("app reconciliation retains a newer persisted run when the cache contains an older run", () => {
   const queryClient = new QueryClient();
   queryClient.setQueryData(["apps"], [
     {
       app_name: "live-app",
       latest_run_id: "old-run",
+      latest_run_started_at: "2024-05-31T10:00:00Z",
       latest_status: "RUNNING",
       stove_version: "0.23.1",
     },
@@ -291,6 +305,7 @@ test("app reconciliation retains the persisted run when a cached running run has
     {
       app_name: "live-app",
       latest_run_id: "new-run",
+      latest_run_started_at: "2024-06-01T10:00:00Z",
       latest_status: "PASSED",
       stove_version: "0.23.2",
     },
@@ -299,9 +314,71 @@ test("app reconciliation retains the persisted run when a cached running run has
   assert.equal(reconciledApps[0].latest_status, "PASSED");
 });
 
+test("a newer live app survives a stale in-flight apps response", async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryKey = ["apps"];
+  const response = deferredPromise();
+  queryClient.setQueryData(queryKey, [
+    {
+      app_name: "live-app",
+      latest_run_id: "old-run",
+      latest_run_started_at: "2024-05-31T10:00:00Z",
+      latest_status: "PASSED",
+      stove_version: "0.23.1",
+      metadata: {},
+    },
+  ]);
+
+  const request = queryClient.fetchQuery({
+    queryKey,
+    queryFn: () => loadAndReconcileDashboardData(queryClient, queryKey, () => response.promise),
+  });
+  applyLiveDashboardEvent(queryClient, runStartedEvent("new-run", "2024-06-01T10:00:00Z"));
+  response.resolve([
+    {
+      app_name: "live-app",
+      latest_run_id: "old-run",
+      latest_run_started_at: "2024-05-31T10:00:00Z",
+      latest_status: "PASSED",
+      stove_version: "0.23.1",
+      metadata: {},
+    },
+  ]);
+  await request;
+
+  assert.equal(queryClient.getQueryData(queryKey)[0].latest_run_id, "new-run");
+});
+
+test("a newer apps response wins over an older live event received in flight", async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryKey = ["apps"];
+  const response = deferredPromise();
+  queryClient.setQueryData(queryKey, []);
+
+  const request = queryClient.fetchQuery({
+    queryKey,
+    queryFn: () => loadAndReconcileDashboardData(queryClient, queryKey, () => response.promise),
+  });
+  applyLiveDashboardEvent(queryClient, runStartedEvent("old-run", "2024-05-31T10:00:00Z"));
+  response.resolve([
+    {
+      app_name: "live-app",
+      latest_run_id: "new-run",
+      latest_run_started_at: "2024-06-01T10:00:00Z",
+      latest_status: "RUNNING",
+      stove_version: "0.23.2",
+      metadata: {},
+    },
+  ]);
+  await request;
+
+  assert.equal(queryClient.getQueryData(queryKey)[0].latest_run_id, "new-run");
+});
+
 test("live assertion retries collapse to the latest attempt and retain failure history", () => {
   const queryClient = new QueryClient();
   const queryKey = ["entries", "run-retry", "test-retry"];
+  queryClient.setQueryData(queryKey, []);
 
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     const failed = attempt < 5;
@@ -411,27 +488,30 @@ test("live test data survives a stale persisted response", () => {
   assert.equal(reconciled[0].status, "RUNNING");
 });
 
-test("a live event cancels the conflicting REST request before updating its cache", async () => {
+test("a live event survives a production-shaped in-flight REST request without cancellation", async () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   let requestWasAborted = false;
 
+  const queryKey = ["tests", "run-race"];
   const staleRequest = queryClient
     .fetchQuery({
-      queryKey: ["tests", "run-race"],
+      queryKey,
       queryFn: ({ signal }) =>
-        new Promise((resolve, reject) => {
-          signal.addEventListener(
-            "abort",
-            () => {
-              requestWasAborted = true;
-              reject(new DOMException("The operation was aborted", "AbortError"));
-            },
-            { once: true },
-          );
-          setTimeout(() => resolve([]), 100);
-        }),
+        loadAndReconcileDashboardData(queryClient, queryKey, () =>
+          new Promise((resolve, reject) => {
+            signal.addEventListener(
+              "abort",
+              () => {
+                requestWasAborted = true;
+                reject(new DOMException("The operation was aborted", "AbortError"));
+              },
+              { once: true },
+            );
+            setTimeout(() => resolve([]), 100);
+          }),
+        ),
     })
     .catch((error) => error);
 
@@ -452,9 +532,128 @@ test("a live event cancels the conflicting REST request before updating its cach
   await staleRequest;
   const tests = queryClient.getQueryData(["tests", "run-race"]);
 
-  assert.equal(requestWasAborted, true);
+  assert.equal(requestWasAborted, false);
   assert.equal(tests.length, 1);
   assert.equal(tests[0].id, "test-live");
+});
+
+test("batched test starts update one summary query without creating detail caches", () => {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["tests", "run-batch"], []);
+  let testQueryUpdates = 0;
+  const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+    if (event.type === "updated" && event.query.queryHash.includes("run-batch")) {
+      testQueryUpdates += 1;
+    }
+  });
+
+  applyLiveDashboardEvents(
+    queryClient,
+    Array.from({ length: 1_000 }, (_, index) => ({
+      seq: index + 1,
+      run_id: "run-batch",
+      event_type: "test_started",
+      payload: {
+        test_id: `test-${index}`,
+        test_name: `test ${index}`,
+        spec_name: "BatchSpec",
+        test_path: ["BatchSpec", `test ${index}`],
+        started_at: `2024-06-01T10:${String(Math.floor(index / 60)).padStart(2, "0")}:${String(index % 60).padStart(2, "0")}Z`,
+        status: "RUNNING",
+      },
+    })),
+  );
+  unsubscribe();
+
+  assert.equal(queryClient.getQueryData(["tests", "run-batch"]).length, 1_000);
+  assert.equal(queryClient.getQueryCache().getAll().length, 1);
+  assert.equal(testQueryUpdates, 1);
+});
+
+test("a frame batch produces the same cache state as sequential live events", () => {
+  const sequential = new QueryClient();
+  const batched = new QueryClient();
+  const queryKeys = [
+    ["apps"],
+    ["runs", "live-app"],
+    ["tests", "run-batch-equivalence"],
+    ["entries", "run-batch-equivalence", "test-1"],
+  ];
+  for (const queryClient of [sequential, batched]) {
+    for (const queryKey of queryKeys) queryClient.setQueryData(queryKey, []);
+  }
+
+  const events = [
+    runStartedEvent("run-batch-equivalence", "2024-06-01T10:00:00Z"),
+    {
+      seq: 2,
+      run_id: "run-batch-equivalence",
+      event_type: "test_started",
+      payload: {
+        test_id: "test-1",
+        test_name: "keeps equivalent state",
+        spec_name: "BatchSpec",
+        test_path: ["BatchSpec", "keeps equivalent state"],
+        started_at: "2024-06-01T10:00:01Z",
+        status: "RUNNING",
+      },
+    },
+    {
+      seq: 3,
+      run_id: "run-batch-equivalence",
+      event_type: "entry_recorded",
+      payload: {
+        id: -3,
+        test_id: "test-1",
+        timestamp: "2024-06-01T10:00:02Z",
+        system: "HTTP",
+        action: "GET /ready",
+        result: "PASSED",
+        input: null,
+        output: null,
+        metadata: "{}",
+        expected: null,
+        actual: null,
+        error: null,
+        trace_id: null,
+        assertion_id: "assertion-ready",
+        attempt_count: 1,
+        failure_count: 0,
+      },
+    },
+    {
+      seq: 4,
+      run_id: "run-batch-equivalence",
+      event_type: "test_ended",
+      payload: {
+        test_id: "test-1",
+        status: "PASSED",
+        duration_ms: 1_000,
+        error: null,
+        ended_at: "2024-06-01T10:00:03Z",
+      },
+    },
+    {
+      seq: 5,
+      run_id: "run-batch-equivalence",
+      event_type: "run_ended",
+      payload: {
+        status: "PASSED",
+        total_tests: 1,
+        passed: 1,
+        failed: 0,
+        duration_ms: 3_000,
+        ended_at: "2024-06-01T10:00:03Z",
+      },
+    },
+  ];
+
+  for (const event of events) applyLiveDashboardEvent(sequential, event);
+  applyLiveDashboardEvents(batched, events);
+
+  for (const queryKey of queryKeys) {
+    assert.deepEqual(batched.getQueryData(queryKey), sequential.getQueryData(queryKey));
+  }
 });
 
 test("persisted evidence replaces its temporary live duplicate during reconciliation", () => {
@@ -494,6 +693,29 @@ test("persisted evidence replaces its temporary live duplicate during reconcilia
   assert.equal(reconciled.length, 1);
   assert.equal(reconciled[0].id, 42);
 });
+
+function runStartedEvent(runId, startedAt) {
+  return {
+    seq: 1,
+    run_id: runId,
+    event_type: "run_started",
+    payload: {
+      app_name: "live-app",
+      started_at: startedAt,
+      stove_version: "0.23.2",
+      systems: [],
+      metadata: {},
+    },
+  };
+}
+
+function deferredPromise() {
+  let resolve;
+  const promise = new Promise((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
 
 test("evidence reconciliation preserves persisted and cached multiplicity", () => {
   const queryClient = new QueryClient();
