@@ -1,4 +1,4 @@
-# Stove CLI acceptance tests
+# Stove Server acceptance tests
 
 These tests launch the compiled `stove` executable on ephemeral HTTP and gRPC
 ports with temporary SQLite and PostgreSQL databases. PostgreSQL is started and
@@ -32,7 +32,7 @@ The suite covers:
 - PostgreSQL migrations, JSONB storage and GIN indexing, metadata filters,
   retention, administration, schema discovery, SQL mutations, and bounded
   explorer queries against a disposable PostgreSQL 18 container;
-- two simultaneously started CLI pods sharing PostgreSQL, including alternating
+- two simultaneously started server pods sharing PostgreSQL, including alternating
   and concurrent ingestion, ordered cross-pod SSE without duplicate frames,
   `Last-Event-ID` replay, shared retention, concurrent pruning, and continuation
   after one pod stops.
@@ -54,7 +54,7 @@ For a manual browser pass against the fixture produced by the first test, run:
 
 ```shell
 STOVE_ACCEPTANCE_BROWSER_HOLD_SECONDS=300 \
-  cargo test --test acceptance real_cli_exposes -- --nocapture
+  cargo test --test acceptance real_server_exposes -- --nocapture
 ```
 
 Open the printed URL while the test is holding. The environment variable is

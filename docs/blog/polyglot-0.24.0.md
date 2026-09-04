@@ -220,11 +220,11 @@ The other big addition in 0.24.0 has nothing to do with non-JVM apps and everyth
 
 If you're using an AI agent in your editor or CI bot, you've probably watched it try to triage a failed test by reading the entire stdout, then the entire stderr, then `tail`-ing logs, then guessing at trace IDs. It works, but it burns tokens proportional to log size, and it hallucinates when names are ambiguous.
 
-When `dashboard { }` is enabled and the CLI is running, Stove records the evidence it receives from registered systems in a local SQLite database: timeline entries, snapshots, traces when tracing is enabled and spans are exported, and Kafka evidence when Kafka observation is configured. 0.24.0 adds a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on the same `stove` CLI that exposes that data as structured tools:
+When `dashboard { }` is enabled and the server is running, Stove records the evidence it receives from registered systems in a local SQLite database: timeline entries, snapshots, traces when tracing is enabled and spans are exported, and Kafka evidence when Kafka observation is configured. 0.24.0 adds a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on the same `stove` CLI that exposes that data as structured tools:
 
 ```text
 $ stove
-Stove CLI v0.24.0 running
+Stove Server v0.24.0 running
 UI:   http://localhost:4040
 REST: http://localhost:4040/api/v1
 MCP:  http://localhost:4040/mcp
@@ -267,7 +267,7 @@ Three integrations, one feedback loop. That's the release.
 
 ## Getting started
 
-Upgrade the CLI:
+Upgrade the server:
 
 ```bash
 brew upgrade stove

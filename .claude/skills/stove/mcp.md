@@ -1,6 +1,6 @@
 # Stove MCP — Agent Triage
 
-The Stove CLI exposes a read-only **Model Context Protocol** endpoint at `/mcp`. Agents use it to inspect end-to-end test runs through compact, structured tools instead of loading raw logs into context. It works locally at `http://localhost:4040/mcp` or against a shared internal Stove server.
+The Stove Server exposes a read-only **Model Context Protocol** endpoint at `/mcp`. Agents use it to inspect end-to-end test runs through compact, structured tools instead of loading raw logs into context. It works locally at `http://localhost:4040/mcp` or against a shared internal Stove server.
 
 Use MCP as an optimization, not a dependency. If MCP is unavailable, fall back to normal test output, Stove failure reports, and logs.
 
@@ -15,7 +15,7 @@ Use MCP as an optimization, not a dependency. If MCP is unavailable, fall back t
 When `stove` is running, the startup banner prints the endpoint:
 
 ```text
-Stove CLI v0.26.0 running
+Stove Server v0.26.0 running
 UI:   http://localhost:4040
 REST: http://localhost:4040/api/v1
 MCP:  http://localhost:4040/mcp
@@ -30,7 +30,7 @@ curl -s http://localhost:4040/api/v1/meta
 
 ```json
 {
-  "stove_cli_version": "0.26.0",
+  "stove_server_version": "0.26.0",
   "mcp": {
     "enabled": true,
     "transport": "streamable-http",

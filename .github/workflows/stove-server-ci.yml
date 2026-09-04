@@ -1,4 +1,4 @@
-name: Stove CLI CI
+name: Stove Server CI
 
 on:
   push:
@@ -70,7 +70,7 @@ jobs:
         env:
           SKIP_SPA_BUILD: "1"
 
-      - name: Run CLI acceptance tests
+      - name: Run server acceptance tests
         run: cargo test --test acceptance
         env:
           SKIP_SPA_BUILD: "1"

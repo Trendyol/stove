@@ -72,7 +72,7 @@ Stove registers the systems your app depends on, then registers one AUT runner. 
 
 ## See the run while it happens
 
-When `dashboard { }` is registered and the `stove` CLI is running, registered systems stream local run evidence into a dashboard you can keep open while iterating. Timeline entries, system snapshots, Kafka observations, and exported spans stay attached to the test that produced them.
+When `dashboard { }` is registered and the `stove` server is running, registered systems stream local run evidence into a dashboard you can keep open while iterating. Timeline entries, system snapshots, Kafka observations, and exported spans stay attached to the test that produced them.
 
 {{ dashboard_preview("home") }}
 

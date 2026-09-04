@@ -63,7 +63,7 @@ private class GrpcDashboardTransport(
     if (ack.accepted) {
       SendOutcome.Accepted
     } else {
-      SendOutcome.Failed(IllegalStateException("Dashboard CLI did not commit event ${event.eventId}"))
+      SendOutcome.Failed(IllegalStateException("Dashboard server did not commit event ${event.eventId}"))
     }
   } catch (error: StatusException) {
     if (error.status.code == Status.Code.INVALID_ARGUMENT) {

@@ -155,7 +155,7 @@ async fn serve_http(
 
 fn print_endpoints(http_port: u16, grpc_port: u16) {
   println!(
-    "\n  Stove CLI v{} running\n  UI:   http://localhost:{}\n  REST: http://localhost:{}/api/v1\n  Docs: http://localhost:{}/swagger-ui\n  MCP:  http://localhost:{}/mcp\n  gRPC: localhost:{}\n",
+    "\n  Stove Server v{} running\n  UI:   http://localhost:{}\n  REST: http://localhost:{}/api/v1\n  Docs: http://localhost:{}/swagger-ui\n  MCP:  http://localhost:{}/mcp\n  gRPC: localhost:{}\n",
     env!("STOVE_VERSION"),
     http_port,
     http_port,

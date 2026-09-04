@@ -14,7 +14,7 @@ path = "src/main.rs"
 
 [[test]]
 name = "acceptance"
-path = "acceptance-tests/cli_acceptance.rs"
+path = "acceptance-tests/server_acceptance.rs"
 
 [[test]]
 name = "load"

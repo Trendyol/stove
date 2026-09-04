@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::analysis::ToolOutput;
-use crate::STOVE_CLI_VERSION;
+use crate::STOVE_SERVER_VERSION;
 
 const PROTOCOL_VERSION: &str = "2025-06-18";
 
@@ -18,7 +18,7 @@ pub(crate) fn initialize_result() -> Value {
     },
     "serverInfo": {
       "name": "stove",
-      "version": STOVE_CLI_VERSION,
+      "version": STOVE_SERVER_VERSION,
       "title": "Stove test observability"
     },
     "instructions": "Use Stove MCP to inspect recorded e2e test failures through compact app/run/test scoped tools. If MCP is unavailable, incomplete, or ambiguous, fall back to normal test output, Stove reports, and logs."

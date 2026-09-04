@@ -22,8 +22,8 @@ if [ -d "$HOME/.cargo/bin" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-CLI_DIR="$REPO_ROOT/server/stove-server"
-SPA_DIR="$CLI_DIR/spa"
+SERVER_DIR="$REPO_ROOT/server/stove-server"
+SPA_DIR="$SERVER_DIR/spa"
 RECIPES_DIR="$REPO_ROOT/recipes/jvm"
 
 # ── Parse args ────────────────────────────────────────────────────────
@@ -118,11 +118,11 @@ lint_jvm() {
 lint_rust() {
   section "Rust"
   if [ "$MODE" = "format" ]; then
-    (cd "$CLI_DIR" && run cargo fmt)
+    (cd "$SERVER_DIR" && run cargo fmt)
   else
-    (cd "$CLI_DIR" && run cargo fmt -- --check)
+    (cd "$SERVER_DIR" && run cargo fmt -- --check)
   fi
-  (cd "$CLI_DIR" && SKIP_SPA_BUILD=1 run cargo clippy -- -D warnings)
+  (cd "$SERVER_DIR" && SKIP_SPA_BUILD=1 run cargo clippy -- -D warnings)
 }
 
 # ── SPA (TypeScript / React) ─────────────────────────────────────────

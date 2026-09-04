@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Stove CLI installer (https://github.com/Trendyol/stove)
+# Stove Server installer (https://github.com/Trendyol/stove)
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh | sh
@@ -137,7 +137,7 @@ main() {
   install
 
   echo ""
-  echo "Stove CLI v${VERSION} installed to ${INSTALL_DIR}/${BINARY_NAME}"
+  echo "Stove Server v${VERSION} installed to ${INSTALL_DIR}/${BINARY_NAME}"
 
   # Check if install dir is in PATH
   case ":$PATH:" in

@@ -110,7 +110,7 @@ class DashboardEmitter internal constructor(
           if (!rejectionLogged) {
             rejectionLogged = true
             logger.warn(
-              "Dashboard CLI rejected an event: ${outcome.reason}. " +
+              "Dashboard server rejected an event: ${outcome.reason}. " +
                 "Such events are dropped; tests continue normally."
             )
           }
@@ -131,7 +131,7 @@ class DashboardEmitter internal constructor(
     consecutiveFailures++
     if (consecutiveFailures == 1) {
       logger.warn(
-        "Dashboard CLI ${transport.name} error: ${error.message}. " +
+        "Dashboard server ${transport.name} error: ${error.message}. " +
           "Events will be dropped after $maxFailures consecutive failures."
       )
     }

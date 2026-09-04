@@ -82,7 +82,7 @@ each stack.
 
 ## Dashboard (New in 0.23.0)
 
-Stove Dashboard is a local UI and API for end-to-end test runs. When the `stove` CLI is running and `dashboard { }` is
+Stove Dashboard is a local UI and API for end-to-end test runs. When the `stove` server is running and `dashboard { }` is
 registered, it receives events from your test JVM, stores run data in local SQLite or configured PostgreSQL, and shows
 timelines, system snapshots, and traces in one place. Trace data still requires the tracing setup shown below.
 
@@ -91,7 +91,7 @@ https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
 **Quick start**
 
 ```bash
-# 1) Install and start the Dashboard CLI
+# 1) Install and start the Dashboard server
 brew install Trendyol/trendyol-tap/stove
 # upgrade an existing install: brew update && brew upgrade stove
 stove

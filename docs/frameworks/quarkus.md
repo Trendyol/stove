@@ -76,7 +76,7 @@ Without this, Stove's Kafka interceptor can't attach.
 ## What you get
 
 - :white_check_mark: Real Quarkus startup via the normal `main`
-- :white_check_mark: Tracing, reporting, and dashboard when configured; MCP when the `stove` CLI is running and dashboard data exists
+- :white_check_mark: Tracing, reporting, and dashboard when configured; MCP when the `stove` server is running and dashboard data exists
 - :x: Bridge. Not yet (verify through systems)
 
 ## Verification without Bridge

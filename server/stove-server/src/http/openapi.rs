@@ -57,7 +57,7 @@ pub(crate) struct ProtobufBody(#[allow(dead_code)] Vec<u8>);
 pub(super) fn document() -> utoipa::openapi::OpenApi {
   let mut document = ApiDoc::openapi();
   document.info.title = "Stove Dashboard API".to_string();
-  document.info.version = crate::STOVE_CLI_VERSION.to_string();
+  document.info.version = crate::STOVE_SERVER_VERSION.to_string();
   // Resolve operations relative to the document so gateway path prefixes are preserved.
   document.servers = Some(vec![Server::new("..")]);
   document

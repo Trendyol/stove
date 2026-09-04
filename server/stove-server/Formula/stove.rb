@@ -1,4 +1,4 @@
-# Homebrew formula for Stove CLI.
+# Homebrew formula for Stove Server.
 # Managed by the stove-server-release workflow — do not edit checksums manually.
 #
 # Install:

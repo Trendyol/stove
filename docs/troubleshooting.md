@@ -368,9 +368,9 @@ Deep dive: [Provided Instances · isolation](Components/11-provided-instances.md
 
 | Symptom | Fix |
 |---|---|
-| Dashboard at `http://localhost:4040` empty | `stove` CLI running? `dashboard { }` registered in `Stove().with`? `appName` set? |
-| `gRPC disabled` warning in logs | CLI started after tests; start the CLI before the test suite |
-| Agent can't connect to MCP | Endpoint is on the CLI, not the test JVM. Verify `http://localhost:4040/api/v1/meta` returns `"mcp": { "enabled": true }` |
+| Dashboard at `http://localhost:4040` empty | `stove` server running? `dashboard { }` registered in `Stove().with`? `appName` set? |
+| `gRPC disabled` warning in logs | Server started after tests; start it before the test suite |
+| Agent can't connect to MCP | Endpoint is on the server, not the test JVM. Verify `http://localhost:4040/api/v1/meta` returns `"mcp": { "enabled": true }` |
 | Shared server shows unrelated runs | Attach `metadata` in `DashboardSystemOptions`, then filter by exact key/value pairs in the run picker, `GET /api/v1/runs?metadata=...`, or `stove_runs` |
 | PostgreSQL won't connect | Verify `--database-url` / `STOVE_DATABASE_URL`; TLS is the default. Add `sslmode=disable` only when the server intentionally has no TLS |
 | `stove_trace` returns nothing | [Tracing](Components/15-tracing.md) not enabled |
@@ -379,7 +379,7 @@ Deep dive: [Provided Instances · isolation](Components/11-provided-instances.md
 MCP is optional. It gives agents a structured way to read the same failure evidence humans see in the console and
 dashboard.
 
-The CLI intentionally has no authentication or authorization and accepts remote MCP clients. Run shared deployments only on a trusted internal network. Use the dashboard's **Admin** page at `/admin` to inspect storage, change runtime retention, preview a purge, or remove data; active runs are excluded from purge unless explicitly included.
+The server intentionally has no authentication or authorization and accepts remote MCP clients. Run shared deployments only on a trusted internal network. Use the dashboard's **Admin** page at `/admin` to inspect storage, change runtime retention, preview a purge, or remove data; active runs are excluded from purge unless explicitly included.
 
 ## Migrating versions
 

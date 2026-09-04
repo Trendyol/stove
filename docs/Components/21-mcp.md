@@ -14,7 +14,7 @@ Banner on `stove` shows the endpoint:
 ```
 stove
 
-Stove CLI v0.26.0 running
+Stove Server v0.26.0 running
 UI:   http://localhost:4040
 REST: http://localhost:4040/api/v1
 MCP:  http://localhost:4040/mcp
@@ -25,7 +25,7 @@ Or hit `GET /api/v1/meta` for metadata:
 
 ```json
 {
-  "stove_cli_version": "0.26.0",
+  "stove_server_version": "0.26.0",
   "mcp": {
     "enabled": true,
     "transport": "streamable-http",

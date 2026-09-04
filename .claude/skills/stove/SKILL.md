@@ -98,7 +98,7 @@ providedApplication {
 
 ## Dashboard and MCP defaults
 
-Run the CLI with `stove`.
+Run the server with `stove`.
 
 | Surface | Default |
 |---|---|
@@ -108,7 +108,7 @@ Run the CLI with `stove`.
 | Completed-run retention | `1` per app; set `--retention-runs-per-app`, where `0` means unlimited |
 | Administration | dedicated `/admin` page |
 
-In test code, `DashboardSystemOptions.cliHost` defaults to `localhost`; `cliPort` is the gRPC port, so the default is `4041`. Shared servers intentionally have no authentication or authorization, so expose every Stove surface only on a trusted internal network.
+In test code, `DashboardIngestion.Grpc(host, port)` defaults to `localhost:4041`. Shared servers intentionally have no authentication or authorization, so expose every Stove surface only on a trusted internal network.
 
 ## Guardrails for agents
 

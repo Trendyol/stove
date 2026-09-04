@@ -220,7 +220,7 @@ containerApp(
 
 ## Dashboard & MCP
 
-Container mode emits to the [Dashboard](../Components/18-dashboard.md) and [MCP server](../Components/21-mcp.md) when `dashboard { }` is registered and the `stove` CLI is running. The `appName` you set in `DashboardSystemOptions` is the label MCP uses to find runs:
+Container mode emits to the [Dashboard](../Components/18-dashboard.md) and [MCP server](../Components/21-mcp.md) when `dashboard { }` is registered and the `stove` server is running. The `appName` you set in `DashboardSystemOptions` is the label MCP uses to find runs:
 
 ```text
 Agent calls stove_failures

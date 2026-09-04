@@ -1,6 +1,6 @@
-name: Stove CLI Next
+name: Stove Server Next
 
-# Publishes the CLI dev channel: builds binaries versioned like the Maven
+# Publishes the server dev channel: builds binaries versioned like the Maven
 # snapshot, updates the rolling `next` prerelease in place with them, and
 # updates the `stove-next` formula in the Homebrew tap.
 #
@@ -198,7 +198,7 @@ jobs:
           VERSION: ${{ needs.resolve-version.outputs.version }}
         run: |
           cat > notes.md <<EOF
-          Rolling dev-channel build of the Stove CLI, published alongside the \`${VERSION}\` Maven snapshot.
+          Rolling dev-channel build of the Stove Server, published alongside the \`${VERSION}\` Maven snapshot.
 
           **Homebrew (macOS & Linux):**
           \`\`\`
@@ -224,13 +224,13 @@ jobs:
             gh release edit next \
               --repo "$TAP_REPO" \
               --prerelease \
-              --title "Stove CLI next (${VERSION})" \
+              --title "Stove Server next (${VERSION})" \
               --notes-file notes.md
           else
             gh release create next \
               --repo "$TAP_REPO" \
               --prerelease \
-              --title "Stove CLI next (${VERSION})" \
+              --title "Stove Server next (${VERSION})" \
               --notes-file notes.md \
               stove-*.tar.gz stove-*.sha256
           fi

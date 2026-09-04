@@ -42,7 +42,7 @@ const SKILL_PATHS: &[&str] = &[
 
 /// Handle a `skills` subcommand if one was requested.
 ///
-/// Returns `Ok(true)` when a subcommand was handled and the CLI should exit;
+/// Returns `Ok(true)` when a subcommand was handled and the server should exit;
 /// `Ok(false)` when no subcommand was specified.
 pub async fn handle_skills_command(config: &Config) -> anyhow::Result<bool> {
   let Some(StoveCommand::Skills { command }) = &config.command else {

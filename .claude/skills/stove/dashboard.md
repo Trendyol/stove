@@ -28,7 +28,7 @@ Keep these invariants:
 - Filtering uses exact string equality and AND-combines every supplied pair.
 - Metadata is a selector, not a security boundary. Stove has no authentication or authorization.
 
-`cliHost` and `cliPort` identify the Stove gRPC ingestion endpoint. Point them at the shared server and its gRPC port when the tests and CLI run on different hosts.
+`DashboardIngestion.Grpc(host, port)` identifies the Stove gRPC ingestion endpoint. Point it at the shared server and its gRPC port when the tests and server run on different hosts.
 
 ## Choose a storage backend
 
@@ -92,7 +92,7 @@ docker run -d --name stove --restart unless-stopped \
   ghcr.io/trendyol/stove-server:0.26.0
 ```
 
-Port `4040` serves the UI, REST, admin page, and Streamable HTTP MCP endpoint (`/mcp`). Port `4041` is the gRPC ingestion endpoint configured through `DashboardSystemOptions(cliHost, cliPort)`. Both ports must remain on a trusted internal network because Stove intentionally provides no authentication or authorization.
+Port `4040` serves the UI, REST, admin page, and Streamable HTTP MCP endpoint (`/mcp`). Port `4041` is the gRPC ingestion endpoint configured through `DashboardSystemOptions(ingestion = DashboardIngestion.Grpc(host, port))`. Both ports must remain on a trusted internal network because Stove intentionally provides no authentication or authorization.
 
 ## Configure retention
 
@@ -172,4 +172,4 @@ The acceptance suite runs against SQLite and a disposable PostgreSQL instance th
 
 - Dashboard component: `docs/Components/18-dashboard.md`
 - MCP component: `docs/Components/21-mcp.md`
-- CLI acceptance tests: `server/stove-server/acceptance-tests/README.md`
+- server acceptance tests: `server/stove-server/acceptance-tests/README.md`

@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Dashboard system that streams test events to the stove CLI using the configured
+ * Dashboard system that streams test events to the Stove Server using the configured
  * [DashboardSystemOptions.ingestion] transport.
  *
  * Add to your Stove config:

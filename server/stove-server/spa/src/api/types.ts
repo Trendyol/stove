@@ -26,7 +26,7 @@ export interface AppSummary {
 }
 
 export interface MetaResponse {
-  stove_cli_version: string;
+  stove_server_version: string;
 }
 
 export type LiveRecordId = number | string;

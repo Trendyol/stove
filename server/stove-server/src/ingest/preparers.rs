@@ -184,7 +184,7 @@ pub(super) fn prepare_entry_recorded(
   })
 }
 
-/// The current reporting protocol does not carry a call-site identity, so the CLI
+/// The current reporting protocol does not carry a call-site identity, so the server
 /// derives a best-effort correlation signature from the assertion's semantic
 /// action, input, and expectation. Result-specific fields are deliberately excluded.
 pub(super) fn assertion_correlation_key(event: &proto::EntryRecordedEvent) -> AppResult<String> {

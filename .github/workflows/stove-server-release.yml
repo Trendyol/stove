@@ -1,4 +1,4 @@
-name: Stove CLI Build
+name: Stove Server Build
 
 on:
   push:
@@ -138,7 +138,7 @@ jobs:
           pattern: binaries-*
           merge-multiple: true
 
-      - name: Upload CLI binaries to release
+      - name: Upload server binaries to release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.resolve-version.outputs.tag }}
@@ -152,7 +152,7 @@ jobs:
 
             ---
 
-            ### Stove CLI Install
+            ### Stove Server Install
 
             **Homebrew (macOS):**
             ```

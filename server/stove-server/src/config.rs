@@ -30,7 +30,7 @@ pub struct Config {
 #[derive(Parser)]
 #[command(
   name = "stove",
-  about = "Stove CLI \u{2014} local e2e test observability",
+  about = "Stove Server \u{2014} local e2e test observability",
   version = env!("STOVE_VERSION")
 )]
 #[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
@@ -85,7 +85,7 @@ struct CliConfig {
   #[arg(long)]
   no_skills_check: bool,
 
-  /// Optional subcommand. When omitted, the CLI runs the dashboard.
+  /// Optional subcommand. When omitted, the server runs the dashboard.
   #[command(subcommand)]
   command: Option<StoveCommand>,
 }
@@ -101,7 +101,7 @@ struct FileConfig {
   retention_runs_per_app: Option<usize>,
 }
 
-/// Top-level subcommands for the Stove CLI.
+/// Top-level subcommands for the Stove Server.
 #[derive(Subcommand, Debug)]
 pub enum StoveCommand {
   /// Manage Stove agent skills under the current project.

@@ -36,7 +36,7 @@ export function VersionMismatchWarning({ summary }: VersionMismatchWarningProps)
           <div>
             <strong>{model.title}</strong>
             <p>
-              Dashboard CLI <code>v{model.cliVersion}</code> · {model.mismatchCount} affected
+              Dashboard server <code>v{model.serverVersion}</code> · {model.mismatchCount} affected
               {model.mismatchCount === 1 ? " app" : " apps"}
             </p>
           </div>
@@ -59,8 +59,8 @@ export function VersionMismatchWarning({ summary }: VersionMismatchWarningProps)
                   <dd>{detail.runtimeVersion ? `v${detail.runtimeVersion}` : "Not reported"}</dd>
                 </div>
                 <div>
-                  <dt>CLI</dt>
-                  <dd>v{detail.cliVersion}</dd>
+                  <dt>Server</dt>
+                  <dd>v{detail.serverVersion}</dd>
                 </div>
               </dl>
               <div className="stove-version-warning-fix">

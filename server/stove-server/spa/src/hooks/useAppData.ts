@@ -46,7 +46,7 @@ export function useAppData() {
   });
 
   const activeApp = selectedApp ?? apps[0]?.app_name;
-  const cliVersion = meta?.stove_cli_version ?? null;
+  const serverVersion = meta?.stove_server_version ?? null;
   const allRuns = useRunsQuery(queryClient, activeApp, liveConnected);
   const runs = useMemo(
     () => filterRunsByMetadata(allRuns, metadataFilter),
@@ -94,13 +94,13 @@ export function useAppData() {
   }, [selectedTestId, selection.clearTest, tests]);
 
   const selectedTest = tests.find((test) => test.id === selectedTestId) ?? tests[0];
-  const versionMismatchSummary = summarizeVersionMismatches(apps, cliVersion, activeApp);
+  const versionMismatchSummary = summarizeVersionMismatches(apps, serverVersion, activeApp);
   const mismatchedApps = versionMismatchSummary?.affectedAppNames ?? [];
 
   return {
     apps,
     activeApp,
-    cliVersion,
+    serverVersion,
     latestRun,
     runs,
     allRuns,

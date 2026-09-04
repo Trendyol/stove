@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   tonic_prost_build::configure()
     .build_server(true)
     // The generated client is used by the black-box acceptance suite to send
-    // events to the real CLI process over its public gRPC boundary.
+    // events to the real server process over its public gRPC boundary.
     .build_client(true)
     .compile_protos(
       &[

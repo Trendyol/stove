@@ -14,12 +14,12 @@ const {
 test("compareVersions detects exact matches, directional mismatches, and unknown cases", () => {
   assert.equal(compareVersions("0.23.2", "0.23.2"), null);
   assert.equal(compareVersions("0.23.0", "0.23.2"), "runtime_older");
-  assert.equal(compareVersions("0.23.3", "0.23.2"), "cli_older");
+  assert.equal(compareVersions("0.23.3", "0.23.2"), "server_older");
   assert.equal(compareVersions(null, "0.23.2"), "unknown");
   assert.equal(compareVersions("0.23.2-SNAPSHOT", "0.23.2"), "unknown");
 });
 
-test("summarizeVersionMismatches returns null when every latest app matches the CLI", () => {
+test("summarizeVersionMismatches returns null when every latest app matches the server", () => {
   const summary = summarizeVersionMismatches(
     [
       {
@@ -59,7 +59,7 @@ test("summarizeVersionMismatches captures selected-app mismatch and all affected
     "alpha-api",
   );
 
-  assert.equal(summary.cliVersion, "0.23.2");
+  assert.equal(summary.serverVersion, "0.23.2");
   assert.equal(summary.mismatches.length, 2);
   assert.deepEqual(summary.affectedAppNames, ["alpha-api", "beta-api"]);
   assert.equal(summary.selectedAppMismatch.appName, "alpha-api");
@@ -68,11 +68,11 @@ test("summarizeVersionMismatches captures selected-app mismatch and all affected
 
 test("buildVersionMismatchWarningModel returns dependency alignment guidance for older runtimes", () => {
   const model = buildVersionMismatchWarningModel({
-    cliVersion: "0.23.2",
+    serverVersion: "0.23.2",
     mismatches: [
       {
         appName: "alpha-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: "0.23.0",
         kind: "runtime_older",
       },
@@ -80,7 +80,7 @@ test("buildVersionMismatchWarningModel returns dependency alignment guidance for
     affectedAppNames: ["alpha-api"],
     selectedAppMismatch: {
       appName: "alpha-api",
-      cliVersion: "0.23.2",
+      serverVersion: "0.23.2",
       runtimeVersion: "0.23.0",
       kind: "runtime_older",
     },
@@ -95,23 +95,23 @@ test("buildVersionMismatchWarningModel returns dependency alignment guidance for
   ]);
 });
 
-test("buildVersionMismatchWarningModel returns CLI upgrade commands when the runtime is newer", () => {
+test("buildVersionMismatchWarningModel returns server upgrade commands when the runtime is newer", () => {
   const model = buildVersionMismatchWarningModel({
-    cliVersion: "0.23.2",
+    serverVersion: "0.23.2",
     mismatches: [
       {
         appName: "beta-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: "0.23.5",
-        kind: "cli_older",
+        kind: "server_older",
       },
     ],
     affectedAppNames: ["beta-api"],
     selectedAppMismatch: {
       appName: "beta-api",
-      cliVersion: "0.23.2",
+      serverVersion: "0.23.2",
       runtimeVersion: "0.23.5",
-      kind: "cli_older",
+      kind: "server_older",
     },
   });
 
@@ -129,19 +129,19 @@ test("buildVersionMismatchWarningModel returns CLI upgrade commands when the run
 
 test("buildVersionMismatchWarningModel keeps details when the selected app matches", () => {
   const model = buildVersionMismatchWarningModel({
-    cliVersion: "0.23.2",
+    serverVersion: "0.23.2",
     mismatches: [
       {
         appName: "alpha-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: "0.23.0",
         kind: "runtime_older",
       },
       {
         appName: "beta-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: "0.23.5",
-        kind: "cli_older",
+        kind: "server_older",
       },
     ],
     affectedAppNames: ["alpha-api", "beta-api"],
@@ -158,11 +158,11 @@ test("buildVersionMismatchWarningModel keeps details when the selected app match
 
 test("buildVersionMismatchWarningModel returns legacy guidance for missing runtime versions", () => {
   const model = buildVersionMismatchWarningModel({
-    cliVersion: "0.23.2",
+    serverVersion: "0.23.2",
     mismatches: [
       {
         appName: "legacy-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: null,
         kind: "unknown",
       },
@@ -170,7 +170,7 @@ test("buildVersionMismatchWarningModel returns legacy guidance for missing runti
     affectedAppNames: ["legacy-api"],
     selectedAppMismatch: {
       appName: "legacy-api",
-      cliVersion: "0.23.2",
+      serverVersion: "0.23.2",
       runtimeVersion: null,
       kind: "unknown",
     },
@@ -186,27 +186,27 @@ test("buildVersionMismatchWarningModel returns legacy guidance for missing runti
 
 test("buildVersionMismatchWarningModel includes details for every mismatch and puts the selected app first", () => {
   const model = buildVersionMismatchWarningModel({
-    cliVersion: "0.23.2",
+    serverVersion: "0.23.2",
     mismatches: [
       {
         appName: "alpha-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: "0.23.0",
         kind: "runtime_older",
       },
       {
         appName: "beta-api",
-        cliVersion: "0.23.2",
+        serverVersion: "0.23.2",
         runtimeVersion: "0.23.5",
-        kind: "cli_older",
+        kind: "server_older",
       },
     ],
     affectedAppNames: ["alpha-api", "beta-api"],
     selectedAppMismatch: {
       appName: "beta-api",
-      cliVersion: "0.23.2",
+      serverVersion: "0.23.2",
       runtimeVersion: "0.23.5",
-      kind: "cli_older",
+      kind: "server_older",
     },
   });
 
@@ -216,7 +216,7 @@ test("buildVersionMismatchWarningModel includes details for every mismatch and p
     ["beta-api", "alpha-api"],
   );
   assert.equal(model.details[0].selected, true);
-  assert.match(model.details[0].problem, /CLI is older/);
+  assert.match(model.details[0].problem, /server is older/);
   assert.match(model.details[1].problem, /runtime is older/);
   assert.ok(model.details.every((detail) => detail.remediationSteps.length > 0));
 });

@@ -3,9 +3,9 @@ package com.trendyol.stove.dashboard
 import com.trendyol.stove.system.abstractions.SystemOptions
 import java.net.URI
 
-/** Selects how dashboard events reach the Stove CLI. */
+/** Selects how dashboard events reach the Stove Server. */
 sealed interface DashboardIngestion {
-  /** Uses the CLI's plaintext gRPC endpoint. */
+  /** Uses the server's plaintext gRPC endpoint. */
   data class Grpc(
     val host: String = "localhost",
     val port: Int = 4041

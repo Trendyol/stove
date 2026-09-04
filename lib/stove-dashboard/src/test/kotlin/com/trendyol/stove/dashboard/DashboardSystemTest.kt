@@ -122,7 +122,7 @@ class DashboardSystemTest : FunSpec({
     }
   }
 
-  test("eventually-style attempts all reach the CLI while final test status stays passed") {
+  test("eventually-style attempts all reach the server while final test status stays passed") {
     val received = CopyOnWriteArrayList<DashboardEvent>()
     val server = startMockServer(received, port = 0)
 
@@ -175,7 +175,7 @@ class DashboardSystemTest : FunSpec({
     }
   }
 
-  test("exhausted attempts all reach the CLI and final test failure remains authoritative") {
+  test("exhausted attempts all reach the server and final test failure remains authoritative") {
     val received = CopyOnWriteArrayList<DashboardEvent>()
     val server = startMockServer(received, port = 0)
 

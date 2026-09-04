@@ -129,7 +129,7 @@ goApp(
     }
 )
 
-// Rust CLI server — CLI args
+// Rust server — command-line args
 processApp {
     ProcessApplicationOptions(
         command = listOf("/path/to/rust-server"),
@@ -862,7 +862,7 @@ bridge { application, type ->
 
 ## Dashboard
 
-Streams test events to the stove CLI for real-time visualization. Requires `stove-dashboard` and `stove-extensions-kotest` or `stove-extensions-junit` — see [Reporting](#reporting).
+Streams test events to the Stove Server for real-time visualization. Requires `stove-dashboard` and `stove-extensions-kotest` or `stove-extensions-junit` — see [Reporting](#reporting).
 
 ```kotlin
 dashboard {
@@ -873,13 +873,15 @@ dashboard {
             "gitlab.project" to (System.getenv("CI_PROJECT_PATH") ?: "local"),
             "gitlab.pipeline_id" to (System.getenv("CI_PIPELINE_ID") ?: "local")
         ),
-        cliHost = "localhost",  // default
-        cliPort = 4041          // default
+        ingestion = DashboardIngestion.Grpc(
+            host = "localhost",    // default
+            port = 4041            // default
+        )
     )
 }
 ```
 
-Run `stove` CLI separately, then run your tests — the dashboard at `http://localhost:4040` shows a live tree of specs, test hierarchy, timeline entries, traces, and snapshots.
+Run the Stove server separately with `stove`, then run your tests — the dashboard at `http://localhost:4040` shows a live tree of specs, test hierarchy, timeline entries, traces, and snapshots.
 
 Metadata values must be strings. Use stable, namespaced keys for CI dimensions that agents and humans will filter on. For shared-server deployment, PostgreSQL, retention, UI filters, REST queries, and administration, read [dashboard.md](dashboard.md). For agent triage, read [mcp.md](mcp.md).
 

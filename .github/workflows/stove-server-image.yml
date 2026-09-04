@@ -1,4 +1,4 @@
-name: Stove CLI Container Image
+name: Stove Server Container Image
 
 on:
   push:
@@ -122,7 +122,7 @@ jobs:
             type=raw,value=${{ needs.prepare.outputs.major }},enable=${{ needs.prepare.outputs.stable }}
             type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest }}
           labels: |
-            org.opencontainers.image.title=Stove CLI
+            org.opencontainers.image.title=Stove Server
             org.opencontainers.image.description=Dashboard, API, MCP server, and event ingestion for Stove test runs
             org.opencontainers.image.source=https://github.com/Trendyol/stove
             org.opencontainers.image.licenses=Apache-2.0

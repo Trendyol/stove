@@ -23,7 +23,7 @@ It does not replace assertions, logs, or tracing setup. It gives you one place t
 
 ## Quick Setup (5 Minutes)
 
-### 1) Install and start the CLI
+### 1) Install and start the server
 
 ```bash
 brew install Trendyol/trendyol-tap/stove
@@ -52,7 +52,7 @@ stoveTracing {
 }
 ```
 
-The dashboard dependency streams Stove timeline entries and snapshots to the CLI. The trace view also needs `stove-tracing` plus the tracing Gradle plugin for in-process JVM apps. Process and container apps can appear in the same dashboard, but they must export OpenTelemetry spans to the receiver themselves.
+The dashboard dependency streams Stove timeline entries and snapshots to the server. The trace view also needs `stove-tracing` plus the tracing Gradle plugin for in-process JVM apps. Process and container apps can appear in the same dashboard, but they must export OpenTelemetry spans to the receiver themselves.
 
 ### 3) Register Dashboard in Stove config
 
@@ -89,13 +89,13 @@ This gives you both sides of the picture: test-level evidence from Stove systems
 
 Use Dashboard as a local companion while iterating:
 
-1. Start CLI once: `stove`
+1. Start server once: `stove`
 2. Keep it running in a separate terminal
 3. Run focused tests repeatedly (class or test-level)
 4. Inspect changes immediately in Timeline/Trace views
 5. Use Reporting + Tracing in CI; use Dashboard primarily for local debugging speed
 
-Dashboard is fault-tolerant by design. If the CLI is not running, tests continue normally and Dashboard emission disables itself for the rest of the suite instead of breaking test execution.
+Dashboard is fault-tolerant by design. If the server is not running, tests continue normally and Dashboard emission disables itself for the rest of the suite instead of breaking test execution.
 
 ## Minimal End-to-End Example
 
@@ -124,7 +124,7 @@ You keep writing the same Stove tests. The dashboard system captures entries fro
 
 - **UI stuck at waiting state:** ensure `stove` is running before tests.
 - **No events appear:** verify `stove-dashboard` dependency and `dashboard {}` registration.
-- **Port mismatch:** align `DashboardSystemOptions(cliPort = ...)` with CLI `--grpc-port`.
+- **Port mismatch:** align `DashboardIngestion.Grpc(port = ...)` with the server's `--grpc-port`.
 - **Too much historical data:** run `stove --clear`.
 
 ## Links

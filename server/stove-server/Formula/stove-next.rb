@@ -1,4 +1,4 @@
-# Homebrew formula for the Stove CLI dev channel.
+# Homebrew formula for the Stove Server dev channel.
 # Managed by the stove-server-next workflow — do not edit checksums manually.
 #
 # Install:

@@ -1,19 +1,19 @@
 import type { AppSummary } from "../api/types";
 
 const RELEASE_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/;
-const CLI_UPGRADE_COMMAND = "brew upgrade Trendyol/trendyol-tap/stove";
+const SERVER_UPGRADE_COMMAND = "brew upgrade Trendyol/trendyol-tap/stove";
 
-export type VersionMismatchKind = "runtime_older" | "cli_older" | "unknown";
+export type VersionMismatchKind = "runtime_older" | "server_older" | "unknown";
 
 export interface VersionMismatch {
   appName: string;
-  cliVersion: string;
+  serverVersion: string;
   runtimeVersion: string | null;
   kind: VersionMismatchKind;
 }
 
 export interface VersionMismatchSummary {
-  cliVersion: string;
+  serverVersion: string;
   mismatches: VersionMismatch[];
   affectedAppNames: string[];
   selectedAppMismatch: VersionMismatch | null;
@@ -33,16 +33,16 @@ export interface VersionMismatchDetailModel extends VersionMismatch {
 export interface VersionMismatchWarningModel {
   title: string;
   mismatchCount: number;
-  cliVersion: string;
+  serverVersion: string;
   details: VersionMismatchDetailModel[];
 }
 
 export function compareVersions(
   runtimeVersion: string | null | undefined,
-  cliVersion: string,
+  serverVersion: string,
 ): VersionMismatchKind | null {
   const normalizedRuntime = normalizeVersion(runtimeVersion);
-  if (normalizedRuntime === cliVersion) {
+  if (normalizedRuntime === serverVersion) {
     return null;
   }
 
@@ -51,17 +51,17 @@ export function compareVersions(
   }
 
   const runtimeTriplet = parseReleaseVersion(normalizedRuntime);
-  const cliTriplet = parseReleaseVersion(cliVersion);
-  if (!runtimeTriplet || !cliTriplet) {
+  const serverTriplet = parseReleaseVersion(serverVersion);
+  if (!runtimeTriplet || !serverTriplet) {
     return "unknown";
   }
 
   for (let index = 0; index < runtimeTriplet.length; index += 1) {
-    if (runtimeTriplet[index] < cliTriplet[index]) {
+    if (runtimeTriplet[index] < serverTriplet[index]) {
       return "runtime_older";
     }
-    if (runtimeTriplet[index] > cliTriplet[index]) {
-      return "cli_older";
+    if (runtimeTriplet[index] > serverTriplet[index]) {
+      return "server_older";
     }
   }
 
@@ -70,15 +70,15 @@ export function compareVersions(
 
 export function summarizeVersionMismatches(
   apps: AppSummary[],
-  cliVersion: string | null,
+  serverVersion: string | null,
   selectedApp: string | undefined,
 ): VersionMismatchSummary | null {
-  if (!cliVersion) {
+  if (!serverVersion) {
     return null;
   }
 
   const mismatches = apps
-    .map((app) => createVersionMismatch(app, cliVersion))
+    .map((app) => createVersionMismatch(app, serverVersion))
     .filter((mismatch): mismatch is VersionMismatch => mismatch !== null);
 
   if (mismatches.length === 0) {
@@ -88,7 +88,7 @@ export function summarizeVersionMismatches(
   const affectedAppNames = mismatches.map((mismatch) => mismatch.appName);
 
   return {
-    cliVersion,
+    serverVersion,
     mismatches,
     affectedAppNames,
     selectedAppMismatch: mismatches.find((mismatch) => mismatch.appName === selectedApp) ?? null,
@@ -112,20 +112,20 @@ export function buildVersionMismatchWarningModel(
   return {
     title: warningTitle(mismatchCount),
     mismatchCount,
-    cliVersion: summary.cliVersion,
+    serverVersion: summary.serverVersion,
     details,
   };
 }
 
-function createVersionMismatch(app: AppSummary, cliVersion: string): VersionMismatch | null {
-  const kind = compareVersions(app.stove_version, cliVersion);
+function createVersionMismatch(app: AppSummary, serverVersion: string): VersionMismatch | null {
+  const kind = compareVersions(app.stove_version, serverVersion);
   if (!kind) {
     return null;
   }
 
   return {
     appName: app.app_name,
-    cliVersion,
+    serverVersion,
     runtimeVersion: normalizeVersion(app.stove_version),
     kind,
   };
@@ -153,38 +153,38 @@ function parseReleaseVersion(version: string): number[] | null {
 
 function remediationStepsForMismatch(mismatch: VersionMismatch): VersionMismatchRemediationStep[] {
   if (mismatch.kind === "runtime_older") {
-    return [textStep(dependencyAlignmentMessage(mismatch.cliVersion))];
+    return [textStep(dependencyAlignmentMessage(mismatch.serverVersion))];
   }
 
-  if (mismatch.kind === "cli_older") {
+  if (mismatch.kind === "server_older") {
     return [
       textStep("Update stove-server to match the runtime version:"),
-      commandStep(CLI_UPGRADE_COMMAND),
+      commandStep(SERVER_UPGRADE_COMMAND),
       commandStep(installScriptCommand(mismatch.runtimeVersion!)),
     ];
   }
 
   return [
     textStep(
-      `This run comes from an older or non-standard Stove runtime. ${dependencyAlignmentMessage(mismatch.cliVersion)}`,
+      `This run comes from an older or non-standard Stove runtime. ${dependencyAlignmentMessage(mismatch.serverVersion)}`,
     ),
   ];
 }
 
 function mismatchProblem(mismatch: VersionMismatch): string {
   if (mismatch.kind === "runtime_older") {
-    return "The app runtime is older than the dashboard CLI.";
+    return "The app runtime is older than the dashboard server.";
   }
 
-  if (mismatch.kind === "cli_older") {
-    return "The dashboard CLI is older than the app runtime.";
+  if (mismatch.kind === "server_older") {
+    return "The dashboard server is older than the app runtime.";
   }
 
   return "The app did not report a standard Stove release version.";
 }
 
-function dependencyAlignmentMessage(cliVersion: string): string {
-  return `Align the Stove BOM or all Stove test dependencies to ${cliVersion}.`;
+function dependencyAlignmentMessage(serverVersion: string): string {
+  return `Align the Stove BOM or all Stove test dependencies to ${serverVersion}.`;
 }
 
 function installScriptCommand(runtimeVersion: string): string {

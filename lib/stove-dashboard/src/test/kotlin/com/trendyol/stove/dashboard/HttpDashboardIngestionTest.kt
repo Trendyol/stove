@@ -113,7 +113,7 @@ class HttpDashboardIngestionTest :
     }
 
     test("keeps emitting after per-event validation rejections (HTTP 400)") {
-      // The CLI rejects individual events (e.g. unknown test `default`) with 400.
+      // The server rejects individual events (e.g. unknown test `default`) with 400.
       // These are per-event validation errors, not transport outages, so they must NOT trip
       // the consecutive-failure auto-disable. A subsequent valid event must still be delivered.
       val received = CopyOnWriteArrayList<DashboardEvent>()

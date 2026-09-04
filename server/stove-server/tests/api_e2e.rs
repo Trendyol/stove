@@ -1,4 +1,4 @@
-//! End-to-end tests for the Stove CLI REST API.
+//! End-to-end tests for the Stove Server REST API.
 //!
 //! Each test spins up a real axum server on an OS-assigned port backed by an
 //! in-memory SQLite database, then exercises the HTTP endpoints with `reqwest`.
@@ -332,12 +332,12 @@ async fn next_sse_data(
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn meta_returns_cli_version() {
+async fn meta_returns_server_version() {
   let server = TestServer::start().await;
 
   let body = server.get_json("/meta").await;
 
-  assert_eq!(body["stove_cli_version"], stove::STOVE_CLI_VERSION);
+  assert_eq!(body["stove_server_version"], stove::STOVE_SERVER_VERSION);
   assert_eq!(body["mcp"]["enabled"], true);
   assert_eq!(body["mcp"]["transport"], "streamable-http");
   assert_eq!(body["mcp"]["endpoint"], format!("{}/mcp", server.base_url));

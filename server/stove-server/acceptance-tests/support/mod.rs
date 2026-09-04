@@ -311,7 +311,7 @@ pub fn run_started(
         timestamp: timestamp(seconds),
         app_name: app_name.to_string(),
         systems: vec!["HTTP".to_string(), "Kafka".to_string()],
-        stove_version: stove::STOVE_CLI_VERSION.to_string(),
+        stove_version: stove::STOVE_SERVER_VERSION.to_string(),
         metadata: metadata
           .iter()
           .map(|(key, value)| ((*key).to_string(), (*value).to_string()))

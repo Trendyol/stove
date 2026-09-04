@@ -4,7 +4,7 @@
 //! RPC consumes, encoded as raw protobuf bytes (`application/x-protobuf`),
 //! and responds with the `EventAck` protobuf message.
 //!
-//! This transport exists for deployments where the CLI sits behind an
+//! This transport exists for deployments where the server sits behind an
 //! HTTPS-only ingress or API gateway that cannot forward plaintext gRPC —
 //! the events travel as an ordinary HTTPS POST instead.
 

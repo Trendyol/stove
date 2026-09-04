@@ -123,7 +123,7 @@ class DashboardEmitterTest :
     }
 
     test("keeps emitting after per-event validation rejections (INVALID_ARGUMENT)") {
-      // The CLI rejects individual events (e.g. unknown test `default`) with INVALID_ARGUMENT.
+      // The server rejects individual events (e.g. unknown test `default`) with INVALID_ARGUMENT.
       // These are per-event validation errors, not transport outages, so they must NOT trip
       // the consecutive-failure auto-disable. A subsequent valid event must still be delivered.
       val received = CopyOnWriteArrayList<DashboardEvent>()

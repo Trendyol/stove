@@ -4,10 +4,10 @@ A web UI for evidence emitted by registered Stove systems. Timelines, span trees
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.
+Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the server.
 </div>
 
-Current CLI versions start the dashboard with bare `stove`; older docs and scripts may still show `stove serve`.
+Current server versions start the dashboard with bare `stove`; older docs and scripts may still show `stove serve`.
 
 ## Preview
 
@@ -15,7 +15,7 @@ The dashboard is useful because the test timeline, trace tree, and system eviden
 
 {{ dashboard_preview() }}
 
-## Install the CLI
+## Install the server
 
 === "Homebrew"
 
@@ -54,7 +54,7 @@ brew upgrade stove
 
 ### Dev channel (`stove-next`)
 
-Want the latest changes before a release? Every Maven snapshot publish also ships the CLI as a rolling dev channel, versioned to match the snapshot (e.g. `1.0.0.57-SNAPSHOT`):
+Want the latest changes before a release? Every Maven snapshot publish also ships the server as a rolling dev channel, versioned to match the snapshot (e.g. `1.0.0.57-SNAPSHOT`):
 
 ```bash
 brew install trendyol/trendyol-tap/stove-next
@@ -241,7 +241,7 @@ Stove().with {
                 "gitlab.pipeline_id" to (System.getenv("CI_PIPELINE_ID") ?: "local")
             )
         )
-        // If you start the CLI with `stove --grpc-port 9001`, match that here:
+        // If you start the server with `stove --grpc-port 9001`, match that here:
         // DashboardSystemOptions(
         //     appName = "my-service",
         //     ingestion = DashboardIngestion.Grpc(port = 9001)
@@ -251,13 +251,13 @@ Stove().with {
 }.run()
 ```
 
-Now the registered Stove systems stream test events to the dashboard while the CLI is running.
+Now the registered Stove systems stream test events to the dashboard while the server is running.
 
 Metadata is an immutable set of string key/value pairs attached when a run starts. Keys are intentionally open-ended, so CI jobs can describe a run with team, project, pipeline, branch, environment, or any other useful dimensions without a server schema change.
 
 ### Ingestion over HTTP(S)
 
-By default events are streamed to the CLI over plaintext gRPC at `localhost:4041`. Configure another gRPC endpoint with `DashboardIngestion.Grpc(host, port)`. When the CLI sits behind an HTTPS-only ingress or API gateway that cannot forward gRPC — for example a shared dashboard server for CI pipelines — select HTTP ingestion instead:
+By default events are streamed to the server over plaintext gRPC at `localhost:4041`. Configure another gRPC endpoint with `DashboardIngestion.Grpc(host, port)`. When the server sits behind an HTTPS-only ingress or API gateway that cannot forward gRPC — for example a shared dashboard server for CI pipelines — select HTTP ingestion instead:
 
 ```kotlin
 DashboardSystemOptions(
@@ -320,7 +320,7 @@ stove --database-url-file /run/secrets/stove/database-url
 
 PostgreSQL connections use TLS by default. Add `?sslmode=disable` only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. [Refinery](https://github.com/rust-db/refinery) owns migration discovery and history (`refinery_schema_history`); backend-specific SQL lives in parallel `server/stove-server/src/storage/migrations/sqlite/` and `server/stove-server/src/storage/migrations/postgres/` directories. [Diesel](https://github.com/diesel-rs/diesel) owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite `rowid` behavior is not usefully expressed by the ORM.
 
-This storage rewrite is intentionally a clean break. Databases created by a CLI version that recorded migrations in `schema_migrations` are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as `JSONB` with a GIN `jsonb_path_ops` index, so dynamic exact-subset filters remain efficient without predeclaring keys.
+This storage rewrite is intentionally a clean break. Databases created by a server version that recorded migrations in `schema_migrations` are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as `JSONB` with a GIN `jsonb_path_ops` index, so dynamic exact-subset filters remain efficient without predeclaring keys.
 
 `--db` and `--fresh-start` are SQLite-only; Stove rejects `--fresh-start` when PostgreSQL is selected. `--clear` operates on the selected backend.
 
@@ -329,12 +329,12 @@ This storage rewrite is intentionally a clean break. Databases created by a CLI 
 Dashboard is **opt-in** and **non-blocking**:
 
 - Events queue locally; publishing (gRPC or HTTP) happens in the background.
-- If the CLI is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.
+- If the server is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.
 - Tests never wait on the dashboard.
 
 ## REST API
 
-The CLI exposes REST endpoints for integration:
+The server exposes REST endpoints for integration:
 
 | Endpoint | Use |
 |---|---|
@@ -407,7 +407,7 @@ The explorer has direct write access to Stove's tables. Confirmation in the brow
 !!! warning "Trusted networks only"
     The dashboard, REST API, database explorer, admin operations, gRPC ingestion, and MCP endpoint intentionally have no authentication or authorization. The servers listen on all interfaces so remote CI jobs and agents can connect. Deploy Stove only on an internal trusted network and control exposure outside Stove (for example with firewall rules or a private ingress).
 
-## CLI options reference
+## Server options reference
 
 | Flag | Default | Notes |
 |---|---|---|
@@ -452,5 +452,5 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 |---|---|
 | Dashboard empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
 | Events not arriving | Port mismatch. `DashboardIngestion.Grpc(port = ...)` must match `--grpc-port` |
-| "gRPC disabled" warning | Expected if CLI started after tests; restart in correct order |
+| "gRPC disabled" warning | Expected if the server started after tests; restart in correct order |
 | Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |

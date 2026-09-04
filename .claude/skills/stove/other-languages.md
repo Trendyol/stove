@@ -249,7 +249,7 @@ A common pattern: one `StoveConfig.kt` branches on `-Dgo.aut.mode=process|contai
 
 ## MCP triage on failures
 
-When `stove` (the CLI) is running, agents can triage failed runs through its MCP endpoint instead of scraping logs. The local default is `http://localhost:4040/mcp`; shared internal servers are also supported. See [mcp.md](mcp.md) for the workflow.
+When `stove` (the server) is running, agents can triage failed runs through its MCP endpoint instead of scraping logs. The local default is `http://localhost:4040/mcp`; shared internal servers are also supported. See [mcp.md](mcp.md) for the workflow.
 
 ## Reference
 

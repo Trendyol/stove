@@ -16,7 +16,7 @@ use support::{
 };
 
 #[tokio::test]
-async fn real_cli_exposes_grpc_rest_mcp_agent_loop_and_embedded_spa() -> Result<()> {
+async fn real_server_exposes_grpc_rest_mcp_agent_loop_and_embedded_spa() -> Result<()> {
   let stove = RunningStove::start(Some(0)).await?;
   let mut grpc = stove.grpc_client().await?;
 
@@ -106,7 +106,7 @@ async fn real_cli_exposes_grpc_rest_mcp_agent_loop_and_embedded_spa() -> Result<
 }
 
 #[tokio::test]
-async fn real_cli_admin_retention_preview_purge_and_clear_are_safe() -> Result<()> {
+async fn real_server_admin_retention_preview_purge_and_clear_are_safe() -> Result<()> {
   let stove = RunningStove::start(Some(0)).await?;
   let mut grpc = stove.grpc_client().await?;
 
@@ -266,7 +266,8 @@ async fn real_cli_admin_retention_preview_purge_and_clear_are_safe() -> Result<(
 }
 
 #[tokio::test]
-async fn local_cli_default_retention_keeps_one_completed_run_and_all_active_runs() -> Result<()> {
+async fn local_server_default_retention_keeps_one_completed_run_and_all_active_runs() -> Result<()>
+{
   let stove = RunningStove::start(None).await?;
   let mut grpc = stove.grpc_client().await?;
   send_events(
@@ -296,7 +297,7 @@ async fn local_cli_default_retention_keeps_one_completed_run_and_all_active_runs
 }
 
 #[tokio::test]
-async fn postgres_cli_runs_migrations_jsonb_filters_retention_and_admin_in_testcontainer()
+async fn postgres_server_runs_migrations_jsonb_filters_retention_and_admin_in_testcontainer()
 -> Result<()> {
   let database = PostgresTestDatabase::start().await?;
   let stove = RunningStove::start_postgres_with_config_file(&database.url, Some(0)).await?;
@@ -1083,9 +1084,9 @@ async fn assert_embedded_spa(stove: &RunningStove) -> Result<()> {
     .await?;
   assert!(asset.status().is_success());
   let javascript = asset.text().await?;
-  assert!(javascript.contains("Metadata filters"));
-  assert!(javascript.contains("Select key"));
-  assert!(javascript.contains("Select value"));
+  assert!(javascript.contains("Filter runs by metadata"));
+  assert!(javascript.contains("Choose one or more metadata values"));
+  assert!(javascript.contains("Pick several values"));
   assert!(javascript.contains("Dashboard administration"));
   Ok(())
 }

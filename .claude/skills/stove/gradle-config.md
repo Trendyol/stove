@@ -151,7 +151,7 @@ abstract class BaseE2ETest {
 | `stove-grpc` | gRPC client system |
 | `stove-grpc-mock` | gRPC mock server system |
 | `stove-tracing` | Tracing system |
-| `stove-dashboard` | Dashboard system (streams events to stove CLI) |
+| `stove-dashboard` | Dashboard system (streams events to Stove Server) |
 | `stove-process` | Process-based AUT starter (`processApp`, `goApp`) |
 | `stove-container` | Container-based AUT starter (`containerApp`) |
 | `stove-extensions-kotest` | Kotest reporting integration |

@@ -6,7 +6,7 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::redundant_closure_for_method_calls)]
 
-pub const STOVE_CLI_VERSION: &str = env!("STOVE_VERSION");
+pub const STOVE_SERVER_VERSION: &str = env!("STOVE_VERSION");
 
 pub mod config;
 pub(crate) mod error;

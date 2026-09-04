@@ -4,11 +4,11 @@ use axum::http::header::HOST;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::STOVE_CLI_VERSION;
+use crate::STOVE_SERVER_VERSION;
 
 #[derive(Serialize, ToSchema)]
 pub struct MetaResponse {
-  pub stove_cli_version: &'static str,
+  pub stove_server_version: &'static str,
   pub mcp: McpMeta,
 }
 
@@ -33,7 +33,7 @@ pub async fn get_meta(headers: HeaderMap) -> Json<MetaResponse> {
     .filter(|host| !host.trim().is_empty())
     .map_or_else(|| "/mcp".to_string(), |host| format!("http://{host}/mcp"));
   Json(MetaResponse {
-    stove_cli_version: STOVE_CLI_VERSION,
+    stove_server_version: STOVE_SERVER_VERSION,
     mcp: McpMeta {
       enabled: true,
       transport: "streamable-http",
