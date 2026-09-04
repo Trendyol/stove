@@ -1,4 +1,4 @@
-name: Stove Server Build
+name: Stove Server Release
 
 on:
   push:
