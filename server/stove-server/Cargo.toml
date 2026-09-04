@@ -1,5 +1,5 @@
 [package]
-name = "stove-cli"
+name = "stove-server"
 version = "0.0.0"
 edition = "2024"
 description = "CLI for Stove — local observability dashboard for e2e test runs"

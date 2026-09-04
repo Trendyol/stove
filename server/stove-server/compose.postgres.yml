@@ -22,7 +22,7 @@ services:
   stove:
     build:
       context: ../..
-      dockerfile: tools/stove-cli/Dockerfile
+      dockerfile: server/stove-server/Dockerfile
       args:
         STOVE_VERSION: local
     init: true

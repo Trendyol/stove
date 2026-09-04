@@ -73,7 +73,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
-        working-directory: tools/stove-cli
+        working-directory: server/stove-server
 
     steps:
       - uses: actions/checkout@v7
@@ -82,7 +82,7 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-          cache-dependency-path: tools/stove-cli/spa/package-lock.json
+          cache-dependency-path: server/stove-server/spa/package-lock.json
 
       - name: Build SPA
         run: cd spa && npm ci && npm run build
@@ -104,8 +104,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            tools/stove-cli/target
-          key: cargo-release-${{ matrix.target }}-${{ hashFiles('tools/stove-cli/Cargo.lock') }}
+            server/stove-server/target
+          key: cargo-release-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
           restore-keys: cargo-release-${{ matrix.target }}-
 
       - name: Build release binary
@@ -132,8 +132,8 @@ jobs:
         with:
           name: binaries-${{ matrix.label }}
           path: |
-            tools/stove-cli/stove-*.tar.gz
-            tools/stove-cli/stove-*.sha256
+            server/stove-server/stove-*.tar.gz
+            server/stove-server/stove-*.sha256
 
   # Publishing the `next` prerelease and pushing the matching formula is one
   # serialized transaction (all invocations, reusable and dispatch, share the
@@ -145,7 +145,7 @@ jobs:
     needs: [resolve-version, build]
     runs-on: ubuntu-latest
     concurrency:
-      group: stove-cli-next-publish
+      group: stove-server-next-publish
       queue: max
 
     steps:
@@ -264,7 +264,7 @@ jobs:
           SHA_DARWIN_AMD64=$(awk '{print $1}' "${CHECKSUM_DIR}/stove-${VERSION}-darwin-amd64.tar.gz.sha256")
           SHA_LINUX_AMD64=$(awk '{print $1}' "${CHECKSUM_DIR}/stove-${VERSION}-linux-amd64.tar.gz.sha256")
 
-          cp tools/stove-cli/Formula/stove-next.rb stove-next.rb
+          cp server/stove-server/Formula/stove-next.rb stove-next.rb
           sed -i "s/__VERSION__/${VERSION}/" stove-next.rb
           sed -i "s/__SHA256_DARWIN_ARM64__/${SHA_DARWIN_ARM64}/" stove-next.rb
           sed -i "s/__SHA256_DARWIN_AMD64__/${SHA_DARWIN_AMD64}/" stove-next.rb

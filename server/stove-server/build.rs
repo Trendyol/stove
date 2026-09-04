@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   println!("cargo:rerun-if-env-changed=STOVE_VERSION");
   let version = std::env::var("STOVE_VERSION").unwrap_or_else(|_| {
     let gradle_props = std::fs::read_to_string("../../gradle.properties")
-      .expect("Failed to read gradle.properties — is this running from tools/stove-cli?");
+      .expect("Failed to read gradle.properties — is this running from server/stove-server?");
     gradle_props
       .lines()
       .find_map(|line| line.strip_prefix("version="))

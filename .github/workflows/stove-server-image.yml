@@ -21,12 +21,12 @@ permissions:
   packages: write
 
 concurrency:
-  group: stove-cli-image-${{ github.ref }}
+  group: stove-server-image-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: trendyol/stove-cli
+  IMAGE_NAME: trendyol/stove-server
 
 jobs:
   prepare:
@@ -141,15 +141,15 @@ jobs:
         uses: actions/cache@v6
         with:
           path: cache-mount
-          key: stove-cli-cargo-${{ matrix.platform.slug }}-${{ github.run_id }}
-          restore-keys: stove-cli-cargo-${{ matrix.platform.slug }}-
+          key: stove-server-cargo-${{ matrix.platform.slug }}-${{ github.run_id }}
+          restore-keys: stove-server-cargo-${{ matrix.platform.slug }}-
 
       - name: Inject BuildKit cache mounts
         uses: reproducible-containers/buildkit-cache-dance@v3
         with:
           builder: ${{ steps.setup-buildx.outputs.name }}
           cache-dir: cache-mount
-          dockerfile: tools/stove-cli/Dockerfile
+          dockerfile: server/stove-server/Dockerfile
           skip-extraction: ${{ steps.cache-mounts.outputs.cache-hit }}
 
       - name: Build and push by digest
@@ -157,14 +157,14 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: tools/stove-cli/Dockerfile
+          file: server/stove-server/Dockerfile
           platforms: ${{ matrix.platform.name }}
           build-args: |
             STOVE_VERSION=${{ needs.prepare.outputs.version }}
           labels: ${{ steps.metadata.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=stove-cli-image-${{ matrix.platform.slug }}
-          cache-to: type=gha,mode=max,scope=stove-cli-image-${{ matrix.platform.slug }}
+          cache-from: type=gha,scope=stove-server-image-${{ matrix.platform.slug }}
+          cache-to: type=gha,mode=max,scope=stove-server-image-${{ matrix.platform.slug }}
           # Attestations are disabled: with push-by-digest + manifest merge they
           # would be orphaned from the final manifest list.
           provenance: false

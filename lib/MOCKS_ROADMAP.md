@@ -14,11 +14,11 @@ Make the mock systems the strongest external-dependency testing surface on the J
 
 **D1 (grpc-mock test scoping — live bug) ✅ → D2 (wiremock fail-open journal — decision violation) ✅ → D3 (shared journal foundation in core) ✅ → C1 (near-miss diagnostics) ✅ → A (grpc-mock verification + descriptor typing) ✅ → B (fidelity, both modules) ✅ → C2 (exchange inspector) + C3 (error-path coverage) + cross-test match warnings → E (contracts, drift, live mode — later bets).**
 
-The reporter → stove-cli ingestion/storage/API/SPA path is now complete for mock interactions, warnings, and failure-time snapshots. What remains is the derived C3 aggregation views, deeper choreography integration, optional MCP queries over the persisted data, and the Theme E later bets.
+The reporter → stove-server ingestion/storage/API/SPA path is now complete for mock interactions, warnings, and failure-time snapshots. What remains is the derived C3 aggregation views, deeper choreography integration, optional MCP queries over the persisted data, and the Theme E later bets.
 
 Verification status for the library work: core suite 323 tests, wiremock 68, grpc-mock 35 — all green, including dedicated specs for fail-open scoping, stub precedence/type-conflict semantics, near-miss diagnostics, typed verification, and both modules' fidelity features. `apiCheck` and `spotlessCheck` pass after API regeneration. Release notes needed: `ReceivedRequest` gained a `testId` field and `StubDefinition` subclasses gained `delay`/`thenFailWith`/`trailers` fields (data-class constructor/copy binary changes); `delay: Duration?` parameters were appended to wiremock `mock*` signatures (binary change, source-compatible); stubs registered outside a test context no longer carry a `"default"` test-id tag; grpc-mock stub matching is now last-registered-wins and mixed method types per method fail fast.
 
-The mock-facing dashboard work rides the same reporter → sqlite → dashboard (stove-cli) → MCP pipeline as the Kafka diagnostics theme. Reporter events, sqlite persistence, live SSE payloads, per-test/per-run HTTP reads, and the SPA evidence workbench are complete; MCP exposure can follow independently.
+The mock-facing dashboard work rides the same reporter → sqlite → dashboard (stove-server) → MCP pipeline as the Kafka diagnostics theme. Reporter events, sqlite persistence, live SSE payloads, per-test/per-run HTTP reads, and the SPA evidence workbench are complete; MCP exposure can follow independently.
 
 ---
 

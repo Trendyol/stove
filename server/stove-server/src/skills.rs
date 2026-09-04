@@ -26,7 +26,7 @@ mod github {
   pub const REPO_OWNER: &str = "Trendyol";
   pub const REPO_NAME: &str = "stove";
   pub const REPO_REF: &str = "main";
-  pub const USER_AGENT: &str = concat!("stove-cli/", env!("STOVE_VERSION"));
+  pub const USER_AGENT: &str = concat!("stove-server/", env!("STOVE_VERSION"));
   /// Capped low so a slow GitHub call cannot stall server bind on cold start.
   pub const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 }

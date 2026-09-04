@@ -65,7 +65,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
-        working-directory: tools/stove-cli
+        working-directory: server/stove-server
 
     steps:
       - uses: actions/checkout@v7
@@ -74,7 +74,7 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-          cache-dependency-path: tools/stove-cli/spa/package-lock.json
+          cache-dependency-path: server/stove-server/spa/package-lock.json
 
       - name: Build SPA
         run: cd spa && npm ci && npm run build
@@ -96,8 +96,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            tools/stove-cli/target
-          key: cargo-release-${{ matrix.target }}-${{ hashFiles('tools/stove-cli/Cargo.lock') }}
+            server/stove-server/target
+          key: cargo-release-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
           restore-keys: cargo-release-${{ matrix.target }}-
 
       - name: Build release binary
@@ -123,8 +123,8 @@ jobs:
         with:
           name: binaries-${{ matrix.label }}
           path: |
-            tools/stove-cli/stove-*.tar.gz
-            tools/stove-cli/stove-*.sha256
+            server/stove-server/stove-*.tar.gz
+            server/stove-server/stove-*.sha256
 
   release:
     needs: [resolve-version, build]
@@ -165,7 +165,7 @@ jobs:
 
             **Shell script (macOS & Linux):**
             ```
-            curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh
+            curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh | sh
             ```
 
             **Manual:** Download the archive for your platform below, extract, and place `stove` in your PATH.
@@ -188,13 +188,13 @@ jobs:
           SHA_DARWIN_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-amd64.tar.gz.sha256" | awk '{print $1}')
           SHA_LINUX_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-linux-amd64.tar.gz.sha256" | awk '{print $1}')
 
-          cp tools/stove-cli/Formula/stove.rb stove.rb
+          cp server/stove-server/Formula/stove.rb stove.rb
           sed -i "s/__VERSION__/${VERSION}/" stove.rb
           sed -i "s/__SHA256_DARWIN_ARM64__/${SHA_DARWIN_ARM64}/" stove.rb
           sed -i "s/__SHA256_DARWIN_AMD64__/${SHA_DARWIN_AMD64}/" stove.rb
           sed -i "s/__SHA256_LINUX_AMD64__/${SHA_LINUX_AMD64}/" stove.rb
 
-          # Retried with a fresh clone: the stove-cli-next workflow pushes to
+          # Retried with a fresh clone: the stove-server-next workflow pushes to
           # the same tap, and a concurrent push would reject this one as
           # non-fast-forward. An empty staged diff means the formula is
           # already current (idempotent rerun, or a push that landed despite

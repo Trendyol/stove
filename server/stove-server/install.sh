@@ -2,7 +2,7 @@
 # Stove CLI installer (https://github.com/Trendyol/stove)
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh | sh
 #   curl -fsSL ... | sh -s -- --version 0.23.0
 #   curl -fsSL ... | sh -s -- --dir /usr/local/bin
 

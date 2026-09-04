@@ -158,7 +158,7 @@ function remediationStepsForMismatch(mismatch: VersionMismatch): VersionMismatch
 
   if (mismatch.kind === "cli_older") {
     return [
-      textStep("Update stove-cli to match the runtime version:"),
+      textStep("Update stove-server to match the runtime version:"),
       commandStep(CLI_UPGRADE_COMMAND),
       commandStep(installScriptCommand(mismatch.runtimeVersion!)),
     ];
@@ -188,7 +188,7 @@ function dependencyAlignmentMessage(cliVersion: string): string {
 }
 
 function installScriptCommand(runtimeVersion: string): string {
-  return `curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh -s -- --version ${runtimeVersion}`;
+  return `curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh | sh -s -- --version ${runtimeVersion}`;
 }
 
 function textStep(value: string): VersionMismatchRemediationStep {

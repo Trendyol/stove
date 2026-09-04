@@ -391,7 +391,7 @@ The CLI intentionally has no authentication or authorization and accepts remote 
 | `0.22 → 0.23` | Dashboard launched | Opt-in, non-blocking |
 | `0.23 → 0.24` | Polyglot leap (provided app, keyed systems, process/container, Go, MCP) | All additive |
 
-Pin the BOM, all `com.trendyol:stove-*` dependencies, the tracing Gradle plugin, and `stove-cli` to one Stove version.
+Pin the BOM, all `com.trendyol:stove-*` dependencies, the tracing Gradle plugin, and `stove-server` to one Stove version.
 Mixed versions are a common cause of class-load errors and empty dashboard data.
 
 ## Common FAQ

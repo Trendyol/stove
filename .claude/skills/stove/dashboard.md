@@ -51,8 +51,8 @@ For production, prefer `stove --config-file /etc/stove/stove.toml` (or `STOVE_CO
 
 PostgreSQL uses TLS by default. Add `sslmode=disable` only for an intentionally non-TLS endpoint on a trusted network. Stove applies versioned migrations at startup:
 
-- SQLite: `tools/stove-cli/src/storage/migrations/sqlite/`
-- PostgreSQL: `tools/stove-cli/src/storage/migrations/postgres/`
+- SQLite: `server/stove-server/src/storage/migrations/sqlite/`
+- PostgreSQL: `server/stove-server/src/storage/migrations/postgres/`
 
 Refinery discovers those migrations and records them in `refinery_schema_history`. Diesel handles ordinary persistence; raw SQL is reserved for database-specific coordination and complex queries. This is a clean storage break: databases with the former `schema_migrations` history must be deleted (SQLite) or recreated (PostgreSQL), not upgraded in place.
 
@@ -68,7 +68,7 @@ Budget four PostgreSQL connections per replica (read, write, database explorer, 
 
 ## Run the packaged server
 
-Stable releases publish `ghcr.io/trendyol/stove-cli` for Linux AMD64 and ARM64. Pin the exact Stove version used by the tests.
+Stable releases publish `ghcr.io/trendyol/stove-server` for Linux AMD64 and ARM64. Pin the exact Stove version used by the tests.
 
 For SQLite, mount `/data`; the image defaults to `/data/stove.db`:
 
@@ -76,10 +76,10 @@ For SQLite, mount `/data`; the image defaults to `/data/stove.db`:
 docker run -d --name stove --restart unless-stopped \
   -p 4040:4040 -p 4041:4041 \
   -v stove-data:/data \
-  ghcr.io/trendyol/stove-cli:0.26.0
+  ghcr.io/trendyol/stove-server:0.26.0
 ```
 
-For a current-source local server backed by PostgreSQL, run `just postgres-up` from `tools/stove-cli`. It builds the image and exposes HTTP/MCP on `4040`, gRPC on `4041`, and PostgreSQL on `5433`. Use `just postgres-down` to preserve data or `just postgres-reset` to delete the local PostgreSQL volume.
+For a current-source local server backed by PostgreSQL, run `just postgres-up` from `server/stove-server`. It builds the image and exposes HTTP/MCP on `4040`, gRPC on `4041`, and PostgreSQL on `5433`. Use `just postgres-down` to preserve data or `just postgres-reset` to delete the local PostgreSQL volume.
 
 For PostgreSQL, mount the connection URL as a read-only secret and omit the SQLite volume:
 
@@ -89,7 +89,7 @@ docker run -d --name stove --restart unless-stopped \
   -v /secure/stove/database-url:/run/secrets/stove-database-url:ro \
   -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
   -e STOVE_RETENTION_RUNS_PER_APP=50 \
-  ghcr.io/trendyol/stove-cli:0.26.0
+  ghcr.io/trendyol/stove-server:0.26.0
 ```
 
 Port `4040` serves the UI, REST, admin page, and Streamable HTTP MCP endpoint (`/mcp`). Port `4041` is the gRPC ingestion endpoint configured through `DashboardSystemOptions(cliHost, cliPort)`. Both ports must remain on a trusted internal network because Stove intentionally provides no authentication or authorization.
@@ -159,7 +159,7 @@ Stove intentionally has no authentication or authorization. The HTTP server, MCP
 
 ## Verify changes
 
-From `tools/stove-cli`, with a Docker-compatible daemon running:
+From `server/stove-server`, with a Docker-compatible daemon running:
 
 ```bash
 cargo test --test acceptance
@@ -172,4 +172,4 @@ The acceptance suite runs against SQLite and a disposable PostgreSQL instance th
 
 - Dashboard component: `docs/Components/18-dashboard.md`
 - MCP component: `docs/Components/21-mcp.md`
-- CLI acceptance tests: `tools/stove-cli/acceptance-tests/README.md`
+- CLI acceptance tests: `server/stove-server/acceptance-tests/README.md`

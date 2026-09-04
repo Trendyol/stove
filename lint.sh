@@ -22,7 +22,7 @@ if [ -d "$HOME/.cargo/bin" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-CLI_DIR="$REPO_ROOT/tools/stove-cli"
+CLI_DIR="$REPO_ROOT/server/stove-server"
 SPA_DIR="$CLI_DIR/spa"
 RECIPES_DIR="$REPO_ROOT/recipes/jvm"
 
@@ -60,10 +60,10 @@ detect_changed() {
   if echo "$CHANGED" | grep -qE '\.(kt|kts|java)$'; then
     PROJECTS="$PROJECTS jvm"
   fi
-  if echo "$CHANGED" | grep -qE "^tools/stove-cli/.*\.(rs|toml)$"; then
+  if echo "$CHANGED" | grep -qE "^server/stove-server/.*\.(rs|toml)$"; then
     PROJECTS="$PROJECTS rust"
   fi
-  if echo "$CHANGED" | grep -qE "^tools/stove-cli/spa/src/.*\.(ts|tsx|js|jsx|css)$"; then
+  if echo "$CHANGED" | grep -qE "^server/stove-server/spa/src/.*\.(ts|tsx|js|jsx|css)$"; then
     PROJECTS="$PROJECTS spa"
   fi
   if echo "$CHANGED" | grep -qE "^recipes/"; then

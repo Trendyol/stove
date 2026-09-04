@@ -4,7 +4,7 @@ A web UI for evidence emitted by registered Stove systems. Timelines, span trees
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Install <code>stove-cli</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.
+Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard { }</code> in <code>Stove().with</code>, then open <code>http://localhost:4040</code>. The dashboard stays empty until tests stream events to the CLI.
 </div>
 
 Current CLI versions start the dashboard with bare `stove`; older docs and scripts may still show `stove serve`.
@@ -26,7 +26,7 @@ The dashboard is useful because the test timeline, trace tree, and system eviden
 === "curl"
 
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh | bash
     ```
 
 === "Manual"
@@ -38,7 +38,7 @@ The dashboard is useful because the test timeline, trace tree, and system eviden
     Pull a versioned multi-platform image from GHCR:
 
     ```bash
-    docker pull ghcr.io/trendyol/stove-cli:0.26.0
+    docker pull ghcr.io/trendyol/stove-server:0.26.0
     ```
 
     Replace `0.26.0` with the Stove version used by your tests.
@@ -123,7 +123,7 @@ docker run -d \
   -p 4040:4040 \
   -p 4041:4041 \
   -v stove-data:/data \
-  ghcr.io/trendyol/stove-cli:0.26.0
+  ghcr.io/trendyol/stove-server:0.26.0
 ```
 
 ### Local PostgreSQL stack
@@ -131,7 +131,7 @@ docker run -d \
 To run the current source against PostgreSQL without preparing a database manually:
 
 ```bash
-cd tools/stove-cli
+cd server/stove-server
 just postgres-up
 ```
 
@@ -154,7 +154,7 @@ docker run -d \
   -v /secure/stove/database-url:/run/secrets/stove-database-url:ro \
   -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
   -e STOVE_RETENTION_RUNS_PER_APP=50 \
-  ghcr.io/trendyol/stove-cli:0.26.0
+  ghcr.io/trendyol/stove-server:0.26.0
 ```
 
 The container applies database migrations when it starts. PostgreSQL uses TLS by default; append `?sslmode=disable` only when the database intentionally has no TLS and the connection stays inside a trusted private network. No `/data` volume is needed with PostgreSQL.
@@ -193,7 +193,7 @@ spec:
       terminationGracePeriodSeconds: 15
       containers:
         - name: stove
-          image: ghcr.io/trendyol/stove-cli:0.26.0
+          image: ghcr.io/trendyol/stove-server:0.26.0
           args: ["--config-file", "/etc/stove/stove.toml", "--no-skills-check"]
           ports:
             - { name: http, containerPort: 4040 }
@@ -318,7 +318,7 @@ STOVE_DATABASE_URL='postgresql://stove:secret@db.example/stove' stove
 stove --database-url-file /run/secrets/stove/database-url
 ```
 
-PostgreSQL connections use TLS by default. Add `?sslmode=disable` only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. [Refinery](https://github.com/rust-db/refinery) owns migration discovery and history (`refinery_schema_history`); backend-specific SQL lives in parallel `tools/stove-cli/src/storage/migrations/sqlite/` and `tools/stove-cli/src/storage/migrations/postgres/` directories. [Diesel](https://github.com/diesel-rs/diesel) owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite `rowid` behavior is not usefully expressed by the ORM.
+PostgreSQL connections use TLS by default. Add `?sslmode=disable` only for a trusted PostgreSQL endpoint that intentionally has no TLS. Stove applies versioned migrations at startup. [Refinery](https://github.com/rust-db/refinery) owns migration discovery and history (`refinery_schema_history`); backend-specific SQL lives in parallel `server/stove-server/src/storage/migrations/sqlite/` and `server/stove-server/src/storage/migrations/postgres/` directories. [Diesel](https://github.com/diesel-rs/diesel) owns normal reads and writes. Raw SQL is limited to backend-specific coordination and queries whose CTE, JSON attribution, aggregation, or SQLite `rowid` behavior is not usefully expressed by the ORM.
 
 This storage rewrite is intentionally a clean break. Databases created by a CLI version that recorded migrations in `schema_migrations` are not upgraded or imported. Delete the local SQLite database, or recreate the PostgreSQL database/schema, before starting this version. Run metadata is stored as `JSONB` with a GIN `jsonb_path_ops` index, so dynamic exact-subset filters remain efficient without predeclaring keys.
 
@@ -423,14 +423,14 @@ The explorer has direct write access to Stove's tables. Confirmation in the brow
 
 ## Acceptance and load tests
 
-From `tools/stove-cli`, run the public-boundary acceptance suite with a Docker-compatible daemon available:
+From `server/stove-server`, run the public-boundary acceptance suite with a Docker-compatible daemon available:
 
 ```bash
 cargo test --test acceptance
 cargo test --test load -- --nocapture
 ```
 
-The acceptance suite verifies the same ingestion, filtering, retention, administration, UI, and MCP behavior against SQLite and a disposable PostgreSQL instance created with `testcontainers` 0.28.0. The separate load test seeds 50,000 PostgreSQL runs, requires the planner to use the metadata GIN index, and mixes concurrent dashboard, REST, admin, and MCP reads under a configurable p95 latency budget. See `tools/stove-cli/acceptance-tests/README.md` for tuning variables and the manual browser workflow.
+The acceptance suite verifies the same ingestion, filtering, retention, administration, UI, and MCP behavior against SQLite and a disposable PostgreSQL instance created with `testcontainers` 0.28.0. The separate load test seeds 50,000 PostgreSQL runs, requires the planner to use the metadata GIN index, and mixes concurrent dashboard, REST, admin, and MCP reads under a configurable p95 latency budget. See `server/stove-server/acceptance-tests/README.md` for tuning variables and the manual browser workflow.
 
 ## Pairs well with
 

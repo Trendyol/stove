@@ -5,11 +5,11 @@ ARG STOVE_VERSION=dev
 FROM node:24-bookworm-slim AS spa-builder
 
 ARG STOVE_VERSION
-WORKDIR /source/tools/stove-cli/spa
+WORKDIR /source/server/stove-server/spa
 COPY gradle.properties /source/gradle.properties
-COPY tools/stove-cli/spa/package.json tools/stove-cli/spa/package-lock.json ./
+COPY server/stove-server/spa/package.json server/stove-server/spa/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
-COPY tools/stove-cli/spa/ ./
+COPY server/stove-server/spa/ ./
 RUN STOVE_VERSION="${STOVE_VERSION}" npm run build
 
 FROM rust:1-bookworm AS rust-builder
@@ -24,8 +24,8 @@ RUN apt-get update \
       protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /source/tools/stove-cli
-COPY tools/stove-cli/Cargo.toml tools/stove-cli/Cargo.lock ./
+WORKDIR /source/server/stove-server
+COPY server/stove-server/Cargo.toml server/stove-server/Cargo.lock ./
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     cargo fetch --locked
@@ -33,13 +33,13 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 WORKDIR /source
 COPY gradle.properties ./
 COPY lib/stove-dashboard-api/src/main/proto/ lib/stove-dashboard-api/src/main/proto/
-COPY tools/stove-cli/ tools/stove-cli/
-COPY --from=spa-builder /source/tools/stove-cli/spa/dist/ tools/stove-cli/spa/dist/
+COPY server/stove-server/ server/stove-server/
+COPY --from=spa-builder /source/server/stove-server/spa/dist/ server/stove-server/spa/dist/
 
-WORKDIR /source/tools/stove-cli
+WORKDIR /source/server/stove-server
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/source/tools/stove-cli/target \
+    --mount=type=cache,target=/source/server/stove-server/target \
     STOVE_VERSION="${STOVE_VERSION}" SKIP_SPA_BUILD=1 cargo build --locked --release \
     && cp target/release/stove /usr/local/bin/stove
 

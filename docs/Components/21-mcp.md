@@ -1,6 +1,6 @@
 # MCP
 
-`stove-cli` exposes a Model Context Protocol endpoint. AI agents (Claude Code, Cursor, ...) query failed runs through compact, structured tools instead of grepping raw logs.
+`stove-server` exposes a Model Context Protocol endpoint. AI agents (Claude Code, Cursor, ...) query failed runs through compact, structured tools instead of grepping raw logs.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>

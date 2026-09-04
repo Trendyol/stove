@@ -16,7 +16,7 @@ Use this file as the entrypoint only. Open the focused guide that matches the us
    - Already running app: staging/dev smoke tests via `providedApplication`.
 2. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`.
 3. Identify needed systems: HTTP, databases, Kafka, WireMock, gRPC, tracing, dashboard.
-4. Check local source when uncertain. Current APIs live under `lib/`, `starters/`, `test-extensions/`, and `tools/stove-cli/`.
+4. Check local source when uncertain. Current APIs live under `lib/`, `starters/`, `test-extensions/`, and `server/stove-server/`.
 
 ## Route by task
 

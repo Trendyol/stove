@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'tools/stove-cli/**'
+      - 'server/stove-server/**'
       - 'lib/stove-dashboard-api/src/main/proto/**'
   pull_request:
     branches: [main]
     paths:
-      - 'tools/stove-cli/**'
+      - 'server/stove-server/**'
       - 'lib/stove-dashboard-api/src/main/proto/**'
 
 concurrency:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: tools/stove-cli
+        working-directory: server/stove-server
 
     steps:
       - uses: actions/checkout@v7
@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-          cache-dependency-path: tools/stove-cli/spa/package-lock.json
+          cache-dependency-path: server/stove-server/spa/package-lock.json
 
       - name: Install SPA dependencies
         run: cd spa && npm ci
@@ -53,8 +53,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            tools/stove-cli/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('tools/stove-cli/Cargo.lock') }}
+            server/stove-server/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
       - name: Check formatting

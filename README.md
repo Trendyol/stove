@@ -98,7 +98,7 @@ stove
 
 # Or run the matching version as a container (SQLite persists in stove-data)
 docker run -d --name stove -p 4040:4040 -p 4041:4041 \
-  -v stove-data:/data ghcr.io/trendyol/stove-cli:0.26.0
+  -v stove-data:/data ghcr.io/trendyol/stove-server:0.26.0
 
 # 2) Run your tests and open the dashboard
 ./gradlew test
@@ -107,7 +107,7 @@ docker run -d --name stove -p 4040:4040 -p 4041:4041 \
 
 For shared or multi-pod deployments, use one PostgreSQL database for every replica and load-balance both ports; no session affinity, Redis, or message broker is required. PostgreSQL coordinates ordered, idempotent ingestion, shared retention, and durable cross-pod live updates. Production settings can be mounted as TOML or JSON, with the PostgreSQL URL read from a separate secret file. See the [Dashboard deployment guide](https://trendyol.github.io/stove/Components/18-dashboard/#configuration-files-and-secrets).
 
-For local PostgreSQL development, run `just postgres-up` from `tools/stove-cli`; the Compose stack builds Stove and starts a persistent PostgreSQL 18 instance. The dedicated `/admin` page includes a native SQLite/PostgreSQL schema browser and SQL workbench running inside the Stove process. It has direct database write access and no built-in authentication, so expose it only on a trusted network.
+For local PostgreSQL development, run `just postgres-up` from `server/stove-server`; the Compose stack builds Stove and starts a persistent PostgreSQL 18 instance. The dedicated `/admin` page includes a native SQLite/PostgreSQL schema browser and SQL workbench running inside the Stove process. It has direct database write access and no built-in authentication, so expose it only on a trusted network.
 
 ```kotlin
 // build.gradle.kts
@@ -145,7 +145,7 @@ class StoveConfig : AbstractProjectConfig() {
 abstract class BaseE2ETest { /* Stove().with { ... }.run() in @BeforeAll */ }
 ```
 
-Keep `stove-cli`, the Stove BOM, the tracing Gradle plugin, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
+Keep `stove-server`, the Stove BOM, the tracing Gradle plugin, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
 
 See [Dashboard docs](https://trendyol.github.io/stove/Components/18-dashboard/) and
 [0.23.0 release notes](https://trendyol.github.io/stove/release-notes/0.23.0/) for full details.

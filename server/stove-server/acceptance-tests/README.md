@@ -11,7 +11,7 @@ Refinery owns migration history in `refinery_schema_history`, while Diesel owns
 normal persistence. The tests intentionally start with empty databases; legacy
 databases using the removed `schema_migrations` table are not supported.
 
-Run them from `tools/stove-cli`:
+Run them from `server/stove-server`:
 
 ```shell
 cargo test --test acceptance

@@ -126,7 +126,7 @@ This experience requires three things, all opt-in:
 
 -   :material-robot-outline: **MCP**
 
-    Loopback agent endpoint exposed by `stove-cli`.
+    Loopback agent endpoint exposed by `stove-server`.
 
     [Connect MCP](../Components/21-mcp.md)
 

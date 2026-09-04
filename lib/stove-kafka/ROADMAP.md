@@ -7,7 +7,7 @@ Working document for improving `lib/stove-kafka`. Captures the initial ideas, th
 Make stove-kafka the strongest Kafka e2e-testing surface on the JVM by improving three things in order:
 
 1. **Foundation** — event-driven internals and test-scoped isolation, so everything built on top is fast, parallel-safe, and debuggable.
-2. **Diagnostics** — feed richer failure evidence into the existing reporter → dashboard (stove-cli) → MCP pipeline.
+2. **Diagnostics** — feed richer failure evidence into the existing reporter → dashboard (stove-server) → MCP pipeline.
 3. **Fidelity & assertions** — close publishing gaps and add assertion power, always based on positive evidence.
 
 ## Priority order
@@ -74,7 +74,7 @@ The duplicate Caffeine stores, polling loop, deserialization helpers, assertion 
 | Item | Status | Notes |
 |---|---|---|
 | Near-miss diagnostics | ⬜ | On assertion timeout, attach same-type candidates that failed the condition (field-level diff) to `ReportEntry.failure`. Console shows closest miss; dashboard shows all; MCP gives agents "3 candidates, closest differed in `amount`" instead of "timeout". Best value-per-effort item. |
-| Message choreography view | ⬜ | stove-cli dashboard swimlane per test: trigger → publish → consume → retry → DLT → commit, correlated with OTel spans (same sqlite store, same test-id keying). Mermaid export nearly free. |
+| Message choreography view | ⬜ | stove-server dashboard swimlane per test: trigger → publish → consume → retry → DLT → commit, correlated with OTel spans (same sqlite store, same test-id keying). Mermaid export nearly free. |
 | Message-leak warnings | ⬜ | Events published that nothing consumed, or matches arriving after the assertion window — surfaced as dashboard timeline *warnings*, never test failures (see decisions). |
 | Consumer-group lag panel | ⬜ | Live `Admin`-fed panel: group state, per-partition lag, rebalance events on the timeline. Assertion API can follow once the data proves useful. |
 | Cross-run trend analytics | ⬜ | `~/.stove-dashboard.db` persists across sessions: track assertion latency vs. timeout per test per run; flag assertions trending toward their timeout (flakiness early warning). |

@@ -65,7 +65,7 @@ dependencies {
 ```
 
 !!! info "Version alignment"
-    Keep the BOM, every `com.trendyol:stove-*`, and `stove-cli` (if you use the dashboard) on the same version. Check [Releases](https://github.com/Trendyol/stove/releases).
+    Keep the BOM, every `com.trendyol:stove-*`, and `stove-server` (if you use the dashboard) on the same version. Check [Releases](https://github.com/Trendyol/stove/releases).
 
 Systems are á-la-carte. Each dependency adds one DSL block and, when needed, one options object for container/provided runtime configuration:
 

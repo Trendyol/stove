@@ -123,7 +123,7 @@ test("buildVersionMismatchWarningModel returns CLI upgrade commands when the run
   );
   assert.equal(
     model.details[0].remediationSteps[2].value,
-    "curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/tools/stove-cli/install.sh | sh -s -- --version 0.23.5",
+    "curl -fsSL https://raw.githubusercontent.com/Trendyol/stove/main/server/stove-server/install.sh | sh -s -- --version 0.23.5",
   );
 });
 

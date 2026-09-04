@@ -1,5 +1,5 @@
 # Homebrew formula for the Stove CLI dev channel.
-# Managed by the stove-cli-next workflow — do not edit checksums manually.
+# Managed by the stove-server-next workflow — do not edit checksums manually.
 #
 # Install:
 #   brew install Trendyol/trendyol-tap/stove-next

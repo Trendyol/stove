@@ -1,10 +1,10 @@
-# The stove-cli image only needs the CLI sources, its shared protobuf contract,
+# The stove-server image only needs the CLI sources, its shared protobuf contract,
 # and the repository version. Keep the build context small and deterministic.
 *
 !gradle.properties
 !tools/
-!tools/stove-cli/
-!tools/stove-cli/**
+!server/stove-server/
+!server/stove-server/**
 !lib/
 !lib/stove-dashboard-api/
 !lib/stove-dashboard-api/src/
@@ -12,9 +12,9 @@
 !lib/stove-dashboard-api/src/main/proto/
 !lib/stove-dashboard-api/src/main/proto/**
 
-tools/stove-cli/target/
-tools/stove-cli/spa/dist/
-tools/stove-cli/spa/node_modules/
-tools/stove-cli/**/*.log
-tools/stove-cli/.idea/
-tools/stove-cli/.vscode/
+server/stove-server/target/
+server/stove-server/spa/dist/
+server/stove-server/spa/node_modules/
+server/stove-server/**/*.log
+server/stove-server/.idea/
+server/stove-server/.vscode/
