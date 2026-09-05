@@ -23,18 +23,16 @@ internal object TestTaskConfigurator {
       }
 
       validateProtocol(extension.protocol.get())
-
-      dependencies.add(
+      project.dependencies.add(
         "otelAgent",
         "io.opentelemetry.javaagent:opentelemetry-javaagent:${extension.otelAgentVersion.get()}"
       )
 
-      val testTasks = resolveTestTasks(extension)
+      val testTasks = project.resolveTestTasks(extension)
       testTasks.forEach { testTask ->
         configureTestTask(testTask, otelAgentConfig, extension)
       }
-
-      logConfiguration(extension, testTasks)
+      project.logConfiguration(extension, testTasks)
     }
   }
 
@@ -59,8 +57,6 @@ internal object TestTaskConfigurator {
     otelAgentConfig: Configuration,
     extension: StoveTracingExtension,
   ) {
-    val resolvedAgentPath: String? = otelAgentConfig.resolve().firstOrNull()?.absolutePath
-
     val tracingConfig = ResolvedTracingConfig(
       protocol = extension.protocol.get(),
       serviceName = extension.serviceName.get(),
@@ -74,6 +70,9 @@ internal object TestTaskConfigurator {
     )
 
     testTask.doFirst {
+      // Resolve only when a traced test task actually executes. This keeps dependency
+      // resolution out of Gradle's configuration phase and avoids work for unrelated tasks.
+      val resolvedAgentPath = otelAgentConfig.resolve().firstOrNull()?.absolutePath
       if (resolvedAgentPath == null) {
         testTask.logger.warn("No OTel agent JAR found in otelAgent configuration")
         return@doFirst

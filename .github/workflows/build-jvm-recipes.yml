@@ -41,19 +41,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: current
           cache-read-only: false
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-jvm-recipes-${{ runner.os }}-${{ hashFiles('recipes/jvm/**/gradle/wrapper/gradle-wrapper.properties', 'recipes/jvm/**/gradle/libs.versions.toml') }}
-          restore-keys: |
-            gradle-jvm-recipes-${{ runner.os }}-
 
       # Cache Docker images for testcontainers
       - name: Cache Docker images
@@ -67,7 +56,7 @@ jobs:
       # Run all tasks in a single Gradle invocation
       - name: Build, Test, and E2E Test
         run: |
-          gradle -p recipes/jvm build test e2eTest \
+          ./gradlew -p recipes/jvm build test e2eTest \
             --build-cache \
             --no-daemon \
             -Dorg.gradle.parallel=true

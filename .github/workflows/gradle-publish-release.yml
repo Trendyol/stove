@@ -27,7 +27,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: current
 
       - name: Extract version from gradle.properties
         run: |
@@ -36,7 +35,7 @@ jobs:
           echo "Releasing version: $VERSION"
 
       - name: Publish to Maven Central
-        run: gradle --no-configuration-cache publish
+        run: ./gradlew --no-configuration-cache publish
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.gpg_private_key }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.gpg_passphrase }}

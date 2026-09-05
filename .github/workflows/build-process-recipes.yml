@@ -45,19 +45,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: current
           cache-read-only: false
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-process-recipes-${{ runner.os }}-${{ hashFiles('recipes/process/**/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-process-recipes-${{ runner.os }}-
 
       # Cache Docker images for testcontainers
       - name: Cache Docker images
@@ -75,7 +64,7 @@ jobs:
           GO_EXECUTABLE="$(command -v go)"
           export GO_EXECUTABLE
           "$GO_EXECUTABLE" version
-          gradle -p recipes/process/golang/go-showcase e2eTest \
+          ./gradlew -p recipes/process/golang/go-showcase e2eTest \
             --build-cache \
             --no-daemon
 
@@ -86,10 +75,10 @@ jobs:
           GO_EXECUTABLE="$(command -v go)"
           export GO_EXECUTABLE
           "$GO_EXECUTABLE" version
-          gradle -p recipes/process/golang/go-showcase e2eTest-container \
+          ./gradlew -p recipes/process/golang/go-showcase e2eTest-container \
             --build-cache \
             --no-daemon && \
-          gradle -p recipes/process/golang/go-showcase removeContainerImage \
+          ./gradlew -p recipes/process/golang/go-showcase removeContainerImage \
             --no-daemon
 
       # Upload test results
