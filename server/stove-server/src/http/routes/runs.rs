@@ -7,6 +7,7 @@ use utoipa::IntoParams;
 use crate::error::AppError;
 use crate::http::server::AppState;
 use crate::storage::models::{AppSummary, Run};
+use crate::storage::repository::pagination::{Collection, PageQuery};
 
 #[derive(Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
@@ -20,29 +21,45 @@ pub struct RunsQuery {
   get,
   path = "/api/v1/apps",
   tag = "runs",
-  responses((status = 200, description = "Known applications", body = [AppSummary]))
+  params(PageQuery),
+  responses((status = 200, description = "Known applications", body = Collection<AppSummary>))
 )]
 pub async fn get_apps(
   State(state): State<AppState>,
-) -> Result<Json<Vec<AppSummary>>, crate::error::AppError> {
-  let apps = state.repository.get_apps()?;
-  Ok(Json(apps))
+  Query(query): Query<PageQuery>,
+) -> Result<Json<Collection<AppSummary>>, crate::error::AppError> {
+  if query.page {
+    return Ok(Json(Collection::Page(
+      state.repository.apps_page(query).await?,
+    )));
+  }
+  if query.cursor.is_some() || query.limit.is_some() || query.search.is_some() {
+    return Err(AppError::InvalidEvent(
+      "pagination and search require page=true".into(),
+    ));
+  }
+  let apps = state
+    .repository
+    .read_async(move |repository| repository.get_apps())
+    .await?;
+  Ok(Json(Collection::Legacy(apps)))
 }
 
 #[utoipa::path(
   get,
   path = "/api/v1/runs",
   tag = "runs",
-  params(RunsQuery),
+  params(RunsQuery, PageQuery),
   responses(
-    (status = 200, description = "Runs matching the filters", body = [Run]),
+    (status = 200, description = "Runs matching the filters", body = Collection<Run>),
     (status = 400, description = "Invalid metadata filter")
   )
 )]
 pub async fn get_runs(
   State(state): State<AppState>,
   Query(query): Query<RunsQuery>,
-) -> Result<Json<Vec<Run>>, crate::error::AppError> {
+  Query(page): Query<PageQuery>,
+) -> Result<Json<Collection<Run>>, crate::error::AppError> {
   let metadata = query
     .metadata
     .as_deref()
@@ -54,10 +71,24 @@ pub async fn get_runs(
       ))
     })?
     .unwrap_or_default();
+  if page.page {
+    return Ok(Json(Collection::Page(
+      state
+        .repository
+        .runs_page(query.app, metadata, page)
+        .await?,
+    )));
+  }
+  if page.cursor.is_some() || page.limit.is_some() || page.search.is_some() {
+    return Err(AppError::InvalidEvent(
+      "pagination and search require page=true".into(),
+    ));
+  }
   let runs = state
     .repository
-    .get_runs_filtered(query.app.as_deref(), &metadata)?;
-  Ok(Json(runs))
+    .read_async(move |repository| repository.get_runs_filtered(query.app.as_deref(), &metadata))
+    .await?;
+  Ok(Json(Collection::Legacy(runs)))
 }
 
 #[utoipa::path(
@@ -71,7 +102,10 @@ pub async fn get_run(
   State(state): State<AppState>,
   Path(run_id): Path<String>,
 ) -> Result<Json<Option<Run>>, crate::error::AppError> {
-  let run = state.repository.get_run(&run_id)?;
+  let run = state
+    .repository
+    .read_async(move |repository| repository.get_run(&run_id))
+    .await?;
   Ok(Json(run))
 }
 

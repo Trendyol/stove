@@ -161,6 +161,7 @@ quarkus-messaging-kafka = { module = "io.quarkus:quarkus-messaging-kafka", versi
 # r2dbc
 r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
 kotliquery = { module = "com.github.seratch:kotliquery", version = "1.9.1" }
+sqliteJdbc = { module = "org.xerial:sqlite-jdbc", version = "3.53.1.0" }
 h2Database = { module = "com.h2database:h2", version = "2.4.240" }
 
 # postgres

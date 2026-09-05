@@ -48,6 +48,10 @@ fn run_routes() -> Router<AppState> {
     .route("/meta", get(super::routes::get_meta))
     .route("/apps", get(super::routes::get_apps))
     .route("/events", post(super::routes::post_event))
+    .route(
+      "/events/batch",
+      post(super::routes::post_batch).get(super::routes::batch_capabilities),
+    )
     .route("/runs", get(super::routes::get_runs))
     .route("/runs/{run_id}", get(super::routes::get_run))
     .route("/runs/{run_id}/tests", get(super::routes::get_tests))
@@ -62,6 +66,10 @@ fn run_routes() -> Router<AppState> {
     .route(
       "/runs/{run_id}/tests/{test_id}/spans",
       get(super::routes::get_test_spans),
+    )
+    .route(
+      "/runs/{run_id}/tests/{test_id}/snapshots/{snapshot_id}",
+      get(super::routes::get_snapshot),
     )
     .route(
       "/runs/{run_id}/tests/{test_id}/snapshots",

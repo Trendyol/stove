@@ -1,9 +1,11 @@
 /// <reference lib="webworker" />
 
-import type { Span } from "../api/types";
-import { applyDagreLayout, spansToTraceDag } from "../utils/flow";
+import { calculateFlow, type FlowInput } from "../utils/flow-work";
 
-self.onmessage = (message: MessageEvent<Span[]>) => {
-  const graph = spansToTraceDag(message.data);
-  self.postMessage({ nodes: applyDagreLayout(graph.nodes, graph.edges), edges: graph.edges });
+self.onmessage = (message: MessageEvent<FlowInput>) => {
+  try {
+    self.postMessage({ graph: calculateFlow(message.data) });
+  } catch (error) {
+    self.postMessage({ error: error instanceof Error ? error.message : "Flow calculation failed" });
+  }
 };

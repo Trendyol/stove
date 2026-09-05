@@ -1,8 +1,14 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Entry, Snapshot, Span } from "../api/types";
 import type { FlowNodeData, GapNodeData, SystemNodeData } from "../utils/flow";
-import { applyLinearTimelineLayout, entriesToDag } from "../utils/flow";
+import {
+  FLOW_NODE_LIMIT,
+  type FlowGraph,
+  type FlowInput,
+  TIMELINE_RECORD_LIMIT,
+} from "../utils/flow-work";
+import { LatestTask } from "../utils/latest-task";
 import { CapturedStateLane } from "./CapturedStateLane";
 import { FlowDag } from "./FlowDag";
 import { NodePopup } from "./NodePopup";
@@ -20,7 +26,14 @@ type FlowSelection =
   | { kind: "none" }
   | { kind: "node"; node: SystemNodeData }
   | { kind: "snapshot"; snapshot: Snapshot };
-const TRACE_NODE_LIMIT = 1_000;
+interface FlowWork {
+  input: FlowInput;
+  scope: string;
+  start: number;
+  end: number;
+  total: number;
+}
+type FlowResult = { graph: FlowGraph; error?: never } | { error: string; graph?: never };
 
 function modeButtonClass(active: boolean): string {
   return `stove-focus-ring cursor-pointer rounded-md px-2.5 py-1 text-xs border-0 transition-colors ${
@@ -33,40 +46,43 @@ function modeButtonClass(active: boolean): string {
 export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabProps) {
   const [mode, setMode] = useState<FlowMode>("timeline");
   const [selection, setSelection] = useState<FlowSelection>({ kind: "none" });
-  const [traceGraph, setTraceGraph] = useState<{
-    nodes: ReturnType<typeof entriesToDag>["nodes"];
-    edges: ReturnType<typeof entriesToDag>["edges"];
-  }>({ nodes: [], edges: [] });
-
-  const timelineGraph = useMemo(() => {
-    const dag = entriesToDag(entries);
-    return { nodes: applyLinearTimelineLayout(dag.nodes), edges: dag.edges };
-  }, [entries]);
+  const [endAnchor, setEndAnchor] = useState<number | null>(null);
+  const [completed, setCompleted] = useState<{ result: FlowResult; work: FlowWork } | null>(null);
+  const schedulerRef = useRef<LatestTask<FlowWork, FlowResult> | null>(null);
+  const pageSize = mode === "trace" ? FLOW_NODE_LIMIT : TIMELINE_RECORD_LIMIT;
+  const total = mode === "trace" ? spans.length : entries.length;
+  const end = Math.min(endAnchor ?? total, total);
+  const start = Math.max(0, end - pageSize);
+  const scope = `${mode}:${endAnchor ?? "latest"}`;
 
   useEffect(() => {
-    if (mode !== "trace" || spans.length === 0) return;
-    let worker: Worker | undefined;
-    const timer = window.setTimeout(() => {
-      const layoutWorker = new Worker(
-        new URL("../workers/flow-layout.worker.ts", import.meta.url),
-        {
-          type: "module",
-        },
-      );
-      worker = layoutWorker;
-      layoutWorker.onmessage = (message) => {
-        setTraceGraph(message.data);
-        layoutWorker.terminate();
-      };
-      layoutWorker.postMessage(spans.slice(-TRACE_NODE_LIMIT));
-    }, 100);
+    const worker = new Worker(new URL("../workers/flow-layout.worker.ts", import.meta.url), {
+      type: "module",
+    });
+    const scheduler = new LatestTask<FlowWork, FlowResult>(
+      (work) => worker.postMessage(work.input),
+      (result, work) => setCompleted({ result, work }),
+    );
+    schedulerRef.current = scheduler;
+    worker.onmessage = (message: MessageEvent<FlowResult>) => scheduler.complete(message.data);
+    worker.onerror = () => scheduler.complete({ error: "Flow calculation failed" });
     return () => {
-      window.clearTimeout(timer);
-      worker?.terminate();
+      scheduler.dispose();
+      schedulerRef.current = null;
+      worker.terminate();
     };
-  }, [mode, spans]);
+  }, []);
 
-  const { nodes, edges } = mode === "trace" ? traceGraph : timelineGraph;
+  useEffect(() => {
+    const input: FlowInput =
+      mode === "trace"
+        ? { mode, records: spans.slice(start, end) }
+        : { mode, records: entries.slice(start, end) };
+    schedulerRef.current?.submit(scope, { input, scope, start, end, total });
+  }, [mode, entries, spans, start, end, total, scope]);
+
+  const current = completed?.work.scope === scope ? completed : null;
+  const { nodes, edges } = current?.result.graph ?? { nodes: [], edges: [] };
 
   const handleNodeClick = useCallback((data: FlowNodeData) => {
     if (!data.inspectable) {
@@ -128,7 +144,10 @@ export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabPr
         <button
           type="button"
           className={modeButtonClass(mode === "timeline")}
-          onClick={() => setMode("timeline")}
+          onClick={() => {
+            setMode("timeline");
+            setEndAnchor(null);
+          }}
         >
           Timeline Flow
         </button>
@@ -136,12 +155,45 @@ export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabPr
           <button
             type="button"
             className={modeButtonClass(mode === "trace")}
-            onClick={() => setMode("trace")}
+            onClick={() => {
+              setMode("trace");
+              setEndAnchor(null);
+            }}
           >
             Trace Flow
           </button>
         )}
         <div className="ml-auto text-[11px] text-[var(--stove-text-secondary)]">{summary}</div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-3 border-b border-stove-border px-3 py-2 text-xs text-[var(--stove-text-secondary)]">
+        <span role="status">
+          {current
+            ? `Showing ${current.work.end ? current.work.start + 1 : 0}–${current.work.end} of ${current.work.total} ${mode === "trace" ? "spans" : "entries"} (${nodes.length} nodes)`
+            : "Calculating flow…"}
+        </span>
+        <button
+          type="button"
+          className="stove-focus-ring disabled:opacity-40"
+          disabled={start === 0}
+          onClick={() => setEndAnchor(start)}
+        >
+          Older
+        </button>
+        <button
+          type="button"
+          className="stove-focus-ring disabled:opacity-40"
+          disabled={end >= total}
+          onClick={() => setEndAnchor(Math.min(total, end + pageSize))}
+        >
+          Newer
+        </button>
+        {endAnchor !== null && (
+          <button type="button" className="stove-focus-ring" onClick={() => setEndAnchor(null)}>
+            Follow latest
+          </button>
+        )}
+        {current?.result.error && <span role="alert">{current.result.error}</span>}
       </div>
 
       <div className="min-h-0 flex-1">

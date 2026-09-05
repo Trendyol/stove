@@ -63,6 +63,9 @@ class DashboardSystem(
   private val jsonMapper = ObjectMapper()
   private val runId = UUID.randomUUID().toString()
   private lateinit var emitter: DashboardEmitter
+
+  val deliveryStatus: DashboardDeliveryStatus?
+    get() = if (::emitter.isInitialized) emitter.deliveryStatus else null
   private var startTime: Instant = Instant.now()
   private var totalTests = 0
   private var passedTests = 0
@@ -75,7 +78,7 @@ class DashboardSystem(
   private val acceptingEvents = AtomicBoolean(false)
 
   override suspend fun run() {
-    emitter = DashboardEmitter(options.ingestion)
+    emitter = DashboardEmitter(options.ingestion, spoolOptions = options.spool)
     startTime = Instant.now()
     emitter.tryEmit(
       dashboardEvent {

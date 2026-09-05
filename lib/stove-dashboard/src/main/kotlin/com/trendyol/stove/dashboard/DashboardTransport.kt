@@ -2,7 +2,9 @@
 
 package com.trendyol.stove.dashboard
 
+import com.trendyol.stove.dashboard.api.BatchAck
 import com.trendyol.stove.dashboard.api.DashboardEvent
+import com.trendyol.stove.dashboard.api.DashboardEventBatch
 import com.trendyol.stove.dashboard.api.DashboardEventServiceGrpcKt.DashboardEventServiceCoroutineStub
 import com.trendyol.stove.dashboard.api.EventAck
 import io.grpc.ManagedChannel
@@ -19,6 +21,7 @@ import io.ktor.client.statement.bodyAsBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.CancellationException
 import java.io.IOException
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -28,11 +31,15 @@ internal interface DashboardTransport {
 
   suspend fun send(event: DashboardEvent): SendOutcome
 
+  suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome
+
   fun close()
 }
 
 internal sealed interface SendOutcome {
   data object Accepted : SendOutcome
+
+  data object Unsupported : SendOutcome
 
   data class Rejected(val reason: String) : SendOutcome
 
@@ -71,6 +78,21 @@ private class GrpcDashboardTransport(
     } else {
       SendOutcome.Failed(error)
     }
+  } catch (error: Exception) {
+    if (error is CancellationException) throw error
+    SendOutcome.Failed(error)
+  }
+
+  override suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome = try {
+    validateBatchAck(batch, stub.withDeadlineAfter(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS).sendBatch(batch))
+  } catch (error: StatusException) {
+    when (error.status.code) {
+      Status.Code.UNIMPLEMENTED -> SendOutcome.Unsupported
+      Status.Code.INVALID_ARGUMENT -> SendOutcome.Rejected(error.status.description ?: "invalid batch")
+      else -> SendOutcome.Failed(error)
+    }
+  } catch (error: CancellationException) {
+    throw error
   } catch (error: Exception) {
     SendOutcome.Failed(error)
   }
@@ -123,6 +145,25 @@ private class HttpDashboardTransport(private val eventsUri: URI) : DashboardTran
       else -> SendOutcome.Failed(IOException("Dashboard server responded with HTTP ${response.status.value}"))
     }
   } catch (error: Exception) {
+    if (error is CancellationException) throw error
+    SendOutcome.Failed(error)
+  }
+
+  override suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome = try {
+    val response = client.post("$eventsUri/batch") {
+      contentType(PROTOBUF_CONTENT_TYPE)
+      accept(PROTOBUF_CONTENT_TYPE)
+      setBody(batch.toByteArray())
+    }
+    when (response.status) {
+      HttpStatusCode.OK -> validateBatchAck(batch, BatchAck.parseFrom(response.bodyAsBytes()))
+      HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed -> SendOutcome.Unsupported
+      HttpStatusCode.BadRequest -> SendOutcome.Rejected(String(response.bodyAsBytes(), Charsets.UTF_8))
+      else -> SendOutcome.Failed(IOException("Dashboard batch returned HTTP ${response.status.value}"))
+    }
+  } catch (error: CancellationException) {
+    throw error
+  } catch (error: Exception) {
     SendOutcome.Failed(error)
   }
 
@@ -132,5 +173,17 @@ private class HttpDashboardTransport(private val eventsUri: URI) : DashboardTran
     private val PROTOBUF_CONTENT_TYPE = ContentType.parse("application/x-protobuf")
     private const val CONNECT_TIMEOUT_MS = 5_000L
     private const val REQUEST_TIMEOUT_MS = 10_000L
+  }
+}
+
+private fun validateBatchAck(batch: DashboardEventBatch, ack: BatchAck): SendOutcome {
+  val valid = ack.acknowledgementsCount == batch.eventsCount &&
+    batch.eventsList.zip(ack.acknowledgementsList).all { (event, result) ->
+      result.accepted && result.eventId == event.eventId && result.sequence == event.sequence
+    }
+  return if (valid) {
+    SendOutcome.Accepted
+  } else {
+    SendOutcome.Failed(IOException("Dashboard batch acknowledgment did not match the pending events"))
   }
 }

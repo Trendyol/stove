@@ -39,6 +39,10 @@ impl SqliteDatabase {
   }
 
   /// Open another connection to the same database for independent reads.
+  pub(super) fn is_in_memory(&self) -> bool {
+    self.use_uri
+  }
+
   pub(super) fn open_peer(&self) -> Result<Self> {
     let mut connection = SqliteConnection::establish(&self.path)?;
     apply_pragmas(&mut connection, self.use_uri)?;

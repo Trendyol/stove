@@ -9,4 +9,14 @@ import "stove/dashboard/v1/dashboard_events.proto";
 service DashboardEventService {
   rpc StreamEvents(stream DashboardEvent) returns (EventAck);
   rpc SendEvent(DashboardEvent) returns (EventAck);
+  rpc SendBatch(DashboardEventBatch) returns (BatchAck);
+}
+
+// Atomic, ordered events from one run. Maximum 100 events and 1 MiB encoded.
+message DashboardEventBatch {
+  repeated DashboardEvent events = 1;
+}
+
+message BatchAck {
+  repeated EventAck acknowledgements = 1;
 }

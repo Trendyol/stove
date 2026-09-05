@@ -1,6 +1,8 @@
 package com.trendyol.stove.dashboard
 
 import com.trendyol.stove.dashboard.api.DashboardEvent
+import com.trendyol.stove.dashboard.api.DashboardEventBatch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,133 +15,164 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.time.Duration.Companion.milliseconds
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 private const val DEFAULT_MAX_FAILURES = 5
 
 /**
- * Queues dashboard events and sends them using the selected [ingestion] transport.
- *
- * Events are buffered in a coroutine channel and drained by a background coroutine.
- * On connection failure, retries with auto-disable after [maxFailures] consecutive failures.
- *
- * Thread-safe: [tryEmit] can be called from any thread.
+ * Persists events before returning from [tryEmit], then delivers them in order.
+ * Pending records survive process restarts and transport failures. Memory holds at
+ * most one delivery batch; the conflated channel carries wakeups, never evidence.
  */
 class DashboardEmitter internal constructor(
   ingestion: DashboardIngestion,
   private val maxFailures: Int,
-  private val drainWarningIntervalMs: Long
+  private val drainWarningIntervalMs: Long,
+  spoolOptions: DashboardSpoolOptions = DashboardSpoolOptions()
 ) {
   constructor(
     ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
-    maxFailures: Int = DEFAULT_MAX_FAILURES
-  ) : this(ingestion, maxFailures, DRAIN_WARNING_INTERVAL_MS)
+    maxFailures: Int = DEFAULT_MAX_FAILURES,
+    spoolOptions: DashboardSpoolOptions = DashboardSpoolOptions()
+  ) : this(ingestion, maxFailures, DRAIN_WARNING_INTERVAL_MS, spoolOptions)
 
   init {
     require(maxFailures > 0) { "maxFailures must be greater than zero: $maxFailures" }
-    require(drainWarningIntervalMs > 0) {
-      "drainWarningIntervalMs must be greater than zero: $drainWarningIntervalMs"
-    }
+    require(drainWarningIntervalMs > 0) { "drainWarningIntervalMs must be greater than zero" }
   }
 
+  private val lifecycleLock = ReentrantLock()
+  private val spool = DashboardSpool(ingestion, spoolOptions)
   private val transport = ingestion.createTransport()
   private val logger = LoggerFactory.getLogger(DashboardEmitter::class.java)
-  private val eventQueue = Channel<DashboardEvent>(Channel.UNLIMITED)
+  private val wakeup = Channel<Unit>(Channel.CONFLATED)
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-  private val disabled = AtomicBoolean(false)
   private val closed = AtomicBoolean(false)
-  private var consecutiveFailures = 0
-  private var rejectionLogged = false
-  private val sequenceByRun = mutableMapOf<String, Long>()
-  private val drainJob: Job = scope.launch { drainLoop() }
 
-  /** Non-blocking emit. Drops the event only if the emitter is disabled or closed. */
-  @Synchronized
-  fun tryEmit(event: DashboardEvent) {
-    if (disabled.get() || closed.get()) return
-    val sequence = sequenceByRun.getOrDefault(event.runId, 0) + 1
-    sequenceByRun[event.runId] = sequence
-    val identifiedEvent = event.toBuilder()
-      .setEventId(UUID.randomUUID().toString())
-      .setSequence(sequence)
-      .build()
-    val result = eventQueue.trySend(identifiedEvent)
-    if (result.isFailure && !disabled.get()) {
-      logger.debug("Dropping dashboard event because emitter queue is closed")
+  @Volatile private var fatalError: Exception? = null
+
+  @Volatile private var lastError: String? = null
+
+  @Volatile private var finalStatus: DashboardDeliveryStatus? = null
+  private var consecutiveFailures = 0
+  private var batchSupported = true
+  private val drainJob: Job = scope.launch {
+    try {
+      drainLoop()
+    } catch (error: CancellationException) {
+      throw error
+    } catch (error: Exception) {
+      fatalError = error
+      lastError = error.message
+      logger.error("Dashboard delivery stopped; pending evidence remains in ${spool.path}", error)
     }
   }
 
-  /** Graceful, idempotent shutdown: drains queued events, then closes the transport. */
+  val deliveryStatus: DashboardDeliveryStatus
+    get() = lifecycleLock.withLock { finalStatus ?: spool.status().copy(lastError = lastError) }
+
+  /** Durable emit. Disk exhaustion/write failures throw, applying backpressure to the caller. */
+  fun tryEmit(event: DashboardEvent): Unit = lifecycleLock.withLock {
+    check(!closed.get()) { "Dashboard emitter is closed" }
+    fatalError?.let { throw DashboardSpoolException("Dashboard delivery requires attention at ${spool.path}", it) }
+    spool.append(event)
+    wakeup.trySend(Unit)
+  }
+
+  /** Drain while progress is possible; after [maxFailures] shutdown failures, retain pending data. */
   fun close() {
-    if (!closed.compareAndSet(false, true)) return
-    eventQueue.close()
+    lifecycleLock.withLock {
+      if (!closed.compareAndSet(false, true)) return
+    }
+    wakeup.trySend(Unit)
     runBlocking {
       while (!drainJob.isCompleted) {
-        val drained = withTimeoutOrNull(drainWarningIntervalMs.milliseconds) {
-          drainJob.join()
-          true
-        } ?: false
-        if (!drained) {
-          logger.warn("Still waiting for queued dashboard events to be acknowledged")
+        if (withTimeoutOrNull(drainWarningIntervalMs) {
+            drainJob.join()
+            true
+          } != true
+        ) {
+          logger.warn("Still waiting for dashboard acknowledgments; pending evidence is in ${spool.path}")
         }
       }
     }
     scope.cancel()
-    transport.close()
+    val remaining = lifecycleLock.withLock {
+      try {
+        spool.status().copy(lastError = lastError).also { finalStatus = it }
+      } finally {
+        try {
+          spool.close()
+        } finally {
+          transport.close()
+        }
+      }
+    }
+    if (remaining.pendingEvents > 0) {
+      logger.warn(
+        "Dashboard closed with ${remaining.pendingEvents} pending events in ${spool.path}; the next producer using this endpoint and directory will retry them"
+      )
+    }
+    fatalError?.let { throw DashboardSpoolException("Dashboard delivery stopped at ${spool.path}", it) }
   }
 
   private suspend fun drainLoop() {
-    for (event in eventQueue) {
-      if (!scope.isActive || disabled.get()) break
-      sendUntilAcknowledged(event)
-    }
-  }
-
-  private suspend fun sendUntilAcknowledged(event: DashboardEvent) {
-    while (scope.isActive && !disabled.get()) {
-      when (val outcome = transport.send(event)) {
-        SendOutcome.Accepted -> {
-          consecutiveFailures = 0
-          return
-        }
-
-        is SendOutcome.Rejected -> {
-          consecutiveFailures = 0
-          if (!rejectionLogged) {
-            rejectionLogged = true
-            logger.warn(
-              "Dashboard server rejected an event: ${outcome.reason}. " +
-                "Such events are dropped; tests continue normally."
-            )
+    var shutdownLockWaits = 0
+    while (scope.isActive) {
+      val lease = spool.tryAcquireDelivery()
+      if (lease == null) {
+        // Another process owns delivery. Do not block shutdown on that process.
+        if (closed.get() && ++shutdownLockWaits >= maxFailures) return
+        delay(100)
+        continue
+      }
+      var empty = false
+      var failed = false
+      lease.use {
+        var records = spool.peek(if (batchSupported) MAX_BATCH_EVENTS else 1)
+        if (records.isEmpty()) {
+          empty = true
+        } else {
+          if (batchSupported && records.size < MAX_BATCH_EVENTS && !closed.get() && spool.status().pendingEvents == records.size.toLong()) {
+            delay(10)
+            records = spool.peek(if (batchSupported) MAX_BATCH_EVENTS else 1)
           }
-          return
+          val events = records.map { it.event }
+          val batch = DashboardEventBatch.newBuilder().addAllEvents(events).build()
+          val useBatch = batchSupported && batch.serializedSize <= MAX_BATCH_BYTES
+          val outcome = if (useBatch) transport.sendBatch(batch) else transport.send(events.first())
+          when (outcome) {
+            SendOutcome.Accepted -> {
+              spool.acknowledge(if (useBatch) records else records.take(1))
+              consecutiveFailures = 0
+              lastError = null
+            }
+
+            SendOutcome.Unsupported -> batchSupported = false
+
+            is SendOutcome.Rejected -> throw DashboardSpoolException("Server rejected pending evidence: ${outcome.reason}")
+
+            is SendOutcome.Failed -> {
+              consecutiveFailures = (consecutiveFailures + 1).coerceAtMost(Int.MAX_VALUE - 1)
+              lastError = outcome.cause.message
+              if (consecutiveFailures == 1) {
+                logger.warn("Dashboard ${transport.name} delivery failed; retaining and retrying evidence in ${spool.path}", outcome.cause)
+              }
+              failed = true
+            }
+          }
         }
-
-        is SendOutcome.Failed -> handleFailure(outcome.cause)
       }
-
-      if (!disabled.get()) {
-        val attempt = consecutiveFailures.coerceAtLeast(1).coerceAtMost(5)
-        delay((RETRY_BASE_DELAY_MS shl (attempt - 1)).milliseconds)
+      if (empty) {
+        if (closed.get()) return
+        // Poll also discovers records appended by other producer processes.
+        withTimeoutOrNull(100) { wakeup.receive() }
+      } else if (failed) {
+        if (closed.get() && consecutiveFailures >= maxFailures) return
+        delay(RETRY_BASE_DELAY_MS shl (consecutiveFailures.coerceIn(1, 6) - 1))
       }
-    }
-  }
-
-  private fun handleFailure(error: Exception) {
-    consecutiveFailures++
-    if (consecutiveFailures == 1) {
-      logger.warn(
-        "Dashboard server ${transport.name} error: ${error.message}. " +
-          "Events will be dropped after $maxFailures consecutive failures."
-      )
-    }
-    if (consecutiveFailures >= maxFailures) {
-      disabled.set(true)
-      logger.info(
-        "Dashboard emitter disabled after $consecutiveFailures consecutive failures. Tests will continue normally."
-      )
     }
   }
 

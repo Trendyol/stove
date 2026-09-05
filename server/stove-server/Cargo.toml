@@ -89,6 +89,7 @@ uuid = { version = "1", features = ["v4"] }
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "gzip", "http2"] }
 
 [dev-dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["query"] }
 tempfile = "3"
 testcontainers = "0.28"
 

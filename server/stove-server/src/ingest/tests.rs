@@ -58,7 +58,10 @@ async fn sqlite_ingestion_waiting_for_the_writer_does_not_starve_async_work() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn acknowledgement_does_not_wait_for_the_sse_read_lane() {
-  let svc = test_service();
+  let directory = tempfile::tempdir().unwrap();
+  let path = directory.path().join("independent-lanes.db");
+  let repository = Arc::new(Repository::connect_sqlite(path.to_str().unwrap(), 1).unwrap());
+  let svc = EventIngestor::new(repository, Arc::new(SseManager::new()));
   let locked_repository = svc.repository.clone();
   let (locked_tx, locked_rx) = std::sync::mpsc::sync_channel(1);
   let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
@@ -379,4 +382,196 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
     .unwrap();
   assert_eq!(entries.len(), 2);
   assert_ne!(entries[0].assertion_id, entries[1].assertion_id);
+}
+
+#[tokio::test]
+async fn admission_is_shared_and_rejects_before_scheduling_work() {
+  let repository = Arc::new(Repository::connect_sqlite(":memory:", 0).unwrap());
+  let svc = EventIngestor::with_capacity(repository, Arc::new(SseManager::new()), 1);
+  let permit = svc.admission.clone().acquire_owned().await.unwrap();
+  let result = svc
+    .clone()
+    .ingest_async(proto::DashboardEvent::default())
+    .await;
+  assert!(matches!(result, Err(crate::error::AppError::Overloaded)));
+  drop(permit);
+  let result = svc.ingest_async(proto::DashboardEvent::default()).await;
+  assert!(matches!(
+    result,
+    Err(crate::error::AppError::InvalidEvent(_))
+  ));
+  assert_eq!(svc.admission.available_permits(), 1);
+}
+
+#[tokio::test]
+async fn cancelled_request_keeps_admission_until_blocking_work_finishes() {
+  let repository = Arc::new(Repository::connect_sqlite(":memory:", 0).unwrap());
+  let svc = EventIngestor::with_capacity(repository.clone(), Arc::new(SseManager::new()), 1);
+  let (locked_tx, locked_rx) = tokio::sync::oneshot::channel();
+  let (release_tx, release_rx) = std::sync::mpsc::channel();
+  let blocker = std::thread::spawn(move || {
+    repository.with_write_db_locked(|| {
+      locked_tx.send(()).unwrap();
+      release_rx.recv().unwrap();
+    });
+  });
+  locked_rx.await.unwrap();
+  let worker = svc.clone();
+  let request = tokio::spawn(async move {
+    worker
+      .ingest_async(proto::DashboardEvent {
+        run_id: "cancelled-run".into(),
+        event_id: "cancelled-event".into(),
+        sequence: 1,
+        event: Some(proto::dashboard_event::Event::RunStarted(
+          proto::RunStartedEvent {
+            app_name: "cancelled".into(),
+            timestamp: Some(ts(1_704_067_200)),
+            ..Default::default()
+          },
+        )),
+      })
+      .await
+  });
+  while svc.admission.available_permits() != 0 {
+    tokio::task::yield_now().await;
+  }
+  request.abort();
+  let _ = request.await;
+  assert_eq!(svc.admission.available_permits(), 0);
+  release_tx.send(()).unwrap();
+  tokio::time::timeout(Duration::from_secs(5), async {
+    while svc.admission.available_permits() == 0 {
+      tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+  })
+  .await
+  .unwrap();
+  blocker.join().unwrap();
+  assert_eq!(svc.repository.get_runs(None).unwrap().len(), 1);
+}
+
+fn batch_run_event(sequence: u64) -> proto::DashboardEvent {
+  proto::DashboardEvent {
+    run_id: "batch-run".into(),
+    event_id: format!("batch-{sequence}"),
+    sequence,
+    event: Some(proto::dashboard_event::Event::RunStarted(
+      proto::RunStartedEvent {
+        app_name: "batch-app".into(),
+        timestamp: Some(ts(1_704_067_200)),
+        ..Default::default()
+      },
+    )),
+  }
+}
+
+#[tokio::test]
+async fn batch_rolls_back_domain_inbox_and_publication_on_sequence_failure() {
+  let svc = test_service();
+  let result = svc
+    .ingest_batch(proto::DashboardEventBatch {
+      events: vec![batch_run_event(1), batch_run_event(3)],
+    })
+    .await;
+  assert!(matches!(
+    result,
+    Err(crate::error::AppError::InvalidEvent(_))
+  ));
+  assert!(svc.repository.get_runs(None).unwrap().is_empty());
+  assert_eq!(svc.repository.latest_live_event_id().unwrap(), 0);
+  let batch = proto::DashboardEventBatch {
+    events: vec![batch_run_event(1), batch_run_event(2)],
+  };
+  let ack = svc.ingest_batch(batch.clone()).await.unwrap();
+  assert_eq!(ack.acknowledgements.len(), 2);
+  assert!(
+    ack
+      .acknowledgements
+      .iter()
+      .all(|ack| ack.accepted && !ack.duplicate)
+  );
+  let replay = svc.ingest_batch(batch).await.unwrap();
+  assert!(
+    replay
+      .acknowledgements
+      .iter()
+      .all(|ack| ack.accepted && ack.duplicate)
+  );
+  assert_eq!(svc.repository.latest_live_event_id().unwrap(), 2);
+}
+
+#[tokio::test]
+async fn batch_rejects_mixed_runs_and_capacity_limits_without_writes() {
+  let svc = test_service();
+  let mut other = batch_run_event(2);
+  other.run_id = "other-run".into();
+  for events in [
+    vec![],
+    vec![batch_run_event(1), other],
+    (1..=101).map(batch_run_event).collect(),
+  ] {
+    assert!(matches!(
+      svc
+        .ingest_batch(proto::DashboardEventBatch { events })
+        .await,
+      Err(crate::error::AppError::InvalidEvent(_))
+    ));
+  }
+  let mut oversized = batch_run_event(1);
+  oversized.run_id = "x".repeat(1024 * 1024);
+  assert!(matches!(
+    svc
+      .ingest_batch(proto::DashboardEventBatch {
+        events: vec![oversized]
+      })
+      .await,
+    Err(crate::error::AppError::InvalidEvent(_))
+  ));
+  assert!(svc.repository.get_runs(None).unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn batch_correlates_assertion_attempts_against_earlier_writes_in_the_transaction() {
+  let svc = test_service();
+  let started = proto::DashboardEvent {
+    run_id: "batch-run".into(),
+    event_id: "test-started".into(),
+    sequence: 2,
+    event: Some(proto::dashboard_event::Event::TestStarted(
+      proto::TestStartedEvent {
+        test_id: "test".into(),
+        test_name: "test".into(),
+        timestamp: Some(ts(1_704_067_200)),
+        ..Default::default()
+      },
+    )),
+  };
+  let mut events = vec![batch_run_event(1), started];
+  for sequence in 3..=5 {
+    events.push(proto::DashboardEvent {
+      run_id: "batch-run".into(),
+      event_id: format!("attempt-{sequence}"),
+      sequence,
+      event: Some(proto::dashboard_event::Event::EntryRecorded(
+        proto::EntryRecordedEvent {
+          test_id: "test".into(),
+          timestamp: Some(ts(1_704_067_200)),
+          system: "HTTP".into(),
+          action: "GET /api".into(),
+          result: if sequence == 5 { "PASSED" } else { "FAILED" }.into(),
+          expected: "200".into(),
+          ..Default::default()
+        },
+      )),
+    });
+  }
+  svc
+    .ingest_batch(proto::DashboardEventBatch { events })
+    .await
+    .unwrap();
+  let entries = svc.repository.get_entries("batch-run", "test").unwrap();
+  assert_eq!(entries.len(), 1);
+  assert_eq!(entries[0].attempt_count, 3);
+  assert_eq!(entries[0].failure_count, 2);
 }

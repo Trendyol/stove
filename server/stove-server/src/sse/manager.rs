@@ -1,16 +1,66 @@
-use std::sync::Mutex;
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex, Weak};
 
+use serde::Deserialize;
 use tokio::sync::{Notify, broadcast};
 
 use crate::ingest::StoredLiveEvent;
 
-/// Manages SSE (Server-Sent Events) broadcasting to connected browser clients.
-///
-/// Uses `tokio::sync::broadcast` so multiple SSE clients each get their own receiver.
-/// Events are JSON-serialized dashboard events.
+const CACHE_BYTES: usize = 8 * 1024 * 1024;
+const CACHE_EVENTS: usize = 2_000;
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct LiveScope {
+  pub run_id: String,
+  pub event_type: String,
+  pub payload: TestScope,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct TestScope {
+  pub test_id: Option<String>,
+}
+
+impl LiveScope {
+  pub(crate) fn includes(&self, run: Option<&str>, test: Option<&str>) -> bool {
+    matches!(
+      self.event_type.as_str(),
+      "run_started" | "run_ended" | "test_started" | "test_ended"
+    ) || (run == Some(self.run_id.as_str())
+      && test.is_none_or(|test| self.payload.test_id.as_deref() == Some(test)))
+  }
+}
+
+#[derive(Debug)]
+pub struct CachedLiveEvent {
+  pub event: StoredLiveEvent,
+  pub(crate) scope: Option<LiveScope>,
+}
+
+/// The broadcast ring holds only weak references, never a second unbounded payload cache.
+#[derive(Clone, Debug)]
+pub struct LiveNotice {
+  pub id: u64,
+  payload: Weak<CachedLiveEvent>,
+}
+
+impl LiveNotice {
+  #[must_use]
+  pub fn event(&self) -> Option<Arc<CachedLiveEvent>> {
+    self.payload.upgrade()
+  }
+}
+
+#[derive(Default)]
+struct Cache {
+  last_id: u64,
+  bytes: usize,
+  events: VecDeque<Arc<CachedLiveEvent>>,
+}
+
 pub struct SseManager {
-  sender: broadcast::Sender<StoredLiveEvent>,
-  last_broadcast_id: Mutex<u64>,
+  sender: broadcast::Sender<LiveNotice>,
+  cache: Mutex<Cache>,
   commit_notify: Notify,
 }
 
@@ -20,62 +70,79 @@ impl SseManager {
     let (sender, _) = broadcast::channel(4096);
     Self {
       sender,
-      last_broadcast_id: Mutex::new(0),
+      cache: Mutex::new(Cache::default()),
       commit_notify: Notify::new(),
     }
   }
 
-  /// Broadcast a JSON event to all connected SSE clients.
-  ///
-  /// Ignores `SendError` (no subscribers is fine — nobody is listening yet).
   pub fn broadcast(&self, event: StoredLiveEvent) {
-    // Keep the high-water update and send in one critical section. This makes
-    // publication monotonic even if callers race, and drops stale events.
-    let mut last_broadcast_id = self
-      .last_broadcast_id
+    let scope = serde_json::from_str(&event.json).ok();
+    let payload = Arc::new(CachedLiveEvent { event, scope });
+    let mut cache = self
+      .cache
       .lock()
       .unwrap_or_else(std::sync::PoisonError::into_inner);
-    if *last_broadcast_id >= event.id {
+    if cache.last_id >= payload.event.id {
       return;
     }
-    *last_broadcast_id = event.id;
-    if let Err(e) = self.sender.send(event) {
-      tracing::debug!("No SSE subscribers to broadcast to: {e}");
+    cache.last_id = payload.event.id;
+    let notice = LiveNotice {
+      id: payload.event.id,
+      payload: Arc::downgrade(&payload),
+    };
+    if payload.event.json.len() <= CACHE_BYTES {
+      cache.bytes += payload.event.json.len();
+      cache.events.push_back(payload);
+      while cache.bytes > CACHE_BYTES || cache.events.len() > CACHE_EVENTS {
+        if let Some(expired) = cache.events.pop_front() {
+          cache.bytes -= expired.event.json.len();
+        }
+      }
     }
+    let _ = self.sender.send(notice);
   }
 
-  /// Establish the durable cursor before the relay starts. Existing events
-  /// remain available for per-client replay but are not rebroadcast as new.
-  pub(crate) fn initialize_high_water(&self, event_id: u64) {
-    let mut last_broadcast_id = self
-      .last_broadcast_id
+  /// Missing or oversized history forces clients through the durable replay/resync path.
+  pub(crate) fn broadcast_cursor(&self, id: u64) {
+    let mut cache = self
+      .cache
       .lock()
       .unwrap_or_else(std::sync::PoisonError::into_inner);
-    *last_broadcast_id = (*last_broadcast_id).max(event_id);
+    if cache.last_id >= id {
+      return;
+    }
+    cache.last_id = id;
+    let _ = self.sender.send(LiveNotice {
+      id,
+      payload: Weak::new(),
+    });
   }
 
-  /// Wake the durable relay after a successful commit. Notifications may
-  /// coalesce because the relay always drains every event after its cursor.
+  pub(crate) fn initialize_high_water(&self, id: u64) {
+    let mut cache = self
+      .cache
+      .lock()
+      .unwrap_or_else(std::sync::PoisonError::into_inner);
+    cache.last_id = cache.last_id.max(id);
+  }
+
   pub(crate) fn notify_commit(&self) {
     self.commit_notify.notify_one();
   }
-
   pub(crate) async fn wait_for_commit(&self) {
     self.commit_notify.notified().await;
   }
-
-  /// Create a new receiver for SSE clients to subscribe to.
   #[must_use]
-  pub fn subscribe(&self) -> broadcast::Receiver<StoredLiveEvent> {
+  pub fn subscribe(&self) -> broadcast::Receiver<LiveNotice> {
     self.sender.subscribe()
   }
-
   #[must_use]
   pub fn last_broadcast_id(&self) -> u64 {
-    *self
-      .last_broadcast_id
+    self
+      .cache
       .lock()
       .unwrap_or_else(std::sync::PoisonError::into_inner)
+      .last_id
   }
 }
 
@@ -120,6 +187,59 @@ mod tests {
     }
     assert!(ids.windows(2).all(|pair| pair[0] < pair[1]));
     assert_eq!(manager.last_broadcast_id(), 2);
+  }
+
+  #[test]
+  fn payload_cache_is_shared_and_evicted_by_bytes() {
+    let manager = SseManager::new();
+    let mut first = manager.subscribe();
+    let mut second = manager.subscribe();
+    manager.broadcast(StoredLiveEvent {
+      id: 1,
+      json: "x".repeat(super::CACHE_BYTES / 2),
+    });
+    let notice = first.try_recv().unwrap();
+    assert!(Arc::ptr_eq(
+      &notice.event().unwrap(),
+      &second.try_recv().unwrap().event().unwrap()
+    ));
+    for id in 2..=3 {
+      manager.broadcast(StoredLiveEvent {
+        id,
+        json: "x".repeat(super::CACHE_BYTES / 2),
+      });
+    }
+    assert!(notice.event().is_none());
+    let cache = manager.cache.lock().unwrap();
+    assert_eq!(cache.bytes, super::CACHE_BYTES);
+    assert_eq!(cache.events.len(), 2);
+  }
+
+  #[test]
+  fn payload_cache_is_evicted_by_count_and_cursor_notices_force_replay() {
+    let manager = SseManager::new();
+    let mut receiver = manager.subscribe();
+    manager.broadcast(StoredLiveEvent {
+      id: 1,
+      json: "{}".into(),
+    });
+    let notice = receiver.try_recv().unwrap();
+    for id in 2..=2_001 {
+      manager.broadcast(StoredLiveEvent {
+        id,
+        json: "{}".into(),
+      });
+    }
+    assert!(notice.event().is_none());
+    assert_eq!(
+      manager.cache.lock().unwrap().events.len(),
+      super::CACHE_EVENTS
+    );
+    let mut receiver = manager.subscribe();
+    manager.broadcast_cursor(2_002);
+    let missing = receiver.try_recv().unwrap();
+    assert_eq!(missing.id, 2_002);
+    assert!(missing.event().is_none());
   }
 
   #[test]

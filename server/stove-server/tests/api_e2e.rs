@@ -1446,7 +1446,8 @@ async fn mock_interactions_have_the_same_shape_in_sse_and_rest() {
     .await
     .unwrap();
 
-  let live_json: Value = serde_json::from_str(&live.recv().await.unwrap().json).unwrap();
+  let live_json: Value =
+    serde_json::from_str(&live.recv().await.unwrap().event().unwrap().event.json).unwrap();
   assert_eq!(
     live_json["payload"]["near_misses"],
     serde_json::json!(["body matcher rejected"])
@@ -1640,7 +1641,7 @@ async fn sse_broadcast_data_is_readable_after_notification() {
 
   // Subscriber receives the notification
   let msg = rx.try_recv().expect("should receive broadcast");
-  assert!(msg.json.contains("run-sse"));
+  assert!(msg.event().unwrap().event.json.contains("run-sse"));
 
   // Immediately refetch — data must be present (this is what the browser does)
   let body = server.get_json("/runs/run-sse/tests").await;

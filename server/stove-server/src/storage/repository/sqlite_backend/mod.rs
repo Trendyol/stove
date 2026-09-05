@@ -16,7 +16,9 @@ pub(super) mod writes;
 pub(super) struct SqliteBackend {
   write: Arc<Mutex<SqliteDatabase>>,
   read: Arc<Mutex<SqliteDatabase>>,
+  replay: Arc<Mutex<SqliteDatabase>>,
   explorer: Mutex<Connection>,
+  in_memory: bool,
 }
 
 impl SqliteBackend {
@@ -26,11 +28,25 @@ impl SqliteBackend {
 
   fn new(database: SqliteDatabase) -> Result<Self> {
     let explorer = database.open_driver_peer()?;
-    let read = database.open_peer()?;
+    let in_memory = database.is_in_memory();
+    // Shared in-memory SQLite has table locks, not WAL snapshots. Use one
+    // serialized connection there so replay cannot cause SQLITE_LOCKED writes.
+    let peers = if in_memory {
+      None
+    } else {
+      Some((database.open_peer()?, database.open_peer()?))
+    };
+    let write = Arc::new(Mutex::new(database));
+    let (read, replay) = peers.map_or_else(
+      || (write.clone(), write.clone()),
+      |(read, replay)| (Arc::new(Mutex::new(read)), Arc::new(Mutex::new(replay))),
+    );
     Ok(Self {
-      write: Arc::new(Mutex::new(database)),
-      read: Arc::new(Mutex::new(read)),
+      write,
+      read,
+      replay,
       explorer: Mutex::new(explorer),
+      in_memory,
     })
   }
 
@@ -40,6 +56,10 @@ impl SqliteBackend {
 
   pub(super) fn lock_read(&self) -> MutexGuard<'_, SqliteDatabase> {
     self.read.lock().expect("read database lock poisoned")
+  }
+
+  fn lock_replay(&self) -> MutexGuard<'_, SqliteDatabase> {
+    self.replay.lock().expect("replay database lock poisoned")
   }
 
   fn lock_explorer(&self) -> MutexGuard<'_, Connection> {

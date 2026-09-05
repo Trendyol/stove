@@ -38,23 +38,23 @@ impl PostgresBackend {
   }
 
   pub fn save_entry(&self, entry: &NewEntry) -> Result<()> {
-    save_entry_on(&mut self.lock_write(), entry)
+    save_entry_on(&mut self.lock_write(), entry).map(|_| ())
   }
 
   pub fn save_span(&self, span: &NewSpan) -> Result<()> {
-    save_span_on(&mut self.lock_write(), span)
+    save_span_on(&mut self.lock_write(), span).map(|_| ())
   }
 
   pub fn save_snapshot(&self, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-    save_snapshot_on(&mut self.lock_write(), snapshot)
+    save_snapshot_on(&mut self.lock_write(), snapshot).map(|_| ())
   }
 
   pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
-    save_mock_interaction_on(&mut self.lock_write(), interaction)
+    save_mock_interaction_on(&mut self.lock_write(), interaction).map(|_| ())
   }
 
   pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
-    save_mock_warning_on(&mut self.lock_write(), warning)
+    save_mock_warning_on(&mut self.lock_write(), warning).map(|_| ())
   }
 
   pub fn clear_all(&self) -> Result<()> {
@@ -68,20 +68,23 @@ pub(super) fn apply_event(
   conn: &mut PgConnection,
   event: &PersistedDashboardEvent,
   retention: usize,
-) -> Result<()> {
+) -> Result<Option<i64>> {
   match WriteOperation::from(event) {
-    WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
+    WriteOperation::RunStarted(run) => save_run_start_on(conn, &run).map(|()| None),
     WriteOperation::RunEnded(run) => {
       save_run_end_on(conn, &run)?;
-      prune_for_completed_run(conn, run.run_id, retention)
+      prune_for_completed_run(conn, run.run_id, retention)?;
+      Ok(None)
     }
-    WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
-    WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
-    WriteOperation::Entry(entry) => save_entry_on(conn, entry),
-    WriteOperation::Span(span) => save_span_on(conn, span),
-    WriteOperation::Snapshot(snapshot) => save_snapshot_on(conn, &snapshot),
-    WriteOperation::MockInteraction(interaction) => save_mock_interaction_on(conn, interaction),
-    WriteOperation::MockWarning(warning) => save_mock_warning_on(conn, warning),
+    WriteOperation::TestStarted(test) => save_test_start_on(conn, &test).map(|()| None),
+    WriteOperation::TestEnded(test) => save_test_end_on(conn, &test).map(|()| None),
+    WriteOperation::Entry(entry) => save_entry_on(conn, entry).map(Some),
+    WriteOperation::Span(span) => save_span_on(conn, span).map(Some),
+    WriteOperation::Snapshot(snapshot) => save_snapshot_on(conn, &snapshot).map(Some),
+    WriteOperation::MockInteraction(interaction) => {
+      save_mock_interaction_on(conn, interaction).map(Some)
+    }
+    WriteOperation::MockWarning(warning) => save_mock_warning_on(conn, warning).map(Some),
   }
 }
 
@@ -163,8 +166,8 @@ fn save_test_end_on(conn: &mut PgConnection, test: &TestEnd<'_>) -> Result<()> {
   Ok(())
 }
 
-fn save_entry_on(conn: &mut PgConnection, entry: &NewEntry) -> Result<()> {
-  diesel::insert_into(entries::table)
+fn save_entry_on(conn: &mut PgConnection, entry: &NewEntry) -> Result<i64> {
+  let id = diesel::insert_into(entries::table)
     .values((
       entries::run_id.eq(&entry.run_id),
       entries::test_id.eq(&entry.test_id),
@@ -182,12 +185,13 @@ fn save_entry_on(conn: &mut PgConnection, entry: &NewEntry) -> Result<()> {
       entries::assertion_id.eq(&entry.assertion_id),
       entries::correlation_key.eq(&entry.correlation_key),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(entries::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
-fn save_span_on(conn: &mut PgConnection, span: &NewSpan) -> Result<()> {
-  diesel::insert_into(spans::table)
+fn save_span_on(conn: &mut PgConnection, span: &NewSpan) -> Result<i64> {
+  let id = diesel::insert_into(spans::table)
     .values((
       spans::run_id.eq(&span.run_id),
       spans::trace_id.eq(&span.trace_id),
@@ -203,12 +207,13 @@ fn save_span_on(conn: &mut PgConnection, span: &NewSpan) -> Result<()> {
       spans::exception_message.eq(non_empty(&span.exception_message)),
       spans::exception_stack_trace.eq(non_empty(&span.exception_stack_trace)),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(spans::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
-fn save_snapshot_on(conn: &mut PgConnection, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-  diesel::insert_into(snapshots::table)
+fn save_snapshot_on(conn: &mut PgConnection, snapshot: &SnapshotWrite<'_>) -> Result<i64> {
+  let id = diesel::insert_into(snapshots::table)
     .values((
       snapshots::run_id.eq(snapshot.run_id),
       snapshots::test_id.eq(snapshot.test_id),
@@ -218,15 +223,16 @@ fn save_snapshot_on(conn: &mut PgConnection, snapshot: &SnapshotWrite<'_>) -> Re
       snapshots::captured_at.eq(non_empty(snapshot.captured_at)),
       snapshots::trigger_kind.eq(snapshot.trigger),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(snapshots::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
 fn save_mock_interaction_on(
   conn: &mut PgConnection,
   interaction: &NewMockInteraction,
-) -> Result<()> {
-  diesel::insert_into(mock_interactions::table)
+) -> Result<i64> {
+  let id = diesel::insert_into(mock_interactions::table)
     .values((
       mock_interactions::run_id.eq(&interaction.run_id),
       mock_interactions::test_id.eq(&interaction.test_id),
@@ -253,12 +259,13 @@ fn save_mock_interaction_on(
       mock_interactions::fault.eq(&interaction.fault),
       mock_interactions::client_deadline_ms.eq(interaction.client_deadline_ms),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(mock_interactions::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
-fn save_mock_warning_on(conn: &mut PgConnection, warning: &NewMockWarning) -> Result<()> {
-  diesel::insert_into(mock_warnings::table)
+fn save_mock_warning_on(conn: &mut PgConnection, warning: &NewMockWarning) -> Result<i64> {
+  let id = diesel::insert_into(mock_warnings::table)
     .values((
       mock_warnings::run_id.eq(&warning.run_id),
       mock_warnings::test_id.eq(&warning.test_id),
@@ -269,8 +276,9 @@ fn save_mock_warning_on(conn: &mut PgConnection, warning: &NewMockWarning) -> Re
       mock_warnings::stub_id.eq(&warning.stub_id),
       mock_warnings::target.eq(&warning.target),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(mock_warnings::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
 fn prune_for_completed_run(conn: &mut PgConnection, run_id: &str, retention: usize) -> Result<()> {
@@ -296,6 +304,11 @@ pub(in crate::storage::repository) fn prune_app(
   if retention == 0 {
     return Ok(());
   }
+  // Serialize the candidate read with other cleanup transactions for this app.
+  // Each statement after the lock observes run completions committed by its predecessor.
+  diesel::sql_query("SELECT pg_advisory_xact_lock(1937012087, hashtext($1))")
+    .bind::<diesel::sql_types::Text, _>(app_name)
+    .execute(conn)?;
   let offset = i64::try_from(retention).unwrap_or(i64::MAX);
   let expired = runs::table
     .filter(runs::app_name.eq(app_name))

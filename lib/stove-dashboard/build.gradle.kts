@@ -35,8 +35,10 @@ dependencies {
   api(projects.lib.stoveDashboardApi)
   implementation(libs.io.grpc.netty)
   implementation(libs.kotlinx.core)
+  implementation(libs.sqliteJdbc)
   implementation(libs.ktor.client.core)
   implementation(libs.ktor.client.cio)
 
   testImplementation(projects.lib.stoveTracing)
+  testImplementation(libs.kotlinx.serialization.json)
 }

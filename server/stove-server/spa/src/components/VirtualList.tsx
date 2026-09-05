@@ -1,5 +1,7 @@
 import { type Key, type ReactNode, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { fixedRange, variableRange } from "../utils/virtual-window";
+
 const DEFAULT_OVERSCAN_PX = 320;
 const DEFAULT_WINDOW_THRESHOLD = 160;
 
@@ -12,11 +14,6 @@ interface VirtualListProps<T> {
   ariaLabel: string;
   windowThreshold?: number;
   overscanPx?: number;
-}
-
-interface ItemLayout {
-  start: number;
-  size: number;
 }
 
 /** Keeps large ledgers bounded while retaining ordinary document flow for small lists. */
@@ -34,9 +31,12 @@ export function VirtualList<T>({
   const [viewport, setViewport] = useState({ height: 0, scrollTop: 0 });
   const windowed = items.length > windowThreshold;
   const { layout, totalSize } = useMemo(() => {
+    if (typeof getItemSize === "number") {
+      return { layout: null, totalSize: items.length * getItemSize };
+    }
     let start = 0;
     const nextLayout = items.map((item) => {
-      const size = typeof getItemSize === "number" ? getItemSize : getItemSize(item);
+      const size = getItemSize(item);
       const position = { start, size };
       start += size;
       return position;
@@ -65,7 +65,12 @@ export function VirtualList<T>({
     );
   }
 
-  const range = visibleRange(layout, viewport.scrollTop, viewport.height, overscanPx);
+  const minimum = Math.max(0, viewport.scrollTop - overscanPx);
+  const maximum = viewport.scrollTop + viewport.height + overscanPx;
+  const range =
+    typeof getItemSize === "number"
+      ? fixedRange(items.length, getItemSize, minimum, maximum)
+      : variableRange(layout ?? [], minimum, maximum);
   return (
     <ul
       ref={viewportRef}
@@ -81,7 +86,10 @@ export function VirtualList<T>({
       <li className="virtual-list-space" style={{ height: totalSize }} aria-hidden="true" />
       {items.slice(range.start, range.end).map((item, relativeIndex) => {
         const index = range.start + relativeIndex;
-        const position = layout[index];
+        const position =
+          typeof getItemSize === "number"
+            ? { start: index * getItemSize, size: getItemSize }
+            : layout![index];
         return (
           <li
             key={getKey(item)}
@@ -94,19 +102,4 @@ export function VirtualList<T>({
       })}
     </ul>
   );
-}
-
-function visibleRange(
-  layout: readonly ItemLayout[],
-  scrollTop: number,
-  viewportHeight: number,
-  overscanPx: number,
-): { start: number; end: number } {
-  const minimum = Math.max(0, scrollTop - overscanPx);
-  const maximum = scrollTop + viewportHeight + overscanPx;
-  let start = 0;
-  while (start < layout.length && layout[start].start + layout[start].size < minimum) start += 1;
-  let end = start;
-  while (end < layout.length && layout[end].start < maximum) end += 1;
-  return { start, end };
 }

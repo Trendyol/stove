@@ -2,6 +2,7 @@ package com.trendyol.stove.dashboard
 
 import com.trendyol.stove.system.abstractions.SystemOptions
 import java.net.URI
+import java.nio.file.Path
 
 /** Selects how dashboard events reach the Stove Server. */
 sealed interface DashboardIngestion {
@@ -49,5 +50,16 @@ sealed interface DashboardIngestion {
 data class DashboardSystemOptions(
   val appName: String,
   val metadata: Map<String, String> = emptyMap(),
-  val ingestion: DashboardIngestion = DashboardIngestion.Grpc()
+  val ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
+  val spool: DashboardSpoolOptions = DashboardSpoolOptions()
 ) : SystemOptions
+
+/** Persistent producer storage. Use a persistent local directory to recover after restart. */
+data class DashboardSpoolOptions(
+  val directory: Path = Path.of(System.getProperty("user.home"), ".stove", "spool"),
+  val maxBytes: Long = 1024L * 1024 * 1024
+) {
+  init {
+    require(maxBytes >= 1024 * 1024) { "Dashboard spool quota must be at least 1 MiB" }
+  }
+}

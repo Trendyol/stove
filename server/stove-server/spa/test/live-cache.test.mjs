@@ -759,3 +759,20 @@ test("evidence reconciliation preserves persisted and cached multiplicity", () =
     [-8, 42],
   );
 });
+
+test("identical snapshot bodies retain distinct committed identities across SSE and REST", () => {
+  const client = new QueryClient();
+  const key = ["snapshots", "run", "test"];
+  client.setQueryData(key, []);
+  const payload = { test_id: "test", system: "Redis", state_json: "{}", summary: "empty", captured_at: "2024-01-01T00:00:00Z", trigger: "TEST_END" };
+  const first = { seq: 10, run_id: "run", event_type: "snapshot", payload: { ...payload, id: 1 } };
+  const second = { seq: 11, run_id: "run", event_type: "snapshot", payload: { ...payload, id: 2 } };
+  applyLiveDashboardEvents(client, [first, second]);
+  applyLiveDashboardEvent(client, second);
+  applyLiveDashboardEvent(client, { ...first, payload: { ...first.payload, id: "1" } });
+  assert.deepEqual(client.getQueryData(key).map((row) => row.id), [1, 2]);
+  const persisted = [{ ...first.payload, run_id: "run" }];
+  assert.deepEqual(reconcileDashboardData(client, key, persisted).map((row) => row.id), [1, 2]);
+  client.setQueryData(key, [{ ...payload, id: -10, run_id: "run" }]);
+  assert.deepEqual(reconcileDashboardData(client, key, persisted).map((row) => row.id), [1]);
+});

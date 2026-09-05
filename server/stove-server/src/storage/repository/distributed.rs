@@ -1,6 +1,6 @@
 use super::{Backend, Repository};
 use crate::error::{AppError, Result};
-use crate::ingest::{CommitOutcome, EventIdentity, PreparedDashboardEvent, StoredLiveEvent};
+use crate::ingest::{CommitOutcome, EventIdentity, StoredLiveEvent};
 use tokio::sync::mpsc;
 
 pub(super) type StoredEventIdentity = (String, Option<i64>, i64);
@@ -39,10 +39,10 @@ pub(super) fn duplicate_outcome(
 }
 
 impl Repository {
-  pub fn subscribe_live_event_notifications(&self) -> mpsc::UnboundedReceiver<()> {
+  pub fn subscribe_live_event_notifications(&self) -> mpsc::Receiver<()> {
     match &self.backend {
       Backend::Sqlite(_) => {
-        let (_sender, receiver) = mpsc::unbounded_channel();
+        let (_sender, receiver) = mpsc::channel(1);
         receiver
       }
       Backend::Postgres(postgres) => postgres.subscribe_live_event_notifications(),
@@ -52,13 +52,25 @@ impl Repository {
   pub(crate) fn commit_dashboard_event(
     &self,
     identity: &EventIdentity,
-    event: &PreparedDashboardEvent,
+    event: &crate::proto::DashboardEvent,
   ) -> Result<CommitOutcome> {
     self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => {
         sqlite.commit_dashboard_event(identity, event, self.retention_runs_per_app())
       }
       Backend::Postgres(postgres) => postgres.commit_dashboard_event(identity, event),
+    })
+  }
+
+  pub(crate) fn commit_dashboard_batch(
+    &self,
+    events: &[(EventIdentity, crate::proto::DashboardEvent)],
+  ) -> Result<Vec<CommitOutcome>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => {
+        sqlite.commit_dashboard_batch(events, self.retention_runs_per_app())
+      }
+      Backend::Postgres(postgres) => postgres.commit_dashboard_batch(events),
     })
   }
 

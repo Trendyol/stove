@@ -4,6 +4,7 @@ import type {
   AppSummary,
   Entry,
   LiveDashboardEvent,
+  LiveRecordId,
   MockInteraction,
   MockWarning,
   Run,
@@ -564,9 +565,14 @@ function appendSnapshots(
   if (
     snapshots?.some(
       (snapshot) =>
-        snapshot.system === incoming.system &&
-        snapshot.summary === incoming.summary &&
-        snapshot.state_json === incoming.state_json,
+        sameRecordId(snapshot.id, incoming.id) ||
+        ((committedRecordId(snapshot.id) !== undefined) !==
+          (committedRecordId(incoming.id) !== undefined) &&
+          snapshot.system === incoming.system &&
+          snapshot.summary === incoming.summary &&
+          snapshot.captured_at === incoming.captured_at &&
+          snapshot.trigger === incoming.trigger &&
+          snapshot.state_json === incoming.state_json),
     )
   ) {
     return snapshots;
@@ -742,7 +748,17 @@ function mergeWarnings(persisted: MockWarning[], cached: MockWarning[]): MockWar
   );
 }
 
-function mergeEvidenceRecords<T>(
+function committedRecordId(id: LiveRecordId): string | undefined {
+  if (typeof id === "number") return id > 0 ? String(id) : undefined;
+  return /^[1-9][0-9]*$/.test(id) ? id : undefined;
+}
+
+function sameRecordId(left: LiveRecordId, right: LiveRecordId): boolean {
+  const committed = committedRecordId(left);
+  return left === right || (committed !== undefined && committed === committedRecordId(right));
+}
+
+function mergeEvidenceRecords<T extends { id: LiveRecordId }>(
   persisted: T[],
   cached: T[],
   identity: (record: T) => string,
@@ -755,7 +771,22 @@ function mergeEvidenceRecords<T>(
   }
 
   const merged = [...persisted];
+  const persistedIds = new Set(
+    persisted
+      .map((record) => committedRecordId(record.id))
+      .filter((id): id is string => id !== undefined),
+  );
   for (const record of cached) {
+    const committedId = committedRecordId(record.id);
+    if (committedId !== undefined) {
+      if (!persistedIds.has(committedId)) {
+        persistedIds.add(committedId);
+        merged.push(record);
+      }
+      continue;
+    }
+    // Older servers publish temporary negative IDs; preserve their semantic
+    // reconciliation while new streams reconcile exact committed identities.
     const key = identity(record);
     const remaining = unmatchedPersisted.get(key) ?? 0;
     if (remaining > 0) {

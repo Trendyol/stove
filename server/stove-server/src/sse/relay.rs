@@ -8,7 +8,7 @@ use super::manager::SseManager;
 use crate::error::Result;
 use crate::storage::repository::Repository;
 
-const PAGE_SIZE: usize = 1_000;
+use crate::storage::repository::replay::{REPLAY_PAGE_BYTES, REPLAY_PAGE_EVENTS};
 const POLL_INTERVAL: Duration = Duration::from_millis(250);
 
 /// Tails the durable live-event log and fans every committed event out to this pod's clients.
@@ -40,26 +40,40 @@ pub fn spawn(repository: Arc<Repository>, manager: Arc<SseManager>) -> JoinHandl
         }
       }
 
-      if let Err(error) = broadcast_available(&repository, &manager, &mut cursor) {
+      if let Err(error) = broadcast_available(&repository, &manager, &mut cursor).await {
         warn!(%error, "Failed to read durable dashboard live events");
       }
     }
   })
 }
 
-pub(crate) fn broadcast_available(
-  repository: &Repository,
+pub(crate) async fn broadcast_available(
+  repository: &Arc<Repository>,
   manager: &SseManager,
   cursor: &mut u64,
 ) -> Result<()> {
   loop {
-    let events = repository.live_events_after(*cursor, PAGE_SIZE)?;
-    let page_is_full = events.len() == PAGE_SIZE;
-    for event in events {
-      *cursor = event.id;
-      manager.broadcast(event);
+    let page = repository
+      .replay_page(*cursor, REPLAY_PAGE_EVENTS, REPLAY_PAGE_BYTES, None)
+      .await?;
+    if page.deleted_through > *cursor {
+      manager.broadcast_cursor(page.deleted_through);
+      *cursor = page.deleted_through;
     }
-    if !page_is_full {
+    for event in page.events {
+      if event.id > *cursor {
+        *cursor = event.id;
+        manager.broadcast(event);
+      }
+    }
+    if let Some(id) = page.oversized
+      && id > *cursor
+    {
+      manager.broadcast_cursor(id);
+      *cursor = id;
+    }
+    tokio::task::yield_now().await;
+    if *cursor >= page.watermark {
       return Ok(());
     }
   }

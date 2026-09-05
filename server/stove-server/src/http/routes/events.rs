@@ -36,13 +36,14 @@ use crate::proto;
       content_type = "application/x-protobuf"
     ),
     (status = 400, description = "Malformed protobuf or invalid dashboard event"),
+    (status = 503, description = "Ingestion capacity exhausted; retry the same event"),
     (status = 500, description = "Event could not be persisted")
   )
 )]
 pub async fn post_event(State(state): State<AppState>, body: Bytes) -> Result<impl IntoResponse> {
   let event = proto::DashboardEvent::decode(body.as_ref())
     .map_err(|error| AppError::InvalidEvent(format!("invalid protobuf DashboardEvent: {error}")))?;
-  let ack = state.ingestor.ingest(&event)?;
+  let ack = state.ingestor.ingest_async(event).await?;
   Ok((
     [(header::CONTENT_TYPE, "application/x-protobuf")],
     ack.encode_to_vec(),
@@ -92,6 +93,37 @@ mod tests {
         },
       )),
     }
+  }
+
+  #[tokio::test]
+  async fn post_batch_negotiates_and_commits_protobuf() {
+    let (base_url, repository) = spawn_server().await;
+    let client = reqwest::Client::new();
+    let capabilities: serde_json::Value = client
+      .get(format!("{base_url}/api/v1/events/batch"))
+      .send()
+      .await
+      .unwrap()
+      .json()
+      .await
+      .unwrap();
+    assert_eq!(capabilities["max_events"], 100);
+    let response = client
+      .post(format!("{base_url}/api/v1/events/batch"))
+      .body(
+        proto::DashboardEventBatch {
+          events: vec![run_started_event("batch-http")],
+        }
+        .encode_to_vec(),
+      )
+      .send()
+      .await
+      .unwrap();
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    let ack = proto::BatchAck::decode(response.bytes().await.unwrap().as_ref()).unwrap();
+    assert_eq!(ack.acknowledgements.len(), 1);
+    assert!(ack.acknowledgements[0].accepted);
+    assert_eq!(repository.get_runs(None).unwrap().len(), 1);
   }
 
   #[tokio::test]
@@ -230,7 +262,11 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 25);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 27);
+    assert!(
+      document["paths"]["/api/v1/runs/{run_id}/tests/{test_id}/snapshots/{snapshot_id}"]
+        .is_object()
+    );
     assert!(document["paths"]["/api/v1/runs"].is_object());
     assert!(document["paths"]["/api/v1/admin/status"].is_object());
     assert!(document["paths"]["/api/v1/events/stream"].is_object());
@@ -245,4 +281,33 @@ mod tests {
       .unwrap();
     assert!(ui.contains("../api-docs/openapi.json"));
   }
+}
+
+/// Atomic protobuf ingestion. GET allows producers to negotiate support without a write.
+pub async fn batch_capabilities() -> axum::Json<serde_json::Value> {
+  axum::Json(serde_json::json!({"max_events": 100, "max_bytes": 1_048_576}))
+}
+
+#[utoipa::path(
+  post,
+  path = "/api/v1/events/batch",
+  tag = "ingestion",
+  request_body(content = inline(crate::http::openapi::ProtobufBody), content_type = "application/x-protobuf", description = "Atomic DashboardEventBatch: 1..100 identified events from one run, maximum 1 MiB"),
+  responses(
+    (status = 200, description = "Committed BatchAck", body = inline(crate::http::openapi::ProtobufBody), content_type = "application/x-protobuf"),
+    (status = 400, description = "Invalid batch; nothing committed"),
+    (status = 503, description = "Capacity exhausted; retry unchanged batch")
+  )
+)]
+pub async fn post_batch(State(state): State<AppState>, body: Bytes) -> Result<impl IntoResponse> {
+  if body.len() > 1024 * 1024 {
+    return Err(AppError::InvalidEvent("batch exceeds 1 MiB".into()));
+  }
+  let batch = proto::DashboardEventBatch::decode(body.as_ref())
+    .map_err(|error| AppError::InvalidEvent(format!("invalid protobuf batch: {error}")))?;
+  let ack = state.ingestor.ingest_batch(batch).await?;
+  Ok((
+    [(header::CONTENT_TYPE, "application/x-protobuf")],
+    ack.encode_to_vec(),
+  ))
 }

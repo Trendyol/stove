@@ -18,6 +18,13 @@ pub struct Config {
   pub db: String,
   pub database_url: Option<String>,
   pub retention_runs_per_app: usize,
+  pub ingestion_capacity: usize,
+  pub read_capacity: usize,
+  pub replay_capacity: usize,
+  pub stream_capacity: usize,
+  pub postgres_replay_readers: usize,
+  pub postgres_readers: usize,
+  pub postgres_writers: usize,
   pub clear: bool,
   pub fresh_start: bool,
   pub update_skills: bool,
@@ -68,6 +75,34 @@ struct CliConfig {
   #[arg(long, env = "STOVE_RETENTION_RUNS_PER_APP")]
   retention_runs_per_app: Option<usize>,
 
+  /// Maximum queued and running ingestion operations.
+  #[arg(long, env = "STOVE_INGESTION_CAPACITY")]
+  ingestion_capacity: Option<usize>,
+
+  /// Maximum queued and running interactive read operations.
+  #[arg(long, env = "STOVE_READ_CAPACITY")]
+  read_capacity: Option<usize>,
+
+  /// Maximum queued and running durable replay operations.
+  #[arg(long, env = "STOVE_REPLAY_CAPACITY")]
+  replay_capacity: Option<usize>,
+
+  /// Maximum simultaneous SSE subscribers per pod.
+  #[arg(long, env = "STOVE_STREAM_CAPACITY")]
+  stream_capacity: Option<usize>,
+
+  /// PostgreSQL connection pool size (1..64).
+  #[arg(long, env = "STOVE_POSTGRES_WRITERS")]
+  postgres_writers: Option<usize>,
+
+  /// PostgreSQL connection pool size (1..64).
+  #[arg(long, env = "STOVE_POSTGRES_READERS")]
+  postgres_readers: Option<usize>,
+
+  /// PostgreSQL connection pool size (1..64).
+  #[arg(long, env = "STOVE_POSTGRES_REPLAY_READERS")]
+  postgres_replay_readers: Option<usize>,
+
   /// Clear all stored runs and exit
   #[arg(long)]
   clear: bool,
@@ -93,6 +128,13 @@ struct CliConfig {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FileConfig {
+  read_capacity: Option<usize>,
+  replay_capacity: Option<usize>,
+  stream_capacity: Option<usize>,
+  postgres_replay_readers: Option<usize>,
+  postgres_readers: Option<usize>,
+  postgres_writers: Option<usize>,
+  ingestion_capacity: Option<usize>,
   port: Option<u16>,
   grpc_port: Option<u16>,
   db: Option<PathBuf>,
@@ -155,7 +197,71 @@ impl Config {
       |path| path.to_string_lossy().into_owned(),
     );
 
+    let read_capacity = cli
+      .read_capacity
+      .or_else(|| file.as_ref().and_then(|config| config.read_capacity))
+      .unwrap_or(64);
+    let replay_capacity = cli
+      .replay_capacity
+      .or_else(|| file.as_ref().and_then(|config| config.replay_capacity))
+      .unwrap_or(16);
+    let stream_capacity = cli
+      .stream_capacity
+      .or_else(|| file.as_ref().and_then(|config| config.stream_capacity))
+      .unwrap_or(64);
+    let ingestion_capacity = cli
+      .ingestion_capacity
+      .or_else(|| file.as_ref().and_then(|config| config.ingestion_capacity))
+      .unwrap_or(64);
+
+    for (name, capacity) in [
+      ("read_capacity", read_capacity),
+      ("replay_capacity", replay_capacity),
+      ("stream_capacity", stream_capacity),
+      ("ingestion_capacity", ingestion_capacity),
+    ] {
+      if !(1..=65_536).contains(&capacity) {
+        bail!("{name} must be between 1 and 65536");
+      }
+    }
+
+    let postgres_writers = cli
+      .postgres_writers
+      .or_else(|| file.as_ref().and_then(|config| config.postgres_writers))
+      .unwrap_or(4);
+
+    let postgres_readers = cli
+      .postgres_readers
+      .or_else(|| file.as_ref().and_then(|config| config.postgres_readers))
+      .unwrap_or(4);
+
+    let postgres_replay_readers = cli
+      .postgres_replay_readers
+      .or_else(|| {
+        file
+          .as_ref()
+          .and_then(|config| config.postgres_replay_readers)
+      })
+      .unwrap_or(2);
+
+    for (name, capacity) in [
+      ("postgres_writers", postgres_writers),
+      ("postgres_readers", postgres_readers),
+      ("postgres_replay_readers", postgres_replay_readers),
+    ] {
+      if !(1..=64).contains(&capacity) {
+        bail!("{name} must be between 1 and 64");
+      }
+    }
+
     Ok(Self {
+      postgres_replay_readers,
+      postgres_readers,
+      postgres_writers,
+      ingestion_capacity,
+      read_capacity,
+      replay_capacity,
+      stream_capacity,
       port: cli
         .port
         .or_else(|| file.as_ref().and_then(|config| config.port))
@@ -546,6 +652,70 @@ retention_runs_per_app = 50
       .expect("conflicting database URL sources should fail");
 
     assert!(error.to_string().contains("configure only one"));
+  }
+
+  #[test]
+  fn ingestion_capacity_validates_bounds_and_cli_overrides_file() {
+    for capacity in ["0", "65537"] {
+      assert!(Config::try_parse_from(["stove", "--ingestion-capacity", capacity]).is_err());
+    }
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("stove.toml");
+    fs::write(&path, "ingestion_capacity = 8").unwrap();
+    let path = path.to_str().unwrap();
+    assert_eq!(
+      Config::try_parse_from(["stove", "--config-file", path])
+        .unwrap()
+        .ingestion_capacity,
+      8
+    );
+    assert_eq!(
+      Config::try_parse_from(["stove", "--config-file", path, "--ingestion-capacity", "16"])
+        .unwrap()
+        .ingestion_capacity,
+      16
+    );
+  }
+
+  #[test]
+  fn read_replay_and_stream_capacity_follow_configuration_precedence() {
+    for flag in ["--read-capacity", "--replay-capacity", "--stream-capacity"] {
+      for capacity in ["0", "65537"] {
+        assert!(Config::try_parse_from(["stove", flag, capacity]).is_err());
+      }
+    }
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("stove.toml");
+    fs::write(
+      &path,
+      "read_capacity = 3\nreplay_capacity = 4\nstream_capacity = 5",
+    )
+    .unwrap();
+    let file = Config::try_parse_from(["stove", "--config-file", path.to_str().unwrap()]).unwrap();
+    assert_eq!(
+      (
+        file.read_capacity,
+        file.replay_capacity,
+        file.stream_capacity
+      ),
+      (3, 4, 5)
+    );
+    let cli = Config::try_parse_from([
+      "stove",
+      "--config-file",
+      path.to_str().unwrap(),
+      "--read-capacity",
+      "6",
+      "--replay-capacity",
+      "7",
+      "--stream-capacity",
+      "8",
+    ])
+    .unwrap();
+    assert_eq!(
+      (cli.read_capacity, cli.replay_capacity, cli.stream_capacity),
+      (6, 7, 8)
+    );
   }
 
   #[test]

@@ -8,6 +8,7 @@ use crate::storage::models::{DatabaseColumn, DatabaseQueryResult, DatabaseSchema
 
 impl SqliteBackend {
   pub(in crate::storage::repository) fn database_schema(&self) -> Result<DatabaseSchema> {
+    let _memory_guard = self.in_memory.then(|| self.lock_write());
     let connection = self.lock_explorer();
     let mut statement = connection.prepare(
       "SELECT name FROM sqlite_schema \
@@ -47,6 +48,7 @@ impl SqliteBackend {
     sql: &str,
     max_rows: usize,
   ) -> Result<DatabaseQueryResult> {
+    let _memory_guard = self.in_memory.then(|| self.lock_write());
     let connection = self.lock_explorer();
     let mut statement = connection.prepare(sql)?;
     let columns = statement

@@ -3,6 +3,7 @@ import { parseLiveDashboardEvent } from "./live-event";
 import type { LiveDashboardEvent } from "./types";
 
 const MAX_QUEUED_EVENTS = 2_000;
+const MAX_QUEUED_BYTES = 8 * 1024 * 1024;
 
 interface UseSSEOptions {
   onEvents: (events: readonly LiveDashboardEvent[]) => void;
@@ -49,9 +50,12 @@ export function useSSE({
     let frame: number | null = null;
     let queuedEvents: LiveDashboardEvent[] = [];
     let overflowed = false;
+    let queuedBytes = 0;
+    let reconnectTimer: number | null = null;
 
     function flushEvents() {
       frame = null;
+      queuedBytes = 0;
       if (disposed) return;
       if (overflowed) {
         overflowed = false;
@@ -65,13 +69,14 @@ export function useSSE({
       callbacksRef.current.onEvents(events);
     }
 
-    function enqueue(event: LiveDashboardEvent) {
+    function enqueue(event: LiveDashboardEvent, bytes: number) {
       if (overflowed) return;
-      if (queuedEvents.length >= MAX_QUEUED_EVENTS) {
+      if (queuedEvents.length >= MAX_QUEUED_EVENTS || queuedBytes + bytes > MAX_QUEUED_BYTES) {
         queuedEvents = [];
         overflowed = true;
       } else {
         queuedEvents.push(event);
+        queuedBytes += bytes;
       }
       if (frame === null) {
         frame = window.requestAnimationFrame(flushEvents);
@@ -83,7 +88,27 @@ export function useSSE({
         return;
       }
 
-      source = new EventSource("/api/v1/events/stream");
+      const after = lastSeqRef.current;
+      source = new EventSource(`/api/v1/events/stream${after === null ? "" : `?after=${after}`}`);
+      source.addEventListener("resync", (message) => {
+        let watermark: unknown;
+        try {
+          watermark = JSON.parse((message as MessageEvent<string>).data).watermark;
+        } catch {
+          return;
+        }
+        if (typeof watermark !== "number" || !Number.isSafeInteger(watermark) || watermark < 0)
+          return;
+        source?.close();
+        queuedEvents = [];
+        queuedBytes = 0;
+        overflowed = false;
+        lastSeqRef.current = watermark;
+        openRef.current = false;
+        setConnected(false);
+        callbacksRef.current.onOverflow?.();
+        reconnectTimer = window.setTimeout(connect, 250);
+      });
 
       source.onopen = () => {
         const isReconnect = hasConnectedRef.current;
@@ -100,11 +125,11 @@ export function useSSE({
         const event = parseLiveDashboardEvent(message.data);
         if (!event) return;
 
-        if (lastSeqRef.current !== null && event.seq !== lastSeqRef.current + 1) {
-          callbacksRef.current.onGap?.(event);
-        }
+        // Global IDs can have legitimate gaps (filtered streams and rolled-back
+        // PostgreSQL transactions). The server explicitly signals missing history.
+        if (lastSeqRef.current !== null && event.seq <= lastSeqRef.current) return;
         lastSeqRef.current = event.seq;
-        enqueue(event);
+        enqueue(event, new TextEncoder().encode(message.data).byteLength);
       };
 
       source.onerror = () => {
@@ -128,6 +153,7 @@ export function useSSE({
       openRef.current = false;
       setConnected(false);
       source?.close();
+      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
     };
   }, []);
 

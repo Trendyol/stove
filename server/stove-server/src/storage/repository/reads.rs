@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use super::{Backend, Repository};
 use crate::error::Result;
 use crate::storage::models::{
-  AppSummary, Entry, MockInteraction, MockWarning, OpenAssertion, Run, Snapshot, Span, Test,
+  AppSummary, Entry, MockInteraction, MockWarning, Run, Snapshot, Span, Test,
 };
 
 #[derive(Clone, Copy)]
@@ -14,29 +14,6 @@ pub(super) enum EvidenceScope<'a> {
 }
 
 impl Repository {
-  pub(crate) fn get_open_assertion(
-    &self,
-    run_id: &str,
-    test_id: &str,
-    correlation_key: &str,
-  ) -> Result<Option<OpenAssertion>> {
-    self.with_backend(|backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.get_open_assertion(run_id, test_id, correlation_key),
-      Backend::Postgres(postgres) => postgres.get_open_assertion(run_id, test_id, correlation_key),
-    })
-  }
-
-  pub(crate) fn get_test_id_for_trace(
-    &self,
-    run_id: &str,
-    trace_id: &str,
-  ) -> Result<Option<String>> {
-    self.with_backend(|backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.get_test_id_for_trace(run_id, trace_id),
-      Backend::Postgres(postgres) => postgres.get_test_id_for_trace(run_id, trace_id),
-    })
-  }
-
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
     self.with_backend(|backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_apps(),

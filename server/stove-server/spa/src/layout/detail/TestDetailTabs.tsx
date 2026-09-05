@@ -203,6 +203,7 @@ function FlowView({ scope, onOpenTrace }: { scope: TestQueryScope; onOpenTrace: 
   return (
     <Suspense fallback={<LoadingMessage>Assembling flow…</LoadingMessage>}>
       <FlowTab
+        key={JSON.stringify([scope.runId, scope.testId])}
         entries={entries.data}
         spans={spans.data}
         snapshots={detailedSnapshots}

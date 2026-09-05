@@ -44,23 +44,23 @@ impl SqliteBackend {
   }
 
   pub fn save_entry(&self, entry: &NewEntry) -> Result<()> {
-    save_entry_on(self.lock_write().conn(), entry)
+    save_entry_on(self.lock_write().conn(), entry).map(|_| ())
   }
 
   pub fn save_span(&self, span: &NewSpan) -> Result<()> {
-    save_span_on(self.lock_write().conn(), span)
+    save_span_on(self.lock_write().conn(), span).map(|_| ())
   }
 
   pub fn save_snapshot(&self, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-    save_snapshot_on(self.lock_write().conn(), snapshot)
+    save_snapshot_on(self.lock_write().conn(), snapshot).map(|_| ())
   }
 
   pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
-    save_mock_interaction_on(self.lock_write().conn(), interaction)
+    save_mock_interaction_on(self.lock_write().conn(), interaction).map(|_| ())
   }
 
   pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
-    save_mock_warning_on(self.lock_write().conn(), warning)
+    save_mock_warning_on(self.lock_write().conn(), warning).map(|_| ())
   }
 
   pub fn clear_all(&self) -> Result<()> {
@@ -76,20 +76,23 @@ pub(super) fn apply_persisted_event(
   conn: &mut SqliteConnection,
   event: &PersistedDashboardEvent,
   retention_runs_per_app: usize,
-) -> Result<()> {
+) -> Result<Option<i64>> {
   match WriteOperation::from(event) {
-    WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
+    WriteOperation::RunStarted(run) => save_run_start_on(conn, &run).map(|()| None),
     WriteOperation::RunEnded(run) => {
       save_run_end_on(conn, &run)?;
-      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app)
+      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app)?;
+      Ok(None)
     }
-    WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
-    WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
-    WriteOperation::Entry(entry) => save_entry_on(conn, entry),
-    WriteOperation::Span(span) => save_span_on(conn, span),
-    WriteOperation::Snapshot(snapshot) => save_snapshot_on(conn, &snapshot),
-    WriteOperation::MockInteraction(interaction) => save_mock_interaction_on(conn, interaction),
-    WriteOperation::MockWarning(warning) => save_mock_warning_on(conn, warning),
+    WriteOperation::TestStarted(test) => save_test_start_on(conn, &test).map(|()| None),
+    WriteOperation::TestEnded(test) => save_test_end_on(conn, &test).map(|()| None),
+    WriteOperation::Entry(entry) => save_entry_on(conn, entry).map(Some),
+    WriteOperation::Span(span) => save_span_on(conn, span).map(Some),
+    WriteOperation::Snapshot(snapshot) => save_snapshot_on(conn, &snapshot).map(Some),
+    WriteOperation::MockInteraction(interaction) => {
+      save_mock_interaction_on(conn, interaction).map(Some)
+    }
+    WriteOperation::MockWarning(warning) => save_mock_warning_on(conn, warning).map(Some),
   }
 }
 
@@ -238,8 +241,8 @@ fn save_test_end_on(conn: &mut SqliteConnection, test: &TestEnd<'_>) -> Result<(
   Ok(())
 }
 
-fn save_entry_on(conn: &mut SqliteConnection, entry: &NewEntry) -> Result<()> {
-  diesel::insert_into(entries::table)
+fn save_entry_on(conn: &mut SqliteConnection, entry: &NewEntry) -> Result<i64> {
+  let id = diesel::insert_into(entries::table)
     .values((
       entries::run_id.eq(&entry.run_id),
       entries::test_id.eq(&entry.test_id),
@@ -257,12 +260,13 @@ fn save_entry_on(conn: &mut SqliteConnection, entry: &NewEntry) -> Result<()> {
       entries::assertion_id.eq(&entry.assertion_id),
       entries::correlation_key.eq(&entry.correlation_key),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(entries::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
-fn save_span_on(conn: &mut SqliteConnection, span: &NewSpan) -> Result<()> {
-  diesel::insert_into(spans::table)
+fn save_span_on(conn: &mut SqliteConnection, span: &NewSpan) -> Result<i64> {
+  let id = diesel::insert_into(spans::table)
     .values((
       spans::run_id.eq(&span.run_id),
       spans::trace_id.eq(&span.trace_id),
@@ -278,12 +282,13 @@ fn save_span_on(conn: &mut SqliteConnection, span: &NewSpan) -> Result<()> {
       spans::exception_message.eq(non_empty(&span.exception_message)),
       spans::exception_stack_trace.eq(non_empty(&span.exception_stack_trace)),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(spans::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
-fn save_snapshot_on(conn: &mut SqliteConnection, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-  diesel::insert_into(snapshots::table)
+fn save_snapshot_on(conn: &mut SqliteConnection, snapshot: &SnapshotWrite<'_>) -> Result<i64> {
+  let id = diesel::insert_into(snapshots::table)
     .values((
       snapshots::run_id.eq(snapshot.run_id),
       snapshots::test_id.eq(snapshot.test_id),
@@ -293,15 +298,16 @@ fn save_snapshot_on(conn: &mut SqliteConnection, snapshot: &SnapshotWrite<'_>) -
       snapshots::captured_at.eq(non_empty(snapshot.captured_at)),
       snapshots::trigger_kind.eq(snapshot.trigger),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(snapshots::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
 fn save_mock_interaction_on(
   conn: &mut SqliteConnection,
   interaction: &NewMockInteraction,
-) -> Result<()> {
-  diesel::insert_into(mock_interactions::table)
+) -> Result<i64> {
+  let id = diesel::insert_into(mock_interactions::table)
     .values((
       mock_interactions::run_id.eq(&interaction.run_id),
       mock_interactions::test_id.eq(&interaction.test_id),
@@ -328,12 +334,13 @@ fn save_mock_interaction_on(
       mock_interactions::fault.eq(&interaction.fault),
       mock_interactions::client_deadline_ms.eq(interaction.client_deadline_ms),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(mock_interactions::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }
 
-fn save_mock_warning_on(conn: &mut SqliteConnection, warning: &NewMockWarning) -> Result<()> {
-  diesel::insert_into(mock_warnings::table)
+fn save_mock_warning_on(conn: &mut SqliteConnection, warning: &NewMockWarning) -> Result<i64> {
+  let id = diesel::insert_into(mock_warnings::table)
     .values((
       mock_warnings::run_id.eq(&warning.run_id),
       mock_warnings::test_id.eq(&warning.test_id),
@@ -344,6 +351,7 @@ fn save_mock_warning_on(conn: &mut SqliteConnection, warning: &NewMockWarning) -
       mock_warnings::stub_id.eq(&warning.stub_id),
       mock_warnings::target.eq(&warning.target),
     ))
-    .execute(conn)?;
-  Ok(())
+    .returning(mock_warnings::id)
+    .get_result::<i64>(conn)?;
+  Ok(id)
 }

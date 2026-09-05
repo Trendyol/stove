@@ -24,24 +24,112 @@ use crate::storage::repository::Repository;
 pub struct EventIngestor {
   repository: Arc<Repository>,
   sse_manager: Arc<SseManager>,
+  admission: Arc<tokio::sync::Semaphore>,
 }
 
 impl EventIngestor {
   #[must_use]
   pub fn new(repository: Arc<Repository>, sse_manager: Arc<SseManager>) -> Self {
+    Self::with_capacity(repository, sse_manager, 64)
+  }
+
+  /// Bound queued and running ingestion operations before scheduling blocking work.
+  pub fn with_capacity(
+    repository: Arc<Repository>,
+    sse_manager: Arc<SseManager>,
+    capacity: usize,
+  ) -> Self {
+    assert!(capacity > 0, "ingestion capacity must be positive");
     Self {
       repository,
       sse_manager,
+      admission: Arc::new(tokio::sync::Semaphore::new(capacity)),
     }
+  }
+
+  pub(crate) async fn ingest_async(
+    &self,
+    event: proto::DashboardEvent,
+  ) -> AppResult<proto::EventAck> {
+    let permit = self
+      .admission
+      .clone()
+      .try_acquire_owned()
+      .map_err(|_| AppError::Overloaded)?;
+    let ingestor = self.clone();
+    tokio::task::spawn_blocking(move || {
+      // Keep the permit in the blocking task, including when the request is cancelled.
+      let _permit = permit;
+      ingestor.ingest(&event)
+    })
+    .await
+    .map_err(|error| AppError::Startup(format!("ingestion worker failed: {error}")))?
+  }
+
+  pub(crate) async fn ingest_batch(
+    &self,
+    batch: proto::DashboardEventBatch,
+  ) -> AppResult<proto::BatchAck> {
+    use prost::Message;
+    if batch.events.is_empty() || batch.events.len() > 100 || batch.encoded_len() > 1024 * 1024 {
+      return Err(AppError::InvalidEvent(
+        "batch must contain 1..100 events and at most 1 MiB".into(),
+      ));
+    }
+    let run_id = &batch.events[0].run_id;
+    if batch
+      .events
+      .iter()
+      .any(|event| &event.run_id != run_id || event.event_id.is_empty() || event.sequence == 0)
+    {
+      return Err(AppError::InvalidEvent(
+        "batch events require one run, event IDs and positive sequences".into(),
+      ));
+    }
+    let permit = self
+      .admission
+      .clone()
+      .try_acquire_owned()
+      .map_err(|_| AppError::Overloaded)?;
+    let ingestor = self.clone();
+    tokio::task::spawn_blocking(move || {
+      let _permit = permit;
+      let events = batch
+        .events
+        .into_iter()
+        .map(|event| {
+          (
+            EventIdentity {
+              event_id: event.event_id.clone(),
+              sequence: Some(event.sequence),
+            },
+            event,
+          )
+        })
+        .collect::<Vec<_>>();
+      let outcomes = ingestor.repository.commit_dashboard_batch(&events)?;
+      if outcomes.iter().any(|outcome| !outcome.duplicate) {
+        ingestor.sse_manager.notify_commit();
+      }
+      Ok(proto::BatchAck {
+        acknowledgements: events
+          .into_iter()
+          .zip(outcomes)
+          .map(|((_, event), outcome)| proto::EventAck {
+            accepted: true,
+            event_id: event.event_id,
+            sequence: event.sequence,
+            duplicate: outcome.duplicate,
+          })
+          .collect(),
+      })
+    })
+    .await
+    .map_err(|error| AppError::Startup(format!("ingestion worker failed: {error}")))?
   }
 
   /// Commit an event transactionally before acknowledging it to the producer.
   pub(crate) fn ingest(&self, event: &proto::DashboardEvent) -> AppResult<proto::EventAck> {
-    let Some(prepared) = self.prepare_event(event)? else {
-      return Err(AppError::InvalidEvent(
-        "dashboard event has no payload".to_string(),
-      ));
-    };
     let identity = EventIdentity {
       event_id: if event.event_id.is_empty() {
         Uuid::new_v4().to_string()
@@ -50,9 +138,7 @@ impl EventIngestor {
       },
       sequence: (event.sequence > 0).then_some(event.sequence),
     };
-    let outcome = self
-      .repository
-      .commit_dashboard_event(&identity, &prepared)?;
+    let outcome = self.repository.commit_dashboard_event(&identity, event)?;
     if !outcome.duplicate {
       self.sse_manager.notify_commit();
     }
@@ -70,8 +156,8 @@ impl EventIngestor {
     }
   }
 
-  fn prepare_event(
-    &self,
+  pub(crate) fn prepare_event(
+    lookup: &mut impl PreparationLookup,
     event: &proto::DashboardEvent,
   ) -> AppResult<Option<PreparedDashboardEvent>> {
     let Some(inner_event) = &event.event else {
@@ -95,15 +181,11 @@ impl EventIngestor {
       proto::dashboard_event::Event::EntryRecorded(inner) => {
         let correlation_key = preparers::assertion_correlation_key(inner)?;
         let open_assertion =
-          self
-            .repository
-            .get_open_assertion(&event.run_id, &inner.test_id, &correlation_key)?;
+          lookup.get_open_assertion(&event.run_id, &inner.test_id, &correlation_key)?;
         preparers::prepare_entry_recorded(&event.run_id, inner, open_assertion)
       }
       proto::dashboard_event::Event::SpanRecorded(inner) => {
-        let trace_test_id = self
-          .repository
-          .get_test_id_for_trace(&event.run_id, &inner.trace_id)?;
+        let trace_test_id = lookup.get_test_id_for_trace(&event.run_id, &inner.trace_id)?;
         preparers::prepare_span_recorded(&event.run_id, inner, trace_test_id)
       }
       proto::dashboard_event::Event::Snapshot(inner) => {
@@ -119,6 +201,16 @@ impl EventIngestor {
 
     Ok(Some(prepared))
   }
+}
+
+pub(crate) trait PreparationLookup {
+  fn get_open_assertion(
+    &mut self,
+    run_id: &str,
+    test_id: &str,
+    correlation_key: &str,
+  ) -> AppResult<Option<crate::storage::models::OpenAssertion>>;
+  fn get_test_id_for_trace(&mut self, run_id: &str, trace_id: &str) -> AppResult<Option<String>>;
 }
 
 #[derive(Clone, Debug)]
@@ -210,6 +302,22 @@ impl LiveDashboardEvent {
       event_type: payload.event_type().to_string(),
       payload,
     }
+  }
+
+  /// Use the committed database identity when publishing materialized evidence.
+  #[must_use]
+  pub(crate) fn with_record_id(mut self, id: Option<i64>) -> Self {
+    if let Some(id) = id {
+      match &mut self.payload {
+        LiveDashboardPayload::EntryRecorded(payload) => payload.id = id,
+        LiveDashboardPayload::SpanRecorded(payload) => payload.id = id,
+        LiveDashboardPayload::Snapshot(payload) => payload.id = id,
+        LiveDashboardPayload::MockInteraction(payload) => payload.id = id,
+        LiveDashboardPayload::MockWarning(payload) => payload.id = id,
+        _ => {}
+      }
+    }
+    self
   }
 
   #[must_use]

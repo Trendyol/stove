@@ -13,8 +13,10 @@ mod admin;
 mod distributed;
 mod explorer;
 mod mapping;
+pub mod pagination;
 mod postgres_backend;
 mod reads;
+pub(crate) mod replay;
 mod sqlite_backend;
 mod write_models;
 mod writes;
@@ -32,21 +34,70 @@ enum Backend {
 
 pub struct Repository {
   backend: Backend,
+  replay_admission: std::sync::Arc<tokio::sync::Semaphore>,
+  read_admission: std::sync::Arc<tokio::sync::Semaphore>,
+  pub(crate) stream_admission: std::sync::Arc<tokio::sync::Semaphore>,
   retention_runs_per_app: AtomicUsize,
 }
 
 impl Repository {
+  /// Configure admission before sharing the repository with request handlers.
+  pub fn configure_admission(&mut self, reads: usize, replay: usize, streams: usize) -> Result<()> {
+    if [reads, replay, streams]
+      .iter()
+      .any(|capacity| !(1..=65_536).contains(capacity))
+    {
+      return Err(crate::error::AppError::Startup(
+        "admission capacities must be between 1 and 65536".into(),
+      ));
+    }
+    self.read_admission = std::sync::Arc::new(tokio::sync::Semaphore::new(reads));
+    self.replay_admission = std::sync::Arc::new(tokio::sync::Semaphore::new(replay));
+    self.stream_admission = std::sync::Arc::new(tokio::sync::Semaphore::new(streams));
+    Ok(())
+  }
+
   pub fn connect_sqlite(database_path: &str, retention_runs_per_app: usize) -> Result<Self> {
     Ok(Self {
+      stream_admission: std::sync::Arc::new(tokio::sync::Semaphore::new(64)),
+      replay_admission: std::sync::Arc::new(tokio::sync::Semaphore::new(16)),
+      read_admission: std::sync::Arc::new(tokio::sync::Semaphore::new(64)),
       backend: Backend::Sqlite(sqlite_backend::SqliteBackend::connect(database_path)?),
       retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })
   }
 
   pub fn connect_postgres(database_url: &str, retention_runs_per_app: usize) -> Result<Self> {
+    Self::connect_postgres_with_pools(database_url, retention_runs_per_app, 4, 4, 2)
+  }
+
+  pub fn connect_postgres_with_pools(
+    database_url: &str,
+    retention_runs_per_app: usize,
+    writers: usize,
+    readers: usize,
+    replay_readers: usize,
+  ) -> Result<Self> {
+    if [writers, readers, replay_readers]
+      .iter()
+      .any(|size| !(1..=64).contains(size))
+    {
+      return Err(crate::error::AppError::Startup(
+        "PostgreSQL pool sizes must be between 1 and 64".into(),
+      ));
+    }
     Ok(Self {
+      stream_admission: std::sync::Arc::new(tokio::sync::Semaphore::new(64)),
+      replay_admission: std::sync::Arc::new(tokio::sync::Semaphore::new(16)),
+      read_admission: std::sync::Arc::new(tokio::sync::Semaphore::new(64)),
       backend: Backend::Postgres(Box::new(run_blocking(|| {
-        postgres_backend::PostgresBackend::connect(database_url, retention_runs_per_app)
+        postgres_backend::PostgresBackend::connect(
+          database_url,
+          retention_runs_per_app,
+          writers,
+          readers,
+          replay_readers,
+        )
       })?)),
       retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })

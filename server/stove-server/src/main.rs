@@ -40,7 +40,11 @@ async fn main() -> anyhow::Result<()> {
 
   let sse_manager = Arc::new(sse::manager::SseManager::new());
   let live_event_relay = sse::relay::spawn(repository.clone(), sse_manager.clone());
-  let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
+  let ingestor = EventIngestor::with_capacity(
+    repository.clone(),
+    sse_manager.clone(),
+    config.ingestion_capacity,
+  );
   let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
   let grpc_handle = tokio::spawn(serve_grpc(
@@ -110,11 +114,22 @@ fn prepare_fresh_start(config: &config::Config) -> anyhow::Result<()> {
 fn open_repository(
   config: &config::Config,
 ) -> anyhow::Result<Arc<storage::repository::Repository>> {
-  let repository = if let Some(database_url) = &config.database_url {
-    storage::repository::Repository::connect_postgres(database_url, config.retention_runs_per_app)?
+  let mut repository = if let Some(database_url) = &config.database_url {
+    storage::repository::Repository::connect_postgres_with_pools(
+      database_url,
+      config.retention_runs_per_app,
+      config.postgres_writers,
+      config.postgres_readers,
+      config.postgres_replay_readers,
+    )?
   } else {
     storage::repository::Repository::connect_sqlite(&config.db, config.retention_runs_per_app)?
   };
+  repository.configure_admission(
+    config.read_capacity,
+    config.replay_capacity,
+    config.stream_capacity,
+  )?;
   Ok(Arc::new(repository))
 }
 
