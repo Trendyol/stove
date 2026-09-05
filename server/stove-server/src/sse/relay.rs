@@ -41,6 +41,7 @@ pub fn spawn(repository: Arc<Repository>, manager: Arc<SseManager>) -> JoinHandl
       }
 
       if let Err(error) = broadcast_available(&repository, &manager, &mut cursor).await {
+        crate::metrics::relay_failed();
         warn!(%error, "Failed to read durable dashboard live events");
       }
     }
@@ -56,6 +57,7 @@ pub(crate) async fn broadcast_available(
     let page = repository
       .replay_page(*cursor, REPLAY_PAGE_EVENTS, REPLAY_PAGE_BYTES, None)
       .await?;
+    crate::metrics::relay_page_read(page.watermark, *cursor);
     if page.deleted_through > *cursor {
       manager.broadcast_cursor(page.deleted_through);
       *cursor = page.deleted_through;
@@ -72,6 +74,7 @@ pub(crate) async fn broadcast_available(
       manager.broadcast_cursor(id);
       *cursor = id;
     }
+    crate::metrics::relay_advanced(page.watermark, *cursor);
     tokio::task::yield_now().await;
     if *cursor >= page.watermark {
       return Ok(());

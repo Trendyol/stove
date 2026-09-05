@@ -29,6 +29,7 @@ pub fn create_router(
   };
 
   Router::new()
+    .route("/metrics", get(crate::metrics::endpoint))
     .route(
       "/mcp",
       get(crate::mcp::handle_get).post(crate::mcp::handle_post),

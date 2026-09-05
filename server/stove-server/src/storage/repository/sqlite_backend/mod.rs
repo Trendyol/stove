@@ -1,3 +1,4 @@
+use crate::metrics::{DatabaseOperation, database_acquire};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use rusqlite::Connection;
@@ -51,21 +52,29 @@ impl SqliteBackend {
   }
 
   pub(super) fn lock_write(&self) -> MutexGuard<'_, SqliteDatabase> {
-    self.write.lock().expect("write database lock poisoned")
+    database_acquire(DatabaseOperation::SqliteWriteWait, || {
+      self.write.lock().expect("write database lock poisoned")
+    })
   }
 
   pub(super) fn lock_read(&self) -> MutexGuard<'_, SqliteDatabase> {
-    self.read.lock().expect("read database lock poisoned")
+    database_acquire(DatabaseOperation::SqliteReadWait, || {
+      self.read.lock().expect("read database lock poisoned")
+    })
   }
 
   fn lock_replay(&self) -> MutexGuard<'_, SqliteDatabase> {
-    self.replay.lock().expect("replay database lock poisoned")
+    database_acquire(DatabaseOperation::SqliteReplayWait, || {
+      self.replay.lock().expect("replay database lock poisoned")
+    })
   }
 
   fn lock_explorer(&self) -> MutexGuard<'_, Connection> {
-    self
-      .explorer
-      .lock()
-      .expect("explorer database lock poisoned")
+    database_acquire(DatabaseOperation::SqliteExplorerWait, || {
+      self
+        .explorer
+        .lock()
+        .expect("explorer database lock poisoned")
+    })
   }
 }

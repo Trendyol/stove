@@ -1,14 +1,9 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Entry, Snapshot, Span } from "../api/types";
+import { type FlowWork, useFlowCalculation } from "../hooks/useFlowCalculation";
 import type { FlowNodeData, GapNodeData, SystemNodeData } from "../utils/flow";
-import {
-  FLOW_NODE_LIMIT,
-  type FlowGraph,
-  type FlowInput,
-  TIMELINE_RECORD_LIMIT,
-} from "../utils/flow-work";
-import { LatestTask } from "../utils/latest-task";
+import { FLOW_NODE_LIMIT, TIMELINE_RECORD_LIMIT } from "../utils/flow-work";
 import { CapturedStateLane } from "./CapturedStateLane";
 import { FlowDag } from "./FlowDag";
 import { NodePopup } from "./NodePopup";
@@ -26,14 +21,6 @@ type FlowSelection =
   | { kind: "none" }
   | { kind: "node"; node: SystemNodeData }
   | { kind: "snapshot"; snapshot: Snapshot };
-interface FlowWork {
-  input: FlowInput;
-  scope: string;
-  start: number;
-  end: number;
-  total: number;
-}
-type FlowResult = { graph: FlowGraph; error?: never } | { error: string; graph?: never };
 
 function modeButtonClass(active: boolean): string {
   return `stove-focus-ring cursor-pointer rounded-md px-2.5 py-1 text-xs border-0 transition-colors ${
@@ -47,41 +34,26 @@ export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabPr
   const [mode, setMode] = useState<FlowMode>("timeline");
   const [selection, setSelection] = useState<FlowSelection>({ kind: "none" });
   const [endAnchor, setEndAnchor] = useState<number | null>(null);
-  const [completed, setCompleted] = useState<{ result: FlowResult; work: FlowWork } | null>(null);
-  const schedulerRef = useRef<LatestTask<FlowWork, FlowResult> | null>(null);
   const pageSize = mode === "trace" ? FLOW_NODE_LIMIT : TIMELINE_RECORD_LIMIT;
   const total = mode === "trace" ? spans.length : entries.length;
   const end = Math.min(endAnchor ?? total, total);
   const start = Math.max(0, end - pageSize);
   const scope = `${mode}:${endAnchor ?? "latest"}`;
 
-  useEffect(() => {
-    const worker = new Worker(new URL("../workers/flow-layout.worker.ts", import.meta.url), {
-      type: "module",
-    });
-    const scheduler = new LatestTask<FlowWork, FlowResult>(
-      (work) => worker.postMessage(work.input),
-      (result, work) => setCompleted({ result, work }),
-    );
-    schedulerRef.current = scheduler;
-    worker.onmessage = (message: MessageEvent<FlowResult>) => scheduler.complete(message.data);
-    worker.onerror = () => scheduler.complete({ error: "Flow calculation failed" });
-    return () => {
-      scheduler.dispose();
-      schedulerRef.current = null;
-      worker.terminate();
-    };
-  }, []);
-
-  useEffect(() => {
-    const input: FlowInput =
-      mode === "trace"
-        ? { mode, records: spans.slice(start, end) }
-        : { mode, records: entries.slice(start, end) };
-    schedulerRef.current?.submit(scope, { input, scope, start, end, total });
-  }, [mode, entries, spans, start, end, total, scope]);
-
-  const current = completed?.work.scope === scope ? completed : null;
+  const work = useMemo<FlowWork>(
+    () => ({
+      input:
+        mode === "trace"
+          ? { mode, records: spans.slice(start, end) }
+          : { mode, records: entries.slice(start, end) },
+      scope,
+      start,
+      end,
+      total,
+    }),
+    [mode, entries, spans, start, end, total, scope],
+  );
+  const current = useFlowCalculation(work);
   const { nodes, edges } = current?.result.graph ?? { nodes: [], edges: [] };
 
   const handleNodeClick = useCallback((data: FlowNodeData) => {

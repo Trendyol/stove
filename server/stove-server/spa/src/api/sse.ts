@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { BoundedEventQueue } from "../utils/bounded-event-queue";
 import { parseLiveDashboardEvent } from "./live-event";
 import type { LiveDashboardEvent } from "./types";
 
@@ -48,39 +49,24 @@ export function useSSE({
     let disposed = false;
     let source: EventSource | null = null;
     let frame: number | null = null;
-    let queuedEvents: LiveDashboardEvent[] = [];
-    let overflowed = false;
-    let queuedBytes = 0;
+    const queue = new BoundedEventQueue<LiveDashboardEvent>(MAX_QUEUED_EVENTS, MAX_QUEUED_BYTES);
+    const encoder = new TextEncoder();
     let reconnectTimer: number | null = null;
 
     function flushEvents() {
       frame = null;
-      queuedBytes = 0;
       if (disposed) return;
-      if (overflowed) {
-        overflowed = false;
-        queuedEvents = [];
+      const batch = queue.drain();
+      if (batch.overflowed) {
         callbacksRef.current.onOverflow?.();
-        return;
+      } else if (batch.items.length > 0) {
+        callbacksRef.current.onEvents(batch.items);
       }
-      if (queuedEvents.length === 0) return;
-      const events = queuedEvents;
-      queuedEvents = [];
-      callbacksRef.current.onEvents(events);
     }
 
     function enqueue(event: LiveDashboardEvent, bytes: number) {
-      if (overflowed) return;
-      if (queuedEvents.length >= MAX_QUEUED_EVENTS || queuedBytes + bytes > MAX_QUEUED_BYTES) {
-        queuedEvents = [];
-        overflowed = true;
-      } else {
-        queuedEvents.push(event);
-        queuedBytes += bytes;
-      }
-      if (frame === null) {
-        frame = window.requestAnimationFrame(flushEvents);
-      }
+      queue.push(event, bytes);
+      if (frame === null) frame = window.requestAnimationFrame(flushEvents);
     }
 
     function connect() {
@@ -100,9 +86,7 @@ export function useSSE({
         if (typeof watermark !== "number" || !Number.isSafeInteger(watermark) || watermark < 0)
           return;
         source?.close();
-        queuedEvents = [];
-        queuedBytes = 0;
-        overflowed = false;
+        queue.clear();
         lastSeqRef.current = watermark;
         openRef.current = false;
         setConnected(false);
@@ -129,7 +113,7 @@ export function useSSE({
         // PostgreSQL transactions). The server explicitly signals missing history.
         if (lastSeqRef.current !== null && event.seq <= lastSeqRef.current) return;
         lastSeqRef.current = event.seq;
-        enqueue(event, new TextEncoder().encode(message.data).byteLength);
+        enqueue(event, encoder.encode(message.data).byteLength);
       };
 
       source.onerror = () => {
@@ -148,8 +132,7 @@ export function useSSE({
     return () => {
       disposed = true;
       if (frame !== null) window.cancelAnimationFrame(frame);
-      queuedEvents = [];
-      overflowed = false;
+      queue.clear();
       openRef.current = false;
       setConnected(false);
       source?.close();

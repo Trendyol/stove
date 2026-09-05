@@ -4,7 +4,7 @@ use diesel::QueryableByName;
 use diesel::sql_types::BigInt;
 
 use super::{Backend, Repository};
-use crate::error::{AppError, Result};
+use crate::error::Result;
 use crate::ingest::StoredLiveEvent;
 
 pub(crate) const REPLAY_PAGE_EVENTS: usize = 200;
@@ -76,15 +76,13 @@ impl Repository {
     bytes: usize,
     scope: Option<ReplayScope>,
   ) -> Result<ReplayPage> {
-    let permit = self
-      .replay_admission
-      .clone()
-      .try_acquire_owned()
-      .map_err(|_| AppError::Overloaded)?;
     let repository = self.clone();
-    tokio::task::spawn_blocking(move || {
-      let _permit = permit;
-      match &repository.backend {
+    crate::blocking::admitted(
+      &self.replay_admission,
+      &crate::metrics::REPLAY,
+      0,
+      "replay",
+      move || match &repository.backend {
         Backend::Sqlite(sqlite) => sqlite.replay_page(
           after,
           events.min(REPLAY_PAGE_EVENTS),
@@ -97,10 +95,9 @@ impl Repository {
           bytes.min(REPLAY_PAGE_BYTES),
           scope.as_ref(),
         ),
-      }
-    })
+      },
+    )
     .await
-    .map_err(|error| AppError::Startup(format!("replay worker failed: {error}")))?
   }
 
   pub(crate) async fn read_async<T, F>(self: &Arc<Self>, operation: F) -> Result<T>
@@ -108,24 +105,22 @@ impl Repository {
     T: Send + 'static,
     F: FnOnce(&Self) -> Result<T> + Send + 'static,
   {
-    let permit = self
-      .read_admission
-      .clone()
-      .try_acquire_owned()
-      .map_err(|_| AppError::Overloaded)?;
     let repository = self.clone();
-    tokio::task::spawn_blocking(move || {
-      let _permit = permit;
-      operation(&repository)
-    })
+    crate::blocking::admitted(
+      &self.read_admission,
+      &crate::metrics::READ,
+      0,
+      "read",
+      move || operation(&repository),
+    )
     .await
-    .map_err(|error| AppError::Startup(format!("read worker failed: {error}")))?
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::error::AppError;
 
   #[test]
   fn replay_lengths_stop_before_loading_an_oversized_payload() {

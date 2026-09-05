@@ -1,3 +1,4 @@
+use crate::metrics::{DatabaseOperation, database_result};
 use crate::storage::repository::replay::{
   BOUNDS_SQL, ReplayBounds, ReplayPage, ReplayScope, ReplaySize, page_end,
 };
@@ -21,9 +22,11 @@ impl SqliteBackend {
     retention: usize,
   ) -> Result<CommitOutcome> {
     let mut database = self.lock_write();
-    database
-      .conn()
-      .transaction(|conn| commit_on(conn, identity, event, retention))
+    database_result(DatabaseOperation::SqliteIngestTransaction, || {
+      database
+        .conn()
+        .transaction(|conn| commit_on(conn, identity, event, retention))
+    })
   }
 
   pub fn commit_dashboard_batch(
@@ -32,11 +35,13 @@ impl SqliteBackend {
     retention: usize,
   ) -> Result<Vec<CommitOutcome>> {
     let mut database = self.lock_write();
-    database.conn().transaction(|conn| {
-      events
-        .iter()
-        .map(|(identity, event)| commit_on(conn, identity, event, retention))
-        .collect()
+    database_result(DatabaseOperation::SqliteIngestTransaction, || {
+      database.conn().transaction(|conn| {
+        events
+          .iter()
+          .map(|(identity, event)| commit_on(conn, identity, event, retention))
+          .collect()
+      })
     })
   }
 
@@ -48,7 +53,8 @@ impl SqliteBackend {
     scope: Option<&ReplayScope>,
   ) -> Result<ReplayPage> {
     let mut database = self.lock_replay();
-    database.conn().transaction(|conn| {
+    database_result(DatabaseOperation::SqliteReplayTransaction, || {
+      database.conn().transaction(|conn| {
       let bounds = diesel::sql_query(BOUNDS_SQL).get_result::<ReplayBounds>(conn)?;
       let rows = diesel::sql_query("SELECT id, length(CAST(payload AS BLOB)) AS bytes FROM live_events WHERE id > ?1 AND (NOT ?3 OR event_type IN ('run_started','run_ended','test_started','test_ended') OR (run_id=?4 AND (?5 IS NULL OR json_extract(payload, '$.payload.test_id')=?5))) ORDER BY id LIMIT ?2")
         .bind::<diesel::sql_types::BigInt, _>(i64::try_from(after).unwrap_or(i64::MAX))
@@ -64,6 +70,7 @@ impl SqliteBackend {
           .into_iter().map(|(id, payload)| Ok(StoredLiveEvent { id: live_event_id_to_u64(id)?, json: payload })).collect::<Result<Vec<_>>>()?
       } else { Vec::new() };
       Ok(ReplayPage { events, watermark: live_event_id_to_u64(bounds.watermark)?, deleted_through: live_event_id_to_u64(bounds.deleted_through)?, oversized, exhausted: rows.len() < event_limit && end == rows.last().map(|row| row.id) && oversized.is_none() })
+    })
     })
   }
 

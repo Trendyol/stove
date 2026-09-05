@@ -1,3 +1,4 @@
+use crate::metrics::{DatabaseOperation, database_result};
 use std::time::Duration;
 
 use crate::storage::repository::replay::{
@@ -46,20 +47,24 @@ impl PostgresBackend {
     identity: &EventIdentity,
     event: &crate::proto::DashboardEvent,
   ) -> Result<CommitOutcome> {
-    self
-      .lock_write()
-      .transaction(|conn| commit_on(conn, identity, event))
+    let mut database = self.lock_write();
+    database_result(DatabaseOperation::PostgresIngestTransaction, || {
+      database.transaction(|conn| commit_on(conn, identity, event))
+    })
   }
 
   pub fn commit_dashboard_batch(
     &self,
     events: &[(EventIdentity, crate::proto::DashboardEvent)],
   ) -> Result<Vec<CommitOutcome>> {
-    self.lock_write().transaction(|conn| {
-      events
-        .iter()
-        .map(|(identity, event)| commit_on(conn, identity, event))
-        .collect()
+    let mut database = self.lock_write();
+    database_result(DatabaseOperation::PostgresIngestTransaction, || {
+      database.transaction(|conn| {
+        events
+          .iter()
+          .map(|(identity, event)| commit_on(conn, identity, event))
+          .collect()
+      })
     })
   }
 
@@ -71,7 +76,8 @@ impl PostgresBackend {
     scope: Option<&ReplayScope>,
   ) -> Result<ReplayPage> {
     let mut database = self.lock_replay();
-    database.build_transaction().repeatable_read().read_only().run(|conn| {
+    database_result(DatabaseOperation::PostgresReplayTransaction, || {
+      database.build_transaction().repeatable_read().read_only().run(|conn| {
       let bounds = diesel::sql_query(BOUNDS_SQL).get_result::<ReplayBounds>(conn)?;
       let rows = diesel::sql_query("SELECT id, octet_length(payload::text)::bigint AS bytes FROM live_events WHERE id > $1 AND (NOT $3 OR event_type IN ('run_started','run_ended','test_started','test_ended') OR (run_id=$4 AND ($5 IS NULL OR payload->'payload'->>'test_id'=$5))) ORDER BY id LIMIT $2")
         .bind::<diesel::sql_types::BigInt, _>(i64::try_from(after).unwrap_or(i64::MAX))
@@ -87,6 +93,7 @@ impl PostgresBackend {
           .into_iter().map(|(id, payload)| Ok(StoredLiveEvent { id: live_event_id_to_u64(id)?, json: serde_json::to_string(&payload)? })).collect::<Result<Vec<_>>>()?
       } else { Vec::new() };
       Ok(ReplayPage { events, watermark: live_event_id_to_u64(bounds.watermark)?, deleted_through: live_event_id_to_u64(bounds.deleted_through)?, oversized, exhausted: rows.len() < event_limit && end == rows.last().map(|row| row.id) && oversized.is_none() })
+    })
     })
   }
 

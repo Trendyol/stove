@@ -58,6 +58,13 @@ struct Cache {
   events: VecDeque<Arc<CachedLiveEvent>>,
 }
 
+pub(crate) struct SseMetrics {
+  pub events: usize,
+  pub bytes: usize,
+  pub subscribers: usize,
+  pub cursor: u64,
+}
+
 pub struct SseManager {
   sender: broadcast::Sender<LiveNotice>,
   cache: Mutex<Cache>,
@@ -75,13 +82,27 @@ impl SseManager {
     }
   }
 
+  fn cache(&self) -> std::sync::MutexGuard<'_, Cache> {
+    self
+      .cache
+      .lock()
+      .unwrap_or_else(std::sync::PoisonError::into_inner)
+  }
+
+  pub(crate) fn metrics(&self) -> SseMetrics {
+    let cache = self.cache();
+    SseMetrics {
+      events: cache.events.len(),
+      bytes: cache.bytes,
+      subscribers: self.sender.receiver_count(),
+      cursor: cache.last_id,
+    }
+  }
+
   pub fn broadcast(&self, event: StoredLiveEvent) {
     let scope = serde_json::from_str(&event.json).ok();
     let payload = Arc::new(CachedLiveEvent { event, scope });
-    let mut cache = self
-      .cache
-      .lock()
-      .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut cache = self.cache();
     if cache.last_id >= payload.event.id {
       return;
     }
@@ -104,10 +125,7 @@ impl SseManager {
 
   /// Missing or oversized history forces clients through the durable replay/resync path.
   pub(crate) fn broadcast_cursor(&self, id: u64) {
-    let mut cache = self
-      .cache
-      .lock()
-      .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut cache = self.cache();
     if cache.last_id >= id {
       return;
     }
@@ -119,10 +137,7 @@ impl SseManager {
   }
 
   pub(crate) fn initialize_high_water(&self, id: u64) {
-    let mut cache = self
-      .cache
-      .lock()
-      .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut cache = self.cache();
     cache.last_id = cache.last_id.max(id);
   }
 
@@ -138,11 +153,7 @@ impl SseManager {
   }
   #[must_use]
   pub fn last_broadcast_id(&self) -> u64 {
-    self
-      .cache
-      .lock()
-      .unwrap_or_else(std::sync::PoisonError::into_inner)
-      .last_id
+    self.cache().last_id
   }
 }
 

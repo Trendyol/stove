@@ -63,38 +63,24 @@ private class GrpcDashboardTransport(
 
   override val name: String = "gRPC"
 
-  override suspend fun send(event: DashboardEvent): SendOutcome = try {
-    val ack = stub
-      .withDeadlineAfter(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-      .sendEvent(event)
-    if (ack.accepted) {
-      SendOutcome.Accepted
-    } else {
-      SendOutcome.Failed(IllegalStateException("Dashboard server did not commit event ${event.eventId}"))
-    }
-  } catch (error: StatusException) {
-    if (error.status.code == Status.Code.INVALID_ARGUMENT) {
-      SendOutcome.Rejected(error.status.description ?: "invalid event")
-    } else {
-      SendOutcome.Failed(error)
-    }
-  } catch (error: Exception) {
-    if (error is CancellationException) throw error
-    SendOutcome.Failed(error)
+  override suspend fun send(event: DashboardEvent): SendOutcome = request(batch = false) {
+    validateEventAck(event, stub.withDeadlineAfter(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS).sendEvent(event))
   }
 
-  override suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome = try {
+  override suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome = request(batch = true) {
     validateBatchAck(batch, stub.withDeadlineAfter(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS).sendBatch(batch))
-  } catch (error: StatusException) {
-    when (error.status.code) {
-      Status.Code.UNIMPLEMENTED -> SendOutcome.Unsupported
-      Status.Code.INVALID_ARGUMENT -> SendOutcome.Rejected(error.status.description ?: "invalid batch")
-      else -> SendOutcome.Failed(error)
+  }
+
+  private suspend fun request(batch: Boolean, block: suspend () -> SendOutcome): SendOutcome = transportAttempt {
+    try {
+      block()
+    } catch (error: StatusException) {
+      when (error.status.code) {
+        Status.Code.UNIMPLEMENTED -> if (batch) SendOutcome.Unsupported else SendOutcome.Failed(error)
+        Status.Code.INVALID_ARGUMENT -> SendOutcome.Rejected(error.status.description ?: if (batch) "invalid batch" else "invalid event")
+        else -> SendOutcome.Failed(error)
+      }
     }
-  } catch (error: CancellationException) {
-    throw error
-  } catch (error: Exception) {
-    SendOutcome.Failed(error)
   }
 
   override fun close() {
@@ -124,47 +110,31 @@ private class HttpDashboardTransport(private val eventsUri: URI) : DashboardTran
 
   override val name: String = "HTTP"
 
-  override suspend fun send(event: DashboardEvent): SendOutcome = try {
-    val response = client.post(eventsUri.toString()) {
-      contentType(PROTOBUF_CONTENT_TYPE)
-      accept(PROTOBUF_CONTENT_TYPE)
-      setBody(event.toByteArray())
-    }
-    val responseBody = response.bodyAsBytes()
-    when (response.status) {
-      HttpStatusCode.OK -> EventAck.parseFrom(responseBody).let { ack ->
-        if (ack.accepted) {
-          SendOutcome.Accepted
-        } else {
-          SendOutcome.Failed(IllegalStateException("Dashboard server did not commit event ${event.eventId}"))
-        }
-      }
-
-      HttpStatusCode.BadRequest -> SendOutcome.Rejected(String(responseBody, Charsets.UTF_8))
-
-      else -> SendOutcome.Failed(IOException("Dashboard server responded with HTTP ${response.status.value}"))
-    }
-  } catch (error: Exception) {
-    if (error is CancellationException) throw error
-    SendOutcome.Failed(error)
+  override suspend fun send(event: DashboardEvent): SendOutcome = request(eventsUri.toString(), event.toByteArray(), batch = false) {
+    validateEventAck(event, EventAck.parseFrom(it))
   }
 
-  override suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome = try {
-    val response = client.post("$eventsUri/batch") {
+  override suspend fun sendBatch(batch: DashboardEventBatch): SendOutcome = request("$eventsUri/batch", batch.toByteArray(), batch = true) {
+    validateBatchAck(batch, BatchAck.parseFrom(it))
+  }
+
+  private suspend fun request(
+    uri: String,
+    payload: ByteArray,
+    batch: Boolean,
+    acknowledge: (ByteArray) -> SendOutcome
+  ): SendOutcome = transportAttempt {
+    val response = client.post(uri) {
       contentType(PROTOBUF_CONTENT_TYPE)
       accept(PROTOBUF_CONTENT_TYPE)
-      setBody(batch.toByteArray())
+      setBody(payload)
     }
-    when (response.status) {
-      HttpStatusCode.OK -> validateBatchAck(batch, BatchAck.parseFrom(response.bodyAsBytes()))
-      HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed -> SendOutcome.Unsupported
-      HttpStatusCode.BadRequest -> SendOutcome.Rejected(String(response.bodyAsBytes(), Charsets.UTF_8))
-      else -> SendOutcome.Failed(IOException("Dashboard batch returned HTTP ${response.status.value}"))
+    when {
+      response.status == HttpStatusCode.OK -> acknowledge(response.bodyAsBytes())
+      batch && response.status in listOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed) -> SendOutcome.Unsupported
+      response.status == HttpStatusCode.BadRequest -> SendOutcome.Rejected(response.bodyAsBytes().toString(Charsets.UTF_8))
+      else -> SendOutcome.Failed(IOException("Dashboard server responded with HTTP ${response.status.value}"))
     }
-  } catch (error: CancellationException) {
-    throw error
-  } catch (error: Exception) {
-    SendOutcome.Failed(error)
   }
 
   override fun close() = client.close()
@@ -186,4 +156,20 @@ private fun validateBatchAck(batch: DashboardEventBatch, ack: BatchAck): SendOut
   } else {
     SendOutcome.Failed(IOException("Dashboard batch acknowledgment did not match the pending events"))
   }
+}
+
+/** Cancellation belongs to the delivery coroutine; transport failures remain retryable. */
+private suspend fun transportAttempt(block: suspend () -> SendOutcome): SendOutcome = try {
+  block()
+} catch (error: CancellationException) {
+  throw error
+} catch (error: Exception) {
+  SendOutcome.Failed(error)
+}
+
+// Older single-event servers may not echo identities; batch acknowledgements require them.
+private fun validateEventAck(event: DashboardEvent, ack: EventAck): SendOutcome = if (ack.accepted) {
+  SendOutcome.Accepted
+} else {
+  SendOutcome.Failed(IllegalStateException("Dashboard server did not commit event ${event.eventId}"))
 }

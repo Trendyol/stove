@@ -206,7 +206,8 @@ sustained producer/browser load run, or evidence that the requested latency gate
 - Scoped SSE snapshot summaries and any additional server-side filter facets needed by the UI.
 - Indexed UI reducers, sliced/coalesced processing, bounded caches, scope recovery
   and hidden-tab handling (virtualization and persistent bounded Flow are implemented).
-- After implementation: refactor all code changed for this plan, then rerun verification.
+- Keep the refactored module boundaries as the remaining features are implemented,
+  then rerun combined verification.
 - Baseline and final ten-producer/five-viewer sustained and burst workloads on both
   databases, including two PostgreSQL server instances and all failure scenarios.
 
@@ -220,3 +221,34 @@ STOVE_REAL_SERVER_BINARY="$PWD/server/stove-server/target/debug/stove" \
 `STOVE_REAL_SERVER_EVENTS` controls the number of evidence records per producer
 (default 100; ten producers). This is a correctness smoke test, not the requested
 sustained ten-minute reference-hardware benchmark.
+
+### Prometheus diagnostics
+
+`GET /metrics` now exposes bounded-cardinality backend operation pressure and
+latency, commit/deduplication counters, SSE cache occupancy, relay progress/errors
+and resynchronization attempts. See [METRICS.md](METRICS.md) for per-pod scraping,
+PromQL examples, and measurement boundaries. Separate database connection-wait and ingestion/replay transaction histograms are
+also available. Scheduler wait, producer spool and background cleanup instrumentation
+remain follow-up work.
+
+### Refactoring the implemented delivery path
+
+The implemented paths now share a cancellation-safe blocking admission wrapper
+and pagination option/cursor helpers. Metrics have separate observation, database
+instrumentation and Prometheus exposition modules; scrapes copy metric snapshots
+before formatting and group each metric family together. Delivery code reports
+metrics through named operations instead of manipulating counters directly.
+
+The Kotlin emitter separates delivery attempts from retry/shutdown policy, shares
+transport cancellation and acknowledgement handling, and updates spool counters
+once per acknowledgement transaction. Its locks remain `ReentrantLock.withLock`.
+The SPA separates bounded queue state, evidence identity reconciliation and Flow
+worker lifetime from the React views. Existing wire formats, cursor scopes,
+publication locks and spool recovery rules remain in place. This refactor covers
+implemented code; the outstanding functionality listed above remains outstanding.
+
+Refactor verification: all 168 Rust tests (including SQLite and two-pod PostgreSQL
+acceptance), all 31 regular Kotlin dashboard tests plus the real-server ten-producer
+smoke test, and all 65 SPA tests passed. Rust Clippy and the production SPA build
+passed. Biome reported no errors and three existing unused-suppression warnings in
+untouched files. These checks do not replace the outstanding sustained-load gates.

@@ -1,3 +1,4 @@
+use crate::metrics::{DatabaseOperation, database_acquire};
 use std::sync::{Mutex, MutexGuard};
 
 use diesel::prelude::*;
@@ -47,22 +48,24 @@ impl PostgresBackend {
   }
 
   fn lock_write(&self) -> pool::Lease<'_> {
-    self.write.get()
+    database_acquire(DatabaseOperation::PostgresWriteWait, || self.write.get())
   }
 
   fn lock_read(&self) -> pool::Lease<'_> {
-    self.read.get()
+    database_acquire(DatabaseOperation::PostgresReadWait, || self.read.get())
   }
 
   fn lock_replay(&self) -> pool::Lease<'_> {
-    self.replay.get()
+    database_acquire(DatabaseOperation::PostgresReplayWait, || self.replay.get())
   }
 
   fn lock_explorer(&self) -> MutexGuard<'_, postgres::Client> {
-    self
-      .explorer
-      .lock()
-      .expect("PostgreSQL explorer lock poisoned")
+    database_acquire(DatabaseOperation::PostgresExplorerWait, || {
+      self
+        .explorer
+        .lock()
+        .expect("PostgreSQL explorer lock poisoned")
+    })
   }
 }
 

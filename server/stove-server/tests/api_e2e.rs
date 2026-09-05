@@ -2260,3 +2260,33 @@ async fn admin_preview_and_purge_use_exact_ids_and_protect_running_runs() {
   assert_eq!(protected["purged_runs"], 0);
   assert!(server.repo.get_run("run-active").unwrap().is_some());
 }
+
+#[tokio::test]
+async fn prometheus_metrics_are_exposed_without_database_queries() {
+  let server = TestServer::start().await;
+  let response = server
+    .client
+    .get(format!("{}/metrics", server.base_url))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(response.status(), StatusCode::OK);
+  assert_eq!(
+    response.headers()["content-type"],
+    "text/plain; version=0.0.4; charset=utf-8"
+  );
+  let body = response.text().await.unwrap();
+  assert!(body.contains("# TYPE stove_operation_duration_seconds histogram"));
+  assert!(
+    body.contains("stove_operation_duration_seconds_bucket{operation=\"ingest\",le=\"+Inf\"}")
+  );
+  assert!(body.contains("stove_sse_cache_bytes 0"));
+  assert!(body.contains("stove_relay_lag_ids "));
+  assert!(body.contains("# TYPE stove_database_duration_seconds histogram"));
+  assert!(body.contains("stove_database_duration_seconds_count{operation=\"sqlite_write_wait\"}"));
+  assert!(
+    body
+      .contains("stove_database_duration_seconds_count{operation=\"postgres_ingest_transaction\"}")
+  );
+  assert!(!body.contains("run_id="));
+}

@@ -113,6 +113,7 @@ async fn checkpoint(sender: &Sender, cursor: u64) -> bool {
 }
 
 async fn resync(sender: &Sender, reason: &str, watermark: u64) -> bool {
+  crate::metrics::resync_requested();
   send(
     sender,
     Event::default()

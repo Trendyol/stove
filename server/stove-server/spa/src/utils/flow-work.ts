@@ -6,6 +6,7 @@ export const FLOW_NODE_LIMIT = 1_000;
 export const TIMELINE_RECORD_LIMIT = FLOW_NODE_LIMIT / 2;
 export type FlowInput = { mode: "timeline"; records: Entry[] } | { mode: "trace"; records: Span[] };
 export type FlowGraph = ReturnType<typeof entriesToDag>;
+export type FlowResult = { graph: FlowGraph; error?: never } | { error: string; graph?: never };
 
 export function calculateFlow(input: FlowInput): FlowGraph {
   if (input.mode === "timeline") {

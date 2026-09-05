@@ -43,31 +43,35 @@ internal class DashboardSpool(ingestion: DashboardIngestion, options: DashboardS
     path = options.directory.toRealPath().resolve("$name.db")
     connection = DriverManager.getConnection("jdbc:sqlite:$path")
     try {
-      connection.createStatement().use { statement ->
-        statement.execute("PRAGMA busy_timeout=10000")
-        statement.execute("PRAGMA journal_mode=DELETE")
-        statement.execute("PRAGMA synchronous=FULL")
-        statement.execute("PRAGMA cache_size=-1024")
-        statement.execute("PRAGMA temp_store=FILE")
-        // Reserve more than half the quota for the rollback journal and filesystem overhead.
-        val pages = options.maxBytes / 4096 / 100 * 45
-        statement.executeQuery("PRAGMA max_page_count=$pages").use { result ->
-          check(result.next() && result.getLong(1) <= pages) { "Existing spool exceeds the configured disk quota" }
-        }
-        statement.execute("CREATE TABLE IF NOT EXISTS run_sequences (run_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL)")
-        statement.execute(
-          "CREATE TABLE IF NOT EXISTS pending (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, payload BLOB NOT NULL, bytes INTEGER NOT NULL)"
-        )
-        statement.execute("CREATE INDEX IF NOT EXISTS pending_run ON pending(run_id)")
-        statement.execute(
-          "CREATE TABLE IF NOT EXISTS counters (id INTEGER PRIMARY KEY CHECK(id=1), events INTEGER NOT NULL, bytes INTEGER NOT NULL)"
-        )
-        statement.execute("INSERT OR IGNORE INTO counters VALUES (1, 0, 0)")
-      }
+      initializeDatabase(options)
       deliveryChannel = DashboardDeliveryLock.open(path.resolveSibling("$name.delivery.lock"))
     } catch (error: Exception) {
       connection.close()
       throw DashboardSpoolException("Cannot open dashboard spool $path", error)
+    }
+  }
+
+  private fun initializeDatabase(options: DashboardSpoolOptions) {
+    connection.createStatement().use { statement ->
+      statement.execute("PRAGMA busy_timeout=10000")
+      statement.execute("PRAGMA journal_mode=DELETE")
+      statement.execute("PRAGMA synchronous=FULL")
+      statement.execute("PRAGMA cache_size=-1024")
+      statement.execute("PRAGMA temp_store=FILE")
+      // Reserve more than half the quota for the rollback journal and filesystem overhead.
+      val pages = options.maxBytes / 4096 / 100 * 45
+      statement.executeQuery("PRAGMA max_page_count=$pages").use { result ->
+        check(result.next() && result.getLong(1) <= pages) { "Existing spool exceeds the configured disk quota" }
+      }
+      statement.execute("CREATE TABLE IF NOT EXISTS run_sequences (run_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL)")
+      statement.execute(
+        "CREATE TABLE IF NOT EXISTS pending (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, payload BLOB NOT NULL, bytes INTEGER NOT NULL)"
+      )
+      statement.execute("CREATE INDEX IF NOT EXISTS pending_run ON pending(run_id)")
+      statement.execute(
+        "CREATE TABLE IF NOT EXISTS counters (id INTEGER PRIMARY KEY CHECK(id=1), events INTEGER NOT NULL, bytes INTEGER NOT NULL)"
+      )
+      statement.execute("INSERT OR IGNORE INTO counters VALUES (1, 0, 0)")
     }
   }
 
@@ -111,20 +115,16 @@ internal class DashboardSpool(ingestion: DashboardIngestion, options: DashboardS
   fun peek(limit: Int = MAX_BATCH_EVENTS): List<SpooledEvent> = lock.withLock {
     connection.createStatement().use { query ->
       query.executeQuery(
-        "SELECT id, run_id, payload, bytes FROM pending " +
+        "SELECT id, payload, bytes FROM pending " +
           "WHERE run_id=(SELECT run_id FROM pending ORDER BY id LIMIT 1) ORDER BY id LIMIT $limit"
       ).use { rows ->
         val batch = mutableListOf<SpooledEvent>()
         var bytes = 0
-        var run: String? = null
         while (rows.next()) {
-          val runId = rows.getString(2)
-          if (run != null && run != runId) break
-          val length = rows.getInt(4)
+          val length = rows.getInt(3)
           val size = 1 + CodedOutputStream.computeUInt32SizeNoTag(length) + length
           if (batch.isNotEmpty() && bytes + size > MAX_BATCH_BYTES) break
-          batch.add(SpooledEvent(rows.getLong(1), DashboardEvent.parseFrom(rows.getBytes(3))))
-          run = runId
+          batch.add(SpooledEvent(rows.getLong(1), DashboardEvent.parseFrom(rows.getBytes(2))))
           bytes += size
           if (bytes >= MAX_BATCH_BYTES) break
         }
@@ -134,31 +134,35 @@ internal class DashboardSpool(ingestion: DashboardIngestion, options: DashboardS
   }
 
   fun acknowledge(events: List<SpooledEvent>) = transaction {
-    for (record in events) {
-      connection.prepareStatement(
-        "DELETE FROM pending WHERE id=? RETURNING bytes"
-      ).use { delete ->
+    var removedEvents = 0L
+    var removedBytes = 0L
+    connection.prepareStatement("DELETE FROM pending WHERE id=? RETURNING bytes").use { delete ->
+      for (record in events) {
         delete.setLong(1, record.id)
         delete.executeQuery().use { row ->
           if (row.next()) {
-            connection.prepareStatement(
-              "UPDATE counters SET events=events-1, bytes=bytes-? WHERE id=1"
-            ).use { update ->
-              update.setInt(1, row.getInt(1))
-              update.executeUpdate()
-            }
+            removedEvents++
+            removedBytes += row.getLong(1)
           }
         }
+        if (record.event.hasRunEnded()) removeCompletedSequence(record.event.runId)
       }
-      if (record.event.hasRunEnded()) {
-        connection.prepareStatement(
-          "DELETE FROM run_sequences WHERE run_id=? AND NOT EXISTS (SELECT 1 FROM pending WHERE run_id=?)"
-        ).use { delete ->
-          delete.setString(1, record.event.runId)
-          delete.setString(2, record.event.runId)
-          delete.executeUpdate()
-        }
-      }
+    }
+    connection.prepareStatement("UPDATE counters SET events=events-?, bytes=bytes-? WHERE id=1").use { update ->
+      update.setLong(1, removedEvents)
+      update.setLong(2, removedBytes)
+      update.executeUpdate()
+    }
+    Unit
+  }
+
+  private fun removeCompletedSequence(runId: String) {
+    connection.prepareStatement(
+      "DELETE FROM run_sequences WHERE run_id=? AND NOT EXISTS (SELECT 1 FROM pending WHERE run_id=?)"
+    ).use { delete ->
+      delete.setString(1, runId)
+      delete.setString(2, runId)
+      delete.executeUpdate()
     }
   }
 

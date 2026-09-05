@@ -125,59 +125,77 @@ class DashboardEmitter internal constructor(
       if (lease == null) {
         // Another process owns delivery. Do not block shutdown on that process.
         if (closed.get() && ++shutdownLockWaits >= maxFailures) return
-        delay(100)
+        delay(POLL_INTERVAL_MS)
         continue
       }
-      var empty = false
-      var failed = false
-      lease.use {
-        var records = spool.peek(if (batchSupported) MAX_BATCH_EVENTS else 1)
-        if (records.isEmpty()) {
-          empty = true
-        } else {
-          if (batchSupported && records.size < MAX_BATCH_EVENTS && !closed.get() && spool.status().pendingEvents == records.size.toLong()) {
-            delay(10)
-            records = spool.peek(if (batchSupported) MAX_BATCH_EVENTS else 1)
-          }
-          val events = records.map { it.event }
-          val batch = DashboardEventBatch.newBuilder().addAllEvents(events).build()
-          val useBatch = batchSupported && batch.serializedSize <= MAX_BATCH_BYTES
-          val outcome = if (useBatch) transport.sendBatch(batch) else transport.send(events.first())
-          when (outcome) {
-            SendOutcome.Accepted -> {
-              spool.acknowledge(if (useBatch) records else records.take(1))
-              consecutiveFailures = 0
-              lastError = null
-            }
-
-            SendOutcome.Unsupported -> batchSupported = false
-
-            is SendOutcome.Rejected -> throw DashboardSpoolException("Server rejected pending evidence: ${outcome.reason}")
-
-            is SendOutcome.Failed -> {
-              consecutiveFailures = (consecutiveFailures + 1).coerceAtMost(Int.MAX_VALUE - 1)
-              lastError = outcome.cause.message
-              if (consecutiveFailures == 1) {
-                logger.warn("Dashboard ${transport.name} delivery failed; retaining and retrying evidence in ${spool.path}", outcome.cause)
-              }
-              failed = true
-            }
-          }
+      when (lease.use { deliverPending() }) {
+        DeliveryAttempt.Empty -> {
+          if (closed.get()) return
+          // Poll also discovers records appended by other producer processes.
+          withTimeoutOrNull(POLL_INTERVAL_MS) { wakeup.receive() }
         }
-      }
-      if (empty) {
-        if (closed.get()) return
-        // Poll also discovers records appended by other producer processes.
-        withTimeoutOrNull(100) { wakeup.receive() }
-      } else if (failed) {
-        if (closed.get() && consecutiveFailures >= maxFailures) return
-        delay(RETRY_BASE_DELAY_MS shl (consecutiveFailures.coerceIn(1, 6) - 1))
+
+        DeliveryAttempt.Failed -> {
+          if (closed.get() && consecutiveFailures >= maxFailures) return
+          delay(RETRY_BASE_DELAY_MS shl (consecutiveFailures.coerceIn(1, 6) - 1))
+        }
+
+        DeliveryAttempt.Progress -> Unit
       }
     }
   }
 
+  /** The cross-process delivery lease is held throughout this operation. */
+  private suspend fun deliverPending(): DeliveryAttempt {
+    var records = pendingBatch()
+    if (records.isEmpty()) return DeliveryAttempt.Empty
+    if (shouldWaitForBatch(records)) {
+      delay(BATCH_FLUSH_INTERVAL_MS)
+      records = pendingBatch()
+    }
+    val batch = DashboardEventBatch.newBuilder().addAllEvents(records.map { it.event }).build()
+    val useBatch = batchSupported && batch.serializedSize <= MAX_BATCH_BYTES
+    val outcome = if (useBatch) transport.sendBatch(batch) else transport.send(records.first().event)
+    return when (outcome) {
+      SendOutcome.Accepted -> {
+        spool.acknowledge(if (useBatch) records else records.take(1))
+        consecutiveFailures = 0
+        lastError = null
+        DeliveryAttempt.Progress
+      }
+
+      SendOutcome.Unsupported -> {
+        batchSupported = false
+        DeliveryAttempt.Progress
+      }
+
+      is SendOutcome.Rejected -> throw DashboardSpoolException("Server rejected pending evidence: ${outcome.reason}")
+
+      is SendOutcome.Failed -> recordFailure(outcome.cause)
+    }
+  }
+
+  private fun pendingBatch(): List<SpooledEvent> = spool.peek(if (batchSupported) MAX_BATCH_EVENTS else 1)
+
+  private fun shouldWaitForBatch(records: List<SpooledEvent>): Boolean =
+    batchSupported && records.size < MAX_BATCH_EVENTS && !closed.get() &&
+      spool.status().pendingEvents == records.size.toLong()
+
+  private fun recordFailure(cause: Exception): DeliveryAttempt {
+    consecutiveFailures = (consecutiveFailures + 1).coerceAtMost(Int.MAX_VALUE - 1)
+    lastError = cause.message
+    if (consecutiveFailures == 1) {
+      logger.warn("Dashboard ${transport.name} delivery failed; retaining and retrying evidence in ${spool.path}", cause)
+    }
+    return DeliveryAttempt.Failed
+  }
+
+  private enum class DeliveryAttempt { Empty, Progress, Failed }
+
   private companion object {
     private const val DRAIN_WARNING_INTERVAL_MS = 30000L
+    private const val POLL_INTERVAL_MS = 100L
+    private const val BATCH_FLUSH_INTERVAL_MS = 10L
     private const val RETRY_BASE_DELAY_MS = 100L
   }
 }

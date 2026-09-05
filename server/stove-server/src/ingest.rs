@@ -51,19 +51,15 @@ impl EventIngestor {
     &self,
     event: proto::DashboardEvent,
   ) -> AppResult<proto::EventAck> {
-    let permit = self
-      .admission
-      .clone()
-      .try_acquire_owned()
-      .map_err(|_| AppError::Overloaded)?;
     let ingestor = self.clone();
-    tokio::task::spawn_blocking(move || {
-      // Keep the permit in the blocking task, including when the request is cancelled.
-      let _permit = permit;
-      ingestor.ingest(&event)
-    })
+    crate::blocking::admitted(
+      &self.admission,
+      &crate::metrics::INGEST,
+      prost::Message::encoded_len(&event) as u64,
+      "ingestion",
+      move || ingestor.ingest(&event),
+    )
     .await
-    .map_err(|error| AppError::Startup(format!("ingestion worker failed: {error}")))?
   }
 
   pub(crate) async fn ingest_batch(
@@ -86,46 +82,48 @@ impl EventIngestor {
         "batch events require one run, event IDs and positive sequences".into(),
       ));
     }
-    let permit = self
-      .admission
-      .clone()
-      .try_acquire_owned()
-      .map_err(|_| AppError::Overloaded)?;
     let ingestor = self.clone();
-    tokio::task::spawn_blocking(move || {
-      let _permit = permit;
-      let events = batch
-        .events
-        .into_iter()
-        .map(|event| {
-          (
-            EventIdentity {
-              event_id: event.event_id.clone(),
-              sequence: Some(event.sequence),
-            },
-            event,
-          )
-        })
-        .collect::<Vec<_>>();
-      let outcomes = ingestor.repository.commit_dashboard_batch(&events)?;
-      if outcomes.iter().any(|outcome| !outcome.duplicate) {
-        ingestor.sse_manager.notify_commit();
-      }
-      Ok(proto::BatchAck {
-        acknowledgements: events
+    crate::blocking::admitted(
+      &self.admission,
+      &crate::metrics::INGEST,
+      batch.encoded_len() as u64,
+      "ingestion",
+      move || {
+        let events = batch
+          .events
           .into_iter()
-          .zip(outcomes)
-          .map(|((_, event), outcome)| proto::EventAck {
-            accepted: true,
-            event_id: event.event_id,
-            sequence: event.sequence,
-            duplicate: outcome.duplicate,
+          .map(|event| {
+            (
+              EventIdentity {
+                event_id: event.event_id.clone(),
+                sequence: Some(event.sequence),
+              },
+              event,
+            )
           })
-          .collect(),
-      })
-    })
+          .collect::<Vec<_>>();
+        let outcomes = ingestor.repository.commit_dashboard_batch(&events)?;
+        for outcome in &outcomes {
+          crate::metrics::event_committed(outcome.duplicate);
+        }
+        if outcomes.iter().any(|outcome| !outcome.duplicate) {
+          ingestor.sse_manager.notify_commit();
+        }
+        Ok(proto::BatchAck {
+          acknowledgements: events
+            .into_iter()
+            .zip(outcomes)
+            .map(|((_, event), outcome)| proto::EventAck {
+              accepted: true,
+              event_id: event.event_id,
+              sequence: event.sequence,
+              duplicate: outcome.duplicate,
+            })
+            .collect(),
+        })
+      },
+    )
     .await
-    .map_err(|error| AppError::Startup(format!("ingestion worker failed: {error}")))?
   }
 
   /// Commit an event transactionally before acknowledging it to the producer.
@@ -139,6 +137,7 @@ impl EventIngestor {
       sequence: (event.sequence > 0).then_some(event.sequence),
     };
     let outcome = self.repository.commit_dashboard_event(&identity, event)?;
+    crate::metrics::event_committed(outcome.duplicate);
     if !outcome.duplicate {
       self.sse_manager.notify_commit();
     }
