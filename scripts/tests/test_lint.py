@@ -1,4 +1,4 @@
-"""Exercise lint routing and failure handling without installing project toolchains."""
+"""Exercise real just/Lefthook orchestration with stubbed language toolchains."""
 
 import json
 import os
@@ -14,34 +14,43 @@ class LintTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="stove-lint-")
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.bin = self.root / "tools"
         self.bin.mkdir()
+        mise = self.bin / "mise"
+        mise.write_text(f'''#!{sys.executable}
+import os, sys
+assert sys.argv[1:3] == ["exec", "--"], sys.argv
+os.execvp(sys.argv[3], sys.argv[3:])
+''')
+        mise.chmod(0o755)
         self.log = self.root / "commands.jsonl"
         self.env = dict(os.environ, HOME=str(self.root),
                         PATH=f"{self.bin}{os.pathsep}{os.environ['PATH']}",
-                        LINT_TEST_LOG=str(self.log))
-        shutil.copy(Path(__file__).resolve().parents[2] / "lint.sh", self.root)
+                        LINT_TEST_LOG=str(self.log), LEFTHOOK="1")
+        source = Path(__file__).resolve().parents[2]
+        for name in ["justfile", "lefthook.yml", "server/stove-server/justfile"]:
+            target = self.root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(source / name, target)
         recorder = f'''#!{sys.executable}
 import json, os, sys
 from pathlib import Path
 name = Path(sys.argv[0]).name
 with open(os.environ["LINT_TEST_LOG"], "a") as log:
     log.write(json.dumps([name, os.getcwd(), sys.argv[1:]]) + "\\n")
+if name == "gofmt" and "-l" in sys.argv and os.environ.get("LINT_UNFORMATTED"):
+    print("go/stove-kafka/unformatted.go")
 sys.exit(1 if name == os.environ.get("LINT_FAIL_TOOL") else 0)
 '''
-        for name in ["cargo", "npm", "npx", "go", "gofmt"]:
-            tool = self.bin / name
-            tool.write_text(recorder)
-            tool.chmod(0o755)
-        for name in ["gradlew", "recipes/jvm/gradlew"]:
-            tool = self.root / name
+        for name in ["cargo", "npm", "go", "gofmt", "gradlew", "recipes/jvm/gradlew"]:
+            tool = (self.root if name.endswith("gradlew") else self.bin) / name
             tool.parent.mkdir(parents=True, exist_ok=True)
             tool.write_text(recorder)
             tool.chmod(0o755)
-        for name in ["server/stove-server/spa/node_modules", "go/stove-kafka",
+        for name in ["server/stove-server/spa", "go/stove-kafka",
                      "recipes/process/golang/go-showcase"]:
-            (self.root / name).mkdir(parents=True)
+            (self.root / name).mkdir(parents=True, exist_ok=True)
         (self.root / ".gitignore").write_text("tools/\ncommands.jsonl\n")
         self.write("lib/stove/src/Main.kt")
         self.write("server/stove-server/src/lib.rs")
@@ -59,85 +68,109 @@ sys.exit(1 if name == os.environ.get("LINT_FAIL_TOOL") else 0)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
 
-    def lint(self, *args, fail=None, cwd=None):
+    def run_commands(self, *args, fail=None, unformatted=False, cwd=None):
         self.log.unlink(missing_ok=True)
         env = dict(self.env)
         if fail:
             env["LINT_FAIL_TOOL"] = fail
-        result = subprocess.run(["sh", str(self.root / "lint.sh"), *args],
-                                cwd=cwd or self.root, env=env,
+        if unformatted:
+            env["LINT_UNFORMATTED"] = "1"
+        result = subprocess.run(args, cwd=cwd or self.root, env=env,
                                 capture_output=True, text=True)
         commands = [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
         return result, commands
 
+    def hook(self, **kwargs):
+        return self.run_commands("lefthook", "run", "pre-commit", "--no-auto-install", **kwargs)
+
+    def groups(self, commands):
+        groups = set()
+        for tool, cwd, args in commands:
+            if tool == "gradlew":
+                groups.add("recipes" if "recipes/jvm" in args else "jvm")
+            else:
+                groups.add({"cargo": "rust", "npm": "spa", "gofmt": "go", "go": "go"}[tool])
+        return groups
+
+    def test_lint_checks_every_group_on_clean_tree(self):
+        result, commands = self.run_commands("just", "lint")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.groups(commands), {"jvm", "recipes", "rust", "spa", "go"})
+        for tool, cwd, args in commands:
+            if tool == "cargo":
+                self.assertEqual(Path(cwd), self.root / "server/stove-server")
+
     def test_tool_failures_reach_exit_status(self):
-        for project, tool in [("rust", "cargo"), ("spa", "npx"), ("go", "go"),
-                              ("go", "gofmt"), ("jvm", "gradlew"), ("recipes", "gradlew")]:
-            with self.subTest(project=project, tool=tool):
-                result, commands = self.lint(project, fail=tool)
+        for group, tool in [("rust", "cargo"), ("spa", "npm"), ("go", "go"),
+                            ("go", "gofmt"), ("jvm", "gradlew"), ("recipes", "gradlew")]:
+            with self.subTest(group=group, tool=tool):
+                result, commands = self.run_commands("just", f"lint-{group}", fail=tool)
                 self.assertTrue(commands)
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertNotIn("All checks passed.", result.stdout)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        result, _ = self.run_commands("just", "lint-go", unformatted=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unformatted.go", result.stdout)
 
-    def test_install_failure_is_not_hidden_by_successful_checks(self):
-        (self.root / "server/stove-server/spa/node_modules").rmdir()
-        result, _ = self.lint("spa", fail="npm")
-        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+    def test_hook_selects_projects_from_staged_paths(self):
+        cases = [
+            ("lib/stove/src/Main.kt", {"jvm"}),
+            ("build.gradle.kts", {"jvm"}),
+            ("lib/stove/api/stove.api", {"jvm"}),
+            ("recipes/jvm/example/src/Test.kt", {"recipes"}),
+            ("recipes/process/golang/go-showcase/main.go", {"go"}),
+            ("recipes/process/golang/go-showcase/go.mod", {"go"}),
+            ("go/stove-kafka/nested/client.go", {"go"}),
+            ("server/stove-server/src/lib.rs", {"rust"}),
+            ("server/stove-server/Cargo.toml", {"rust"}),
+            ("server/stove-server/spa/src/new.ts", {"spa"}),
+            ("server/stove-server/spa/package-lock.json", {"spa"}),
+            ("gradle/libs.versions.toml", {"jvm", "recipes"}),
+            (".editorconfig", {"jvm", "recipes"}),
+            ("justfile", {"jvm", "recipes", "rust", "spa", "go"}),
+            ("mise.toml", {"jvm", "recipes", "rust", "spa", "go"}),
+            ("README.md", set()),
+        ]
+        for name, expected in cases:
+            with self.subTest(path=name):
+                self.git("reset", "--mixed", "HEAD")
+                path = self.root / name
+                self.write(name, path.read_text() + "\n" if path.exists() else "fixture\n")
+                self.git("add", name)
+                result, commands = self.hook()
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(self.groups(commands), expected)
 
-    def test_recipe_changes_do_not_lint_main_build(self):
-        self.write("recipes/jvm/example/src/Test.kt")
-        result, commands = self.lint()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(commands), 1)
-        self.assertIn(str(self.root / "recipes/jvm"), commands[0][2])
-        self.assertNotIn("--no-daemon", commands[0][2])
-
-    def test_go_recipe_changes_do_not_start_gradle(self):
-        self.write("recipes/process/golang/go-showcase/main.go")
-        result, commands = self.lint()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual({c[0] for c in commands}, {"go", "gofmt"})
-
-    def test_default_checks_staged_unstaged_and_untracked(self):
-        self.write("lib/stove/src/Main.kt", "changed\n")
-        self.git("add", "lib/stove/src/Main.kt")
+    def test_empty_index_ignores_unstaged_and_untracked_files(self):
         self.write("server/stove-server/src/lib.rs", "changed\n")
         self.write("server/stove-server/spa/src/new.ts")
-        result, commands = self.lint()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual({c[0] for c in commands}, {"gradlew", "cargo", "npx"})
-        result, commands = self.lint("--staged")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual([c[0] for c in commands], ["gradlew"])
-
-    def test_empty_index_does_not_lint_unstaged_files(self):
-        self.write("server/stove-server/src/lib.rs", "changed\n")
-        result, commands = self.lint("--staged")
-        self.assertEqual(result.returncode, 0, result.stderr)
+        result, commands = self.hook()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(commands, [])
 
-    def test_detection_from_subdirectory(self):
-        self.write("server/stove-server/src/lib.rs", "changed\n")
-        result, commands = self.lint(cwd=self.root / "server/stove-server")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual({c[0] for c in commands}, {"cargo"})
+    def test_parallel_hook_failure_is_not_hidden(self):
+        for name in ["lib/stove/src/Main.kt", "server/stove-server/src/lib.rs"]:
+            self.write(name, "changed\n")
+            self.git("add", name)
+        result, commands = self.hook(fail="cargo")
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.groups(commands), {"jvm", "rust"})
 
-    def test_shared_catalog_checks_both_gradle_builds(self):
-        self.write("gradle/libs.versions.toml")
-        result, commands = self.lint()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(commands), 2)
-        self.assertTrue(all(c[0] == "gradlew" for c in commands))
+    def test_deleted_files_still_select_their_project(self):
+        self.git("rm", "server/stove-server/src/lib.rs")
+        result, commands = self.hook()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.groups(commands), {"rust"})
 
-    def test_duplicate_selections_run_once(self):
-        result, commands = self.lint("jvm", "jvm")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(commands), 1)
-
-    def test_clean_tree_does_no_work(self):
-        result, commands = self.lint()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(commands, [])
+    def test_format_keeps_expensive_checks_and_api_updates_separate(self):
+        result, commands = self.run_commands("just", "format")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.groups(commands), {"jvm", "recipes", "rust", "spa", "go"})
+        forbidden = {"apiDump", "apiCheck", "detekt", "clippy", "vet", "typecheck", "check"}
+        for _, _, args in commands:
+            self.assertTrue(forbidden.isdisjoint(args), args)
+        result, commands = self.run_commands("just", "api-dump")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(commands[0][2], ["apiDump"])
 
 
 if __name__ == "__main__":

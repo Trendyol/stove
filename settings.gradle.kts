@@ -76,12 +76,3 @@ dependencyResolutionManagement {
     }
   }
 }
-plugins {
-  id("org.danilopianini.gradle-pre-commit-git-hooks").version("2.1.23")
-}
-gitHooks {
-  preCommit {
-    from(rootDir.resolve("pre-commit.sh"))
-  }
-  createHooks(overwriteExisting = true)
-}

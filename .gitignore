@@ -1,4 +1,6 @@
 .DS_Store
+mise.local.toml
+mise.*.local.toml
 /site
 /.idea
 .idea/shelf

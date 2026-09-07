@@ -19,8 +19,11 @@ on:
       - '.editorconfig'
       - 'detekt.yml'
       - '.github/workflows/build.yml'
-      - 'lint.sh'
-      - 'pre-commit.sh'
+      - 'justfile'
+      - 'lefthook.yml'
+      - 'mise.toml'
+      - 'scripts/onboarding.py'
+      - 'scripts/dev-env.sh'
       - 'scripts/tests/**'
   pull_request:
     branches: [main]
@@ -40,8 +43,11 @@ on:
       - '.editorconfig'
       - 'detekt.yml'
       - '.github/workflows/build.yml'
-      - 'lint.sh'
-      - 'pre-commit.sh'
+      - 'justfile'
+      - 'lefthook.yml'
+      - 'mise.toml'
+      - 'scripts/onboarding.py'
+      - 'scripts/dev-env.sh'
       - 'scripts/tests/**'
 
 # Cancel in-progress runs for the same branch
@@ -63,7 +69,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Test local lint runner
+      - uses: jdx/mise-action@v3
+        with:
+          version: '2026.9.1'
+          install: false
+          env: false
+
+      - name: Validate onboarding configuration
+        run: mise tasks ls
+
+      - uses: extractions/setup-just@v3
+        with:
+          just-version: '1.58.0'
+
+      - name: Install Lefthook
+        run: npm install --global lefthook@2.1.12
+
+      - name: Test local commands and hook routing
         run: python3 -m unittest discover -s scripts/tests -v
 
       - uses: actions/setup-java@v6

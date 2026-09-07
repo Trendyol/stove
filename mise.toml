@@ -1,0 +1,29 @@
+min_version = "2026.9.1"
+
+[tools]
+# Keep Java 25 first: it runs Gradle; the other JDKs compile individual modules.
+java = ["temurin-25.0.4+101.0.LTS", "temurin-21.0.12+101.0.LTS", "temurin-17.0.20+101"]
+node = "24.20.0"
+go = "1.26.2"
+rust = { version = "1.98.1", profile = "minimal", components = ["rustfmt", "clippy"] }
+just = "1.58.0"
+lefthook = "2.1.12"
+protoc = "36.1"
+python = "3.14.7"
+
+[env]
+STOVE_JDK21 = { value = "{{ tools.java[1].path }}", tools = true }
+STOVE_JDK17 = { value = "{{ tools.java[2].path }}", tools = true }
+_.source = "scripts/dev-env.sh"
+
+[hooks]
+# Also installs the Git hook when a newcomer runs `mise install` directly.
+postinstall = "just hooks"
+
+[tasks.setup]
+description = "Install Git hooks, prepare SPA dependencies, and check local prerequisites"
+run = ["just hooks", "just setup-spa", "python3 scripts/onboarding.py doctor"]
+
+[tasks.doctor]
+description = "Check Docker and native prerequisites for the full repository"
+run = "python3 scripts/onboarding.py doctor"

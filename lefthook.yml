@@ -1,0 +1,67 @@
+min_version: 2.1.0
+glob_matcher: doublestar
+
+# Select projects from staged paths; checks read each project's working tree.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: jvm
+      glob:
+        - '**/*.{kt,kts,java,api}'
+        - 'gradle/**'
+        - 'gradlew{,.bat}'
+        - 'gradle.properties'
+        - 'detekt.yml'
+        - '.editorconfig'
+        - 'justfile'
+        - 'lefthook.yml'
+        - 'mise.toml'
+        - 'scripts/dev-env.sh'
+      exclude:
+        - 'recipes/**'
+      run: mise exec -- just lint-jvm
+
+    - name: rust
+      glob:
+        - 'server/stove-server/**/*.{rs,toml}'
+        - 'server/stove-server/Cargo.lock'
+        - 'server/stove-server/justfile'
+        - 'lib/stove-dashboard-api/src/main/proto/**'
+        - 'gradle.properties'
+        - 'justfile'
+        - 'lefthook.yml'
+        - 'mise.toml'
+        - 'scripts/dev-env.sh'
+      run: mise exec -- just lint-rust
+
+    - name: spa
+      glob:
+        - 'server/stove-server/spa/**'
+        - 'justfile'
+        - 'lefthook.yml'
+        - 'mise.toml'
+        - 'scripts/dev-env.sh'
+      run: mise exec -- just lint-spa
+
+    - name: recipes
+      glob:
+        - 'recipes/jvm/**'
+        - 'gradle/libs.versions.toml'
+        - '.editorconfig'
+        - 'justfile'
+        - 'lefthook.yml'
+        - 'mise.toml'
+        - 'scripts/dev-env.sh'
+      run: mise exec -- just lint-recipes
+
+    - name: go
+      glob:
+        - 'go/stove-kafka/**/*.go'
+        - 'go/stove-kafka/go.{mod,sum}'
+        - 'recipes/process/golang/go-showcase/**/*.go'
+        - 'recipes/process/golang/go-showcase/go.{mod,sum}'
+        - 'justfile'
+        - 'lefthook.yml'
+        - 'mise.toml'
+        - 'scripts/dev-env.sh'
+      run: mise exec -- just lint-go

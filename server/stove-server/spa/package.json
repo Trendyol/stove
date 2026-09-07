@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "tsc -p test/tsconfig.json && node --test test/*.test.mjs",
     "check": "biome check src",
+    "typecheck": "tsc -b",
     "format": "biome check --write src",
     "generate:api": "node scripts/api-types/generate.mjs",
     "check:api": "node scripts/api-types/generate.mjs --check"
