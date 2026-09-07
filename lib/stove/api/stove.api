@@ -1185,6 +1185,7 @@ public abstract interface class com/trendyol/stove/system/ReadinessStrategy {
 }
 
 public final class com/trendyol/stove/system/ReadinessStrategy$FixedDelay : com/trendyol/stove/system/ReadinessStrategy {
+	public fun <init> ()V
 	public synthetic fun <init> (JILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-UwyO8pc ()J
