@@ -71,12 +71,13 @@ export function VirtualList<T>({
       ref={viewportRef}
       className={`${className} virtual-list-window`}
       aria-label={ariaLabel}
-      onScroll={(event) =>
+      onScroll={(event) => {
+        const scrollTop = event.currentTarget.scrollTop;
         setViewport((current) => ({
           ...current,
-          scrollTop: event.currentTarget.scrollTop,
-        }))
-      }
+          scrollTop,
+        }));
+      }}
     >
       <li className="virtual-list-space" style={{ height: totalSize }} aria-hidden="true" />
       {items.slice(range.start, range.end).map((item, relativeIndex) => {
