@@ -8,6 +8,12 @@
   "branchPrefix": "renovate/",
   "packageRules": [
     {
+      "description": "refinery-core 0.9.2 supports rusqlite only through 0.39; raise this limit when refinery supports newer versions",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["rusqlite"],
+      "allowedVersions": "<0.40"
+    },
+    {
       "allowedVersions": "!/M/",
       "matchPackageNames": [
         "/io.kotest:kotest.*/"
