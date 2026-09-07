@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/IBM/sarama v1.60.2
-	github.com/XSAM/otelsql v0.43.0
+	github.com/XSAM/otelsql v0.44.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
 	github.com/segmentio/kafka-go v0.4.51
